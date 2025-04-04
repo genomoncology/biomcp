@@ -1,4 +1,5 @@
 # BioMCP: Biomedical Model Context Protocol
+[![smithery badge](https://smithery.ai/badge/@genomoncology/biomcp)](https://smithery.ai/server/@genomoncology/biomcp)
 
 BioMCP provides LLMs with structured access to critical biomedical databases
 through the Model Context Protocol (MCP).
@@ -19,6 +20,14 @@ through the Model Context Protocol (MCP).
   - Annotations (CIViC, ClinVar, COSMIC, dbSNP, etc.)
 
 ## Installation
+
+### Installing via Smithery
+
+To install biomcp for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@genomoncology/biomcp):
+
+```bash
+npx -y @smithery/cli install @genomoncology/biomcp --client claude
+```
 
 To install the BioMCP package to use it as a Python package or Command Line
 Interface (CLI), run the following command:
