@@ -26,6 +26,8 @@ genomic variants.
 
 ## Installation
 
+**NOTE**: BioMCP is installable via the python package name `biomcp-python`.
+
 ### Quick Start Options
 
 #### For Claude Desktop Users
@@ -94,10 +96,13 @@ npx @modelcontextprotocol/inspector uv run biomcp run
 ## Command Line Interface
 
 BioMCP provides a comprehensive CLI for direct interaction with biomedical
-databases:
+databases. Note, the package name is `biomcp-python`, not `biomcp`.
 
 ```bash
-# Get help
+# Install the package as tool using uv (note: package name is `biomcp-python`)
+uv tool install biomcp-python
+
+# Get help (note CLI name is `biomcp`)
 biomcp --help
 
 # Run the MCP server
