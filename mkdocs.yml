@@ -1,6 +1,6 @@
 site_name: biomcp
 repo_url: https://github.com/genomoncology/biomcp
-site_url: https://genomoncology.com/biomcp
+site_url: https://biomcp.org/
 site_description: Biomedical Model Context Protocol Server
 site_author: Ian Maurer
 edit_uri: edit/main/docs/
@@ -9,6 +9,27 @@ copyright: Maintained by <a href="https://genomoncology.com">genomoncology</a>.
 
 nav:
   - Home: index.md
+  - Guides:
+      - Installation: installation.md
+      - Getting Started: getting_started.md
+      - Common Workflows: workflows.md
+      - Python SDK: python_sdk.md
+      - Server & MCP:
+          - Server Protocol: server_protocol.md
+          - MCP Integration: mcp_integration.md
+  - CLI Reference:
+      - Trials: cli/trials.md
+      - Articles: cli/articles.md
+      - Variants: cli/variants.md
+  - API Reference:
+      - ClinicalTrials.gov: apis/clinicaltrials_gov.md
+      - PubTator3: apis/pubtator3_api.md
+      - MyVariant.info: apis/myvariant_info.md
+  - Blog:
+      - What is BioMCP?: blog/what-is-biomcp.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+
 plugins:
   - search
   - mkdocstrings:
@@ -42,10 +63,20 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/genomoncology/biomcp
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/biomcp
+      link: https://pypi.org/project/biomcp-python
 
 markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.arithmatex:
       generic: true
+  # Consider adding other useful extensions:
+  - admonition # Nice looking note/warning boxes
+  - pymdownx.details # Collapsible sections
+  - pymdownx.highlight: # Code highlighting
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets # Include content from other files
+  - pymdownx.superfences # Nested code blocks/diagrams
+  - pymdownx.tabbed: # Tabbed content
+      alternate_style: true

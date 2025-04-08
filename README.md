@@ -1,4 +1,5 @@
 # BioMCP: Biomedical Model Context Protocol
+
 [![smithery badge](https://smithery.ai/badge/@genomoncology/biomcp)](https://smithery.ai/server/@genomoncology/biomcp)
 
 BioMCP is an open source (MIT License) toolkit for biomedical research AI
@@ -6,9 +7,7 @@ assistants and agents. Built following the Model Context Protocol (MCP),
 it supports searching and retrieving clinical trials, pubmed articles, and
 genomic variants.
 
-[![▶️ Watch the video](./docs/images/screencase_1_thumbnail.png)](https://www.youtube.com/watch?v=bKxOWrWUUhM)
-
-
+[![▶️ Watch the video](./docs/blog/images/what_is_biomcp_thumbnail.png)](https://www.youtube.com/watch?v=bKxOWrWUUhM)
 
 ## Tools
 
@@ -143,12 +142,12 @@ Find out more about GenomOncology and OncoMCP by visiting:
 
 This project is licensed under the MIT License.
 
-
 ## Sources
 
 BioMCP integrates data from several authoritative biomedical databases, each with their own terms of service and data usage policies. Users should be aware of these policies when utilizing BioMCP for various applications.
 
 ### PubTator3 / PubMed
+
 - **Provider**: National Center for Biotechnology Information (NCBI), National Library of Medicine (NLM)
 - **Content**: Biomedical literature indexed in PubMed and PubMed Central
 - **Terms of Service**: [NCBI/NLM Terms and Conditions](https://www.ncbi.nlm.nih.gov/home/about/policies/)
@@ -157,6 +156,7 @@ BioMCP integrates data from several authoritative biomedical databases, each wit
 - **Underlying Sources**: Articles from thousands of biomedical journals and repositories.
 
 ### ClinicalTrials.gov
+
 - **Provider**: National Library of Medicine (NLM)
 - **Content**: Clinical trials registry and results database
 - **Terms of Service**: [ClinicalTrials.gov Terms and Conditions](https://clinicaltrials.gov/ct2/about-site/terms-conditions)
@@ -165,6 +165,7 @@ BioMCP integrates data from several authoritative biomedical databases, each wit
 - **Citation Requirements**: Any publication using data from ClinicalTrials.gov should properly acknowledge the source.
 
 ### MyVariant.info
+
 - **Provider**: The Su Lab at Scripps Research
 - **Content**: Comprehensive genetic variant annotation compiled from multiple databases
 - **Terms of Service**: [MyVariant.info Terms of Service](https://myvariant.info/terms)

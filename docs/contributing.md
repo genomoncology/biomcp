@@ -10,19 +10,19 @@ This project adheres to the Contributor Covenant Code of Conduct. By participati
 
 ### Reporting Bugs
 
-*   Check the [issue tracker](https://github.com/genomoncology/biomcp/issues) to see if the bug has already been reported.
-*   If not, open a new issue. Please include:
-    *   A clear and descriptive title.
-    *   Steps to reproduce the bug.
-    *   The expected behavior.
-    *   The actual behavior (including error messages or logs).
-    *   Your environment details (Python version, OS, BioMCP version).
+- Check the [issue tracker](https://github.com/genomoncology/biomcp/issues) to see if the bug has already been reported.
+- If not, open a new issue. Please include:
+  - A clear and descriptive title.
+  - Steps to reproduce the bug.
+  - The expected behavior.
+  - The actual behavior (including error messages or logs).
+  - Your environment details (Python version, OS, BioMCP version).
 
 ### Suggesting Enhancements
 
-*   Open an issue on the [issue tracker](https://github.com/genomoncology/biomcp/issues).
-*   Provide a clear description of the enhancement or feature request.
-*   Explain the motivation or use case for the proposed change.
+- Open an issue on the [issue tracker](https://github.com/genomoncology/biomcp/issues).
+- Provide a clear description of the enhancement or feature request.
+- Explain the motivation or use case for the proposed change.
 
 ### Submitting Pull Requests
 
@@ -37,21 +37,21 @@ This project adheres to the Contributor Covenant Code of Conduct. By participati
     git checkout -b feature/your-feature-name # or fix/your-bug-fix-name
     ```
 4.  **Set Up Development Environment:**
-    *   Ensure you have Python 3.9+ installed.
-    *   It's recommended to use a virtual environment:
-        ```bash
-        python -m venv venv
-        source venv/bin/activate # On Windows use `venv\Scripts\activate`
-        ```
-    *   Install BioMCP in editable mode with development dependencies (assuming they are specified, e.g., in `pyproject.toml` or `requirements-dev.txt` - adjust if needed):
-        ```bash
-        pip install -e ".[dev]" # Or adapt based on project setup
-        ```
-        If no specific dev extras exist, install pytest and formatters manually:
-        ```bash
-        pip install -e .
-        pip install pytest black ruff # Or other required tools
-        ```
+    - Ensure you have Python 3.9+ installed.
+    - It's recommended to use a virtual environment:
+      ```bash
+      python -m venv venv
+      source venv/bin/activate # On Windows use `venv\Scripts\activate`
+      ```
+    - Install BioMCP in editable mode with development dependencies (assuming they are specified, e.g., in `pyproject.toml` or `requirements-dev.txt` - adjust if needed):
+      ```bash
+      pip install -e ".[dev]" # Or adapt based on project setup
+      ```
+      If no specific dev extras exist, install pytest and formatters manually:
+      ```bash
+      pip install -e .
+      pip install pytest black ruff # Or other required tools
+      ```
 5.  **Make Your Changes:** Implement your feature or bug fix.
 6.  **Code Formatting and Linting:** Ensure your code adheres to common standards. Run formatters/linters:
     ```bash
@@ -76,9 +76,9 @@ This project adheres to the Contributor Covenant Code of Conduct. By participati
 
 ## Development Guidelines
 
-*   Follow existing code style and patterns.
-*   Write clear comments where necessary.
-*   Update documentation (`docs/`) if your changes affect user-facing features or CLI options.
-*   Ensure tests cover your changes.
+- Follow existing code style and patterns.
+- Write clear comments where necessary.
+- Update documentation (`docs/`) if your changes affect user-facing features or CLI options.
+- Ensure tests cover your changes.
 
 Thank you for contributing!

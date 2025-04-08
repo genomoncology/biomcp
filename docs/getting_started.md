@@ -25,30 +25,36 @@ Example Output (Truncated Markdown):
 ```markdown
 # Record 1
 
-## _Id: Chr7:G.140453136a>T
+## \_Id: Chr7:G.140453136a>T
 
 ### CADD
+
 Phred: 32
 
 ### Clinvar
 
 #### Rcv
+
 Clinical Significance: Pathogenic
 
 ### Dbnsfp
+
 Genename: BRAF
 Hgvsc: c.1799T>A
 Hgvsp: p.V600E
 
 ### Dbsnp
+
 Rsid: rs113488022
 
 ### Exac
+
 Af: 1.647e-05
 
 ### Gnomad Exome
 
 #### Af
+
 Af: 3.97994e-06
 
 ... (more annotations) ...
@@ -74,36 +80,37 @@ Study Title: A Study of DF1001 in Patients With Advanced Solid Tumors
 Study Url: https://clinicaltrials.gov/study/NCT06212009
 Study Status: RECRUITING
 Brief Summary:
-  This is a Phase 1/2 first-in-human, multi-center, open-label study
-  of DF1001 in patients with advanced solid tumors. The study consists
-  of dose escalation (Phase 1) and dose expansion (Phase 2). Phase 1
-  will determine the maximum tolerated dose (MTD) and recommended Phase 2
-  dose (RP2D) of DF1001 as monotherapy and in combination with nivolumab.
-  Phase 2 will evaluate the safety and efficacy of DF1001 at the RP2D as
-  monotherapy and in combination with nivolumab in selected indications.
+This is a Phase 1/2 first-in-human, multi-center, open-label study
+of DF1001 in patients with advanced solid tumors. The study consists
+of dose escalation (Phase 1) and dose expansion (Phase 2). Phase 1
+will determine the maximum tolerated dose (MTD) and recommended Phase 2
+dose (RP2D) of DF1001 as monotherapy and in combination with nivolumab.
+Phase 2 will evaluate the safety and efficacy of DF1001 at the RP2D as
+monotherapy and in combination with nivolumab in selected indications.
 Study Results: No Results Available
 Conditions:
-  - Advanced Solid Tumor
-  - Head and Neck Squamous Cell Carcinoma
-  - Non-small Cell Lung Cancer
-  - Melanoma
-  - Urothelial Carcinoma
-  - Cervical Cancer
-  - Endometrial Cancer
-Interventions:
-  - Drug: DF1001
-  - Biological: nivolumab
-Phases:
-  - Phase1
-  - Phase2
-Enrollment: 198
-Study Type: Interventional
-Study Design:
+
+- Advanced Solid Tumor
+- Head and Neck Squamous Cell Carcinoma
+- Non-small Cell Lung Cancer
+- Melanoma
+- Urothelial Carcinoma
+- Cervical Cancer
+- Endometrial Cancer
+  Interventions:
+- Drug: DF1001
+- Biological: nivolumab
+  Phases:
+- Phase1
+- Phase2
+  Enrollment: 198
+  Study Type: Interventional
+  Study Design:
   Allocation: Non-Randomized, Endpoint Classification: Safety/Efficacy
   Study, Intervention Model: Parallel Assignment, Masking: None (Open
   Label), Primary Purpose: Treatment
-Start Date: 2023-12-19
-Completion Date: 2027-12-31
+  Start Date: 2023-12-19
+  Completion Date: 2027-12-31
 
 ... (more records) ...
 ```
@@ -125,17 +132,18 @@ Example Output (Truncated Markdown):
 
 Pmid: 39034737
 Title:
-  Distinct Clinical Outcomes Associated With Non-V600 BRAF Mutations
-  in Patients With Non-Small-Cell Lung Cancer in Real-World Settings.
+Distinct Clinical Outcomes Associated With Non-V600 BRAF Mutations
+in Patients With Non-Small-Cell Lung Cancer in Real-World Settings.
 Journal: Clin Lung Cancer
 Authors:
-  - Zhao S
-  - Fang W
-  - Huang Y
-  - [...]
-Date: 2024-11-01T00:00:00Z
-Doi: 10.1016/j.cllc.2024.08.007
-Abstract:
+
+- Zhao S
+- Fang W
+- Huang Y
+- [...]
+  Date: 2024-11-01T00:00:00Z
+  Doi: 10.1016/j.cllc.2024.08.007
+  Abstract:
   INTRODUCTION: Non-V600 BRAF mutations have distinct kinase activities,
   transforming potential, and therapeutic vulnerabilities. This study
   evaluated the clinical outcomes of non-small-cell lung cancer (NSCLC)
@@ -147,8 +155,8 @@ Abstract:
   patients harboring non-V600 BRAF mutations exhibit heterogeneous
   clinicopathologic features and treatment outcomes. Concurrent TP53
   mutation might indicate poor prognosis. [...]
-Pubmed Url: https://pubmed.ncbi.nlm.nih.gov/39034737/
-Doi Url: https://doi.org/10.1016/j.cllc.2024.08.007
+  Pubmed Url: https://pubmed.ncbi.nlm.nih.gov/39034737/
+  Doi Url: https://doi.org/10.1016/j.cllc.2024.08.007
 
 ... (more records) ...
 ```

@@ -88,6 +88,7 @@ BioMCP exposes the following tools through the MCP interface:
 #### Article Tools
 
 - `article_searcher`: Searches PubMed/PubTator3 for biomedical literature
+
   - Input: `PubmedRequest` with fields for genes, variants, diseases, chemicals, and keywords
   - Output: Markdown-formatted list of matching articles
 
@@ -98,18 +99,22 @@ BioMCP exposes the following tools through the MCP interface:
 #### Trial Tools
 
 - `trial_searcher`: Searches ClinicalTrials.gov for clinical trials
+
   - Input: `TrialQuery` with fields for conditions, interventions, recruiting status, etc.
   - Output: Markdown-formatted list of matching trials
 
 - `trial_protocol`: Fetches protocol details for a specific trial
+
   - Input: NCT ID
   - Output: Markdown-formatted protocol details
 
 - `trial_locations`: Fetches location information for a specific trial
+
   - Input: NCT ID
   - Output: Markdown-formatted location details
 
 - `trial_outcomes`: Fetches outcome/results information for a specific trial
+
   - Input: NCT ID
   - Output: Markdown-formatted outcome details
 
@@ -120,6 +125,7 @@ BioMCP exposes the following tools through the MCP interface:
 #### Variant Tools
 
 - `variant_searcher`: Searches MyVariant.info for genetic variants
+
   - Input: `VariantQuery` with fields for gene, protein change, significance, etc.
   - Output: Markdown-formatted list of matching variants
 
@@ -133,7 +139,7 @@ BioMCP implements the Model Context Protocol to bridge AI assistants with specia
 
 ![BioMCP MCP Architecture](assets/mcp_architecture.txt)
 
-*Figure: BioMCP MCP Architecture showing the flow between AI assistants, BioMCP, and biomedical data sources*
+_Figure: BioMCP MCP Architecture showing the flow between AI assistants, BioMCP, and biomedical data sources_
 
 ### Key Components:
 
@@ -162,6 +168,7 @@ Claude Desktop is an AI assistant application that supports MCP tools through it
 ### Configuration Steps
 
 1. **Locate the Claude Desktop configuration file**:
+
    - On macOS: `~/Library/Application Support/Claude Desktop/config.json`
    - On Windows: `%APPDATA%\Claude Desktop\config.json`
    - On Linux: `~/.config/Claude Desktop/config.json`
@@ -240,15 +247,15 @@ def call_biomcp_tool(tool_name, tool_input):
         "tool_name": tool_name,
         "tool_input": tool_input
     }
-    
+
     # Send request to BioMCP
     biomcp_process.stdin.write(json.dumps(mcp_request) + "\n")
     biomcp_process.stdin.flush()
-    
+
     # Read response from BioMCP
     response_line = biomcp_process.stdout.readline()
     mcp_response = json.loads(response_line)
-    
+
     return mcp_response["result"]
 
 # Initialize Anthropic client
@@ -280,30 +287,30 @@ biomcp_process.terminate()
 You can use the `@modelcontextprotocol/client` JavaScript library to integrate BioMCP:
 
 ```javascript
-const { spawn } = require('child_process');
-const { MCPClient } = require('@modelcontextprotocol/client');
+const { spawn } = require("child_process");
+const { MCPClient } = require("@modelcontextprotocol/client");
 
 // Start BioMCP process
-const biomcpProcess = spawn('biomcp', ['run']);
+const biomcpProcess = spawn("biomcp", ["run"]);
 
 // Create MCP client
 const mcpClient = new MCPClient({
   input: biomcpProcess.stdout,
-  output: biomcpProcess.stdin
+  output: biomcpProcess.stdin,
 });
 
 // Example: Search for articles about BRAF in melanoma
 async function searchArticles() {
   try {
-    const result = await mcpClient.callTool('article_searcher', {
-      genes: ['BRAF'],
-      diseases: ['Melanoma']
+    const result = await mcpClient.callTool("article_searcher", {
+      genes: ["BRAF"],
+      diseases: ["Melanoma"],
     });
-    
-    console.log('Article search results:');
+
+    console.log("Article search results:");
     console.log(result);
   } catch (error) {
-    console.error('Error calling BioMCP:', error);
+    console.error("Error calling BioMCP:", error);
   } finally {
     // Clean up
     biomcpProcess.kill();
@@ -332,7 +339,7 @@ class MCPClient:
             text=True,
             bufsize=1
         )
-    
+
     async def call_tool(self, tool_name: str, tool_input: Dict[str, Any]) -> str:
         # Create MCP request
         mcp_request = {
@@ -340,20 +347,20 @@ class MCPClient:
             "tool_name": tool_name,
             "tool_input": tool_input
         }
-        
+
         # Send request to BioMCP
         self.process.stdin.write(json.dumps(mcp_request) + "\n")
         self.process.stdin.flush()
-        
+
         # Read response from BioMCP
         response_line = self.process.stdout.readline()
         mcp_response = json.loads(response_line)
-        
+
         if mcp_response.get("error"):
             raise Exception(f"BioMCP error: {mcp_response['error']}")
-        
+
         return mcp_response["result"]
-    
+
     def close(self):
         self.process.terminate()
 
@@ -391,6 +398,7 @@ This will open an interactive interface where you can:
 4. Test different input parameters
 
 The MCP Inspector is particularly useful for:
+
 - Verifying that BioMCP is functioning correctly
 - Understanding the expected input format for each tool
 - Seeing the exact output format that will be returned
@@ -414,23 +422,23 @@ When integrating BioMCP with AI assistants, consider these security aspects:
 
 ### Common Connection Issues
 
-| Issue | Possible Causes | Solutions |
-|-------|----------------|-----------|
-| `SPAWN ENOENT` error | BioMCP executable not found in PATH | Provide full path to BioMCP or ensure it's in your PATH |
-| Process hangs | Communication deadlock | Ensure proper stdin/stdout handling; check for buffering issues |
-| Process exits unexpectedly | Exception in BioMCP | Check logs; ensure valid input parameters |
-| No response from BioMCP | Input not properly formatted | Verify JSON format; ensure newline after each request |
-| Permission denied | Executable permissions | Check file permissions; use `chmod +x` if needed |
+| Issue                      | Possible Causes                     | Solutions                                                       |
+| -------------------------- | ----------------------------------- | --------------------------------------------------------------- |
+| `SPAWN ENOENT` error       | BioMCP executable not found in PATH | Provide full path to BioMCP or ensure it's in your PATH         |
+| Process hangs              | Communication deadlock              | Ensure proper stdin/stdout handling; check for buffering issues |
+| Process exits unexpectedly | Exception in BioMCP                 | Check logs; ensure valid input parameters                       |
+| No response from BioMCP    | Input not properly formatted        | Verify JSON format; ensure newline after each request           |
+| Permission denied          | Executable permissions              | Check file permissions; use `chmod +x` if needed                |
 
 ### MCP Tool Invocation Problems
 
-| Issue | Possible Causes | Solutions |
-|-------|----------------|-----------|
-| "Tool not found" error | Incorrect tool name | Verify tool name against documentation |
-| "Invalid input" error | Malformed input JSON | Check input structure against tool requirements |
-| Empty or null result | No matching data found | Refine search parameters; check for typos |
-| Timeout | External API delay | Increase timeout settings; check network connectivity |
-| Unexpected output format | Version mismatch | Ensure using latest BioMCP version |
+| Issue                    | Possible Causes        | Solutions                                             |
+| ------------------------ | ---------------------- | ----------------------------------------------------- |
+| "Tool not found" error   | Incorrect tool name    | Verify tool name against documentation                |
+| "Invalid input" error    | Malformed input JSON   | Check input structure against tool requirements       |
+| Empty or null result     | No matching data found | Refine search parameters; check for typos             |
+| Timeout                  | External API delay     | Increase timeout settings; check network connectivity |
+| Unexpected output format | Version mismatch       | Ensure using latest BioMCP version                    |
 
 ### Authentication and Permissions
 
@@ -459,7 +467,8 @@ BioMCP currently does not require authentication for the tools it exposes. Howev
 
 First, let me search for information about this variant."
 
-*[AI uses BioMCP tool: variant_searcher]*
+_[AI uses BioMCP tool: variant_searcher]_
+
 ```json
 {
   "mcp_protocol_version": "1.0",
@@ -472,7 +481,8 @@ First, let me search for information about this variant."
 }
 ```
 
-*[BioMCP response - truncated for brevity]*
+_[BioMCP response - truncated for brevity]_
+
 ```
 # Record 1
 
@@ -486,7 +496,8 @@ Significance: Pathogenic
 
 "The BRAF V600E mutation (rs113488022) is a pathogenic variant in the BRAF gene. Let me now search for clinical trials related to this mutation in melanoma."
 
-*[AI uses BioMCP tool: trial_searcher]*
+_[AI uses BioMCP tool: trial_searcher]_
+
 ```json
 {
   "mcp_protocol_version": "1.0",
@@ -499,7 +510,8 @@ Significance: Pathogenic
 }
 ```
 
-*[BioMCP response - truncated for brevity]*
+_[BioMCP response - truncated for brevity]_
+
 ```
 # Record 1
 
@@ -512,7 +524,8 @@ Study Status: RECRUITING
 
 "Now, let me find recent research articles about this mutation in melanoma."
 
-*[AI uses BioMCP tool: article_searcher]*
+_[AI uses BioMCP tool: article_searcher]_
+
 ```json
 {
   "mcp_protocol_version": "1.0",
@@ -525,7 +538,8 @@ Study Status: RECRUITING
 }
 ```
 
-*[BioMCP response - truncated for brevity]*
+_[BioMCP response - truncated for brevity]_
+
 ```
 # Record 1
 
@@ -553,7 +567,8 @@ Would you like me to elaborate on any specific aspect of this mutation or its tr
 **AI Assistant**:
 "I'll help you find information about currently recruiting clinical trials for glioblastoma. Let me search for that information."
 
-*[AI uses BioMCP tool: trial_searcher]*
+_[AI uses BioMCP tool: trial_searcher]_
+
 ```json
 {
   "mcp_protocol_version": "1.0",
@@ -565,7 +580,8 @@ Would you like me to elaborate on any specific aspect of this mutation or its tr
 }
 ```
 
-*[BioMCP response - truncated for brevity]*
+_[BioMCP response - truncated for brevity]_
+
 ```
 # Record 1
 
@@ -578,7 +594,8 @@ Study Status: RECRUITING
 
 "I've found several recruiting clinical trials for glioblastoma. Let me get more details about one of these trials."
 
-*[AI uses BioMCP tool: trial_protocol]*
+_[AI uses BioMCP tool: trial_protocol]_
+
 ```json
 {
   "mcp_protocol_version": "1.0",
@@ -587,7 +604,8 @@ Study Status: RECRUITING
 }
 ```
 
-*[BioMCP response - truncated for brevity]*
+_[BioMCP response - truncated for brevity]_
+
 ```
 # Protocol: NCT04003649
 
@@ -598,7 +616,8 @@ This phase I trial studies the side effects and best dose of tetrahydrouridine a
 
 "Let me also check where this trial is being conducted."
 
-*[AI uses BioMCP tool: trial_locations]*
+_[AI uses BioMCP tool: trial_locations]_
+
 ```json
 {
   "mcp_protocol_version": "1.0",
@@ -607,7 +626,8 @@ This phase I trial studies the side effects and best dose of tetrahydrouridine a
 }
 ```
 
-*[BioMCP response - truncated for brevity]*
+_[BioMCP response - truncated for brevity]_
+
 ```
 # Locations: NCT04003649
 
@@ -626,6 +646,7 @@ This phase I trial studies the side effects and best dose of tetrahydrouridine a
 This trial is currently recruiting at multiple locations across the United States, including the University of California San Diego. The study is investigating whether this combination therapy can help the immune system attack glioblastoma while blocking enzymes needed for tumor growth.
 
 Would you like me to:
+
 1. Provide details about more glioblastoma trials?
 2. Focus on trials with a specific treatment approach (like immunotherapy or targeted therapy)?
 3. Look for trials in a specific location?

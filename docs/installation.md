@@ -4,8 +4,8 @@ This guide provides instructions for installing BioMCP.
 
 ## Prerequisites
 
-*   **Python:** BioMCP requires Python 3.9 or later. You can check your Python version by running `python --version` or `python3 --version`.
-*   **pip:** Python's package installer is required. It usually comes bundled with Python. You can check if pip is installed by running `pip --version` or `pip3 --version`.
+- **Python:** BioMCP requires Python 3.9 or later. You can check your Python version by running `python --version` or `python3 --version`.
+- **pip:** Python's package installer is required. It usually comes bundled with Python. You can check if pip is installed by running `pip --version` or `pip3 --version`.
 
 ## Installation Methods
 
@@ -19,12 +19,15 @@ This is the standard and recommended way to install BioMCP for most users.
     ```bash
     pip install biomcp-python
     ```
+
     Or, depending on your system configuration:
+
     ```bash
     pip3 install biomcp-python
     ```
-    
+
     You can also use other package managers like `uv`:
+
     ```bash
     uv pip install biomcp-python
     ```
@@ -36,6 +39,7 @@ This is the standard and recommended way to install BioMCP for most users.
 If you want to contribute to BioMCP development or install the latest unreleased version, you can install it directly from the source code.
 
 1.  **Clone the repository:**
+
     ```bash
     git clone https://github.com/genomoncology/biomcp.git
     cd biomcp
@@ -49,7 +53,7 @@ If you want to contribute to BioMCP development or install the latest unreleased
     ```bash
     pip3 install -e .
     ```
-    *(Note: If the project uses a different build system like Poetry or Hatch, follow its specific instructions for installing in editable mode.)*
+    _(Note: If the project uses a different build system like Poetry or Hatch, follow its specific instructions for installing in editable mode.)_
 
 ## Verification
 

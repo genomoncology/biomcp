@@ -39,7 +39,7 @@ This endpoint allows searching for clinical trials using various parameters.
 | `sort`                 | Sort order                          | `LastUpdatePostDate:desc`                       |
 | `fields`               | Fields to return                    | `NCTId,BriefTitle,OverallStatus,HasResults`     |
 
-| `countTotal`           | Count total number of studies       | `true` or `false`                               |
+| `countTotal` | Count total number of studies | `true` or `false` |
 
 #### Example Request
 

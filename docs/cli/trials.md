@@ -150,3 +150,4 @@ Get protocol information as JSON:
 
 ```bash
 biomcp trial get NCT04267848 Protocol --json
+```

@@ -46,8 +46,6 @@ Search with multiple gene filters:
 biomcp article search --gene BRAF --gene KRAS --disease Melanoma
 ```
 
-
-
 Get results as JSON:
 
 ```bash
@@ -98,3 +96,4 @@ Get results as JSON:
 
 ```bash
 biomcp article get 21717063 --json
+```

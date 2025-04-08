@@ -81,7 +81,6 @@ identifiers and keywords.
 | --------- | ------------------------------- | ---------------------- |
 | `text`    | Entity identifier or text query | `@CHEMICAL_remdesivir` |
 
-
 #### Example Request and Response
 
 ```bash
