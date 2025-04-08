@@ -38,8 +38,9 @@ plugins:
           paths: ["src/biomcp"]
 theme:
   name: material
-  logo: assets/logo.png
+  custom_dir: overrides
   favicon: assets/favicon.ico
+  logo: assets/icon.png
   feature:
     tabs: true
   palette:

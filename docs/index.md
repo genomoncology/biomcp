@@ -1,11 +1,9 @@
-# biomcp
+# BioMCP: Biomedical Model Context Protocol Server
 
 [![Release](https://img.shields.io/github/v/tag/genomoncology/biomcp)](https://github.com/genomoncology/biomcp/tags)
 [![Build status](https://img.shields.io/github/actions/workflow/status/genomoncology/biomcp/main.yml?branch=main)](https://github.com/genomoncology/biomcp/actions/workflows/main.yml?query=branch%3Amain)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/genomoncology/biomcp)](https://img.shields.io/github/commit-activity/m/genomoncology/biomcp)
 [![License](https://img.shields.io/github/license/genomoncology/biomcp)](https://img.shields.io/github/license/genomoncology/biomcp)
-
-**BioMCP: Biomedical Model Context Protocol Server**
 
 BioMCP provides a unified command-line interface (CLI) and server protocol to simplify access to key biomedical data sources, including ClinicalTrials.gov, PubMed (via PubTator3), and MyVariant.info.
 
@@ -35,10 +33,71 @@ Whether you need to quickly look up a gene variant, find relevant clinical trial
 
 ## Installation
 
-Install BioMCP using pip:
+**NOTE**: BioMCP is installable via the python package name `biomcp-python`.
+
+### Quick Start Options
+
+#### For Claude Desktop Users
+
+The easiest way to install BioMCP for Claude Desktop is via [Smithery](https://smithery.ai/server/@genomoncology/biomcp):
+
+```bash
+npx -y @smithery/cli install @genomoncology/biomcp --client claude
+```
+
+This automatically configures the BioMCP MCP server for use with Claude Desktop.
+
+#### For Python/CLI Users
+
+Install the BioMCP package using pip:
 
 ```bash
 pip install biomcp-python
+```
+
+Or preferably using uv for faster installation:
+
+```bash
+uv pip install biomcp-python
+```
+
+You can also run BioMCP commands directly without installation:
+
+```bash
+uvx --from biomcp-python biomcp trial search --condition "lung cancer" --intervention "pembro"
+```
+
+### Advanced Installation
+
+#### Manual Claude Desktop Integration
+
+To manually configure BioMCP as an MCP Server for Claude Desktop:
+
+1. Open Claude Desktop settings
+2. Navigate to the MCP Servers configuration section
+3. Add the following configuration:
+
+```json
+{
+  "globalShortcut": "",
+  "mcpServers": {
+    "biomcp": {
+      "command": "uv",
+      "args": ["run", "--from", "biomcp-python", "biomcp", "run"]
+    }
+  }
+}
+```
+
+**Note:** If you get a `SPAWN ENOENT` warning, make sure your `uv` executable
+is in your PATH or provide a full path to it (e.g. /Users/name/.local/bin/uv).
+
+#### Verification
+
+To verify your BioMCP MCP Server installation, use the MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector uv run biomcp run
 ```
 
 For more detailed instructions, see the [Installation Guide](installation.md).
