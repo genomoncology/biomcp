@@ -1,11 +1,15 @@
 # Changelog
 
-## [0.2.0] - 2025-05-
+## [0.0.3] - 2025-04-08
+
+- Testing of publishing workflow.
+
+## [0.0.2] - 2025-04-02
 
 - Fixed path to resources folder for custom instructions in build.
 - Cleaned up documentation in preparation for biomcp.org website.
 
-## [0.1.0] - 2025-04-03
+## [0.0.1] - 2025-04-02
 
 - Initial release of BioMCP CLI and server.
 - Support for searching ClinicalTrials.gov (`biomcp trial search`).

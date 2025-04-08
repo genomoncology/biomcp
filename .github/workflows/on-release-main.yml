@@ -32,6 +32,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: [set-version]
+    permissions:
+      id-token: write
+    environment: release
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -49,9 +52,6 @@ jobs:
 
       - name: Publish package
         run: uvx twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
   deploy-docs:
     needs: publish
