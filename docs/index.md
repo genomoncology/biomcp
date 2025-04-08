@@ -7,6 +7,8 @@
 
 BioMCP provides a unified command-line interface (CLI) and server protocol to simplify access to key biomedical data sources, including ClinicalTrials.gov, PubMed (via PubTator3), and MyVariant.info.
 
+### Built and Maintained by <a href="https://www.genomoncology.com"><img src="./assets/logo.png" width=200 valign="middle" /></a>
+
 ## What is BioMCP?
 
 Navigating the landscape of biomedical data often requires interacting with multiple distinct APIs, each with its own query syntax, parameters, and data formats. BioMCP solves this by offering:
@@ -130,6 +132,7 @@ Explore more examples in the [Getting Started Guide](getting_started.md).
   - [MyVariant.info API](apis/myvariant_info.md)
 - [Server Protocol Guide](server_protocol.md)
 - [MCP Integration Guide](mcp_integration.md)
+- [About GenomOncology](genomoncology.md)
 - [Contributing Guide](contributing.md)
 - [Changelog](changelog.md)
 
