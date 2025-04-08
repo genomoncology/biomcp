@@ -1,4 +1,4 @@
-site_name: biomcp
+site_name: BioMCP
 repo_url: https://github.com/genomoncology/biomcp
 site_url: https://biomcp.org/
 site_description: Biomedical Model Context Protocol Server
@@ -38,6 +38,8 @@ plugins:
           paths: ["src/biomcp"]
 theme:
   name: material
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
   feature:
     tabs: true
   palette:
