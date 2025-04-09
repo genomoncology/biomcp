@@ -2,70 +2,74 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://biomcp.org/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/changelog/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/contributing/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/genomoncology/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/getting_started/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/installation/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/mcp_integration/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/python_sdk/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/server_protocol/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/workflows/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/apis/clinicaltrials_gov/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/apis/myvariant_info/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/apis/pubtator3_api/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/blog/ai-assisted-clinical-trial-search-analysis/</loc>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/blog/what-is-biomcp/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/cli/articles/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/cli/trials/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/cli/variants/</loc>
-         <lastmod>2025-04-08</lastmod>
+         <lastmod>2025-04-09</lastmod>
     </url>
 </urlset>
