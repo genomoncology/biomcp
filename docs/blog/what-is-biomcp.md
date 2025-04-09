@@ -10,6 +10,9 @@ This is where BioMCP comes in – an open-source implementation of the Model
 Context Protocol (MCP) specifically designed for biomedical applications. But
 what exactly does that mean, and why does it matter?
 
+Video Link:
+[![▶️ Watch the video](./images/what_is_biomcp_thumbnail.png)](https://www.youtube.com/watch?v=bKxOWrWUUhM)
+
 ## Bridging the Gap Between AI and Specialized Knowledge
 
 BioMCP serves as a crucial bridge connecting AI assistants and agents to

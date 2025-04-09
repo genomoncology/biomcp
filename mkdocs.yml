@@ -27,6 +27,7 @@ nav:
       - MyVariant.info: apis/myvariant_info.md
   - Blog:
       - What is BioMCP?: blog/what-is-biomcp.md
+      - AI Assisted Clinical Trial Search and Analysis: blog/ai-assisted-clinical-trial-search-analysis.md
   - About GenomOncology: genomoncology.md
   - Contributing: contributing.md
   - Changelog: changelog.md
