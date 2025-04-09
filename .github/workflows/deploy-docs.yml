@@ -24,20 +24,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Python environment
+        uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.11"
-          cache: "pip"
-
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Install dependencies
-        run: |
-          uv pip install -e ".[dev]"
+          uv-version: "0.5.20"
 
       - name: Configure Git User
         run: |
@@ -46,4 +37,4 @@ jobs:
 
       - name: Deploy documentation using MkDocs
         run: |
-          mkdocs gh-deploy --force
+          uv run mkdocs gh-deploy --force
