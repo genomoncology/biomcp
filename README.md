@@ -1,7 +1,5 @@
 # BioMCP: Biomedical Model Context Protocol
 
-[![smithery badge](https://smithery.ai/badge/@genomoncology/biomcp)](https://smithery.ai/server/@genomoncology/biomcp)
-
 BioMCP is an open source (MIT License) toolkit for biomedical research AI
 assistants and agents. Built following the Model Context Protocol (MCP),
 it supports searching and retrieving clinical trials, pubmed articles, and
@@ -194,3 +192,11 @@ When using BioMCP, please be aware that:
 4. **Protected Health Information**: BioMCP does not handle or provide access to protected health information (PHI) or personally identifiable information (PII).
 
 For additional information about specific data sources or usage policies, please refer to the documentation provided by each source database.
+
+### MCP Registries
+
+[![smithery badge](https://smithery.ai/badge/@genomoncology/biomcp)](https://smithery.ai/server/@genomoncology/biomcp)
+
+<a href="https://glama.ai/mcp/servers/@genomoncology/biomcp">
+<img width="380" height="200" src="https://glama.ai/mcp/servers/@genomoncology/biomcp/badge" />
+</a>
