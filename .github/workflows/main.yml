@@ -29,7 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        # testing only Python 3.11 to minimize the load on services
+        python-version: ["3.11"] # ["3.10", "3.11", "3.12", "3.13"]
       fail-fast: false
     defaults:
       run:
