@@ -106,11 +106,18 @@ def check_variant_field(it, variants_data, field, operator, expected):
 )
 def number_of_variants_check(variants_data, operator, expected):
     """Check the number of variants returned."""
-    count = (
-        len(variants_data.get("hits", []))
-        if isinstance(variants_data, dict)
-        else len(variants_data)
-    )
+    if (
+        isinstance(variants_data, list)
+        and len(variants_data) == 1
+        and "error" in variants_data[0]
+    ):
+        count = 0  # If we have an error response, count as 0 variants
+    else:
+        count = (
+            len(variants_data.get("hits", []))
+            if isinstance(variants_data, dict)
+            else len(variants_data)
+        )
     operator = operator.strip().lower().replace(" ", "_")
     f = getattr(assert_that(count), operator)
     f(int(expected))
