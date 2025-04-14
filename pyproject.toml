@@ -1,6 +1,6 @@
 [project]
 name = "biomcp-python"
-version = "0.1.0"
+version = "0.1.1"
 description = "Biomedical Model Context Protocol Server"
 authors = [{ name = "Ian Maurer", email = "imaurer@gmail.com" }]
 readme = "README.md"
@@ -16,7 +16,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "anyio>=4.8.0",
     "certifi>=2025.1.31",
     "diskcache>=5.6.3",
     "httpx>=0.28.1",
@@ -60,8 +59,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]
 biomcp = ["resources/*.md"]
-
-
 
 [project.scripts]
 biomcp = "biomcp.__main__:main"
@@ -163,4 +160,16 @@ omit = [
     "src/*/__main__.py",
     "src/*/server.py",
     "src/*/http_client.py",
+]
+
+[tool.deptry]
+exclude = [
+  "example_scripts/python_sdk.py",
+  "venv",
+  ".venv",
+  ".direnv",
+  "tests",
+  ".git",
+    "build",
+    "dist",
 ]

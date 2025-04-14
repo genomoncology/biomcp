@@ -23,7 +23,7 @@ You can run `biomcp` commands directly without a full installation using `uvx`. 
   ```
 - Test a search command (e.g., trial search):
   ```bash
-  uvx --from biomcp-python biomcp trial search --condition NSCLC --size 1 | head -n 5
+  uvx --from biomcp-python biomcp trial search --condition NSCLC | head -n 5
   # Expected Output (NCT ID and Title will vary):
   # # Record 1
   # Nct Number: NCT0XXXXXXX
