@@ -17,6 +17,9 @@ nav:
       - Server & MCP:
           - Server Protocol: server_protocol.md
           - MCP Integration: mcp_integration.md
+  - Tutorials:
+      - Claude Desktop: tutorials/claude-desktop.md
+      - MCP Inspector: tutorials/mcp-inspector.md
   - CLI Reference:
       - Trials: cli/trials.md
       - Articles: cli/articles.md

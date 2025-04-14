@@ -99,7 +99,7 @@ is in your PATH or provide a full path to it (e.g. /Users/name/.local/bin/uv).
 To verify your BioMCP MCP Server installation, use the MCP Inspector:
 
 ```bash
-npx @modelcontextprotocol/inspector uv run biomcp run
+npx @modelcontextprotocol/inspector uv run --with biomcp-python biomcp run
 ```
 
 For more detailed instructions, see the [Installation Guide](installation.md).

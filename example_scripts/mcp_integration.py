@@ -17,17 +17,17 @@ from mcp.types import TextContent
 
 
 async def check_server():
-    # Run with pypi package
-    # server_params = StdioServerParameters(
-    #     command="uvx",
-    #     args=["--from", "biomcp-python", "biomcp", "run"],
-    # )
-
-    # Run with local code
+    # Run with pypi package using `uv` not `uvx`
     server_params = StdioServerParameters(
-        command="python",
-        args=["-m", "biomcp", "run"],
+        command="uv",
+        args=["run", "--with", "biomcp-python==0.1.1", "biomcp", "run"],
     )
+    #
+    # Run with local code
+    # server_params = StdioServerParameters(
+    #     command="python",
+    #     args=["-m", "biomcp", "run"],
+    # )
 
     async with (
         stdio_client(server_params) as (read, write),
