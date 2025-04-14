@@ -12,7 +12,8 @@ def run_server():
     """Run the BioMCP server with STDIO transport."""
 
     tools = asyncio.run(mcp_app.list_tools())
-    logger.info(f"Tools loaded: {",".join(t.name for t in tools)}")
+    tools_str = ",".join(t.name for t in tools)
+    logger.info(f"Tools loaded: {tools_str}")
 
     logger.info("Starting MCP server:")
     mcp_app.run()
