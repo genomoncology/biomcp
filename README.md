@@ -1,202 +1,160 @@
 # BioMCP: Biomedical Model Context Protocol
 
-BioMCP is an open source (MIT License) toolkit for biomedical research AI
-assistants and agents. Built following the Model Context Protocol (MCP),
-it supports searching and retrieving clinical trials, pubmed articles, and
-genomic variants.
+BioMCP is an open source (MIT License) toolkit that empowers AI assistants and
+agents with specialized biomedical knowledge. Built following the Model Context
+Protocol (MCP), it connects AI systems to authoritative biomedical data
+sources, enabling them to answer questions about clinical trials, scientific
+literature, and genomic variants with precision and depth.
 
 [![▶️ Watch the video](./docs/blog/images/what_is_biomcp_thumbnail.png)](https://www.youtube.com/watch?v=bKxOWrWUUhM)
 
-## Tools
+## Why BioMCP?
 
-- PubTator3 (PubMed/PMC)
-  - Article Search
-  - Full Text
-- ClinicalTrials.gov
-  - Clinical Trial Advanced Search
-  - Protocols
-  - Outcomes
-  - Locations
-  - Reference
-- MyVariant.info
-  - Variant Search
-  - Annotations (CIViC, ClinVar, COSMIC, dbSNP, etc.)
+While Large Language Models have broad general knowledge, they often lack
+specialized domain-specific information or access to up-to-date resources.
+BioMCP bridges this gap for biomedicine by:
 
-## Installation
+- Providing **structured access** to clinical trials, biomedical literature,
+  and genomic variants
+- Enabling **natural language queries** to specialized databases without
+  requiring knowledge of their specific syntax
+- Supporting **biomedical research** workflows through a consistent interface
+- Functioning as an **MCP server** for AI assistants and agents
 
-**NOTE**: BioMCP is installable via the python package name `biomcp-python`.
+## Biomedical Data Sources
 
-### Quick Start Options
+BioMCP integrates with three key biomedical data sources:
 
-#### For Claude Desktop Users
+- **PubTator3/PubMed** - Biomedical literature with entity annotations
+- **ClinicalTrials.gov** - Clinical trial registry and results database
+- **MyVariant.info** - Consolidated genetic variant annotation from multiple
+  databases
 
-The easiest way to install BioMCP for Claude Desktop is via [Smithery](https://smithery.ai/server/@genomoncology/biomcp):
+## Available MCP Tools
+
+### PubMed & PubTator3
+
+- `article_searcher`: Search for articles by genes, diseases, variants, or
+  keywords
+- `article_details`: Get detailed article information including abstracts and
+  full text
+
+### ClinicalTrials.gov
+
+- `trial_searcher`: Advanced trial search with filtering by condition,
+  intervention, phase, etc.
+- `trial_protocol`: Detailed trial protocol information
+- `trial_locations`: Trial site locations and contact information
+- `trial_outcomes`: Results and outcome measures
+- `trial_references`: Related publications
+
+### MyVariant.info
+
+- `variant_searcher`: Search for genetic variants with sophisticated filtering
+- `variant_details`: Comprehensive annotations from multiple sources (CIViC,
+  ClinVar, COSMIC, dbSNP, etc.)
+
+## Quick Start
+
+### For Claude Desktop Users
+
+1. **Install `uv`** if you don't have it (recommended):
+
+   ```bash
+   # MacOS
+   brew install uv
+
+   # Windows/Linux
+   pip install uv
+   ```
+
+2. **Configure Claude Desktop**:
+   - Open Claude Desktop settings
+   - Navigate to Developer section
+   - Click "Edit Config" and add:
+   ```json
+   {
+     "mcpServers": {
+       "biomcp": {
+         "command": "uv",
+         "args": ["run", "--with", "biomcp-python", "biomcp", "run"]
+       }
+     }
+   }
+   ```
+   - Restart Claude Desktop and start chatting about biomedical topics!
+
+### Python Package Installation
 
 ```bash
-npx -y @smithery/cli install @genomoncology/biomcp --client claude
-```
-
-This automatically configures the BioMCP MCP server for use with Claude Desktop.
-
-#### For Python/CLI Users
-
-Install the BioMCP package using pip or uv:
-
-```bash
+# Using pip
 pip install biomcp-python
-```
 
-Or preferably using uv for faster installation:
-
-```bash
+# Using uv (recommended for faster installation)
 uv pip install biomcp-python
-```
 
-You can also run BioMCP commands directly without installation:
-
-```bash
-uvx --from biomcp-python biomcp trial search --condition "lung cancer" --intervention "pembro"
-```
-
-### Advanced Installation
-
-#### Manual Claude Desktop Integration
-
-To manually configure BioMCP as an MCP Server for Claude Desktop:
-
-1. Open Claude Desktop settings
-2. Navigate to the MCP Servers configuration section
-3. Add the following configuration:
-
-```json
-{
-  "globalShortcut": "",
-  "mcpServers": {
-    "biomcp": {
-      "command": "uv",
-      "args": ["run", "--from", "biomcp-python", "biomcp", "run"]
-    }
-  }
-}
-```
-
-**Note:** If you get a `SPAWN ENOENT` warning, make sure your `uv` executable
-is in your PATH or provide a full path to it (e.g. /Users/name/.local/bin/uv).
-
-#### Verification
-
-To verify your BioMCP MCP Server installation, use the MCP Inspector: Server, using the MCP Inspector, run the following command:
-
-```bash
-npx @modelcontextprotocol/inspector uv run biomcp run
+# Run directly without installation
+uv run --with biomcp-python biomcp trial search --condition "lung cancer"
 ```
 
 ## Command Line Interface
 
-BioMCP provides a comprehensive CLI for direct interaction with biomedical
-databases. Note, the package name is `biomcp-python`, not `biomcp`.
+BioMCP provides a comprehensive CLI for direct database interaction:
 
 ```bash
-# Install the package as tool using uv (note: package name is `biomcp-python`)
-uv tool install biomcp-python
-
-# Get help (note CLI name is `biomcp`)
+# Get help
 biomcp --help
 
 # Run the MCP server
 biomcp run
 
-# Search for articles
+# Examples
 biomcp article search --gene BRAF --disease Melanoma
-
-# Get article details by PMID
 biomcp article get 21717063 --full
-
-# Search for clinical trials
-biomcp trial search --condition "Lung Cancer" --phase Phase_3
-
-# Get trial details by NCT ID
+biomcp trial search --condition "Lung Cancer" --phase PHASE3
 biomcp trial get NCT04280705 Protocol
-
-# Search for variants
-biomcp variant search --gene BRAF --significance Pathogenic
-
-# Get variant details
+biomcp variant search --gene TP53 --significance pathogenic
 biomcp variant get rs113488022
 ```
 
-## Commercial Version: OncoMCP
+## Testing & Verification
+
+Test your BioMCP setup with the MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector uv run --with biomcp-python biomcp run
+```
+
+This opens a web interface where you can explore and test all available tools.
+
+## Enterprise Version: OncoMCP
 
 OncoMCP extends BioMCP with GenomOncology's enterprise-grade precision oncology
-platform (POP), providing healthcare organizations with:
+platform (POP), providing:
 
-- On-premise deployment with full HIPAA compliance
-- Real-time clinical trial recruiting status and arm-level matching
-- Seamless EHR and clinical data warehouse integration
-- Curated knowledge base of 15,000+ clinical trials and FDA approvals
-- Patient-trial matching using integrated clinical and molecular profiles
-- Advanced NLP for structured data extraction and normalization
-- Comprehensive biomarker and mutation rule processing
+- **HIPAA-Compliant Deployment**: Secure on-premise options
+- **Real-Time Trial Matching**: Up-to-date status and arm-level matching
+- **Healthcare Integration**: Seamless EHR and data warehouse connectivity
+- **Curated Knowledge Base**: 15,000+ trials and FDA approvals
+- **Sophisticated Patient Matching**: Using integrated clinical and molecular
+  profiles
+- **Advanced NLP**: Structured extraction from unstructured text
+- **Comprehensive Biomarker Processing**: Mutation and rule processing
 
-Find out more about GenomOncology and OncoMCP by visiting:
-[GenomOncology](https://genomoncology.com/).
+Learn more: [GenomOncology](https://genomoncology.com/)
 
-## License
-
-This project is licensed under the MIT License.
-
-## Sources
-
-BioMCP integrates data from several authoritative biomedical databases, each with their own terms of service and data usage policies. Users should be aware of these policies when utilizing BioMCP for various applications.
-
-### PubTator3 / PubMed
-
-- **Provider**: National Center for Biotechnology Information (NCBI), National Library of Medicine (NLM)
-- **Content**: Biomedical literature indexed in PubMed and PubMed Central
-- **Terms of Service**: [NCBI/NLM Terms and Conditions](https://www.ncbi.nlm.nih.gov/home/about/policies/)
-- **Access Limits**: Standard access is limited to a specific number of requests per second. Higher throughput available with an API key.
-- **Citation Requirements**: Publications using data from PubMed should cite the appropriate NCBI/NLM resources.
-- **Underlying Sources**: Articles from thousands of biomedical journals and repositories.
-
-### ClinicalTrials.gov
-
-- **Provider**: National Library of Medicine (NLM)
-- **Content**: Clinical trials registry and results database
-- **Terms of Service**: [ClinicalTrials.gov Terms and Conditions](https://clinicaltrials.gov/ct2/about-site/terms-conditions)
-- **Data Usage**: Data is freely available for research and academic purposes. Commercial use may have additional restrictions.
-- **API Access**: [ClinicalTrials.gov API](https://clinicaltrials.gov/data-api/about-api)
-- **Citation Requirements**: Any publication using data from ClinicalTrials.gov should properly acknowledge the source.
-
-### MyVariant.info
-
-- **Provider**: The Su Lab at Scripps Research
-- **Content**: Comprehensive genetic variant annotation compiled from multiple databases
-- **Terms of Service**: [MyVariant.info Terms of Service](https://myvariant.info/terms)
-- **Annotation Sources**: [Comprehensive list of annotation sources](https://docs.myvariant.info/en/latest/doc/data.html)
-- **Attribution**: Users should properly attribute both MyVariant.info and the original annotation sources in publications.
-- **Primary Data Sources Include**:
-  - **ClinVar**: Clinical interpretations of genetic variants
-  - **COSMIC**: Catalogue of Somatic Mutations in Cancer
-  - **dbSNP**: Database of single nucleotide polymorphisms
-  - **CIViC**: Clinical Interpretations of Variants in Cancer
-  - **gnomAD**: Genome Aggregation Database
-  - **CADD**: Combined Annotation Dependent Depletion scores
-
-### Important Usage Notes
-
-When using BioMCP, please be aware that:
-
-1. **Attribution Requirements**: Publications or applications using data obtained through BioMCP should cite both BioMCP and the original data sources appropriately.
-2. **Data Currency**: Information retrieved may not represent the most current data available from the original sources due to update frequencies.
-3. **Usage Restrictions**: While BioMCP provides access to these resources, users must comply with the individual terms of service for each data source, particularly for commercial applications.
-4. **Protected Health Information**: BioMCP does not handle or provide access to protected health information (PHI) or personally identifiable information (PII).
-
-For additional information about specific data sources or usage policies, please refer to the documentation provided by each source database.
-
-### MCP Registries
+## MCP Registries
 
 [![smithery badge](https://smithery.ai/badge/@genomoncology/biomcp)](https://smithery.ai/server/@genomoncology/biomcp)
 
 <a href="https://glama.ai/mcp/servers/@genomoncology/biomcp">
 <img width="380" height="200" src="https://glama.ai/mcp/servers/@genomoncology/biomcp/badge" />
 </a>
+
+## Documentation
+
+For comprehensive documentation, visit [https://biomcp.org](https://biomcp.org)
+
+## License
+
+This project is licensed under the MIT License.

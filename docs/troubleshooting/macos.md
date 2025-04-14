@@ -6,7 +6,7 @@
   ```bash
   brew install uv
   ```
-  For other systems or methods, see the [uv installation guide](https://docs.astral.sh/uv/install/). `uvx` is included with `uv`.
+  For other systems or methods, see the [uv installation guide](https://docs.astral.sh/uv/install/).
 - Ensure you have `npx` available (usually comes with Node.js/npm). Recommended method for macOS if needed:
   ```bash
   brew install node
@@ -14,16 +14,16 @@
 
 **1. Testing the CLI Directly:**
 
-You can run `biomcp` commands directly without a full installation using `uvx`. This tests if the package is fetchable and the CLI commands execute.
+You can run `biomcp` commands directly without a full installation using `uv`:
 
 - Check the version:
   ```bash
-  uvx --from biomcp-python biomcp version
+  uv run --with biomcp-python biomcp version
   # Expected Output (version may vary): biomcp version: 0.1.0
   ```
 - Test a search command (e.g., trial search):
   ```bash
-  uvx --from biomcp-python biomcp trial search --condition NSCLC | head -n 5
+  uv run --with biomcp-python biomcp trial search --condition NSCLC | head -n 5
   # Expected Output (NCT ID and Title will vary):
   # # Record 1
   # Nct Number: NCT0XXXXXXX
@@ -36,9 +36,9 @@ You can run `biomcp` commands directly without a full installation using `uvx`. 
 
 This verifies that the server starts correctly and the tools are available via the Model Context Protocol.
 
-- Run the inspector, telling it to start your server using the `uvx` command (this mirrors how Smithery likely starts it):
+- Run the inspector, telling it to start your server using the `uv` command:
   ```bash
-  npx @modelcontextprotocol/inspector uvx --from biomcp-python biomcp run
+  npx @modelcontextprotocol/inspector uv run --with biomcp-python biomcp run
   ```
 - Open the MCP Inspector interface in your browser (usually `http://127.0.0.1:6274`).
 - You should see the list of available tools (e.g., `article_searcher`, `trial_protocol`, `variant_searcher`, etc.).

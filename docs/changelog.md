@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.1] - 2025-04-14
+
+- Simplified `biomcp run`.
+- Added tutorials on Claude Desktop, MCP Inspector, and Python SDK.
+
 ## [0.1.0] - 2025-04-08
 
 - Initial release of BioMCP CLI and server.

@@ -5,133 +5,143 @@
 [![Commit activity](https://img.shields.io/github/commit-activity/m/genomoncology/biomcp)](https://img.shields.io/github/commit-activity/m/genomoncology/biomcp)
 [![License](https://img.shields.io/github/license/genomoncology/biomcp)](https://img.shields.io/github/license/genomoncology/biomcp)
 
-BioMCP provides a unified command-line interface (CLI) and server protocol to simplify access to key biomedical data sources, including ClinicalTrials.gov, PubMed (via PubTator3), and MyVariant.info.
+BioMCP is a specialized Model Context Protocol (MCP) server that connects AI assistants like Claude to biomedical data sources, including ClinicalTrials.gov, PubMed, and MyVariant.info.
 
 ### Built and Maintained by <a href="https://www.genomoncology.com"><img src="./assets/logo.png" width=200 valign="middle" /></a>
 
+## Quick Start: Claude Desktop Setup
+
+The fastest way to get started with BioMCP is to set it up with Claude Desktop:
+
+1. **Install Claude Desktop** from [Anthropic](https://claude.ai/desktop)
+
+2. **Ensure `uv` is installed**:
+
+   ```bash
+   # Install uv if you don't have it
+   # MacOS: brew install uv
+   # Windows: pip install uv
+   ```
+
+3. **Configure Claude Desktop**:
+
+   - Open Claude Desktop settings
+   - Navigate to Developer section
+   - Click "Edit Config" and add:
+
+   ```json
+   {
+     "mcpServers": {
+       "biomcp": {
+         "command": "uv",
+         "args": ["run", "--with", "biomcp-python", "biomcp", "run"]
+       }
+     }
+   }
+   ```
+
+   - Save and restart Claude Desktop
+
+4. **Start chatting with Claude** about biomedical topics!
+
+For detailed setup instructions and examples, see our [Claude Desktop Tutorial](tutorials/claude-desktop.md).
+
 ## What is BioMCP?
 
-Navigating the landscape of biomedical data often requires interacting with multiple distinct APIs, each with its own query syntax, parameters, and data formats. BioMCP solves this by offering:
+BioMCP is a specialized MCP (Model Context Protocol) server that bridges the gap between AI systems and critical biomedical data sources. While Large Language Models (LLMs) like Claude have extensive general knowledge, they often lack real-time access to specialized databases needed for in-depth biomedical research.
 
-- A **consistent Command-Line Interface (CLI)** for searching and retrieving information about clinical trials, biomedical literature, and genetic variants.
-- An underlying **abstraction layer** that handles communication with the respective external APIs (ClinicalTrials.gov, PubTator3, MyVariant.info).
-- A **server component** implementing the Biomedical Model Context Protocol, designed for programmatic interaction, potentially with systems like Large Language Models (LLMs).
+Using the Model Context Protocol, BioMCP provides Claude and other AI assistants with structured, real-time access to:
 
-Whether you need to quickly look up a gene variant, find relevant clinical trials, explore recent research articles, or integrate this data programmatically, BioMCP aims to streamline the process.
+1. **Clinical Trials** - Searchable access to ClinicalTrials.gov for finding relevant studies
+2. **Research Literature** - Query PubMed/PubTator3 for the latest biomedical research
+3. **Genomic Variants** - Explore detailed genetic variant information from MyVariant.info
 
-## Target Audience
+Through MCP, AI assistants can seamlessly invoke BioMCP tools during conversations, retrieving precise biomedical information without the user needing to understand complex query syntax or database-specific parameters.
 
-- **Bioinformaticians & Researchers:** Quickly query biomedical databases from the command line.
-- **Developers:** Integrate biomedical data into applications or workflows using the CLI or potentially the server protocol.
-- **Data Scientists:** Aggregate data from multiple sources for analysis.
+## MCP Tools and Capabilities
 
-## Core Features
+BioMCP exposes the following tools through the MCP interface:
 
-- **Trials CLI (`biomcp trial ...`):** Search ClinicalTrials.gov for studies based on conditions, interventions, status, location, and more. Retrieve detailed trial information.
-- **Articles CLI (`biomcp article ...`):** Search PubMed/PubTator3 for articles using keywords, genes, diseases, chemicals, or variants. Fetch article abstracts and metadata.
-- **Variants CLI (`biomcp variant ...`):** Search MyVariant.info for genetic variants by gene, protein change, rsID, or genomic location. Filter by clinical significance, population frequency, and functional predictions. Retrieve detailed variant annotations.
-- **Workflow Integration:** Combine commands to perform common research tasks (see [Common Workflows](workflows.md)).
-- **Server Protocol:** Run `biomcp run` to start a server for programmatic interaction (details in [Server Protocol](server_protocol.md)).
+### Clinical Trial Tools
 
-## Installation
+- `trial_searcher`: Search for trials by condition, intervention, location, phase, etc.
+- `trial_protocol`: Get detailed protocol information for specific trials
+- `trial_locations`: Find where trials are conducted
+- `trial_outcomes`: Access trial results and outcome data
+- `trial_references`: Find publications related to specific trials
 
-**NOTE**: BioMCP is installable via the python package name `biomcp-python`.
+### Literature Tools
 
-### Quick Start Options
+- `article_searcher`: Find biomedical articles across multiple dimensions
+- `article_details`: Retrieve detailed article content and metadata
 
-#### For Claude Desktop Users
+### Genomic Tools
 
-The easiest way to install BioMCP for Claude Desktop is via [Smithery](https://smithery.ai/server/@genomoncology/biomcp):
+- `variant_searcher`: Search for genetic variants with filtering options
+- `variant_details`: Get comprehensive annotations for specific variants
 
-```bash
-npx -y @smithery/cli install @genomoncology/biomcp --client claude
-```
+## Tutorials
 
-This automatically configures the BioMCP MCP server for use with Claude Desktop.
+- [**Claude Desktop Tutorial**](tutorials/claude-desktop.md) - Set up and use BioMCP with Claude Desktop
+- [**MCP Inspector Tutorial**](tutorials/mcp-inspector.md) - Test and debug BioMCP directly
+- [**Python SDK Tutorial**](tutorials/python-sdk.md) - Use BioMCP as a Python library
+- [**MCP Client Tutorial**](tutorials/mcp-client.md) - Integrate with MCP clients programmatically
 
-#### For Python/CLI Users
+## Verification and Testing
 
-Install the BioMCP package using pip:
-
-```bash
-pip install biomcp-python
-```
-
-Or preferably using uv for faster installation:
-
-```bash
-uv pip install biomcp-python
-```
-
-You can also run BioMCP commands directly without installation:
-
-```bash
-uvx --from biomcp-python biomcp trial search --condition "lung cancer" --intervention "pembro"
-```
-
-### Advanced Installation
-
-#### Manual Claude Desktop Integration
-
-To manually configure BioMCP as an MCP Server for Claude Desktop:
-
-1. Open Claude Desktop settings
-2. Navigate to the MCP Servers configuration section
-3. Add the following configuration:
-
-```json
-{
-  "globalShortcut": "",
-  "mcpServers": {
-    "biomcp": {
-      "command": "uv",
-      "args": ["run", "--from", "biomcp-python", "biomcp", "run"]
-    }
-  }
-}
-```
-
-**Note:** If you get a `SPAWN ENOENT` warning, make sure your `uv` executable
-is in your PATH or provide a full path to it (e.g. /Users/name/.local/bin/uv).
-
-#### Verification
-
-To verify your BioMCP MCP Server installation, use the MCP Inspector:
+The easiest way to test your BioMCP setup is with the MCP Inspector:
 
 ```bash
 npx @modelcontextprotocol/inspector uv run --with biomcp-python biomcp run
 ```
 
-For more detailed instructions, see the [Installation Guide](installation.md).
+This launches a web interface where you can test each BioMCP tool directly. For detailed instructions, see the [MCP Inspector Tutorial](tutorials/mcp-inspector.md).
 
-## Getting Started
+## Additional Usage Options
 
-Once installed, try a simple command:
+While BioMCP is primarily designed as an MCP server for AI assistants, it can also be used in other ways:
+
+### Command Line Interface
+
+BioMCP includes a comprehensive CLI for direct interaction with biomedical databases:
 
 ```bash
-# Find information about the BRAF V600E variant
-biomcp variant search --gene BRAF --protein p.V600E
+# Examples of CLI usage
+biomcp trial search --condition "Melanoma" --phase PHASE3
+biomcp article search --gene BRAF --disease Melanoma
+biomcp variant search --gene TP53 --significance pathogenic
 ```
 
-This will output information about the variant in a human-readable Markdown format.
+### Python SDK
 
-Explore more examples in the [Getting Started Guide](getting_started.md).
+For programmatic access, BioMCP can be used as a Python library:
+
+```bash
+# Install the package
+pip install biomcp-python
+```
+
+See the [Python SDK Tutorial](tutorials/python-sdk.md) for code examples.
+
+### MCP Client Integration
+
+For developers building MCP-compatible applications, BioMCP can be integrated using the MCP client libraries. See the [MCP Client Tutorial](tutorials/mcp-client.md) for details.
 
 ## Documentation Overview
 
-- [Installation Guide](installation.md)
-- [Getting Started Guide](getting_started.md)
-- [Common Workflows](workflows.md)
-- CLI Reference:
+- Tutorials
+  - [Claude Desktop Tutorial](tutorials/claude-desktop.md)
+  - [MCP Inspector Tutorial](tutorials/mcp-inspector.md)
+  - [Python SDK Tutorial](tutorials/python-sdk.md)
+  - [MCP Client Tutorial](tutorials/mcp-client.md)
+- [CLI Reference](cli/trials.md)
   - [Trials CLI](cli/trials.md)
   - [Articles CLI](cli/articles.md)
   - [Variants CLI](cli/variants.md)
-- API Reference (Underlying APIs):
+- [API Reference](apis/clinicaltrials_gov.md)
   - [ClinicalTrials.gov API](apis/clinicaltrials_gov.md)
   - [PubTator3 API](apis/pubtator3_api.md)
   - [MyVariant.info API](apis/myvariant_info.md)
-- [Server Protocol Guide](server_protocol.md)
-- [MCP Integration Guide](mcp_integration.md)
 - [About GenomOncology](genomoncology.md)
 - [Contributing Guide](contributing.md)
 - [Changelog](changelog.md)

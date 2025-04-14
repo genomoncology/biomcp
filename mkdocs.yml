@@ -9,17 +9,11 @@ copyright: Maintained by <a href="https://genomoncology.com">genomoncology</a>.
 
 nav:
   - Home: index.md
-  - Guides:
-      - Installation: installation.md
-      - Getting Started: getting_started.md
-      - Common Workflows: workflows.md
-      - Python SDK: python_sdk.md
-      - Server & MCP:
-          - Server Protocol: server_protocol.md
-          - MCP Integration: mcp_integration.md
   - Tutorials:
       - Claude Desktop: tutorials/claude-desktop.md
       - MCP Inspector: tutorials/mcp-inspector.md
+      - Python SDK: tutorials/python-sdk.md
+      - MCP Client: tutorials/mcp-client.md
   - CLI Reference:
       - Trials: cli/trials.md
       - Articles: cli/articles.md
@@ -30,7 +24,7 @@ nav:
       - MyVariant.info: apis/myvariant_info.md
   - Blog:
       - What is BioMCP?: blog/what-is-biomcp.md
-      - AI Assisted Clinical Trial Search and Analysis: blog/ai-assisted-clinical-trial-search-analysis.md
+      - AI Assisted Clinical Trial Search: blog/ai-assisted-clinical-trial-search-analysis.md
   - Troubleshooting:
       - MacOS: troubleshooting/macos.md
   - About GenomOncology: genomoncology.md
