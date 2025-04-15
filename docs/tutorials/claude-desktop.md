@@ -106,54 +106,37 @@ Try questions like:
 - "What's the clinical significance of the BRAF V600E mutation?"
 - "Find pathogenic variants in the TP53 gene"
 - "Explain the difference between Class I and Class III BRAF mutations"
--
 
 ### Combination Queries
 
 Claude can combine multiple BioMCP tools in a single query:
 
-```
-I'm researching KRAS G12C mutations in lung cancer. Can you find:
-1. The key characteristics of this mutation
-2. Recent clinical trials targeting it
-3. Significant research papers from the last 2 years
-```
+- "I'm researching KRAS G12C mutations in lung cancer. Can you find:"
+  1. The key characteristics of this mutation
+  2. Recent clinical trials targeting it
+  3. Significant research papers from the last 2 years
 
 Claude can help with complex biomedical research workflows:
 
-```
-I'm studying treatment resistance in ALK-positive lung cancer. Can you help me:
-1. Identify the main ALK fusion variants
-2. Find current clinical trials testing next-generation ALK inhibitors
-3. Summarize recent literature on resistance mechanisms
-```
+- I'm studying treatment resistance in ALK-positive lung cancer. Help me:
+  1. Identify the main ALK fusion variants
+  2. Find current clinical trials testing next-generation ALK inhibitors
+  3. Summarize recent literature on resistance mechanisms
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"SPAWN ENOENT" Error**:
-
-   - Make sure `uv` is in your PATH
-   - Try using the full path to `uv` in the configuration
-
-2. **Claude doesn't use BioMCP**:
-
-   - Verify you've correctly configured the MCP server
-   - Try restarting Claude Desktop
-   - Check if your query is specific enough to trigger BioMCP usage
-
-3. **No results returned**:
-   - Your query may be too specific or use terms not in the databases
-   - Try reformulating with more standard medical terminology
-
-### Getting Help
-
-- Check the [BioMCP documentation](https://biomcp.org/troubleshooting/macos/)
-  for more troubleshooting tips
-- Visit the GitHub repository
-  at [genomoncology/biomcp](https://github.com/genomoncology/biomcp) for issues
-  and updates
+- "SPAWN ENOENT" Error:
+  - Make sure `uv` is in your PATH
+  - Try using the full path to `uv` in the configuration
+- Claude doesn't use BioMCP
+  - Verify you've correctly configured the MCP server
+  - Check if your query is specific enough to trigger BioMCP usage
+  - Ask Claude directly to search trials, variants, or articles using BioMCP
+- No results returned
+  - Your query may be too specific or use terms not in the databases
+  - Try reformulating with more standard medical terminology
 
 ## Resources
 
