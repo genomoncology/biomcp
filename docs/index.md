@@ -127,25 +127,6 @@ See the [Python SDK Tutorial](tutorials/python-sdk.md) for code examples.
 
 For developers building MCP-compatible applications, BioMCP can be integrated using the MCP client libraries. See the [MCP Client Tutorial](tutorials/mcp-client.md) for details.
 
-## Documentation Overview
-
-- Tutorials
-  - [Claude Desktop Tutorial](tutorials/claude-desktop.md)
-  - [MCP Inspector Tutorial](tutorials/mcp-inspector.md)
-  - [Python SDK Tutorial](tutorials/python-sdk.md)
-  - [MCP Client Tutorial](tutorials/mcp-client.md)
-- [CLI Reference](cli/trials.md)
-  - [Trials CLI](cli/trials.md)
-  - [Articles CLI](cli/articles.md)
-  - [Variants CLI](cli/variants.md)
-- [API Reference](apis/clinicaltrials_gov.md)
-  - [ClinicalTrials.gov API](apis/clinicaltrials_gov.md)
-  - [PubTator3 API](apis/pubtator3_api.md)
-  - [MyVariant.info API](apis/myvariant_info.md)
-- [About GenomOncology](genomoncology.md)
-- [Contributing Guide](contributing.md)
-- [Changelog](changelog.md)
-
 ## License
 
 BioMCP is licensed under the MIT License.

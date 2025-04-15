@@ -28,7 +28,6 @@ nav:
   - Troubleshooting:
       - MacOS: troubleshooting/macos.md
   - About GenomOncology: genomoncology.md
-  - Contributing: contributing.md
   - Changelog: changelog.md
 
 plugins:
