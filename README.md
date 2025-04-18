@@ -155,6 +155,19 @@ Learn more: [GenomOncology](https://genomoncology.com/)
 
 For comprehensive documentation, visit [https://biomcp.org](https://biomcp.org)
 
+## BioMCP Examples Repo
+
+Looking to see BioMCP in action?
+
+Check out the companion repository:
+👉 **[biomcp-examples](https://github.com/genomoncology/biomcp-examples)**
+
+It contains real prompts, AI-generated research briefs, and evaluation runs across different models.
+Use it to explore capabilities, compare outputs, or benchmark your own setup.
+
+Have a cool example of your own?
+**We’d love for you to contribute!** Just fork the repo and submit a PR with your experiment.
+
 ## License
 
 This project is licensed under the MIT License.

@@ -117,6 +117,14 @@ async def add_abstracts(response: SearchResponse) -> None:
             result.abstract = abstract_response.get_abstract(result.pmid)
 
 
+def clean_authors(record):
+    """Keep only the first and last author if > 4 authors."""
+    authors = record.get("authors")
+    if authors and len(authors) > 4:
+        record["authors"] = [authors[0], "...", authors[-1]]
+    return record
+
+
 async def search_articles(
     request: PubmedRequest,
     output_json: bool = False,
@@ -138,10 +146,15 @@ async def search_articles(
             {"error": f"Error {error.code}: {error.message}"}
         ]
     else:
-        data = [
-            result.model_dump(mode="json", exclude_none=True)
-            for result in (response.results if response else [])
-        ]
+        data = list(
+            map(
+                clean_authors,
+                [
+                    result.model_dump(mode="json", exclude_none=True)
+                    for result in (response.results if response else [])
+                ],
+            )
+        )
 
     if data and not output_json:
         return render.to_markdown(data)

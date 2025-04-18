@@ -6,6 +6,9 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.logging import get_logger
 
+# Initialize the MCP app here
+mcp_app = FastMCP(name="BioMCP - Biomedical Model Context Protocol Server")
+
 
 class StrEnum(str, Enum):
     def __str__(self):
@@ -36,6 +39,3 @@ logger.setLevel("WARN")
 
 logger = get_logger(__name__)
 logger.setLevel("INFO")
-
-# Initialize the MCP app here
-mcp_app = FastMCP(name="BioMCP - Biomedical Model Context Protocol Server")
