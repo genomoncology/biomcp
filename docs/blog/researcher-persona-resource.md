@@ -41,6 +41,12 @@ The Researcher Persona will then work through its 10-step process, keeping you
 updated on its progress and ultimately producing a comprehensive research
 brief.
 
+## Video Demonstration
+
+Below is a video demonstrating the Researcher Persona in action:
+
+[![▶️ Watch the video](./images/deep-researcher-video.png)](https://youtu.be/tBGG53O-7Hg)
+
 ## Sequential Thinking: A Rigorous 10-Step Research Process
 
 What makes the Researcher Persona so powerful is its integration with the
