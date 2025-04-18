@@ -1,27 +1,45 @@
-# BioMCP Researcher Persona: Supercharging Biomedical Research With AI
-
-Biomedical research often requires deep expertise, specialized knowledge, and
-countless hours combing through clinical trials, scientific literature, and
-genomic data. The sheer volume of information can be overwhelming, making it
-difficult to produce comprehensive, evidence-based research briefs efficiently.
-Today, we're excited to announce a significant addition to the BioMCP toolkit:
-the **Researcher Persona**.
-
-## Introducing the Researcher Persona
+# BioMCP Deep Researcher Persona
 
 With the release of BioMCP v0.1.2, users can now access a specialized
 Researcher Persona that transforms Claude into a rigorous biomedical research
-assistant. This persona is designed to leverage BioMCP's suite of tools for
-accessing PubMed articles, ClinicalTrials.gov data, and genomic variant
-information, while incorporating Claude's web search capabilities to produce
-comprehensive, thoroughly-researched reports.
+assistant via the Sequential Thinking MCP.
 
-![Select Researcher Persona](./images/researcher-drop-down.png)
+This persona is designed to leverage BioMCP's suite of tools for accessing
+PubMed articles, ClinicalTrials.gov data, and genomic variant information,
+while incorporating Claude's web search capabilities to produce comprehensive,
+thoroughly-researched reports.
 
-Simply select the "Researcher" persona from the dropdown menu in Claude Desktop
-to activate this specialized research assistant. Behind the scenes, the persona
-applies a sophisticated prompt that guides Claude through a meticulous,
-structured research process.
+## How to Use the Researcher Persona
+
+Getting started with the BioMCP Researcher Persona is straightforward:
+
+1. Configure Claude Desktop by updating your configuration JSON with:
+
+```json
+{
+  "mcpServers": {
+    "biomcp": {
+      "command": "uv",
+      "args": ["run", "--with", "biomcp-python>=0.1.2", "biomcp", "run"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    }
+  }
+}
+```
+
+2. Restart Claude Desktop (the `>=0.1.2` ensures the latest version is used)
+
+3. Select the "Researcher" persona from the dropdown menu
+   ![Select Researcher Persona](./images/researcher-drop-down.png)
+
+4. Ask your biomedical research question
+
+The Researcher Persona will then work through its 10-step process, keeping you
+updated on its progress and ultimately producing a comprehensive research
+brief.
 
 ## Sequential Thinking: A Rigorous 10-Step Research Process
 
@@ -97,35 +115,6 @@ where you can find:
 The consensus among the judges placed the BioMCP-powered brief at the top,
 highlighting its exceptional structure, evidence-based approach, and
 comprehensive coverage.
-
-## How to Use the Researcher Persona
-
-Getting started with the BioMCP Researcher Persona is straightforward:
-
-1. Configure Claude Desktop by updating your configuration JSON with:
-
-```json
-{
-  "mcpServers": {
-    "biomcp": {
-      "command": "uv",
-      "args": ["run", "--with", "biomcp-python>=0.1.2", "biomcp", "run"]
-    },
-    "sequential-thinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
-    }
-  }
-}
-```
-
-2. Restart Claude Desktop (the `>=0.1.2` ensures the latest version is used)
-3. Select the "Researcher" persona from the dropdown menu
-4. Ask your biomedical research question
-
-The Researcher Persona will then work through its 10-step process, keeping you
-updated on its progress and ultimately producing a comprehensive research
-brief.
 
 ## Beyond the Example: Wide-Ranging Applications
 
