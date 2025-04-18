@@ -1,0 +1,1941 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Biomedical Model Context Protocol Server">
+      
+      
+        <meta name="author" content="Ian Maurer">
+      
+      
+        <link rel="canonical" href="https://biomcp.org/apis/myvariant_info/">
+      
+      
+        <link rel="prev" href="../pubtator3_api/">
+      
+      
+        <link rel="next" href="../../blog/what-is-biomcp/">
+      
+      
+      <link rel="icon" href="../../assets/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.7">
+    
+    
+      
+        <title>MyVariant.info - BioMCP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8608ea7d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#myvariantinfo-api" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="BioMCP" class="md-header__button md-logo" aria-label="BioMCP" data-md-component="logo">
+      
+  <img src="../../assets/icon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            BioMCP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MyVariant.info
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/genomoncology/biomcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    genomoncology/biomcp
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="BioMCP" class="md-nav__button md-logo" aria-label="BioMCP" data-md-component="logo">
+      
+  <img src="../../assets/icon.png" alt="logo">
+
+    </a>
+    BioMCP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/genomoncology/biomcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    genomoncology/biomcp
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/claude-desktop/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Claude Desktop
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/mcp-inspector/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MCP Inspector
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/python-sdk/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Python SDK
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/mcp-client/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MCP Client
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    CLI Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            CLI Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/trials/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Trials
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/articles/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Articles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/variants/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Variants
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clinicaltrials_gov/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ClinicalTrials.gov
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pubtator3_api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PubTator3
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    MyVariant.info
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    MyVariant.info
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Endpoints
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#query-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      Query API
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Query API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-query-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Query Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Requests
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variant-retrieval-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      Variant Retrieval API
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementation Strategy
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#query-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Query Construction
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#response-parsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Response Parsing
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Fields
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication-and-rate-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      Authentication and Rate Limits
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#search-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Search Parameters
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Search Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-gene-symbol" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Gene Symbol
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-cdna-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. cDNA Notation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-protein-p-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Protein (p.) Notation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-genomic-region" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Genomic Region
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-dbsnp-rsid" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. dbSNP rsID
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-clinvar-significance" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. ClinVar Significance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-population-frequency" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Population Frequency
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-functional-predictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      8. Functional Predictions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-cosmic-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      9. COSMIC ID
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-combining-multiple-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      10. Combining Multiple Filters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-fields-reference-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      Query Fields Reference Table
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Integration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output Format
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#more-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      More Information
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="More Information">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#urls" class="md-nav__link">
+    <span class="md-ellipsis">
+      URLs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Blog
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Blog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/what-is-biomcp/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    What is BioMCP?
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/ai-assisted-clinical-trial-search-analysis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AI Assisted Clinical Trial Search
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Troubleshooting
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/macos/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MacOS
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../genomoncology/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    About GenomOncology
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Endpoints
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Endpoints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#query-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      Query API
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Query API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-query-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Query Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Requests
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variant-retrieval-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      Variant Retrieval API
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementation Strategy
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#query-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Query Construction
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#response-parsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Response Parsing
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Fields
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authentication-and-rate-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      Authentication and Rate Limits
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#search-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Search Parameters
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Search Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-gene-symbol" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Gene Symbol
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-cdna-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. cDNA Notation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-protein-p-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Protein (p.) Notation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-genomic-region" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Genomic Region
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-dbsnp-rsid" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. dbSNP rsID
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-clinvar-significance" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. ClinVar Significance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-population-frequency" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Population Frequency
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-functional-predictions" class="md-nav__link">
+    <span class="md-ellipsis">
+      8. Functional Predictions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-cosmic-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      9. COSMIC ID
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-combining-multiple-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      10. Combining Multiple Filters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-fields-reference-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      Query Fields Reference Table
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Integration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output Format
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#more-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      More Information
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="More Information">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#urls" class="md-nav__link">
+    <span class="md-ellipsis">
+      URLs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="myvariantinfo-api">MyVariant.info API<a class="headerlink" href="#myvariantinfo-api" title="Permanent link">&para;</a></h1>
+<p>This document details the MyVariant.info API, which BioMCP uses for fetching genetic variant annotations. Understanding the underlying API fields and query syntax can aid advanced users and developers working with BioMCP.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>MyVariant.info is a comprehensive API that provides variant annotation
+information from multiple databases in a centralized location. This document
+outlines how to interface with this API to search for and retrieve information
+about genetic variants.</p>
+<blockquote>
+<p><strong>CLI Documentation</strong>: For information on using these APIs through the BioMCP
+command line interface, see
+the <a href="../../cli/variants/">Variants CLI Documentation</a>.</p>
+</blockquote>
+<h2 id="api-endpoints">API Endpoints<a class="headerlink" href="#api-endpoints" title="Permanent link">&para;</a></h2>
+<h3 id="query-api">Query API<a class="headerlink" href="#query-api" title="Permanent link">&para;</a></h3>
+<p><strong>Endpoint:</strong> <code>https://myvariant.info/v1/query</code></p>
+<p>This endpoint allows searching for variants using various query parameters.</p>
+<h4 id="key-query-parameters">Key Query Parameters<a class="headerlink" href="#key-query-parameters" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>Query string using field:value syntax</td>
+<td><code>dbnsfp.genename:BRAF AND dbnsfp.hgvsp:p.V600E</code></td>
+</tr>
+<tr>
+<td><code>fields</code></td>
+<td>Comma-separated list of fields to return</td>
+<td><code>_id,dbsnp.rsid,dbnsfp.genename,clinvar.clinical_significance</code></td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td>Number of hits to return</td>
+<td><code>10</code></td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td>Number of hits to skip</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>sort</code></td>
+<td>Sort by specified field</td>
+<td><code>cadd.phred:desc</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="example-requests">Example Requests<a class="headerlink" href="#example-requests" title="Permanent link">&para;</a></h4>
+<p>Full variant search:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="s2">&quot;https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF%20AND%20dbnsfp.hgvsp%3Ap.V600E&quot;</span>
+</code></pre></div>
+<p>Partial variant search (selected fields):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="s2">&quot;https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF%20AND%20dbnsfp.hgvsp%3Ap.V600E&amp;fields=_id,dbsnp.rsid,dbnsfp.genename,clinvar.clinical_significance,cadd.phred,gnomad_exome.af.af,exac.af,mutdb&quot;</span>
+</code></pre></div>
+<h3 id="variant-retrieval-api">Variant Retrieval API<a class="headerlink" href="#variant-retrieval-api" title="Permanent link">&para;</a></h3>
+<p><strong>Endpoint:</strong> <code>https://myvariant.info/v1/variant/{variant_id}</code></p>
+<p>This endpoint retrieves detailed information about a specific variant using its
+ID.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="s2">&quot;https://myvariant.info/v1/variant/chr7:g.140453136A&gt;T&quot;</span>
+</code></pre></div>
+<h2 id="implementation-strategy">Implementation Strategy<a class="headerlink" href="#implementation-strategy" title="Permanent link">&para;</a></h2>
+<h3 id="query-construction">Query Construction<a class="headerlink" href="#query-construction" title="Permanent link">&para;</a></h3>
+<p>Constructing effective queries requires understanding the field structure. The
+most common query patterns include:</p>
+<ol>
+<li><strong>Gene + Variant</strong>: <code>dbnsfp.genename:BRAF AND dbnsfp.hgvsp:p.V600E</code></li>
+<li><strong>dbSNP ID</strong>: <code>dbsnp.rsid:rs113488022</code></li>
+<li><strong>Chromosome Position</strong>: <code>_id:chr7:g.140453136A&gt;T</code></li>
+</ol>
+<p>Code example for query building:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_variant_query</span><span class="p">(</span><span class="n">gene</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protein_change</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rsid</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">query_parts</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">if</span> <span class="n">gene</span><span class="p">:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        <span class="n">query_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dbnsfp.genename:</span><span class="si">{</span><span class="n">gene</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="k">if</span> <span class="n">protein_change</span><span class="p">:</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="n">query_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dbnsfp.hgvsp:</span><span class="si">{</span><span class="n">protein_change</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="k">if</span> <span class="n">rsid</span><span class="p">:</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="n">query_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dbsnp.rsid:</span><span class="si">{</span><span class="n">rsid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="k">return</span> <span class="s2">&quot; AND &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">query_parts</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="response-parsing">Response Parsing<a class="headerlink" href="#response-parsing" title="Permanent link">&para;</a></h3>
+<p>The API returns data in JSON format. Example response structure for a variant:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;took&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;max_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">26.326775</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">&quot;hits&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">      </span><span class="nt">&quot;_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="nt">&quot;_score&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">26.326775</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">      </span><span class="nt">&quot;cadd&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">        </span><span class="nt">&quot;_license&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://bit.ly/2TIuab9&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">        </span><span class="nt">&quot;phred&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">      </span><span class="nt">&quot;dbnsfp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">        </span><span class="nt">&quot;_license&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://bit.ly/2VLnQBz&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">        </span><span class="nt">&quot;genename&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;BRAF&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;BRAF&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;BRAF&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;BRAF&quot;</span><span class="p">]</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">      </span><span class="nt">&quot;dbsnp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">        </span><span class="nt">&quot;_license&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://bit.ly/2AqoLOc&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">        </span><span class="nt">&quot;rsid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rs113488022&quot;</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">      </span><span class="nt">&quot;exac&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">        </span><span class="nt">&quot;_license&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://bit.ly/2H9c4hg&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="w">        </span><span class="nt">&quot;af&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.00001647</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="w">      </span><span class="nt">&quot;gnomad_exome&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">        </span><span class="nt">&quot;_license&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://bit.ly/2I1cl1I&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="w">        </span><span class="nt">&quot;af&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="w">          </span><span class="nt">&quot;af&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.00000397994</span>
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="data-fields">Data Fields<a class="headerlink" href="#data-fields" title="Permanent link">&para;</a></h2>
+<p>The API provides rich variant annotation data from multiple sources, including:</p>
+<ol>
+<li>
+<p><strong>Basic Information</strong>:</p>
+</li>
+<li>
+<p><code>_id</code>: Variant ID in HGVS format (e.g., <code>chr7:g.140453136A&gt;T</code>)</p>
+</li>
+<li>
+<p><code>dbsnp.rsid</code>: dbSNP RS identifier (e.g., <code>rs113488022</code>)</p>
+</li>
+<li>
+<p><strong>Functional Impact Scores</strong>:</p>
+</li>
+<li>
+<p><code>cadd.phred</code>: CADD Phred score for variant deleteriousness</p>
+</li>
+<li>
+<p><code>mutpred_score</code>: MutPred score for amino acid substitutions</p>
+</li>
+<li>
+<p><strong>Population Frequency</strong>:</p>
+</li>
+<li>
+<p><code>gnomad_exome.af.af</code>: Frequency in gnomAD exome dataset</p>
+</li>
+<li>
+<p><code>exac.af</code>: Frequency in ExAC dataset</p>
+</li>
+<li>
+<p><strong>Clinical Significance</strong>:</p>
+</li>
+<li>
+<p><code>clinvar.clinical_significance</code>: Clinical significance from ClinVar</p>
+</li>
+<li>
+<p><strong>Gene Information</strong>:</p>
+</li>
+<li><code>dbnsfp.genename</code>: Associated gene name(s)</li>
+</ol>
+<h2 id="authentication-and-rate-limits">Authentication and Rate Limits<a class="headerlink" href="#authentication-and-rate-limits" title="Permanent link">&para;</a></h2>
+<p>The MyVariant.info API is public and does not require authentication for basic
+usage, but there are rate limits:</p>
+<ul>
+<li><strong>Anonymous Access</strong>: Limited to 1,000 requests per IP per day</li>
+<li><strong>Registered Access</strong>: Higher limits available with a free API key</li>
+<li><strong>Batch Queries</strong>: Limited to 1,000 variants per request</li>
+</ul>
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Use Specific Queries</strong>: Target exact genes, variants, or identifiers</li>
+<li><strong>Limit Returned Fields</strong>: Use the <code>fields</code> parameter to request only needed
+   data</li>
+<li><strong>Implement Caching</strong>: Cache frequently accessed variant data</li>
+<li><strong>Handle Errors Robustly</strong>: Implement retry logic and proper error handling</li>
+<li><strong>Batch Requests</strong>: When possible, use batch endpoints for multiple variants</li>
+</ol>
+<h2 id="search-parameters">Search Parameters<a class="headerlink" href="#search-parameters" title="Permanent link">&para;</a></h2>
+<p>The following are the prioritized list of commonly used attributes for
+searching MyVariant data:</p>
+<h3 id="1-gene-symbol">1. Gene Symbol<a class="headerlink" href="#1-gene-symbol" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Most common approach to find all known variants in a gene</li>
+<li><strong>Query Syntax</strong>: <code>dbnsfp.genename:&lt;GENE&gt;</code></li>
+<li><strong>Example</strong>: <code>q=dbnsfp.genename:TP53</code></li>
+</ul>
+<h3 id="2-cdna-notation">2. cDNA Notation<a class="headerlink" href="#2-cdna-notation" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Search by cDNA expression</li>
+<li><strong>Query Syntax</strong>: <code>dbnsfp.hgvsc:&lt;CDNA_EXPRESSION&gt;</code></li>
+<li><strong>Example</strong>: <code>q=dbnsfp.hgvsc:c.1799T&gt;A</code></li>
+</ul>
+<h3 id="3-protein-p-notation">3. Protein (p.) Notation<a class="headerlink" href="#3-protein-p-notation" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Search by protein-level notation</li>
+<li><strong>Query Syntax</strong>: <code>dbnsfp.hgvsp:&lt;PROTEIN_EXPRESSION&gt;</code></li>
+<li><strong>Example</strong>: <code>q=dbnsfp.hgvsp:p.V600E</code></li>
+</ul>
+<h3 id="4-genomic-region">4. Genomic Region<a class="headerlink" href="#4-genomic-region" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Find all variants in a coordinate range</li>
+<li><strong>Query Syntax</strong>: <code>chr&lt;NUM&gt;:&lt;START&gt;-&lt;END&gt;</code></li>
+<li><strong>Example</strong>: <code>q=chr7:140453100-140453200</code></li>
+<li><strong>With Additional Filters</strong>:
+  <code>q=chr7:140453100-140453200 AND dbnsfp.genename:BRAF</code></li>
+</ul>
+<h3 id="5-dbsnp-rsid">5. dbSNP rsID<a class="headerlink" href="#5-dbsnp-rsid" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Lookup by rsID</li>
+<li><strong>Query Syntax</strong>: <code>dbsnp.rsid:&lt;RSID&gt;</code></li>
+<li><strong>Example</strong>: <code>q=dbsnp.rsid:rs113488022</code></li>
+</ul>
+<h3 id="6-clinvar-significance">6. ClinVar Significance<a class="headerlink" href="#6-clinvar-significance" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Filter by clinical significance</li>
+<li><strong>Query Syntax</strong>: <code>clinvar.clinical_significance:&lt;VALUE&gt;</code></li>
+<li><strong>Example</strong>: <code>q=clinvar.clinical_significance:Pathogenic</code></li>
+<li><strong>Multiple Values</strong>:
+  <code>q=clinvar.clinical_significance:(Pathogenic OR Likely_pathogenic)</code></li>
+</ul>
+<h3 id="7-population-frequency">7. Population Frequency<a class="headerlink" href="#7-population-frequency" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Filter by rarity or commonality</li>
+<li><strong>Query Syntax</strong>: <code>gnomad_exome.af:&lt;THRESHOLD&gt;</code> or
+  <code>exac.af:&lt;OPERATOR&gt;&lt;THRESHOLD&gt;</code></li>
+<li><strong>Example</strong>: <code>q=gnomad_exome.af:&lt;0.001</code> or <code>q=exac.af:&gt;=0.01</code></li>
+</ul>
+<h3 id="8-functional-predictions">8. Functional Predictions<a class="headerlink" href="#8-functional-predictions" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Filter by prediction scores</li>
+<li><strong>CADD</strong>: <code>q=cadd.phred:&gt;15</code></li>
+<li><strong>PolyPhen</strong>: <code>q=dbnsfp.polyphen2.hdiv.pred:probably_damaging</code> or
+  <code>q=dbnsfp.polyphen2.hdiv.score:&gt;0.9</code></li>
+<li><strong>SIFT</strong>: <code>q=dbnsfp.sift.pred:deleterious</code> or <code>q=dbnsfp.sift.score:&lt;0.05</code></li>
+</ul>
+<h3 id="9-cosmic-id">9. COSMIC ID<a class="headerlink" href="#9-cosmic-id" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Search by COSMIC mutation IDs</li>
+<li><strong>Query Syntax</strong>: <code>cosmic.cosmic_id:&lt;ID&gt;</code> or <code>mutdb.cosmic_id:&lt;ID&gt;</code></li>
+<li><strong>Example</strong>: <code>q=cosmic.cosmic_id:476</code></li>
+</ul>
+<h3 id="10-combining-multiple-filters">10. Combining Multiple Filters<a class="headerlink" href="#10-combining-multiple-filters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Description</strong>: Combine conditions for precise searches</li>
+<li><strong>Example</strong>: <code>q=dbnsfp.genename:BRAF AND cadd.phred:&gt;=20 AND exac.af:&lt;0.001</code></li>
+</ul>
+<h3 id="query-fields-reference-table">Query Fields Reference Table<a class="headerlink" href="#query-fields-reference-table" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>MyVariant Field / Query Expression</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gene Symbol</td>
+<td><code>dbnsfp.genename:&lt;GENE&gt;</code></td>
+</tr>
+<tr>
+<td>cDNA Notation</td>
+<td><code>dbnsfp.hgvsc:&lt;NOTATION&gt;</code></td>
+</tr>
+<tr>
+<td>Protein Notation</td>
+<td><code>dbnsfp.hgvsp:&lt;NOTATION&gt;</code></td>
+</tr>
+<tr>
+<td>Genomic Region</td>
+<td><code>chr7:140453100-140453200</code> (substitute correct chr, start, end)</td>
+</tr>
+<tr>
+<td>dbSNP rsID</td>
+<td><code>dbsnp.rsid:&lt;RSID&gt;</code></td>
+</tr>
+<tr>
+<td>ClinVar Significance</td>
+<td><code>clinvar.clinical_significance:&lt;VALUE&gt;</code></td>
+</tr>
+<tr>
+<td>GnomAD / ExAC Frequency</td>
+<td><code>gnomad_exome.af:&lt;FLOAT&gt;</code> / <code>exac.af:&gt;FLOAT</code></td>
+</tr>
+<tr>
+<td>CADD PHRED Score</td>
+<td><code>cadd.phred:&gt;FLOAT</code> (or <code>&lt;, &gt;=, &lt;=</code>)</td>
+</tr>
+<tr>
+<td>PolyPhen2 Prediction</td>
+<td><code>dbnsfp.polyphen2.hdiv.pred:(D OR P)</code> or <code>dbnsfp.polyphen2.hdiv.score:&gt;X</code></td>
+</tr>
+<tr>
+<td>SIFT</td>
+<td><code>dbnsfp.sift.pred:deleterious</code> / <code>dbnsfp.sift.score:&lt;0.05</code></td>
+</tr>
+<tr>
+<td>COSMIC ID</td>
+<td><code>cosmic.cosmic_id:&lt;ID&gt;</code> or <code>mutdb.cosmic_id:&lt;ID&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="data-integration">Data Integration<a class="headerlink" href="#data-integration" title="Permanent link">&para;</a></h2>
+<p>The Variants endpoint can be used to find variants based on their genomic
+location (chr, start, ref, alt), converting to Gene and Protein change (HGVS)
+and used to search Trials and Articles. This provides a powerful way to link
+genetic information with clinical trials and literature.</p>
+<h2 id="output-format">Output Format<a class="headerlink" href="#output-format" title="Permanent link">&para;</a></h2>
+<p>For the API implementation, all data is typically returned in JSON format. BioMCP CLI commands render this data as Markdown by default (unless <code>--json</code> is specified).</p>
+<p>When using the <code>biomcp variant search</code> command, a curated set of important fields (defined internally, plus those requested via <code>--sources</code>) is requested from the API to provide a concise summary.</p>
+<p>When using the <code>biomcp variant get</code> command to retrieve a specific variant, BioMCP requests <code>fields=all</code> from the MyVariant.info API to get the most comprehensive data available for that variant, and then injects relevant database links.</p>
+<h2 id="more-information">More Information<a class="headerlink" href="#more-information" title="Permanent link">&para;</a></h2>
+<p>For complete API documentation, visit
+the <a href="https://docs.myvariant.info/">MyVariant.info Documentation</a>.</p>
+<h3 id="urls">URLs<a class="headerlink" href="#urls" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Website/Database</th>
+<th style="text-align: left;">Identifier Used</th>
+<th style="text-align: left;">Data Field(s) in API Response</th>
+<th style="text-align: left;">URL Construction Pattern</th>
+<th style="text-align: left;">Placement/Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">dbSNP</td>
+<td style="text-align: left;">rsID</td>
+<td style="text-align: left;"><code>dbsnp.rsid</code></td>
+<td style="text-align: left;"><code>https://www.ncbi.nlm.nih.gov/snp/&lt;rsID&gt;</code></td>
+<td style="text-align: left;">Standard link for SNP information. Include <em>if rsID exists</em>.</td>
+</tr>
+<tr>
+<td style="text-align: left;">ClinVar (Variant)</td>
+<td style="text-align: left;">ClinVar Variation ID</td>
+<td style="text-align: left;"><code>clinvar.variation_id</code></td>
+<td style="text-align: left;"><code>https://www.ncbi.nlm.nih.gov/clinvar/variation/&lt;VariationID&gt;/</code></td>
+<td style="text-align: left;">Links to the variant page in ClinVar. Include <em>if Variation ID exists</em>.</td>
+</tr>
+<tr>
+<td style="text-align: left;">ClinVar (Interpretation)</td>
+<td style="text-align: left;">ClinVar RCV Accession</td>
+<td style="text-align: left;"><code>clinvar.rcv.accession</code></td>
+<td style="text-align: left;"><code>https://www.ncbi.nlm.nih.gov/clinvar/rcv/&lt;RCV Accession&gt;/</code></td>
+<td style="text-align: left;">Links to a specific interpretation record. Include <em>if RCV Accession exists</em>.</td>
+</tr>
+<tr>
+<td style="text-align: left;">COSMIC</td>
+<td style="text-align: left;">COSMIC ID (Numeric)</td>
+<td style="text-align: left;"><code>cosmic.cosmic_id</code></td>
+<td style="text-align: left;"><code>https://cancer.sanger.ac.uk/cosmic/mutation/overview?id=&lt;COSMIC_ID_number&gt;</code></td>
+<td style="text-align: left;">Links to the mutation in COSMIC. Extract <em>only the number</em> from the COSMIC ID (e.g., from <code>COSM12345</code>, use <code>12345</code>). Include <em>if COSMIC ID exists</em>.</td>
+</tr>
+<tr>
+<td style="text-align: left;">CIViC</td>
+<td style="text-align: left;">CIViC Variant ID</td>
+<td style="text-align: left;"><code>civic.id</code> <em>or</em> <code>civic.variant_id</code></td>
+<td style="text-align: left;"><code>https://civicdb.org/variants/&lt;CIVIC_Variant_ID&gt;/summary</code></td>
+<td style="text-align: left;">Links to the variant summary in CIViC. Include <em>if CIViC ID exists</em>.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Ensembl</td>
+<td style="text-align: left;">rsID <em>or</em> Ensembl ID</td>
+<td style="text-align: left;"><code>dbsnp.rsid</code> <em>or</em> <code>ensembl.variant.id</code></td>
+<td style="text-align: left;"><code>https://ensembl.org/Homo_sapiens/Variation/Explore?v=&lt;rsID&gt;</code> (preferred if rsID exists)</td>
+<td style="text-align: left;">Links to the variant in Ensembl. Prioritize using rsID if available.</td>
+</tr>
+<tr>
+<td style="text-align: left;">UCSC Genome Browser</td>
+<td style="text-align: left;">Genomic Coordinates</td>
+<td style="text-align: left;"><code>chrom</code>, <code>vcf.pos</code> (or <code>hg19.start</code>, <code>hg38.start</code>)</td>
+<td style="text-align: left;"><code>https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&amp;position=&lt;chr&gt;:&lt;start&gt;-&lt;end&gt;</code></td>
+<td style="text-align: left;">Links to the genomic region. Construct <code>start</code>/<code>end</code> around <code>vcf.pos</code>. Check genome build (hg38 is current, hg19 might be needed for older data). Requires chromosome and position.</td>
+</tr>
+<tr>
+<td style="text-align: left;">HGNC (Gene Link)</td>
+<td style="text-align: left;">Gene Symbol</td>
+<td style="text-align: left;"><code>dbnsfp.genename</code></td>
+<td style="text-align: left;"><code>https://www.genenames.org/data/gene-symbol-report/#!/symbol/&lt;GeneSymbol&gt;</code></td>
+<td style="text-align: left;">Links to the associated gene's official nomenclature page. Useful context.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Maintained by <a href="https://genomoncology.com">genomoncology</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/genomoncology/biomcp" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/biomcp-python" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 404c11.1 0 20.1 9.1 20.1 20.3 0 11.3-9 20.4-20.1 20.4-11 0-20.1-9.2-20.1-20.4.1-11.3 9.1-20.3 20.1-20.3M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.7-142.6c-11.1 0-20.1-9.1-20.1-20.3.1-11.3 9-20.4 20.1-20.4 11 0 20.1 9.2 20.1 20.4s-9 20.3-20.1 20.3"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+    
+  </body>
+</html>
