@@ -5,7 +5,7 @@
  */
 
 // Server URL will be configured from environment variables
-let REMOTE_MCP_SERVER_URL = 'http://biomcp-remote.genomoncology.io:8000'; // Default fallback
+let REMOTE_MCP_SERVER_URL = 'http://localhost:8000'; // Default fallback
 const DEBUG = true;
 
 const log  = (m) => DEBUG && console.log('[DEBUG]', m);
