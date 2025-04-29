@@ -178,3 +178,6 @@ exclude = [
     "build",
     "dist",
 ]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = ["uvicorn"]

@@ -118,20 +118,22 @@ Clients can connect to this endpoint using SSE:
 
 ```javascript
 // Example client-side JavaScript
-const eventSource = new EventSource('https://biomcp-worker.<your-worker-subdomain>.workers.dev');
+const eventSource = new EventSource(
+  "https://biomcp-worker.<your-worker-subdomain>.workers.dev",
+);
 
 eventSource.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  console.log('Received:', data);
-  
+  console.log("Received:", data);
+
   // Check for the end of the stream
-  if (event.data === '[DONE]') {
+  if (event.data === "[DONE]") {
     eventSource.close();
   }
 };
 
 eventSource.onerror = (error) => {
-  console.error('EventSource error:', error);
+  console.error("EventSource error:", error);
   eventSource.close();
 };
 ```

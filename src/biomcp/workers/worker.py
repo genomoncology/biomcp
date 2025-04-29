@@ -25,6 +25,7 @@ app.add_middleware(
 active_connections: set[Any] = set()
 active_controller = None
 
+
 # Log all requests for debugging
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -34,7 +35,7 @@ async def log_requests(request: Request, call_next):
     # For POST requests, log the body
     if request.method == "POST":
         body_bytes = await request.body()
-        body_str = body_bytes.decode('utf-8')
+        body_str = body_bytes.decode("utf-8")
         logger.info(f"Body: {body_str}")
 
         # Store the body in the request state for later use
@@ -42,6 +43,7 @@ async def log_requests(request: Request, call_next):
 
     response = await call_next(request)
     return response
+
 
 # Handle MCP requests at the root path (this is where mcp-remote sends them)
 @app.post("/")
@@ -54,42 +56,40 @@ async def handle_root_mcp_request(request: Request):
         else:
             body_bytes = await request.body()
 
-        body_str = body_bytes.decode('utf-8')
+        body_str = body_bytes.decode("utf-8")
         logger.info(f"Processing MCP request at root path: {body_str}")
 
         # Parse JSON
         body = json.loads(body_str)
 
         # Process the request
-        response = await mcp_app.process_request(body)
+        response = await mcp_app.process_request(body)  # type: ignore[attr-defined]
         logger.info(f"Response: {response}")
 
         # Return the response
         return Response(
-            content=json.dumps(response),
-            media_type="application/json"
+            content=json.dumps(response), media_type="application/json"
         )
     except Exception as e:
         logger.error(f"Error processing MCP request: {e}", exc_info=True)
         error_response = {
             "jsonrpc": "2.0",
-            "error": {
-                "code": -32603,
-                "message": f"Internal error: {e!s}"
-            },
-            "id": body.get("id") if "body" in locals() else None
+            "error": {"code": -32603, "message": f"Internal error: {e!s}"},
+            "id": body.get("id") if "body" in locals() else None,
         }
         return Response(
             content=json.dumps(error_response),
             media_type="application/json",
-            status_code=500
+            status_code=500,
         )
+
 
 # Keep the /mcp endpoint for backward compatibility
 @app.post("/mcp")
 async def handle_mcp_endpoint(request: Request):
     """Handle MCP protocol messages at the /mcp endpoint."""
     return await handle_root_mcp_request(request)
+
 
 # Add the SSE endpoint
 @app.get("/sse")
@@ -120,9 +120,10 @@ async def sse_endpoint():
             "Connection": "keep-alive",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "*"
-        }
+            "Access-Control-Allow-Headers": "*",
+        },
     )
+
 
 # Add OPTIONS endpoint for CORS preflight
 @app.options("/{path:path}")
@@ -135,11 +136,13 @@ async def options_handler(path: str):
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
             "Access-Control-Allow-Headers": "*",
-            "Access-Control-Max-Age": "86400"  # 24 hours
-        }
+            "Access-Control-Max-Age": "86400",  # 24 hours
+        },
     )
 
+
 # Create a stub for create_worker_app to satisfy imports
+
 
 def create_worker_app() -> FastAPI:
     """Stub for create_worker_app to satisfy import in __init__.py."""

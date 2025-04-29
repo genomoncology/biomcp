@@ -33,10 +33,14 @@ def run_server(
         try:
             mcp_app.run(transport="sse")
         except ImportError as e:
-             logger.error(f"Failed to start worker/sse mode: {e}")
-             logger.error("Make sure you have the required dependencies installed:")
-             logger.error("pip install uvicorn mcp-python[server]") # Ensure all server extras are installed
-             raise typer.Exit(1)
+            logger.error(f"Failed to start worker/sse mode: {e}")
+            logger.error(
+                "Make sure you have the required dependencies installed:"
+            )
+            logger.error(
+                "pip install uvicorn mcp-python[server]"
+            )  # Ensure all server extras are installed
+            raise typer.Exit(1) from e
         except Exception as e:
             logger.error(f"An unexpected error occurred: {e}", exc_info=True)
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e
