@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Set
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import StreamingResponse
@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 # Track active SSE connections
-active_connections = set()
+active_connections: Set[Any] = set()
 active_controller = None
 
 # Log all requests for debugging
@@ -139,3 +139,9 @@ async def options_handler(path: str):
             "Access-Control-Max-Age": "86400"  # 24 hours
         }
     )
+
+# Create a stub for create_worker_app to satisfy imports
+
+def create_worker_app() -> FastAPI:
+    """Stub for create_worker_app to satisfy import in __init__.py."""
+    return app
