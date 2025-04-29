@@ -2,12 +2,11 @@
 
 import asyncio
 import json
-import logging
-from typing import Dict, Any, Optional, Set
+from typing import Any
 
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from .. import logger, mcp_app
 
@@ -23,7 +22,7 @@ app.add_middleware(
 )
 
 # Track active SSE connections
-active_connections: Set[Any] = set()
+active_connections: set[Any] = set()
 active_controller = None
 
 # Log all requests for debugging
@@ -31,16 +30,16 @@ active_controller = None
 async def log_requests(request: Request, call_next):
     logger.info(f"Received {request.method} request to {request.url.path}")
     logger.info(f"Headers: {request.headers}")
-    
+
     # For POST requests, log the body
     if request.method == "POST":
         body_bytes = await request.body()
         body_str = body_bytes.decode('utf-8')
         logger.info(f"Body: {body_str}")
-        
+
         # Store the body in the request state for later use
         request.state.body = body_bytes
-    
+
     response = await call_next(request)
     return response
 
@@ -54,17 +53,17 @@ async def handle_root_mcp_request(request: Request):
             body_bytes = request.state.body
         else:
             body_bytes = await request.body()
-        
+
         body_str = body_bytes.decode('utf-8')
         logger.info(f"Processing MCP request at root path: {body_str}")
-        
+
         # Parse JSON
         body = json.loads(body_str)
-        
+
         # Process the request
         response = await mcp_app.process_request(body)
         logger.info(f"Response: {response}")
-        
+
         # Return the response
         return Response(
             content=json.dumps(response),
@@ -76,7 +75,7 @@ async def handle_root_mcp_request(request: Request):
             "jsonrpc": "2.0",
             "error": {
                 "code": -32603,
-                "message": f"Internal error: {str(e)}"
+                "message": f"Internal error: {e!s}"
             },
             "id": body.get("id") if "body" in locals() else None
         }
@@ -97,22 +96,22 @@ async def handle_mcp_endpoint(request: Request):
 async def sse_endpoint():
     """
     Server-Sent Events (SSE) endpoint for remote MCP connections.
-    
+
     This endpoint establishes a persistent connection with the client
     and sends events as they occur.
     """
     logger.info("SSE connection established")
-    
+
     async def event_generator():
         # Send initial ready event
         yield "event: ready\ndata: {}\n\n"
-        
+
         # Keep the connection alive with keepalive events
         while True:
             await asyncio.sleep(15)
             logger.debug("Sending keepalive")
             yield ":keepalive\n\n"
-    
+
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",

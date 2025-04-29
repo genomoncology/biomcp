@@ -1,8 +1,5 @@
-import asyncio
-import os
-import json
 from enum import Enum
-from typing import Optional, Annotated
+from typing import Annotated
 
 import typer
 
@@ -30,9 +27,9 @@ def run_server(
 
     if mode == ServerMode.STDIO:
         logger.info("Starting MCP server with STDIO transport:")
-        mcp_app.run(transport="stdio") 
+        mcp_app.run(transport="stdio")
     elif mode == ServerMode.WORKER:
-        logger.info(f"Starting MCP server with Worker/SSE transport")
+        logger.info("Starting MCP server with Worker/SSE transport")
         try:
             mcp_app.run(transport="sse")
         except ImportError as e:
