@@ -7,5 +7,5 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MCP_MODE=worker  # Can be set to 'stdio' or 'worker'
+      - MCP_MODE=worker # Can be set to 'stdio' or 'worker'
     restart: unless-stopped
