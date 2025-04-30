@@ -143,3 +143,4 @@ llms/
 vault/
 
 .DS_Store
+/node_modules/
