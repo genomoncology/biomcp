@@ -26,11 +26,13 @@ biomcp health check [OPTIONS]
 The health check command tests connectivity and responses from all external APIs that BioMCP depends on:
 
 1. **PubTator3 API**:
+
    - Autocomplete endpoint
    - Publications export endpoint
    - Search endpoint
 
 2. **ClinicalTrials.gov API**:
+
    - Studies search endpoint
    - Individual study retrieval endpoint
 
@@ -93,5 +95,6 @@ In verbose mode, detailed error information is displayed for any failing endpoin
 ### Exit Status
 
 The command provides a summary of overall health status:
+
 - "✓ All systems operational!" when all checks pass
 - "⚠ Some health checks failed." when one or more checks fail
