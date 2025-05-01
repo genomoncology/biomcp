@@ -14,10 +14,12 @@ nav:
       - MCP Inspector: tutorials/mcp-inspector.md
       - Python SDK: tutorials/python-sdk.md
       - MCP Client: tutorials/mcp-client.md
+      - Cloudflare Worker Deployment: tutorials/cloudflare-worker-deployment.md
   - CLI Reference:
       - Trials: cli/trials.md
       - Articles: cli/articles.md
       - Variants: cli/variants.md
+      - Health Check: cli/health.md
   - API Reference:
       - ClinicalTrials.gov: apis/clinicaltrials_gov.md
       - PubTator3: apis/pubtator3_api.md
