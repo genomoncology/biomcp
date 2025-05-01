@@ -4,6 +4,7 @@ from typing import Annotated, Optional
 import typer
 
 from .articles import article_app
+from .health import health_app
 from .server import run_server
 from .trials import trial_app
 from .variants import variant_app
@@ -46,6 +47,12 @@ app.add_typer(
 app.add_typer(
     variant_app,
     name="variant",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    health_app,
+    name="health",
     no_args_is_help=True,
 )
 
