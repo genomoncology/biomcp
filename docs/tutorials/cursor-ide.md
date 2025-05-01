@@ -64,6 +64,7 @@ Try questions like:
 ### Common Issues
 
 - Installation fails:
+
   - Make sure you have the correct Smithery token
   - Check your internet connection
   - Verify you have the necessary permissions to install packages

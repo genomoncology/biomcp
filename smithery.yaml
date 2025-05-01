@@ -84,7 +84,7 @@ schemas:
       next_page_hash:
         type: string
         description: "Token to retrieve the next page of results"
-  
+
   VariantQuery:
     type: object
     properties:
@@ -134,7 +134,7 @@ schemas:
         type: integer
         description: "Result offset for pagination"
         default: 0
-  
+
   PubmedRequest:
     type: object
     properties:
@@ -167,13 +167,13 @@ schemas:
 tools:
   trial_searcher:
     input:
-      schema: 
+      schema:
         type: object
         properties:
           query:
             $ref: "#/schemas/TrialQuery"
         required: ["query"]
-  
+
   variant_searcher:
     input:
       schema:
@@ -182,7 +182,7 @@ tools:
           query:
             $ref: "#/schemas/VariantQuery"
         required: ["query"]
-  
+
   article_searcher:
     input:
       schema:
@@ -191,7 +191,7 @@ tools:
           query:
             $ref: "#/schemas/PubmedRequest"
         required: ["query"]
-  
+
   # Simple string parameter functions
   trial_protocol:
     input:
@@ -202,7 +202,7 @@ tools:
             type: string
             description: "A single NCT ID (e.g., NCT04280705)"
         required: ["nct_id"]
-  
+
   trial_locations:
     input:
       schema:
@@ -212,7 +212,7 @@ tools:
             type: string
             description: "A single NCT ID (e.g., NCT04280705)"
         required: ["nct_id"]
-  
+
   trial_outcomes:
     input:
       schema:
@@ -222,7 +222,7 @@ tools:
             type: string
             description: "A single NCT ID (e.g., NCT04280705)"
         required: ["nct_id"]
-  
+
   trial_references:
     input:
       schema:
@@ -232,7 +232,7 @@ tools:
             type: string
             description: "A single NCT ID (e.g., NCT04280705)"
         required: ["nct_id"]
-  
+
   article_details:
     input:
       schema:
@@ -242,7 +242,7 @@ tools:
             type: string
             description: "A single PubMed ID (e.g., 34397683)"
         required: ["pmid"]
-  
+
   variant_details:
     input:
       schema:
