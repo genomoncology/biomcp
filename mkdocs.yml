@@ -14,6 +14,7 @@ nav:
       - MCP Inspector: tutorials/mcp-inspector.md
       - Python SDK: tutorials/python-sdk.md
       - MCP Client: tutorials/mcp-client.md
+      - Cursor IDE: tutorials/cursor-ide.md
       - Cloudflare Worker Deployment: tutorials/cloudflare-worker-deployment.md
   - CLI Reference:
       - Trials: cli/trials.md
