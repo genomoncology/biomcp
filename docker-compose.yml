@@ -1,0 +1,11 @@
+services:
+  biomcp-server:
+    platform: linux/amd64
+    build: .
+    image: us.gcr.io/graceful-medley-134315/biomcp-server:${TAG}
+    container_name: biomcp-server
+    ports:
+      - "8000:8000"
+    environment:
+      - MCP_MODE=worker # Can be set to 'stdio' or 'worker'
+    restart: unless-stopped

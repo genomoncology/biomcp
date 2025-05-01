@@ -18,11 +18,14 @@ COPY tests ./tests
 COPY Makefile .
 COPY tox.ini .
 
-# Install the package
-RUN pip install --upgrade pip && pip install .
+# Install the package with worker dependencies
+RUN pip install --upgrade pip && pip install .[worker]
 
-# Expose port if necessary
-# EXPOSE 8000
+# Expose port for remote MCP connections
+EXPOSE 8000
 
-# Run the MCP server
-CMD ["biomcp", "run"]
+# Set default mode to worker, but allow it to be overridden
+ENV MCP_MODE=stdio
+
+# Run the MCP server with configurable mode
+CMD ["sh", "-c", "biomcp run --mode ${MCP_MODE}"]

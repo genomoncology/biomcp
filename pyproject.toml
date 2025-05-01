@@ -55,6 +55,11 @@ dev = [
 api = [
 ]
 
+worker = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+]
+
 [build-system]
 requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
@@ -175,3 +180,6 @@ exclude = [
     "build",
     "dist",
 ]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = ["uvicorn"]

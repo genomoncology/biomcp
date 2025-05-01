@@ -89,10 +89,8 @@ def version():
     typer.echo(f"biomcp version: {__version__}")
 
 
-@app.command("run")
-def run():
-    """Run the BioMCP server"""
-    return run_server()
+# Directly expose run_server as the 'run' command with all its options
+app.command("run")(run_server)
 
 
 if __name__ == "__main__":
