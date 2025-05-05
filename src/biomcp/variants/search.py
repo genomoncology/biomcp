@@ -232,11 +232,11 @@ async def variant_searcher(
     sift=None,
     sources=None,
     size=40,
-    offset=0
+    offset=0,
 ) -> str:
     """
     Searches for genetic variants based on specified criteria.
-    
+
     Parameters:
     - gene: Gene symbol to search for (e.g. BRAF, TP53)
     - hgvsp: Protein change notation (e.g., p.V600E, p.Arg557His)
@@ -252,7 +252,7 @@ async def variant_searcher(
     - sources: Include only specific data sources
     - size: Number of results to return (default: 40)
     - offset: Result offset for pagination (default: 0)
-    
+
     Returns:
     Markdown formatted list of matching variants with key annotations
     """
@@ -271,6 +271,6 @@ async def variant_searcher(
         sift=sift,
         sources=sources or [],
         size=size,
-        offset=offset
+        offset=offset,
     )
     return await search_variants(query, output_json=False)

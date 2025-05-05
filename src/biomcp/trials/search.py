@@ -472,11 +472,11 @@ async def trial_searcher(
     sponsor_type=None,
     study_design=None,
     sort=None,
-    next_page_hash=None
+    next_page_hash=None,
 ) -> str:
     """
     Searches for clinical trials based on specified criteria.
-    
+
     Parameters:
     - conditions: Condition terms (e.g., "breast cancer")
     - terms: General search terms
@@ -498,7 +498,7 @@ async def trial_searcher(
     - study_design: Study design
     - sort: Sort order for results
     - next_page_hash: Token to retrieve the next page of results
-    
+
     Returns:
     Markdown formatted list of clinical trials
     """
@@ -523,6 +523,6 @@ async def trial_searcher(
         sponsor_type=sponsor_type,
         study_design=study_design,
         sort=sort,
-        next_page_hash=next_page_hash
+        next_page_hash=next_page_hash,
     )
     return await search_trials(query, output_json=False)
