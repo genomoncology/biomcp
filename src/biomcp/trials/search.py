@@ -452,15 +452,77 @@ async def search_trials(
 
 
 @mcp_app.tool()
-async def trial_searcher(query: TrialQuery) -> str:
+async def trial_searcher(
+    conditions=None,
+    terms=None,
+    interventions=None,
+    recruiting_status=None,
+    study_type=None,
+    nct_ids=None,
+    lat=None,
+    long=None,
+    distance=None,
+    min_date=None,
+    max_date=None,
+    date_field=None,
+    phase=None,
+    age_group=None,
+    primary_purpose=None,
+    intervention_type=None,
+    sponsor_type=None,
+    study_design=None,
+    sort=None,
+    next_page_hash=None,
+) -> str:
     """
     Searches for clinical trials based on specified criteria.
-    Input: A `TrialQuery` object containing fields like `conditions`,
-           `interventions`, `terms`, `recruiting_status`, `phase`,
-           `location` (lat/long/distance), date ranges, etc.
-    Process: Queries the ClinicalTrials.gov v2 API
-    Output: A Markdown formatted list summarizing matching trials
-            (NCT ID, Title, Status, Conditions, Interventions,
-            Summary). Results are typically paginated by the API.
+
+    Parameters:
+    - conditions: Condition terms (e.g., "breast cancer")
+    - terms: General search terms
+    - interventions: Intervention names (e.g., "pembrolizumab")
+    - recruiting_status: Study recruitment status (OPEN, CLOSED, ANY)
+    - study_type: Type of study
+    - nct_ids: Clinical trial NCT IDs
+    - lat: Latitude for location search
+    - long: Longitude for location search
+    - distance: Distance from lat/long in miles
+    - min_date: Minimum date for filtering (YYYY-MM-DD)
+    - max_date: Maximum date for filtering (YYYY-MM-DD)
+    - date_field: Date field to filter on
+    - phase: Trial phase filter
+    - age_group: Age group filter
+    - primary_purpose: Primary purpose of the trial
+    - intervention_type: Type of intervention
+    - sponsor_type: Type of sponsor
+    - study_design: Study design
+    - sort: Sort order for results
+    - next_page_hash: Token to retrieve the next page of results
+
+    Returns:
+    Markdown formatted list of clinical trials
     """
+    # Convert individual parameters to a TrialQuery object
+    query = TrialQuery(
+        conditions=conditions,
+        terms=terms,
+        interventions=interventions,
+        recruiting_status=recruiting_status,
+        study_type=study_type,
+        nct_ids=nct_ids,
+        lat=lat,
+        long=long,
+        distance=distance,
+        min_date=min_date,
+        max_date=max_date,
+        date_field=date_field,
+        phase=phase,
+        age_group=age_group,
+        primary_purpose=primary_purpose,
+        intervention_type=intervention_type,
+        sponsor_type=sponsor_type,
+        study_design=study_design,
+        sort=sort,
+        next_page_hash=next_page_hash,
+    )
     return await search_trials(query, output_json=False)

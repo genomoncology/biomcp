@@ -218,16 +218,59 @@ async def search_variants(
 
 
 @mcp_app.tool()
-async def variant_searcher(query: VariantQuery) -> str:
+async def variant_searcher(
+    gene=None,
+    hgvsp=None,
+    hgvsc=None,
+    rsid=None,
+    region=None,
+    significance=None,
+    max_frequency=None,
+    min_frequency=None,
+    cadd=None,
+    polyphen=None,
+    sift=None,
+    sources=None,
+    size=40,
+    offset=0,
+) -> str:
     """
     Searches for genetic variants based on specified criteria.
-    Input: A `VariantQuery` object containing fields like `gene`,
-           HGVS notations `hgvsp`, `hgvsc`), `rsid`, `region`,
-           `significance`, frequency ranges, prediction scores, etc.
-    Process: Constructs a query for the MyVariant.info query
-             endpoint (`/v1/query`) based on the input object.
-    Output: A Markdown formatted list summarizing matching variants
-            with key annotations (ID, gene, significance, frequency).
-            Includes a summary section with total hits found.
+
+    Parameters:
+    - gene: Gene symbol to search for (e.g. BRAF, TP53)
+    - hgvsp: Protein change notation (e.g., p.V600E, p.Arg557His)
+    - hgvsc: cDNA notation (e.g., c.1799T>A)
+    - rsid: dbSNP rsID (e.g., rs113488022)
+    - region: Genomic region as chr:start-end (e.g. chr1:12345-67890)
+    - significance: ClinVar clinical significance
+    - max_frequency: Maximum population allele frequency threshold
+    - min_frequency: Minimum population allele frequency threshold
+    - cadd: Minimum CADD phred score
+    - polyphen: PolyPhen-2 prediction
+    - sift: SIFT prediction
+    - sources: Include only specific data sources
+    - size: Number of results to return (default: 40)
+    - offset: Result offset for pagination (default: 0)
+
+    Returns:
+    Markdown formatted list of matching variants with key annotations
     """
+    # Convert individual parameters to a VariantQuery object
+    query = VariantQuery(
+        gene=gene,
+        hgvsp=hgvsp,
+        hgvsc=hgvsc,
+        rsid=rsid,
+        region=region,
+        significance=significance,
+        max_frequency=max_frequency,
+        min_frequency=min_frequency,
+        cadd=cadd,
+        polyphen=polyphen,
+        sift=sift,
+        sources=sources or [],
+        size=size,
+        offset=offset,
+    )
     return await search_variants(query, output_json=False)

@@ -163,17 +163,34 @@ async def search_articles(
 
 
 @mcp_app.tool()
-async def article_searcher(request: PubmedRequest) -> str:
+async def article_searcher(
+    chemicals=None, diseases=None, genes=None, keywords=None, variants=None
+) -> str:
     """
     Searches PubMed articles using structured criteria.
-    Input: A `PubmedRequest` object containing lists for `genes`,
-           `variants`, `diseases`, `chemicals`, and `keywords`.
-           Use full terms ("Non-small cell lung carcinoma") over
-           abbreviations ("NSCLC"). Use keywords to specify terms
-           that don't fit in disease, gene ("EGFR"), chemical ("Cisplatin"),
-           or variant ("BRAF V600E").
-    Process: Resolves entities then queries PubTator3's search API.
-    Output: A Markdown formatted list summarizing matching articles
-            (PMID, title, abstract, etc.). Limited to max 40 results.
+
+    Parameters:
+    - chemicals: List of chemicals for filtering results
+    - diseases: Diseases such as Hypertension, Lung Adenocarcinoma, etc.
+    - genes: List of genes for filtering results
+    - keywords: List of other keywords for filtering results
+    - variants: List of variants for filtering results
+
+    Notes:
+    - Use full terms ("Non-small cell lung carcinoma") over abbreviations ("NSCLC")
+    - Use keywords to specify terms that don't fit in disease, gene ("EGFR"),
+      chemical ("Cisplatin"), or variant ("BRAF V600E") categories
+
+    Returns:
+    Markdown formatted list of matching articles (PMID, title, abstract, etc.)
+    Limited to max 40 results.
     """
+    # Convert individual parameters to a PubmedRequest object
+    request = PubmedRequest(
+        chemicals=chemicals or [],
+        diseases=diseases or [],
+        genes=genes or [],
+        keywords=keywords or [],
+        variants=variants or [],
+    )
     return await search_articles(request)
