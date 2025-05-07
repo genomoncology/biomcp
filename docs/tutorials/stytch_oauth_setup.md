@@ -10,10 +10,12 @@ This document outlines the steps required to set up Stytch OAuth authentication 
 ## Setting Up Your Stytch Account
 
 1. **Create a Stytch Account**
-   - Sign up at [Stytch](https://stytch.com/) 
+
+   - Sign up at [Stytch](https://stytch.com/)
    - Select "Consumer Authentication" when prompted during the setup process
 
 2. **Configure the Stytch Project**
+
    - In the Stytch dashboard, navigate to "Frontend SDKs" and enable the frontend SDK
    - Navigate to "Connected Apps" and enable "Dynamic Client Registration"
    - This allows MCP clients to register themselves dynamically with Stytch
@@ -28,6 +30,7 @@ This document outlines the steps required to set up Stytch OAuth authentication 
 ## Configuring BioMCP with Stytch
 
 1. **Update the Wrangler Configuration**
+
    - Open `wrangler.toml` in the BioMCP project
    - Update the following variables with your Stytch credentials:
      ```toml
@@ -45,6 +48,7 @@ This document outlines the steps required to set up Stytch OAuth authentication 
      ```
 
 2. **Configure the OAuth KV Namespace**
+
    - Create a KV namespace in Cloudflare for storing OAuth tokens and state
    - Update the KV namespace ID in `wrangler.toml`:
      ```toml
@@ -83,6 +87,7 @@ The worker implements the following OAuth endpoints:
 To test the OAuth implementation:
 
 1. Deploy the worker to Cloudflare:
+
    ```
    wrangler deploy
    ```
