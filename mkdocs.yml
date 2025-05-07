@@ -16,6 +16,7 @@ nav:
       - MCP Client: tutorials/mcp-client.md
       - Cursor IDE: tutorials/cursor-ide.md
       - Cloudflare Worker Deployment: tutorials/cloudflare-worker-deployment.md
+      - Setting Up Stytch OAuth for BioMCP: tutorials/stytch_oauth_setup.md
   - CLI Reference:
       - Trials: cli/trials.md
       - Articles: cli/articles.md
