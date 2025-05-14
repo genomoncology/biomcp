@@ -180,17 +180,28 @@ async def article_searcher(
     - Use full terms ("Non-small cell lung carcinoma") over abbreviations ("NSCLC")
     - Use keywords to specify terms that don't fit in disease, gene ("EGFR"),
       chemical ("Cisplatin"), or variant ("BRAF V600E") categories
+    - Parameters can be provided as lists or comma-separated strings
 
     Returns:
     Markdown formatted list of matching articles (PMID, title, abstract, etc.)
     Limited to max 40 results.
     """
+
+    # Convert string inputs to lists (handle Claude's comma-separated strings)
+    def ensure_list(param):
+        if param is None:
+            return []
+        if isinstance(param, str):
+            # Split by comma and strip whitespace
+            return [item.strip() for item in param.split(",")]
+        return param
+
     # Convert individual parameters to a PubmedRequest object
     request = PubmedRequest(
-        chemicals=chemicals or [],
-        diseases=diseases or [],
-        genes=genes or [],
-        keywords=keywords or [],
-        variants=variants or [],
+        chemicals=ensure_list(chemicals),
+        diseases=ensure_list(diseases),
+        genes=ensure_list(genes),
+        keywords=ensure_list(keywords),
+        variants=ensure_list(variants),
     )
     return await search_articles(request)
