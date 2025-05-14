@@ -1,6 +1,6 @@
 import json
 from collections.abc import Generator
-from typing import Any, get_args
+from typing import Annotated, Any, get_args
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -164,7 +164,22 @@ async def search_articles(
 
 @mcp_app.tool()
 async def article_searcher(
-    chemicals=None, diseases=None, genes=None, keywords=None, variants=None
+    chemicals: Annotated[
+        list[str] | str | None, "List of chemicals for filtering results"
+    ] = None,
+    diseases: Annotated[
+        list[str] | str | None,
+        "Diseases such as Hypertension, Lung Adenocarcinoma, etc.",
+    ] = None,
+    genes: Annotated[
+        list[str] | str | None, "List of genes for filtering results"
+    ] = None,
+    keywords: Annotated[
+        list[str] | str | None, "List of other keywords for filtering results"
+    ] = None,
+    variants: Annotated[
+        list[str] | str | None, "List of variants for filtering results"
+    ] = None,
 ) -> str:
     """
     Searches PubMed articles using structured criteria.

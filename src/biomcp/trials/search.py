@@ -1,8 +1,8 @@
 import json
 from ssl import TLSVersion
-from typing import Any
+from typing import Annotated
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 from .. import StrEnum, const, ensure_list, http_client, mcp_app, render
 
@@ -300,17 +300,21 @@ class TrialQuery(BaseModel):
     )
 
     # Field validators for list fields
-    @field_validator(
-        "conditions",
-        "terms",
-        "interventions",
-        "nct_ids",
-        mode="before",
-    )
-    @classmethod
-    def validate_list_fields(cls, value: Any) -> list[Any]:
-        """Convert any field to a list or None."""
-        return ensure_list(value)
+    @model_validator(mode="before")
+    def convert_list_fields(cls, data):
+        """Convert string values to lists for list fields."""
+        if isinstance(data, dict):
+            for field_name in [
+                "conditions",
+                "terms",
+                "interventions",
+                "nct_ids",
+            ]:
+                if field_name in data and data[field_name] is not None:
+                    data[field_name] = ensure_list(
+                        data[field_name], split_strings=True
+                    )
+        return data
 
 
 def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
@@ -453,26 +457,57 @@ async def search_trials(
 
 @mcp_app.tool()
 async def trial_searcher(
-    conditions=None,
-    terms=None,
-    interventions=None,
-    recruiting_status=None,
-    study_type=None,
-    nct_ids=None,
-    lat=None,
-    long=None,
-    distance=None,
-    min_date=None,
-    max_date=None,
-    date_field=None,
-    phase=None,
-    age_group=None,
-    primary_purpose=None,
-    intervention_type=None,
-    sponsor_type=None,
-    study_design=None,
-    sort=None,
-    next_page_hash=None,
+    conditions: Annotated[
+        list[str] | str | None,
+        "Condition terms (e.g., 'breast cancer') - list or comma-separated string",
+    ] = None,
+    terms: Annotated[
+        list[str] | str | None,
+        "General search terms - list or comma-separated string",
+    ] = None,
+    interventions: Annotated[
+        list[str] | str | None,
+        "Intervention names (e.g., 'pembrolizumab') - list or comma-separated string",
+    ] = None,
+    recruiting_status: Annotated[
+        RecruitingStatus | str | None,
+        "Study recruitment status (OPEN, CLOSED, ANY)",
+    ] = None,
+    study_type: Annotated[StudyType | str | None, "Type of study"] = None,
+    nct_ids: Annotated[
+        list[str] | str | None,
+        "Clinical trial NCT IDs - list or comma-separated string",
+    ] = None,
+    lat: Annotated[float | None, "Latitude for location search"] = None,
+    long: Annotated[float | None, "Longitude for location search"] = None,
+    distance: Annotated[
+        float | None, "Distance from lat/long in miles"
+    ] = None,
+    min_date: Annotated[
+        str | None, "Minimum date for filtering (YYYY-MM-DD)"
+    ] = None,
+    max_date: Annotated[
+        str | None, "Maximum date for filtering (YYYY-MM-DD)"
+    ] = None,
+    date_field: Annotated[
+        DateField | str | None, "Date field to filter on"
+    ] = None,
+    phase: Annotated[TrialPhase | str | None, "Trial phase filter"] = None,
+    age_group: Annotated[AgeGroup | str | None, "Age group filter"] = None,
+    primary_purpose: Annotated[
+        PrimaryPurpose | str | None, "Primary purpose of the trial"
+    ] = None,
+    intervention_type: Annotated[
+        InterventionType | str | None, "Type of intervention"
+    ] = None,
+    sponsor_type: Annotated[
+        SponsorType | str | None, "Type of sponsor"
+    ] = None,
+    study_design: Annotated[StudyDesign | str | None, "Study design"] = None,
+    sort: Annotated[SortOrder | str | None, "Sort order for results"] = None,
+    next_page_hash: Annotated[
+        str | None, "Token to retrieve the next page of results"
+    ] = None,
 ) -> str:
     """
     Searches for clinical trials based on specified criteria.
