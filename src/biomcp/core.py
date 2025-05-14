@@ -30,15 +30,15 @@ class StrEnum(str, Enum):
 def ensure_list(value: Any, split_strings: bool = False) -> list[Any]:
     """
     Convert a value to a list if it's not already.
-    
+
     This is particularly useful for handling inputs from LLMs that might
     provide comma-separated strings instead of proper lists.
-    
+
     Args:
         value: The value to convert to a list
         split_strings: If True, splits string values by comma and strips whitespace.
                       If False, wraps the string in a list without splitting.
-        
+
     Returns:
         A list containing the value(s)
         - If value is None, returns an empty list
