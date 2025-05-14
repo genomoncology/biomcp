@@ -1,9 +1,9 @@
 import json
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from .. import StrEnum, const, http_client, mcp_app, render
+from .. import StrEnum, const, ensure_list, http_client, mcp_app, render
 from .filters import filter_variants
 from .links import inject_links
 
@@ -219,20 +219,37 @@ async def search_variants(
 
 @mcp_app.tool()
 async def variant_searcher(
-    gene=None,
-    hgvsp=None,
-    hgvsc=None,
-    rsid=None,
-    region=None,
-    significance=None,
-    max_frequency=None,
-    min_frequency=None,
-    cadd=None,
-    polyphen=None,
-    sift=None,
-    sources=None,
-    size=40,
-    offset=0,
+    gene: Annotated[
+        str | None, "Gene symbol to search for (e.g. BRAF, TP53)"
+    ] = None,
+    hgvsp: Annotated[
+        str | None, "Protein change notation (e.g., p.V600E, p.Arg557His)"
+    ] = None,
+    hgvsc: Annotated[str | None, "cDNA notation (e.g., c.1799T>A)"] = None,
+    rsid: Annotated[str | None, "dbSNP rsID (e.g., rs113488022)"] = None,
+    region: Annotated[
+        str | None, "Genomic region as chr:start-end (e.g. chr1:12345-67890)"
+    ] = None,
+    significance: Annotated[
+        ClinicalSignificance | str | None, "ClinVar clinical significance"
+    ] = None,
+    max_frequency: Annotated[
+        float | None, "Maximum population allele frequency threshold"
+    ] = None,
+    min_frequency: Annotated[
+        float | None, "Minimum population allele frequency threshold"
+    ] = None,
+    cadd: Annotated[float | None, "Minimum CADD phred score"] = None,
+    polyphen: Annotated[
+        PolyPhenPrediction | str | None, "PolyPhen-2 prediction"
+    ] = None,
+    sift: Annotated[SiftPrediction | str | None, "SIFT prediction"] = None,
+    sources: Annotated[
+        list[VariantSources] | list[str] | str | None,
+        "Include only specific data sources (list or comma-separated string)",
+    ] = None,
+    size: Annotated[int, "Number of results to return"] = 40,
+    offset: Annotated[int, "Result offset for pagination"] = 0,
 ) -> str:
     """
     Searches for genetic variants based on specified criteria.
@@ -249,7 +266,7 @@ async def variant_searcher(
     - cadd: Minimum CADD phred score
     - polyphen: PolyPhen-2 prediction
     - sift: SIFT prediction
-    - sources: Include only specific data sources
+    - sources: Include only specific data sources (list or comma-separated string)
     - size: Number of results to return (default: 40)
     - offset: Result offset for pagination (default: 0)
 
@@ -269,7 +286,7 @@ async def variant_searcher(
         cadd=cadd,
         polyphen=polyphen,
         sift=sift,
-        sources=sources or [],
+        sources=ensure_list(sources, split_strings=True),
         size=size,
         offset=offset,
     )

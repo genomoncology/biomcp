@@ -27,11 +27,35 @@ class StrEnum(str, Enum):
         return None
 
 
-def ensure_list(value: Any) -> list[Any]:
-    """Convert a single value to a list if it's not already."""
-    if not isinstance(value, list):
-        return [value] if value is not None else []
-    return value
+def ensure_list(value: Any, split_strings: bool = False) -> list[Any]:
+    """
+    Convert a value to a list if it's not already.
+
+    This is particularly useful for handling inputs from LLMs that might
+    provide comma-separated strings instead of proper lists.
+
+    Args:
+        value: The value to convert to a list
+        split_strings: If True, splits string values by comma and strips whitespace.
+                      If False, wraps the string in a list without splitting.
+
+    Returns:
+        A list containing the value(s)
+        - If value is None, returns an empty list
+        - If value is a string and split_strings is True, splits by comma and strips whitespace
+        - If value is a string and split_strings is False, wraps it in a list
+        - If value is already a list, returns it unchanged
+        - For other types, wraps them in a list
+    """
+    if value is None:
+        return []
+    if isinstance(value, str) and split_strings:
+        # Split by comma and strip whitespace
+        return [item.strip() for item in value.split(",")]
+    if isinstance(value, list):
+        return value
+    # For any other type, wrap it in a list
+    return [value]
 
 
 logger = get_logger("httpx")

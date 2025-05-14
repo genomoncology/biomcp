@@ -1,10 +1,10 @@
 import json
 from collections.abc import Generator
-from typing import Any, get_args
+from typing import Annotated, Any, get_args
 
 from pydantic import BaseModel, Field, computed_field
 
-from .. import const, http_client, mcp_app, render
+from .. import const, ensure_list, http_client, mcp_app, render
 from .autocomplete import Concept, EntityRequest, autocomplete
 from .fetch import call_pubtator_api
 
@@ -164,7 +164,22 @@ async def search_articles(
 
 @mcp_app.tool()
 async def article_searcher(
-    chemicals=None, diseases=None, genes=None, keywords=None, variants=None
+    chemicals: Annotated[
+        list[str] | str | None, "List of chemicals for filtering results"
+    ] = None,
+    diseases: Annotated[
+        list[str] | str | None,
+        "Diseases such as Hypertension, Lung Adenocarcinoma, etc.",
+    ] = None,
+    genes: Annotated[
+        list[str] | str | None, "List of genes for filtering results"
+    ] = None,
+    keywords: Annotated[
+        list[str] | str | None, "List of other keywords for filtering results"
+    ] = None,
+    variants: Annotated[
+        list[str] | str | None, "List of variants for filtering results"
+    ] = None,
 ) -> str:
     """
     Searches PubMed articles using structured criteria.
@@ -180,17 +195,19 @@ async def article_searcher(
     - Use full terms ("Non-small cell lung carcinoma") over abbreviations ("NSCLC")
     - Use keywords to specify terms that don't fit in disease, gene ("EGFR"),
       chemical ("Cisplatin"), or variant ("BRAF V600E") categories
+    - Parameters can be provided as lists or comma-separated strings
 
     Returns:
     Markdown formatted list of matching articles (PMID, title, abstract, etc.)
     Limited to max 40 results.
     """
+
     # Convert individual parameters to a PubmedRequest object
     request = PubmedRequest(
-        chemicals=chemicals or [],
-        diseases=diseases or [],
-        genes=genes or [],
-        keywords=keywords or [],
-        variants=variants or [],
+        chemicals=ensure_list(chemicals, split_strings=True),
+        diseases=ensure_list(diseases, split_strings=True),
+        genes=ensure_list(genes, split_strings=True),
+        keywords=ensure_list(keywords, split_strings=True),
+        variants=ensure_list(variants, split_strings=True),
     )
     return await search_articles(request)
