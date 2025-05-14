@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from .. import StrEnum, const, http_client, mcp_app, render
+from .. import StrEnum, const, ensure_list, http_client, mcp_app, render
 from .filters import filter_variants
 from .links import inject_links
 
@@ -249,7 +249,7 @@ async def variant_searcher(
     - cadd: Minimum CADD phred score
     - polyphen: PolyPhen-2 prediction
     - sift: SIFT prediction
-    - sources: Include only specific data sources
+    - sources: Include only specific data sources (list or comma-separated string)
     - size: Number of results to return (default: 40)
     - offset: Result offset for pagination (default: 0)
 
@@ -269,7 +269,7 @@ async def variant_searcher(
         cadd=cadd,
         polyphen=polyphen,
         sift=sift,
-        sources=sources or [],
+        sources=ensure_list(sources, split_strings=True),
         size=size,
         offset=offset,
     )

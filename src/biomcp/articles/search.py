@@ -4,7 +4,7 @@ from typing import Any, get_args
 
 from pydantic import BaseModel, Field, computed_field
 
-from .. import const, http_client, mcp_app, render
+from .. import const, ensure_list, http_client, mcp_app, render
 from .autocomplete import Concept, EntityRequest, autocomplete
 from .fetch import call_pubtator_api
 
@@ -187,21 +187,12 @@ async def article_searcher(
     Limited to max 40 results.
     """
 
-    # Convert string inputs to lists (handle Claude's comma-separated strings)
-    def ensure_list(param):
-        if param is None:
-            return []
-        if isinstance(param, str):
-            # Split by comma and strip whitespace
-            return [item.strip() for item in param.split(",")]
-        return param
-
     # Convert individual parameters to a PubmedRequest object
     request = PubmedRequest(
-        chemicals=ensure_list(chemicals),
-        diseases=ensure_list(diseases),
-        genes=ensure_list(genes),
-        keywords=ensure_list(keywords),
-        variants=ensure_list(variants),
+        chemicals=ensure_list(chemicals, split_strings=True),
+        diseases=ensure_list(diseases, split_strings=True),
+        genes=ensure_list(genes, split_strings=True),
+        keywords=ensure_list(keywords, split_strings=True),
+        variants=ensure_list(variants, split_strings=True),
     )
     return await search_articles(request)

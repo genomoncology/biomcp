@@ -478,12 +478,12 @@ async def trial_searcher(
     Searches for clinical trials based on specified criteria.
 
     Parameters:
-    - conditions: Condition terms (e.g., "breast cancer")
-    - terms: General search terms
-    - interventions: Intervention names (e.g., "pembrolizumab")
+    - conditions: Condition terms (e.g., "breast cancer") - list or comma-separated string
+    - terms: General search terms - list or comma-separated string
+    - interventions: Intervention names (e.g., "pembrolizumab") - list or comma-separated string
     - recruiting_status: Study recruitment status (OPEN, CLOSED, ANY)
     - study_type: Type of study
-    - nct_ids: Clinical trial NCT IDs
+    - nct_ids: Clinical trial NCT IDs - list or comma-separated string
     - lat: Latitude for location search
     - long: Longitude for location search
     - distance: Distance from lat/long in miles
@@ -504,12 +504,12 @@ async def trial_searcher(
     """
     # Convert individual parameters to a TrialQuery object
     query = TrialQuery(
-        conditions=conditions,
-        terms=terms,
-        interventions=interventions,
+        conditions=ensure_list(conditions, split_strings=True),
+        terms=ensure_list(terms, split_strings=True),
+        interventions=ensure_list(interventions, split_strings=True),
         recruiting_status=recruiting_status,
         study_type=study_type,
-        nct_ids=nct_ids,
+        nct_ids=ensure_list(nct_ids, split_strings=True),
         lat=lat,
         long=long,
         distance=distance,
