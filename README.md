@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/genomoncology-biomcp-badge.png)](https://mseep.ai/app/genomoncology-biomcp)
+
 # BioMCP: Biomedical Model Context Protocol
 
 BioMCP is an open source (MIT License) toolkit that empowers AI assistants and
