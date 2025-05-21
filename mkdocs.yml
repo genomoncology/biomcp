@@ -17,6 +17,7 @@ nav:
       - Cursor IDE: tutorials/cursor-ide.md
       - Cloudflare Worker Deployment: tutorials/cloudflare-worker-deployment.md
       - Setting Up Stytch OAuth for BioMCP: tutorials/stytch_oauth_setup.md
+      - Logging with BigQuery: tutorials/bigquery_logging.md
   - CLI Reference:
       - Trials: cli/trials.md
       - Articles: cli/articles.md
@@ -26,6 +27,7 @@ nav:
       - ClinicalTrials.gov: apis/clinicaltrials_gov.md
       - PubTator3: apis/pubtator3_api.md
       - MyVariant.info: apis/myvariant_info.md
+
   - Blog:
       - What is BioMCP?: blog/what-is-biomcp.md
       - AI Assisted Clinical Trial Search: blog/ai-assisted-clinical-trial-search-analysis.md

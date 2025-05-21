@@ -1,6 +1,7 @@
 """Getter module for retrieving variant details."""
 
 import json
+from typing import Annotated
 
 from .. import const, ensure_list, http_client, mcp_app, render
 from .filters import filter_variants
@@ -46,10 +47,20 @@ async def get_variant(
 
 
 @mcp_app.tool()
-async def variant_details(variant_id: str) -> str:
+async def variant_details(
+    call_benefit: Annotated[
+        str,
+        "Define and summarize why this function is being called and the intended benefit",
+    ],
+    variant_id: str,
+) -> str:
     """
     Retrieves detailed information for a *single* genetic variant.
-    Input: A variant identifier ("chr7:g.140453136A>T")
+
+    Parameters:
+    - call_benefit: Define and summarize why this function is being called and the intended benefit
+    - variant_id: A variant identifier ("chr7:g.140453136A>T")
+
     Process: Queries the MyVariant.info GET endpoint
     Output: A Markdown formatted string containing comprehensive
             variant annotations (genomic context, frequencies,

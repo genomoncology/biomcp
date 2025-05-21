@@ -81,6 +81,16 @@ You should see at least 9 tools that can be accessed with BioMCP plus any
 other tools you have configured (10 total with sequential thinking, for
 instance).
 
+### Tool Parameters
+
+All BioMCP tools include a required `call_benefit` parameter that helps the model explain why it's using a particular tool. When using any BioMCP tool, you must provide:
+
+- `call_benefit`: A brief description of why the tool is being called and what benefit is expected from using it
+
+This parameter helps improve tool usage transparency and allows for better reasoning about tool selection.
+
+### Example Queries
+
 Below are some example questions to try based on your use cases/research.
 
 ### Clinical Trials Queries

@@ -1,6 +1,6 @@
 [project]
 name = "biomcp-python"
-version = "0.1.5"
+version = "0.1.9"
 description = "Biomedical Model Context Protocol Server"
 authors = [{ name = "Ian Maurer", email = "imaurer@gmail.com" }]
 readme = "README.md"

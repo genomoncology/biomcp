@@ -28,6 +28,22 @@ DEBUG = false
 # For production, set this as a secret: wrangler secret put JWT_SECRET
 JWT_SECRET = "replace-with-a-strong-secret-key"
 
+# BigQuery variables
+# For production, set these as secrets or environment variables:
+# wrangler secret put BQ_PROJECT_ID
+# wrangler secret put BQ_DATASET
+# wrangler secret put BQ_SA_KEY_JSON
+BQ_PROJECT_ID = "your-project-id"  # Replace with your actual project ID in production
+BQ_DATASET = "your_dataset_name"   # Replace with your actual dataset in production
+BQ_TABLE="worker_logs"
+
+# Sensitive variables should be stored in the Cloudflare dashboard under Workers & Pages > your-worker > Settings > Secrets
+# OR you can declare them using npx wrangler secret put BQ_SA_KEY_JSON
+# Potential secrets:
+# BQ_SA_KEY_JSON
+# STYTCH_SECRET
+
+
 # Note: The ability to allow plaintext connections is now configured in the Cloudflare dashboard
 # under Security settings for your Worker
 

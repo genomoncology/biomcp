@@ -457,6 +457,10 @@ async def search_trials(
 
 @mcp_app.tool()
 async def trial_searcher(
+    call_benefit: Annotated[
+        str,
+        "Define and summarize why this function is being called and the intended benefit",
+    ],
     conditions: Annotated[
         list[str] | str | None,
         "Condition terms (e.g., 'breast cancer') - list or comma-separated string",
@@ -513,6 +517,7 @@ async def trial_searcher(
     Searches for clinical trials based on specified criteria.
 
     Parameters:
+    - call_benefit: Define and summarize why this function is being called and the intended benefit
     - conditions: Condition terms (e.g., "breast cancer") - list or comma-separated string
     - terms: General search terms - list or comma-separated string
     - interventions: Intervention names (e.g., "pembrolizumab") - list or comma-separated string
