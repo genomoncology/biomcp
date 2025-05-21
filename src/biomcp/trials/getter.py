@@ -1,6 +1,6 @@
 import json
 from ssl import TLSVersion
-from typing import Any
+from typing import Annotated, Any
 
 from .. import StrEnum, const, http_client, mcp_app, render
 
@@ -72,11 +72,21 @@ async def get_trial(
 
 
 @mcp_app.tool()
-async def trial_protocol(nct_id: str):
+async def trial_protocol(
+    call_benefit: Annotated[
+        str,
+        "Define and summarize why this function is being called and the intended benefit",
+    ],
+    nct_id: str,
+):
     """
     Retrieves core protocol information for a single clinical
     trial identified by its NCT ID.
-    Input: A single NCT ID (string, e.g., "NCT04280705").
+
+    Parameters:
+    - call_benefit: Define and summarize why this function is being called and the intended benefit
+    - nct_id: A single NCT ID (string, e.g., "NCT04280705")
+
     Process: Fetches standard "Protocol" view modules (like ID,
              Status, Sponsor, Design, Eligibility) from the
              ClinicalTrials.gov v2 API.
@@ -88,11 +98,21 @@ async def trial_protocol(nct_id: str):
 
 
 @mcp_app.tool()
-async def trial_locations(nct_id: str) -> str:
+async def trial_locations(
+    call_benefit: Annotated[
+        str,
+        "Define and summarize why this function is being called and the intended benefit",
+    ],
+    nct_id: str,
+) -> str:
     """
     Retrieves contact and location details for a single
     clinical trial identified by its NCT ID.
-    Input: A single NCT ID (string, e.g., "NCT04280705").
+
+    Parameters:
+    - call_benefit: Define and summarize why this function is being called and the intended benefit
+    - nct_id: A single NCT ID (string, e.g., "NCT04280705")
+
     Process: Fetches the `ContactsLocationsModule` from the
              ClinicalTrials.gov v2 API for the given NCT ID.
     Output: A Markdown formatted string detailing facility names,
@@ -103,11 +123,21 @@ async def trial_locations(nct_id: str) -> str:
 
 
 @mcp_app.tool()
-async def trial_outcomes(nct_id: str) -> str:
+async def trial_outcomes(
+    call_benefit: Annotated[
+        str,
+        "Define and summarize why this function is being called and the intended benefit",
+    ],
+    nct_id: str,
+) -> str:
     """
     Retrieves outcome measures, results (if available), and
     adverse event data for a single clinical trial.
-    Input: A single NCT ID (string, e.g., "NCT04280705").
+
+    Parameters:
+    - call_benefit: Define and summarize why this function is being called and the intended benefit
+    - nct_id: A single NCT ID (string, e.g., "NCT04280705")
+
     Process: Fetches the `OutcomesModule` and `ResultsSection`
              from the ClinicalTrials.gov v2 API for the NCT ID.
     Output: A Markdown formatted string detailing primary/secondary
@@ -118,11 +148,21 @@ async def trial_outcomes(nct_id: str) -> str:
 
 
 @mcp_app.tool()
-async def trial_references(nct_id: str):
+async def trial_references(
+    call_benefit: Annotated[
+        str,
+        "Define and summarize why this function is being called and the intended benefit",
+    ],
+    nct_id: str,
+):
     """
     Retrieves publications and other references associated with
     a single clinical trial identified by its NCT ID.
-    Input: A single NCT ID (string, e.g., "NCT04280705").
+
+    Parameters:
+    - call_benefit: Define and summarize why this function is being called and the intended benefit
+    - nct_id: A single NCT ID (string, e.g., "NCT04280705")
+
     Process: Fetches the `ReferencesModule` from the
              ClinicalTrials.gov v2 API for the NCT ID.
     Output: A Markdown formatted string listing citations,

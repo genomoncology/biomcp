@@ -164,6 +164,10 @@ async def search_articles(
 
 @mcp_app.tool()
 async def article_searcher(
+    call_benefit: Annotated[
+        str,
+        "Define and summarize why this function is being called and the intended benefit",
+    ],
     chemicals: Annotated[
         list[str] | str | None, "List of chemicals for filtering results"
     ] = None,
@@ -185,6 +189,7 @@ async def article_searcher(
     Searches PubMed articles using structured criteria.
 
     Parameters:
+    - call_benefit: Define and summarize why this function is being called and the intended benefit
     - chemicals: List of chemicals for filtering results
     - diseases: Diseases such as Hypertension, Lung Adenocarcinoma, etc.
     - genes: List of genes for filtering results

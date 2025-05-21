@@ -82,6 +82,16 @@ The worker implements the following OAuth endpoints:
 - `/callback`: OAuth callback endpoint
 - `/token`: Token exchange endpoint
 
+## Integration with BigQuery Logging
+
+BioMCP integrates Stytch OAuth authentication with BigQuery logging to track user interactions and API usage. This integration:
+
+1. **Captures Authentication Events**: Logs successful and failed authentication attempts
+2. **Tracks User Activity**: Associates API requests with authenticated users
+3. **Enables Analytics**: Provides insights into how users interact with the system
+
+For detailed information about the BigQuery logging setup and usage, see the [BigQuery Logging Documentation](/docs/tutorials/bigquery_logging.md).
+
 ## Testing
 
 To test the OAuth implementation:

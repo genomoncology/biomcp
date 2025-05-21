@@ -1,6 +1,6 @@
 import json
 from ssl import TLSVersion
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -194,11 +194,21 @@ async def fetch_articles(
 
 
 @mcp_app.tool()
-async def article_details(pmid) -> str:
+async def article_details(
+    call_benefit: Annotated[
+        str,
+        "Define and summarize why this function is being called and the intended benefit",
+    ],
+    pmid,
+) -> str:
     """
     Retrieves details for a single PubMed article given its
     PubMed ID (PMID).
-    Input: A single PMID (e.g., 34397683)
+
+    Parameters:
+    - call_benefit: Define and summarize why this function is being called and the intended benefit
+    - pmid: A single PubMed ID (e.g., 34397683)
+
     Process: Calls the PubTator3 API to fetch the article's
              title, abstract, and full text (if available).
     Output: A Markdown formatted string containing the

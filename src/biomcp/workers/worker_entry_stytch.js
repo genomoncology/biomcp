@@ -3,7 +3,7 @@
  */
 
 import { Hono } from "hono";
-import { createRemoteJWKSet, jwtVerify, SignJWT } from "jose";
+import { createRemoteJWKSet, jwtVerify, SignJWT, importPKCS8 } from "jose";
 
 // Configuration variables - will be overridden by env values
 let DEBUG = false; // Default value, will be updated from env
@@ -29,6 +29,81 @@ const getStytchUrl = (env, path, isPublic = false) => {
 
 // JWT validation logic
 let jwks = null;
+
+/**
+ * Decode the payload of a JWT (no signature check).
+ */
+function decodeJwt(token) {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(base64);
+    return JSON.parse(json);
+  } catch {
+    return {};
+  }
+}
+
+let bqTokenPromise = null;
+
+/**
+ * Fetch (and cache) a BigQuery OAuth token.
+ * @param {object} env  the Hono env (c.env)
+ */
+async function getBQToken(env) {
+  // Parse the service‐account JSON key
+  const key = JSON.parse(env.BQ_SA_KEY_JSON);
+  const now = Math.floor(Date.now() / 1000);
+
+  // Convert PEM private key string into a CryptoKey
+  const privateKey = await importPKCS8(key.private_key, "RS256");
+
+  // Build the JWT assertion
+  const assertion = await new SignJWT({
+    iss: key.client_email,
+    scope: "https://www.googleapis.com/auth/bigquery.insertdata",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  })
+    .setProtectedHeader({ alg: "RS256", kid: key.private_key_id })
+    .sign(privateKey);
+
+  // Exchange the assertion for an access token
+  const resp = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+  const { access_token } = await resp.json();
+  return access_token;
+}
+
+/**
+ * Insert a single row into BigQuery via streaming insert.
+ * @param {object} env  the Hono env (c.env)
+ * @param {object} row  { timestamp, userEmail, query }
+ */
+async function insertEvent(env, row) {
+  const token = await getBQToken(env);
+
+  const url =
+    `https://bigquery.googleapis.com/bigquery/v2/projects/` +
+    `${env.BQ_PROJECT_ID}/datasets/${env.BQ_DATASET}` +
+    `/tables/${env.BQ_TABLE}/insertAll`;
+
+  await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ rows: [{ json: row }] }),
+  });
+}
 
 /**
  * Validate a JWT token
@@ -981,6 +1056,50 @@ app
 
     // Read the body
     const body = await c.req.text();
+    const authHeader = c.req.header("Authorization") || "";
+    let userEmail = "unknown";
+
+    if (authHeader.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+      const claims = decodeJwt(token);
+      userEmail =
+        claims.email || claims.preferred_username || claims.sub || "unknown";
+    }
+
+    log(`[Proxy] user=${userEmail}  query=${body}`);
+
+    let sendToBQ = false;
+    let parsed;
+    try {
+      parsed = JSON.parse(body);
+      const args = parsed.params?.arguments;
+      if (args && Object.keys(args).length > 0) {
+        sendToBQ = true;
+      }
+    } catch (e) {
+      console.log("[BigQuery] skipping insert—cannot parse JSON body", e);
+    }
+
+    const { BQ_SA_KEY_JSON, BQ_PROJECT_ID, BQ_DATASET, BQ_TABLE } = c.env;
+
+    if (sendToBQ && BQ_SA_KEY_JSON && BQ_PROJECT_ID && BQ_DATASET && BQ_TABLE) {
+      const eventRow = {
+        timestamp: new Date().toISOString(),
+        userEmail,
+        query: body,
+      };
+      // fire & forget
+      c.executionCtx.waitUntil(insertEvent(c.env, eventRow));
+    } else {
+      const missing = [
+        !sendToBQ ? "no query args" : null,
+        !BQ_SA_KEY_JSON && "BQ_SA_KEY_JSON",
+        !BQ_PROJECT_ID && "BQ_PROJECT_ID",
+        !BQ_DATASET && "BQ_DATASET",
+        !BQ_TABLE && "BQ_TABLE",
+      ].filter(Boolean);
+      console.log("[BigQuery] skipping insert—", missing.join(", "));
+    }
 
     // Make a new Request object with the body we've already read
     const newRequest = new Request(c.req.url, {

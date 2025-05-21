@@ -219,6 +219,10 @@ async def search_variants(
 
 @mcp_app.tool()
 async def variant_searcher(
+    call_benefit: Annotated[
+        str,
+        "Define and summarize why this function is being called and the intended benefit",
+    ],
     gene: Annotated[
         str | None, "Gene symbol to search for (e.g. BRAF, TP53)"
     ] = None,
@@ -255,6 +259,7 @@ async def variant_searcher(
     Searches for genetic variants based on specified criteria.
 
     Parameters:
+    - call_benefit: Define and summarize why this function is being called and the intended benefit
     - gene: Gene symbol to search for (e.g. BRAF, TP53)
     - hgvsp: Protein change notation (e.g., p.V600E, p.Arg557His)
     - hgvsc: cDNA notation (e.g., c.1799T>A)
