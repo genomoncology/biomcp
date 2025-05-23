@@ -20,7 +20,7 @@ dependencies = [
     "certifi>=2025.1.31",
     "diskcache>=5.6.3",
     "httpx>=0.28.1",
-    "mcp[cli]>=1.7.1",
+    "mcp[cli]==1.9.0",
     "platformdirs>=4.3.6",
     "psutil>=7.0.0",
     "pydantic>=2.10.6",

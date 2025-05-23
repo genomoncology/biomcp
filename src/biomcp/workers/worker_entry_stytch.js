@@ -124,6 +124,24 @@ async function validateToken(token, env) {
       const result = await jwtVerify(token, secret, {
         issuer: env.STYTCH_PROJECT_ID,
       });
+
+      // Also check if token exists in KV (for revocation checking)
+      const tokenHash = await crypto.subtle.digest(
+        "SHA-256",
+        encoder.encode(token),
+      );
+      const tokenKey = btoa(String.fromCharCode(...new Uint8Array(tokenHash)))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "")
+        .substring(0, 32);
+
+      const storedToken = await env.OAUTH_KV.get(`token_hash:${tokenKey}`);
+      if (!storedToken) {
+        log("Token not found in storage - may have been revoked");
+        throw new Error("Token not found or revoked");
+      }
+
       log("Self-issued JWT validation successful");
       return result;
     } catch (error) {
@@ -986,17 +1004,33 @@ app
       // Generate refresh token (still using UUID for simplicity)
       const refreshToken = crypto.randomUUID();
 
-      // Store token information
+      // Store token information - use a hash of the token as the key to avoid length limits
+      const tokenHash = await crypto.subtle.digest(
+        "SHA-256",
+        encoder.encode(accessToken),
+      );
+      const tokenKey = btoa(String.fromCharCode(...new Uint8Array(tokenHash)))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "")
+        .substring(0, 32); // Use first 32 chars of hash
+
       try {
-        log("Storing access token data");
+        log(`Storing access token with key: access_token:${tokenKey}`);
         await c.env.OAUTH_KV.put(
-          `access_token:${accessToken}`,
+          `access_token:${tokenKey}`,
           JSON.stringify({
             token: accessToken,
+            hash: tokenKey,
             ...accessTokenPayload,
           }),
           { expirationTtl: 3600 },
         );
+
+        // Also store a mapping from the full token to the hash for validation
+        await c.env.OAUTH_KV.put(`token_hash:${tokenKey}`, accessToken, {
+          expirationTtl: 3600,
+        });
 
         log("Storing refresh token");
         await c.env.OAUTH_KV.put(
