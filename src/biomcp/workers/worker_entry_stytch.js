@@ -128,7 +128,7 @@ async function validateToken(token, env) {
       // Also check if token exists in KV (for revocation checking)
       const tokenHash = await crypto.subtle.digest(
         "SHA-256",
-        encoder.encode(token)
+        encoder.encode(token),
       );
       const tokenKey = btoa(String.fromCharCode(...new Uint8Array(tokenHash)))
         .replace(/\+/g, "-")
@@ -1007,7 +1007,7 @@ app
       // Store token information - use a hash of the token as the key to avoid length limits
       const tokenHash = await crypto.subtle.digest(
         "SHA-256",
-        encoder.encode(accessToken)
+        encoder.encode(accessToken),
       );
       const tokenKey = btoa(String.fromCharCode(...new Uint8Array(tokenHash)))
         .replace(/\+/g, "-")
@@ -1028,11 +1028,9 @@ app
         );
 
         // Also store a mapping from the full token to the hash for validation
-        await c.env.OAUTH_KV.put(
-          `token_hash:${tokenKey}`,
-          accessToken,
-          { expirationTtl: 3600 },
-        );
+        await c.env.OAUTH_KV.put(`token_hash:${tokenKey}`, accessToken, {
+          expirationTtl: 3600,
+        });
 
         log("Storing refresh token");
         await c.env.OAUTH_KV.put(
