@@ -31,7 +31,6 @@ def run_server(
     elif mode == ServerMode.WORKER:
         logger.info("Starting MCP server with Worker/SSE transport")
         try:
-            # Fix: Use the correct import path - worker is in the same directory
             import uvicorn
 
             from ..workers.worker import app
