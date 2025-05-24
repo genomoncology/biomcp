@@ -3,7 +3,7 @@
  */
 
 import { Hono } from "hono";
-import { createRemoteJWKSet, jwtVerify, SignJWT, importPKCS8 } from "jose";
+import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from "jose";
 
 // Configuration variables - will be overridden by env values
 let DEBUG = false; // Default value, will be updated from env
@@ -1008,7 +1008,14 @@ app
       c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
     return serveSSE(c.req, REMOTE_MCP_SERVER_URL);
   })
-
+  // MCP endpoint (alias for SSE, protected with bearer token authentication)
+  .use("/mcp", stytchBearerTokenAuthMiddleware)
+  .get("/mcp", (c) => {
+    log("MCP endpoint hit");
+    const REMOTE_MCP_SERVER_URL =
+      c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
+    return serveSSE(c.req, REMOTE_MCP_SERVER_URL);
+  })
   .get("/events", (c) => {
     log("Events endpoint hit");
     const REMOTE_MCP_SERVER_URL =
