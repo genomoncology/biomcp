@@ -31,15 +31,18 @@ def run_server(
     elif mode == ServerMode.WORKER:
         logger.info("Starting MCP server with Worker/SSE transport")
         try:
-            mcp_app.run(transport="sse")
+            import uvicorn
+
+            from ..workers.worker import app
+
+            uvicorn.run(
+                app,
+                host="0.0.0.0",  # noqa: S104 - Required for Docker container networking
+                port=8000,
+                log_level="info",
+            )
         except ImportError as e:
             logger.error(f"Failed to start worker/sse mode: {e}")
-            logger.error(
-                "Make sure you have the required dependencies installed:"
-            )
-            logger.error(
-                "pip install uvicorn mcp-python[server]"
-            )  # Ensure all server extras are installed
             raise typer.Exit(1) from e
         except Exception as e:
             logger.error(f"An unexpected error occurred: {e}", exc_info=True)

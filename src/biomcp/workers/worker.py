@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-from typing import Any
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,28 +20,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Track active SSE connections
-active_connections: set[Any] = set()
-active_controller = None
+# Mount the MCP SSE app - this is the key change
+# This will handle /sse and /messages endpoints automatically
+sse_app = mcp_app.sse_app()
+app.mount("/", sse_app)
 
 
-# Log all requests for debugging
+# Keep your logging middleware if needed
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     logger.info(f"Received {request.method} request to {request.url.path}")
-    logger.info(f"Headers: {request.headers}")
-
-    # For POST requests, log the body
-    if request.method == "POST":
-        body_bytes = await request.body()
-        body_str = body_bytes.decode("utf-8")
-        logger.info(f"Body: {body_str}")
-
-        # Store the body in the request state for later use
-        request.state.body = body_bytes
-
     response = await call_next(request)
     return response
+
+
+# Add any additional custom endpoints if needed
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 
 # Handle MCP requests at the root path (this is where mcp-remote sends them)
@@ -103,8 +98,12 @@ async def sse_endpoint():
     logger.info("SSE connection established")
 
     async def event_generator():
-        # Send initial ready event
-        yield "event: ready\ndata: {}\n\n"
+        init_metadata = {
+            "protocol_version": "1.9.1",
+            "server_capabilities": ["tools", "resources"],
+        }
+        yield f"event: ready\ndata: {json.dumps(init_metadata)}\n\n"
+        logger.info(f"SSE sent initial event: {init_metadata}")
 
         # Keep the connection alive with keepalive events
         while True:

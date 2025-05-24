@@ -3,7 +3,7 @@
  */
 
 import { Hono } from "hono";
-import { createRemoteJWKSet, jwtVerify, SignJWT, importPKCS8 } from "jose";
+import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from "jose";
 
 // Configuration variables - will be overridden by env values
 let DEBUG = false; // Default value, will be updated from env
@@ -274,153 +274,31 @@ async function processAuthCallback(c, token, state, oauthRequest) {
 // Function to proxy POST requests to remote MCP server
 async function proxyPost(req, remoteServerUrl, path, sid) {
   const body = await req.text();
-  const target = `${remoteServerUrl}${path}?session_id=${encodeURIComponent(
+  const targetUrl = `${remoteServerUrl}${path}?session_id=${encodeURIComponent(
     sid,
   )}`;
 
+  const headers = {
+    "Content-Type": "application/json",
+    "User-Agent": "Claude/1.0",
+  };
+
   try {
-    // Parse the request to check if it's a list request that might need a longer timeout
-    let jsonBody = {};
-    let isToolsListRequest = false;
-    try {
-      jsonBody = JSON.parse(body);
-      isToolsListRequest = jsonBody.method === "tools/list";
-
-      if (isToolsListRequest) {
-        log("TOOLS LIST REQUEST DETECTED!");
-        log(`Full tools/list request: ${JSON.stringify(jsonBody)}`);
-      }
-    } catch (e) {
-      log(`Error parsing request body: ${e.message}`);
-      // Not valid JSON, proceed with normal request
-    }
-
-    // Set a longer timeout for list requests that tend to time out
-    const timeout =
-      jsonBody.method &&
-      (jsonBody.method === "tools/list" || jsonBody.method === "resources/list")
-        ? 30000 // Extended timeout for list requests
-        : 10000;
-
-    // Use AbortController to implement timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    log(
-      `Proxying ${
-        jsonBody.method || "request"
-      } with timeout ${timeout}ms to: ${target}`,
-    );
-
-    // For tools/list requests, add a user agent header that some MCP servers expect
-    const headers = {
-      "Content-Type": "application/json",
-      "User-Agent": "Claude/1.0",
-    };
-
-    const resp = await fetch(target, {
+    const response = await fetch(targetUrl, {
       method: "POST",
       headers: headers,
-      body,
-      signal: controller.signal,
+      body: body,
     });
 
-    clearTimeout(timeoutId);
-
-    // Handle tools/list responses separately
-    if (isToolsListRequest) {
-      const responseText = await resp.text();
-      log(`Full tools/list response: ${responseText}`);
-      return new Response(responseText, {
-        status: resp.status,
-        headers: { "Content-Type": "application/json", ...CORS },
-      });
-    }
-
-    // Log response for debugging
-    const responseText = await resp.text();
-    log(
-      `Response from MCP server (first 200 chars): ${responseText.substring(
-        0,
-        200,
-      )}...`,
-    );
-
-    // If it's a resources/list request, handle it
-    if (jsonBody.method === "resources/list") {
-      log(`Received response for resources/list`);
-      try {
-        // Try to parse and check for resources
-        const responseObj = JSON.parse(responseText);
-        if (
-          !responseObj.result ||
-          !responseObj.result.resources ||
-          responseObj.result.resources.length === 0
-        ) {
-          log("No resources returned, providing empty list");
-          return new Response(
-            JSON.stringify({
-              jsonrpc: "2.0",
-              id: jsonBody.id,
-              result: { resources: [] },
-            }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json", ...CORS },
-            },
-          );
-        }
-      } catch (parseError) {
-        log(`Error parsing resources response: ${parseError.message}`);
-      }
-    }
+    const responseText = await response.text();
+    log(`Proxy response from ${targetUrl}: ${responseText.substring(0, 500)}`);
 
     return new Response(responseText, {
-      status: resp.status,
+      status: response.status,
       headers: { "Content-Type": "application/json", ...CORS },
     });
   } catch (error) {
-    log(`POST error: ${error.message}`);
-
-    // For timeout errors, provide a default response
-    if (error.name === "AbortError") {
-      try {
-        const jsonBody = JSON.parse(body);
-        if (jsonBody.method === "tools/list") {
-          log("Returning empty tools list due to timeout");
-          return new Response(
-            JSON.stringify({
-              jsonrpc: "2.0",
-              id: jsonBody.id,
-              result: {
-                tools: [],
-              },
-            }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json", ...CORS },
-            },
-          );
-        } else if (jsonBody.method === "resources/list") {
-          log("Returning empty resources list due to timeout");
-          return new Response(
-            JSON.stringify({
-              jsonrpc: "2.0",
-              id: jsonBody.id,
-              result: { resources: [] },
-            }),
-            {
-              status: 200,
-              headers: { "Content-Type": "application/json", ...CORS },
-            },
-          );
-        }
-      } catch (e) {
-        log(`Error handling timeout response: ${e.message}`);
-        // If parsing fails, fall through to default error response
-      }
-    }
-
+    log(`Proxy fetch error: ${error.message}`);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 502,
       headers: { "Content-Type": "application/json", ...CORS },
@@ -431,16 +309,13 @@ async function proxyPost(req, remoteServerUrl, path, sid) {
 // Function to serve SSE connections
 function serveSSE(clientReq, remoteServerUrl) {
   const enc = new TextEncoder();
-  let keepalive;
-  let forwardPath = "/messages";
-  let resourceEndpoint = null;
   const upstreamCtl = new AbortController();
+  let keepalive;
 
   const stream = new ReadableStream({
     async start(ctrl) {
       ctrl.enqueue(enc.encode("event: ready\ndata: {}\n\n"));
 
-      // Safely add event listener if signal exists
       if (
         clientReq.signal &&
         typeof clientReq.signal.addEventListener === "function"
@@ -456,57 +331,36 @@ function serveSSE(clientReq, remoteServerUrl) {
 
       try {
         log(`Connecting to upstream SSE: ${remoteServerUrl}/sse`);
-        const u = await fetch(`${remoteServerUrl}/sse`, {
+        const upstreamResponse = await fetch(`${remoteServerUrl}/sse`, {
           headers: { Accept: "text/event-stream" },
           signal: upstreamCtl.signal,
         });
 
-        if (!u.ok || !u.body) {
-          log(`Upstream SSE connection failed with status: ${u.status}`);
-          throw new Error(`Upstream SSE ${u.status}`);
+        if (!upstreamResponse.ok || !upstreamResponse.body) {
+          log(`Upstream SSE connection failed: ${upstreamResponse.status}`);
+          throw new Error(`Upstream SSE ${upstreamResponse.status}`);
         }
 
         log("Upstream SSE connection established");
-        const r = u.body.getReader();
+        const reader = upstreamResponse.body.getReader();
 
         while (true) {
-          const { value, done } = await r.read();
+          const { value, done } = await reader.read();
           if (done) {
             log("Upstream SSE connection closed");
             break;
           }
           if (value) {
-            const text = new TextDecoder().decode(value);
-            log(
-              `SSE data received (first 100 chars): ${text.substring(0, 100)}`,
-            );
-
-            // capture first endpoint once
-            if (!resourceEndpoint) {
-              const m = text.match(
-                /data:\s*(\/messages\/\?session_id=[A-Za-z0-9_-]+)/,
-              );
-              if (m) {
-                resourceEndpoint = m[1];
-                forwardPath = resourceEndpoint.split("?")[0];
-                log(`Captured endpoint ${resourceEndpoint}`);
-                ctrl.enqueue(
-                  enc.encode(`event: resource\ndata: ${resourceEndpoint}\n\n`),
-                );
-              }
-            }
             ctrl.enqueue(value);
           }
         }
       } catch (e) {
         log(`SSE connection error: ${e.name} - ${e.message}`);
         if (e.name !== "AbortError") {
-          log(`SSE error: ${e.message}`);
           ctrl.enqueue(enc.encode(`event: error\ndata: ${e.message}\n\n`));
         }
       }
 
-      // Reduce keepalive interval to 5 seconds to prevent timeouts
       log("Setting up SSE keepalive");
       keepalive = setInterval(() => {
         try {
@@ -1154,7 +1008,14 @@ app
       c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
     return serveSSE(c.req, REMOTE_MCP_SERVER_URL);
   })
-
+  // MCP endpoint (alias for SSE, protected with bearer token authentication)
+  .use("/mcp", stytchBearerTokenAuthMiddleware)
+  .get("/mcp", (c) => {
+    log("MCP endpoint hit");
+    const REMOTE_MCP_SERVER_URL =
+      c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
+    return serveSSE(c.req, REMOTE_MCP_SERVER_URL);
+  })
   .get("/events", (c) => {
     log("Events endpoint hit");
     const REMOTE_MCP_SERVER_URL =
