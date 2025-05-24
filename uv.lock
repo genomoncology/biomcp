@@ -61,7 +61,7 @@ dependencies = [
     { name = "certifi" },
     { name = "diskcache" },
     { name = "httpx" },
-    { name = "mcp" },
+    { name = "mcp", extra = ["cli"] },
     { name = "platformdirs" },
     { name = "psutil" },
     { name = "pydantic" },
@@ -100,7 +100,7 @@ requires-dist = [
     { name = "diskcache", specifier = ">=5.6.3" },
     { name = "fastapi", marker = "extra == 'worker'", specifier = ">=0.110.0" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "mcp", specifier = ">=1.9.1" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.9.1" },
     { name = "platformdirs", specifier = ">=4.3.6" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
@@ -621,6 +621,12 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e7/bc/54aec2c334698cc575ca3b3481eed627125fb66544152fa1af927b1a495c/mcp-1.9.1.tar.gz", hash = "sha256:19879cd6dde3d763297617242888c2f695a95dfa854386a6a68676a646ce75e4", size = 316247 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/c0/4ac795585a22a0a2d09cd2b1187b0252d2afcdebd01e10a68bbac4d34890/mcp-1.9.1-py3-none-any.whl", hash = "sha256:2900ded8ffafc3c8a7bfcfe8bc5204037e988e753ec398f371663e6a06ecd9a9", size = 130261 },
+]
+
+[package.optional-dependencies]
+cli = [
+    { name = "python-dotenv" },
+    { name = "typer" },
 ]
 
 [[package]]
