@@ -1,10 +1,13 @@
 import json
+import logging
 from ssl import TLSVersion
 from typing import Annotated
 
 from pydantic import BaseModel, Field, model_validator
 
 from .. import StrEnum, const, ensure_list, http_client, mcp_app, render
+
+logger = logging.getLogger(__name__)
 
 
 class SortOrder(StrEnum):
@@ -317,6 +320,25 @@ class TrialQuery(BaseModel):
         return data
 
 
+def _inject_ids(
+    params: dict[str, list[str]], ids: list[str], has_other_filters: bool
+) -> None:
+    """Inject NCT IDs into params using intersection or id-only semantics.
+
+    Args:
+        params: The parameter dictionary to modify
+        ids: List of NCT IDs to inject
+        has_other_filters: Whether other filters are present
+    """
+    ids_csv = ",".join(ids)
+    if has_other_filters:  # intersection path
+        params["filter.ids"] = [ids_csv]
+    elif len(ids_csv) < 1800:  # pure-ID & small
+        params["query.id"] = [ids_csv]
+    else:  # pure-ID & large
+        params["filter.ids"] = [ids_csv]
+
+
 def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
     """Convert a TrialQuery object into a dict of query params
     for the ClinicalTrials.gov API (v2). Each key maps to one or
@@ -328,6 +350,9 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
         "markupFormat": [DEFAULT_MARKUP],
     }
 
+    # Track whether we have other filters (for NCT ID intersection logic)
+    has_other_filters = False
+
     # Handle conditions, terms, interventions
     for key, val in [
         ("query.cond", query.conditions),
@@ -335,6 +360,7 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
         ("query.intr", query.interventions),
     ]:
         if val:
+            has_other_filters = True
             if len(val) == 1:
                 params[key] = [val[0]]
             else:
@@ -343,6 +369,7 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
 
     # Geospatial
     if query.lat is not None and query.long is not None:
+        has_other_filters = True
         geo_val = f"distance({query.lat},{query.long},{query.distance}mi)"
         params["filter.geo"] = [geo_val]
 
@@ -351,6 +378,7 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
 
     # Date filter
     if query.date_field and (query.min_date or query.max_date):
+        has_other_filters = True
         date_field = CTGOV_DATE_FIELD_MAPPING[query.date_field]
         min_val = query.min_date or "MIN"
         max_val = query.max_date or "MAX"
@@ -377,6 +405,7 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
     # Append advanced filters
     for area, (qval, mapping) in advanced_map.items():
         if qval:
+            has_other_filters = True
             # Check if mapping is a dict before using get method
             mapped = (
                 mapping.get(qval)
@@ -389,6 +418,7 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
 
     # Age group
     if query.age_group and query.age_group != "ALL":
+        has_other_filters = True
         mapped = CTGOV_AGE_GROUP_MAPPING[query.age_group]
         if mapped:
             advanced_filters.append(f"AREA[StdAge]{mapped[0]}")
@@ -399,20 +429,26 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
     if advanced_filters:
         params["filter.advanced"] = [" AND ".join(advanced_filters)]
 
-    # Recruiting status
-    if (
-        query.recruiting_status is None
-        or query.recruiting_status == RecruitingStatus.OPEN
-    ):
-        params["filter.overallStatus"] = [",".join(OPEN_STATUSES)]
-    elif query.recruiting_status != RecruitingStatus.ANY:
-        statuses = CTGOV_RECRUITING_STATUS_MAPPING.get(query.recruiting_status)
-        if statuses:
-            params["filter.overallStatus"] = [",".join(statuses)]
-
-    # NCT IDs
+    # NCT IDs - now using intersection semantics
+    # Must be done BEFORE recruiting status to properly detect user-set filters
     if query.nct_ids:
-        params["query.id"] = [",".join(query.nct_ids)]
+        _inject_ids(params, query.nct_ids, has_other_filters)
+
+    # Recruiting status - apply AFTER NCT ID injection
+    # Only count as a user filter if explicitly set to something other than default
+    if query.recruiting_status not in (None, RecruitingStatus.OPEN):
+        # User explicitly set a non-default status
+        if query.recruiting_status is not None:  # Type guard for mypy
+            statuses = CTGOV_RECRUITING_STATUS_MAPPING.get(
+                query.recruiting_status
+            )
+            if statuses:
+                params["filter.overallStatus"] = [",".join(statuses)]
+    elif not query.nct_ids or has_other_filters:
+        # Apply default OPEN status only if:
+        # 1. No NCT IDs provided, OR
+        # 2. NCT IDs provided with other filters (intersection mode)
+        params["filter.overallStatus"] = [",".join(OPEN_STATUSES)]
 
     # Sort & paging
     if query.sort is None:
@@ -437,6 +473,33 @@ async def search_trials(
 ) -> str:
     """Search ClinicalTrials.gov for clinical trials."""
     params = convert_query(query)
+
+    # Log filter mode if NCT IDs are present
+    if query.nct_ids:
+        # Check if we're using intersection or id-only mode
+        # Only count explicit user-set filters, not defaults
+        has_other_filters = any([
+            query.conditions,
+            query.terms,
+            query.interventions,
+            query.lat is not None and query.long is not None,
+            query.date_field and (query.min_date or query.max_date),
+            query.primary_purpose,
+            query.study_type,
+            query.intervention_type,
+            query.sponsor_type,
+            query.study_design,
+            query.phase,
+            query.age_group and query.age_group != AgeGroup.ALL,
+            query.recruiting_status not in (None, RecruitingStatus.OPEN),
+        ])
+
+        if has_other_filters:
+            logger.debug(
+                "Filter mode: intersection (NCT IDs AND other filters)"
+            )
+        else:
+            logger.debug("Filter mode: id-only (NCT IDs only)")
 
     response, error = await http_client.request_api(
         url=const.CT_GOV_STUDIES,

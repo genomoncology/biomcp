@@ -50,6 +50,13 @@ def add_intervention(trial_query: TrialQuery, intervention: str):
     trial_query.interventions = [intervention]
 
 
+@given(parsers.parse('I add nct_id "{nct_id}"'))
+def add_nct_id(trial_query: TrialQuery, nct_id: str):
+    if trial_query.nct_ids is None:
+        trial_query.nct_ids = []
+    trial_query.nct_ids.append(nct_id)
+
+
 @given(parsers.parse('I set recruiting status to "{status}"'))
 def set_recruiting_status(trial_query: TrialQuery, status: RecruitingStatus):
     trial_query.recruiting_status = status
@@ -157,6 +164,31 @@ def check_term(trial_results: dict[str, Any], term: str):
 )
 def check_specific_nct_id(trial_results: dict[str, Any], nct_id: str):
     """Verify that the specific NCT ID is in the results."""
+
+
+@then(
+    parsers.parse(
+        'the response should not contain a study with NCT ID "{nct_id}"',
+    ),
+)
+def check_nct_id_not_present(trial_results: dict[str, Any], nct_id: str):
+    """Verify that the specific NCT ID is NOT in the results."""
+    # For empty results or results with no studies key
+    if not trial_results or "studies" not in trial_results:
+        return  # Test passes - no studies found
+
+    studies = trial_results.get("studies", [])
+    if not studies:
+        return  # Test passes - empty studies list
+
+    # Check that none of the studies have the specified NCT ID
+    for study in studies:
+        protocol = study.get("protocolSection", {})
+        id_module = protocol.get("identificationModule", {})
+        if id_module.get("nctId", "") == nct_id:
+            raise AssertionError(
+                f"Found study with NCT ID {nct_id} when it should not be present"
+            )
 
 
 @then("the study should have a valid NCT ID")

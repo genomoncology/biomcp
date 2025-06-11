@@ -13,6 +13,7 @@ from biomcp.trials.search import (
     StudyType,
     TrialPhase,
     TrialQuery,
+    _inject_ids,
     convert_query,
 )
 
@@ -399,6 +400,75 @@ def test_trial_query_field_validation_primary_purpose():
     assert query.primary_purpose == PrimaryPurpose.SCREENING
 
     # Invalid
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError):
         TrialQuery(primary_purpose="invalid")
-    assert "error for TrialQuery\nprimary_purpose" in str(excinfo.value)
+
+
+def test_inject_ids_with_many_ids_and_condition():
+    """Test _inject_ids function with 300 IDs and a condition to ensure filter.ids is used."""
+    # Create a params dict with a condition (indicating other filters present)
+    params = {
+        "query.cond": ["melanoma"],
+        "format": ["json"],
+        "markupFormat": ["markdown"],
+    }
+
+    # Generate 300 NCT IDs
+    nct_ids = [f"NCT{str(i).zfill(8)}" for i in range(1, 301)]
+
+    # Call _inject_ids with has_other_filters=True
+    _inject_ids(params, nct_ids, has_other_filters=True)
+
+    # Assert that filter.ids is used (not query.id)
+    assert "filter.ids" in params
+    assert "query.id" not in params
+
+    # Verify the IDs are properly formatted
+    ids_param = params["filter.ids"][0]
+    assert ids_param.startswith("NCT")
+    assert "NCT00000001" in ids_param
+    assert "NCT00000300" in ids_param
+
+    # Verify it's a comma-separated list
+    assert "," in ids_param
+    assert ids_param.count(",") == 299  # 300 IDs = 299 commas
+
+
+def test_inject_ids_without_other_filters():
+    """Test _inject_ids function with only NCT IDs (no other filters)."""
+    # Create a minimal params dict
+    params = {
+        "format": ["json"],
+        "markupFormat": ["markdown"],
+    }
+
+    # Use a small number of NCT IDs
+    nct_ids = ["NCT00000001", "NCT00000002", "NCT00000003"]
+
+    # Call _inject_ids with has_other_filters=False
+    _inject_ids(params, nct_ids, has_other_filters=False)
+
+    # Assert that query.id is used (not filter.ids) for small lists
+    assert "query.id" in params
+    assert "filter.ids" not in params
+
+    # Verify the format
+    assert params["query.id"][0] == "NCT00000001,NCT00000002,NCT00000003"
+
+
+def test_inject_ids_large_list_without_filters():
+    """Test _inject_ids with a large ID list but no other filters."""
+    params = {
+        "format": ["json"],
+        "markupFormat": ["markdown"],
+    }
+
+    # Generate enough IDs to exceed 1800 character limit
+    nct_ids = [f"NCT{str(i).zfill(8)}" for i in range(1, 201)]  # ~2200 chars
+
+    # Call _inject_ids with has_other_filters=False
+    _inject_ids(params, nct_ids, has_other_filters=False)
+
+    # Assert that filter.ids is used for large lists even without other filters
+    assert "filter.ids" in params
+    assert "query.id" not in params

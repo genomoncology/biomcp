@@ -31,10 +31,10 @@ This endpoint allows searching for clinical trials using various parameters.
 | `query.outc`           | "Outcome measure" query             | `overall survival`                              |
 | `query.spons`          | "Sponsor/collaborator" query        | `National Cancer Institute`                     |
 | `query.lead`           | Searches in "LeadSponsorName" field | `MD Anderson`                                   |
-| `query.id`             | "Study IDs" query                   | `NCT04267848`                                   |
+| `query.id`             | "Study IDs" query (OR semantics)    | `NCT04267848`                                   |
 | `filter.overallStatus` | Comma-separated list of statuses    | `NOT_YET_RECRUITING,RECRUITING`                 |
 | `filter.geo`           | Geo-location filter                 | `distance(39.0035707,-77.1013313,50mi)`         |
-| `filter.ids`           | Filter by NCT IDs                   | `NCT04852770,NCT01728545`                       |
+| `filter.ids`           | Filter by NCT IDs (AND semantics)   | `NCT04852770,NCT01728545`                       |
 | `filter.advanced`      | Advanced filter query               | `AREA[StartDate]2022`                           |
 | `sort`                 | Sort order                          | `LastUpdatePostDate:desc`                       |
 | `fields`               | Fields to return                    | `NCTId,BriefTitle,OverallStatus,HasResults`     |
@@ -71,6 +71,15 @@ The API response contains various modules of information:
 - **annotationsSection**: Additional annotations
 
 ## Implementation Details
+
+### NCT ID Filtering Semantics
+
+BioMCP uses intelligent filtering when NCT IDs are provided:
+
+- **ID-only mode**: When NCT IDs are the only filter criteria, `query.id` is used for fast direct lookup
+- **Intersection mode**: When NCT IDs are combined with other filters (conditions, interventions, etc.), `filter.ids` is used to ensure results match ALL criteria
+
+This ensures that specifying NCT IDs restricts results rather than expanding them.
 
 ### Query Building
 
