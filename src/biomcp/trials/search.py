@@ -96,6 +96,12 @@ class AgeGroup(StrEnum):
     ALL = "ALL"
 
 
+class LineOfTherapy(StrEnum):
+    FIRST_LINE = "1L"
+    SECOND_LINE = "2L"
+    THIRD_LINE_PLUS = "3L+"
+
+
 CTGOV_SORT_MAPPING = {
     SortOrder.RELEVANCE: "@relevance",
     SortOrder.LAST_UPDATE: "LastUpdatePostDate:desc",
@@ -193,6 +199,33 @@ CTGOV_AGE_GROUP_MAPPING = {
     AgeGroup.ADULT: ("Adult",),
     AgeGroup.SENIOR: ("Older Adult",),
     AgeGroup.ALL: None,
+}
+
+# Line of therapy patterns for EligibilityCriteria search
+LINE_OF_THERAPY_PATTERNS = {
+    LineOfTherapy.FIRST_LINE: [
+        '"first line"',
+        '"first-line"',
+        '"1st line"',
+        '"frontline"',
+        '"treatment naive"',
+        '"previously untreated"',
+    ],
+    LineOfTherapy.SECOND_LINE: [
+        '"second line"',
+        '"second-line"',
+        '"2nd line"',
+        '"one prior line"',
+        '"1 prior line"',
+    ],
+    LineOfTherapy.THIRD_LINE_PLUS: [
+        '"third line"',
+        '"third-line"',
+        '"3rd line"',
+        '"≥2 prior"',
+        '"at least 2 prior"',
+        '"heavily pretreated"',
+    ],
 }
 
 DEFAULT_FORMAT = "csv"
@@ -301,6 +334,45 @@ class TrialQuery(BaseModel):
         default=None,
         description="Token to retrieve the next page of results",
     )
+    # New eligibility-focused fields
+    prior_therapies: list[str] | None = Field(
+        default=None,
+        description="Prior therapies to search for in eligibility criteria",
+    )
+    progression_on: list[str] | None = Field(
+        default=None,
+        description="Therapies the patient has progressed on",
+    )
+    required_mutations: list[str] | None = Field(
+        default=None,
+        description="Required mutations in eligibility criteria",
+    )
+    excluded_mutations: list[str] | None = Field(
+        default=None,
+        description="Excluded mutations in eligibility criteria",
+    )
+    biomarker_expression: dict[str, str] | None = Field(
+        default=None,
+        description="Biomarker expression requirements (e.g., {'PD-L1': '≥50%'})",
+    )
+    line_of_therapy: LineOfTherapy | None = Field(
+        default=None,
+        description="Line of therapy filter",
+    )
+    allow_brain_mets: bool | None = Field(
+        default=None,
+        description="Whether to allow trials that accept brain metastases",
+    )
+    return_fields: list[str] | None = Field(
+        default=None,
+        description="Specific fields to return in the response",
+    )
+    page_size: int | None = Field(
+        default=None,
+        description="Number of results per page",
+        ge=1,
+        le=1000,
+    )
 
     # Field validators for list fields
     @model_validator(mode="before")
@@ -312,6 +384,11 @@ class TrialQuery(BaseModel):
                 "terms",
                 "interventions",
                 "nct_ids",
+                "prior_therapies",
+                "progression_on",
+                "required_mutations",
+                "excluded_mutations",
+                "return_fields",
             ]:
                 if field_name in data and data[field_name] is not None:
                     data[field_name] = ensure_list(
@@ -337,6 +414,75 @@ def _inject_ids(
         params["query.id"] = [ids_csv]
     else:  # pure-ID & large
         params["filter.ids"] = [ids_csv]
+
+
+def _build_prior_therapy_essie(therapies: list[str]) -> list[str]:
+    """Build Essie fragments for prior therapy search."""
+    fragments = []
+    for therapy in therapies:
+        if therapy.strip():  # Skip empty strings
+            fragment = f'AREA[EligibilityCriteria]("{therapy}" AND (prior OR previous OR received))'
+            fragments.append(fragment)
+    return fragments
+
+
+def _build_progression_essie(therapies: list[str]) -> list[str]:
+    """Build Essie fragments for progression on therapy search."""
+    fragments = []
+    for therapy in therapies:
+        if therapy.strip():  # Skip empty strings
+            fragment = f'AREA[EligibilityCriteria]("{therapy}" AND (progression OR resistant OR refractory))'
+            fragments.append(fragment)
+    return fragments
+
+
+def _build_required_mutations_essie(mutations: list[str]) -> list[str]:
+    """Build Essie fragments for required mutations."""
+    fragments = []
+    for mutation in mutations:
+        if mutation.strip():  # Skip empty strings
+            fragment = f'AREA[EligibilityCriteria]("{mutation}")'
+            fragments.append(fragment)
+    return fragments
+
+
+def _build_excluded_mutations_essie(mutations: list[str]) -> list[str]:
+    """Build Essie fragments for excluded mutations."""
+    fragments = []
+    for mutation in mutations:
+        if mutation.strip():  # Skip empty strings
+            fragment = f'AREA[EligibilityCriteria](NOT "{mutation}")'
+            fragments.append(fragment)
+    return fragments
+
+
+def _build_biomarker_expression_essie(biomarkers: dict[str, str]) -> list[str]:
+    """Build Essie fragments for biomarker expression requirements."""
+    fragments = []
+    for marker, expression in biomarkers.items():
+        if marker.strip() and expression.strip():  # Skip empty values
+            fragment = (
+                f'AREA[EligibilityCriteria]("{marker}" AND "{expression}")'
+            )
+            fragments.append(fragment)
+    return fragments
+
+
+def _build_line_of_therapy_essie(line: LineOfTherapy) -> str:
+    """Build Essie fragment for line of therapy."""
+    patterns = LINE_OF_THERAPY_PATTERNS.get(line, [])
+    if patterns:
+        # Join all patterns with OR within a single AREA block
+        pattern_str = " OR ".join(patterns)
+        return f"AREA[EligibilityCriteria]({pattern_str})"
+    return ""
+
+
+def _build_brain_mets_essie(allow: bool) -> str:
+    """Build Essie fragment for brain metastases filter."""
+    if allow is False:
+        return 'AREA[EligibilityCriteria](NOT "brain metastases")'
+    return ""
 
 
 def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
@@ -366,6 +512,67 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
             else:
                 # Join multiple terms with OR, wrapped in parentheses
                 params[key] = [f"({' OR '.join(val)})"]
+
+    # Collect Essie fragments for eligibility criteria
+    essie_fragments: list[str] = []
+
+    # Prior therapies
+    if query.prior_therapies:
+        has_other_filters = True
+        essie_fragments.extend(
+            _build_prior_therapy_essie(query.prior_therapies)
+        )
+
+    # Progression on therapies
+    if query.progression_on:
+        has_other_filters = True
+        essie_fragments.extend(_build_progression_essie(query.progression_on))
+
+    # Required mutations
+    if query.required_mutations:
+        has_other_filters = True
+        essie_fragments.extend(
+            _build_required_mutations_essie(query.required_mutations)
+        )
+
+    # Excluded mutations
+    if query.excluded_mutations:
+        has_other_filters = True
+        essie_fragments.extend(
+            _build_excluded_mutations_essie(query.excluded_mutations)
+        )
+
+    # Biomarker expression
+    if query.biomarker_expression:
+        has_other_filters = True
+        essie_fragments.extend(
+            _build_biomarker_expression_essie(query.biomarker_expression)
+        )
+
+    # Line of therapy
+    if query.line_of_therapy:
+        has_other_filters = True
+        line_fragment = _build_line_of_therapy_essie(query.line_of_therapy)
+        if line_fragment:
+            essie_fragments.append(line_fragment)
+
+    # Brain metastases filter
+    if query.allow_brain_mets is not None:
+        has_other_filters = True
+        brain_fragment = _build_brain_mets_essie(query.allow_brain_mets)
+        if brain_fragment:
+            essie_fragments.append(brain_fragment)
+
+    # Combine all Essie fragments with AND and append to query.term
+    if essie_fragments:
+        combined_essie = " AND ".join(essie_fragments)
+        if "query.term" in params:
+            # Append to existing terms with AND
+            params["query.term"][0] = (
+                f"{params['query.term'][0]} AND {combined_essie}"
+            )
+        else:
+            params["query.term"] = [combined_essie]
 
     # Geospatial
     if query.lat is not None and query.long is not None:
@@ -461,8 +668,18 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
         params["pageToken"] = [query.next_page_hash]
 
     # Finally, add fields to limit payload size
-    params["fields"] = SEARCH_FIELDS_PARAM
-    params["pageSize"] = ["40"]
+    if query.return_fields:
+        # Use custom fields if specified
+        params["fields"] = [",".join(query.return_fields)]
+    else:
+        # Use default fields
+        params["fields"] = SEARCH_FIELDS_PARAM
+
+    # Set page size
+    if query.page_size:
+        params["pageSize"] = [str(query.page_size)]
+    else:
+        params["pageSize"] = ["40"]
 
     return params
 
@@ -492,6 +709,13 @@ async def search_trials(
             query.phase,
             query.age_group and query.age_group != AgeGroup.ALL,
             query.recruiting_status not in (None, RecruitingStatus.OPEN),
+            query.prior_therapies,
+            query.progression_on,
+            query.required_mutations,
+            query.excluded_mutations,
+            query.biomarker_expression,
+            query.line_of_therapy,
+            query.allow_brain_mets is not None,
         ])
 
         if has_other_filters:
@@ -575,6 +799,42 @@ async def trial_searcher(
     next_page_hash: Annotated[
         str | None, "Token to retrieve the next page of results"
     ] = None,
+    prior_therapies: Annotated[
+        list[str] | str | None,
+        "Prior therapies to search for in eligibility criteria - list or comma-separated string",
+    ] = None,
+    progression_on: Annotated[
+        list[str] | str | None,
+        "Therapies the patient has progressed on - list or comma-separated string",
+    ] = None,
+    required_mutations: Annotated[
+        list[str] | str | None,
+        "Required mutations in eligibility criteria - list or comma-separated string",
+    ] = None,
+    excluded_mutations: Annotated[
+        list[str] | str | None,
+        "Excluded mutations in eligibility criteria - list or comma-separated string",
+    ] = None,
+    biomarker_expression: Annotated[
+        dict[str, str] | None,
+        "Biomarker expression requirements (e.g., {'PD-L1': '≥50%'})",
+    ] = None,
+    line_of_therapy: Annotated[
+        LineOfTherapy | str | None,
+        "Line of therapy filter (1L, 2L, 3L+)",
+    ] = None,
+    allow_brain_mets: Annotated[
+        bool | None,
+        "Whether to allow trials that accept brain metastases",
+    ] = None,
+    return_fields: Annotated[
+        list[str] | str | None,
+        "Specific fields to return in the response - list or comma-separated string",
+    ] = None,
+    page_size: Annotated[
+        int | None,
+        "Number of results per page (1-1000)",
+    ] = None,
 ) -> str:
     """
     Searches for clinical trials based on specified criteria.
@@ -601,6 +861,15 @@ async def trial_searcher(
     - study_design: Study design
     - sort: Sort order for results
     - next_page_hash: Token to retrieve the next page of results
+    - prior_therapies: Prior therapies to search for in eligibility criteria - list or comma-separated string
+    - progression_on: Therapies the patient has progressed on - list or comma-separated string
+    - required_mutations: Required mutations in eligibility criteria - list or comma-separated string
+    - excluded_mutations: Excluded mutations in eligibility criteria - list or comma-separated string
+    - biomarker_expression: Biomarker expression requirements (e.g., {'PD-L1': '≥50%'})
+    - line_of_therapy: Line of therapy filter (1L, 2L, 3L+)
+    - allow_brain_mets: Whether to allow trials that accept brain metastases
+    - return_fields: Specific fields to return in the response - list or comma-separated string
+    - page_size: Number of results per page (1-1000)
 
     Returns:
     Markdown formatted list of clinical trials
@@ -627,5 +896,14 @@ async def trial_searcher(
         study_design=study_design,
         sort=sort,
         next_page_hash=next_page_hash,
+        prior_therapies=ensure_list(prior_therapies, split_strings=True),
+        progression_on=ensure_list(progression_on, split_strings=True),
+        required_mutations=ensure_list(required_mutations, split_strings=True),
+        excluded_mutations=ensure_list(excluded_mutations, split_strings=True),
+        biomarker_expression=biomarker_expression,
+        line_of_therapy=line_of_therapy,
+        allow_brain_mets=allow_brain_mets,
+        return_fields=ensure_list(return_fields, split_strings=True),
+        page_size=page_size,
     )
     return await search_trials(query, output_json=False)

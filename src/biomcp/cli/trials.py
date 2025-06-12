@@ -10,6 +10,7 @@ from ..trials.search import (
     AgeGroup,
     DateField,
     InterventionType,
+    LineOfTherapy,
     PrimaryPurpose,
     RecruitingStatus,
     SortOrder,
@@ -251,8 +252,85 @@ def search_trials_cli(
             case_sensitive=False,
         ),
     ] = False,
+    prior_therapy: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--prior-therapy",
+            help="Prior therapies to search for in eligibility criteria (can specify multiple)",
+        ),
+    ] = None,
+    progression_on: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--progression-on",
+            help="Therapies the patient has progressed on (can specify multiple)",
+        ),
+    ] = None,
+    required_mutation: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--required-mutation",
+            help="Required mutations in eligibility criteria (can specify multiple)",
+        ),
+    ] = None,
+    excluded_mutation: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--excluded-mutation",
+            help="Excluded mutations in eligibility criteria (can specify multiple)",
+        ),
+    ] = None,
+    biomarker: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--biomarker",
+            help="Biomarker expression requirements in format 'MARKER:EXPRESSION' (e.g., 'PD-L1:≥50%')",
+        ),
+    ] = None,
+    line_of_therapy: Annotated[
+        LineOfTherapy | None,
+        typer.Option(
+            "--line-of-therapy",
+            help="Line of therapy filter",
+            show_choices=True,
+            show_default=True,
+            case_sensitive=False,
+        ),
+    ] = None,
+    allow_brain_mets: Annotated[
+        bool | None,
+        typer.Option(
+            "--allow-brain-mets/--no-brain-mets",
+            help="Whether to allow trials that accept brain metastases",
+        ),
+    ] = None,
+    return_field: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--return-field",
+            help="Specific fields to return in the response (can specify multiple)",
+        ),
+    ] = None,
+    page_size: Annotated[
+        int | None,
+        typer.Option(
+            "--page-size",
+            help="Number of results per page (1-1000)",
+            min=1,
+            max=1000,
+        ),
+    ] = None,
 ):
     """Search for clinical trials."""
+    # Parse biomarker expression from CLI format
+    biomarker_expression = None
+    if biomarker:
+        biomarker_expression = {}
+        for item in biomarker:
+            if ":" in item:
+                marker, expr = item.split(":", 1)
+                biomarker_expression[marker] = expr
+
     query = TrialQuery(
         conditions=condition,
         interventions=intervention,
@@ -274,6 +352,15 @@ def search_trials_cli(
         lat=latitude,
         long=longitude,
         distance=distance,
+        prior_therapies=prior_therapy,
+        progression_on=progression_on,
+        required_mutations=required_mutation,
+        excluded_mutations=excluded_mutation,
+        biomarker_expression=biomarker_expression,
+        line_of_therapy=line_of_therapy,
+        allow_brain_mets=allow_brain_mets,
+        return_fields=return_field,
+        page_size=page_size,
     )
 
     result = asyncio.run(search_trials(query, output_json))

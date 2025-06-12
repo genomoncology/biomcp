@@ -5,6 +5,7 @@ from biomcp.trials.search import (
     AgeGroup,
     DateField,
     InterventionType,
+    LineOfTherapy,
     PrimaryPurpose,
     RecruitingStatus,
     SortOrder,
@@ -13,6 +14,13 @@ from biomcp.trials.search import (
     StudyType,
     TrialPhase,
     TrialQuery,
+    _build_biomarker_expression_essie,
+    _build_brain_mets_essie,
+    _build_excluded_mutations_essie,
+    _build_line_of_therapy_essie,
+    _build_prior_therapy_essie,
+    _build_progression_essie,
+    _build_required_mutations_essie,
     _inject_ids,
     convert_query,
 )
@@ -472,3 +480,191 @@ def test_inject_ids_large_list_without_filters():
     # Assert that filter.ids is used for large lists even without other filters
     assert "filter.ids" in params
     assert "query.id" not in params
+
+
+# Tests for new Essie builder functions
+def test_build_prior_therapy_essie():
+    """Test building Essie fragments for prior therapies."""
+    # Single therapy
+    fragments = _build_prior_therapy_essie(["osimertinib"])
+    assert len(fragments) == 1
+    assert (
+        fragments[0]
+        == 'AREA[EligibilityCriteria]("osimertinib" AND (prior OR previous OR received))'
+    )
+
+    # Multiple therapies
+    fragments = _build_prior_therapy_essie(["osimertinib", "erlotinib"])
+    assert len(fragments) == 2
+    assert (
+        fragments[0]
+        == 'AREA[EligibilityCriteria]("osimertinib" AND (prior OR previous OR received))'
+    )
+    assert (
+        fragments[1]
+        == 'AREA[EligibilityCriteria]("erlotinib" AND (prior OR previous OR received))'
+    )
+
+    # Empty strings are filtered out
+    fragments = _build_prior_therapy_essie(["osimertinib", "", "erlotinib"])
+    assert len(fragments) == 2
+
+
+def test_build_progression_essie():
+    """Test building Essie fragments for progression on therapy."""
+    fragments = _build_progression_essie(["pembrolizumab"])
+    assert len(fragments) == 1
+    assert (
+        fragments[0]
+        == 'AREA[EligibilityCriteria]("pembrolizumab" AND (progression OR resistant OR refractory))'
+    )
+
+
+def test_build_required_mutations_essie():
+    """Test building Essie fragments for required mutations."""
+    fragments = _build_required_mutations_essie(["EGFR L858R", "T790M"])
+    assert len(fragments) == 2
+    assert fragments[0] == 'AREA[EligibilityCriteria]("EGFR L858R")'
+    assert fragments[1] == 'AREA[EligibilityCriteria]("T790M")'
+
+
+def test_build_excluded_mutations_essie():
+    """Test building Essie fragments for excluded mutations."""
+    fragments = _build_excluded_mutations_essie(["KRAS G12C"])
+    assert len(fragments) == 1
+    assert fragments[0] == 'AREA[EligibilityCriteria](NOT "KRAS G12C")'
+
+
+def test_build_biomarker_expression_essie():
+    """Test building Essie fragments for biomarker expression."""
+    biomarkers = {"PD-L1": "≥50%", "TMB": "≥10 mut/Mb"}
+    fragments = _build_biomarker_expression_essie(biomarkers)
+    assert len(fragments) == 2
+    assert 'AREA[EligibilityCriteria]("PD-L1" AND "≥50%")' in fragments
+    assert 'AREA[EligibilityCriteria]("TMB" AND "≥10 mut/Mb")' in fragments
+
+    # Empty values are filtered out
+    biomarkers = {"PD-L1": "≥50%", "TMB": "", "HER2": "positive"}
+    fragments = _build_biomarker_expression_essie(biomarkers)
+    assert len(fragments) == 2
+
+
+def test_build_line_of_therapy_essie():
+    """Test building Essie fragment for line of therapy."""
+    # First line
+    fragment = _build_line_of_therapy_essie(LineOfTherapy.FIRST_LINE)
+    assert (
+        fragment
+        == 'AREA[EligibilityCriteria]("first line" OR "first-line" OR "1st line" OR "frontline" OR "treatment naive" OR "previously untreated")'
+    )
+
+    # Second line
+    fragment = _build_line_of_therapy_essie(LineOfTherapy.SECOND_LINE)
+    assert (
+        fragment
+        == 'AREA[EligibilityCriteria]("second line" OR "second-line" OR "2nd line" OR "one prior line" OR "1 prior line")'
+    )
+
+    # Third line plus
+    fragment = _build_line_of_therapy_essie(LineOfTherapy.THIRD_LINE_PLUS)
+    assert (
+        fragment
+        == 'AREA[EligibilityCriteria]("third line" OR "third-line" OR "3rd line" OR "≥2 prior" OR "at least 2 prior" OR "heavily pretreated")'
+    )
+
+
+def test_build_brain_mets_essie():
+    """Test building Essie fragment for brain metastases filter."""
+    # Allow brain mets (no filter)
+    fragment = _build_brain_mets_essie(True)
+    assert fragment == ""
+
+    # Exclude brain mets
+    fragment = _build_brain_mets_essie(False)
+    assert fragment == 'AREA[EligibilityCriteria](NOT "brain metastases")'
+
+
+def test_convert_query_with_eligibility_fields():
+    """Test conversion of query with new eligibility-focused fields."""
+    query = TrialQuery(
+        conditions=["lung cancer"],
+        prior_therapies=["osimertinib"],
+        progression_on=["erlotinib"],
+        required_mutations=["EGFR L858R"],
+        excluded_mutations=["T790M"],
+        biomarker_expression={"PD-L1": "≥50%"},
+        line_of_therapy=LineOfTherapy.SECOND_LINE,
+        allow_brain_mets=False,
+    )
+    params = convert_query(query)
+
+    # Check that query.term contains all the Essie fragments
+    assert "query.term" in params
+    term = params["query.term"][0]
+
+    # Prior therapy
+    assert (
+        'AREA[EligibilityCriteria]("osimertinib" AND (prior OR previous OR received))'
+        in term
+    )
+
+    # Progression
+    assert (
+        'AREA[EligibilityCriteria]("erlotinib" AND (progression OR resistant OR refractory))'
+        in term
+    )
+
+    # Required mutation
+    assert 'AREA[EligibilityCriteria]("EGFR L858R")' in term
+
+    # Excluded mutation
+    assert 'AREA[EligibilityCriteria](NOT "T790M")' in term
+
+    # Biomarker expression
+    assert 'AREA[EligibilityCriteria]("PD-L1" AND "≥50%")' in term
+
+    # Line of therapy
+    assert 'AREA[EligibilityCriteria]("second line" OR "second-line"' in term
+
+    # Brain mets exclusion
+    assert 'AREA[EligibilityCriteria](NOT "brain metastases")' in term
+
+    # All fragments should be combined with AND
+    assert " AND " in term
+
+
+def test_convert_query_with_custom_fields_and_page_size():
+    """Test conversion of query with custom return fields and page size."""
+    query = TrialQuery(
+        conditions=["diabetes"],
+        return_fields=["NCTId", "BriefTitle", "OverallStatus"],
+        page_size=100,
+    )
+    params = convert_query(query)
+
+    assert "fields" in params
+    assert params["fields"] == ["NCTId,BriefTitle,OverallStatus"]
+
+    assert "pageSize" in params
+    assert params["pageSize"] == ["100"]
+
+
+def test_convert_query_eligibility_with_existing_terms():
+    """Test that eligibility Essie fragments are properly combined with existing terms."""
+    query = TrialQuery(
+        terms=["immunotherapy"],
+        prior_therapies=["chemotherapy"],
+    )
+    params = convert_query(query)
+
+    assert "query.term" in params
+    term = params["query.term"][0]
+
+    # Should contain both the original term and the new Essie fragment
+    assert "immunotherapy" in term
+    assert (
+        'AREA[EligibilityCriteria]("chemotherapy" AND (prior OR previous OR received))'
+        in term
+    )
+    # Should be combined with AND
+    assert "immunotherapy AND AREA[EligibilityCriteria]" in term
