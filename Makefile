@@ -61,3 +61,7 @@ help:
 inspector:
 	@echo "🚀 Starting MCP Inspector"
 	npx @modelcontextprotocol/inspector uv run --with . biomcp run
+
+.PHONY: pbdiff
+pbdiff: ## Copy git diff to clipboard
+	@git diff -- . ':(exclude)uv.lock' | pbcopy

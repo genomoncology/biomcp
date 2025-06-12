@@ -46,6 +46,12 @@ Feature: Search Clinical Trials
     When I perform a trial search
     Then the response should contain a study with NCT ID "NCT04179552"
 
+  Scenario: NCT ID intersection with condition filter
+    Given I build a trial query with condition "melanoma"
+    And I add nct_id "NCT07006480"
+    When I perform a trial search
+    Then the response should not contain a study with NCT ID "NCT07006480"
+
   Scenario: Search trials by phase
     Given I build a trial query with condition "leukemia"
     And I set phase to "PHASE3"

@@ -22,6 +22,7 @@ biomcp trial search [OPTIONS]
 - `-i, --intervention TEXT`: Treatment or intervention to search for (e.g., "Pembrolizumab"). Can specify multiple times.
 - `-t, --term TEXT`: General search terms (e.g., "immunotherapy"). Can specify multiple times.
 - `-n, --nct-id TEXT`: Specific Clinical trial NCT ID(s) to look up (e.g., NCT04179552). Can specify multiple times.
+  - **Note**: When NCT IDs are provided along with other filters (conditions, interventions, etc.), the results will be the intersection of both criteria - only trials that match ALL filters AND are in the NCT ID list will be returned. When NCT IDs are provided alone, only those specific trials are retrieved.
 
 #### Study Characteristics Filters
 

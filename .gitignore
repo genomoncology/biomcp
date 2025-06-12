@@ -144,3 +144,7 @@ vault/
 
 .DS_Store
 /node_modules/
+
+CLAUDE.md
+lzyank.toml
+experiment/

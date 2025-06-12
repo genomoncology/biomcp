@@ -8,6 +8,7 @@ exclude = [
     "LICENSE",
     "codecov.yaml",
     "mkdocs.yml",
+    "tests/data"
 ]
 
 [actions]
