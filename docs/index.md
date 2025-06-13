@@ -80,6 +80,10 @@ BioMCP exposes the following tools through the MCP interface:
 - `variant_searcher`: Search for genetic variants with filtering options
 - `variant_details`: Get comprehensive annotations for specific variants
 
+### Sequential Thinking Tool
+
+- `sequential_thinking`: A problem-solving tool for dynamic and reflective thinking, helping analyze complex biomedical problems through a flexible, adaptive process
+
 ## Tutorials
 
 - [**Claude Desktop Tutorial**](tutorials/claude-desktop.md) - Set up and use BioMCP with Claude Desktop

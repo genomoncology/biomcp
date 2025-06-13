@@ -23,6 +23,7 @@ nav:
       - Articles: cli/articles.md
       - Variants: cli/variants.md
       - Health Check: cli/health.md
+      - Thinking: cli/thinking.md
   - API Reference:
       - ClinicalTrials.gov: apis/clinicaltrials_gov.md
       - PubTator3: apis/pubtator3_api.md
