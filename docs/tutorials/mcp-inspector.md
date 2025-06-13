@@ -41,6 +41,7 @@ The Inspector should display the available BioMCP tools:
 - `trial_references`
 - `variant_searcher`
 - `variant_details`
+- `sequential_thinking`
 
 Click on any tool to see its description and input parameters.
 
@@ -192,6 +193,26 @@ or
 
 ```text
 chr7:g.140453136A>T
+```
+
+### Tool 10: sequential_thinking
+
+**Input:**
+
+```json
+{
+  "thought": "First, I need to understand the clinical context of this BRAF V600E mutation",
+  "nextThoughtNeeded": true,
+  "thoughtNumber": 1,
+  "totalThoughts": 3,
+  "isRevision": false
+}
+```
+
+**Example Output:**
+
+```text
+Added thought 1 to main sequence. Progress: 1/3 thoughts. Next thought needed.
 ```
 
 ### Testing Location-Based Search

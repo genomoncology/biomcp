@@ -80,6 +80,22 @@ BioMCP exposes the following tools through the MCP interface:
 - `variant_searcher`: Search for genetic variants with filtering options
 - `variant_details`: Get comprehensive annotations for specific variants
 
+### Sequential Thinking Tool
+
+- `sequential_thinking`: A problem-solving tool for dynamic and reflective thinking, helping analyze complex biomedical problems through a flexible, adaptive process
+
+## MCP Resources
+
+BioMCP provides the following resources through the MCP interface:
+
+### Instructions Resource
+
+- `get_instructions`: Returns operational instructions and guidelines for effective use of BioMCP tools. This resource helps AI assistants understand best practices for biomedical research tasks.
+
+### Researcher Persona Resource
+
+- `get_researcher`: Provides a detailed biomedical researcher persona with extensive expertise across multiple domains. This persona helps AI assistants adopt appropriate research methodologies and communication styles for biomedical tasks.
+
 ## Tutorials
 
 - [**Claude Desktop Tutorial**](tutorials/claude-desktop.md) - Set up and use BioMCP with Claude Desktop

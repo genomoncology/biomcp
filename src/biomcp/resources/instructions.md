@@ -7,6 +7,21 @@ queries.
 
 ---
 
+## CRITICAL: Always Use Sequential Thinking
+
+**The sequential_thinking tool is your PRIMARY reasoning mechanism when using BioMCP.** You MUST use it for:
+
+- Every biomedical research query
+- All multi-step analyses
+- Any task requiring systematic breakdown
+- Planning tool usage sequences
+- Tracking analysis progress
+- Synthesizing results from multiple tools
+
+Start EVERY BioMCP interaction with sequential_thinking. Use it liberally throughout your analysis. Only set nextThoughtNeeded=false when your analysis is complete.
+
+---
+
 ## 1. Purpose of BioMCP
 
 BioMCP (Biomedical Model Context Protocol) standardizes access to multiple
@@ -27,19 +42,15 @@ to:
 When a user query is received (for example, "Please investigate ALK
 rearrangements in advanced NSCLC..."), the assistant should follow these steps:
 
-### A. Understand the User's Query
+### A. ALWAYS Start with Sequential Thinking
 
-- **Analyze the Query:** Parse the user's natural language query and extract
-  relevant details such as gene variants (e.g., ALK rearrangements), disease
-  type (advanced NSCLC), and treatment focus (combinations of ALK inhibitors
-  with immunotherapy).
-- **Clarify if Needed:** If any part of the query is ambiguous or incomplete,
-  ask the user for clarification before proceeding.
+- **Use sequential_thinking immediately:** For ANY biomedical research query, begin by invoking the sequential_thinking tool to break down the problem systematically.
+- **Initial thought should:** Parse the user's natural language query and extract relevant details such as gene variants (e.g., ALK rearrangements), disease type (advanced NSCLC), and treatment focus (combinations of ALK inhibitors with immunotherapy).
+- **Continue thinking:** Use additional sequential_thinking calls to plan your approach, identify data sources needed, and track your analysis progress.
 
-### B. Plan and Explain the Tool Sequence
+### B. Plan and Explain the Tool Sequence (via Sequential Thinking)
 
-- **Outline Your Reasoning:** Before executing any BioMCP tool calls, briefly
-  explain to the user the planned sequence:
+- **Use sequential_thinking to plan:** Continue using sequential_thinking to outline your reasoning and planned tool sequence:
   - **Step 1:** Use ClinicalTrials.gov to retrieve clinical trial data
     related to the query.
   - **Step 2:** Use PubMed (via PubTator3) to fetch relevant literature
@@ -133,16 +144,14 @@ clinical trials exploring combinations of ALK inhibitors and immunotherapy.
 
 The assistant should:
 
-1. **Understand and Clarify:** Confirm the focus is on ALK rearrangements in
-   advanced NSCLC with a combination treatment focus.
-2. **Plan Tool Calls:**
-   - **First:** Query ClinicalTrials.gov for ALK+ NSCLC trials that combine
-     ALK inhibitors with immunotherapy.
-   - **Second:** Query PubMed to retrieve key articles discussing treatment
-     outcomes or synergy.
-   - **Third:** Check MyVariant.info for any annotations on ALK fusions or
-     rearrangements.
-3. **Synthesize and Report:** Produce a synthesized answer that includes:
+1. **Start with Sequential Thinking:**
+   - Invoke sequential_thinking with thought 1 to understand the query focus on ALK rearrangements in advanced NSCLC with combination treatments
+   - Use thought 2 to plan the research approach and identify needed data sources
+2. **Execute Tool Calls (tracking with sequential_thinking):**
+   - **First:** Query ClinicalTrials.gov for ALK+ NSCLC trials that combine ALK inhibitors with immunotherapy (document findings in thought 3)
+   - **Second:** Query PubMed to retrieve key articles discussing treatment outcomes or synergy (document in thought 4)
+   - **Third:** Check MyVariant.info for any annotations on ALK fusions or rearrangements (document in thought 5)
+3. **Synthesize and Report (via sequential_thinking):** Use final thoughts to synthesize findings before producing the answer that includes:
    - A concise summary of clinical trials with comparison tables like:
 
 | **Trial**        | **Combination**        | **Patient Population**         | **Results** | **Safety Profile**                              | **Reference**                                                    |

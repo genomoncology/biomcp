@@ -54,6 +54,11 @@ BioMCP integrates with three key biomedical data sources:
 - `variant_details`: Comprehensive annotations from multiple sources (CIViC,
   ClinVar, COSMIC, dbSNP, etc.)
 
+### Sequential Thinking
+
+- `sequential_thinking`: A problem-solving tool for dynamic and reflective thinking,
+  helping analyze complex biomedical problems through a flexible, adaptive process
+
 ## Quick Start
 
 ### For Claude Desktop Users

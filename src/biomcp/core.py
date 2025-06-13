@@ -7,7 +7,10 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.logging import get_logger
 
 # Initialize the MCP app here
-mcp_app = FastMCP(name="BioMCP - Biomedical Model Context Protocol Server")
+mcp_app = FastMCP(
+    name="BioMCP - Biomedical Model Context Protocol Server",
+    description="Biomedical research server with integrated sequential thinking. ALWAYS use the sequential_thinking tool for systematic analysis of any biomedical query.",
+)
 
 
 class StrEnum(str, Enum):
