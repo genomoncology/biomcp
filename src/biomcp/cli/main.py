@@ -6,7 +6,6 @@ import typer
 from .articles import article_app
 from .health import health_app
 from .server import run_server
-from .thinking import thinking_app
 from .trials import trial_app
 from .variants import variant_app
 
@@ -54,12 +53,6 @@ app.add_typer(
 app.add_typer(
     health_app,
     name="health",
-    no_args_is_help=True,
-)
-
-app.add_typer(
-    thinking_app,
-    name="thinking",
     no_args_is_help=True,
 )
 

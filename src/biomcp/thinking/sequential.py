@@ -12,6 +12,7 @@ thought_branches: dict[str, list[dict[str, Any]]] = {}
 def get_current_timestamp() -> str:
     """Get current timestamp in ISO format."""
     from datetime import datetime
+
     return datetime.now().isoformat()
 
 
@@ -47,16 +48,43 @@ def add_thought_to_branch(entry: dict[str, Any]) -> None:
 
 @mcp_app.tool()
 async def sequential_thinking(
-    thought: Annotated[str, "Your current thinking step"],
-    nextThoughtNeeded: Annotated[bool, "Whether another thought step is needed"],
-    thoughtNumber: Annotated[int, "Current thought number"],
-    totalThoughts: Annotated[int, "Estimated total thoughts needed"],
-    isRevision: Annotated[bool, "Whether this revises previous thinking"] = False,
-    revisesThought: Annotated[Optional[int], "Which thought is being reconsidered"] = None,
-    branchFromThought: Annotated[Optional[int], "Branching point thought number"] = None,
+    thought: Annotated[
+        str, "Current thinking step - be detailed and thorough"
+    ],
+    nextThoughtNeeded: Annotated[
+        bool, "True if more thinking needed, False only when completely done"
+    ],
+    thoughtNumber: Annotated[int, "Current thought number (start at 1)"],
+    totalThoughts: Annotated[
+        int, "Best estimate of total thoughts (adjust as needed)"
+    ],
+    isRevision: Annotated[
+        bool, "True when correcting/improving a previous thought"
+    ] = False,
+    revisesThought: Annotated[
+        Optional[int], "The thought number being revised"
+    ] = None,
+    branchFromThought: Annotated[
+        Optional[int], "Create alternative path from this thought number"
+    ] = None,
+    needsMoreThoughts: Annotated[
+        Optional[bool],
+        "True when problem is significantly larger than initially estimated",
+    ] = None,
 ) -> str:
     """
-    A detailed problem-solving tool for dynamic and reflective thinking, helping analyze complex problems through a flexible, adaptive process.
+    ALWAYS use this tool for complex reasoning, analysis, or problem-solving. This facilitates a detailed, step-by-step thinking process that helps break down problems systematically.
+
+    Use this tool when:
+    - Analyzing complex problems or questions
+    - Planning multi-step solutions
+    - Breaking down tasks into components
+    - Reasoning through uncertainties
+    - Exploring alternative approaches
+
+    Start with thoughtNumber=1 and totalThoughts as your best estimate. Set nextThoughtNeeded=true to continue thinking, or false when done. You can revise earlier thoughts or branch into alternative paths as needed.
+
+    This is your primary reasoning tool - USE IT LIBERALLY for any non-trivial thinking task.
     """
 
     # Validate inputs
@@ -78,8 +106,11 @@ async def sequential_thinking(
         "isRevision": isRevision,
         "revisesThought": revisesThought,
         "branchFromThought": branchFromThought,
-        "branchId": f"branch_{branchFromThought}" if branchFromThought else None,
-        "timestamp": get_current_timestamp()
+        "branchId": f"branch_{branchFromThought}"
+        if branchFromThought
+        else None,
+        "needsMoreThoughts": needsMoreThoughts,
+        "timestamp": get_current_timestamp(),
     }
 
     # Store in appropriate location
@@ -107,6 +138,10 @@ async def sequential_thinking(
 
     # Generate progress information
     progress_msg = f"Progress: {thoughtNumber}/{totalThoughts} thoughts"
-    next_msg = "Next thought needed" if nextThoughtNeeded else "Thinking sequence complete"
+    next_msg = (
+        "Next thought needed"
+        if nextThoughtNeeded
+        else "Thinking sequence complete"
+    )
 
     return f"{status_msg}. {progress_msg}. {next_msg}."

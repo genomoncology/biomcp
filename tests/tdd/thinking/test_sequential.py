@@ -92,7 +92,7 @@ class TestSequentialThinking:
             thoughtNumber=1,
             totalThoughts=2,
             isRevision=True,
-            revisesThought=1
+            revisesThought=1,
         )
 
         assert "Revised thought 1" in result
@@ -160,9 +160,26 @@ class TestSequentialThinking:
             nextThoughtNeeded=False,
             thoughtNumber=1,
             totalThoughts=1,
-            isRevision=True
+            isRevision=True,
         )
-        assert "revisesThought must be specified when isRevision=True" in result
+        assert (
+            "revisesThought must be specified when isRevision=True" in result
+        )
+
+    @pytest.mark.anyio
+    async def test_needs_more_thoughts(self):
+        """Test the needsMoreThoughts parameter."""
+        result = await sequential.sequential_thinking(
+            thought="This problem is more complex than expected",
+            nextThoughtNeeded=True,
+            thoughtNumber=3,
+            totalThoughts=3,
+            needsMoreThoughts=True,
+        )
+
+        assert "Added thought 3 to main sequence" in result
+        assert len(sequential.thought_history) == 1
+        assert sequential.thought_history[0]["needsMoreThoughts"] is True
 
 
 class TestUtilityFunctions:
@@ -173,7 +190,9 @@ class TestUtilityFunctions:
         timestamp = sequential.get_current_timestamp()
         assert isinstance(timestamp, str)
         # Should be able to parse as ISO format
-        parsed = datetime.fromisoformat(timestamp.replace('Z', '+00:00').replace('T', ' ').split('.')[0])
+        parsed = datetime.fromisoformat(
+            timestamp.replace("Z", "+00:00").replace("T", " ").split(".")[0]
+        )
         assert isinstance(parsed, datetime)
 
     def test_helper_functions(self):
@@ -184,7 +203,7 @@ class TestUtilityFunctions:
             "thoughtNumber": 1,
             "totalThoughts": 1,
             "nextThoughtNeeded": False,
-            "timestamp": sequential.get_current_timestamp()
+            "timestamp": sequential.get_current_timestamp(),
         }
         sequential.add_thought_to_history(entry)
         assert len(sequential.thought_history) == 1
@@ -197,7 +216,7 @@ class TestUtilityFunctions:
             "totalThoughts": 2,
             "nextThoughtNeeded": False,
             "branchId": "test-branch",
-            "timestamp": sequential.get_current_timestamp()
+            "timestamp": sequential.get_current_timestamp(),
         }
         sequential.add_thought_to_branch(branch_entry)
         assert len(sequential.thought_branches) == 1
