@@ -101,3 +101,52 @@ Feature: Search Clinical Trials
     # For test, we'll skip setting it since it requires a valid format
     When I perform a trial search
     Then the response should contain studies
+
+  Scenario: Search trials with prior therapy filter
+    Given I build a trial query with condition "lung cancer"
+    And I add prior therapy "osimertinib"
+    When I perform a trial search
+    Then the response should contain a study with condition "lung cancer"
+    And the study eligibility should mention "osimertinib" with "prior" context
+
+  Scenario: Search trials with progression on therapy filter
+    Given I build a trial query with condition "melanoma"
+    And I add progression on "vemurafenib"
+    When I perform a trial search
+    Then the response should contain a study with condition "melanoma"
+    And the study eligibility should mention "vemurafenib" with "progression" context
+
+  Scenario: Search trials with required mutations
+    Given I build a trial query with condition "lung cancer"
+    And I add required mutation "EGFR L858R"
+    When I perform a trial search
+    Then the response should contain a study with condition "lung cancer"
+    And the study eligibility should mention "EGFR L858R"
+
+  Scenario: Search trials with excluded mutations
+    Given I build a trial query with condition "lung cancer"
+    And I add excluded mutation "KRAS"
+    When I perform a trial search
+    Then the response should contain a study with condition "lung cancer"
+    And the study eligibility should exclude "KRAS"
+
+  Scenario: Search trials with biomarker expression
+    Given I build a trial query with condition "lung cancer"
+    And I add biomarker expression "PD-L1" with value "≥50%"
+    When I perform a trial search
+    Then the response should contain a study with condition "lung cancer"
+    And the study eligibility should mention "PD-L1" with expression "≥50%"
+
+  Scenario: Search trials by line of therapy
+    Given I build a trial query with condition "breast cancer"
+    And I set line of therapy to "2L"
+    When I perform a trial search
+    Then the response should contain a study with condition "breast cancer"
+    And the study eligibility should mention "second line" therapy
+
+  Scenario: Search trials excluding brain metastases
+    Given I build a trial query with condition "lung cancer"
+    And I set allow brain mets to "False"
+    When I perform a trial search
+    Then the response should contain a study with condition "lung cancer"
+    And the study eligibility should exclude "brain metastases"
