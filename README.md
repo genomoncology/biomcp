@@ -23,21 +23,27 @@ BioMCP bridges this gap for biomedicine by:
 
 ## Biomedical Data Sources
 
-BioMCP integrates with three key biomedical data sources:
+BioMCP integrates with multiple biomedical data sources:
 
-- **PubTator3/PubMed** - Biomedical literature with entity annotations
+### Literature Sources
+
+- **PubTator3/PubMed** - Peer-reviewed biomedical literature with entity annotations
+- **bioRxiv/medRxiv** - Preprint servers for biology and health sciences
+- **Europe PMC** - Open science platform including preprints
+
+### Clinical & Genomic Sources
+
 - **ClinicalTrials.gov** - Clinical trial registry and results database
-- **MyVariant.info** - Consolidated genetic variant annotation from multiple
-  databases
+- **MyVariant.info** - Consolidated genetic variant annotation
+- **TCGA/GDC** - The Cancer Genome Atlas for cancer variant data
+- **1000 Genomes** - Population frequency data via Ensembl
 
 ## Available MCP Tools
 
-### PubMed & PubTator3
+### Literature Search
 
-- `article_searcher`: Search for articles by genes, diseases, variants, or
-  keywords
-- `article_details`: Get detailed article information including abstracts and
-  full text
+- `article_searcher`: Search both peer-reviewed and preprint articles by genes, diseases, variants, or keywords (includes PubMed, bioRxiv/medRxiv, and Europe PMC by default)
+- `article_details`: Get detailed article information including abstracts and full text
 
 ### ClinicalTrials.gov
 
@@ -48,11 +54,13 @@ BioMCP integrates with three key biomedical data sources:
 - `trial_outcomes`: Results and outcome measures
 - `trial_references`: Related publications
 
-### MyVariant.info
+### Genetic Variants
 
 - `variant_searcher`: Search for genetic variants with sophisticated filtering
-- `variant_details`: Comprehensive annotations from multiple sources (CIViC,
-  ClinVar, COSMIC, dbSNP, etc.)
+- `variant_details`: Comprehensive annotations from multiple sources including:
+  - Core databases: CIViC, ClinVar, COSMIC, dbSNP
+  - Cancer data: TCGA/GDC tumor frequencies
+  - Population data: 1000 Genomes allele frequencies
 
 ### Sequential Thinking
 
@@ -113,13 +121,19 @@ biomcp --help
 # Run the MCP server
 biomcp run
 
-# Examples
-biomcp article search --gene BRAF --disease Melanoma
+# Article search examples
+biomcp article search --gene BRAF --disease Melanoma  # Includes preprints by default
+biomcp article search --gene BRAF --no-preprints      # Exclude preprints
 biomcp article get 21717063 --full
+
+# Clinical trial examples
 biomcp trial search --condition "Lung Cancer" --phase PHASE3
 biomcp trial get NCT04280705 Protocol
+
+# Variant examples with external annotations
 biomcp variant search --gene TP53 --significance pathogenic
-biomcp variant get rs113488022
+biomcp variant get rs113488022  # Includes TCGA and 1000 Genomes data by default
+biomcp variant get rs113488022 --no-external  # Core annotations only
 ```
 
 ## Testing & Verification

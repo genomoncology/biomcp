@@ -5,6 +5,7 @@ from typing import Annotated, Any, get_args
 from pydantic import BaseModel, Field, computed_field
 
 from .. import const, ensure_list, http_client, mcp_app, render
+from ..core import PublicationState
 from .autocomplete import Concept, EntityRequest, autocomplete
 from .fetch import call_pubtator_api
 
@@ -58,6 +59,10 @@ class ResultItem(BaseModel):
     date: str | None = None
     doi: str | None = None
     abstract: str | None = None
+    publication_state: PublicationState = PublicationState.PEER_REVIEWED
+    source: str | None = Field(
+        None, description="Source database (e.g., PubMed, bioRxiv, Europe PMC)"
+    )
 
     @computed_field
     def pubmed_url(self) -> str | None:
@@ -139,6 +144,9 @@ async def search_articles(
 
     if response:
         await add_abstracts(response)
+        # Add source field to PubMed results
+        for result in response.results:
+            result.source = "PubMed"
 
     # noinspection DuplicatedCode
     if error:
@@ -184,9 +192,12 @@ async def article_searcher(
     variants: Annotated[
         list[str] | str | None, "List of variants for filtering results"
     ] = None,
+    include_preprints: Annotated[
+        bool, "Include preprint articles from bioRxiv/medRxiv and Europe PMC"
+    ] = True,
 ) -> str:
     """
-    Searches PubMed articles using structured criteria.
+    Searches for articles across PubMed and preprint servers.
 
     Parameters:
     - call_benefit: Define and summarize why this function is being called and the intended benefit
@@ -195,17 +206,21 @@ async def article_searcher(
     - genes: List of genes for filtering results
     - keywords: List of other keywords for filtering results
     - variants: List of variants for filtering results
+    - include_preprints: Include results from preprint servers (default: True)
 
     Notes:
     - Use full terms ("Non-small cell lung carcinoma") over abbreviations ("NSCLC")
     - Use keywords to specify terms that don't fit in disease, gene ("EGFR"),
       chemical ("Cisplatin"), or variant ("BRAF V600E") categories
     - Parameters can be provided as lists or comma-separated strings
+    - Results include both peer-reviewed and preprint articles by default
 
     Returns:
-    Markdown formatted list of matching articles (PMID, title, abstract, etc.)
-    Limited to max 40 results.
+    Markdown formatted list of matching articles, with peer-reviewed articles listed first.
+    Limited to max 80 results (40 from each source).
     """
+    # Import here to avoid circular dependency
+    from .unified import search_articles_unified
 
     # Convert individual parameters to a PubmedRequest object
     request = PubmedRequest(
@@ -215,4 +230,9 @@ async def article_searcher(
         keywords=ensure_list(keywords, split_strings=True),
         variants=ensure_list(variants, split_strings=True),
     )
-    return await search_articles(request)
+
+    return await search_articles_unified(
+        request,
+        include_pubmed=True,
+        include_preprints=include_preprints,
+    )

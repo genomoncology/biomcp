@@ -28,6 +28,13 @@ def get_variant(
             case_sensitive=False,
         ),
     ] = False,
+    include_external: Annotated[
+        bool,
+        typer.Option(
+            "--include-external/--no-external",
+            help="Include annotations from external sources (TCGA, 1000 Genomes)",
+        ),
+    ] = True,
 ):
     """
     Get detailed information about a specific genetic variant.
@@ -37,14 +44,19 @@ def get_variant(
     Examples:
         Get by HGVS: biomcp variant get "chr7:g.140453136A>T"
         Get by rsID: biomcp variant get rs113488022
-        Get as JSON: biomcp variant get rs113488022 --format json
+        Get as JSON: biomcp variant get rs113488022 --json
+        Get without external annotations: biomcp variant get rs113488022 --no-external
     """
     if not variant_id:
         typer.echo("Error: A variant identifier must be provided.", err=True)
         raise typer.Exit(code=1)
 
     result = asyncio.run(
-        getter.get_variant(variant_id, output_json=output_json)
+        getter.get_variant(
+            variant_id,
+            output_json=output_json,
+            include_external=include_external,
+        )
     )
     typer.echo(result)
 

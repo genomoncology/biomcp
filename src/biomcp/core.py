@@ -30,6 +30,14 @@ class StrEnum(str, Enum):
         return None
 
 
+class PublicationState(StrEnum):
+    """Publication state of an article."""
+
+    PREPRINT = "preprint"
+    PEER_REVIEWED = "peer_reviewed"
+    UNKNOWN = "unknown"
+
+
 def ensure_list(value: Any, split_strings: bool = False) -> list[Any]:
     """
     Convert a value to a list if it's not already.

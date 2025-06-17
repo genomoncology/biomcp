@@ -82,7 +82,8 @@ async def call_http(
         return resp.status_code, resp.text
 
     except httpx.HTTPError as exc:
-        return 599, str(exc)
+        error_msg = str(exc) if str(exc) else "Network connectivity error"
+        return 599, error_msg
 
 
 async def request_api(

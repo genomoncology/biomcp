@@ -5,6 +5,7 @@ import typer
 
 from ..articles import fetch
 from ..articles.search import PubmedRequest, search_articles
+from ..articles.unified import search_articles_unified
 
 article_app = typer.Typer(help="Search and retrieve biomedical articles.")
 
@@ -68,6 +69,13 @@ def search_article(
             case_sensitive=False,
         ),
     ] = False,
+    include_preprints: Annotated[
+        bool,
+        typer.Option(
+            "--include-preprints/--no-preprints",
+            help="Include preprint articles from bioRxiv/medRxiv and Europe PMC",
+        ),
+    ] = True,
 ):
     """Search biomedical research articles"""
     request = PubmedRequest(
@@ -76,10 +84,19 @@ def search_article(
         diseases=diseases or [],
         chemicals=chemicals or [],
         keywords=keywords or [],
-        page=page,
     )
 
-    result = asyncio.run(search_articles(request, output_json))
+    if include_preprints:
+        result = asyncio.run(
+            search_articles_unified(
+                request,
+                include_pubmed=True,
+                include_preprints=True,
+                output_json=output_json,
+            )
+        )
+    else:
+        result = asyncio.run(search_articles(request, output_json))
     typer.echo(result)
 
 
