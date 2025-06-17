@@ -6,7 +6,7 @@ This module provides a command to check the health of API endpoints and system r
 import asyncio
 import platform
 import socket
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 import typer
@@ -31,7 +31,7 @@ console = Console()
 async def check_api_endpoint(
     url: str,
     name: str,
-    params: Optional[dict[Any, Any]] = None,
+    params: dict[Any, Any] | None = None,
     method: str = "GET",
 ) -> dict:
     """Check if an API endpoint is accessible and responding."""

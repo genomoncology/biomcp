@@ -1,6 +1,5 @@
 """Integration tests for external variant data sources with real API calls."""
 
-
 import pytest
 
 from biomcp.variants.external import (
@@ -88,7 +87,7 @@ class TestThousandGenomesIntegration:
 
             # Consequence information might not be available for all variants
             # Just verify the data structure is correct
-            assert hasattr(result, 'most_severe_consequence')
+            assert hasattr(result, "most_severe_consequence")
 
     @pytest.mark.asyncio
     @pytest.mark.integration

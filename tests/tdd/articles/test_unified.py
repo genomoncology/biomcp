@@ -33,7 +33,7 @@ class TestUnifiedSearch:
                 "doi": "10.1234/test2",
                 "date": "2024-01-10",
                 "publication_state": "peer_reviewed",
-            }
+            },
         ])
 
     @pytest.fixture
@@ -53,52 +53,59 @@ class TestUnifiedSearch:
                 "date": "2024-01-14",
                 "publication_state": "preprint",
                 "source": "Europe PMC",
-            }
+            },
         ])
 
     @pytest.mark.asyncio
-    async def test_search_articles_unified_both_sources(self, pubmed_results, preprint_results):
+    async def test_search_articles_unified_both_sources(
+        self, pubmed_results, preprint_results
+    ):
         """Test searching with both PubMed and preprints enabled."""
         request = PubmedRequest(genes=["BRAF"])
 
         mock_pubmed = AsyncMock(return_value=pubmed_results)
         mock_preprints = AsyncMock(return_value=preprint_results)
 
-        with patch("biomcp.articles.unified.search_articles", mock_pubmed), \
-             patch("biomcp.articles.unified.search_preprints", mock_preprints):
+        with (
+            patch("biomcp.articles.unified.search_articles", mock_pubmed),
+            patch("biomcp.articles.unified.search_preprints", mock_preprints),
+        ):
+            result = await search_articles_unified(
+                request,
+                include_pubmed=True,
+                include_preprints=True,
+                output_json=True,
+            )
 
-                result = await search_articles_unified(
-                    request,
-                    include_pubmed=True,
-                    include_preprints=True,
-                    output_json=True,
-                )
+            # Parse result
+            articles = json.loads(result)
 
-                # Parse result
-                articles = json.loads(result)
+            # Should have 3 articles (one duplicate removed)
+            assert len(articles) == 3
 
-                # Should have 3 articles (one duplicate removed)
-                assert len(articles) == 3
+            # Check ordering - peer reviewed should come first
+            # Sort is by (publication_state priority, date DESC)
+            # The test data has preprint with newer date, so it might come first
+            # Let's just check we have the right mix
+            states = [a["publication_state"] for a in articles]
+            assert states.count("peer_reviewed") == 2
+            assert states.count("preprint") == 1
 
-                # Check ordering - peer reviewed should come first
-                # Sort is by (publication_state priority, date DESC)
-                # The test data has preprint with newer date, so it might come first
-                # Let's just check we have the right mix
-                states = [a["publication_state"] for a in articles]
-                assert states.count("peer_reviewed") == 2
-                assert states.count("preprint") == 1
-
-                # Check deduplication worked
-                dois = [a.get("doi") for a in articles if a.get("doi")]
-                assert len(dois) == len(set(dois))  # No duplicate DOIs
+            # Check deduplication worked
+            dois = [a.get("doi") for a in articles if a.get("doi")]
+            assert len(dois) == len(set(dois))  # No duplicate DOIs
 
     @pytest.mark.asyncio
     async def test_search_articles_unified_pubmed_only(self, pubmed_results):
         """Test searching with only PubMed enabled."""
         request = PubmedRequest(genes=["BRAF"])
 
-        with patch("biomcp.articles.unified.search_articles") as mock_pubmed, \
-             patch("biomcp.articles.unified.search_preprints") as mock_preprints:
+        with (
+            patch("biomcp.articles.unified.search_articles") as mock_pubmed,
+            patch(
+                "biomcp.articles.unified.search_preprints"
+            ) as mock_preprints,
+        ):
             mock_pubmed.return_value = pubmed_results
 
             result = await search_articles_unified(
@@ -114,15 +121,23 @@ class TestUnifiedSearch:
             # Parse result
             articles = json.loads(result)
             assert len(articles) == 2
-            assert all(a["publication_state"] == "peer_reviewed" for a in articles)
+            assert all(
+                a["publication_state"] == "peer_reviewed" for a in articles
+            )
 
     @pytest.mark.asyncio
-    async def test_search_articles_unified_preprints_only(self, preprint_results):
+    async def test_search_articles_unified_preprints_only(
+        self, preprint_results
+    ):
         """Test searching with only preprints enabled."""
         request = PubmedRequest(genes=["BRAF"])
 
-        with patch("biomcp.articles.unified.search_articles") as mock_pubmed, \
-             patch("biomcp.articles.unified.search_preprints") as mock_preprints:
+        with (
+            patch("biomcp.articles.unified.search_articles") as mock_pubmed,
+            patch(
+                "biomcp.articles.unified.search_preprints"
+            ) as mock_preprints,
+        ):
             mock_preprints.return_value = preprint_results
 
             result = await search_articles_unified(
@@ -145,8 +160,12 @@ class TestUnifiedSearch:
         """Test error handling when one source fails."""
         request = PubmedRequest(genes=["BRAF"])
 
-        with patch("biomcp.articles.unified.search_articles") as mock_pubmed, \
-             patch("biomcp.articles.unified.search_preprints") as mock_preprints:
+        with (
+            patch("biomcp.articles.unified.search_articles") as mock_pubmed,
+            patch(
+                "biomcp.articles.unified.search_preprints"
+            ) as mock_preprints,
+        ):
             # PubMed succeeds
             mock_pubmed.return_value = json.dumps([{"title": "Success"}])
             # Preprints fails
@@ -165,14 +184,15 @@ class TestUnifiedSearch:
             assert articles[0]["title"] == "Success"
 
     @pytest.mark.asyncio
-    async def test_search_articles_unified_markdown_output(self, pubmed_results):
+    async def test_search_articles_unified_markdown_output(
+        self, pubmed_results
+    ):
         """Test markdown output format."""
         request = PubmedRequest(genes=["BRAF"])
 
         mock_pubmed = AsyncMock(return_value=pubmed_results)
 
         with patch("biomcp.articles.unified.search_articles", mock_pubmed):
-
             result = await search_articles_unified(
                 request,
                 include_pubmed=True,

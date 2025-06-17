@@ -15,12 +15,7 @@ class TestExtractGeneAAChange:
 
     def test_extract_from_docm(self, aggregator):
         """Test extraction from DOCM data."""
-        variant_data = {
-            "docm": {
-                "gene": "BRAF",
-                "aa_change": "p.V600E"
-            }
-        }
+        variant_data = {"docm": {"gene": "BRAF", "aa_change": "p.V600E"}}
 
         result = aggregator._extract_gene_aa_change(variant_data)
         assert result == "BRAF V600E"
@@ -29,7 +24,7 @@ class TestExtractGeneAAChange:
         """Test extraction from hgvsp with long amino acid names."""
         variant_data = {
             "cadd": {"gene": {"genename": "TP53"}},
-            "hgvsp": ["p.Arg175His"]
+            "hgvsp": ["p.Arg175His"],
         }
 
         result = aggregator._extract_gene_aa_change(variant_data)
@@ -40,7 +35,7 @@ class TestExtractGeneAAChange:
         """Test extraction from hgvsp with dbnsfp gene name."""
         variant_data = {
             "dbnsfp": {"genename": "EGFR"},
-            "hgvsp": ["p.Leu858Arg"]
+            "hgvsp": ["p.Leu858Arg"],
         }
 
         result = aggregator._extract_gene_aa_change(variant_data)
@@ -53,7 +48,7 @@ class TestExtractGeneAAChange:
             "cadd": {
                 "gene": {"genename": "KRAS", "prot": {"protpos": 12}},
                 "oaa": "G",
-                "naa": "D"
+                "naa": "D",
             }
         }
 
@@ -62,12 +57,7 @@ class TestExtractGeneAAChange:
 
     def test_extract_from_docm_without_p_prefix(self, aggregator):
         """Test extraction from DOCM without p. prefix."""
-        variant_data = {
-            "docm": {
-                "gene": "PIK3CA",
-                "aa_change": "E545K"
-            }
-        }
+        variant_data = {"docm": {"gene": "PIK3CA", "aa_change": "E545K"}}
 
         result = aggregator._extract_gene_aa_change(variant_data)
         assert result == "PIK3CA E545K"
@@ -76,10 +66,7 @@ class TestExtractGeneAAChange:
         """Test handling of multiple hgvsp entries - should take first."""
         variant_data = {
             "cadd": {"gene": {"genename": "BRCA1"}},
-            "hgvsp": [
-                "p.Gln1756Ter",
-                "p.Gln1756*"
-            ]
+            "hgvsp": ["p.Gln1756Ter", "p.Gln1756*"],
         }
 
         result = aggregator._extract_gene_aa_change(variant_data)
@@ -90,7 +77,7 @@ class TestExtractGeneAAChange:
         """Test extraction with special characters in protein change."""
         variant_data = {
             "cadd": {"gene": {"genename": "MLH1"}},
-            "hgvsp": ["p.Lys618Alafs*9"]
+            "hgvsp": ["p.Lys618Alafs*9"],
         }
 
         result = aggregator._extract_gene_aa_change(variant_data)
@@ -100,18 +87,14 @@ class TestExtractGeneAAChange:
 
     def test_extract_no_gene_name(self, aggregator):
         """Test when gene name is missing."""
-        variant_data = {
-            "hgvsp": ["p.Val600Glu"]
-        }
+        variant_data = {"hgvsp": ["p.Val600Glu"]}
 
         result = aggregator._extract_gene_aa_change(variant_data)
         assert result is None
 
     def test_extract_no_aa_change(self, aggregator):
         """Test when AA change is missing."""
-        variant_data = {
-            "cadd": {"gene": {"genename": "BRAF"}}
-        }
+        variant_data = {"cadd": {"gene": {"genename": "BRAF"}}}
 
         result = aggregator._extract_gene_aa_change(variant_data)
         assert result is None
@@ -126,9 +109,7 @@ class TestExtractGeneAAChange:
         variant_data = {
             "clinvar": {
                 "gene": {"symbol": "MYC"},
-                "hgvs": {
-                    "protein": ["invalid_format"]
-                }
+                "hgvs": {"protein": ["invalid_format"]},
             }
         }
 
@@ -138,16 +119,13 @@ class TestExtractGeneAAChange:
     def test_extract_priority_order(self, aggregator):
         """Test that DOCM is prioritized for AA change, CADD for gene name."""
         variant_data = {
-            "docm": {
-                "gene": "BRAF",
-                "aa_change": "p.V600E"
-            },
+            "docm": {"gene": "BRAF", "aa_change": "p.V600E"},
             "hgvsp": ["p.Val600Lys"],  # Different change
             "cadd": {
                 "gene": {"genename": "WRONG", "prot": {"protpos": 600}},
                 "oaa": "V",
-                "naa": "K"
-            }
+                "naa": "K",
+            },
         }
 
         result = aggregator._extract_gene_aa_change(variant_data)
@@ -159,7 +137,7 @@ class TestExtractGeneAAChange:
         # The code specifically looks for Val or Ala to trigger regex
         variant_data = {
             "cadd": {"gene": {"genename": "TEST1"}},
-            "hgvsp": ["p.Val600Ala"]
+            "hgvsp": ["p.Val600Ala"],
         }
 
         result = aggregator._extract_gene_aa_change(variant_data)
@@ -172,7 +150,7 @@ class TestExtractGeneAAChange:
         # This should trigger an exception internally but return None
         variant_data = {
             "cadd": {"gene": {"genename": "GENE"}},
-            "hgvsp": None  # This will cause issues
+            "hgvsp": None,  # This will cause issues
         }
 
         result = aggregator._extract_gene_aa_change(variant_data)

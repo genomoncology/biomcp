@@ -33,16 +33,18 @@ async def test_variants_without_mastermind():
     # Test with a variant - even if individual sources fail,
     # the aggregator should handle it gracefully
     result = await aggregator.get_enhanced_annotations(
-        "BRAF V600E",
-        include_tcga=True,
-        include_1000g=True
+        "BRAF V600E", include_tcga=True, include_1000g=True
     )
 
     print("✓ Aggregator completed without errors")
     print(f"  Variant ID: {result.variant_id}")
     print(f"  TCGA data: {'Found' if result.tcga else 'Not found'}")
-    print(f"  1000G data: {'Found' if result.thousand_genomes else 'Not found'}")
-    print(f"  Errors: {result.error_sources if result.error_sources else 'None'}")
+    print(
+        f"  1000G data: {'Found' if result.thousand_genomes else 'Not found'}"
+    )
+    print(
+        f"  Errors: {result.error_sources if result.error_sources else 'None'}"
+    )
 
     # Key test: aggregator should complete successfully
     if True:  # Always passes now without Mastermind
@@ -55,9 +57,9 @@ async def test_variants_without_mastermind():
 
 async def main():
     """Run all tests."""
-    print("="*60)
+    print("=" * 60)
     print("Testing BioMCP features without external API keys")
-    print("="*60)
+    print("=" * 60)
 
     # Test preprints
     preprint_ok = await test_preprints()
@@ -65,11 +67,11 @@ async def main():
     # Test variants
     variant_ok = await test_variants_without_mastermind()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Summary:")
     print(f"  Preprint search: {'✓ PASS' if preprint_ok else '✗ FAIL'}")
     print(f"  Variant aggregator: {'✓ PASS' if variant_ok else '✗ FAIL'}")
-    print("="*60)
+    print("=" * 60)
 
     if preprint_ok and variant_ok:
         print("\n✓ All features work without external API keys!")

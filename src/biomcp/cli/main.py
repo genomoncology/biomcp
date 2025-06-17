@@ -1,5 +1,5 @@
 import importlib.metadata
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 
@@ -64,7 +64,7 @@ app.add_typer(
 @app.callback()
 def main_callback(
     version: Annotated[
-        Optional[bool],  # Allows the option to not be present
+        bool | None,  # Allows the option to not be present
         typer.Option(
             "--version",  # The flag name
             callback=version_callback,  # Function to call when flag is used

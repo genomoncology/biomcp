@@ -30,7 +30,7 @@ class TestTCGAClient:
                         "ssm_id": "test-ssm-id",
                         "cosmic_id": ["COSM476"],
                         "gene_aa_change": ["BRAF V600E"],
-                        "genomic_dna_change": "chr7:g.140453136A>T"
+                        "genomic_dna_change": "chr7:g.140453136A>T",
                     }
                 ]
             }
@@ -48,7 +48,10 @@ class TestTCGAClient:
 
         with patch("biomcp.http_client.request_api") as mock_request:
             # First call is for SSM search, second is for occurrences
-            mock_request.side_effect = [(mock_response, None), (mock_occ_response, None)]
+            mock_request.side_effect = [
+                (mock_response, None),
+                (mock_occ_response, None),
+            ]
 
             result = await client.get_variant_data("BRAF V600E")
 
@@ -95,7 +98,7 @@ class TestThousandGenomesClient:
                     ]
                 }
             ],
-            "ancestral_allele": "A"
+            "ancestral_allele": "A",
         }
 
         with patch("biomcp.http_client.request_api") as mock_request:
@@ -121,7 +124,10 @@ class TestThousandGenomesClient:
             {"population": "1000GENOMES:phase_3:EAS", "frequency": 0.02},
             {"population": "1000GENOMES:phase_3:EUR", "frequency": 0.08},
             {"population": "1000GENOMES:phase_3:SAS", "frequency": 0.06},
-            {"population": "OTHER:population", "frequency": 0.99},  # Should be ignored
+            {
+                "population": "OTHER:population",
+                "frequency": 0.99,
+            },  # Should be ignored
         ]
 
         result = client._extract_population_frequencies(populations)
@@ -145,20 +151,21 @@ class TestExternalVariantAggregator:
 
         # Mock all clients
         mock_tcga_data = TCGAVariantData(
-            cosmic_id="COSM476",
-            tumor_types=["LUAD"],
-            affected_cases=10
+            cosmic_id="COSM476", tumor_types=["LUAD"], affected_cases=10
         )
 
-        mock_1000g_data = ThousandGenomesData(
-            global_maf=0.05,
-            eur_maf=0.08
+        mock_1000g_data = ThousandGenomesData(global_maf=0.05, eur_maf=0.08)
+
+        aggregator.tcga_client.get_variant_data = AsyncMock(
+            return_value=mock_tcga_data
+        )
+        aggregator.thousand_genomes_client.get_variant_data = AsyncMock(
+            return_value=mock_1000g_data
         )
 
-        aggregator.tcga_client.get_variant_data = AsyncMock(return_value=mock_tcga_data)
-        aggregator.thousand_genomes_client.get_variant_data = AsyncMock(return_value=mock_1000g_data)
-
-        result = await aggregator.get_enhanced_annotations("chr7:g.140453136A>T")
+        result = await aggregator.get_enhanced_annotations(
+            "chr7:g.140453136A>T"
+        )
 
         assert result.variant_id == "chr7:g.140453136A>T"
         assert result.tcga is not None
@@ -173,7 +180,9 @@ class TestExternalVariantAggregator:
 
         # Mock TCGA to succeed
         mock_tcga_data = TCGAVariantData(cosmic_id="COSM476")
-        aggregator.tcga_client.get_variant_data = AsyncMock(return_value=mock_tcga_data)
+        aggregator.tcga_client.get_variant_data = AsyncMock(
+            return_value=mock_tcga_data
+        )
 
         # Mock 1000G to fail
         aggregator.thousand_genomes_client.get_variant_data = AsyncMock(
@@ -181,9 +190,7 @@ class TestExternalVariantAggregator:
         )
 
         result = await aggregator.get_enhanced_annotations(
-            "chr7:g.140453136A>T",
-            include_tcga=True,
-            include_1000g=True
+            "chr7:g.140453136A>T", include_tcga=True, include_1000g=True
         )
 
         assert result.tcga is not None
@@ -201,13 +208,11 @@ class TestFormatEnhancedAnnotations:
             tcga=TCGAVariantData(
                 cosmic_id="COSM476",
                 tumor_types=["LUAD", "LUSC"],
-                affected_cases=10
+                affected_cases=10,
             ),
             thousand_genomes=ThousandGenomesData(
-                global_maf=0.05,
-                eur_maf=0.08,
-                ancestral_allele="A"
-            )
+                global_maf=0.05, eur_maf=0.08, ancestral_allele="A"
+            ),
         )
 
         result = format_enhanced_annotations(annotation)
@@ -216,14 +221,17 @@ class TestFormatEnhancedAnnotations:
         assert "tcga" in result["external_annotations"]
         assert result["external_annotations"]["tcga"]["cosmic_id"] == "COSM476"
         assert "1000_genomes" in result["external_annotations"]
-        assert result["external_annotations"]["1000_genomes"]["global_maf"] == 0.05
+        assert (
+            result["external_annotations"]["1000_genomes"]["global_maf"]
+            == 0.05
+        )
 
     def test_format_partial_annotations(self):
         """Test formatting when only some annotations are present."""
         annotation = EnhancedVariantAnnotation(
             variant_id="chr7:g.140453136A>T",
             tcga=TCGAVariantData(cosmic_id="COSM476"),
-            error_sources=["thousand_genomes"]
+            error_sources=["thousand_genomes"],
         )
 
         result = format_enhanced_annotations(annotation)

@@ -72,12 +72,14 @@ class TestExternalAggregatorIntegration:
         result = await aggregator.get_enhanced_annotations(
             "rs7412",  # APOE variant
             include_tcga=True,
-            include_1000g=True
+            include_1000g=True,
         )
 
         print(f"Variant ID: {result.variant_id}")
         print(f"TCGA data: {'Present' if result.tcga else 'Not found'}")
-        print(f"1000G data: {'Present' if result.thousand_genomes else 'Not found'}")
+        print(
+            f"1000G data: {'Present' if result.thousand_genomes else 'Not found'}"
+        )
         print(f"Errors: {result.error_sources}")
 
         # Should still work
@@ -92,12 +94,14 @@ class TestExternalAggregatorIntegration:
         result = await aggregator.get_enhanced_annotations(
             "chr1:g.12345678A>G",  # Arbitrary variant
             include_tcga=True,
-            include_1000g=True
+            include_1000g=True,
         )
 
         print("Results for arbitrary variant:")
         print(f"- TCGA: {'Found' if result.tcga else 'Not found'}")
-        print(f"- 1000G: {'Found' if result.thousand_genomes else 'Not found'}")
+        print(
+            f"- 1000G: {'Found' if result.thousand_genomes else 'Not found'}"
+        )
         print(f"- Errors: {result.error_sources}")
 
         # Should complete without crashing
@@ -108,14 +112,16 @@ if __name__ == "__main__":
     print("Testing TCGA/GDC...")
     asyncio.run(TestTCGAIntegration().test_tcga_real_variant())
 
-    print("\n" + "="*50 + "\n")
+    print("\n" + "=" * 50 + "\n")
     print("Testing 1000 Genomes...")
     asyncio.run(TestThousandGenomesIntegration().test_1000g_real_variant())
 
-    print("\n" + "="*50 + "\n")
+    print("\n" + "=" * 50 + "\n")
     print("Testing aggregator...")
     asyncio.run(TestExternalAggregatorIntegration().test_aggregator_basic())
 
-    print("\n" + "="*50 + "\n")
+    print("\n" + "=" * 50 + "\n")
     print("Testing aggregator with partial failures...")
-    asyncio.run(TestExternalAggregatorIntegration().test_aggregator_partial_failures())
+    asyncio.run(
+        TestExternalAggregatorIntegration().test_aggregator_partial_failures()
+    )

@@ -33,10 +33,10 @@ class TestBiorxivClient:
                     authors="Smith, J.; Doe, J.",
                     date="2024-01-01",
                     abstract="Study about BRAF mutations in cancer.",
-                    server="biorxiv"
+                    server="biorxiv",
                 )
             ],
-            total=1
+            total=1,
         )
 
         with patch("biomcp.http_client.request_api") as mock_request:
@@ -56,7 +56,10 @@ class TestBiorxivClient:
         client = BiorxivClient()
 
         with patch("biomcp.http_client.request_api") as mock_request:
-            mock_request.return_value = (None, {"code": 404, "message": "Not found"})
+            mock_request.return_value = (
+                None,
+                {"code": 404, "message": "Not found"},
+            )
 
             results = await client.search("nonexistent")
 
@@ -83,10 +86,10 @@ class TestEuropePMCClient:
                         "authorString": "Johnson, A., Williams, B.",
                         "journalTitle": "bioRxiv",
                         "firstPublicationDate": "2024-01-02",
-                        "abstractText": "Analysis of TP53 mutations."
+                        "abstractText": "Analysis of TP53 mutations.",
                     }
                 ]
-            }
+            },
         )
 
         with patch("biomcp.http_client.request_api") as mock_request:
@@ -114,7 +117,7 @@ class TestPreprintSearcher:
                 doi="10.1101/2024.01.01.111111",
                 title="BRAF Study 1",
                 date="2024-01-01",
-                publication_state=PublicationState.PREPRINT
+                publication_state=PublicationState.PREPRINT,
             )
         ]
 
@@ -123,12 +126,16 @@ class TestPreprintSearcher:
                 doi="10.1101/2024.01.02.222222",
                 title="BRAF Study 2",
                 date="2024-01-02",
-                publication_state=PublicationState.PREPRINT
+                publication_state=PublicationState.PREPRINT,
             )
         ]
 
-        searcher.biorxiv_client.search = AsyncMock(return_value=mock_biorxiv_results)
-        searcher.europe_pmc_client.search = AsyncMock(return_value=mock_europe_results)
+        searcher.biorxiv_client.search = AsyncMock(
+            return_value=mock_biorxiv_results
+        )
+        searcher.europe_pmc_client.search = AsyncMock(
+            return_value=mock_europe_results
+        )
 
         request = PubmedRequest(genes=["BRAF"])
         response = await searcher.search(request)
@@ -152,7 +159,7 @@ class TestPreprintSearcher:
                 doi=duplicate_doi,
                 title="Duplicate Study",
                 date="2024-01-01",
-                publication_state=PublicationState.PREPRINT
+                publication_state=PublicationState.PREPRINT,
             )
         ]
 
@@ -161,12 +168,16 @@ class TestPreprintSearcher:
                 doi=duplicate_doi,
                 title="Duplicate Study",
                 date="2024-01-01",
-                publication_state=PublicationState.PREPRINT
+                publication_state=PublicationState.PREPRINT,
             )
         ]
 
-        searcher.biorxiv_client.search = AsyncMock(return_value=mock_biorxiv_results)
-        searcher.europe_pmc_client.search = AsyncMock(return_value=mock_europe_results)
+        searcher.biorxiv_client.search = AsyncMock(
+            return_value=mock_biorxiv_results
+        )
+        searcher.europe_pmc_client.search = AsyncMock(
+            return_value=mock_europe_results
+        )
 
         request = PubmedRequest(keywords=["test"])
         response = await searcher.search(request)

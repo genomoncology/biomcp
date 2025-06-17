@@ -21,13 +21,17 @@ EUROPE_PMC_BASE = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
 
 class BiorxivRequest(BaseModel):
     """Request parameters for bioRxiv/medRxiv API."""
+
     query: str
-    interval: str = Field(default="", description="Date interval in YYYY-MM-DD/YYYY-MM-DD format")
+    interval: str = Field(
+        default="", description="Date interval in YYYY-MM-DD/YYYY-MM-DD format"
+    )
     cursor: int = Field(default=0, description="Starting position")
 
 
 class BiorxivResult(BaseModel):
     """Individual result from bioRxiv/medRxiv."""
+
     doi: str | None = None
     title: str | None = None
     authors: str | None = None
@@ -47,7 +51,9 @@ class BiorxivResult(BaseModel):
         """Convert to standard ResultItem format."""
         authors_list = []
         if self.authors:
-            authors_list = [author.strip() for author in self.authors.split(";")]
+            authors_list = [
+                author.strip() for author in self.authors.split(";")
+            ]
 
         return ResultItem(
             pmid=None,
@@ -65,6 +71,7 @@ class BiorxivResult(BaseModel):
 
 class BiorxivResponse(BaseModel):
     """Response from bioRxiv/medRxiv API."""
+
     collection: list[BiorxivResult] = Field(default_factory=list)
     messages: list[dict[str, Any]] = Field(default_factory=list)
     total: int = Field(default=0, alias="total")
@@ -72,6 +79,7 @@ class BiorxivResponse(BaseModel):
 
 class EuropePMCRequest(BaseModel):
     """Request parameters for Europe PMC API."""
+
     query: str
     format: str = "json"
     pageSize: int = Field(default=25, le=1000)
@@ -81,6 +89,7 @@ class EuropePMCRequest(BaseModel):
 
 class EuropePMCResult(BaseModel):
     """Individual result from Europe PMC."""
+
     id: str | None = None
     source: str | None = None
     pmid: str | None = None
@@ -97,7 +106,9 @@ class EuropePMCResult(BaseModel):
         """Convert to standard ResultItem format."""
         authors_list = []
         if self.authorString:
-            authors_list = [author.strip() for author in self.authorString.split(",")]
+            authors_list = [
+                author.strip() for author in self.authorString.split(",")
+            ]
 
         return ResultItem(
             pmid=int(self.pmid) if self.pmid and self.pmid.isdigit() else None,
@@ -115,6 +126,7 @@ class EuropePMCResult(BaseModel):
 
 class EuropePMCResponse(BaseModel):
     """Response from Europe PMC API."""
+
     hitCount: int = Field(default=0)
     nextCursorMark: str | None = None
     resultList: dict[str, Any] = Field(default_factory=dict)
@@ -165,13 +177,10 @@ class PreprintSearcher:
             unique_results.append(result)
 
         # Sort by date (newest first)
-        unique_results.sort(
-            key=lambda x: x.date or "0000-00-00",
-            reverse=True
-        )
+        unique_results.sort(key=lambda x: x.date or "0000-00-00", reverse=True)
 
         # Limit results
-        limited_results = unique_results[:const.SYSTEM_PAGE_SIZE]
+        limited_results = unique_results[: const.SYSTEM_PAGE_SIZE]
 
         return SearchResponse(
             results=limited_results,
@@ -219,7 +228,9 @@ class BiorxivClient:
     Consider using Europe PMC for more comprehensive preprint search capabilities.
     """
 
-    async def search(self, query: str, server: str = "biorxiv") -> list[ResultItem]:
+    async def search(
+        self, query: str, server: str = "biorxiv"
+    ) -> list[ResultItem]:
         """Search bioRxiv or medRxiv for articles.
 
         Note: Due to API limitations, this performs client-side filtering on
@@ -232,11 +243,7 @@ class BiorxivClient:
         today = datetime.now()
         interval = f"{today.year}-01-01/{today.year}-{today.month:02d}-{today.day:02d}"
 
-        request = BiorxivRequest(
-            query=query,
-            interval=interval,
-            cursor=0
-        )
+        request = BiorxivRequest(query=query, interval=interval, cursor=0)
 
         url = f"{base_url}/{request.interval}/{request.cursor}"
 
@@ -248,7 +255,9 @@ class BiorxivClient:
         )
 
         if error or not response:
-            logger.warning(f"Failed to fetch {server} articles for query '{query}': {error if error else 'No response'}")
+            logger.warning(
+                f"Failed to fetch {server} articles for query '{query}': {error if error else 'No response'}"
+            )
             return []
 
         # Filter results based on query
@@ -258,8 +267,12 @@ class BiorxivClient:
         for result in response.collection:
             # Check if query matches title or abstract
             if query_lower and query:
-                title_match = result.title and query_lower in result.title.lower()
-                abstract_match = result.abstract and query_lower in result.abstract.lower()
+                title_match = (
+                    result.title and query_lower in result.title.lower()
+                )
+                abstract_match = (
+                    result.abstract and query_lower in result.abstract.lower()
+                )
                 if not (title_match or abstract_match):
                     continue
 
@@ -288,7 +301,9 @@ class EuropePMCClient:
         )
 
         if error or not response:
-            logger.warning(f"Failed to fetch Europe PMC preprints for query '{query}': {error if error else 'No response'}")
+            logger.warning(
+                f"Failed to fetch Europe PMC preprints for query '{query}': {error if error else 'No response'}"
+            )
             return []
 
         return [result.to_result_item() for result in response.results]
@@ -320,5 +335,3 @@ async def search_preprints(
         return render.to_markdown(data)
     else:
         return json.dumps(data, indent=2)
-
-

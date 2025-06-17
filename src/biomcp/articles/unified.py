@@ -64,15 +64,15 @@ async def search_articles_unified(
     # Sort by publication state (peer-reviewed first) and then by date
     unique_articles.sort(
         key=lambda x: (
-            0 if x.get("publication_state", "peer_reviewed") == "peer_reviewed" else 1,
-            x.get("date", "0000-00-00")
+            0
+            if x.get("publication_state", "peer_reviewed") == "peer_reviewed"
+            else 1,
+            x.get("date", "0000-00-00"),
         ),
-        reverse=True
+        reverse=True,
     )
 
     if unique_articles and not output_json:
         return render.to_markdown(unique_articles)
     else:
         return json.dumps(unique_articles, indent=2)
-
-

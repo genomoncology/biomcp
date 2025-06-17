@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -76,47 +76,47 @@ MYVARIANT_FIELDS = [
 class VariantQuery(BaseModel):
     """Search parameters for querying variant data from MyVariant.info."""
 
-    gene: Optional[str] = Field(
+    gene: str | None = Field(
         default=None,
         description="Gene symbol to search for (e.g. BRAF, TP53)",
     )
-    hgvsp: Optional[str] = Field(
+    hgvsp: str | None = Field(
         default=None,
         description="Protein change notation (e.g., p.V600E, p.Arg557His)",
     )
-    hgvsc: Optional[str] = Field(
+    hgvsc: str | None = Field(
         default=None,
         description="cDNA notation (e.g., c.1799T>A)",
     )
-    rsid: Optional[str] = Field(
+    rsid: str | None = Field(
         default=None,
         description="dbSNP rsID (e.g., rs113488022)",
     )
-    region: Optional[str] = Field(
+    region: str | None = Field(
         default=None,
         description="Genomic region as chr:start-end (e.g. chr1:12345-67890)",
     )
-    significance: Optional[ClinicalSignificance] = Field(
+    significance: ClinicalSignificance | None = Field(
         default=None,
         description="ClinVar clinical significance",
     )
-    max_frequency: Optional[float] = Field(
+    max_frequency: float | None = Field(
         default=None,
         description="Maximum population allele frequency threshold",
     )
-    min_frequency: Optional[float] = Field(
+    min_frequency: float | None = Field(
         default=None,
         description="Minimum population allele frequency threshold",
     )
-    cadd: Optional[float] = Field(
+    cadd: float | None = Field(
         default=None,
         description="Minimum CADD phred score",
     )
-    polyphen: Optional[PolyPhenPrediction] = Field(
+    polyphen: PolyPhenPrediction | None = Field(
         default=None,
         description="PolyPhen-2 prediction",
     )
-    sift: Optional[SiftPrediction] = Field(
+    sift: SiftPrediction | None = Field(
         default=None,
         description="SIFT prediction",
     )

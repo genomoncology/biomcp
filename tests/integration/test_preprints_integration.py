@@ -34,7 +34,9 @@ class TestBiorxivIntegration:
 
         # If no results with any term, the API might be down or have no recent articles
         if len(results) == 0:
-            pytest.skip("No results found with any search term - API may be down or have no matching recent articles")
+            pytest.skip(
+                "No results found with any search term - API may be down or have no matching recent articles"
+            )
 
         # Check the structure of results
         first_result = results[0]
@@ -43,7 +45,9 @@ class TestBiorxivIntegration:
         assert first_result.publication_state == PublicationState.PREPRINT
         assert "preprint" in first_result.journal.lower()
 
-        print(f"Found {len(results)} bioRxiv results for term '{successful_term}'")
+        print(
+            f"Found {len(results)} bioRxiv results for term '{successful_term}'"
+        )
         print(f"First result: {first_result.title}")
 
 
@@ -56,7 +60,14 @@ class TestEuropePMCIntegration:
         client = EuropePMCClient()
 
         # Try multiple search terms to find one with results
-        search_terms = ["cancer", "gene", "cell", "protein", "SARS-CoV-2", "COVID"]
+        search_terms = [
+            "cancer",
+            "gene",
+            "cell",
+            "protein",
+            "SARS-CoV-2",
+            "COVID",
+        ]
         results = []
         successful_term = None
 
@@ -68,14 +79,18 @@ class TestEuropePMCIntegration:
 
         # If no results with any term, the API might be down
         if len(results) == 0:
-            pytest.skip("No results found with any search term - Europe PMC API may be down")
+            pytest.skip(
+                "No results found with any search term - Europe PMC API may be down"
+            )
 
         # Check the structure
         first_result = results[0]
         assert first_result.title is not None
         assert first_result.publication_state == PublicationState.PREPRINT
 
-        print(f"Found {len(results)} Europe PMC preprint results for term '{successful_term}'")
+        print(
+            f"Found {len(results)} Europe PMC preprint results for term '{successful_term}'"
+        )
         print(f"First result: {first_result.title}")
         if first_result.doi:
             print(f"DOI: {first_result.doi}")
@@ -121,13 +136,15 @@ class TestPreprintSearcherIntegration:
             print(f"Date: {first.date}")
             print(f"Journal: {first.journal}")
         else:
-            pytest.skip("No results found with any search configuration - APIs may be down")
+            pytest.skip(
+                "No results found with any search configuration - APIs may be down"
+            )
 
 
 if __name__ == "__main__":
     # Run the tests directly
     asyncio.run(TestBiorxivIntegration().test_biorxiv_real_search())
-    print("\n" + "="*50 + "\n")
+    print("\n" + "=" * 50 + "\n")
     asyncio.run(TestEuropePMCIntegration().test_europe_pmc_real_search())
-    print("\n" + "="*50 + "\n")
+    print("\n" + "=" * 50 + "\n")
     asyncio.run(TestPreprintSearcherIntegration().test_combined_search_real())

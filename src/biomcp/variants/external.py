@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 import re
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import quote
 
 from pydantic import BaseModel, Field
@@ -22,42 +22,52 @@ ENSEMBL_REST_BASE = "https://rest.ensembl.org"
 ENSEMBL_VARIATION_ENDPOINT = f"{ENSEMBL_REST_BASE}/variation/human"
 
 
-
 class TCGAVariantData(BaseModel):
     """TCGA/GDC variant annotation data."""
-    cosmic_id: Optional[str] = None
+
+    cosmic_id: str | None = None
     tumor_types: list[str] = Field(default_factory=list)
-    mutation_frequency: Optional[float] = None
-    mutation_count: Optional[int] = None
-    affected_cases: Optional[int] = None
-    consequence_type: Optional[str] = None
-    clinical_significance: Optional[str] = None
+    mutation_frequency: float | None = None
+    mutation_count: int | None = None
+    affected_cases: int | None = None
+    consequence_type: str | None = None
+    clinical_significance: str | None = None
 
 
 class ThousandGenomesData(BaseModel):
     """1000 Genomes variant annotation data."""
-    global_maf: Optional[float] = Field(None, description="Global minor allele frequency")
-    afr_maf: Optional[float] = Field(None, description="African population MAF")
-    amr_maf: Optional[float] = Field(None, description="American population MAF")
-    eas_maf: Optional[float] = Field(None, description="East Asian population MAF")
-    eur_maf: Optional[float] = Field(None, description="European population MAF")
-    sas_maf: Optional[float] = Field(None, description="South Asian population MAF")
-    ancestral_allele: Optional[str] = None
-    most_severe_consequence: Optional[str] = None
+
+    global_maf: float | None = Field(
+        None, description="Global minor allele frequency"
+    )
+    afr_maf: float | None = Field(None, description="African population MAF")
+    amr_maf: float | None = Field(None, description="American population MAF")
+    eas_maf: float | None = Field(
+        None, description="East Asian population MAF"
+    )
+    eur_maf: float | None = Field(None, description="European population MAF")
+    sas_maf: float | None = Field(
+        None, description="South Asian population MAF"
+    )
+    ancestral_allele: str | None = None
+    most_severe_consequence: str | None = None
 
 
 class EnhancedVariantAnnotation(BaseModel):
     """Enhanced variant annotation combining multiple sources."""
+
     variant_id: str
-    tcga: Optional[TCGAVariantData] = None
-    thousand_genomes: Optional[ThousandGenomesData] = None
+    tcga: TCGAVariantData | None = None
+    thousand_genomes: ThousandGenomesData | None = None
     error_sources: list[str] = Field(default_factory=list)
 
 
 class TCGAClient:
     """Client for TCGA/GDC API."""
 
-    async def get_variant_data(self, variant_id: str) -> Optional[TCGAVariantData]:
+    async def get_variant_data(
+        self, variant_id: str
+    ) -> TCGAVariantData | None:
         """Fetch variant data from TCGA/GDC.
 
         Args:
@@ -80,12 +90,12 @@ class TCGAClient:
                     "op": "in",
                     "content": {
                         "field": search_field,
-                        "value": [search_value]
-                    }
+                        "value": [search_value],
+                    },
                 }),
                 "fields": "cosmic_id,genomic_dna_change,gene_aa_change,ssm_id",
                 "format": "json",
-                "size": "5"  # Get a few in case of multiple matches
+                "size": "5",  # Get a few in case of multiple matches
             }
 
             response, error = await http_client.request_api(
@@ -111,7 +121,10 @@ class TCGAClient:
             # For gene_aa_change searches, verify we have the right variant
             if search_field == "gene_aa_change":
                 gene_aa_changes = hit.get("gene_aa_change", [])
-                if isinstance(gene_aa_changes, list) and search_value not in gene_aa_changes:
+                if (
+                    isinstance(gene_aa_changes, list)
+                    and search_value not in gene_aa_changes
+                ):
                     # This SSM has multiple AA changes, but not the one we're looking for
                     return None
 
@@ -122,14 +135,11 @@ class TCGAClient:
             occ_params = {
                 "filters": json.dumps({
                     "op": "in",
-                    "content": {
-                        "field": "ssm.ssm_id",
-                        "value": [ssm_id]
-                    }
+                    "content": {"field": "ssm.ssm_id", "value": [ssm_id]},
                 }),
                 "fields": "case.project.project_id",
                 "format": "json",
-                "size": "2000"  # Get more occurrences
+                "size": "2000",  # Get more occurrences
             }
 
             occ_response, occ_error = await http_client.request_api(
@@ -140,12 +150,16 @@ class TCGAClient:
 
             if occ_error or not occ_response:
                 # Return basic info without occurrence data
-                cosmic_id_str = cosmic_id[0] if isinstance(cosmic_id, list) and cosmic_id else cosmic_id
+                cosmic_id_str = (
+                    cosmic_id[0]
+                    if isinstance(cosmic_id, list) and cosmic_id
+                    else cosmic_id
+                )
                 return TCGAVariantData(
                     cosmic_id=cosmic_id_str,
                     tumor_types=[],
                     affected_cases=0,
-                    consequence_type="missense_variant"  # Most COSMIC variants are missense
+                    consequence_type="missense_variant",  # Most COSMIC variants are missense
                 )
 
             # Process occurrence data
@@ -158,7 +172,9 @@ class TCGAClient:
                 case = occ.get("case", {})
                 project = case.get("project", {})
                 if project_id := project.get("project_id"):
-                    project_counts[project_id] = project_counts.get(project_id, 0) + 1
+                    project_counts[project_id] = (
+                        project_counts.get(project_id, 0) + 1
+                    )
 
             # Extract tumor types
             tumor_types = []
@@ -176,7 +192,11 @@ class TCGAClient:
                 total_cases += count
 
             # Handle cosmic_id as list
-            cosmic_id_str = cosmic_id[0] if isinstance(cosmic_id, list) and cosmic_id else cosmic_id
+            cosmic_id_str = (
+                cosmic_id[0]
+                if isinstance(cosmic_id, list) and cosmic_id
+                else cosmic_id
+            )
 
             return TCGAVariantData(
                 cosmic_id=cosmic_id_str,
@@ -191,14 +211,18 @@ class TCGAClient:
             # ValueError: Invalid data format or conversion issues
             # TypeError: Unexpected data types in response
             # IndexError: Array access issues with response data
-            logger.warning(f"Failed to fetch TCGA variant data for {variant_id}: {type(e).__name__}: {e}")
+            logger.warning(
+                f"Failed to fetch TCGA variant data for {variant_id}: {type(e).__name__}: {e}"
+            )
             return None
 
 
 class ThousandGenomesClient:
     """Client for 1000 Genomes data via Ensembl REST API."""
 
-    def _extract_population_frequencies(self, populations: list[dict]) -> dict[str, Any]:
+    def _extract_population_frequencies(
+        self, populations: list[dict]
+    ) -> dict[str, Any]:
         """Extract population frequencies from Ensembl response."""
         # Note: Multiple entries per population (one per allele), we want the alternate allele frequency
         # The reference allele will have higher frequency for rare variants
@@ -210,37 +234,49 @@ class ThousandGenomesClient:
 
             # Map 1000 Genomes population codes - taking the minor allele frequency
             if pop_name == "1000GENOMES:phase_3:ALL":
-                if "global_maf" not in pop_data or frequency < pop_data.get("global_maf", 1):
+                if "global_maf" not in pop_data or frequency < pop_data.get(
+                    "global_maf", 1
+                ):
                     pop_data["global_maf"] = frequency
             elif pop_name == "1000GENOMES:phase_3:AFR":
-                if "afr_maf" not in pop_data or frequency < pop_data.get("afr_maf", 1):
+                if "afr_maf" not in pop_data or frequency < pop_data.get(
+                    "afr_maf", 1
+                ):
                     pop_data["afr_maf"] = frequency
             elif pop_name == "1000GENOMES:phase_3:AMR":
-                if "amr_maf" not in pop_data or frequency < pop_data.get("amr_maf", 1):
+                if "amr_maf" not in pop_data or frequency < pop_data.get(
+                    "amr_maf", 1
+                ):
                     pop_data["amr_maf"] = frequency
             elif pop_name == "1000GENOMES:phase_3:EAS":
-                if "eas_maf" not in pop_data or frequency < pop_data.get("eas_maf", 1):
+                if "eas_maf" not in pop_data or frequency < pop_data.get(
+                    "eas_maf", 1
+                ):
                     pop_data["eas_maf"] = frequency
             elif pop_name == "1000GENOMES:phase_3:EUR":
-                if "eur_maf" not in pop_data or frequency < pop_data.get("eur_maf", 1):
+                if "eur_maf" not in pop_data or frequency < pop_data.get(
+                    "eur_maf", 1
+                ):
                     pop_data["eur_maf"] = frequency
-            elif pop_name == "1000GENOMES:phase_3:SAS" and ("sas_maf" not in pop_data or frequency < pop_data.get("sas_maf", 1)):
+            elif pop_name == "1000GENOMES:phase_3:SAS" and (
+                "sas_maf" not in pop_data
+                or frequency < pop_data.get("sas_maf", 1)
+            ):
                 pop_data["sas_maf"] = frequency
 
         return pop_data
 
-    async def get_variant_data(self, variant_id: str) -> Optional[ThousandGenomesData]:
+    async def get_variant_data(
+        self, variant_id: str
+    ) -> ThousandGenomesData | None:
         """Fetch variant data from 1000 Genomes via Ensembl."""
         try:
             # Try to get rsID or use the variant ID directly
-            encoded_id = quote(variant_id, safe='')
+            encoded_id = quote(variant_id, safe="")
             url = f"{ENSEMBL_VARIATION_ENDPOINT}/{encoded_id}"
 
             # Request with pops=1 to get population data
-            params = {
-                "content-type": "application/json",
-                "pops": "1"
-            }
+            params = {"content-type": "application/json", "pops": "1"}
 
             response, error = await http_client.request_api(
                 url=url,
@@ -261,9 +297,13 @@ class ThousandGenomesClient:
                 # Extract consequences from transcript consequences
                 all_consequences = []
                 for mapping in mappings:
-                    if transcript_consequences := mapping.get("transcript_consequences", []):
+                    if transcript_consequences := mapping.get(
+                        "transcript_consequences", []
+                    ):
                         for tc in transcript_consequences:
-                            if consequence_terms := tc.get("consequence_terms", []):
+                            if consequence_terms := tc.get(
+                                "consequence_terms", []
+                            ):
                                 all_consequences.extend(consequence_terms)
 
                 if all_consequences:
@@ -274,7 +314,9 @@ class ThousandGenomesClient:
                         if c not in seen:
                             seen.add(c)
                             unique_consequences.append(c)
-                    consequence = unique_consequences[0] if unique_consequences else None
+                    consequence = (
+                        unique_consequences[0] if unique_consequences else None
+                    )
 
             # Only return data if we found population frequencies
             if pop_data:
@@ -293,7 +335,9 @@ class ThousandGenomesClient:
             # ValueError: Invalid data format or conversion issues
             # TypeError: Unexpected data types in response
             # AttributeError: Missing attributes on response objects
-            logger.warning(f"Failed to fetch 1000 Genomes data for {variant_id}: {type(e).__name__}: {e}")
+            logger.warning(
+                f"Failed to fetch 1000 Genomes data for {variant_id}: {type(e).__name__}: {e}"
+            )
             return None
 
 
@@ -304,12 +348,16 @@ class ExternalVariantAggregator:
         self.tcga_client = TCGAClient()
         self.thousand_genomes_client = ThousandGenomesClient()
 
-    def _extract_gene_aa_change(self, variant_data: dict[str, Any]) -> Optional[str]:
+    def _extract_gene_aa_change(
+        self, variant_data: dict[str, Any]
+    ) -> str | None:
         """Extract gene and AA change in format like 'BRAF V600A' from variant data."""
         try:
             # First try to get gene name from CADD data
             gene_name = None
-            if (cadd := variant_data.get("cadd")) and (gene := cadd.get("gene")):
+            if (cadd := variant_data.get("cadd")) and (
+                gene := cadd.get("gene")
+            ):
                 gene_name = gene.get("genename")
 
             # If not found in CADD, try other sources
@@ -329,25 +377,37 @@ class ExternalVariantAggregator:
             aa_change = None
 
             # Try to get from docm first (it has clean p.V600A format)
-            if (docm := variant_data.get("docm")) and (aa := docm.get("aa_change")):
+            if (docm := variant_data.get("docm")) and (
+                aa := docm.get("aa_change")
+            ):
                 # Convert p.V600A to V600A
                 aa_change = aa.replace("p.", "")
 
             # Try hgvsp if not found
-            if not aa_change and (hgvsp_list := variant_data.get("hgvsp")) and isinstance(hgvsp_list, list) and hgvsp_list:
-                    # Take the first one and clean it
-                    hgvsp = hgvsp_list[0]
-                    # Remove p. prefix
-                    aa_change = hgvsp.replace("p.", "")
-                    # Handle formats like Val600Ala -> V600A
-                    if "Val" in aa_change or "Ala" in aa_change:
-                        # Try to extract the short form
-                        match = re.search(r'[A-Z]\d+[A-Z]', aa_change)
-                        if match:
-                            aa_change = match.group()
+            if (
+                not aa_change
+                and (hgvsp_list := variant_data.get("hgvsp"))
+                and isinstance(hgvsp_list, list)
+                and hgvsp_list
+            ):
+                # Take the first one and clean it
+                hgvsp = hgvsp_list[0]
+                # Remove p. prefix
+                aa_change = hgvsp.replace("p.", "")
+                # Handle formats like Val600Ala -> V600A
+                if "Val" in aa_change or "Ala" in aa_change:
+                    # Try to extract the short form
+                    match = re.search(r"[A-Z]\d+[A-Z]", aa_change)
+                    if match:
+                        aa_change = match.group()
 
             # Try CADD data
-            if not aa_change and (cadd := variant_data.get("cadd")) and (gene_info := cadd.get("gene")) and (prot := gene_info.get("prot")):
+            if (
+                not aa_change
+                and (cadd := variant_data.get("cadd"))
+                and (gene_info := cadd.get("gene"))
+                and (prot := gene_info.get("prot"))
+            ):
                 protpos = prot.get("protpos")
                 if protpos and cadd.get("oaa") and cadd.get("naa"):
                     aa_change = f"{cadd['oaa']}{protpos}{cadd['naa']}"
@@ -356,14 +416,22 @@ class ExternalVariantAggregator:
                 return f"{gene_name} {aa_change}"
 
             return None
-        except (KeyError, ValueError, TypeError, AttributeError, re.error) as e:
+        except (
+            KeyError,
+            ValueError,
+            TypeError,
+            AttributeError,
+            re.error,
+        ) as e:
             # Log the error for debugging while gracefully handling data extraction issues
             # KeyError: Missing expected fields in variant data
             # ValueError: Invalid data format or conversion issues
             # TypeError: Unexpected data types in variant data
             # AttributeError: Missing attributes on data objects
             # re.error: Regular expression matching errors
-            logger.warning(f"Failed to extract gene/AA change from variant data: {type(e).__name__}: {e}")
+            logger.warning(
+                f"Failed to extract gene/AA change from variant data: {type(e).__name__}: {e}"
+            )
             return None
 
     async def get_enhanced_annotations(
@@ -371,7 +439,7 @@ class ExternalVariantAggregator:
         variant_id: str,
         include_tcga: bool = True,
         include_1000g: bool = True,
-        variant_data: Optional[dict[str, Any]] = None,
+        variant_data: dict[str, Any] | None = None,
     ) -> EnhancedVariantAnnotation:
         """Fetch and aggregate variant annotations from external sources.
 
@@ -395,7 +463,9 @@ class ExternalVariantAggregator:
             task_names.append("tcga")
 
         if include_1000g:
-            tasks.append(self.thousand_genomes_client.get_variant_data(variant_id))
+            tasks.append(
+                self.thousand_genomes_client.get_variant_data(variant_id)
+            )
             task_names.append("thousand_genomes")
 
         # Run all queries in parallel
@@ -404,7 +474,9 @@ class ExternalVariantAggregator:
         # Build the enhanced annotation
         annotation = EnhancedVariantAnnotation(variant_id=variant_id)
 
-        for _i, (result, name) in enumerate(zip(results, task_names, strict=False)):
+        for _i, (result, name) in enumerate(
+            zip(results, task_names, strict=False)
+        ):
             if isinstance(result, Exception):
                 annotation.error_sources.append(name)
             elif result is not None:
@@ -416,11 +488,13 @@ class ExternalVariantAggregator:
         return annotation
 
 
-def format_enhanced_annotations(annotation: EnhancedVariantAnnotation) -> dict[str, Any]:
+def format_enhanced_annotations(
+    annotation: EnhancedVariantAnnotation,
+) -> dict[str, Any]:
     """Format enhanced annotations for display."""
     formatted: dict[str, Any] = {
         "variant_id": annotation.variant_id,
-        "external_annotations": {}
+        "external_annotations": {},
     }
 
     external_annot = formatted["external_annotations"]

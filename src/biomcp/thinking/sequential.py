@@ -1,6 +1,6 @@
 """Sequential thinking module for BioMCP."""
 
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from .. import mcp_app
 
@@ -62,13 +62,13 @@ async def sequential_thinking(
         bool, "True when correcting/improving a previous thought"
     ] = False,
     revisesThought: Annotated[
-        Optional[int], "The thought number being revised"
+        int | None, "The thought number being revised"
     ] = None,
     branchFromThought: Annotated[
-        Optional[int], "Create alternative path from this thought number"
+        int | None, "Create alternative path from this thought number"
     ] = None,
     needsMoreThoughts: Annotated[
-        Optional[bool],
+        bool | None,
         "True when problem is significantly larger than initially estimated",
     ] = None,
 ) -> str:
