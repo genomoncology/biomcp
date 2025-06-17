@@ -7,6 +7,7 @@ from . import articles
 from . import trials
 from . import variants
 from . import resources
+from . import thinking
 
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
     "mcp_app",
     "render",
     "resources",
+    "thinking",
     "trials",
     "variants",
 ]

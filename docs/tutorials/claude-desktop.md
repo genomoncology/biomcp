@@ -46,26 +46,7 @@ Edit the file like this using your favorite text editor:
 }
 ```
 
-We also recommend using Sequential Thinking MCP, which can be added as well
-by making your whole file:
-
-```json
-{
-  "mcpServers": {
-    "biomcp": {
-      "command": "uv",
-      "args": ["run", "--with", "biomcp-python", "biomcp", "run"]
-    },
-    "sequential-thinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
-    }
-  }
-}
-```
-
-For more information about Sequential Thinking:
-[https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking](https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking)
+Note: BioMCP now includes built-in sequential thinking capabilities, so you don't need to add a separate sequential thinking server.
 
 Save your JSON file and restart Claude Desktop.
 
@@ -77,17 +58,18 @@ clicking the "connector" icon below the chat that says "Attach from MCP".
 In that dialog, select the biomcp instructions as an "integration" and the
 MCP resource will be added as text.
 
-You should see at least 9 tools that can be accessed with BioMCP plus any
-other tools you have configured (10 total with sequential thinking, for
-instance).
+You should see at least 10 tools that can be accessed with BioMCP, including
+the built-in sequential thinking tool.
 
 ### Tool Parameters
 
-All BioMCP tools include a required `call_benefit` parameter that helps the model explain why it's using a particular tool. When using any BioMCP tool, you must provide:
+Most BioMCP data retrieval tools include a required `call_benefit` parameter that helps the model explain why it's using a particular tool. When using these tools, you must provide:
 
 - `call_benefit`: A brief description of why the tool is being called and what benefit is expected from using it
 
 This parameter helps improve tool usage transparency and allows for better reasoning about tool selection.
+
+Note: The `sequential_thinking` tool does not require the `call_benefit` parameter as it has its own structured parameters for managing the thinking process.
 
 ### Example Queries
 
@@ -132,6 +114,16 @@ Claude can help with complex biomedical research workflows:
   1. Identify the main ALK fusion variants
   2. Find current clinical trials testing next-generation ALK inhibitors
   3. Summarize recent literature on resistance mechanisms
+
+### Sequential Thinking Queries
+
+BioMCP includes built-in sequential thinking capabilities for complex problem-solving:
+
+- "Please classify the variant chr19:10602767:C:A, KEAP1 c.811G>T p.V271L, as oncogenic, likely-oncogenic, uncertain significance, likely benign, or benign. Use sequential thinking to work through your analysis."
+- "I need to design a clinical trial for BRAF-mutated melanoma. Use sequential thinking to outline the key considerations and steps."
+- "Help me understand the relationship between TP53 mutations and cancer prognosis. Use sequential thinking to analyze this systematically."
+
+The sequential thinking tool helps Claude break down complex biomedical problems into manageable steps, revise thinking based on new insights, and explore alternative reasoning paths.
 
 ## Troubleshooting
 
