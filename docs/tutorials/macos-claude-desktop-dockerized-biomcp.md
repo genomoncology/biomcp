@@ -11,6 +11,7 @@ Protocol (MCP) server for Claude Desktop for Mac, while having biomcp fully dock
 ## Steps
 
 Create a file called `Dockerfile` in a directory of your choice with this content
+
 ```
 FROM python:3.13-slim AS production
 RUN apt-get update && rm -rf /var/lib/apt/lists/*
@@ -43,4 +44,5 @@ and edit the file `claude_desktop_config.json` adding the biomcp server
   }
 }
 ```
+
 That's it; you should now have biomcp, fully containerized, available in your Macos Claude Desktop Application
