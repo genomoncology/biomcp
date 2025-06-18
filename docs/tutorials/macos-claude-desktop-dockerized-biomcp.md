@@ -1,4 +1,14 @@
-# How to containerize Biomcp and make it available on Claude Desktop for Mac
+# Containerized BioMCP with Claude Desktop for Mac: Step-by-Step Tutorial
+
+This tutorial will guide you through setting up BioMCP as a Model Context
+Protocol (MCP) server for Claude Desktop for Mac, while having biomcp fully dockerized.
+
+## Prerequisites
+
+- Claude Desktop: [Download from Anthropic](https://claude.ai/desktop), or if you have [brew](https://brew.sh/), simply `brew install --cask claude`
+- Docker: [Download from Docker.com](https://docs.docker.com/desktop/setup/install/mac-install/) or, again if you have [brew](https://brew.sh/), simply `brew install --cask docker`
+
+## Steps
 
 Create a file called `Dockerfile` in a directory of your choice with this content
 ```
