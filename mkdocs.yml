@@ -33,6 +33,10 @@ nav:
       - What is BioMCP?: blog/what-is-biomcp.md
       - AI Assisted Clinical Trial Search: blog/ai-assisted-clinical-trial-search-analysis.md
       - Deep Researcher Persona: blog/researcher-persona-resource.md
+  - Policies:
+      - Privacy Policy: policies/biomcp-privacy.md
+      - Security Policy: policies/biomcp-security.md
+      - Terms & Conditions: policies/biomcp-terms.md
   - Troubleshooting:
       - MacOS: troubleshooting/macos.md
   - About GenomOncology: genomoncology.md
