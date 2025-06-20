@@ -34,7 +34,11 @@ async def execute_http_request(
                 resp = await client.post(url, json=params)
             else:
                 from .constants import HTTP_ERROR_CODE_UNSUPPORTED_METHOD
-                return HTTP_ERROR_CODE_UNSUPPORTED_METHOD, f"Unsupported method {method}"
+
+                return (
+                    HTTP_ERROR_CODE_UNSUPPORTED_METHOD,
+                    f"Unsupported method {method}",
+                )
 
         # Check for empty response
         if not resp.text:
@@ -49,4 +53,5 @@ async def execute_http_request(
     except httpx.HTTPError as exc:
         error_msg = str(exc) if str(exc) else "Network connectivity error"
         from .constants import HTTP_ERROR_CODE_NETWORK
+
         return HTTP_ERROR_CODE_NETWORK, error_msg

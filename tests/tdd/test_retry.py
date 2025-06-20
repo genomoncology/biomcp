@@ -19,11 +19,7 @@ from biomcp.retry import (
 
 def test_calculate_delay_exponential_backoff():
     """Test that delay increases exponentially."""
-    config = RetryConfig(
-        initial_delay=1.0,
-        exponential_base=2.0,
-        jitter=False
-    )
+    config = RetryConfig(initial_delay=1.0, exponential_base=2.0, jitter=False)
 
     # Test exponential increase
     assert calculate_delay(0, config) == 1.0  # 1 * 2^0
@@ -35,10 +31,7 @@ def test_calculate_delay_exponential_backoff():
 def test_calculate_delay_max_cap():
     """Test that delay is capped at max_delay."""
     config = RetryConfig(
-        initial_delay=1.0,
-        exponential_base=2.0,
-        max_delay=5.0,
-        jitter=False
+        initial_delay=1.0, exponential_base=2.0, max_delay=5.0, jitter=False
     )
 
     # Test that delay is capped
@@ -51,10 +44,7 @@ def test_calculate_delay_max_cap():
 
 def test_calculate_delay_with_jitter():
     """Test that jitter adds randomness to delay."""
-    config = RetryConfig(
-        initial_delay=10.0,
-        jitter=True
-    )
+    config = RetryConfig(initial_delay=10.0, jitter=True)
 
     # Generate multiple delays and check they're different
     delays = [calculate_delay(1, config) for _ in range(10)]
@@ -69,9 +59,7 @@ def test_calculate_delay_with_jitter():
 
 def test_is_retryable_exception():
     """Test exception retryability check."""
-    config = RetryConfig(
-        retryable_exceptions=(ConnectionError, TimeoutError)
-    )
+    config = RetryConfig(retryable_exceptions=(ConnectionError, TimeoutError))
 
     # Retryable exceptions
     assert is_retryable_exception(ConnectionError("test"), config)
@@ -84,9 +72,7 @@ def test_is_retryable_exception():
 
 def test_is_retryable_status():
     """Test HTTP status code retryability check."""
-    config = RetryConfig(
-        retryable_status_codes=(429, 502, 503, 504)
-    )
+    config = RetryConfig(retryable_status_codes=(429, 502, 503, 504))
 
     # Retryable status codes
     assert is_retryable_status(429, config)
@@ -121,11 +107,13 @@ async def test_with_retry_decorator_eventual_success():
     """Test retry decorator with eventual success."""
     call_count = 0
 
-    @with_retry(RetryConfig(
-        max_attempts=3,
-        initial_delay=0.01,  # Fast for testing
-        retryable_exceptions=(ValueError,)
-    ))
+    @with_retry(
+        RetryConfig(
+            max_attempts=3,
+            initial_delay=0.01,  # Fast for testing
+            retryable_exceptions=(ValueError,),
+        )
+    )
     async def test_func():
         nonlocal call_count
         call_count += 1
@@ -143,11 +131,13 @@ async def test_with_retry_decorator_max_attempts_exceeded():
     """Test retry decorator when max attempts exceeded."""
     call_count = 0
 
-    @with_retry(RetryConfig(
-        max_attempts=3,
-        initial_delay=0.01,
-        retryable_exceptions=(ConnectionError,)
-    ))
+    @with_retry(
+        RetryConfig(
+            max_attempts=3,
+            initial_delay=0.01,
+            retryable_exceptions=(ConnectionError,),
+        )
+    )
     async def test_func():
         nonlocal call_count
         call_count += 1
@@ -164,10 +154,9 @@ async def test_with_retry_non_retryable_exception():
     """Test retry decorator with non-retryable exception."""
     call_count = 0
 
-    @with_retry(RetryConfig(
-        max_attempts=3,
-        retryable_exceptions=(ConnectionError,)
-    ))
+    @with_retry(
+        RetryConfig(max_attempts=3, retryable_exceptions=(ConnectionError,))
+    )
     async def test_func():
         nonlocal call_count
         call_count += 1
@@ -194,7 +183,7 @@ async def test_retry_with_backoff_function():
     config = RetryConfig(
         max_attempts=3,
         initial_delay=0.01,
-        retryable_exceptions=(TimeoutError,)
+        retryable_exceptions=(TimeoutError,),
     )
 
     result = await retry_with_backoff(test_func, "test", config=config)
@@ -215,13 +204,15 @@ async def test_retry_with_delay_progression():
     """Test that retries happen with correct delay progression."""
     call_times = []
 
-    @with_retry(RetryConfig(
-        max_attempts=3,
-        initial_delay=0.1,
-        exponential_base=2.0,
-        jitter=False,
-        retryable_exceptions=(ValueError,)
-    ))
+    @with_retry(
+        RetryConfig(
+            max_attempts=3,
+            initial_delay=0.1,
+            exponential_base=2.0,
+            jitter=False,
+            retryable_exceptions=(ValueError,),
+        )
+    )
     async def test_func():
         call_times.append(asyncio.get_event_loop().time())
         if len(call_times) < 3:
@@ -248,7 +239,9 @@ async def test_integration_with_http_client():
     from biomcp.http_client import call_http
 
     # Test 1: Connection error retry
-    with patch('biomcp.http_client_simple.httpx.AsyncClient') as mock_client_class:
+    with patch(
+        "biomcp.http_client_simple.httpx.AsyncClient"
+    ) as mock_client_class:
         mock_client = AsyncMock()
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
@@ -274,10 +267,7 @@ async def test_integration_with_http_client():
         )
 
         status, content = await call_http(
-            "GET",
-            "https://api.example.com/test",
-            {},
-            retry_config=config
+            "GET", "https://api.example.com/test", {}, retry_config=config
         )
 
         assert status == 200
@@ -285,12 +275,16 @@ async def test_integration_with_http_client():
         assert call_count == 3
 
     # Test 2: Timeout error retry
-    with patch('biomcp.http_client_simple.httpx.AsyncClient') as mock_client_class:
+    with patch(
+        "biomcp.http_client_simple.httpx.AsyncClient"
+    ) as mock_client_class:
         mock_client = AsyncMock()
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Simulate timeout errors
-        mock_client.get.side_effect = httpx.TimeoutException("Request timed out")
+        mock_client.get.side_effect = httpx.TimeoutException(
+            "Request timed out"
+        )
 
         config = RetryConfig(
             max_attempts=2,
@@ -300,10 +294,7 @@ async def test_integration_with_http_client():
         # This should raise TimeoutError after retries fail
         with pytest.raises(TimeoutError):
             await call_http(
-                "GET",
-                "https://api.example.com/test",
-                {},
-                retry_config=config
+                "GET", "https://api.example.com/test", {}, retry_config=config
             )
 
         assert mock_client.get.call_count == 2

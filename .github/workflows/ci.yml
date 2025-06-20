@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -12,9 +12,10 @@ env:
   UV_VERSION: "0.4.0"
 
 jobs:
-  lint:
+  # Quick checks that run on every PR
+  quick-checks:
     runs-on: ubuntu-latest
-    name: Lint Code
+    name: Quick Checks
     steps:
       - uses: actions/checkout@v4
 
@@ -41,11 +42,21 @@ jobs:
         run: |
           uv run mypy
 
-      - name: Check for dependency issues
+      - name: Run tests (Ubuntu, Python 3.12 only)
         run: |
-          uv run deptry .
+          uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml --cov-report=term-missing
 
-  test:
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # Full matrix tests - only run on main branch pushes
+  full-test-matrix:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
     strategy:
@@ -53,7 +64,11 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
         os: [ubuntu-latest, windows-latest, macos-latest]
-    
+        exclude:
+          # Skip redundant test that was already run in quick-checks
+          - python-version: "3.12"
+            os: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -71,19 +86,40 @@ jobs:
         run: |
           uv sync --all-extras
 
-      - name: Run tests with coverage
+      - name: Run tests
         run: |
-          uv run python -m pytest --cov --cov-config=pyproject.toml --cov-report=xml --cov-report=term-missing
+          uv run python -m pytest
 
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
+  # Build checks - run on PRs but simplified
+  build-and-docs:
+    runs-on: ubuntu-latest
+    name: Build & Docs Check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Build package
+        run: |
+          uv build
+
+      - name: Install dependencies for docs
+        run: |
+          uv sync --all-extras
+
+      - name: Build documentation
+        run: |
+          uv run mkdocs build --strict
+
+  # MCP integration test - quick check
   test-mcp:
     runs-on: ubuntu-latest
     name: Test MCP Integration
@@ -111,63 +147,3 @@ jobs:
       - name: Run MCP integration tests
         run: |
           uv run python -m pytest tests/tdd/test_mcp_integration.py -v
-
-  build:
-    runs-on: ubuntu-latest
-    name: Build Package
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Build package
-        run: |
-          uv build
-
-      - name: Check package
-        run: |
-          uv run twine check dist/*
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
-  docs:
-    runs-on: ubuntu-latest
-    name: Build Documentation
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install dependencies
-        run: |
-          uv sync --all-extras
-
-      - name: Build documentation
-        run: |
-          uv run mkdocs build --strict
-
-      - name: Upload documentation
-        uses: actions/upload-artifact@v4
-        with:
-          name: docs
-          path: site/

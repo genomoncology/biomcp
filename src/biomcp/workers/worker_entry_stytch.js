@@ -965,7 +965,7 @@ app
       if (args && Object.keys(args).length > 0) {
         // Extract domain from the arguments
         domain = args.domain || null;
-        
+
         // Skip logging if domain is "thinking"
         if (domain === "thinking") {
           sendToBQ = false;
@@ -991,7 +991,11 @@ app
       c.executionCtx.waitUntil(insertEvent(c.env, eventRow));
     } else {
       const missing = [
-        !sendToBQ ? (domain === "thinking" ? "domain is thinking" : "no query args") : null,
+        !sendToBQ
+          ? domain === "thinking"
+            ? "domain is thinking"
+            : "no query args"
+          : null,
         !BQ_SA_KEY_JSON && "BQ_SA_KEY_JSON",
         !BQ_PROJECT_ID && "BQ_PROJECT_ID",
         !BQ_DATASET && "BQ_DATASET",

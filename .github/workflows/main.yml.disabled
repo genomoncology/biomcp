@@ -1,3 +1,7 @@
+# This workflow has been disabled to avoid duplication with ci.yml
+# The functionality has been consolidated into ci.yml
+# To re-enable, rename this file back to main.yml
+
 name: Main
 
 on:

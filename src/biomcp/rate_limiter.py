@@ -17,7 +17,9 @@ class RateLimitExceeded(BioMCPError):
 
     def __init__(self, domain: str, limit: int, window: int):
         message = f"Rate limit exceeded for {domain}: {limit} requests per {window} seconds"
-        super().__init__(message, {"domain": domain, "limit": limit, "window": window})
+        super().__init__(
+            message, {"domain": domain, "limit": limit, "window": window}
+        )
 
 
 class RateLimiter:
@@ -48,7 +50,9 @@ class RateLimiter:
             self.last_update = now
 
             # Add tokens based on elapsed time
-            self.tokens = min(self.burst_size, self.tokens + elapsed * self.rate)
+            self.tokens = min(
+                self.burst_size, self.tokens + elapsed * self.rate
+            )
 
             if self.tokens < tokens:
                 # Calculate wait time
@@ -80,9 +84,9 @@ class DomainRateLimiter:
         self.limiters: dict[str, RateLimiter] = {}
         self.domain_configs = {
             "article": {"rps": 20.0, "burst": 40},  # PubMed can handle more
-            "trial": {"rps": 10.0, "burst": 20},     # ClinicalTrials.gov standard
-            "variant": {"rps": 15.0, "burst": 30},   # MyVariant.info moderate
-            "thinking": {"rps": 50.0, "burst": 100}, # Local processing
+            "trial": {"rps": 10.0, "burst": 20},  # ClinicalTrials.gov standard
+            "variant": {"rps": 15.0, "burst": 30},  # MyVariant.info moderate
+            "thinking": {"rps": 50.0, "burst": 100},  # Local processing
         }
 
     def get_limiter(self, domain: str) -> RateLimiter:
@@ -125,7 +129,8 @@ class SlidingWindowRateLimiter:
 
             # Remove old requests
             self.requests[key] = [
-                req_time for req_time in self.requests[key]
+                req_time
+                for req_time in self.requests[key]
                 if req_time > cutoff
             ]
 
@@ -140,12 +145,16 @@ class SlidingWindowRateLimiter:
     async def acquire(self, key: str) -> None:
         """Acquire permission to make request."""
         if not await self.check_limit(key):
-            raise RateLimitExceeded(key, self.max_requests, self.window_seconds)
+            raise RateLimitExceeded(
+                key, self.max_requests, self.window_seconds
+            )
 
 
 # Global instances
 domain_limiter = DomainRateLimiter()
-user_limiter = SlidingWindowRateLimiter(requests=1000, window_seconds=3600)  # 1000 req/hour
+user_limiter = SlidingWindowRateLimiter(
+    requests=1000, window_seconds=3600
+)  # 1000 req/hour
 
 
 async def rate_limit_domain(domain: str) -> None:
@@ -158,4 +167,3 @@ async def rate_limit_user(user_id: str | None = None) -> None:
     """Apply rate limiting for a user."""
     if user_id:
         await user_limiter.acquire(user_id)
-

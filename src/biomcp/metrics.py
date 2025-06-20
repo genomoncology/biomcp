@@ -47,7 +47,9 @@ class MetricSummary:
     error_rate: float
 
     @classmethod
-    def from_samples(cls, name: str, samples: list[MetricSample]) -> "MetricSummary":
+    def from_samples(
+        cls, name: str, samples: list[MetricSample]
+    ) -> "MetricSummary":
         """Calculate summary statistics from samples."""
         if not samples:
             return cls(
@@ -140,7 +142,7 @@ class MetricsCollector:
 
             # Keep only the most recent samples
             if len(samples) > self._max_samples:
-                self._metrics[name] = samples[-self._max_samples:]
+                self._metrics[name] = samples[-self._max_samples :]
 
     async def get_summary(self, name: str) -> MetricSummary | None:
         """Get summary statistics for a metric.
@@ -235,6 +237,7 @@ def track_performance(metric_name: str | None = None):
     Returns:
         Decorated function
     """
+
     def decorator(func):
         name = metric_name or f"{func.__module__}.{func.__name__}"
 
@@ -288,7 +291,9 @@ def track_performance(metric_name: str | None = None):
                         )
                     )
                     # Add error handler to prevent unhandled exceptions
-                    task.add_done_callback(lambda t: t.exception() if t.done() else None)
+                    task.add_done_callback(
+                        lambda t: t.exception() if t.done() else None
+                    )
                 except RuntimeError:
                     # No event loop running, log instead
                     logger.debug(
@@ -348,7 +353,9 @@ class Timer:
                 )
             )
             # Add error handler to prevent unhandled exceptions
-            task.add_done_callback(lambda t: t.exception() if t.done() else None)
+            task.add_done_callback(
+                lambda t: t.exception() if t.done() else None
+            )
         except RuntimeError:
             # No event loop running, log instead
             logger.debug(

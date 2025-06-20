@@ -15,7 +15,7 @@ class CircuitState(enum.Enum):
     """Circuit breaker states."""
 
     CLOSED = "closed"  # Normal operation, requests pass through
-    OPEN = "open"      # Circuit tripped, requests fail fast
+    OPEN = "open"  # Circuit tripped, requests fail fast
     HALF_OPEN = "half_open"  # Testing if service recovered
 
 
@@ -32,7 +32,9 @@ class CircuitBreakerConfig:
     success_threshold: int = 2
     """Successes needed in half-open state to close circuit"""
 
-    expected_exception: type[Exception] | tuple[type[Exception], ...] = Exception
+    expected_exception: type[Exception] | tuple[type[Exception], ...] = (
+        Exception
+    )
     """Exception types that count as failures"""
 
     exclude_exceptions: tuple[type[Exception], ...] = ()
@@ -54,7 +56,9 @@ class CircuitBreakerState:
 class CircuitBreakerError(Exception):
     """Raised when circuit breaker is open."""
 
-    def __init__(self, message: str, last_failure_time: datetime | None = None):
+    def __init__(
+        self, message: str, last_failure_time: datetime | None = None
+    ):
         super().__init__(message)
         self.last_failure_time = last_failure_time
 
@@ -104,7 +108,9 @@ class CircuitBreaker:
                     self._state.state = CircuitState.HALF_OPEN
                     self._state.success_count = 0
                     self._state.last_state_change = datetime.now()
-                    logger.info(f"Circuit breaker '{self.name}' entering half-open state")
+                    logger.info(
+                        f"Circuit breaker '{self.name}' entering half-open state"
+                    )
                 else:
                     raise CircuitBreakerError(
                         f"Circuit breaker '{self.name}' is open",
@@ -132,7 +138,9 @@ class CircuitBreaker:
                     self._state.failure_count = 0
                     self._state.success_count = 0
                     self._state.last_state_change = datetime.now()
-                    logger.info(f"Circuit breaker '{self.name}' closed after recovery")
+                    logger.info(
+                        f"Circuit breaker '{self.name}' closed after recovery"
+                    )
             elif self._state.state == CircuitState.CLOSED:
                 # Reset failure count on success
                 self._state.failure_count = 0
@@ -180,7 +188,9 @@ class CircuitBreaker:
             return True
 
         time_since_failure = datetime.now() - self._state.last_failure_time
-        return time_since_failure.total_seconds() >= self.config.recovery_timeout
+        return (
+            time_since_failure.total_seconds() >= self.config.recovery_timeout
+        )
 
     def _is_counted_exception(self, exc: Exception) -> bool:
         """Check if exception should count as failure."""
@@ -252,6 +262,7 @@ def circuit_breaker(
     Returns:
         Decorated function
     """
+
     def decorator(func):
         breaker_name = name or f"{func.__module__}.{func.__name__}"
         breaker = get_circuit_breaker(breaker_name, config)

@@ -57,9 +57,7 @@ class RetryConfig:
         self.retryable_status_codes = retryable_status_codes
 
 
-def calculate_delay(
-    attempt: int, config: RetryConfig
-) -> float:
+def calculate_delay(attempt: int, config: RetryConfig) -> float:
     """Calculate delay for the next retry attempt.
 
     Args:
@@ -70,7 +68,7 @@ def calculate_delay(
         Delay in seconds before the next retry
     """
     # Exponential backoff: delay = initial_delay * (base ^ attempt)
-    delay = config.initial_delay * (config.exponential_base ** attempt)
+    delay = config.initial_delay * (config.exponential_base**attempt)
 
     # Cap at maximum delay
     delay = min(delay, config.max_delay)
@@ -113,7 +111,12 @@ def is_retryable_status(status_code: int, config: RetryConfig) -> bool:
     return status_code in config.retryable_status_codes
 
 
-def with_retry(config: RetryConfig | None = None) -> Callable[[Callable[..., Coroutine[Any, Any, T]]], Callable[..., Coroutine[Any, Any, T]]]:
+def with_retry(
+    config: RetryConfig | None = None,
+) -> Callable[
+    [Callable[..., Coroutine[Any, Any, T]]],
+    Callable[..., Coroutine[Any, Any, T]],
+]:
     """Decorator to add retry logic to async functions.
 
     Args:
@@ -125,7 +128,9 @@ def with_retry(config: RetryConfig | None = None) -> Callable[[Callable[..., Cor
     if config is None:
         config = RetryConfig()
 
-    def decorator(func: Callable[..., Coroutine[Any, Any, T]]) -> Callable[..., Coroutine[Any, Any, T]]:
+    def decorator(
+        func: Callable[..., Coroutine[Any, Any, T]],
+    ) -> Callable[..., Coroutine[Any, Any, T]]:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> T:
             last_exception = None
@@ -168,6 +173,7 @@ def with_retry(config: RetryConfig | None = None) -> Callable[[Callable[..., Cor
             raise RuntimeError("Unexpected retry loop exit")
 
         return wrapper
+
     return decorator
 
 

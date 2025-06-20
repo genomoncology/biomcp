@@ -16,11 +16,13 @@ from biomcp.circuit_breaker import (
 
 class CircuitBreakerTestException(Exception):
     """Test exception for circuit breaker tests."""
+
     pass
 
 
 class IgnoredException(Exception):
     """Exception that should be ignored by circuit breaker."""
+
     pass
 
 
@@ -189,7 +191,9 @@ async def test_circuit_breaker_decorator():
     """Test circuit breaker decorator."""
     call_count = 0
 
-    @circuit_breaker("test_decorator", CircuitBreakerConfig(failure_threshold=2))
+    @circuit_breaker(
+        "test_decorator", CircuitBreakerConfig(failure_threshold=2)
+    )
     async def decorated_func(should_fail=False):
         nonlocal call_count
         call_count += 1
@@ -252,8 +256,12 @@ async def test_circuit_breaker_concurrent_calls():
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     # Should have some CircuitBreakerTestExceptions and some CircuitBreakerErrors
-    test_exceptions = sum(1 for r in results if isinstance(r, CircuitBreakerTestException))
-    breaker_errors = sum(1 for r in results if isinstance(r, CircuitBreakerError))
+    test_exceptions = sum(
+        1 for r in results if isinstance(r, CircuitBreakerTestException)
+    )
+    breaker_errors = sum(
+        1 for r in results if isinstance(r, CircuitBreakerError)
+    )
 
     # At least failure_threshold CircuitBreakerTestExceptions
     assert test_exceptions >= config.failure_threshold

@@ -26,7 +26,7 @@ def test_metric_sample():
         duration=1.5,
         success=True,
         error=None,
-        tags={"domain": "article"}
+        tags={"domain": "article"},
     )
 
     assert sample.duration == 1.5
@@ -41,7 +41,9 @@ def test_metric_summary_from_samples():
     samples = [
         MetricSample(timestamp=now, duration=0.1, success=True),
         MetricSample(timestamp=now, duration=0.2, success=True),
-        MetricSample(timestamp=now, duration=0.3, success=False, error="timeout"),
+        MetricSample(
+            timestamp=now, duration=0.3, success=False, error="timeout"
+        ),
         MetricSample(timestamp=now, duration=0.4, success=True),
         MetricSample(timestamp=now, duration=0.5, success=True),
     ]
@@ -111,6 +113,7 @@ async def test_global_metrics_functions():
     """Test global metrics functions."""
     # Clear any existing metrics
     from biomcp.metrics import _metrics_collector
+
     await _metrics_collector.clear()
 
     # Record metrics
@@ -132,6 +135,7 @@ async def test_global_metrics_functions():
 async def test_track_performance_decorator_async():
     """Test track_performance decorator on async functions."""
     from biomcp.metrics import _metrics_collector
+
     await _metrics_collector.clear()
 
     @track_performance("test_async_func")
@@ -154,6 +158,7 @@ async def test_track_performance_decorator_async():
 async def test_track_performance_decorator_async_error():
     """Test track_performance decorator on async functions with errors."""
     from biomcp.metrics import _metrics_collector
+
     await _metrics_collector.clear()
 
     @track_performance("test_async_error")
@@ -174,6 +179,7 @@ async def test_track_performance_decorator_async_error():
 
 def test_track_performance_decorator_sync():
     """Test track_performance decorator on sync functions."""
+
     @track_performance("test_sync_func")
     def fast_operation():
         time.sleep(0.05)
@@ -182,6 +188,7 @@ def test_track_performance_decorator_sync():
     # Need to run in an event loop context
     async def run_test():
         from biomcp.metrics import _metrics_collector
+
         await _metrics_collector.clear()
 
         result = fast_operation()
@@ -202,6 +209,7 @@ def test_track_performance_decorator_sync():
 async def test_timer_context_manager():
     """Test Timer context manager."""
     from biomcp.metrics import _metrics_collector
+
     await _metrics_collector.clear()
 
     # Test async timer
@@ -230,6 +238,7 @@ async def test_timer_context_manager():
 async def test_timer_with_exception():
     """Test Timer context manager with exceptions."""
     from biomcp.metrics import _metrics_collector
+
     await _metrics_collector.clear()
 
     # Test async timer with exception

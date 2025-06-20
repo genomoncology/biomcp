@@ -10,6 +10,7 @@ from typing import Any
 @dataclass
 class ThoughtEntry:
     """Represents a single thought in the thinking process."""
+
     thought: str
     thought_number: int
     total_thoughts: int
@@ -25,10 +26,13 @@ class ThoughtEntry:
 @dataclass
 class ThinkingSession:
     """Manages state for a thinking session."""
+
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = field(default_factory=datetime.now)
     thought_history: list[ThoughtEntry] = field(default_factory=list)
-    thought_branches: dict[str, list[ThoughtEntry]] = field(default_factory=lambda: defaultdict(list))
+    thought_branches: dict[str, list[ThoughtEntry]] = field(
+        default_factory=lambda: defaultdict(list)
+    )
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_thought(self, entry: ThoughtEntry) -> None:
@@ -79,7 +83,9 @@ class SessionManager:
         self._current_session_id = session.session_id
         return session
 
-    def get_session(self, session_id: str | None = None) -> ThinkingSession | None:
+    def get_session(
+        self, session_id: str | None = None
+    ) -> ThinkingSession | None:
         """Get a session by ID or the current session."""
         if session_id:
             return self.sessions.get(session_id)
@@ -87,7 +93,9 @@ class SessionManager:
             return self.sessions.get(self._current_session_id)
         return None
 
-    def get_or_create_session(self, session_id: str | None = None) -> ThinkingSession:
+    def get_or_create_session(
+        self, session_id: str | None = None
+    ) -> ThinkingSession:
         """Get existing session or create new one."""
         if session_id and session_id in self.sessions:
             self._current_session_id = session_id
@@ -116,4 +124,3 @@ class SessionManager:
 
 # Global session manager instance
 _session_manager = SessionManager()
-

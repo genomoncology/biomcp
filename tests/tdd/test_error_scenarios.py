@@ -26,7 +26,9 @@ def test_format_results_handler_exception():
     # Create a result that will cause formatting to fail
     bad_result = {"missing": "required_fields"}
 
-    with patch('biomcp.domain_handlers.ArticleHandler.format_result') as mock_format:
+    with patch(
+        "biomcp.domain_handlers.ArticleHandler.format_result"
+    ) as mock_format:
         mock_format.side_effect = KeyError("id")
 
         # Should handle the error gracefully
@@ -56,6 +58,7 @@ async def test_concurrent_operations():
         get_metric_summary,
         record_metric,
     )
+
     await _metrics_collector.clear()
 
     # Simulate concurrent metric recording
@@ -75,7 +78,9 @@ async def test_concurrent_operations():
     assert summary is not None
     assert summary.count == 100
     assert summary.error_rate == 0.1  # 10% errors
-    assert 0.18 <= summary.avg_duration <= 0.22  # Average of 0.1, 0.2, 0.3, 0.4
+    assert (
+        0.18 <= summary.avg_duration <= 0.22
+    )  # Average of 0.1, 0.2, 0.3, 0.4
 
 
 def test_cache_corruption_handling():
@@ -83,14 +88,16 @@ def test_cache_corruption_handling():
     from biomcp.http_client import get_cached_response
 
     # Simulate corrupted cache entry
-    with patch('biomcp.http_client.get_cache') as mock_get_cache:
+    with patch("biomcp.http_client.get_cache") as mock_get_cache:
         mock_cache = MagicMock()
         mock_cache.get.return_value = "corrupted\x00data"  # Invalid data
         mock_get_cache.return_value = mock_cache
 
         # Should handle corrupted data gracefully
         result = get_cached_response("test_key")
-        assert result == "corrupted\x00data"  # Returns as-is, parsing handles it
+        assert (
+            result == "corrupted\x00data"
+        )  # Returns as-is, parsing handles it
 
 
 def test_exception_hierarchy():

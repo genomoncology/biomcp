@@ -187,9 +187,6 @@ async def handle_variant_search(
     # Variants API returns paginated results
     total = len(all_results)
 
-    logger.info(
-        f"Variant search returned {total} results"
-    )
+    logger.info(f"Variant search returned {total} results")
 
     return all_results, total
-

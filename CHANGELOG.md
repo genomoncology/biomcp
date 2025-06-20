@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Unified search and fetch tools following OpenAI MCP guidelines
 - Additional variant sources (TCGA/GDC, 1000 Genomes) enabled by default in fetch operations
 - Additional article sources (bioRxiv, medRxiv, Europe PMC) enabled by default in search operations
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration tests for MCP server functionality
 
 ### Changed
+
 - Consolidated 10 separate MCP tools into 2 unified tools (search and fetch)
 - Improved error handling with specific exception types
 - Enhanced type safety throughout the codebase
@@ -35,11 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added domain parameter to all API calls for proper retry configuration
 
 ### Removed
+
 - Individual domain-specific MCP tool decorators
 - Duplicate handler implementations in src/biomcp/handlers/
 - Global state from sequential thinking module
 
 ### Fixed
+
 - Empty trial results when ClinicalTrials.gov returns legacy format
 - Variant fetch returning list instead of single object
 - Type errors in router.py for full mypy compliance
@@ -50,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.10] - 2024-01-15
 
 ### Added
+
 - Initial release of BioMCP
 - PubMed/PubTator3 article search integration
 - ClinicalTrials.gov trial search integration
@@ -61,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite with pytest-bdd
 
 ### Security
+
 - API keys properly externalized
 - Input validation using Pydantic models
 - Safe string handling in all API calls
