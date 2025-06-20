@@ -133,7 +133,9 @@ async def search(  # noqa: C901
     interventions: Annotated[
         list[str] | str | None, "Trial interventions"
     ] = None,
-    recruiting_status: Annotated[str | None, "Trial status filter (OPEN, CLOSED, or ANY)"] = None,
+    recruiting_status: Annotated[
+        str | None, "Trial status filter (OPEN, CLOSED, or ANY)"
+    ] = None,
     phase: Annotated[str | None, "Trial phase filter"] = None,
     significance: Annotated[
         str | None, "Variant clinical significance"
@@ -156,15 +158,21 @@ async def search(  # noqa: C901
     ] = None,
     thoughtNumber: Annotated[
         int | None,
-        Field(description="Current thought number, start at 1 (for thinking domain)"),
+        Field(
+            description="Current thought number, start at 1 (for thinking domain)"
+        ),
     ] = None,
     totalThoughts: Annotated[
         int | None,
-        Field(description="Estimated total thoughts needed (for thinking domain)"),
+        Field(
+            description="Estimated total thoughts needed (for thinking domain)"
+        ),
     ] = None,
     nextThoughtNeeded: Annotated[
         bool | None,
-        Field(description="Whether more thinking is needed (for thinking domain)"),
+        Field(
+            description="Whether more thinking is needed (for thinking domain)"
+        ),
     ] = None,
 ) -> dict:
     """Search biomedical literature, clinical trials, and genetic variants with integrated AI reasoning.
