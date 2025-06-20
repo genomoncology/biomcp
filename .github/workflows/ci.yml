@@ -9,7 +9,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.12"
-  UV_VERSION: "0.4.0"
+  UV_VERSION: "0.4.29"
 
 jobs:
   # Quality check from main.yml - uses make check
@@ -37,7 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --group dev
 
       - name: Run checks
         run: make check
@@ -62,7 +62,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --group dev
+
+      - name: Debug - Check uv version and installed packages
+        run: |
+          uv --version
+          uv pip list
+          which python
+          python --version
 
       - name: Run tests
         run: uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
@@ -93,7 +100,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --group dev
 
       - name: Check if documentation can be built
         run: uv run mkdocs build -s
@@ -128,7 +135,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --group dev
 
       - name: Run tests
         run: |
@@ -184,7 +191,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --group dev
 
       - name: Test MCP server startup
         run: |
