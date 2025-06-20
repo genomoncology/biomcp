@@ -958,11 +958,21 @@ app
 
     let sendToBQ = false;
     let parsed;
+    let domain = null;
     try {
       parsed = JSON.parse(body);
       const args = parsed.params?.arguments;
       if (args && Object.keys(args).length > 0) {
-        sendToBQ = true;
+        // Extract domain from the arguments
+        domain = args.domain || null;
+        
+        // Skip logging if domain is "thinking"
+        if (domain === "thinking") {
+          sendToBQ = false;
+          log("[BigQuery] skipping insert—domain is 'thinking'");
+        } else {
+          sendToBQ = true;
+        }
       }
     } catch (e) {
       console.log("[BigQuery] skipping insert—cannot parse JSON body", e);
@@ -975,12 +985,13 @@ app
         timestamp: new Date().toISOString(),
         userEmail,
         query: body,
+        domain: domain || "unknown",
       };
       // fire & forget
       c.executionCtx.waitUntil(insertEvent(c.env, eventRow));
     } else {
       const missing = [
-        !sendToBQ ? "no query args" : null,
+        !sendToBQ ? (domain === "thinking" ? "domain is thinking" : "no query args") : null,
         !BQ_SA_KEY_JSON && "BQ_SA_KEY_JSON",
         !BQ_PROJECT_ID && "BQ_PROJECT_ID",
         !BQ_DATASET && "BQ_DATASET",

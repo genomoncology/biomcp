@@ -8,6 +8,10 @@ literature, and genomic variants with precision and depth.
 
 [![▶️ Watch the video](./docs/blog/images/what_is_biomcp_thumbnail.png)](https://www.youtube.com/watch?v=bKxOWrWUUhM)
 
+## MCP Review Certification
+
+BioMCP is certified by [MCP Review](https://mcpreview.com/mcp-servers/genomoncology/biomcp). This certification ensures that BioMCP follows best practices for Model Context Protocol implementation and provides reliable biomedical data access.
+
 ## Why BioMCP?
 
 While Large Language Models have broad general knowledge, they often lack
