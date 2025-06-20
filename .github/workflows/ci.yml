@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.4.29"
+
+jobs:
+  # Quality check from main.yml - uses make check
+  quality:
+    runs-on: ubuntu-latest
+    name: Quality
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --group dev
+
+      - name: Run checks
+        run: make check
+
+  # Tests and type check specifically on Python 3.11
+  tests-and-type-check:
+    runs-on: ubuntu-latest
+    name: Tests and Type Check (Python 3.11)
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --group dev
+
+      - name: Run tests
+        run: uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
+
+      - name: Check typing
+        run: uv run mypy
+
+      - name: Upload coverage reports to Codecov with GitHub Action on Python 3.11
+        uses: codecov/codecov-action@v4
+
+  # Documentation check from main.yml
+  check-docs:
+    runs-on: ubuntu-latest
+    name: Check Docs
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --group dev
+
+      - name: Check if documentation can be built
+        run: uv run mkdocs build -s
+
+  # Build package check
+  build-package:
+    runs-on: ubuntu-latest
+    name: Build Package
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Build package
+        run: |
+          uvx --from build pyproject-build --installer uv
+
+      - name: Check package
+        run: |
+          uvx twine check dist/*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  # MCP integration test - quick check
+  test-mcp:
+    runs-on: ubuntu-latest
+    name: Test MCP Integration
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --group dev
+
+      - name: Test MCP server startup
+        run: |
+          timeout 10s uv run biomcp run || code=$?; if [[ $code -ne 124 && $code -ne 0 ]]; then exit $code; fi
+
+      - name: Run MCP integration tests
+        run: |
+          uv run python -m pytest tests/tdd/test_mcp_integration.py -v

@@ -4,10 +4,9 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, computed_field
 
-from .. import const, http_client, mcp_app, render
+from .. import http_client, render
+from ..constants import PUBTATOR3_FULLTEXT_URL
 from ..http_client import RequestError
-
-PUBTATOR3_FULLTEXT = f"{const.PUBTATOR3_BASE}/publications/export/biocjson"
 
 
 class PassageInfo(BaseModel):
@@ -152,10 +151,11 @@ async def call_pubtator_api(
     }
 
     response, error = await http_client.request_api(
-        url=PUBTATOR3_FULLTEXT,
+        url=PUBTATOR3_FULLTEXT_URL,
         request=request,
         response_model_type=FetchArticlesResponse,
         tls_version=TLSVersion.TLSv1_2,
+        domain="pubmed",
     )
     return response, error
 
@@ -193,8 +193,7 @@ async def fetch_articles(
         return json.dumps(data, indent=2)
 
 
-@mcp_app.tool()
-async def article_details(
+async def _article_details(
     call_benefit: Annotated[
         str,
         "Define and summarize why this function is being called and the intended benefit",

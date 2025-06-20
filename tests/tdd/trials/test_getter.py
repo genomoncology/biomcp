@@ -61,3 +61,22 @@ async def test_cli_default_module_functionality(anyio_backend):
     # In a real CLI context, the default would be set at the CLI level
     # This test ensures the Protocol module is valid for that purpose
     assert "Protocol Section" in markdown_with_protocol
+
+
+async def test_json_output(anyio_backend):
+    # Test JSON output format
+    json_output = await get_trial(
+        "NCT04280705", Module.PROTOCOL, output_json=True
+    )
+    assert json_output.startswith("{")
+    assert "URL" in json_output
+    assert "NCT04280705" in json_output
+
+
+async def test_error_handling_json_output(anyio_backend):
+    # Test error handling with JSON output
+    json_output = await get_trial(
+        "NCT99999999", Module.PROTOCOL, output_json=True
+    )
+    assert "error" in json_output
+    assert "NCT99999999" in json_output

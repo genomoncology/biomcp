@@ -6,7 +6,7 @@ This module provides a command to check the health of API endpoints and system r
 import asyncio
 import platform
 import socket
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 import typer
@@ -14,7 +14,12 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from .. import const, http_client
+from .. import http_client
+from ..constants import (
+    CLINICAL_TRIALS_BASE_URL,
+    MYVARIANT_BASE_URL,
+    PUBTATOR3_BASE_URL,
+)
 
 # Try to import psutil, but handle case where it's not installed
 try:
@@ -31,7 +36,7 @@ console = Console()
 async def check_api_endpoint(
     url: str,
     name: str,
-    params: Optional[dict[Any, Any]] = None,
+    params: dict[Any, Any] | None = None,
     method: str = "GET",
 ) -> dict:
     """Check if an API endpoint is accessible and responding."""
@@ -65,17 +70,17 @@ async def check_all_api_endpoints() -> list[dict]:
     endpoints: list[dict[str, Any]] = [
         # PubTator3 API endpoints
         {
-            "url": f"{const.PUBTATOR3_BASE}/entity/autocomplete/",
+            "url": f"{PUBTATOR3_BASE_URL}/entity/autocomplete/",
             "name": "PubTator3 Autocomplete",
             "params": {"query": "BRAF", "concept": "gene", "limit": 2},
         },
         {
-            "url": f"{const.PUBTATOR3_BASE}/publications/export/biocjson",
+            "url": f"{PUBTATOR3_BASE_URL}/publications/export/biocjson",
             "name": "PubTator3 Publications",
             "params": {"pmids": "29355051", "full": "false"},
         },
         {
-            "url": f"{const.PUBTATOR3_BASE}/search/",
+            "url": f"{PUBTATOR3_BASE_URL}/search/",
             "name": "PubTator3 Search",
             "params": {
                 "query": "BRAF",
@@ -87,23 +92,23 @@ async def check_all_api_endpoints() -> list[dict]:
         },
         # ClinicalTrials.gov API endpoints
         {
-            "url": f"{const.CT_GOV_STUDIES}",
+            "url": f"{CLINICAL_TRIALS_BASE_URL}",
             "name": "ClinicalTrials.gov Search API",
             "params": {"query.term": "cancer", "pageSize": "1"},
         },
         {
-            "url": f"{const.CT_GOV_STUDIES}/NCT04280705",
+            "url": f"{CLINICAL_TRIALS_BASE_URL}/NCT04280705",
             "name": "ClinicalTrials.gov Study API",
             "params": {"fields": "IdentificationModule,StatusModule"},
         },
         # MyVariant.info API endpoints
         {
-            "url": f"{const.MYVARIANT_BASE_URL}/query",
+            "url": f"{MYVARIANT_BASE_URL}/query",
             "name": "MyVariant.info Query API",
             "params": {"q": "rs113488022", "size": 1},
         },
         {
-            "url": f"{const.MYVARIANT_BASE_URL}/variant/rs113488022",
+            "url": f"{MYVARIANT_BASE_URL}/variant/rs113488022",
             "name": "MyVariant.info Variant API",
             "params": {"fields": "all"},
         },

@@ -1,14 +1,12 @@
 import json
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from .. import StrEnum, const, ensure_list, http_client, mcp_app, render
+from .. import StrEnum, ensure_list, http_client, render
+from ..constants import MYVARIANT_QUERY_URL
 from .filters import filter_variants
 from .links import inject_links
-
-# MyVariant.info API URL
-MYVARIANT_QUERY_ENDPOINT = f"{const.MYVARIANT_BASE_URL}/query"
 
 
 class ClinicalSignificance(StrEnum):
@@ -76,47 +74,47 @@ MYVARIANT_FIELDS = [
 class VariantQuery(BaseModel):
     """Search parameters for querying variant data from MyVariant.info."""
 
-    gene: Optional[str] = Field(
+    gene: str | None = Field(
         default=None,
         description="Gene symbol to search for (e.g. BRAF, TP53)",
     )
-    hgvsp: Optional[str] = Field(
+    hgvsp: str | None = Field(
         default=None,
         description="Protein change notation (e.g., p.V600E, p.Arg557His)",
     )
-    hgvsc: Optional[str] = Field(
+    hgvsc: str | None = Field(
         default=None,
         description="cDNA notation (e.g., c.1799T>A)",
     )
-    rsid: Optional[str] = Field(
+    rsid: str | None = Field(
         default=None,
         description="dbSNP rsID (e.g., rs113488022)",
     )
-    region: Optional[str] = Field(
+    region: str | None = Field(
         default=None,
         description="Genomic region as chr:start-end (e.g. chr1:12345-67890)",
     )
-    significance: Optional[ClinicalSignificance] = Field(
+    significance: ClinicalSignificance | None = Field(
         default=None,
         description="ClinVar clinical significance",
     )
-    max_frequency: Optional[float] = Field(
+    max_frequency: float | None = Field(
         default=None,
         description="Maximum population allele frequency threshold",
     )
-    min_frequency: Optional[float] = Field(
+    min_frequency: float | None = Field(
         default=None,
         description="Minimum population allele frequency threshold",
     )
-    cadd: Optional[float] = Field(
+    cadd: float | None = Field(
         default=None,
         description="Minimum CADD phred score",
     )
-    polyphen: Optional[PolyPhenPrediction] = Field(
+    polyphen: PolyPhenPrediction | None = Field(
         default=None,
         description="PolyPhen-2 prediction",
     )
-    sift: Optional[SiftPrediction] = Field(
+    sift: SiftPrediction | None = Field(
         default=None,
         description="SIFT prediction",
     )
@@ -199,9 +197,10 @@ async def search_variants(
     params = await convert_query(query)
 
     response, error = await http_client.request_api(
-        url=MYVARIANT_QUERY_ENDPOINT,
+        url=MYVARIANT_QUERY_URL,
         request=params,
         method="GET",
+        domain="myvariant",
     )
     data: list = response.get("hits", []) if response else []
 
@@ -217,8 +216,7 @@ async def search_variants(
         return json.dumps(data, indent=2)
 
 
-@mcp_app.tool()
-async def variant_searcher(
+async def _variant_searcher(
     call_benefit: Annotated[
         str,
         "Define and summarize why this function is being called and the intended benefit",

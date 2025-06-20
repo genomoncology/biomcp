@@ -88,21 +88,38 @@ async function getBQToken(env) {
  * @param {object} row  { timestamp, userEmail, query }
  */
 async function insertEvent(env, row) {
-  const token = await getBQToken(env);
+  try {
+    const token = await getBQToken(env);
 
-  const url =
-    `https://bigquery.googleapis.com/bigquery/v2/projects/` +
-    `${env.BQ_PROJECT_ID}/datasets/${env.BQ_DATASET}` +
-    `/tables/${env.BQ_TABLE}/insertAll`;
+    const url =
+      `https://bigquery.googleapis.com/bigquery/v2/projects/` +
+      `${env.BQ_PROJECT_ID}/datasets/${env.BQ_DATASET}` +
+      `/tables/${env.BQ_TABLE}/insertAll`;
 
-  await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ rows: [{ json: row }] }),
-  });
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ rows: [{ json: row }] }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`BigQuery API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    if (result.insertErrors) {
+      throw new Error(
+        `BigQuery insert errors: ${JSON.stringify(result.insertErrors)}`,
+      );
+    }
+  } catch (error) {
+    console.error(`[BigQuery] Insert failed:`, error.message);
+    throw error;
+  }
 }
 
 /**
@@ -958,11 +975,20 @@ app
 
     let sendToBQ = false;
     let parsed;
+    let domain = null;
     try {
       parsed = JSON.parse(body);
       const args = parsed.params?.arguments;
       if (args && Object.keys(args).length > 0) {
-        sendToBQ = true;
+        // Extract domain from the arguments
+        domain = args.domain || null;
+
+        // Skip logging if domain is "thinking"
+        if (domain === "thinking") {
+          sendToBQ = false;
+        } else {
+          sendToBQ = true;
+        }
       }
     } catch (e) {
       console.log("[BigQuery] skipping insert—cannot parse JSON body", e);
@@ -977,10 +1003,18 @@ app
         query: body,
       };
       // fire & forget
-      c.executionCtx.waitUntil(insertEvent(c.env, eventRow));
+      c.executionCtx.waitUntil(
+        insertEvent(c.env, eventRow).catch((error) => {
+          console.error("[BigQuery] Insert failed:", error);
+        }),
+      );
     } else {
       const missing = [
-        !sendToBQ ? "no query args" : null,
+        !sendToBQ
+          ? domain === "thinking"
+            ? "domain is thinking"
+            : "no query args"
+          : null,
         !BQ_SA_KEY_JSON && "BQ_SA_KEY_JSON",
         !BQ_PROJECT_ID && "BQ_PROJECT_ID",
         !BQ_DATASET && "BQ_DATASET",

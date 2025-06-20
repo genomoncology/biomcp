@@ -9,7 +9,7 @@ from mcp.server.fastmcp.utilities.logging import get_logger
 # Initialize the MCP app here
 mcp_app = FastMCP(
     name="BioMCP - Biomedical Model Context Protocol Server",
-    description="Biomedical research server with integrated sequential thinking. ALWAYS use the sequential_thinking tool for systematic analysis of any biomedical query.",
+    description="Biomedical research server with integrated sequential thinking. Use search(domain='thinking') to activate systematic step-by-step analysis before making biomedical queries.",
 )
 
 
@@ -28,6 +28,14 @@ class StrEnum(str, Enum):
                 if m == v:
                     return member
         return None
+
+
+class PublicationState(StrEnum):
+    """Publication state of an article."""
+
+    PREPRINT = "preprint"
+    PEER_REVIEWED = "peer_reviewed"
+    UNKNOWN = "unknown"
 
 
 def ensure_list(value: Any, split_strings: bool = False) -> list[Any]:

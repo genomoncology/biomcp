@@ -8,6 +8,10 @@ literature, and genomic variants with precision and depth.
 
 [![▶️ Watch the video](./docs/blog/images/what_is_biomcp_thumbnail.png)](https://www.youtube.com/watch?v=bKxOWrWUUhM)
 
+## MCP Review Certification
+
+BioMCP is certified by [MCP Review](https://mcpreview.com/mcp-servers/genomoncology/biomcp). This certification ensures that BioMCP follows best practices for Model Context Protocol implementation and provides reliable biomedical data access.
+
 ## Why BioMCP?
 
 While Large Language Models have broad general knowledge, they often lack
@@ -23,41 +27,116 @@ BioMCP bridges this gap for biomedicine by:
 
 ## Biomedical Data Sources
 
-BioMCP integrates with three key biomedical data sources:
+BioMCP integrates with multiple biomedical data sources:
 
-- **PubTator3/PubMed** - Biomedical literature with entity annotations
+### Literature Sources
+
+- **PubTator3/PubMed** - Peer-reviewed biomedical literature with entity annotations
+- **bioRxiv/medRxiv** - Preprint servers for biology and health sciences
+- **Europe PMC** - Open science platform including preprints
+
+### Clinical & Genomic Sources
+
 - **ClinicalTrials.gov** - Clinical trial registry and results database
-- **MyVariant.info** - Consolidated genetic variant annotation from multiple
-  databases
+- **MyVariant.info** - Consolidated genetic variant annotation
+- **TCGA/GDC** - The Cancer Genome Atlas for cancer variant data
+- **1000 Genomes** - Population frequency data via Ensembl
 
 ## Available MCP Tools
 
-### PubMed & PubTator3
+BioMCP provides two essential tools for biomedical research:
 
-- `article_searcher`: Search for articles by genes, diseases, variants, or
-  keywords
-- `article_details`: Get detailed article information including abstracts and
-  full text
+### Search Tool
 
-### ClinicalTrials.gov
+**IMPORTANT**: Always start with `domain="thinking"` for systematic analysis of biomedical queries.
 
-- `trial_searcher`: Advanced trial search with filtering by condition,
-  intervention, phase, etc.
-- `trial_protocol`: Detailed trial protocol information
-- `trial_locations`: Trial site locations and contact information
-- `trial_outcomes`: Results and outcome measures
-- `trial_references`: Related publications
+```python
+# Start analysis with sequential thinking
+search(
+    domain="thinking",
+    thought="Breaking down the query about BRAF mutations in melanoma...",
+    thoughtNumber=1,
+    totalThoughts=3,
+    nextThoughtNeeded=True
+)
+```
 
-### MyVariant.info
+The sequential thinking domain helps:
 
-- `variant_searcher`: Search for genetic variants with sophisticated filtering
-- `variant_details`: Comprehensive annotations from multiple sources (CIViC,
-  ClinVar, COSMIC, dbSNP, etc.)
+- Break down complex biomedical problems systematically
+- Plan multi-step research approaches
+- Track reasoning progress
+- Revise and branch thinking paths as needed
 
-### Sequential Thinking
+The search tool supports three modes:
 
-- `sequential_thinking`: A problem-solving tool for dynamic and reflective thinking,
-  helping analyze complex biomedical problems through a flexible, adaptive process
+#### 1. Sequential Thinking Mode (Always Use First)
+
+Use `domain="thinking"` with thought parameters for systematic analysis before searching.
+
+#### 2. Unified Query Language (Recommended for Data Search)
+
+Use the `query` parameter with structured field syntax for powerful cross-domain searches:
+
+```python
+# Simple natural language
+search(query="BRAF melanoma")
+
+# Field-specific search
+search(query="gene:BRAF AND trials.condition:melanoma")
+
+# Complex queries
+search(query="gene:BRAF AND variants.significance:pathogenic AND articles.date:>2023")
+
+# Get searchable fields schema
+search(get_schema=True)
+
+# Explain how a query is parsed
+search(query="gene:BRAF", explain_query=True)
+```
+
+**Supported Fields:**
+
+- **Cross-domain**: `gene:`, `variant:`, `disease:`
+- **Trials**: `trials.condition:`, `trials.phase:`, `trials.status:`, `trials.intervention:`
+- **Articles**: `articles.author:`, `articles.journal:`, `articles.date:`
+- **Variants**: `variants.significance:`, `variants.rsid:`, `variants.frequency:`
+
+#### 3. Legacy Domain-Based Search
+
+Use the `domain` parameter with specific filters:
+
+```python
+# Search articles
+search(domain="article", genes=["BRAF"], diseases=["melanoma"])
+
+# Search trials
+search(domain="trial", conditions=["lung cancer"], phase="3")
+
+# Search variants
+search(domain="variant", gene="TP53", significance="pathogenic")
+```
+
+### Fetch Tool
+
+Retrieve full details for a single article, trial, or variant:
+
+```python
+# Fetch article details
+fetch(domain="article", id="34567890")
+
+# Fetch trial with all sections
+fetch(domain="trial", id="NCT04280705", detail="all")
+
+# Fetch variant details
+fetch(domain="variant", id="rs113488022")
+```
+
+**Domain-specific options:**
+
+- **Articles**: `detail="full"` retrieves full text if available
+- **Trials**: `detail` can be "protocol", "locations", "outcomes", "references", or "all"
+- **Variants**: Always returns full details
 
 ## Quick Start
 
@@ -113,13 +192,19 @@ biomcp --help
 # Run the MCP server
 biomcp run
 
-# Examples
-biomcp article search --gene BRAF --disease Melanoma
+# Article search examples
+biomcp article search --gene BRAF --disease Melanoma  # Includes preprints by default
+biomcp article search --gene BRAF --no-preprints      # Exclude preprints
 biomcp article get 21717063 --full
+
+# Clinical trial examples
 biomcp trial search --condition "Lung Cancer" --phase PHASE3
 biomcp trial get NCT04280705 Protocol
+
+# Variant examples with external annotations
 biomcp variant search --gene TP53 --significance pathogenic
-biomcp variant get rs113488022
+biomcp variant get rs113488022  # Includes TCGA and 1000 Genomes data by default
+biomcp variant get rs113488022 --no-external  # Core annotations only
 ```
 
 ## Testing & Verification

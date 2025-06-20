@@ -42,6 +42,7 @@ dev = [
     "deptry>=0.22.0",
     "mypy>=0.991",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.24.0",
     "ruff>=0.9.2",
     "mkdocs>=1.4.2",
     "mkdocs-material>=8.5.10",
@@ -93,6 +94,11 @@ disable_error_code = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
 
 [tool.ruff]
 target-version = "py310"
@@ -147,6 +153,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
 "__init__.py" = ["I001"]
+"src/biomcp/variants/external.py" = ["C901"]  # Complex API interactions are acceptable
 
 [tool.ruff.format]
 preview = true
@@ -185,3 +192,4 @@ exclude = [
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["uvicorn"]
+DEP003 = ["biomcp"]

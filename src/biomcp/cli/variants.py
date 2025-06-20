@@ -1,11 +1,11 @@
 """BioMCP Command Line Interface for genetic variants."""
 
 import asyncio
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 
-from .. import const
+from ..constants import SYSTEM_PAGE_SIZE
 from ..variants import getter, search
 
 variant_app = typer.Typer(help="Search and get variants from MyVariant.info.")
@@ -28,6 +28,13 @@ def get_variant(
             case_sensitive=False,
         ),
     ] = False,
+    include_external: Annotated[
+        bool,
+        typer.Option(
+            "--include-external/--no-external",
+            help="Include annotations from external sources (TCGA, 1000 Genomes)",
+        ),
+    ] = True,
 ):
     """
     Get detailed information about a specific genetic variant.
@@ -37,14 +44,19 @@ def get_variant(
     Examples:
         Get by HGVS: biomcp variant get "chr7:g.140453136A>T"
         Get by rsID: biomcp variant get rs113488022
-        Get as JSON: biomcp variant get rs113488022 --format json
+        Get as JSON: biomcp variant get rs113488022 --json
+        Get without external annotations: biomcp variant get rs113488022 --no-external
     """
     if not variant_id:
         typer.echo("Error: A variant identifier must be provided.", err=True)
         raise typer.Exit(code=1)
 
     result = asyncio.run(
-        getter.get_variant(variant_id, output_json=output_json)
+        getter.get_variant(
+            variant_id,
+            output_json=output_json,
+            include_external=include_external,
+        )
     )
     typer.echo(result)
 
@@ -52,42 +64,42 @@ def get_variant(
 @variant_app.command("search")
 def search_variant_cmd(
     gene: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--gene",
             help="Gene symbol (e.g., BRCA1)",
         ),
     ] = None,
     hgvsp: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--hgvsp",
             help="Protein notation (e.g., p.Val600Glu).",
         ),
     ] = None,
     hgvsc: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--hgvsc",
             help="cDNA notation (e.g., c.1799T>A).",
         ),
     ] = None,
     rsid: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--rsid",
             help="dbSNP rsID (e.g., rs113488022)",
         ),
     ] = None,
     region: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--region",
             help="Genomic region (e.g., chr1:69000-70000)",
         ),
     ] = None,
     significance: Annotated[
-        Optional[search.ClinicalSignificance],
+        search.ClinicalSignificance | None,
         typer.Option(
             "--significance",
             help="Clinical significance (e.g., pathogenic, likely benign)",
@@ -95,7 +107,7 @@ def search_variant_cmd(
         ),
     ] = None,
     min_frequency: Annotated[
-        Optional[float],
+        float | None,
         typer.Option(
             "--min-frequency",
             help="Minimum gnomAD exome allele frequency (0.0 to 1.0)",
@@ -104,7 +116,7 @@ def search_variant_cmd(
         ),
     ] = None,
     max_frequency: Annotated[
-        Optional[float],
+        float | None,
         typer.Option(
             "--max-frequency",
             help="Maximum gnomAD exome allele frequency (0.0 to 1.0)",
@@ -113,7 +125,7 @@ def search_variant_cmd(
         ),
     ] = None,
     cadd: Annotated[
-        Optional[float],
+        float | None,
         typer.Option(
             "--cadd",
             help="Minimum CADD phred score",
@@ -121,7 +133,7 @@ def search_variant_cmd(
         ),
     ] = None,
     polyphen: Annotated[
-        Optional[search.PolyPhenPrediction],
+        search.PolyPhenPrediction | None,
         typer.Option(
             "--polyphen",
             help="PolyPhen-2 prediction: Probably damaging = D,"
@@ -130,7 +142,7 @@ def search_variant_cmd(
         ),
     ] = None,
     sift: Annotated[
-        Optional[search.SiftPrediction],
+        search.SiftPrediction | None,
         typer.Option(
             "--sift",
             help="SIFT prediction: D = Deleterious, T = Tolerated",
@@ -145,9 +157,9 @@ def search_variant_cmd(
             min=1,
             max=100,
         ),
-    ] = const.SYSTEM_PAGE_SIZE,
+    ] = SYSTEM_PAGE_SIZE,
     sources: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--sources",
             help="Specific sources to include in results (comma-separated)",

@@ -3,9 +3,10 @@ import logging
 from ssl import TLSVersion
 from typing import Annotated
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from .. import StrEnum, const, ensure_list, http_client, mcp_app, render
+from .. import StrEnum, ensure_list, http_client, render
+from ..constants import CLINICAL_TRIALS_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -268,7 +269,7 @@ class TrialQuery(BaseModel):
     )
     recruiting_status: RecruitingStatus | None = Field(
         default=None,
-        description="Study recruitment status.",
+        description="Study recruitment status. Use 'OPEN' for actively recruiting trials, 'CLOSED' for completed/terminated trials, or 'ANY' for all trials. Common aliases like 'recruiting', 'active', 'enrolling' map to 'OPEN'.",
     )
     study_type: StudyType | None = Field(
         default=None,
@@ -373,6 +374,24 @@ class TrialQuery(BaseModel):
         ge=1,
         le=1000,
     )
+
+    @field_validator("recruiting_status", mode="before")
+    @classmethod
+    def normalize_recruiting_status(cls, v):
+        """Normalize common recruiting status aliases to enum values."""
+        if isinstance(v, str):
+            v_lower = v.lower()
+            # Map common aliases
+            alias_map = {
+                "recruiting": "OPEN",
+                "active": "OPEN",
+                "enrolling": "OPEN",
+                "closed": "CLOSED",
+                "completed": "CLOSED",
+                "terminated": "CLOSED",
+            }
+            return alias_map.get(v_lower, v)
+        return v
 
     # Field validators for list fields
     @model_validator(mode="before")
@@ -726,10 +745,11 @@ async def search_trials(
             logger.debug("Filter mode: id-only (NCT IDs only)")
 
     response, error = await http_client.request_api(
-        url=const.CT_GOV_STUDIES,
+        url=CLINICAL_TRIALS_BASE_URL,
         request=params,
         method="GET",
         tls_version=TLSVersion.TLSv1_2,
+        domain="trial",
     )
 
     data = response
@@ -742,8 +762,7 @@ async def search_trials(
         return json.dumps(data, indent=2)
 
 
-@mcp_app.tool()
-async def trial_searcher(
+async def _trial_searcher(
     call_benefit: Annotated[
         str,
         "Define and summarize why this function is being called and the intended benefit",

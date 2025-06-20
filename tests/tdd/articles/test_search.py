@@ -1,8 +1,12 @@
 import json
+from unittest.mock import patch
+
+import pytest
 
 from biomcp.articles.search import (
     PubmedRequest,
     ResultItem,
+    SearchResponse,
     convert_request,
     search_articles,
 )
@@ -29,6 +33,15 @@ async def test_convert_search_query(anyio_backend):
 
 
 async def test_search(anyio_backend):
+    """Test search with real API call - may be flaky due to network dependency.
+
+    This test makes real API calls to PubTator3 and can fail due to:
+    - Network connectivity issues (Error 599)
+    - API rate limiting
+    - Changes in search results over time
+
+    Consider using test_search_mocked for more reliable testing.
+    """
     query = {
         "genes": ["BRAF"],
         "diseases": ["NSCLC", "Non - Small Cell Lung Cancer"],
@@ -40,6 +53,13 @@ async def test_search(anyio_backend):
     output = await search_articles(query, output_json=True)
     data = json.loads(output)
     assert isinstance(data, list)
+
+    # Handle potential errors - if the first item has an 'error' key, it's an error response
+    if data and isinstance(data[0], dict) and "error" in data[0]:
+        import pytest
+
+        pytest.skip(f"API returned error: {data[0]['error']}")
+
     assert len(data) == 40
     result = ResultItem.model_validate(data[0])
     # todo: this might be flaky.
@@ -48,3 +68,111 @@ async def test_search(anyio_backend):
         == "[Expert consensus on the diagnosis and treatment in advanced "
         "non-small cell lung cancer with BRAF mutation in China]."
     )
+
+
+@pytest.mark.asyncio
+async def test_search_mocked(anyio_backend):
+    """Test search with mocked API response to avoid network dependency."""
+    query = {
+        "genes": ["BRAF"],
+        "diseases": ["NSCLC", "Non - Small Cell Lung Cancer"],
+        "keywords": ["BRAF mutations NSCLC"],
+        "variants": ["mutation", "mutations"],
+    }
+
+    # Create mock response - don't include abstract here as it will be added by add_abstracts
+    mock_response = SearchResponse(
+        results=[
+            ResultItem(
+                pmid=37495419,
+                title="[Expert consensus on the diagnosis and treatment in advanced "
+                "non-small cell lung cancer with BRAF mutation in China].",
+                journal="Zhonghua Zhong Liu Za Zhi",
+                authors=["Zhang", "Li", "Wang"],
+                date="2023-07-23",
+                doi="10.3760/cma.j.cn112152-20230314-00115",
+            )
+            for _ in range(40)  # Create 40 results
+        ],
+        page_size=40,
+        current=1,
+        count=40,
+        total_pages=1,
+    )
+
+    with patch("biomcp.http_client.request_api") as mock_request:
+        mock_request.return_value = (mock_response, None)
+
+        # Mock the autocomplete calls
+        with patch("biomcp.articles.search.autocomplete") as mock_autocomplete:
+            mock_autocomplete.return_value = (
+                None  # Simplified - no entity mapping
+            )
+
+            # Mock the call_pubtator_api function
+            with patch(
+                "biomcp.articles.search.call_pubtator_api"
+            ) as mock_pubtator:
+                from biomcp.articles.fetch import (
+                    Article,
+                    FetchArticlesResponse,
+                    Passage,
+                    PassageInfo,
+                )
+
+                # Create a mock response with abstracts
+                mock_fetch_response = FetchArticlesResponse(
+                    PubTator3=[
+                        Article(
+                            pmid=37495419,
+                            passages=[
+                                Passage(
+                                    text="This is a test abstract about BRAF mutations in NSCLC.",
+                                    infons=PassageInfo(
+                                        section_type="ABSTRACT"
+                                    ),
+                                )
+                            ],
+                        )
+                    ]
+                )
+                mock_pubtator.return_value = (mock_fetch_response, None)
+
+                query_obj = PubmedRequest(**query)
+                output = await search_articles(query_obj, output_json=True)
+                data = json.loads(output)
+
+                assert isinstance(data, list)
+                assert len(data) == 40
+                result = ResultItem.model_validate(data[0])
+                assert (
+                    result.title
+                    == "[Expert consensus on the diagnosis and treatment in advanced "
+                    "non-small cell lung cancer with BRAF mutation in China]."
+                )
+                assert (
+                    result.abstract
+                    == "This is a test abstract about BRAF mutations in NSCLC."
+                )
+
+
+@pytest.mark.asyncio
+async def test_search_network_error(anyio_backend):
+    """Test search handles network errors gracefully."""
+    query = PubmedRequest(genes=["BRAF"])
+
+    with patch("biomcp.http_client.request_api") as mock_request:
+        from biomcp.http_client import RequestError
+
+        mock_request.return_value = (
+            None,
+            RequestError(code=599, message="Network connectivity error"),
+        )
+
+        output = await search_articles(query, output_json=True)
+        data = json.loads(output)
+
+        assert isinstance(data, list)
+        assert len(data) == 1
+        assert "error" in data[0]
+        assert "Error 599: Network connectivity error" in data[0]["error"]

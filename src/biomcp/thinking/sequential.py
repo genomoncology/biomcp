@@ -1,12 +1,8 @@
 """Sequential thinking module for BioMCP."""
 
-from typing import Annotated, Any, Optional
+from typing import Annotated
 
-from .. import mcp_app
-
-# Global state for thought management
-thought_history: list[dict[str, Any]] = []
-thought_branches: dict[str, list[dict[str, Any]]] = {}
+from .session import ThoughtEntry, _session_manager
 
 
 def get_current_timestamp() -> str:
@@ -16,38 +12,7 @@ def get_current_timestamp() -> str:
     return datetime.now().isoformat()
 
 
-def add_thought_to_history(entry: dict[str, Any]) -> None:
-    """Add a thought entry to the main history."""
-    global thought_history
-
-    # If this is a revision, replace the original thought
-    if entry.get("isRevision") and entry.get("revisesThought"):
-        revised_thought_num = entry["revisesThought"]
-        for i, thought in enumerate(thought_history):
-            if thought["thoughtNumber"] == revised_thought_num:
-                thought_history[i] = entry
-                return
-
-    # Otherwise, add to history
-    thought_history.append(entry)
-
-
-def add_thought_to_branch(entry: dict[str, Any]) -> None:
-    """Add a thought entry to a specific branch."""
-    global thought_branches
-
-    branch_id = entry.get("branchId")
-    if not branch_id:
-        return
-
-    if branch_id not in thought_branches:
-        thought_branches[branch_id] = []
-
-    thought_branches[branch_id].append(entry)
-
-
-@mcp_app.tool()
-async def sequential_thinking(
+async def _sequential_thinking(
     thought: Annotated[
         str, "Current thinking step - be detailed and thorough"
     ],
@@ -62,13 +27,13 @@ async def sequential_thinking(
         bool, "True when correcting/improving a previous thought"
     ] = False,
     revisesThought: Annotated[
-        Optional[int], "The thought number being revised"
+        int | None, "The thought number being revised"
     ] = None,
     branchFromThought: Annotated[
-        Optional[int], "Create alternative path from this thought number"
+        int | None, "Create alternative path from this thought number"
     ] = None,
     needsMoreThoughts: Annotated[
-        Optional[bool],
+        bool | None,
         "True when problem is significantly larger than initially estimated",
     ] = None,
 ) -> str:
@@ -97,44 +62,38 @@ async def sequential_thinking(
     if isRevision and not revisesThought:
         return "Error: revisesThought must be specified when isRevision=True"
 
-    # Create thought entry
-    entry: dict[str, Any] = {
-        "thought": thought,
-        "thoughtNumber": thoughtNumber,
-        "totalThoughts": totalThoughts,
-        "nextThoughtNeeded": nextThoughtNeeded,
-        "isRevision": isRevision,
-        "revisesThought": revisesThought,
-        "branchFromThought": branchFromThought,
-        "branchId": f"branch_{branchFromThought}"
-        if branchFromThought
-        else None,
-        "needsMoreThoughts": needsMoreThoughts,
-        "timestamp": get_current_timestamp(),
-    }
+    # Get or create session
+    session = _session_manager.get_or_create_session()
 
-    # Store in appropriate location
+    # Create thought entry
+    branch_id = f"branch_{branchFromThought}" if branchFromThought else None
+
+    entry = ThoughtEntry(
+        thought=thought,
+        thought_number=thoughtNumber,
+        total_thoughts=totalThoughts,
+        next_thought_needed=nextThoughtNeeded,
+        is_revision=isRevision,
+        revises_thought=revisesThought,
+        branch_from_thought=branchFromThought,
+        branch_id=branch_id,
+        metadata={"needsMoreThoughts": needsMoreThoughts}
+        if needsMoreThoughts
+        else {},
+    )
+
+    # Add thought to session
+    session.add_thought(entry)
+
+    # Generate status message
     if branchFromThought:
-        branch_id = f"branch_{branchFromThought}"
-        if branch_id not in thought_branches:
-            thought_branches[branch_id] = []
-        thought_branches[branch_id].append(entry)
         status_msg = f"Added thought {thoughtNumber} to branch '{branch_id}'"
+    elif isRevision and revisesThought:
+        status_msg = (
+            f"Revised thought {revisesThought} (now thought {thoughtNumber})"
+        )
     else:
-        # If this is a revision, replace the original thought
-        if isRevision and revisesThought:
-            for i, thought_item in enumerate(thought_history):
-                if thought_item["thoughtNumber"] == revisesThought:
-                    thought_history[i] = entry
-                    status_msg = f"Revised thought {revisesThought} (now thought {thoughtNumber})"
-                    break
-            else:
-                # If original thought not found, just append
-                thought_history.append(entry)
-                status_msg = f"Added thought {thoughtNumber} to main sequence (revision target not found)"
-        else:
-            thought_history.append(entry)
-            status_msg = f"Added thought {thoughtNumber} to main sequence"
+        status_msg = f"Added thought {thoughtNumber} to main sequence"
 
     # Generate progress information
     progress_msg = f"Progress: {thoughtNumber}/{totalThoughts} thoughts"
