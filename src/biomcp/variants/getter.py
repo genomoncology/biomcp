@@ -3,12 +3,11 @@
 import json
 from typing import Annotated
 
-from .. import const, ensure_list, http_client, mcp_app, render
+from .. import ensure_list, http_client, render
+from ..constants import MYVARIANT_GET_URL
 from .external import ExternalVariantAggregator, format_enhanced_annotations
 from .filters import filter_variants
 from .links import inject_links
-
-MYVARIANT_GET_ENDPOINT = f"{const.MYVARIANT_BASE_URL}/variant"
 
 
 async def get_variant(
@@ -27,9 +26,10 @@ async def get_variant(
     otherwise, it is rendered as Markdown.
     """
     response, error = await http_client.request_api(
-        url=f"{MYVARIANT_GET_ENDPOINT}/{variant_id}",
+        url=f"{MYVARIANT_GET_URL}/{variant_id}",
         request={"fields": "all"},
         method="GET",
+        domain="myvariant",
     )
 
     data_to_return: list = ensure_list(response)
@@ -65,8 +65,7 @@ async def get_variant(
         return render.to_markdown(data_to_return)
 
 
-@mcp_app.tool()
-async def variant_details(
+async def _variant_details(
     call_benefit: Annotated[
         str,
         "Define and summarize why this function is being called and the intended benefit",

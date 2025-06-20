@@ -3,12 +3,10 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from .. import StrEnum, const, ensure_list, http_client, mcp_app, render
+from .. import StrEnum, ensure_list, http_client, render
+from ..constants import MYVARIANT_QUERY_URL
 from .filters import filter_variants
 from .links import inject_links
-
-# MyVariant.info API URL
-MYVARIANT_QUERY_ENDPOINT = f"{const.MYVARIANT_BASE_URL}/query"
 
 
 class ClinicalSignificance(StrEnum):
@@ -199,9 +197,10 @@ async def search_variants(
     params = await convert_query(query)
 
     response, error = await http_client.request_api(
-        url=MYVARIANT_QUERY_ENDPOINT,
+        url=MYVARIANT_QUERY_URL,
         request=params,
         method="GET",
+        domain="myvariant",
     )
     data: list = response.get("hits", []) if response else []
 
@@ -217,8 +216,7 @@ async def search_variants(
         return json.dumps(data, indent=2)
 
 
-@mcp_app.tool()
-async def variant_searcher(
+async def _variant_searcher(
     call_benefit: Annotated[
         str,
         "Define and summarize why this function is being called and the intended benefit",

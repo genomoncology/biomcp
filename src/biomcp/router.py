@@ -14,6 +14,7 @@ from pydantic import Field
 from biomcp.constants import (
     DEFAULT_PAGE_NUMBER,
     DEFAULT_PAGE_SIZE,
+    DEFAULT_TITLE,
     ERROR_DOMAIN_REQUIRED,
     ERROR_NEXT_THOUGHT_REQUIRED,
     ERROR_THOUGHT_NUMBER_REQUIRED,
@@ -34,6 +35,7 @@ from biomcp.exceptions import (
     SearchExecutionError,
     ThinkingError,
 )
+from biomcp.metrics import track_performance
 from biomcp.parameter_parser import ParameterParser
 from biomcp.query_parser import QueryParser
 from biomcp.query_router import QueryRouter, execute_routing_plan
@@ -87,7 +89,7 @@ def format_results(
             # Ensure the result has the required OpenAI MCP fields
             openai_result = {
                 "id": formatted_result.get("id", ""),
-                "title": formatted_result.get("title", "Untitled"),
+                "title": formatted_result.get("title", DEFAULT_TITLE),
                 "text": formatted_result.get(
                     "snippet", formatted_result.get("text", "")
                 ),
@@ -109,6 +111,7 @@ def format_results(
 # Unified SEARCH tool
 # ────────────────────────────
 @mcp_app.tool()
+@track_performance("biomcp.search")
 async def search(  # noqa: C901
     call_benefit: str,
     query: Annotated[
@@ -326,37 +329,16 @@ async def search(  # noqa: C901
     )
 
     if domain == "article":
-        logger.info("Executing article search")
-        try:
-            from biomcp.articles.search import PubmedRequest, search_articles
+        from .router_handlers import handle_article_search
 
-            request = PubmedRequest(
-                chemicals=chemicals or [],
-                diseases=diseases or [],
-                genes=genes or [],
-                keywords=keywords or [],
-                variants=variants or [],
-            )
-            result_str = await search_articles(request, output_json=True)
-        except Exception as e:
-            logger.error(f"Article search failed: {e}")
-            raise SearchExecutionError("article", e) from e
-
-        # Parse the JSON results
-        try:
-            all_results = json.loads(result_str)
-        except (json.JSONDecodeError, TypeError) as e:
-            logger.error(f"Failed to parse article results: {e}")
-            raise ResultParsingError("article", e) from e
-
-        # Manual pagination
-        start = (page - 1) * page_size
-        end = start + page_size
-        items = all_results[start:end]
-        total = len(all_results)
-
-        logger.info(
-            f"Article search returned {total} total results, showing {len(items)}"
+        items, total = await handle_article_search(
+            genes=genes,
+            diseases=diseases,
+            variants=variants,
+            chemicals=chemicals,
+            keywords=keywords,
+            page=page,
+            page_size=page_size,
         )
 
         return format_results(
@@ -493,6 +475,7 @@ async def search(  # noqa: C901
 # Unified FETCH tool
 # ────────────────────────────
 @mcp_app.tool()
+@track_performance("biomcp.fetch")
 async def fetch(  # noqa: C901
     call_benefit: str,
     domain: Annotated[
@@ -631,7 +614,7 @@ async def fetch(  # noqa: C901
 
         return {
             "id": str(article.get("pmid", id_)),
-            "title": article.get("title", "Untitled"),
+            "title": article.get("title", DEFAULT_TITLE),
             "text": text_content,
             "url": article.get(
                 "url", f"https://pubmed.ncbi.nlm.nih.gov/{id_}/"
@@ -660,48 +643,89 @@ async def fetch(  # noqa: C901
             )
 
         try:
-            # Always fetch protocol for basic info
-            protocol = await trial_getter._trial_protocol(
-                call_benefit=call_benefit, nct_id=id_
+            # Always fetch protocol for basic info - get JSON format
+            protocol_json = await trial_getter.get_trial(
+                nct_id=id_,
+                module=trial_getter.Module.PROTOCOL,
+                output_json=True,
             )
 
-            # Handle empty or error responses
-            if not protocol:
+            # Parse the JSON response
+            try:
+                protocol_data = json.loads(protocol_json)
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse protocol JSON for {id_}: {e}")
                 return {
                     "id": id_,
                     "title": f"Clinical Trial {id_}",
-                    "text": "Trial information not available",
+                    "text": f"Error parsing trial data: {e}",
                     "url": f"https://clinicaltrials.gov/study/{id_}",
-                    "metadata": {"nct_id": id_, "error": "No data available"},
+                    "metadata": {
+                        "nct_id": id_,
+                        "error": f"JSON parse error: {e}",
+                    },
                 }
 
-            protocol_data = (
-                json.loads(protocol) if isinstance(protocol, str) else protocol
-            )
+            # Check for errors in the response
+            if "error" in protocol_data:
+                return {
+                    "id": id_,
+                    "title": f"Clinical Trial {id_}",
+                    "text": protocol_data.get(
+                        "details",
+                        protocol_data.get("error", "Trial not found"),
+                    ),
+                    "url": f"https://clinicaltrials.gov/study/{id_}",
+                    "metadata": {
+                        "nct_id": id_,
+                        "error": protocol_data.get("error"),
+                    },
+                }
 
             # Build comprehensive text description
             text_parts = []
 
+            # Extract protocol section data from the API response
+            protocol_section = protocol_data.get("protocolSection", {})
+
+            # Extract basic info from the protocol section
+            id_module = protocol_section.get("identificationModule", {})
+            status_module = protocol_section.get("statusModule", {})
+            desc_module = protocol_section.get("descriptionModule", {})
+            conditions_module = protocol_section.get("conditionsModule", {})
+            design_module = protocol_section.get("designModule", {})
+            arms_module = protocol_section.get("armsInterventionsModule", {})
+
             # Add basic protocol info to text
-            if protocol_data:
-                text_parts.append(
-                    f"Study Title: {protocol_data.get('title', 'N/A')}"
-                )
-                text_parts.append(
-                    f"\nConditions: {', '.join(protocol_data.get('conditions', []))}"
-                )
-                text_parts.append(
-                    f"Interventions: {', '.join(protocol_data.get('interventions', []))}"
-                )
-                text_parts.append(
-                    f"Phase: {protocol_data.get('phase', 'N/A')}"
-                )
-                text_parts.append(
-                    f"Status: {protocol_data.get('status', 'N/A')}"
-                )
-                text_parts.append(
-                    f"\nSummary: {protocol_data.get('brief_summary', 'No summary available')}"
-                )
+            title = id_module.get("briefTitle", f"Clinical Trial {id_}")
+            text_parts.append(f"Study Title: {title}")
+
+            # Conditions
+            conditions = conditions_module.get("conditions", [])
+            if conditions:
+                text_parts.append(f"\nConditions: {', '.join(conditions)}")
+
+            # Interventions
+            interventions = []
+            for intervention in arms_module.get("interventions", []):
+                interventions.append(intervention.get("name", ""))
+            if interventions:
+                text_parts.append(f"Interventions: {', '.join(interventions)}")
+
+            # Phase
+            phases = design_module.get("phases", [])
+            if phases:
+                text_parts.append(f"Phase: {', '.join(phases)}")
+
+            # Status
+            overall_status = status_module.get("overallStatus", "N/A")
+            text_parts.append(f"Status: {overall_status}")
+
+            # Summary
+            brief_summary = desc_module.get(
+                "briefSummary", "No summary available"
+            )
+            text_parts.append(f"\nSummary: {brief_summary}")
 
             # Prepare metadata
             metadata = {"nct_id": id_, "protocol": protocol_data}
@@ -709,66 +733,96 @@ async def fetch(  # noqa: C901
             if detail in ("all", "locations", "outcomes", "references"):
                 # Fetch additional sections as needed
                 if detail == "all" or detail == "locations":
-                    locations = await trial_getter._trial_locations(
-                        call_benefit=call_benefit, nct_id=id_
-                    )
-                    locations_data = (
-                        json.loads(locations)
-                        if isinstance(locations, str)
-                        else locations
-                    )
-                    metadata["locations"] = (
-                        locations_data.get("locations", [])
-                        if locations_data
-                        else []
-                    )
-                    if metadata["locations"]:
-                        text_parts.append(
-                            f"\n\nLocations: {len(metadata['locations'])} study sites"
+                    try:
+                        locations_json = await trial_getter.get_trial(
+                            nct_id=id_,
+                            module=trial_getter.Module.LOCATIONS,
+                            output_json=True,
                         )
+                        locations_data = json.loads(locations_json)
+                        if "error" not in locations_data:
+                            # Extract locations from the protocol section
+                            locations_module = locations_data.get(
+                                "protocolSection", {}
+                            ).get("contactsLocationsModule", {})
+                            locations_list = locations_module.get(
+                                "locations", []
+                            )
+                            metadata["locations"] = locations_list
+                            if locations_list:
+                                text_parts.append(
+                                    f"\n\nLocations: {len(locations_list)} study sites"
+                                )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to fetch locations for {id_}: {e}"
+                        )
+                        metadata["locations"] = []
 
                 if detail == "all" or detail == "outcomes":
-                    outcomes = await trial_getter._trial_outcomes(
-                        call_benefit=call_benefit, nct_id=id_
-                    )
-                    outcomes_data = (
-                        json.loads(outcomes)
-                        if isinstance(outcomes, str)
-                        else outcomes
-                    )
-                    metadata["outcomes"] = (
-                        outcomes_data.get("outcomes", {})
-                        if outcomes_data
-                        else {}
-                    )
-                    if metadata["outcomes"].get("primary_outcomes"):
-                        text_parts.append(
-                            f"\n\nPrimary Outcomes: {len(metadata['outcomes']['primary_outcomes'])} measures"
+                    try:
+                        outcomes_json = await trial_getter.get_trial(
+                            nct_id=id_,
+                            module=trial_getter.Module.OUTCOMES,
+                            output_json=True,
                         )
+                        outcomes_data = json.loads(outcomes_json)
+                        if "error" not in outcomes_data:
+                            # Extract outcomes from the protocol section
+                            outcomes_module = outcomes_data.get(
+                                "protocolSection", {}
+                            ).get("outcomesModule", {})
+                            primary_outcomes = outcomes_module.get(
+                                "primaryOutcomes", []
+                            )
+                            secondary_outcomes = outcomes_module.get(
+                                "secondaryOutcomes", []
+                            )
+                            metadata["outcomes"] = {
+                                "primary_outcomes": primary_outcomes,
+                                "secondary_outcomes": secondary_outcomes,
+                            }
+                            if primary_outcomes:
+                                text_parts.append(
+                                    f"\n\nPrimary Outcomes: {len(primary_outcomes)} measures"
+                                )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to fetch outcomes for {id_}: {e}"
+                        )
+                        metadata["outcomes"] = {}
 
                 if detail == "all" or detail == "references":
-                    references = await trial_getter._trial_references(
-                        call_benefit=call_benefit, nct_id=id_
-                    )
-                    references_data = (
-                        json.loads(references)
-                        if isinstance(references, str)
-                        else references
-                    )
-                    metadata["references"] = (
-                        references_data.get("references", [])
-                        if references_data
-                        else []
-                    )
-                    if metadata["references"]:
-                        text_parts.append(
-                            f"\n\nReferences: {len(metadata['references'])} publications"
+                    try:
+                        references_json = await trial_getter.get_trial(
+                            nct_id=id_,
+                            module=trial_getter.Module.REFERENCES,
+                            output_json=True,
                         )
+                        references_data = json.loads(references_json)
+                        if "error" not in references_data:
+                            # Extract references from the protocol section
+                            references_module = references_data.get(
+                                "protocolSection", {}
+                            ).get("referencesModule", {})
+                            references_list = references_module.get(
+                                "references", []
+                            )
+                            metadata["references"] = references_list
+                            if references_list:
+                                text_parts.append(
+                                    f"\n\nReferences: {len(references_list)} publications"
+                                )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to fetch references for {id_}: {e}"
+                        )
+                        metadata["references"] = []
 
             # Return OpenAI MCP compliant format
             return {
                 "id": id_,
-                "title": protocol_data.get("title", f"Clinical Trial {id_}"),
+                "title": title,
                 "text": "\n".join(text_parts),
                 "url": f"https://clinicaltrials.gov/study/{id_}",
                 "metadata": metadata,
@@ -793,7 +847,7 @@ async def fetch(  # noqa: C901
             raise SearchExecutionError("variant", e) from e
 
         try:
-            variant_data = (
+            variant_response = (
                 json.loads(result_str)
                 if isinstance(result_str, str)
                 else result_str
@@ -801,6 +855,14 @@ async def fetch(  # noqa: C901
         except (json.JSONDecodeError, TypeError) as e:
             logger.error(f"Failed to parse variant fetch results: {e}")
             raise ResultParsingError("variant", e) from e
+
+        # get_variant returns a list, extract the first variant
+        if isinstance(variant_response, list) and variant_response:
+            variant_data = variant_response[0]
+        elif isinstance(variant_response, dict):
+            variant_data = variant_response
+        else:
+            return {"error": "Variant not found"}
 
         # Build comprehensive text description
         text_parts = []
@@ -851,6 +913,12 @@ async def fetch(  # noqa: C901
             text_parts.append(
                 f"\n\nExternal Resources: {len(links)} database links available"
             )
+
+        # Check for external data indicators
+        if variant_data.get("tcga"):
+            text_parts.append("\n\nTCGA Data: Available")
+        if variant_data.get("1000genomes"):
+            text_parts.append("\n1000 Genomes Data: Available")
 
         # Determine best URL
         url = variant_data.get("url", "")
@@ -981,7 +1049,9 @@ async def _unified_search(  # noqa: C901
                         # Ensure OpenAI MCP format
                         openai_result = {
                             "id": formatted_result.get("id", ""),
-                            "title": formatted_result.get("title", "Untitled"),
+                            "title": formatted_result.get(
+                                "title", DEFAULT_TITLE
+                            ),
                             "text": formatted_result.get(
                                 "snippet", formatted_result.get("text", "")
                             ),

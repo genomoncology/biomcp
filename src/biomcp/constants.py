@@ -47,8 +47,12 @@ DBSNP_BASE_URL = "https://www.ncbi.nlm.nih.gov/snp/"
 CLINVAR_BASE_URL = "https://www.ncbi.nlm.nih.gov/clinvar/variation/"
 COSMIC_BASE_URL = "https://cancer.sanger.ac.uk/cosmic/mutation/overview?id="
 CIVIC_BASE_URL = "https://civicdb.org/variants/"
-ENSEMBL_VARIANT_BASE_URL = "https://ensembl.org/Homo_sapiens/Variation/Explore?v="
-GENENAMES_BASE_URL = "https://www.genenames.org/data/gene-symbol-report/#!/symbol/"
+ENSEMBL_VARIANT_BASE_URL = (
+    "https://ensembl.org/Homo_sapiens/Variation/Explore?v="
+)
+GENENAMES_BASE_URL = (
+    "https://www.genenames.org/data/gene-symbol-report/#!/symbol/"
+)
 UCSC_GENOME_BROWSER_URL = "https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&"
 
 # ============================================================================
@@ -66,14 +70,50 @@ MAX_PAGE_SIZE = 100
 DEFAULT_PAGE_NUMBER = 1
 
 # Search limits
-MAX_RESULTS_PER_DOMAIN_DEFAULT = 10  # Default max results per domain in unified search
-ESTIMATED_ADDITIONAL_RESULTS = 100  # Estimate for additional results when full page returned
+MAX_RESULTS_PER_DOMAIN_DEFAULT = (
+    10  # Default max results per domain in unified search
+)
+ESTIMATED_ADDITIONAL_RESULTS = (
+    100  # Estimate for additional results when full page returned
+)
 DEFAULT_AUTOCOMPLETE_LIMIT = 1
 MAX_AUTOCOMPLETE_LIMIT = 100
 
 # Text display
 MAX_WIDTH = 72  # Maximum width for text wrapping in console output
 SNIPPET_LENGTH = 200  # Maximum length for text snippets in search results
+
+# Rate Limiting
+DEFAULT_RATE_LIMIT_PER_SECOND = 10.0
+DEFAULT_BURST_SIZE = 20
+SLIDING_WINDOW_MINUTE_LIMIT = 60
+SLIDING_WINDOW_HOUR_LIMIT = 1000
+
+# Retry Configuration
+DEFAULT_MAX_RETRY_ATTEMPTS = 3
+DEFAULT_INITIAL_RETRY_DELAY = 1.0
+DEFAULT_MAX_RETRY_DELAY = 60.0
+DEFAULT_EXPONENTIAL_BASE = 2.0
+AGGRESSIVE_MAX_RETRY_ATTEMPTS = 5
+AGGRESSIVE_INITIAL_RETRY_DELAY = 2.0
+AGGRESSIVE_MAX_RETRY_DELAY = 30.0
+
+# Circuit Breaker Configuration
+DEFAULT_FAILURE_THRESHOLD = 10
+DEFAULT_RECOVERY_TIMEOUT = 30.0
+DEFAULT_SUCCESS_THRESHOLD = 3
+
+# Metrics Configuration
+MAX_METRIC_SAMPLES = 1000
+METRIC_PERCENTILE_50 = 0.50
+METRIC_PERCENTILE_95 = 0.95
+METRIC_PERCENTILE_99 = 0.99
+METRIC_JITTER_RANGE = 0.1  # 10% jitter
+
+# HTTP Client Configuration
+HTTP_TIMEOUT_SECONDS = 120.0
+HTTP_ERROR_CODE_NETWORK = 599
+HTTP_ERROR_CODE_UNSUPPORTED_METHOD = 405
 
 # ============================================================================
 # Domain Configuration
@@ -87,17 +127,24 @@ VALID_DOMAINS_PLURAL = ["articles", "trials", "variants"]
 DOMAIN_TO_PLURAL = {
     "article": "articles",
     "trial": "trials",
-    "variant": "variants"
+    "variant": "variants",
 }
 
 PLURAL_TO_DOMAIN = {
     "articles": "article",
     "trials": "trial",
-    "variants": "variant"
+    "variants": "variant",
 }
 
 # Trial detail sections
-TRIAL_DETAIL_SECTIONS = ["protocol", "locations", "outcomes", "references", "all", "full"]
+TRIAL_DETAIL_SECTIONS = [
+    "protocol",
+    "locations",
+    "outcomes",
+    "references",
+    "all",
+    "full",
+]
 
 # ============================================================================
 # Field Names and Enums
@@ -120,14 +167,27 @@ DEFAULT_TRIAL_MARKUP = "markdown"
 ERROR_THOUGHT_NUMBER_MIN = "Error: thoughtNumber must be >= 1"
 ERROR_TOTAL_THOUGHTS_MIN = "Error: totalThoughts must be >= 1"
 ERROR_DOMAIN_REQUIRED = "Either 'query' or 'domain' parameter must be provided"
-ERROR_THOUGHT_REQUIRED = "'thought' parameter is required when domain='thinking'"
-ERROR_THOUGHT_NUMBER_REQUIRED = "'thoughtNumber' parameter is required when domain='thinking'"
-ERROR_TOTAL_THOUGHTS_REQUIRED = "'totalThoughts' parameter is required when domain='thinking'"
-ERROR_NEXT_THOUGHT_REQUIRED = "'nextThoughtNeeded' parameter is required when domain='thinking'"
+ERROR_THOUGHT_REQUIRED = (
+    "'thought' parameter is required when domain='thinking'"
+)
+ERROR_THOUGHT_NUMBER_REQUIRED = (
+    "'thoughtNumber' parameter is required when domain='thinking'"
+)
+ERROR_TOTAL_THOUGHTS_REQUIRED = (
+    "'totalThoughts' parameter is required when domain='thinking'"
+)
+ERROR_NEXT_THOUGHT_REQUIRED = (
+    "'nextThoughtNeeded' parameter is required when domain='thinking'"
+)
 
 # ============================================================================
 # API Response Formatting
 # ============================================================================
+
+# Default values for missing data
+DEFAULT_TITLE = "Untitled"
+DEFAULT_GENE = "Unknown"
+DEFAULT_SIGNIFICANCE = "Unknown"
 
 # Metadata field names
 METADATA_YEAR = "year"

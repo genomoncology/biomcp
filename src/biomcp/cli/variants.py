@@ -5,7 +5,7 @@ from typing import Annotated
 
 import typer
 
-from .. import const
+from ..constants import SYSTEM_PAGE_SIZE
 from ..variants import getter, search
 
 variant_app = typer.Typer(help="Search and get variants from MyVariant.info.")
@@ -157,7 +157,7 @@ def search_variant_cmd(
             min=1,
             max=100,
         ),
-    ] = const.SYSTEM_PAGE_SIZE,
+    ] = SYSTEM_PAGE_SIZE,
     sources: Annotated[
         str | None,
         typer.Option(

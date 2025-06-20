@@ -8,15 +8,17 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .. import const, http_client, render
+from .. import http_client, render
+from ..constants import (
+    BIORXIV_BASE_URL,
+    EUROPE_PMC_BASE_URL,
+    MEDRXIV_BASE_URL,
+    SYSTEM_PAGE_SIZE,
+)
 from ..core import PublicationState
 from .search import PubmedRequest, ResultItem, SearchResponse
 
 logger = logging.getLogger(__name__)
-
-BIORXIV_BASE = "https://api.biorxiv.org/details/biorxiv"
-MEDRXIV_BASE = "https://api.biorxiv.org/details/medrxiv"
-EUROPE_PMC_BASE = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
 
 
 class BiorxivRequest(BaseModel):
@@ -180,7 +182,7 @@ class PreprintSearcher:
         unique_results.sort(key=lambda x: x.date or "0000-00-00", reverse=True)
 
         # Limit results
-        limited_results = unique_results[: const.SYSTEM_PAGE_SIZE]
+        limited_results = unique_results[:SYSTEM_PAGE_SIZE]
 
         return SearchResponse(
             results=limited_results,
@@ -236,7 +238,9 @@ class BiorxivClient:
         Note: Due to API limitations, this performs client-side filtering on
         articles from the current year only. See class docstring for details.
         """
-        base_url = BIORXIV_BASE if server == "biorxiv" else MEDRXIV_BASE
+        base_url = (
+            BIORXIV_BASE_URL if server == "biorxiv" else MEDRXIV_BASE_URL
+        )
 
         # bioRxiv API doesn't have direct search, so we get recent articles
         # and filter client-side (not ideal but it's what's available)
@@ -252,6 +256,7 @@ class BiorxivClient:
             method="GET",
             request={},
             response_model_type=BiorxivResponse,
+            domain="biorxiv",
         )
 
         if error or not response:
@@ -288,16 +293,17 @@ class EuropePMCClient:
         """Search Europe PMC for preprints."""
         request = EuropePMCRequest(
             query=f"(SRC:PPR) AND ({query})" if query else "SRC:PPR",
-            pageSize=const.SYSTEM_PAGE_SIZE,
+            pageSize=SYSTEM_PAGE_SIZE,
         )
 
         params = request.model_dump(exclude_none=True)
 
         response, error = await http_client.request_api(
-            url=EUROPE_PMC_BASE,
+            url=EUROPE_PMC_BASE_URL,
             method="GET",
             request=params,
             response_model_type=EuropePMCResponse,
+            domain="europepmc",
         )
 
         if error or not response:

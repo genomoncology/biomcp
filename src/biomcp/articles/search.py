@@ -4,12 +4,11 @@ from typing import Annotated, Any, get_args
 
 from pydantic import BaseModel, Field, computed_field
 
-from .. import const, ensure_list, http_client, mcp_app, render
+from .. import ensure_list, http_client, render
+from ..constants import PUBTATOR3_SEARCH_URL, SYSTEM_PAGE_SIZE
 from ..core import PublicationState
 from .autocomplete import Concept, EntityRequest, autocomplete
 from .fetch import call_pubtator_api
-
-PUBTATOR3_SEARCH = f"{const.PUBTATOR3_BASE}/search/"
 
 concepts: list[Concept] = sorted(get_args(Concept))
 fields: list[str] = [concept + "s" for concept in concepts]
@@ -110,7 +109,7 @@ async def convert_request(request: PubmedRequest) -> PubtatorRequest:
 
     query_text = " AND ".join(query_parts)
 
-    return PubtatorRequest(text=query_text, size=const.SYSTEM_PAGE_SIZE)
+    return PubtatorRequest(text=query_text, size=SYSTEM_PAGE_SIZE)
 
 
 async def add_abstracts(response: SearchResponse) -> None:
@@ -137,9 +136,10 @@ async def search_articles(
     pubtator_request = await convert_request(request)
 
     response, error = await http_client.request_api(
-        url=PUBTATOR3_SEARCH,
+        url=PUBTATOR3_SEARCH_URL,
         request=pubtator_request,
         response_model_type=SearchResponse,
+        domain="article",
     )
 
     if response:
@@ -170,8 +170,7 @@ async def search_articles(
         return json.dumps(data, indent=2)
 
 
-@mcp_app.tool()
-async def article_searcher(
+async def _article_searcher(
     call_benefit: Annotated[
         str,
         "Define and summarize why this function is being called and the intended benefit",

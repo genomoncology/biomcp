@@ -40,32 +40,99 @@ BioMCP integrates with multiple biomedical data sources:
 
 ## Available MCP Tools
 
-### Literature Search
+BioMCP provides two essential tools for biomedical research:
 
-- `article_searcher`: Search both peer-reviewed and preprint articles by genes, diseases, variants, or keywords (includes PubMed, bioRxiv/medRxiv, and Europe PMC by default)
-- `article_details`: Get detailed article information including abstracts and full text
+### Search Tool
 
-### ClinicalTrials.gov
+**IMPORTANT**: Always start with `domain="thinking"` for systematic analysis of biomedical queries.
 
-- `trial_searcher`: Advanced trial search with filtering by condition,
-  intervention, phase, etc.
-- `trial_protocol`: Detailed trial protocol information
-- `trial_locations`: Trial site locations and contact information
-- `trial_outcomes`: Results and outcome measures
-- `trial_references`: Related publications
+```python
+# Start analysis with sequential thinking
+search(
+    domain="thinking",
+    thought="Breaking down the query about BRAF mutations in melanoma...",
+    thoughtNumber=1,
+    totalThoughts=3,
+    nextThoughtNeeded=True
+)
+```
 
-### Genetic Variants
+The sequential thinking domain helps:
 
-- `variant_searcher`: Search for genetic variants with sophisticated filtering
-- `variant_details`: Comprehensive annotations from multiple sources including:
-  - Core databases: CIViC, ClinVar, COSMIC, dbSNP
-  - Cancer data: TCGA/GDC tumor frequencies
-  - Population data: 1000 Genomes allele frequencies
+- Break down complex biomedical problems systematically
+- Plan multi-step research approaches
+- Track reasoning progress
+- Revise and branch thinking paths as needed
 
-### Sequential Thinking
+The search tool supports three modes:
 
-- `sequential_thinking`: A problem-solving tool for dynamic and reflective thinking,
-  helping analyze complex biomedical problems through a flexible, adaptive process
+#### 1. Sequential Thinking Mode (Always Use First)
+
+Use `domain="thinking"` with thought parameters for systematic analysis before searching.
+
+#### 2. Unified Query Language (Recommended for Data Search)
+
+Use the `query` parameter with structured field syntax for powerful cross-domain searches:
+
+```python
+# Simple natural language
+search(query="BRAF melanoma")
+
+# Field-specific search
+search(query="gene:BRAF AND trials.condition:melanoma")
+
+# Complex queries
+search(query="gene:BRAF AND variants.significance:pathogenic AND articles.date:>2023")
+
+# Get searchable fields schema
+search(get_schema=True)
+
+# Explain how a query is parsed
+search(query="gene:BRAF", explain_query=True)
+```
+
+**Supported Fields:**
+
+- **Cross-domain**: `gene:`, `variant:`, `disease:`
+- **Trials**: `trials.condition:`, `trials.phase:`, `trials.status:`, `trials.intervention:`
+- **Articles**: `articles.author:`, `articles.journal:`, `articles.date:`
+- **Variants**: `variants.significance:`, `variants.rsid:`, `variants.frequency:`
+
+#### 3. Legacy Domain-Based Search
+
+Use the `domain` parameter with specific filters:
+
+```python
+# Search articles
+search(domain="article", genes=["BRAF"], diseases=["melanoma"])
+
+# Search trials
+search(domain="trial", conditions=["lung cancer"], phase="3")
+
+# Search variants
+search(domain="variant", gene="TP53", significance="pathogenic")
+```
+
+### Fetch Tool
+
+Retrieve full details for a single article, trial, or variant:
+
+```python
+# Fetch article details
+fetch(domain="article", id="34567890")
+
+# Fetch trial with all sections
+fetch(domain="trial", id="NCT04280705", detail="all")
+
+# Fetch variant details
+fetch(domain="variant", id="rs113488022")
+```
+
+**Domain-specific options:**
+
+- **Articles**: `detail="full"` retrieves full text if available
+- **Trials**: `detail` can be "protocol", "locations", "outcomes", "references", or "all"
+- **Variants**: Always returns full details
 
 ## Quick Start
 

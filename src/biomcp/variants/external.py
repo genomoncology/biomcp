@@ -102,6 +102,7 @@ class TCGAClient:
                 url=GDC_SSMS_ENDPOINT,
                 method="GET",
                 request=params,
+                domain="gdc",
             )
 
             if error or not response:
@@ -146,6 +147,7 @@ class TCGAClient:
                 url="https://api.gdc.cancer.gov/ssm_occurrences",
                 method="GET",
                 request=occ_params,
+                domain="gdc",
             )
 
             if occ_error or not occ_response:
@@ -282,6 +284,7 @@ class ThousandGenomesClient:
                 url=url,
                 method="GET",
                 request=params,
+                domain="ensembl",
             )
 
             if error or not response:

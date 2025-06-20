@@ -8,7 +8,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, RootModel
 
-from .. import const, http_client
+from .. import http_client
+from ..constants import PUBTATOR3_BASE_URL
 
 Concept = Literal["variant", "chemical", "disease", "gene"]
 
@@ -58,7 +59,7 @@ class EntityList(RootModel):
         return self.root[0] if self.root else None
 
 
-PUBTATOR3_AUTOCOMPLETE = f"{const.PUBTATOR3_BASE}/entity/autocomplete/"
+PUBTATOR3_AUTOCOMPLETE = f"{PUBTATOR3_BASE_URL}/entity/autocomplete/"
 
 
 async def autocomplete(request: EntityRequest) -> Entity | None:
@@ -82,5 +83,6 @@ async def autocomplete(request: EntityRequest) -> Entity | None:
         url=PUBTATOR3_AUTOCOMPLETE,
         request=request,
         response_model_type=EntityList,
+        domain="pubmed",
     )
     return response.first if response else None

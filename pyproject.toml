@@ -192,3 +192,4 @@ exclude = [
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["uvicorn"]
+DEP003 = ["biomcp"]

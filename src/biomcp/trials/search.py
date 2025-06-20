@@ -5,7 +5,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field, model_validator
 
-from .. import StrEnum, const, ensure_list, http_client, mcp_app, render
+from .. import StrEnum, ensure_list, http_client, render
+from ..constants import CLINICAL_TRIALS_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -726,10 +727,11 @@ async def search_trials(
             logger.debug("Filter mode: id-only (NCT IDs only)")
 
     response, error = await http_client.request_api(
-        url=const.CT_GOV_STUDIES,
+        url=CLINICAL_TRIALS_BASE_URL,
         request=params,
         method="GET",
         tls_version=TLSVersion.TLSv1_2,
+        domain="trial",
     )
 
     data = response
@@ -742,8 +744,7 @@ async def search_trials(
         return json.dumps(data, indent=2)
 
 
-@mcp_app.tool()
-async def trial_searcher(
+async def _trial_searcher(
     call_benefit: Annotated[
         str,
         "Define and summarize why this function is being called and the intended benefit",

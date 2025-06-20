@@ -5,11 +5,11 @@ from unittest.mock import patch
 
 import pytest
 
-from biomcp.articles.search import article_searcher
+from biomcp.articles.search import _article_searcher
 
 
 class TestArticleSearcherMCPTool:
-    """Test the article_searcher MCP tool."""
+    """Test the _article_searcher MCP tool."""
 
     @pytest.mark.asyncio
     async def test_article_searcher_with_all_params(self):
@@ -21,7 +21,7 @@ class TestArticleSearcherMCPTool:
         ) as mock_search:
             mock_search.return_value = json.dumps(mock_results)
 
-            await article_searcher(
+            await _article_searcher(
                 call_benefit="Testing search functionality",
                 chemicals="aspirin,ibuprofen",
                 diseases="cancer,diabetes",
@@ -57,7 +57,7 @@ class TestArticleSearcherMCPTool:
         ) as mock_search:
             mock_search.return_value = "## Results"
 
-            await article_searcher(
+            await _article_searcher(
                 call_benefit="Testing with lists",
                 chemicals=["drug1", "drug2"],
                 diseases=["disease1"],
@@ -85,7 +85,7 @@ class TestArticleSearcherMCPTool:
         ) as mock_search:
             mock_search.return_value = "## No results"
 
-            await article_searcher(call_benefit="Minimal test")
+            await _article_searcher(call_benefit="Minimal test")
 
             # Should still work with no search parameters
             args = mock_search.call_args[0]
@@ -105,7 +105,7 @@ class TestArticleSearcherMCPTool:
         ) as mock_search:
             mock_search.return_value = "## Results"
 
-            await article_searcher(
+            await _article_searcher(
                 call_benefit="Empty string test",
                 chemicals="",
                 diseases="",
