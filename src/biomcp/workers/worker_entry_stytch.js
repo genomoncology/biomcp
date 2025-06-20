@@ -112,7 +112,9 @@ async function insertEvent(env, row) {
 
     const result = await response.json();
     if (result.insertErrors) {
-      throw new Error(`BigQuery insert errors: ${JSON.stringify(result.insertErrors)}`);
+      throw new Error(
+        `BigQuery insert errors: ${JSON.stringify(result.insertErrors)}`,
+      );
     }
   } catch (error) {
     console.error(`[BigQuery] Insert failed:`, error.message);
@@ -1004,7 +1006,7 @@ app
       c.executionCtx.waitUntil(
         insertEvent(c.env, eventRow).catch((error) => {
           console.error("[BigQuery] Insert failed:", error);
-        })
+        }),
       );
     } else {
       const missing = [
