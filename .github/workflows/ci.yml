@@ -98,7 +98,6 @@ jobs:
       - name: Check if documentation can be built
         run: uv run mkdocs build -s
 
-
   # Build package check
   build-package:
     runs-on: ubuntu-latest
