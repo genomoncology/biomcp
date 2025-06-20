@@ -45,7 +45,7 @@ jobs:
           python-version: "3.11"
 
       - name: Run tests
-        run: uv run pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
+        run: uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
 
       - name: Check typing
         run: uv run mypy
@@ -101,7 +101,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest
+          uv run python -m pytest
 
   # Build package check
   build-package:
@@ -161,4 +161,4 @@ jobs:
 
       - name: Run MCP integration tests
         run: |
-          uv run pytest tests/tdd/test_mcp_integration.py -v
+          uv run python -m pytest tests/tdd/test_mcp_integration.py -v
