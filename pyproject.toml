@@ -52,6 +52,7 @@ dev = [
     "pytest-bdd>=8.1.0",
     "tomlkit>=0.13.2",
     "assertpy>=1.1",
+    "twine>=4.0.0",
 ]
 
 [project.optional-dependencies]
