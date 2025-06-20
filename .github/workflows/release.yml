@@ -8,7 +8,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.12"
-  UV_VERSION: "0.4.0"
+  UV_VERSION: "0.4.29"
 
 jobs:
   release:
@@ -33,19 +33,19 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --all-extras --group dev
+          uv sync --group dev
 
       - name: Run tests
         run: |
-          uv run python -m pytest
+          uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
 
       - name: Build package
         run: |
-          uv build
+          uvx --from build pyproject-build --installer uv
 
       - name: Check package
         run: |
-          uv run twine check dist/*
+          uvx twine check dist/*
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -81,7 +81,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --all-extras --group dev
+          uv sync --group dev
 
       - name: Build documentation
         run: |
