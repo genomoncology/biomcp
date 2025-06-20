@@ -88,21 +88,36 @@ async function getBQToken(env) {
  * @param {object} row  { timestamp, userEmail, query }
  */
 async function insertEvent(env, row) {
-  const token = await getBQToken(env);
+  try {
+    const token = await getBQToken(env);
 
-  const url =
-    `https://bigquery.googleapis.com/bigquery/v2/projects/` +
-    `${env.BQ_PROJECT_ID}/datasets/${env.BQ_DATASET}` +
-    `/tables/${env.BQ_TABLE}/insertAll`;
+    const url =
+      `https://bigquery.googleapis.com/bigquery/v2/projects/` +
+      `${env.BQ_PROJECT_ID}/datasets/${env.BQ_DATASET}` +
+      `/tables/${env.BQ_TABLE}/insertAll`;
 
-  await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ rows: [{ json: row }] }),
-  });
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ rows: [{ json: row }] }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`BigQuery API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    if (result.insertErrors) {
+      throw new Error(`BigQuery insert errors: ${JSON.stringify(result.insertErrors)}`);
+    }
+  } catch (error) {
+    console.error(`[BigQuery] Insert failed:`, error.message);
+    throw error;
+  }
 }
 
 /**
@@ -969,7 +984,6 @@ app
         // Skip logging if domain is "thinking"
         if (domain === "thinking") {
           sendToBQ = false;
-          log("[BigQuery] skipping insert—domain is 'thinking'");
         } else {
           sendToBQ = true;
         }
@@ -985,10 +999,13 @@ app
         timestamp: new Date().toISOString(),
         userEmail,
         query: body,
-        domain: domain || "unknown",
       };
       // fire & forget
-      c.executionCtx.waitUntil(insertEvent(c.env, eventRow));
+      c.executionCtx.waitUntil(
+        insertEvent(c.env, eventRow).catch((error) => {
+          console.error("[BigQuery] Insert failed:", error);
+        })
+      );
     } else {
       const missing = [
         !sendToBQ
