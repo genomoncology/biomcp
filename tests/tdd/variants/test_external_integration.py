@@ -3,6 +3,7 @@
 import pytest
 
 from biomcp.variants.external import (
+    CBioPortalClient,
     ExternalVariantAggregator,
     TCGAClient,
     ThousandGenomesClient,
@@ -129,6 +130,70 @@ class TestThousandGenomesIntegration:
         assert result is None
 
 
+class TestCBioPortalIntegration:
+    """Integration tests for cBioPortal API."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_braf_v600e_variant(self):
+        """Test fetching BRAF V600E data from cBioPortal."""
+        client = CBioPortalClient()
+
+        result = await client.get_variant_data("BRAF V600E")
+
+        if result:
+            # BRAF V600E is common in melanoma and other cancers
+            assert result.total_cases is not None
+            assert result.total_cases > 0
+            assert len(result.studies) > 0
+            # Should have data from various studies
+            print(
+                f"Found {result.total_cases} cases in {len(result.studies)} studies: {result.studies}"
+            )
+
+            # Check enhanced fields
+            assert result.cancer_type_distribution is not None
+            assert len(result.cancer_type_distribution) > 0
+            print(
+                f"Cancer types: {list(result.cancer_type_distribution.keys())}"
+            )
+
+            assert result.mutation_types is not None
+            assert "Missense_Mutation" in result.mutation_types
+
+            assert result.mean_vaf is not None
+            print(f"Mean VAF: {result.mean_vaf}")
+        else:
+            pytest.skip("cBioPortal API did not return data for BRAF V600E")
+
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_kras_g12d_variant(self):
+        """Test fetching KRAS G12D data from cBioPortal."""
+        client = CBioPortalClient()
+
+        result = await client.get_variant_data("KRAS G12D")
+
+        if result:
+            # KRAS G12D is a common mutation in multiple cancer types
+            assert result.total_cases is not None
+            assert result.total_cases > 0
+            assert len(result.studies) > 0
+        else:
+            pytest.skip("cBioPortal API did not return data for KRAS G12D")
+
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_invalid_variant(self):
+        """Test cBioPortal response for invalid variant."""
+        client = CBioPortalClient()
+
+        # Invalid gene name
+        result = await client.get_variant_data("FAKEGENE V600E")
+
+        assert result is None
+
+
 class TestExternalVariantAggregatorIntegration:
     """Integration tests for the external variant aggregator."""
 
@@ -139,10 +204,18 @@ class TestExternalVariantAggregatorIntegration:
         aggregator = ExternalVariantAggregator()
 
         # Use rs1045642 which is a common variant that should have 1000 Genomes data
+        # Also provide variant data for cBioPortal
+        variant_data = {
+            "cadd": {"gene": {"genename": "ABCB1"}},
+            "docm": {"aa_change": "p.I1145I"},
+        }
+
         result = await aggregator.get_enhanced_annotations(
             "rs1045642",
             include_tcga=True,
             include_1000g=True,
+            include_cbioportal=True,
+            variant_data=variant_data,
         )
 
         assert result.variant_id == "rs1045642"
@@ -153,6 +226,8 @@ class TestExternalVariantAggregatorIntegration:
             sources_with_data.append("tcga")
         if result.thousand_genomes:
             sources_with_data.append("1000g")
+        if result.cbioportal:
+            sources_with_data.append("cbioportal")
 
         # This common variant should have at least 1000 Genomes data
         assert len(sources_with_data) > 0

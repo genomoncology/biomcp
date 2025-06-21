@@ -32,7 +32,7 @@ def get_variant(
         bool,
         typer.Option(
             "--include-external/--no-external",
-            help="Include annotations from external sources (TCGA, 1000 Genomes)",
+            help="Include annotations from external sources (TCGA, 1000 Genomes, cBioPortal)",
         ),
     ] = True,
 ):

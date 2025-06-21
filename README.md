@@ -41,6 +41,7 @@ BioMCP integrates with multiple biomedical data sources:
 - **MyVariant.info** - Consolidated genetic variant annotation
 - **TCGA/GDC** - The Cancer Genome Atlas for cancer variant data
 - **1000 Genomes** - Population frequency data via Ensembl
+- **cBioPortal** - Cancer genomics portal with mutation occurrence data
 
 ## Available MCP Tools
 
@@ -181,6 +182,20 @@ uv pip install biomcp-python
 uv run --with biomcp-python biomcp trial search --condition "lung cancer"
 ```
 
+## Configuration
+
+### Environment Variables
+
+BioMCP supports optional environment variables for enhanced functionality:
+
+```bash
+# cBioPortal API authentication (optional)
+export CBIO_TOKEN="your-api-token"  # For authenticated access
+export CBIO_BASE_URL="https://www.cbioportal.org/api"  # Custom API endpoint
+```
+
+Note: All APIs work without authentication, but tokens may provide higher rate limits.
+
 ## Command Line Interface
 
 BioMCP provides a comprehensive CLI for direct database interaction:
@@ -203,7 +218,7 @@ biomcp trial get NCT04280705 Protocol
 
 # Variant examples with external annotations
 biomcp variant search --gene TP53 --significance pathogenic
-biomcp variant get rs113488022  # Includes TCGA and 1000 Genomes data by default
+biomcp variant get rs113488022  # Includes TCGA, 1000 Genomes, and cBioPortal data by default
 biomcp variant get rs113488022 --no-external  # Core annotations only
 ```
 
