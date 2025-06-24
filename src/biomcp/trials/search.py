@@ -281,15 +281,15 @@ class TrialQuery(BaseModel):
     )
     lat: float | None = Field(
         default=None,
-        description="Latitude for location search",
+        description="Latitude for location search. AI agents should geocode city/location names (e.g., 'Cleveland' → 41.4993, -81.6944) before using this parameter.",
     )
     long: float | None = Field(
         default=None,
-        description="Longitude for location search",
+        description="Longitude for location search. AI agents should geocode city/location names (e.g., 'Cleveland' → 41.4993, -81.6944) before using this parameter.",
     )
     distance: int | None = Field(
         default=None,
-        description="Distance from lat/long in miles",
+        description="Distance from lat/long in miles (default: 50 miles if lat/long provided but distance not specified)",
     )
     min_date: str | None = Field(
         default=None,
@@ -788,10 +788,17 @@ async def _trial_searcher(
         list[str] | str | None,
         "Clinical trial NCT IDs - list or comma-separated string",
     ] = None,
-    lat: Annotated[float | None, "Latitude for location search"] = None,
-    long: Annotated[float | None, "Longitude for location search"] = None,
+    lat: Annotated[
+        float | None,
+        "Latitude for location search. AI agents should geocode city/location names (e.g., 'Cleveland' → 41.4993, -81.6944) before using this parameter.",
+    ] = None,
+    long: Annotated[
+        float | None,
+        "Longitude for location search. AI agents should geocode city/location names (e.g., 'Cleveland' → 41.4993, -81.6944) before using this parameter.",
+    ] = None,
     distance: Annotated[
-        float | None, "Distance from lat/long in miles"
+        float | None,
+        "Distance from lat/long in miles (default: 50 miles if lat/long provided but distance not specified)",
     ] = None,
     min_date: Annotated[
         str | None, "Minimum date for filtering (YYYY-MM-DD)"

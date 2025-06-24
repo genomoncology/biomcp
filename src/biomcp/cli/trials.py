@@ -225,14 +225,14 @@ def search_trials_cli(
         float | None,
         typer.Option(
             "--lat",
-            help="Latitude for location-based search",
+            help="Latitude for location-based search. For city names, geocode first (e.g., Cleveland: 41.4993)",
         ),
     ] = None,
     longitude: Annotated[
         float | None,
         typer.Option(
             "--lon",
-            help="Longitude for location-based search",
+            help="Longitude for location-based search. For city names, geocode first (e.g., Cleveland: -81.6944)",
         ),
     ] = None,
     distance: Annotated[
@@ -240,7 +240,7 @@ def search_trials_cli(
         typer.Option(
             "--distance",
             "-d",
-            help="Distance in miles for location-based search",
+            help="Distance in miles for location-based search (default: 50 miles if lat/lon provided)",
         ),
     ] = None,
     output_json: Annotated[

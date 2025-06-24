@@ -140,6 +140,18 @@ async def search(  # noqa: C901
     significance: Annotated[
         str | None, "Variant clinical significance"
     ] = None,
+    lat: Annotated[
+        float | None,
+        "Latitude for trial location search. AI agents should geocode city names (e.g., 'Cleveland' → 41.4993) before using.",
+    ] = None,
+    long: Annotated[
+        float | None,
+        "Longitude for trial location search. AI agents should geocode city names (e.g., 'Cleveland' → -81.6944) before using.",
+    ] = None,
+    distance: Annotated[
+        int | None,
+        "Distance in miles from lat/long for trial search (default: 50 miles if lat/long provided)",
+    ] = None,
     page: Annotated[int, "Page number (minimum: 1)"] = DEFAULT_PAGE_NUMBER,
     page_size: Annotated[int, "Results per page (1-100)"] = DEFAULT_PAGE_SIZE,
     max_results_per_domain: Annotated[
@@ -378,6 +390,12 @@ async def search(  # noqa: C901
                 raise
         if keywords:
             search_params["keywords"] = keywords
+        if lat is not None:
+            search_params["lat"] = lat
+        if long is not None:
+            search_params["long"] = long
+        if distance is not None:
+            search_params["distance"] = distance
 
         try:
             from biomcp.trials.search import TrialQuery, search_trials
