@@ -121,7 +121,7 @@ async def search(  # noqa: C901
     domain: Annotated[
         Literal["article", "trial", "variant", "thinking"] | None,
         Field(
-            description="Domain to search. Use 'thinking' for sequential reasoning (required if query not provided)"
+            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS (NOT articles about variants), 'thinking' for sequential reasoning"
         ),
     ] = None,
     genes: Annotated[list[str] | str | None, "Gene symbols"] = None,
@@ -234,9 +234,9 @@ async def search(  # noqa: C901
     Use the 'domain' parameter with specific filters for targeted searches.
 
     Domains:
-    - "article": Search PubMed/PubTator3 for research articles and preprints
+    - "article": Search PubMed/PubTator3 for research articles and preprints ABOUT genes, variants, diseases, or chemicals
     - "trial": Search ClinicalTrials.gov for clinical studies
-    - "variant": Search MyVariant.info for genetic variants
+    - "variant": Search MyVariant.info for genetic variant DATABASE RECORDS (population frequency, clinical significance, etc.) - NOT for articles about variants!
 
     Example:
     ```
@@ -248,6 +248,12 @@ async def search(  # noqa: C901
     )
     ```
 
+    ## DOMAIN SELECTION EXAMPLES:
+    - To find ARTICLES about BRAF V600E mutation: domain="article", genes=["BRAF"], variants=["V600E"]
+    - To find VARIANT DATA for BRAF mutations: domain="variant", gene="BRAF"
+    - To find articles about ERBB2 p.D277Y: domain="article", genes=["ERBB2"], variants=["p.D277Y"]
+    - Common mistake: Using domain="variant" when you want articles about a variant
+
     ## IMPORTANT NOTES:
     - ALWAYS start with sequential thinking (domain="thinking") for research questions
     - The tool returns results in OpenAI MCP format: {"results": [{"id", "title", "text", "url"}, ...]}
@@ -257,6 +263,7 @@ async def search(  # noqa: C901
     - Use explain_query=True to understand query parsing (unified mode)
     - Domain-specific searches use AND logic for multiple values
     - For OR logic, use the unified query language
+    - Remember: domain="article" finds LITERATURE, domain="variant" finds DATABASE RECORDS
 
     ## RETURN FORMAT:
     All search modes return results in this format:
