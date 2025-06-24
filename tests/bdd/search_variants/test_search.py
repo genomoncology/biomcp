@@ -112,12 +112,14 @@ def number_of_variants_check(variants_data, operator, expected):
         and "error" in variants_data[0]
     ):
         count = 0  # If we have an error response, count as 0 variants
+    elif isinstance(variants_data, dict) and "variants" in variants_data:
+        # Handle new format with cBioPortal summary
+        count = len(variants_data["variants"])
+    elif isinstance(variants_data, dict) and "hits" in variants_data:
+        # Handle myvariant.info response format
+        count = len(variants_data["hits"])
     else:
-        count = (
-            len(variants_data.get("hits", []))
-            if isinstance(variants_data, dict)
-            else len(variants_data)
-        )
+        count = len(variants_data) if isinstance(variants_data, list) else 0
     operator = operator.strip().lower().replace(" ", "_")
     f = getattr(assert_that(count), operator)
     f(int(expected))

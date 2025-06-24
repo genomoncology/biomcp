@@ -1054,29 +1054,70 @@ async def _unified_search(  # noqa: C901
             )  # Remove trailing 's'
 
             # Process and format each result
+            # Handle both list format and dict format (for articles with cBioPortal data)
+            items_to_process = []
+            cbioportal_summary = None
+
             if isinstance(data, list):
-                for item in data[:max_results_per_domain]:
-                    try:
-                        formatted_result = handler_class.format_result(item)
-                        # Ensure OpenAI MCP format
-                        openai_result = {
-                            "id": formatted_result.get("id", ""),
-                            "title": formatted_result.get(
-                                "title", DEFAULT_TITLE
-                            ),
-                            "text": formatted_result.get(
-                                "snippet", formatted_result.get("text", "")
-                            ),
-                            "url": formatted_result.get("url", ""),
-                        }
-                        # Note: For unified search, we can optionally include domain in metadata
-                        # This helps distinguish between result types
-                        all_results.append(openai_result)
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to format result in domain {domain}: {e}"
+                items_to_process = data[:max_results_per_domain]
+            elif isinstance(data, dict):
+                # Handle unified search format with cBioPortal data
+                if "articles" in data:
+                    items_to_process = data["articles"][
+                        :max_results_per_domain
+                    ]
+                    cbioportal_summary = data.get("cbioportal_summary")
+                else:
+                    # Single item dict
+                    items_to_process = [data]
+
+            # Add cBioPortal summary as first result if available
+            if cbioportal_summary and domain == "articles":
+                try:
+                    # Extract gene name from parsed query or summary
+                    gene_name = parsed.cross_domain_fields.get("gene", "")
+                    if not gene_name and "Summary for " in cbioportal_summary:
+                        # Try to extract from summary title
+                        import re
+
+                        match = re.search(
+                            r"Summary for (\w+)", cbioportal_summary
                         )
-                        continue
+                        if match:
+                            gene_name = match.group(1)
+
+                    cbio_result = {
+                        "id": f"cbioportal_summary_{gene_name or 'gene'}",
+                        "title": f"cBioPortal Summary for {gene_name or 'Gene'}",
+                        "text": cbioportal_summary[:5000],  # Limit text length
+                        "url": f"https://www.cbioportal.org/results?gene_list={gene_name}"
+                        if gene_name
+                        else "",
+                    }
+                    all_results.append(cbio_result)
+                except Exception as e:
+                    logger.warning(f"Failed to format cBioPortal summary: {e}")
+
+            for item in items_to_process:
+                try:
+                    formatted_result = handler_class.format_result(item)
+                    # Ensure OpenAI MCP format
+                    openai_result = {
+                        "id": formatted_result.get("id", ""),
+                        "title": formatted_result.get("title", DEFAULT_TITLE),
+                        "text": formatted_result.get(
+                            "snippet", formatted_result.get("text", "")
+                        ),
+                        "url": formatted_result.get("url", ""),
+                    }
+                    # Note: For unified search, we can optionally include domain in metadata
+                    # This helps distinguish between result types
+                    all_results.append(openai_result)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to format result in domain {domain}: {e}"
+                    )
+                    continue
 
         except (json.JSONDecodeError, TypeError, ValueError) as e:
             logger.warning(f"Failed to parse results for domain {domain}: {e}")

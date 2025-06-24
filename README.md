@@ -108,8 +108,12 @@ search(query="gene:BRAF", explain_query=True)
 Use the `domain` parameter with specific filters:
 
 ```python
-# Search articles
+# Search articles (includes automatic cBioPortal integration)
 search(domain="article", genes=["BRAF"], diseases=["melanoma"])
+
+# Search with mutation-specific cBioPortal data
+search(domain="article", genes=["BRAF"], keywords=["V600E"])
+search(domain="article", genes=["SRSF2"], keywords=["F57*"])  # Wildcard patterns
 
 # Search trials
 search(domain="trial", conditions=["lung cancer"], phase="3")
@@ -117,6 +121,12 @@ search(domain="trial", conditions=["lung cancer"], phase="3")
 # Search variants
 search(domain="variant", gene="TP53", significance="pathogenic")
 ```
+
+**Note**: When searching articles with a gene parameter, cBioPortal data is automatically included:
+
+- Gene-level summaries show mutation frequency across cancer studies
+- Mutation-specific searches (e.g., "V600E") show study-level occurrence data
+- Cancer types are dynamically resolved from cBioPortal API
 
 ### Fetch Tool
 

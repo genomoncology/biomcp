@@ -28,7 +28,7 @@ nav:
       - ClinicalTrials.gov: apis/clinicaltrials_gov.md
       - PubTator3: apis/pubtator3_api.md
       - MyVariant.info: apis/myvariant_info.md
-
+      - cBioPortal: apis/cbioportal.md
   - Blog:
       - What is BioMCP?: blog/what-is-biomcp.md
       - AI Assisted Clinical Trial Search: blog/ai-assisted-clinical-trial-search-analysis.md

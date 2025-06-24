@@ -69,7 +69,15 @@ class TestUnifiedSearch:
         with (
             patch("biomcp.articles.unified.search_articles", mock_pubmed),
             patch("biomcp.articles.unified.search_preprints", mock_preprints),
+            patch(
+                "biomcp.variants.cbioportal_search.CBioPortalSearchClient"
+            ) as mock_cbio,
         ):
+            # Mock cBioPortal client to return None (no summary)
+            mock_cbio.return_value.get_gene_search_summary = AsyncMock(
+                return_value=None
+            )
+
             result = await search_articles_unified(
                 request,
                 include_pubmed=True,
@@ -78,7 +86,14 @@ class TestUnifiedSearch:
             )
 
             # Parse result
-            articles = json.loads(result)
+            data = json.loads(result)
+
+            # When gene is specified but cBioPortal returns no data,
+            # we should just get the articles list
+            if isinstance(data, dict):
+                articles = data.get("articles", data)
+            else:
+                articles = data
 
             # Should have 3 articles (one duplicate removed)
             assert len(articles) == 3
@@ -98,7 +113,9 @@ class TestUnifiedSearch:
     @pytest.mark.asyncio
     async def test_search_articles_unified_pubmed_only(self, pubmed_results):
         """Test searching with only PubMed enabled."""
-        request = PubmedRequest(genes=["BRAF"])
+        request = PubmedRequest(
+            keywords=["cancer"]
+        )  # No gene, so no cBioPortal
 
         with (
             patch("biomcp.articles.unified.search_articles") as mock_pubmed,
@@ -130,7 +147,9 @@ class TestUnifiedSearch:
         self, preprint_results
     ):
         """Test searching with only preprints enabled."""
-        request = PubmedRequest(genes=["BRAF"])
+        request = PubmedRequest(
+            keywords=["cancer"]
+        )  # No gene, so no cBioPortal
 
         with (
             patch("biomcp.articles.unified.search_articles") as mock_pubmed,
@@ -158,7 +177,9 @@ class TestUnifiedSearch:
     @pytest.mark.asyncio
     async def test_search_articles_unified_error_handling(self):
         """Test error handling when one source fails."""
-        request = PubmedRequest(genes=["BRAF"])
+        request = PubmedRequest(
+            keywords=["cancer"]
+        )  # No gene, so no cBioPortal
 
         with (
             patch("biomcp.articles.unified.search_articles") as mock_pubmed,

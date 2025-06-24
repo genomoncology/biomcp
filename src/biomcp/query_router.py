@@ -4,7 +4,8 @@ import asyncio
 from dataclasses import dataclass
 from typing import Any
 
-from biomcp.articles.search import PubmedRequest, search_articles
+from biomcp.articles.search import PubmedRequest
+from biomcp.articles.unified import search_articles_unified
 from biomcp.query_parser import ParsedQuery
 from biomcp.trials.search import TrialQuery, search_trials
 from biomcp.variants.search import VariantQuery, search_variants
@@ -99,6 +100,17 @@ class QueryRouter:
                 article_fields["journal"]
             ]
 
+        # Extract mutation patterns from raw query
+        import re
+
+        raw_query = parsed_query.raw_query
+        # Look for mutation patterns like F57Y, F57*, V600E
+        mutation_patterns = re.findall(r"\b[A-Z]\d+[A-Z*]\b", raw_query)
+        if mutation_patterns:
+            if "keywords" not in mapping:
+                mapping["keywords"] = []
+            mapping["keywords"].extend(mutation_patterns)
+
         return mapping
 
     def _map_trial_fields(self, parsed_query: ParsedQuery) -> dict[str, Any]:
@@ -178,7 +190,14 @@ async def execute_routing_plan(
 
         if tool_name == "article_searcher":
             request = PubmedRequest(**params)
-            tasks.append(search_articles(request, output_json=output_json))
+            tasks.append(
+                search_articles_unified(
+                    request,
+                    include_pubmed=True,
+                    include_preprints=False,
+                    output_json=output_json,
+                )
+            )
             task_names.append("articles")
 
         elif tool_name == "trial_searcher":

@@ -78,7 +78,9 @@ class TestMCPIntegration:
             }
         ])
 
-        with patch("biomcp.articles.search.search_articles") as mock_search:
+        with patch(
+            "biomcp.articles.unified.search_articles_unified"
+        ) as mock_search:
             mock_search.return_value = mock_result
 
             # Import search function directly since we can't test through MCP without Context
@@ -227,7 +229,9 @@ class TestMCPIntegration:
         """Test parameter parsing through MCP."""
         mock_result = json.dumps([])
 
-        with patch("biomcp.articles.search.search_articles") as mock_search:
+        with patch(
+            "biomcp.articles.unified.search_articles_unified"
+        ) as mock_search:
             mock_search.return_value = mock_result
 
             from biomcp.router import search

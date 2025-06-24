@@ -71,7 +71,11 @@ async def retry_with_backoff(
             else:
                 # Non-retriable status code
                 raise
-        except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.ConnectError) as e:
+        except (
+            httpx.ConnectTimeout,
+            httpx.ReadTimeout,
+            httpx.ConnectError,
+        ) as e:
             last_exception = e
             if attempt < max_retries:
                 wait_time = min(backoff, MAX_BACKOFF)
@@ -128,6 +132,7 @@ class RetryableHTTPClient:
         Returns:
             Response object or None if all retries failed
         """
+
         async def _get() -> httpx.Response:
             response = await client.get(url, **kwargs)
             response.raise_for_status()

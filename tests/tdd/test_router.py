@@ -177,7 +177,9 @@ class TestSearchFunction:
             {"pmid": "123", "title": "Test", "abstract": "Abstract"}
         ])
 
-        with patch("biomcp.articles.search.search_articles") as mock_search:
+        with patch(
+            "biomcp.articles.unified.search_articles_unified"
+        ) as mock_search:
             mock_search.return_value = mock_result
 
             result = await search(
@@ -296,7 +298,9 @@ class TestSearchFunction:
         """Test parameter parsing for list inputs."""
         mock_result = json.dumps([])
 
-        with patch("biomcp.articles.search.search_articles") as mock_search:
+        with patch(
+            "biomcp.articles.unified.search_articles_unified"
+        ) as mock_search:
             mock_search.return_value = mock_result
 
             # Test with JSON array string

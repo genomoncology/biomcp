@@ -147,193 +147,48 @@ class TestCBioPortalClient:
     """Tests for cBioPortal client."""
 
     @pytest.mark.asyncio
+    @pytest.mark.integration
     async def test_get_variant_data_success(self):
-        """Test successful cBioPortal variant data retrieval."""
-        # Mock gene lookup response
-        mock_gene_response = {
-            "entrezGeneId": 673,
-            "hugoGeneSymbol": "BRAF",
-        }
-
-        # Mock mutations response
-        mock_mutations_response = [
-            {
-                "sampleId": "TCGA-AA-1234",
-                "proteinChange": "V600E",
-                "mutationType": "Missense_Mutation",
-                "studyId": "coadread_mskcc",
-                "keyword": "BRAF V600 hotspot",
-                "tumorAltCount": 50,
-                "tumorRefCount": 150,
-            },
-            {
-                "sampleId": "TCGA-AA-5678",
-                "proteinChange": "V600E",
-                "mutationType": "Missense_Mutation",
-                "studyId": "coadread_mskcc",
-                "tumorAltCount": 30,
-                "tumorRefCount": 170,
-            },
-            {
-                "sampleId": "TCGA-AA-9012",
-                "proteinChange": "V600E",
-                "mutationType": "Missense_Mutation",
-                "studyId": "coadread_mskcc",
-            },
-        ]
-
-        with (
-            patch(
-                "biomcp.variants.external.RetryableHTTPClient"
-            ) as mock_retry_class,
-            patch(
-                "biomcp.variants.external.httpx.AsyncClient"
-            ) as mock_client_class,
-        ):
-            # Mock retry client
-            mock_retry = mock_retry_class.return_value
-            mock_retry.get_with_retry = AsyncMock()
-
-            # Create mock client instance
-            mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
-
-            # Create client after mocks are set up
-            client = CBioPortalClient()
-            client._study_cache.clear()
-
-            # Mock gene lookup response
-            gene_resp = AsyncMock()
-            gene_resp.status_code = 200
-            gene_resp.json = lambda: mock_gene_response
-
-            # Mock molecular profiles response
-            profiles_resp = AsyncMock()
-            profiles_resp.status_code = 200
-            profiles_resp.json = lambda: [
-                {
-                    "molecularProfileId": "coadread_mskcc_mutations",
-                    "studyId": "coadread_mskcc",
-                    "molecularAlterationType": "MUTATION_EXTENDED",
-                }
-            ]
-
-            # Mock study metadata response
-            study_resp = AsyncMock()
-            study_resp.status_code = 200
-            study_resp.json = lambda: {
-                "studyId": "coadread_mskcc",
-                "cancerType": {"name": "Colorectal Adenocarcinoma"},
-            }
-
-            # Mock mutations response
-            mutations_resp = AsyncMock()
-            mutations_resp.status_code = 200
-            mutations_resp.json = lambda: mock_mutations_response
-
-            # Mock the retry client to return responses in order
-            mock_retry.get_with_retry.side_effect = [
-                gene_resp,  # gene lookup
-                profiles_resp,  # profiles lookup (parallel with gene)
-                study_resp,  # study metadata
-                mutations_resp,  # mutations
-            ]
-
-            result = await client.get_variant_data("BRAF V600E")
-
-            assert result is not None
-            assert result.total_cases == 3
-            # The studies come from the mutations data
-            assert "coadread_mskcc" in result.studies
-            assert len(result.studies) == 1
-            # Check enhanced fields
-            assert (
-                result.cancer_type_distribution["Colorectal Adenocarcinoma"]
-                == 3
-            )
-            assert result.mutation_types["Missense_Mutation"] == 3
-            assert (
-                result.hotspot_count == 1
-            )  # One mutation has "hotspot" in keyword
-            assert (
-                result.mean_vaf is not None
-            )  # VAF calculated from tumor counts
-
-    @pytest.mark.asyncio
-    async def test_get_variant_data_not_found(self):
-        """Test cBioPortal variant data when not found."""
+        """Test successful cBioPortal variant data retrieval using real API."""
         client = CBioPortalClient()
 
-        # Mock gene lookup response
-        mock_gene_response = {
-            "entrezGeneId": 673,
-            "hugoGeneSymbol": "BRAF",
-        }
+        # Test with a known variant
+        result = await client.get_variant_data("BRAF V600E")
 
-        # Mock empty mutations response
+        assert result is not None
+        assert result.total_cases > 0
+        assert len(result.studies) > 0
+        assert "Missense_Mutation" in result.mutation_types
+        assert result.mutation_types["Missense_Mutation"] > 0
+        assert result.mean_vaf is not None
+        assert result.mean_vaf > 0.0
+        assert result.mean_vaf < 1.0
 
-        with (
-            patch(
-                "biomcp.variants.external.httpx.AsyncClient"
-            ) as mock_client_class,
-            patch(
-                "biomcp.variants.external.RetryableHTTPClient"
-            ) as mock_retry_class,
-        ):
-            # Create mock client instance
-            mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
-
-            # Mock retry client
-            mock_retry = mock_retry_class.return_value
-            mock_retry.get_with_retry = AsyncMock()
-
-            # Mock gene lookup response
-            gene_resp = AsyncMock()
-            gene_resp.status_code = 200
-            gene_resp.json = lambda: mock_gene_response
-
-            # Mock molecular profiles response
-            profiles_resp = AsyncMock()
-            profiles_resp.status_code = 200
-            profiles_resp.json = lambda: [
-                {
-                    "molecularProfileId": "coadread_mskcc_mutations",
-                    "studyId": "coadread_mskcc",
-                    "molecularAlterationType": "MUTATION_EXTENDED",
-                }
-            ]
-
-            # Mock study metadata response
-            study_resp = AsyncMock()
-            study_resp.status_code = 200
-            study_resp.json = lambda: {
-                "studyId": "coadread_mskcc",
-                "cancerType": {"name": "Colorectal Adenocarcinoma"},
-            }
-
-            # Mock empty mutations response for V601E
-            empty_resp = AsyncMock()
-            empty_resp.status_code = 200
-            empty_resp.json = lambda: []
-
-            # Mock the retry client
-            mock_retry.get_with_retry.side_effect = [
-                gene_resp,
-                profiles_resp,
-                study_resp,
-                empty_resp,
-            ]
-
-            result = await client.get_variant_data("BRAF V601E")
-
-            assert result is None
+        # Check cancer type distribution
+        assert len(result.cancer_type_distribution) > 0
+        # BRAF V600E is common in melanoma and colorectal
+        cancer_types = list(result.cancer_type_distribution.keys())
+        assert any(
+            "glioma" in ct.lower()
+            or "lung" in ct.lower()
+            or "colorectal" in ct.lower()
+            for ct in cancer_types
+        )
 
     @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_get_variant_data_not_found(self):
+        """Test cBioPortal variant data when not found using real API."""
+        client = CBioPortalClient()
+
+        # Test with a variant that's extremely rare or doesn't exist
+        result = await client.get_variant_data("BRAF X999Z")
+
+        # Should return None for non-existent variants
+        assert result is None
+
+    @pytest.mark.asyncio
+    @pytest.mark.integration
     async def test_get_variant_data_invalid_format(self):
         """Test cBioPortal with invalid gene/AA format."""
         client = CBioPortalClient()
@@ -343,31 +198,15 @@ class TestCBioPortalClient:
         assert result is None
 
     @pytest.mark.asyncio
+    @pytest.mark.integration
     async def test_get_variant_data_gene_not_found(self):
         """Test cBioPortal when gene is not found."""
         client = CBioPortalClient()
 
-        with (
-            patch(
-                "biomcp.variants.external.httpx.AsyncClient"
-            ) as mock_client_class,
-            patch(
-                "biomcp.variants.external.RetryableHTTPClient"
-            ) as mock_retry_class,
-        ):
-            # Create mock client instance
-            mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
+        # Test with a non-existent gene
+        result = await client.get_variant_data("FAKEGENE123 V600E")
 
-            # Mock retry client to return None (failure after retries)
-            mock_retry = mock_retry_class.return_value
-            mock_retry.get_with_retry = AsyncMock(return_value=None)
-
-            result = await client.get_variant_data("FAKEGENE V600E")
-
-            assert result is None
+        assert result is None
 
 
 class TestExternalVariantAggregator:

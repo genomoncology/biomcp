@@ -26,7 +26,8 @@ async def handle_article_search(
     """Handle article domain search."""
     logger.info("Executing article search")
     try:
-        from biomcp.articles.search import PubmedRequest, search_articles
+        from biomcp.articles.search import PubmedRequest
+        from biomcp.articles.unified import search_articles_unified
 
         request = PubmedRequest(
             chemicals=chemicals or [],
@@ -35,14 +36,33 @@ async def handle_article_search(
             keywords=keywords or [],
             variants=variants or [],
         )
-        result_str = await search_articles(request, output_json=True)
+        result_str = await search_articles_unified(
+            request,
+            include_pubmed=True,
+            include_preprints=False,
+            output_json=True,
+        )
     except Exception as e:
         logger.error(f"Article search failed: {e}")
         raise SearchExecutionError("article", e) from e
 
     # Parse the JSON results
     try:
-        all_results = json.loads(result_str)
+        parsed_result = json.loads(result_str)
+        # Handle unified search format (may include cBioPortal data)
+        if isinstance(parsed_result, dict) and "articles" in parsed_result:
+            all_results = parsed_result["articles"]
+            # Log if cBioPortal data was included
+            if "cbioportal_summary" in parsed_result:
+                logger.info("Article search included cBioPortal summary data")
+        elif isinstance(parsed_result, list):
+            all_results = parsed_result
+        else:
+            # Handle unexpected format
+            logger.warning(
+                f"Unexpected article result format: {type(parsed_result)}"
+            )
+            all_results = []
     except (json.JSONDecodeError, TypeError) as e:
         logger.error(f"Failed to parse article results: {e}")
         raise ResultParsingError("article", e) from e

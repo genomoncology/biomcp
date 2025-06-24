@@ -34,7 +34,11 @@ def _recursive_extract(current_value, key_path, path_index):
 
 def iter_value(field_map: dict, data: dict | list, key: str):
     """Iterates through a nested structure, yielding all values encountered."""
-    hits = data.get("hits", []) if isinstance(data, dict) else data
+    if isinstance(data, dict):
+        # Handle new format with cBioPortal summary
+        hits = data["variants"] if "variants" in data else data.get("hits", [])
+    else:
+        hits = data
     key_path = field_map.get(key, [key])
 
     # num = variant number for tracking each individual variant
