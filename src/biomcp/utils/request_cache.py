@@ -51,7 +51,10 @@ def request_cache(ttl: int = DEFAULT_TTL) -> Callable:
     Returns:
         Decorated function with caching
     """
-    def decorator(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
+
+    def decorator(
+        func: Callable[..., Awaitable[T]],
+    ) -> Callable[..., Awaitable[T]]:
         @wraps(func)
         async def wrapper(*args, **kwargs) -> T:
             # Skip caching if explicitly disabled
@@ -74,6 +77,7 @@ def request_cache(ttl: int = DEFAULT_TTL) -> Callable:
             return result
 
         return wrapper
+
     return decorator
 
 

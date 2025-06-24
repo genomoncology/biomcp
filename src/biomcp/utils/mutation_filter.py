@@ -14,7 +14,9 @@ class MutationHitProtocol(Protocol):
 class MutationFilter:
     """Filter mutations based on specific mutation or pattern."""
 
-    def __init__(self, specific_mutation: str | None = None, pattern: str | None = None):
+    def __init__(
+        self, specific_mutation: str | None = None, pattern: str | None = None
+    ):
         """Initialize the filter.
 
         Args:
@@ -71,7 +73,9 @@ class MutationFilter:
             # Fallback to simple prefix match
             return protein_change.startswith(self.pattern)
 
-    def filter_mutations(self, mutations: Sequence[MutationHitProtocol]) -> list[MutationHitProtocol]:
+    def filter_mutations(
+        self, mutations: Sequence[MutationHitProtocol]
+    ) -> list[MutationHitProtocol]:
         """Filter a list of mutations.
 
         Args:

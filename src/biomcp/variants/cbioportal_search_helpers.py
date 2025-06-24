@@ -31,7 +31,7 @@ async def process_mutation_results(
     cancer_distribution: dict[str, int] = {}
     studies_with_data = 0
 
-    for (result, study_id) in mutation_results:
+    for result, study_id in mutation_results:
         if isinstance(result, Exception):
             logger.debug(f"Failed to get mutations for {study_id}: {result}")
             continue
@@ -53,7 +53,9 @@ async def process_mutation_results(
                 study_cancer_type = await client._get_study_cancer_type(
                     http_client, study_id, cancer_types_lookup
                 )
-                _update_hotspot_counts(mutations, hotspot_counts, study_cancer_type)
+                _update_hotspot_counts(
+                    mutations, hotspot_counts, study_cancer_type
+                )
                 _update_cancer_distribution(
                     mutations, cancer_distribution, study_cancer_type
                 )
@@ -91,9 +93,9 @@ def _update_cancer_distribution(
     cancer_type: str,
 ) -> None:
     """Update cancer type distribution."""
-    cancer_distribution[cancer_type] = cancer_distribution.get(cancer_type, 0) + len(
-        {m.get("sampleId") for m in mutations if m.get("sampleId")}
-    )
+    cancer_distribution[cancer_type] = cancer_distribution.get(
+        cancer_type, 0
+    ) + len({m.get("sampleId") for m in mutations if m.get("sampleId")})
 
 
 def format_hotspots(

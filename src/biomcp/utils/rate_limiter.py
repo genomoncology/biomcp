@@ -21,7 +21,9 @@ class RateLimiter:
         self.last_check: dict[str, float] = defaultdict(float)
         self._lock = asyncio.Lock()
 
-    async def check_rate_limit(self, key: str = "default") -> tuple[bool, float | None]:
+    async def check_rate_limit(
+        self, key: str = "default"
+    ) -> tuple[bool, float | None]:
         """Check if request is allowed under rate limit.
 
         Args:
@@ -48,7 +50,9 @@ class RateLimiter:
                 return True, None
             else:
                 # Calculate wait time
-                wait_time = (1.0 - self.allowance[key]) * (self.per_seconds / self.rate)
+                wait_time = (1.0 - self.allowance[key]) * (
+                    self.per_seconds / self.rate
+                )
                 return False, wait_time
 
     async def wait_if_needed(self, key: str = "default") -> None:

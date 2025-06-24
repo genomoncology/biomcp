@@ -45,7 +45,9 @@ class CancerTypeAPIClient:
                 )
 
                 if resp.status_code != 200:
-                    logger.error(f"Failed to fetch cancer types: {resp.status_code}")
+                    logger.error(
+                        f"Failed to fetch cancer types: {resp.status_code}"
+                    )
                     return {}
 
                 cancer_types = resp.json()
@@ -119,13 +121,17 @@ class CancerTypeAPIClient:
                     return "Unknown"
 
                 study_data = resp.json()
-                cancer_type_id = study_data.get("cancerType", {}).get("cancerTypeId", "")
+                cancer_type_id = study_data.get("cancerType", {}).get(
+                    "cancerTypeId", ""
+                )
 
                 if cancer_type_id and cancer_type_id != "unknown":
                     return await self.get_cancer_type_name(cancer_type_id)
 
                 # Fallback to the cancer type name directly
-                cancer_type_name = study_data.get("cancerType", {}).get("name", "")
+                cancer_type_name = study_data.get("cancerType", {}).get(
+                    "name", ""
+                )
                 if cancer_type_name:
                     return cancer_type_name
 

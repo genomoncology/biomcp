@@ -1,6 +1,5 @@
 """Tests for cBioPortal mutation-specific search functionality."""
 
-
 import pytest
 
 from biomcp.utils.mutation_filter import MutationFilter
@@ -22,9 +21,7 @@ class TestCBioPortalMutationSearch:
         client = CBioPortalMutationClient()
 
         result = await client.search_specific_mutation(
-            gene="SRSF2",
-            mutation="F57Y",
-            max_studies=10
+            gene="SRSF2", mutation="F57Y", max_studies=10
         )
 
         assert result is not None
@@ -46,9 +43,7 @@ class TestCBioPortalMutationSearch:
         client = CBioPortalMutationClient()
 
         result = await client.search_specific_mutation(
-            gene="SRSF2",
-            pattern="F57*",
-            max_studies=10
+            gene="SRSF2", pattern="F57*", max_studies=10
         )
 
         assert result is not None
@@ -60,8 +55,7 @@ class TestCBioPortalMutationSearch:
             assert result.mutation_types is not None
             # Check that we found some F57 mutations
             f57_mutations = [
-                mut for mut in result.mutation_types
-                if mut.startswith("F57")
+                mut for mut in result.mutation_types if mut.startswith("F57")
             ]
             assert len(f57_mutations) > 0
 
@@ -72,9 +66,7 @@ class TestCBioPortalMutationSearch:
         client = CBioPortalMutationClient()
 
         result = await client.search_specific_mutation(
-            gene="BRAF",
-            mutation="V600E",
-            max_studies=20
+            gene="BRAF", mutation="V600E", max_studies=20
         )
 
         assert result is not None

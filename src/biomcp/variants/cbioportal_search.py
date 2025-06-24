@@ -98,7 +98,9 @@ class CBioPortalSearchClient:
                 cancer_keywords = get_cancer_keywords(gene)
 
                 # Get relevant molecular profiles in parallel with cancer types
-                profiles_task = self._get_relevant_profiles(client, gene, cancer_keywords)
+                profiles_task = self._get_relevant_profiles(
+                    client, gene, cancer_keywords
+                )
                 cancer_types_task = self._get_cancer_types(client)
 
                 profiles, cancer_types = await asyncio.gather(
@@ -316,7 +318,9 @@ class CBioPortalSearchClient:
             )
 
             sample_count = (
-                len(samples_resp.json()) if samples_resp.status_code == 200 else 0
+                len(samples_resp.json())
+                if samples_resp.status_code == 200
+                else 0
             )
 
             # Get mutations

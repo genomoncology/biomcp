@@ -22,7 +22,10 @@ class TestArticleCBioPortalIntegration:
 
         # Test markdown output
         result = await search_articles_unified(
-            request, include_pubmed=True, include_preprints=False, output_json=False
+            request,
+            include_pubmed=True,
+            include_preprints=False,
+            output_json=False,
         )
 
         # Should include cBioPortal summary
@@ -44,7 +47,10 @@ class TestArticleCBioPortalIntegration:
         )
 
         result = await search_articles_unified(
-            request, include_pubmed=True, include_preprints=False, output_json=True
+            request,
+            include_pubmed=True,
+            include_preprints=False,
+            output_json=True,
         )
 
         # Parse JSON
@@ -68,7 +74,10 @@ class TestArticleCBioPortalIntegration:
 
         # Test markdown output
         result = await search_articles_unified(
-            request, include_pubmed=True, include_preprints=False, output_json=False
+            request,
+            include_pubmed=True,
+            include_preprints=False,
+            output_json=False,
         )
 
         # Should NOT include cBioPortal summary
@@ -85,7 +94,10 @@ class TestArticleCBioPortalIntegration:
         )
 
         result = await search_articles_unified(
-            request, include_pubmed=True, include_preprints=False, output_json=False
+            request,
+            include_pubmed=True,
+            include_preprints=False,
+            output_json=False,
         )
 
         # Should include cBioPortal summary for KRAS (first gene)
@@ -105,7 +117,10 @@ class TestArticleCBioPortalIntegration:
         # First check that we handle invalid genes gracefully
         # by using a real gene that might have cBioPortal data
         result = await search_articles_unified(
-            request, include_pubmed=True, include_preprints=False, output_json=False
+            request,
+            include_pubmed=True,
+            include_preprints=False,
+            output_json=False,
         )
 
         # Should have some content - either cBioPortal summary or articles
@@ -118,7 +133,10 @@ class TestArticleCBioPortalIntegration:
         )
 
         result2 = await search_articles_unified(
-            request2, include_pubmed=True, include_preprints=False, output_json=False
+            request2,
+            include_pubmed=True,
+            include_preprints=False,
+            output_json=False,
         )
 
         # Should return results even if cBioPortal data is not available
@@ -134,12 +152,17 @@ class TestArticleCBioPortalIntegration:
         )
 
         result = await search_articles_unified(
-            request, include_pubmed=True, include_preprints=True, output_json=False
+            request,
+            include_pubmed=True,
+            include_preprints=True,
+            output_json=False,
         )
 
         # Should include cBioPortal summary
         assert "cBioPortal Summary for EGFR" in result
         # Should include both peer-reviewed and preprint results
         assert ("pmid" in result or "Title" in result) and (
-            "Preprint" in result or "bioRxiv" in result or "peer_reviewed" in result
+            "Preprint" in result
+            or "bioRxiv" in result
+            or "peer_reviewed" in result
         )

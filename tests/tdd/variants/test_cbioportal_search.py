@@ -123,7 +123,9 @@ class TestCBioPortalSearch:
         hotspot_changes = [hs.amino_acid_change for hs in summary.hotspots]
         print(f"TP53 hotspots found: {hotspot_changes[:5]}")
         # Just verify we found hotspots, not specific ones since it depends on study selection
-        assert len(hotspot_changes) >= 1, "Should find at least one TP53 hotspot"
+        assert (
+            len(hotspot_changes) >= 1
+        ), "Should find at least one TP53 hotspot"
 
     @pytest.mark.asyncio
     @pytest.mark.integration
@@ -137,7 +139,9 @@ class TestCBioPortalSearch:
         assert summary.gene == "KRAS"
 
         # Check for G12 mutations (common KRAS hotspot)
-        g12_found = any("G12" in hs.amino_acid_change for hs in summary.hotspots)
+        g12_found = any(
+            "G12" in hs.amino_acid_change for hs in summary.hotspots
+        )
         assert g12_found, "KRAS G12 should be a top hotspot"
 
         # Check cancer types

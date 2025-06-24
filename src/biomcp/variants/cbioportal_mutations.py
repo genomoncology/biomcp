@@ -75,8 +75,10 @@ class CBioPortalMutationClient:
         """Async context manager entry."""
         if not self._client:
             self._client = httpx.AsyncClient(
-                limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
-                timeout=httpx.Timeout(60.0)
+                limits=httpx.Limits(
+                    max_connections=10, max_keepalive_connections=5
+                ),
+                timeout=httpx.Timeout(60.0),
             )
         return self
 
@@ -118,8 +120,10 @@ class CBioPortalMutationClient:
             use_temp_client = self._client is None
             if use_temp_client:
                 async with httpx.AsyncClient(
-                    limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
-                    timeout=httpx.Timeout(60.0)
+                    limits=httpx.Limits(
+                        max_connections=10, max_keepalive_connections=5
+                    ),
+                    timeout=httpx.Timeout(60.0),
                 ) as temp_client:
                     return await self._search_mutations_with_client(
                         temp_client, gene, mutation, pattern, max_studies
@@ -184,7 +188,9 @@ class CBioPortalMutationClient:
         profile_ids = [p["molecularProfileId"] for p in all_profiles]
 
         # Batch fetch mutations (this is the slow part)
-        logger.info(f"Fetching mutations for {gene} across {len(profile_ids)} profiles")
+        logger.info(
+            f"Fetching mutations for {gene} across {len(profile_ids)} profiles"
+        )
         mutations = await self._fetch_all_mutations(
             client, profile_ids, entrez_id
         )
@@ -213,9 +219,7 @@ class CBioPortalMutationClient:
         )[:max_studies]
 
         # Count mutation types
-        mutation_types = Counter(
-            m.protein_change for m in filtered_mutations
-        )
+        mutation_types = Counter(m.protein_change for m in filtered_mutations)
 
         return MutationSearchResult(
             gene=gene,
@@ -261,19 +265,25 @@ class CBioPortalMutationClient:
             for mut in raw_mutations:
                 try:
                     # Extract study ID from molecular profile ID
-                    study_id = mut.get("molecularProfileId", "").replace("_mutations", "")
+                    study_id = mut.get("molecularProfileId", "").replace(
+                        "_mutations", ""
+                    )
 
-                    mutations.append(MutationHit(
-                        study_id=study_id,
-                        molecular_profile_id=mut.get("molecularProfileId", ""),
-                        protein_change=mut.get("proteinChange", ""),
-                        mutation_type=mut.get("mutationType", ""),
-                        start_position=mut.get("startPosition"),
-                        end_position=mut.get("endPosition"),
-                        reference_allele=mut.get("referenceAllele"),
-                        variant_allele=mut.get("variantAllele"),
-                        sample_id=mut.get("sampleId"),
-                    ))
+                    mutations.append(
+                        MutationHit(
+                            study_id=study_id,
+                            molecular_profile_id=mut.get(
+                                "molecularProfileId", ""
+                            ),
+                            protein_change=mut.get("proteinChange", ""),
+                            mutation_type=mut.get("mutationType", ""),
+                            start_position=mut.get("startPosition"),
+                            end_position=mut.get("endPosition"),
+                            reference_allele=mut.get("referenceAllele"),
+                            variant_allele=mut.get("variantAllele"),
+                            sample_id=mut.get("sampleId"),
+                        )
+                    )
                 except Exception as e:
                     logger.debug(f"Failed to parse mutation: {e}")
                     continue
@@ -283,7 +293,6 @@ class CBioPortalMutationClient:
         except Exception as e:
             logger.error(f"Error fetching mutations: {e}")
             return []
-
 
     async def _get_studies_info(
         self, client: httpx.AsyncClient
@@ -308,10 +317,18 @@ class CBioPortalMutationClient:
                 cancer_type_id = s.get("cancerTypeId", "")
                 if cancer_type_id and cancer_type_id != "unknown":
                     # Use the API to get the proper display name
-                    cancer_type = await cancer_type_client.get_cancer_type_name(cancer_type_id)
+                    cancer_type = (
+                        await cancer_type_client.get_cancer_type_name(
+                            cancer_type_id
+                        )
+                    )
                 else:
                     # Try to get from full study info
-                    cancer_type = await cancer_type_client.get_study_cancer_type(s["studyId"])
+                    cancer_type = (
+                        await cancer_type_client.get_study_cancer_type(
+                            s["studyId"]
+                        )
+                    )
 
                 study_info[s["studyId"]] = {
                     "name": s.get("name", ""),
@@ -347,7 +364,9 @@ class CBioPortalMutationClient:
                 cancer_type=info.get("cancer_type", "unknown"),
                 mutation_count=len(mutations_list),
                 sample_count=len(study_samples[study_id]),
-                mutations=list(set(mutations_list))[:5],  # Top 5 unique mutations
+                mutations=list(set(mutations_list))[
+                    :5
+                ],  # Top 5 unique mutations
             )
 
         return summaries
@@ -374,8 +393,16 @@ def format_mutation_search_result(result: MutationSearchResult) -> str:
         lines.append("|-------|----------|-------------|------------|")
 
         for study in result.top_studies[:10]:
-            study_id = study.study_id[:20] + "..." if len(study.study_id) > 20 else study.study_id
-            study_name = study.study_name[:40] + "..." if len(study.study_name) > 40 else study.study_name
+            study_id = (
+                study.study_id[:20] + "..."
+                if len(study.study_id) > 20
+                else study.study_id
+            )
+            study_name = (
+                study.study_name[:40] + "..."
+                if len(study.study_name) > 40
+                else study.study_name
+            )
             lines.append(
                 f"| {study.mutation_count:5d} | {study_id:<20} | "
                 f"{study.cancer_type:<11} | {study_name} |"

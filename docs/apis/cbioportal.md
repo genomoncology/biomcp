@@ -22,6 +22,7 @@ search(domain="article", genes=["BRAF"], diseases=["melanoma"])
 ```
 
 This returns:
+
 - Standard PubMed/PubTator3 article results
 - cBioPortal summary showing mutation frequency across cancer studies
 - Top cancer types where the gene is mutated
@@ -42,6 +43,7 @@ search(domain="article", genes=["SRSF2"], keywords=["F57*"])
 ```
 
 Mutation-specific searches return:
+
 - Total number of studies in cBioPortal
 - Number of studies containing the mutation
 - Top studies ranked by mutation count
@@ -50,6 +52,7 @@ Mutation-specific searches return:
 ## Example Output
 
 ### Gene-Level Summary
+
 ```
 ### cBioPortal Summary for BRAF
 - **Mutation Frequency**: 76.7% (368 mutations in 480 samples)
@@ -58,6 +61,7 @@ Mutation-specific searches return:
 ```
 
 ### Mutation-Specific Results
+
 ```
 ### cBioPortal Mutation Search: BRAF
 **Specific Mutation**: V600E
@@ -98,6 +102,7 @@ The integration recognizes standard protein change notation:
 ### Authentication
 
 Optional authentication via environment variable:
+
 ```bash
 export CBIO_TOKEN="your-api-token"
 ```
@@ -120,6 +125,7 @@ biomcp article search --gene SRSF2 --keyword "F57*"
 ## Performance Considerations
 
 1. **Caching**: Results are cached to minimize API calls
+
    - Gene summaries: 15 minutes
    - Mutation searches: 30 minutes
    - Cancer types: 24 hours
@@ -138,6 +144,7 @@ biomcp article search --gene SRSF2 --keyword "F57*"
 ## Error Handling
 
 The integration handles various error scenarios:
+
 - Invalid gene symbols are validated before API calls
 - Network timeouts fall back to article-only results
 - API errors are logged but don't block search results

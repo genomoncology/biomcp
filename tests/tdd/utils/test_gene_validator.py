@@ -1,6 +1,5 @@
 """Tests for gene validation utilities."""
 
-
 from biomcp.utils.gene_validator import (
     is_valid_gene_symbol,
     sanitize_gene_symbol,
@@ -58,12 +57,14 @@ class TestGeneValidator:
             "H3F3A",
             "HIST1H3B",
             "BRAFV600E",  # With mutation
-            "KRASG12D",   # With mutation
+            "KRASG12D",  # With mutation
             "EGFRL858R",  # With mutation
         ]
 
         for gene in valid_genes:
-            assert is_valid_gene_symbol(gene), f"Should accept valid gene: {gene}"
+            assert is_valid_gene_symbol(
+                gene
+            ), f"Should accept valid gene: {gene}"
 
     def test_invalid_gene_symbols(self):
         """Test that invalid gene symbols are rejected."""
@@ -73,14 +74,14 @@ class TestGeneValidator:
             " ",
             "  ",
             "123",  # Starts with number
-            "A",    # Too short
+            "A",  # Too short
             "INVALID_GENE_XYZ",  # Known invalid
             "TEST",
             "NULL",
             "NONE",
             "UNKNOWN",
-            "gene",   # Lowercase
-            "Braf",   # Mixed case
+            "gene",  # Lowercase
+            "Braf",  # Mixed case
             "GENE-WITH-SPECIAL-CHARS!",
             "GENE WITH SPACES",
             "GENE/WITH/SLASHES",
@@ -91,7 +92,9 @@ class TestGeneValidator:
         ]
 
         for gene in invalid_genes:
-            assert not is_valid_gene_symbol(gene), f"Should reject invalid gene: {gene}"
+            assert not is_valid_gene_symbol(
+                gene
+            ), f"Should reject invalid gene: {gene}"
 
     def test_gene_symbols_with_version(self):
         """Test gene symbols with version suffixes."""
@@ -108,7 +111,9 @@ class TestGeneValidator:
         ]
 
         for gene in versioned_genes:
-            assert is_valid_gene_symbol(gene), f"Should accept versioned gene: {gene}"
+            assert is_valid_gene_symbol(
+                gene
+            ), f"Should accept versioned gene: {gene}"
 
     def test_sanitize_gene_symbol(self):
         """Test gene symbol sanitization."""

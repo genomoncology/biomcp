@@ -1,11 +1,11 @@
 """Tests for mutation filter utility."""
 
-
 from biomcp.utils.mutation_filter import MutationFilter
 
 
 class MockMutation:
     """Mock mutation object for testing."""
+
     def __init__(self, protein_change: str):
         self.protein_change = protein_change
 
@@ -84,7 +84,10 @@ class TestMutationFilter:
         """Test string representations of filters."""
         mutation_filter1 = MutationFilter(specific_mutation="V600E")
         assert str(mutation_filter1) == "MutationFilter(specific=V600E)"
-        assert repr(mutation_filter1) == "MutationFilter(specific_mutation='V600E', pattern=None)"
+        assert (
+            repr(mutation_filter1)
+            == "MutationFilter(specific_mutation='V600E', pattern=None)"
+        )
 
         mutation_filter2 = MutationFilter(pattern="V600*")
         assert str(mutation_filter2) == "MutationFilter(pattern=V600*)"
