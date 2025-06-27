@@ -41,19 +41,21 @@ BioMCP integrates with multiple biomedical data sources:
 - **MyVariant.info** - Consolidated genetic variant annotation
 - **TCGA/GDC** - The Cancer Genome Atlas for cancer variant data
 - **1000 Genomes** - Population frequency data via Ensembl
+- **cBioPortal** - Cancer genomics portal with mutation occurrence data
 
 ## Available MCP Tools
 
-BioMCP provides two essential tools for biomedical research:
+BioMCP provides 13 specialized tools for biomedical research:
 
-### Search Tool
+### Core Tools (3)
 
-**IMPORTANT**: Always start with `domain="thinking"` for systematic analysis of biomedical queries.
+#### 1. Think Tool (ALWAYS USE FIRST!)
+
+**CRITICAL**: The `think` tool MUST be your first step for ANY biomedical research task.
 
 ```python
 # Start analysis with sequential thinking
-search(
-    domain="thinking",
+think(
     thought="Breaking down the query about BRAF mutations in melanoma...",
     thoughtNumber=1,
     totalThoughts=3,
@@ -61,20 +63,18 @@ search(
 )
 ```
 
-The sequential thinking domain helps:
+The sequential thinking tool helps:
 
 - Break down complex biomedical problems systematically
 - Plan multi-step research approaches
 - Track reasoning progress
-- Revise and branch thinking paths as needed
+- Ensure comprehensive analysis
 
-The search tool supports three modes:
+#### 2. Search Tool
 
-#### 1. Sequential Thinking Mode (Always Use First)
+The search tool supports two modes:
 
-Use `domain="thinking"` with thought parameters for systematic analysis before searching.
-
-#### 2. Unified Query Language (Recommended for Data Search)
+##### Unified Query Language (Recommended)
 
 Use the `query` parameter with structured field syntax for powerful cross-domain searches:
 
@@ -102,13 +102,17 @@ search(query="gene:BRAF", explain_query=True)
 - **Articles**: `articles.author:`, `articles.journal:`, `articles.date:`
 - **Variants**: `variants.significance:`, `variants.rsid:`, `variants.frequency:`
 
-#### 3. Legacy Domain-Based Search
+##### Domain-Based Search
 
 Use the `domain` parameter with specific filters:
 
 ```python
-# Search articles
+# Search articles (includes automatic cBioPortal integration)
 search(domain="article", genes=["BRAF"], diseases=["melanoma"])
+
+# Search with mutation-specific cBioPortal data
+search(domain="article", genes=["BRAF"], keywords=["V600E"])
+search(domain="article", genes=["SRSF2"], keywords=["F57*"])  # Wildcard patterns
 
 # Search trials
 search(domain="trial", conditions=["lung cancer"], phase="3")
@@ -117,7 +121,13 @@ search(domain="trial", conditions=["lung cancer"], phase="3")
 search(domain="variant", gene="TP53", significance="pathogenic")
 ```
 
-### Fetch Tool
+**Note**: When searching articles with a gene parameter, cBioPortal data is automatically included:
+
+- Gene-level summaries show mutation frequency across cancer studies
+- Mutation-specific searches (e.g., "V600E") show study-level occurrence data
+- Cancer types are dynamically resolved from cBioPortal API
+
+#### 3. Fetch Tool
 
 Retrieve full details for a single article, trial, or variant:
 
@@ -137,6 +147,31 @@ fetch(domain="variant", id="rs113488022")
 - **Articles**: `detail="full"` retrieves full text if available
 - **Trials**: `detail` can be "protocol", "locations", "outcomes", "references", or "all"
 - **Variants**: Always returns full details
+
+### Individual Tools (10)
+
+For users who prefer direct access to specific functionality, BioMCP also provides 10 individual tools:
+
+#### Article Tools (2)
+
+- **article_searcher**: Search PubMed/PubTator3 and preprints
+- **article_getter**: Fetch detailed article information
+
+#### Trial Tools (5)
+
+- **trial_searcher**: Search ClinicalTrials.gov
+- **trial_getter**: Fetch all trial details
+- **trial_protocol_getter**: Fetch protocol information only
+- **trial_references_getter**: Fetch trial publications
+- **trial_outcomes_getter**: Fetch outcome measures and results
+- **trial_locations_getter**: Fetch site locations and contacts
+
+#### Variant Tools (2)
+
+- **variant_searcher**: Search MyVariant.info database
+- **variant_getter**: Fetch comprehensive variant details
+
+**Note**: All individual tools that search by gene automatically include cBioPortal summaries when the `include_cbioportal` parameter is True (default).
 
 ## Quick Start
 
@@ -181,6 +216,20 @@ uv pip install biomcp-python
 uv run --with biomcp-python biomcp trial search --condition "lung cancer"
 ```
 
+## Configuration
+
+### Environment Variables
+
+BioMCP supports optional environment variables for enhanced functionality:
+
+```bash
+# cBioPortal API authentication (optional)
+export CBIO_TOKEN="your-api-token"  # For authenticated access
+export CBIO_BASE_URL="https://www.cbioportal.org/api"  # Custom API endpoint
+```
+
+Note: All APIs work without authentication, but tokens may provide higher rate limits.
+
 ## Command Line Interface
 
 BioMCP provides a comprehensive CLI for direct database interaction:
@@ -203,7 +252,7 @@ biomcp trial get NCT04280705 Protocol
 
 # Variant examples with external annotations
 biomcp variant search --gene TP53 --significance pathogenic
-biomcp variant get rs113488022  # Includes TCGA and 1000 Genomes data by default
+biomcp variant get rs113488022  # Includes TCGA, 1000 Genomes, and cBioPortal data by default
 biomcp variant get rs113488022 --no-external  # Core annotations only
 ```
 

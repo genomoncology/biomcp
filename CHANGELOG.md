@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unified search and fetch tools following OpenAI MCP guidelines
 - Additional variant sources (TCGA/GDC, 1000 Genomes) enabled by default in fetch operations
 - Additional article sources (bioRxiv, medRxiv, Europe PMC) enabled by default in search operations
+- **cBioPortal Integration** for article searches:
+  - Automatic gene-level mutation summaries when searching with gene parameters
+  - Mutation-specific search capabilities (e.g., BRAF V600E, SRSF2 F57\*)
+  - Dynamic cancer type resolution using cBioPortal API
+  - Smart caching and rate limiting for optimal performance
 - Comprehensive constants module for better maintainability
 - Domain-specific handlers for result formatting
 - Parameter parser for robust input validation
@@ -24,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session-based thinking to replace global state
 - Extracted router handlers to reduce complexity
 - Integration tests for MCP server functionality
+- Utility modules for gene validation, mutation filtering, and request caching
 
 ### Changed
 

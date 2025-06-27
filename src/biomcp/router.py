@@ -16,10 +16,6 @@ from biomcp.constants import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_TITLE,
     ERROR_DOMAIN_REQUIRED,
-    ERROR_NEXT_THOUGHT_REQUIRED,
-    ERROR_THOUGHT_NUMBER_REQUIRED,
-    ERROR_THOUGHT_REQUIRED,
-    ERROR_TOTAL_THOUGHTS_REQUIRED,
     ESTIMATED_ADDITIONAL_RESULTS,
     MAX_RESULTS_PER_DOMAIN_DEFAULT,
     TRIAL_DETAIL_SECTIONS,
@@ -33,12 +29,12 @@ from biomcp.exceptions import (
     QueryParsingError,
     ResultParsingError,
     SearchExecutionError,
-    ThinkingError,
 )
 from biomcp.metrics import track_performance
 from biomcp.parameter_parser import ParameterParser
 from biomcp.query_parser import QueryParser
 from biomcp.query_router import QueryRouter, execute_routing_plan
+from biomcp.thinking_tracker import get_thinking_reminder
 from biomcp.trials import getter as trial_getter
 
 logger = logging.getLogger(__name__)
@@ -103,6 +99,17 @@ def format_results(
             # Skip malformed results
             continue
 
+    # Add thinking reminder if needed (as first result)
+    reminder = get_thinking_reminder()
+    if reminder and formatted_data:
+        reminder_result = {
+            "id": "thinking-reminder",
+            "title": "⚠️ Research Best Practice Reminder",
+            "text": reminder,
+            "url": "",
+        }
+        formatted_data.insert(0, reminder_result)
+
     # Return OpenAI MCP compliant format
     return {"results": formatted_data}
 
@@ -115,13 +122,13 @@ def format_results(
 async def search(  # noqa: C901
     call_benefit: str,
     query: Annotated[
-        str | None,
+        str,
         "Unified search query (e.g., 'gene:BRAF AND trials.condition:melanoma'). If provided, other parameters are ignored.",
-    ] = None,
+    ] = "",
     domain: Annotated[
-        Literal["article", "trial", "variant", "thinking"] | None,
+        Literal["article", "trial", "variant"] | None,
         Field(
-            description="Domain to search. Use 'thinking' for sequential reasoning (required if query not provided)"
+            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS (NOT articles about variants)"
         ),
     ] = None,
     genes: Annotated[list[str] | str | None, "Gene symbols"] = None,
@@ -140,6 +147,18 @@ async def search(  # noqa: C901
     significance: Annotated[
         str | None, "Variant clinical significance"
     ] = None,
+    lat: Annotated[
+        float | None,
+        "Latitude for trial location search. AI agents should geocode city names (e.g., 'Cleveland' → 41.4993) before using.",
+    ] = None,
+    long: Annotated[
+        float | None,
+        "Longitude for trial location search. AI agents should geocode city names (e.g., 'Cleveland' → -81.6944) before using.",
+    ] = None,
+    distance: Annotated[
+        int | None,
+        "Distance in miles from lat/long for trial search (default: 50 miles if lat/long provided)",
+    ] = None,
     page: Annotated[int, "Page number (minimum: 1)"] = DEFAULT_PAGE_NUMBER,
     page_size: Annotated[int, "Results per page (1-100)"] = DEFAULT_PAGE_SIZE,
     max_results_per_domain: Annotated[
@@ -151,51 +170,16 @@ async def search(  # noqa: C901
     get_schema: Annotated[
         bool, "Return searchable fields schema instead of results"
     ] = False,
-    # Sequential thinking parameters (when domain="thinking")
-    thought: Annotated[
-        str | None,
-        Field(description="Current thinking step (for thinking domain)"),
-    ] = None,
-    thoughtNumber: Annotated[
-        int | None,
-        Field(
-            description="Current thought number, start at 1 (for thinking domain)"
-        ),
-    ] = None,
-    totalThoughts: Annotated[
-        int | None,
-        Field(
-            description="Estimated total thoughts needed (for thinking domain)"
-        ),
-    ] = None,
-    nextThoughtNeeded: Annotated[
-        bool | None,
-        Field(
-            description="Whether more thinking is needed (for thinking domain)"
-        ),
-    ] = None,
 ) -> dict:
-    """Search biomedical literature, clinical trials, and genetic variants with integrated AI reasoning.
+    """Search biomedical literature, clinical trials, and genetic variants.
 
-    This tool provides comprehensive access to biomedical data from PubMed/PubTator3, ClinicalTrials.gov,
-    and MyVariant.info. It supports three powerful search modes:
+    ⚠️ IMPORTANT: Have you used the 'think' tool first? If not, STOP and use it NOW!
+    The 'think' tool is REQUIRED for proper research planning and should be your FIRST step.
 
-    ## 1. SEQUENTIAL THINKING MODE (Recommended for Complex Queries)
-    Use domain="thinking" to engage systematic AI reasoning before searching.
-    This is ESSENTIAL for complex biomedical research questions.
+    This tool provides access to biomedical data from PubMed/PubTator3, ClinicalTrials.gov,
+    and MyVariant.info. It supports two search modes:
 
-    Example:
-    ```
-    await search(
-        domain="thinking",
-        thought="I need to analyze the relationship between BRAF mutations and melanoma treatment options...",
-        thoughtNumber=1,
-        totalThoughts=3,
-        nextThoughtNeeded=True
-    )
-    ```
-
-    ## 2. UNIFIED QUERY LANGUAGE
+    ## 1. UNIFIED QUERY LANGUAGE
     Use the 'query' parameter with field-based syntax for precise cross-domain searches.
 
     Syntax:
@@ -218,13 +202,13 @@ async def search(  # noqa: C901
     )
     ```
 
-    ## 3. DOMAIN-SPECIFIC SEARCH
+    ## 2. DOMAIN-SPECIFIC SEARCH
     Use the 'domain' parameter with specific filters for targeted searches.
 
     Domains:
-    - "article": Search PubMed/PubTator3 for research articles and preprints
+    - "article": Search PubMed/PubTator3 for research articles and preprints ABOUT genes, variants, diseases, or chemicals
     - "trial": Search ClinicalTrials.gov for clinical studies
-    - "variant": Search MyVariant.info for genetic variants
+    - "variant": Search MyVariant.info for genetic variant DATABASE RECORDS (population frequency, clinical significance, etc.) - NOT for articles about variants!
 
     Example:
     ```
@@ -236,8 +220,14 @@ async def search(  # noqa: C901
     )
     ```
 
+    ## DOMAIN SELECTION EXAMPLES:
+    - To find ARTICLES about BRAF V600E mutation: domain="article", genes=["BRAF"], variants=["V600E"]
+    - To find VARIANT DATA for BRAF mutations: domain="variant", gene="BRAF"
+    - To find articles about ERBB2 p.D277Y: domain="article", genes=["ERBB2"], variants=["p.D277Y"]
+    - Common mistake: Using domain="variant" when you want articles about a variant
+
     ## IMPORTANT NOTES:
-    - ALWAYS start with sequential thinking (domain="thinking") for research questions
+    - For complex research questions, use the separate 'think' tool for systematic analysis
     - The tool returns results in OpenAI MCP format: {"results": [{"id", "title", "text", "url"}, ...]}
     - Search results do NOT include metadata (per OpenAI MCP specification)
     - Use the fetch tool to get detailed metadata for specific records
@@ -245,6 +235,7 @@ async def search(  # noqa: C901
     - Use explain_query=True to understand query parsing (unified mode)
     - Domain-specific searches use AND logic for multiple values
     - For OR logic, use the unified query language
+    - Remember: domain="article" finds LITERATURE, domain="variant" finds DATABASE RECORDS
 
     ## RETURN FORMAT:
     All search modes return results in this format:
@@ -268,39 +259,8 @@ async def search(  # noqa: C901
         parser = QueryParser()
         return parser.get_schema()
 
-    # Handle sequential thinking domain
-    if domain == "thinking":
-        if not thought:
-            raise ThinkingError(thoughtNumber or 0, ERROR_THOUGHT_REQUIRED)
-        if thoughtNumber is None:
-            raise ThinkingError(0, ERROR_THOUGHT_NUMBER_REQUIRED)
-        if totalThoughts is None:
-            raise ThinkingError(thoughtNumber, ERROR_TOTAL_THOUGHTS_REQUIRED)
-        if nextThoughtNeeded is None:
-            raise ThinkingError(thoughtNumber, ERROR_NEXT_THOUGHT_REQUIRED)
-
-        logger.debug(
-            f"Processing thinking step {thoughtNumber}/{totalThoughts}"
-        )
-
-        from biomcp.thinking.sequential import _sequential_thinking
-
-        result = await _sequential_thinking(
-            thought=thought,
-            thoughtNumber=thoughtNumber,
-            totalThoughts=totalThoughts,
-            nextThoughtNeeded=nextThoughtNeeded,
-        )
-
-        return {
-            "domain": "thinking",
-            "result": result,
-            "thoughtNumber": thoughtNumber,
-            "nextThoughtNeeded": nextThoughtNeeded,
-        }
-
     # Determine search mode
-    if query:
+    if query and query.strip():
         # Unified query language mode
         logger.info(f"Using unified query mode: {query}")
         return await _unified_search(
@@ -378,6 +338,12 @@ async def search(  # noqa: C901
                 raise
         if keywords:
             search_params["keywords"] = keywords
+        if lat is not None:
+            search_params["lat"] = lat
+        if long is not None:
+            search_params["long"] = long
+        if distance is not None:
+            search_params["distance"] = distance
 
         try:
             from biomcp.trials.search import TrialQuery, search_trials
@@ -1054,29 +1020,70 @@ async def _unified_search(  # noqa: C901
             )  # Remove trailing 's'
 
             # Process and format each result
+            # Handle both list format and dict format (for articles with cBioPortal data)
+            items_to_process = []
+            cbioportal_summary = None
+
             if isinstance(data, list):
-                for item in data[:max_results_per_domain]:
-                    try:
-                        formatted_result = handler_class.format_result(item)
-                        # Ensure OpenAI MCP format
-                        openai_result = {
-                            "id": formatted_result.get("id", ""),
-                            "title": formatted_result.get(
-                                "title", DEFAULT_TITLE
-                            ),
-                            "text": formatted_result.get(
-                                "snippet", formatted_result.get("text", "")
-                            ),
-                            "url": formatted_result.get("url", ""),
-                        }
-                        # Note: For unified search, we can optionally include domain in metadata
-                        # This helps distinguish between result types
-                        all_results.append(openai_result)
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to format result in domain {domain}: {e}"
+                items_to_process = data[:max_results_per_domain]
+            elif isinstance(data, dict):
+                # Handle unified search format with cBioPortal data
+                if "articles" in data:
+                    items_to_process = data["articles"][
+                        :max_results_per_domain
+                    ]
+                    cbioportal_summary = data.get("cbioportal_summary")
+                else:
+                    # Single item dict
+                    items_to_process = [data]
+
+            # Add cBioPortal summary as first result if available
+            if cbioportal_summary and domain == "articles":
+                try:
+                    # Extract gene name from parsed query or summary
+                    gene_name = parsed.cross_domain_fields.get("gene", "")
+                    if not gene_name and "Summary for " in cbioportal_summary:
+                        # Try to extract from summary title
+                        import re
+
+                        match = re.search(
+                            r"Summary for (\w+)", cbioportal_summary
                         )
-                        continue
+                        if match:
+                            gene_name = match.group(1)
+
+                    cbio_result = {
+                        "id": f"cbioportal_summary_{gene_name or 'gene'}",
+                        "title": f"cBioPortal Summary for {gene_name or 'Gene'}",
+                        "text": cbioportal_summary[:5000],  # Limit text length
+                        "url": f"https://www.cbioportal.org/results?gene_list={gene_name}"
+                        if gene_name
+                        else "",
+                    }
+                    all_results.append(cbio_result)
+                except Exception as e:
+                    logger.warning(f"Failed to format cBioPortal summary: {e}")
+
+            for item in items_to_process:
+                try:
+                    formatted_result = handler_class.format_result(item)
+                    # Ensure OpenAI MCP format
+                    openai_result = {
+                        "id": formatted_result.get("id", ""),
+                        "title": formatted_result.get("title", DEFAULT_TITLE),
+                        "text": formatted_result.get(
+                            "snippet", formatted_result.get("text", "")
+                        ),
+                        "url": formatted_result.get("url", ""),
+                    }
+                    # Note: For unified search, we can optionally include domain in metadata
+                    # This helps distinguish between result types
+                    all_results.append(openai_result)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to format result in domain {domain}: {e}"
+                    )
+                    continue
 
         except (json.JSONDecodeError, TypeError, ValueError) as e:
             logger.warning(f"Failed to parse results for domain {domain}: {e}")

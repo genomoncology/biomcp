@@ -38,6 +38,7 @@ GDC_SSMS_ENDPOINT_URL = f"{GDC_BASE_URL}/ssms"  # Simple Somatic Mutations
 GDC_SSM_OCCURRENCES_URL = f"{GDC_BASE_URL}/ssm_occurrences"
 ENSEMBL_REST_BASE_URL = "https://rest.ensembl.org"
 ENSEMBL_VARIATION_URL = f"{ENSEMBL_REST_BASE_URL}/variation/human"
+CBIOPORTAL_BASE_URL = "https://www.cbioportal.org/api"
 
 # External Resource URLs
 PUBMED_BASE_URL = "https://pubmed.ncbi.nlm.nih.gov/"
@@ -120,7 +121,7 @@ HTTP_ERROR_CODE_UNSUPPORTED_METHOD = 405
 # ============================================================================
 
 # Valid domains for search
-VALID_DOMAINS = ["article", "trial", "variant", "thinking"]
+VALID_DOMAINS = ["article", "trial", "variant"]
 VALID_DOMAINS_PLURAL = ["articles", "trials", "variants"]
 
 # Domain mappings for unified search

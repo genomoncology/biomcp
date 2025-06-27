@@ -5,7 +5,7 @@
 [![Commit activity](https://img.shields.io/github/commit-activity/m/genomoncology/biomcp)](https://img.shields.io/github/commit-activity/m/genomoncology/biomcp)
 [![License](https://img.shields.io/github/license/genomoncology/biomcp)](https://img.shields.io/github/license/genomoncology/biomcp)
 
-BioMCP is a specialized Model Context Protocol (MCP) server that connects AI assistants like Claude to biomedical data sources, including ClinicalTrials.gov, PubMed, and MyVariant.info.
+BioMCP is a specialized Model Context Protocol (MCP) server that connects AI assistants like Claude to biomedical data sources, including ClinicalTrials.gov, PubMed, MyVariant.info, and cBioPortal.
 
 ### Built and Maintained by <a href="https://www.genomoncology.com"><img src="./assets/logo.png" width=200 valign="middle" /></a>
 
@@ -53,36 +53,53 @@ BioMCP is a specialized MCP (Model Context Protocol) server that bridges the gap
 Using the Model Context Protocol, BioMCP provides Claude and other AI assistants with structured, real-time access to:
 
 1. **Clinical Trials** - Searchable access to ClinicalTrials.gov for finding relevant studies
-2. **Research Literature** - Query PubMed/PubTator3 for the latest biomedical research
+2. **Research Literature** - Query PubMed/PubTator3 for the latest biomedical research with automatic cBioPortal cancer genomics integration
 3. **Genomic Variants** - Explore detailed genetic variant information from MyVariant.info
+4. **Cancer Genomics** - Automatic integration with cBioPortal for mutation occurrence data in cancer studies
 
 Through MCP, AI assistants can seamlessly invoke BioMCP tools during conversations, retrieving precise biomedical information without the user needing to understand complex query syntax or database-specific parameters.
 
 ## MCP Tools and Capabilities
 
-BioMCP exposes the following tools through the MCP interface:
+BioMCP provides 13 specialized tools through the MCP interface:
 
-### Clinical Trial Tools
+### Core Tools (3)
+
+#### Think Tool (CRITICAL - ALWAYS USE FIRST!)
+
+- `think`: A sequential thinking tool for systematic analysis of biomedical problems. **MUST be used BEFORE any search operations** to ensure comprehensive research planning and analysis.
+
+#### Unified Tools
+
+- `search`: Powerful unified search across all biomedical data sources with cross-domain query support
+- `fetch`: Retrieve detailed information for specific articles, trials, or variants
+
+### Individual Tools (10)
+
+#### Article Tools (2)
+
+- `article_searcher`: Search PubMed/PubTator3 and preprints with automatic cBioPortal integration
+- `article_getter`: Fetch detailed article content and metadata
+
+**Note**: When searching articles with gene parameters, cBioPortal data is automatically included, providing:
+
+- Gene-level mutation summaries across cancer studies
+- Mutation-specific search capabilities (e.g., BRAF V600E)
+- Dynamic cancer type categorization
+
+#### Clinical Trial Tools (5)
 
 - `trial_searcher`: Search for trials by condition, intervention, location, phase, etc.
-- `trial_protocol`: Get detailed protocol information for specific trials
-- `trial_locations`: Find where trials are conducted
-- `trial_outcomes`: Access trial results and outcome data
-- `trial_references`: Find publications related to specific trials
+- `trial_getter`: Fetch all details for a specific trial
+- `trial_protocol_getter`: Get protocol information only
+- `trial_references_getter`: Find publications related to trials
+- `trial_outcomes_getter`: Access trial results and outcome data
+- `trial_locations_getter`: Find where trials are conducted
 
-### Literature Tools
+#### Genomic Variant Tools (2)
 
-- `article_searcher`: Find biomedical articles across multiple dimensions
-- `article_details`: Retrieve detailed article content and metadata
-
-### Genomic Tools
-
-- `variant_searcher`: Search for genetic variants with filtering options
-- `variant_details`: Get comprehensive annotations for specific variants
-
-### Sequential Thinking Tool
-
-- `sequential_thinking`: A problem-solving tool for dynamic and reflective thinking, helping analyze complex biomedical problems through a flexible, adaptive process
+- `variant_searcher`: Search MyVariant.info with clinical and functional filters
+- `variant_getter`: Get comprehensive annotations including TCGA, 1000 Genomes, and cBioPortal data
 
 ## MCP Resources
 
@@ -124,7 +141,8 @@ BioMCP includes a comprehensive CLI for direct interaction with biomedical datab
 ```bash
 # Examples of CLI usage
 biomcp trial search --condition "Melanoma" --phase PHASE3
-biomcp article search --gene BRAF --disease Melanoma
+biomcp article search --gene BRAF --disease Melanoma  # Includes cBioPortal data
+biomcp article search --gene BRAF --keyword V600E     # Mutation-specific search
 biomcp variant search --gene TP53 --significance pathogenic
 ```
 

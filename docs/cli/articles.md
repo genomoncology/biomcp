@@ -1,8 +1,11 @@
 # Articles CLI Documentation
 
-The Articles CLI module provides commands for searching and retrieving biomedical research articles using the PubTator3 API.
+The Articles CLI module provides commands for searching and retrieving biomedical research articles using the PubTator3 API, with automatic integration of cBioPortal cancer genomics data when searching for genes.
 
-> **API Documentation**: For details about the underlying API, see the [PubTator3 API Documentation](../apis/pubtator3_api.md).
+> **API Documentation**:
+>
+> - For PubTator3 API details, see the [PubTator3 API Documentation](../apis/pubtator3_api.md)
+> - For cBioPortal integration, see the [cBioPortal Integration Documentation](../apis/cbioportal.md)
 >
 > **Tip**: Use the `--help` flag with any command (e.g., `biomcp article search --help`) to see the most up-to-date options directly from the tool.
 
@@ -18,17 +21,19 @@ biomcp article search [OPTIONS]
 
 #### Options
 
-- `-g, --gene TEXT`: Gene name to search for (e.g., BRAF). Can be specified multiple times.
+- `-g, --gene TEXT`: Gene name to search for (e.g., BRAF). Automatically includes cBioPortal data. Can be specified multiple times.
 - `-v, --variant TEXT`: Genetic variant to search for (e.g., "BRAF V600E"). Can be specified multiple times.
 - `-d, --disease TEXT`: Disease name to search for (e.g., Melanoma). Can be specified multiple times.
 - `-c, --chemical TEXT`: Chemical or drug name to search for (e.g., Vemurafenib). Can be specified multiple times.
-- `-k, --keyword TEXT`: Additional keyword to search for. Can be specified multiple times.
+- `-k, --keyword TEXT`: Additional keyword to search for. Use mutation notation (e.g., "V600E", "F57\*") for mutation-specific cBioPortal data. Can be specified multiple times.
 - `-j, --json`: Render output in JSON format instead of Markdown.
 - `--help`: Show help message and exit.
 
+**Note**: When using the `--gene` option, cBioPortal cancer genomics data is automatically included in the results.
+
 #### Examples
 
-Search for articles about the BRAF gene:
+Search for articles about the BRAF gene (includes cBioPortal summary):
 
 ```bash
 biomcp article search --gene BRAF
@@ -38,6 +43,19 @@ Search for articles about the BRAF V600E mutation in melanoma:
 
 ```bash
 biomcp article search --gene BRAF --variant "BRAF V600E" --disease Melanoma
+```
+
+Search for specific mutations with cBioPortal data:
+
+```bash
+# BRAF V600E mutation
+biomcp article search --gene BRAF --keyword V600E
+
+# SRSF2 F57Y mutation
+biomcp article search --gene SRSF2 --keyword F57Y
+
+# Any mutation at SRSF2 position 57 (F57*)
+biomcp article search --gene SRSF2 --keyword "F57*"
 ```
 
 Search with multiple gene filters:

@@ -67,10 +67,21 @@ async def connect_to_biomcp():
         tool_result = await session.list_tools()
         print(f"Available tools: {[t.name for t in tool_result.tools]}")
 
-        # Call a tool example (variant details)
+        # IMPORTANT: Always use think tool first!
+        think_result = await session.call_tool(
+            "think",
+            {
+                "thought": "Planning to analyze variant rs113488022...",
+                "thoughtNumber": 1,
+                "totalThoughts": 2,
+                "nextThoughtNeeded": True
+            }
+        )
+
+        # Now call a search/fetch tool (fetch variant details)
         result = await session.call_tool(
-            "variant_details",
-            {"variant_id": "rs113488022"}
+            "fetch",
+            {"domain": "variant", "id_": "rs113488022"}
         )
 
         if not result.isError and result.content:
@@ -89,24 +100,37 @@ For a complete example of integrating BioMCP with an MCP client, see:
 
 ## Available Tools
 
-BioMCP exposes these tools through the MCP interface:
+BioMCP exposes 13 tools through the MCP interface:
+
+### Core Tools (3)
+
+1. **Think Tool** (CRITICAL - USE FIRST!)
+
+   - `think`: Sequential thinking for systematic analysis (MUST be used before searches)
+
+2. **Unified Tools**
+   - `search`: Unified search across all biomedical data sources
+   - `fetch`: Retrieve detailed information for any domain
+
+### Individual Tools (10)
 
 1. **Article Tools**
 
-   - `article_searcher`: Search biomedical literature
-   - `article_details`: Get details for a specific article
+   - `article_searcher`: Search biomedical literature with cBioPortal integration
+   - `article_getter`: Get details for a specific article
 
 2. **Trial Tools**
 
    - `trial_searcher`: Search clinical trials
-   - `trial_protocol`: Get trial protocol details
-   - `trial_locations`: Get trial location information
-   - `trial_outcomes`: Get trial outcome data
-   - `trial_references`: Get trial references
+   - `trial_getter`: Get all trial details
+   - `trial_protocol_getter`: Get trial protocol details
+   - `trial_references_getter`: Get trial references
+   - `trial_outcomes_getter`: Get trial outcome data
+   - `trial_locations_getter`: Get trial location information
 
 3. **Variant Tools**
-   - `variant_searcher`: Search genetic variants
-   - `variant_details`: Get detailed variant information
+   - `variant_searcher`: Search genetic variants with cBioPortal integration
+   - `variant_getter`: Get detailed variant information
 
 ## Integration Options
 

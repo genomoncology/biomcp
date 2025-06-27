@@ -20,7 +20,7 @@ async def check_server():
     # Run with pypi package using `uv` not `uvx`
     server_params = StdioServerParameters(
         command="uv",
-        args=["run", "--with", "biomcp-python==0.1.1", "biomcp", "run"],
+        args=["run", "--with", "biomcp-python", "biomcp", "run"],
     )
     #
     # Run with local code
@@ -47,11 +47,25 @@ async def check_server():
         tool_result = await session.list_tools()
         tools = tool_result.tools
         print("Available tools:", tools)
-        assert len(tools) >= 9
+        assert len(tools) == 13  # 3 core tools + 10 individual tools
 
-        # run tool
-        tool_name = "variant_details"
-        tool_args = {"variant_id": "rs113488022"}
+        # IMPORTANT: Always use think tool first!
+        think_result = await session.call_tool(
+            "think",
+            {
+                "thought": "Planning to analyze variant rs113488022 for BRAF gene...",
+                "thoughtNumber": 1,
+                "totalThoughts": 2,
+                "nextThoughtNeeded": True,
+            },
+        )
+        assert (
+            think_result.isError is False
+        ), f"Think error: {think_result.content}"
+
+        # Now fetch variant details using unified fetch tool
+        tool_name = "fetch"
+        tool_args = {"domain": "variant", "id_": "rs113488022"}
         result = await session.call_tool(tool_name, tool_args)
         assert result.isError is False, f"Error: {result.content}"
 

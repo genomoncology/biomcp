@@ -10,7 +10,6 @@ from biomcp.exceptions import (
     InvalidParameterError,
     QueryParsingError,
     SearchExecutionError,
-    ThinkingError,
 )
 from biomcp.router import fetch, format_results, search
 
@@ -29,7 +28,9 @@ class TestFormatResults:
             }
         ]
 
-        formatted = format_results(results, "article", 1, 10, 1)
+        # Mock thinking tracker to prevent reminder
+        with patch("biomcp.router.get_thinking_reminder", return_value=""):
+            formatted = format_results(results, "article", 1, 10, 1)
 
         assert "results" in formatted
         assert len(formatted["results"]) == 1
@@ -57,7 +58,9 @@ class TestFormatResults:
             }
         ]
 
-        formatted = format_results(results, "trial", 1, 10, 1)
+        # Mock thinking tracker to prevent reminder
+        with patch("biomcp.router.get_thinking_reminder", return_value=""):
+            formatted = format_results(results, "trial", 1, 10, 1)
 
         assert "results" in formatted
         assert len(formatted["results"]) == 1
@@ -79,7 +82,9 @@ class TestFormatResults:
             }
         ]
 
-        formatted = format_results(results, "trial", 1, 10, 1)
+        # Mock thinking tracker to prevent reminder
+        with patch("biomcp.router.get_thinking_reminder", return_value=""):
+            formatted = format_results(results, "trial", 1, 10, 1)
 
         assert "results" in formatted
         assert len(formatted["results"]) == 1
@@ -99,7 +104,9 @@ class TestFormatResults:
             }
         ]
 
-        formatted = format_results(results, "variant", 1, 10, 1)
+        # Mock thinking tracker to prevent reminder
+        with patch("biomcp.router.get_thinking_reminder", return_value=""):
+            formatted = format_results(results, "variant", 1, 10, 1)
 
         assert "results" in formatted
         assert len(formatted["results"]) == 1
@@ -126,7 +133,9 @@ class TestFormatResults:
             },  # Missing required fields but won't fail (treated as preprint)
         ]
 
-        formatted = format_results(results, "article", 1, 10, 3)
+        # Mock thinking tracker to prevent reminder
+        with patch("biomcp.router.get_thinking_reminder", return_value=""):
+            formatted = format_results(results, "article", 1, 10, 3)
 
         # Should skip None but include the third (treated as preprint with empty fields)
         assert len(formatted["results"]) == 2
@@ -138,38 +147,15 @@ class TestFormatResults:
 class TestSearchFunction:
     """Test the unified search function."""
 
+    @pytest.mark.skip(reason="Thinking is now a separate tool")
     async def test_search_thinking_domain(self):
         """Test search with thinking domain."""
-        with patch(
-            "biomcp.thinking.sequential._sequential_thinking"
-        ) as mock_thinking:
-            mock_thinking.return_value = {"thought": "Test thought"}
+        pass
 
-            result = await search(
-                call_benefit="Test thinking",
-                domain="thinking",
-                thought="My thought",
-                thoughtNumber=1,
-                totalThoughts=3,
-                nextThoughtNeeded=True,
-            )
-
-            assert result["domain"] == "thinking"
-            assert result["thoughtNumber"] == 1
-            assert result["nextThoughtNeeded"] is True
-            mock_thinking.assert_called_once()
-
+    @pytest.mark.skip(reason="Thinking is now a separate tool")
     async def test_search_thinking_missing_params(self):
         """Test thinking domain with missing required parameters."""
-        with pytest.raises(ThinkingError) as exc_info:
-            await search(
-                call_benefit="Test",
-                domain="thinking",
-                thought="My thought",
-                # Missing thoughtNumber, totalThoughts, nextThoughtNeeded
-            )
-
-        assert "thoughtNumber" in str(exc_info.value)
+        pass
 
     async def test_search_article_domain(self):
         """Test search with article domain."""
@@ -177,16 +163,20 @@ class TestSearchFunction:
             {"pmid": "123", "title": "Test", "abstract": "Abstract"}
         ])
 
-        with patch("biomcp.articles.search.search_articles") as mock_search:
+        with patch(
+            "biomcp.articles.unified.search_articles_unified"
+        ) as mock_search:
             mock_search.return_value = mock_result
 
-            result = await search(
-                call_benefit="Test articles",
-                domain="article",
-                genes="BRAF",
-                diseases=["cancer"],
-                page_size=10,
-            )
+            # Mock thinking tracker to prevent reminder
+            with patch("biomcp.router.get_thinking_reminder", return_value=""):
+                result = await search(
+                    call_benefit="Test articles",
+                    domain="article",
+                    genes="BRAF",
+                    diseases=["cancer"],
+                    page_size=10,
+                )
 
             assert "results" in result
             assert len(result["results"]) == 1
@@ -207,13 +197,15 @@ class TestSearchFunction:
         with patch("biomcp.trials.search.search_trials") as mock_search:
             mock_search.return_value = mock_result
 
-            result = await search(
-                call_benefit="Test trials",
-                domain="trial",
-                conditions=["cancer"],
-                phase="Phase 3",
-                page_size=20,
-            )
+            # Mock thinking tracker to prevent reminder
+            with patch("biomcp.router.get_thinking_reminder", return_value=""):
+                result = await search(
+                    call_benefit="Test trials",
+                    domain="trial",
+                    conditions=["cancer"],
+                    phase="Phase 3",
+                    page_size=20,
+                )
 
             assert "results" in result
             mock_search.assert_called_once()
@@ -227,13 +219,15 @@ class TestSearchFunction:
         with patch("biomcp.variants.search.search_variants") as mock_search:
             mock_search.return_value = mock_result
 
-            result = await search(
-                call_benefit="Test variants",
-                domain="variant",
-                genes="BRAF",
-                significance="pathogenic",
-                page_size=10,
-            )
+            # Mock thinking tracker to prevent reminder
+            with patch("biomcp.router.get_thinking_reminder", return_value=""):
+                result = await search(
+                    call_benefit="Test variants",
+                    domain="variant",
+                    genes="BRAF",
+                    significance="pathogenic",
+                    page_size=10,
+                )
 
             assert "results" in result
             assert len(result["results"]) == 1
@@ -296,7 +290,9 @@ class TestSearchFunction:
         """Test parameter parsing for list inputs."""
         mock_result = json.dumps([])
 
-        with patch("biomcp.articles.search.search_articles") as mock_search:
+        with patch(
+            "biomcp.articles.unified.search_articles_unified"
+        ) as mock_search:
             mock_search.return_value = mock_result
 
             # Test with JSON array string

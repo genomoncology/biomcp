@@ -1,6 +1,48 @@
 # Changelog
 
-## [0.4.0] - 2025-06-19
+## [0.4.0] - 2025-06-27
+
+### Added
+
+- **Dedicated Think Tool**: Sequential thinking is now a separate, mandatory tool
+  - `think` tool MUST be used before any search operations
+  - Provides systematic step-by-step analysis for all biomedical queries
+  - Includes automatic reminders if not used
+- **10 Individual Tools Restored**: Direct access tools for specific functionality
+  - Article tools: `article_searcher`, `article_getter`
+  - Trial tools: `trial_searcher`, `trial_getter`, `trial_protocol_getter`, `trial_references_getter`, `trial_outcomes_getter`, `trial_locations_getter`
+  - Variant tools: `variant_searcher`, `variant_getter`
+- **Enhanced cBioPortal Integration**: Now available in individual tools
+  - `article_searcher` and `variant_searcher` include `include_cbioportal` parameter
+  - Centralized helper module for consistent integration
+- **Thinking Usage Tracker**: Monitors and encourages proper thinking tool usage
+  - Context-aware tracking across MCP sessions
+  - Automatic reminders in search results when thinking hasn't been used
+
+### Changed
+
+- **13 Total Tools**: 3 core tools (think, search, fetch) + 10 individual tools
+- **Sequential Thinking**: Moved from `search(domain="thinking")` to dedicated `think` tool
+- **Search Tool Simplified**: Removed thinking domain and parameters from search tool
+- **Query Parameter**: Changed from optional (`str | None = None`) to required with empty default (`str = ""`) for ChatGPT compatibility
+
+### Fixed
+
+- **MyVariant.info Timeouts**: Fixed HTTP client not using configured 120s timeout
+  - Added "myvariant" to aggressive retry domains
+  - Improved error messages for timeout scenarios
+  - Optimized BRAF V600E query pattern
+- **Location Parameter Validation**: Added proper validation for trial search location parameters
+  - Ensures lat/long are provided together
+  - Validates distance requires coordinates
+
+### Improved
+
+- **Code Organization**: Created `cbioportal_helper.py` to centralize integration logic
+- **Type Safety**: Added proper type annotations throughout new modules
+- **Error Handling**: Consistent logger usage and error messages
+
+## [0.3.0] - 2025-06-19
 
 ### Added
 
@@ -41,7 +83,7 @@
 - Fixed trial search KeyError 'nct_id' by handling nested ClinicalTrials.gov API v2 structure in `format_results`
 - Fixed parameter validation errors by accepting both string and list types for search parameters
 
-## [0.3.0] - 2025-06-19
+## [0.2.0] - 2025-06-19
 
 ### Breaking Changes
 

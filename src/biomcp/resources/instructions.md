@@ -7,18 +7,25 @@ queries.
 
 ---
 
-## CRITICAL: Always Use Sequential Thinking
+## CRITICAL: Always Use the 'think' Tool FIRST
 
-**The sequential_thinking tool is your PRIMARY reasoning mechanism when using BioMCP.** You MUST use it for:
+**The 'think' tool is MANDATORY and must be your FIRST action when using BioMCP.**
 
-- Every biomedical research query
-- All multi-step analyses
-- Any task requiring systematic breakdown
-- Planning tool usage sequences
-- Tracking analysis progress
-- Synthesizing results from multiple tools
+🚨 **REQUIRED USAGE:**
 
-Start EVERY BioMCP interaction with sequential_thinking. Use it liberally throughout your analysis. Only set nextThoughtNeeded=false when your analysis is complete.
+- You MUST call 'think' BEFORE any search or fetch operations
+- EVERY biomedical research query requires thinking first
+- ALL multi-step analyses must begin with the think tool
+- ANY task using BioMCP tools requires prior planning with think
+
+⚠️ **WARNING:** Skipping the 'think' tool will result in:
+
+- Incomplete analysis
+- Poor search strategies
+- Missing critical connections
+- Suboptimal results
+
+Start EVERY BioMCP interaction with the 'think' tool. Use it throughout your analysis to track progress. Only set nextThoughtNeeded=false when your analysis is complete.
 
 ---
 
@@ -42,15 +49,15 @@ to:
 When a user query is received (for example, "Please investigate ALK
 rearrangements in advanced NSCLC..."), the assistant should follow these steps:
 
-### A. ALWAYS Start with Sequential Thinking
+### A. ALWAYS Start with the 'think' Tool
 
-- **Use sequential_thinking immediately:** For ANY biomedical research query, begin by invoking the sequential_thinking tool to break down the problem systematically.
+- **Use 'think' immediately:** For ANY biomedical research query, you MUST begin by invoking the 'think' tool to break down the problem systematically.
 - **Initial thought should:** Parse the user's natural language query and extract relevant details such as gene variants (e.g., ALK rearrangements), disease type (advanced NSCLC), and treatment focus (combinations of ALK inhibitors with immunotherapy).
-- **Continue thinking:** Use additional sequential_thinking calls to plan your approach, identify data sources needed, and track your analysis progress.
+- **Continue thinking:** Use additional 'think' calls to plan your approach, identify data sources needed, and track your analysis progress.
 
-### B. Plan and Explain the Tool Sequence (via Sequential Thinking)
+### B. Plan and Explain the Tool Sequence (via the 'think' Tool)
 
-- **Use sequential_thinking to plan:** Continue using sequential_thinking to outline your reasoning and planned tool sequence:
+- **Use 'think' to plan:** Continue using the 'think' tool to outline your reasoning and planned tool sequence:
   - **Step 1:** Use ClinicalTrials.gov to retrieve clinical trial data
     related to the query.
   - **Step 2:** Use PubMed (via PubTator3) to fetch relevant literature
@@ -144,14 +151,14 @@ clinical trials exploring combinations of ALK inhibitors and immunotherapy.
 
 The assistant should:
 
-1. **Start with Sequential Thinking:**
-   - Invoke sequential_thinking with thought 1 to understand the query focus on ALK rearrangements in advanced NSCLC with combination treatments
-   - Use thought 2 to plan the research approach and identify needed data sources
-2. **Execute Tool Calls (tracking with sequential_thinking):**
-   - **First:** Query ClinicalTrials.gov for ALK+ NSCLC trials that combine ALK inhibitors with immunotherapy (document findings in thought 3)
-   - **Second:** Query PubMed to retrieve key articles discussing treatment outcomes or synergy (document in thought 4)
-   - **Third:** Check MyVariant.info for any annotations on ALK fusions or rearrangements (document in thought 5)
-3. **Synthesize and Report (via sequential_thinking):** Use final thoughts to synthesize findings before producing the answer that includes:
+1. **Start with the 'think' Tool:**
+   - Invoke 'think' with thoughtNumber=1 to understand the query focus on ALK rearrangements in advanced NSCLC with combination treatments
+   - Use thoughtNumber=2 to plan the research approach and identify needed data sources
+2. **Execute Tool Calls (tracking with 'think'):**
+   - **First:** Query ClinicalTrials.gov for ALK+ NSCLC trials that combine ALK inhibitors with immunotherapy (document findings in thoughtNumber=3)
+   - **Second:** Query PubMed to retrieve key articles discussing treatment outcomes or synergy (document in thoughtNumber=4)
+   - **Third:** Check MyVariant.info for any annotations on ALK fusions or rearrangements (document in thoughtNumber=5)
+3. **Synthesize and Report (via 'think'):** Use final thoughts to synthesize findings before producing the answer that includes:
    - A concise summary of clinical trials with comparison tables like:
 
 | **Trial**        | **Combination**        | **Patient Population**         | **Results** | **Safety Profile**                              | **Reference**                                                    |

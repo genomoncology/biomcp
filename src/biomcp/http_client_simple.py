@@ -26,8 +26,14 @@ async def execute_http_request(
         ConnectionError: For connection failures
         TimeoutError: For timeout errors
     """
+    from .constants import HTTP_TIMEOUT_SECONDS
+
     try:
-        async with httpx.AsyncClient(verify=verify, http2=False) as client:
+        # Use the configured timeout from constants
+        timeout = httpx.Timeout(HTTP_TIMEOUT_SECONDS)
+        async with httpx.AsyncClient(
+            verify=verify, http2=False, timeout=timeout
+        ) as client:
             if method.upper() == "GET":
                 resp = await client.get(url, params=params)
             elif method.upper() == "POST":

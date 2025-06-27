@@ -17,13 +17,26 @@ class TestMCPIntegration:
         # Get the registered tools
         tools = await mcp_app.list_tools()
 
-        # Should have exactly 2 tools
-        assert len(tools) == 2
+        # Should have 13 tools (2 unified + 1 think + 10 individual)
+        assert len(tools) == 13
 
         # Check tool names
         tool_names = [tool.name for tool in tools]
+        # Unified tools
         assert "search" in tool_names
         assert "fetch" in tool_names
+        assert "think" in tool_names
+        # Individual tools
+        assert "article_searcher" in tool_names
+        assert "article_getter" in tool_names
+        assert "trial_searcher" in tool_names
+        assert "trial_getter" in tool_names
+        assert "trial_protocol_getter" in tool_names
+        assert "trial_references_getter" in tool_names
+        assert "trial_outcomes_getter" in tool_names
+        assert "trial_locations_getter" in tool_names
+        assert "variant_searcher" in tool_names
+        assert "variant_getter" in tool_names
 
     async def test_mcp_search_tool_schema(self):
         """Test the search tool schema."""
@@ -42,7 +55,8 @@ class TestMCPIntegration:
         assert "article" in enum_values
         assert "trial" in enum_values
         assert "variant" in enum_values
-        assert "thinking" in enum_values
+        # thinking domain was removed from search tool
+        # assert "thinking" in enum_values
 
     async def test_mcp_fetch_tool_schema(self):
         """Test the fetch tool schema."""
@@ -78,7 +92,9 @@ class TestMCPIntegration:
             }
         ])
 
-        with patch("biomcp.articles.search.search_articles") as mock_search:
+        with patch(
+            "biomcp.articles.unified.search_articles_unified"
+        ) as mock_search:
             mock_search.return_value = mock_result
 
             # Import search function directly since we can't test through MCP without Context
@@ -94,8 +110,12 @@ class TestMCPIntegration:
 
             # Verify the result structure
             assert "results" in result
-            assert len(result["results"]) == 1
-            assert result["results"][0]["id"] == "12345"
+            # May include thinking reminder as first result
+            actual_results = [
+                r for r in result["results"] if r["id"] != "thinking-reminder"
+            ]
+            assert len(actual_results) == 1
+            assert actual_results[0]["id"] == "12345"
 
     async def test_mcp_fetch_variant_integration(self):
         """Test end-to-end variant fetch through MCP."""
@@ -149,7 +169,11 @@ class TestMCPIntegration:
 
             # Should get results from multiple domains
             assert "results" in result
-            assert len(result["results"]) >= 2
+            # May include thinking reminder
+            actual_results = [
+                r for r in result["results"] if r["id"] != "thinking-reminder"
+            ]
+            assert len(actual_results) >= 2
 
     async def test_mcp_thinking_integration(self):
         """Test sequential thinking through MCP."""
@@ -161,12 +185,10 @@ class TestMCPIntegration:
                 "analysis": "Test analysis",
             }
 
-            from biomcp.router import search
+            from biomcp.thinking_tool import think
 
-            # Call search with thinking domain
-            result = await search(
-                call_benefit="Testing thinking",
-                domain="thinking",
+            # Call the think tool directly
+            result = await think(
                 thought="Test thought",
                 thoughtNumber=1,
                 totalThoughts=3,
@@ -227,7 +249,9 @@ class TestMCPIntegration:
         """Test parameter parsing through MCP."""
         mock_result = json.dumps([])
 
-        with patch("biomcp.articles.search.search_articles") as mock_search:
+        with patch(
+            "biomcp.articles.unified.search_articles_unified"
+        ) as mock_search:
             mock_search.return_value = mock_result
 
             from biomcp.router import search

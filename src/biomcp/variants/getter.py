@@ -1,6 +1,7 @@
 """Getter module for retrieving variant details."""
 
 import json
+import logging
 from typing import Annotated
 
 from .. import ensure_list, http_client, render
@@ -8,6 +9,8 @@ from ..constants import MYVARIANT_GET_URL
 from .external import ExternalVariantAggregator, format_enhanced_annotations
 from .filters import filter_variants
 from .links import inject_links
+
+logger = logging.getLogger(__name__)
 
 
 async def get_variant(
@@ -41,19 +44,29 @@ async def get_variant(
 
         # Add external annotations if requested
         if include_external and data_to_return:
+            logger.info(
+                f"Adding external annotations for {len(data_to_return)} variants"
+            )
             aggregator = ExternalVariantAggregator()
 
             for _i, variant_data in enumerate(data_to_return):
+                logger.info(
+                    f"Processing variant {_i}: keys={list(variant_data.keys())}"
+                )
                 # Get enhanced annotations
                 enhanced = await aggregator.get_enhanced_annotations(
                     variant_id,
                     include_tcga=True,
                     include_1000g=True,
+                    include_cbioportal=True,
                     variant_data=variant_data,
                 )
 
                 # Add formatted annotations to the variant data
                 formatted = format_enhanced_annotations(enhanced)
+                logger.info(
+                    f"Formatted external annotations: {formatted['external_annotations'].keys()}"
+                )
                 variant_data.update(formatted["external_annotations"])
 
     if error:
@@ -73,7 +86,7 @@ async def _variant_details(
     variant_id: str,
     include_external: Annotated[
         bool,
-        "Include annotations from external sources (TCGA, 1000 Genomes)",
+        "Include annotations from external sources (TCGA, 1000 Genomes, cBioPortal)",
     ] = True,
 ) -> str:
     """
@@ -82,7 +95,7 @@ async def _variant_details(
     Parameters:
     - call_benefit: Define and summarize why this function is being called and the intended benefit
     - variant_id: A variant identifier ("chr7:g.140453136A>T")
-    - include_external: Include annotations from TCGA, 1000 Genomes, and Mastermind
+    - include_external: Include annotations from TCGA, 1000 Genomes, cBioPortal, and Mastermind
 
     Process: Queries the MyVariant.info GET endpoint, optionally fetching
             additional annotations from external databases

@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from biomcp.variants.external import (
+    CBioPortalClient,
+    CBioPortalVariantData,
     EnhancedVariantAnnotation,
     ExternalVariantAggregator,
     TCGAClient,
@@ -141,6 +143,72 @@ class TestThousandGenomesClient:
         assert "OTHER" not in str(result)
 
 
+class TestCBioPortalClient:
+    """Tests for cBioPortal client."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_get_variant_data_success(self):
+        """Test successful cBioPortal variant data retrieval using real API."""
+        client = CBioPortalClient()
+
+        # Test with a known variant
+        result = await client.get_variant_data("BRAF V600E")
+
+        assert result is not None
+        assert result.total_cases > 0
+        assert len(result.studies) > 0
+        assert "Missense_Mutation" in result.mutation_types
+        assert result.mutation_types["Missense_Mutation"] > 0
+        assert result.mean_vaf is not None
+        assert result.mean_vaf > 0.0
+        assert result.mean_vaf < 1.0
+
+        # Check cancer type distribution
+        assert len(result.cancer_type_distribution) > 0
+        # BRAF V600E is common in melanoma and colorectal
+        cancer_types = list(result.cancer_type_distribution.keys())
+        assert any(
+            "glioma" in ct.lower()
+            or "lung" in ct.lower()
+            or "colorectal" in ct.lower()
+            for ct in cancer_types
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_get_variant_data_not_found(self):
+        """Test cBioPortal variant data when not found using real API."""
+        client = CBioPortalClient()
+
+        # Test with a variant that's extremely rare or doesn't exist
+        result = await client.get_variant_data("BRAF X999Z")
+
+        # Should return None for non-existent variants
+        assert result is None
+
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_get_variant_data_invalid_format(self):
+        """Test cBioPortal with invalid gene/AA format."""
+        client = CBioPortalClient()
+
+        result = await client.get_variant_data("InvalidFormat")
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_get_variant_data_gene_not_found(self):
+        """Test cBioPortal when gene is not found."""
+        client = CBioPortalClient()
+
+        # Test with a non-existent gene
+        result = await client.get_variant_data("FAKEGENE123 V600E")
+
+        assert result is None
+
+
 class TestExternalVariantAggregator:
     """Tests for external variant aggregator."""
 
@@ -156,15 +224,28 @@ class TestExternalVariantAggregator:
 
         mock_1000g_data = ThousandGenomesData(global_maf=0.05, eur_maf=0.08)
 
+        mock_cbio_data = CBioPortalVariantData(
+            total_cases=42, studies=["tcga_pan_can_atlas_2018"]
+        )
+
         aggregator.tcga_client.get_variant_data = AsyncMock(
             return_value=mock_tcga_data
         )
         aggregator.thousand_genomes_client.get_variant_data = AsyncMock(
             return_value=mock_1000g_data
         )
+        aggregator.cbioportal_client.get_variant_data = AsyncMock(
+            return_value=mock_cbio_data
+        )
+
+        # Mock variant data to extract gene/AA change
+        variant_data = {
+            "cadd": {"gene": {"genename": "BRAF"}},
+            "docm": {"aa_change": "p.V600E"},
+        }
 
         result = await aggregator.get_enhanced_annotations(
-            "chr7:g.140453136A>T"
+            "chr7:g.140453136A>T", variant_data=variant_data
         )
 
         assert result.variant_id == "chr7:g.140453136A>T"
@@ -172,6 +253,9 @@ class TestExternalVariantAggregator:
         assert result.tcga.cosmic_id == "COSM476"
         assert result.thousand_genomes is not None
         assert result.thousand_genomes.global_maf == 0.05
+        assert result.cbioportal is not None
+        assert result.cbioportal.total_cases == 42
+        assert "tcga_pan_can_atlas_2018" in result.cbioportal.studies
 
     @pytest.mark.asyncio
     async def test_get_enhanced_annotations_with_errors(self):
@@ -213,6 +297,21 @@ class TestFormatEnhancedAnnotations:
             thousand_genomes=ThousandGenomesData(
                 global_maf=0.05, eur_maf=0.08, ancestral_allele="A"
             ),
+            cbioportal=CBioPortalVariantData(
+                total_cases=42,
+                studies=["tcga_pan_can_atlas_2018", "msk_impact_2017"],
+                cancer_type_distribution={
+                    "Melanoma": 30,
+                    "Thyroid Cancer": 12,
+                },
+                mutation_types={
+                    "Missense_Mutation": 40,
+                    "Nonsense_Mutation": 2,
+                },
+                hotspot_count=35,
+                mean_vaf=0.285,
+                sample_types={"Primary": 25, "Metastatic": 17},
+            ),
         )
 
         result = format_enhanced_annotations(annotation)
@@ -225,6 +324,15 @@ class TestFormatEnhancedAnnotations:
             result["external_annotations"]["1000_genomes"]["global_maf"]
             == 0.05
         )
+        assert "cbioportal" in result["external_annotations"]
+        cbio = result["external_annotations"]["cbioportal"]
+        assert cbio["total_cases"] == 42
+        assert "tcga_pan_can_atlas_2018" in cbio["studies"]
+        assert cbio["cancer_types"]["Melanoma"] == 30
+        assert cbio["mutation_types"]["Missense_Mutation"] == 40
+        assert cbio["hotspot_samples"] == 35
+        assert cbio["mean_vaf"] == 0.285
+        assert cbio["sample_types"]["Primary"] == 25
 
     def test_format_partial_annotations(self):
         """Test formatting when only some annotations are present."""

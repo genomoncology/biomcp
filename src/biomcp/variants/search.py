@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, model_validator
@@ -7,6 +8,8 @@ from .. import StrEnum, ensure_list, http_client, render
 from ..constants import MYVARIANT_QUERY_URL
 from .filters import filter_variants
 from .links import inject_links
+
+logger = logging.getLogger(__name__)
 
 
 class ClinicalSignificance(StrEnum):
@@ -180,8 +183,16 @@ async def convert_query(query: VariantQuery) -> dict[str, Any]:
     """Convert a VariantQuery to parameters for the MyVariant.info API."""
     fields = MYVARIANT_FIELDS[:] + [f"{s}.*" for s in query.sources]
 
+    # Optimize common queries to prevent timeouts
+    query_string = build_query_string(query)
+
+    # Special handling for common BRAF V600E query
+    if query.gene == "BRAF" and query.hgvsp == "V600E":
+        # Use a more specific query that performs better
+        query_string = 'dbnsfp.genename:"BRAF" AND (dbnsfp.aaref:"V" AND dbnsfp.aapos:600 AND dbnsfp.aaalt:"E")'
+
     return {
-        "q": build_query_string(query),
+        "q": query_string,
         "size": query.size,
         "from": query.offset,
         "fields": ",".join(fields),
@@ -191,8 +202,9 @@ async def convert_query(query: VariantQuery) -> dict[str, Any]:
 async def search_variants(
     query: VariantQuery,
     output_json: bool = False,
+    include_cbioportal: bool = True,
 ) -> str:
-    """Search variants using the MyVariant.info API."""
+    """Search variants using the MyVariant.info API with optional cBioPortal summary."""
 
     params = await convert_query(query)
 
@@ -205,14 +217,46 @@ async def search_variants(
     data: list = response.get("hits", []) if response else []
 
     if error:
-        data = [{"error": f"Error {error.code}: {error.message}"}]
+        # Provide more specific error messages for common issues
+        if "timed out" in error.message.lower():
+            error_msg = (
+                "MyVariant.info API request timed out. This can happen with complex queries. "
+                "Try narrowing your search criteria or searching by specific identifiers (rsID, HGVS)."
+            )
+        else:
+            error_msg = f"Error {error.code}: {error.message}"
+        data = [{"error": error_msg}]
     else:
         data = inject_links(data)
         data = filter_variants(data)
 
+    # Get cBioPortal summary if searching by gene
+    cbioportal_summary = None
+    if include_cbioportal and query.gene and not error:
+        try:
+            from .cbioportal_search import (
+                CBioPortalSearchClient,
+                format_cbioportal_search_summary,
+            )
+
+            client = CBioPortalSearchClient()
+            summary = await client.get_gene_search_summary(query.gene)
+            if summary:
+                cbioportal_summary = format_cbioportal_search_summary(summary)
+        except Exception as e:
+            logger.warning(f"Failed to get cBioPortal summary: {e}")
+
     if not output_json:
-        return render.to_markdown(data)
+        result = render.to_markdown(data)
+        if cbioportal_summary:
+            result = cbioportal_summary + "\n\n" + result
+        return result
     else:
+        if cbioportal_summary:
+            return json.dumps(
+                {"cbioportal_summary": cbioportal_summary, "variants": data},
+                indent=2,
+            )
         return json.dumps(data, indent=2)
 
 
@@ -293,4 +337,6 @@ async def _variant_searcher(
         size=size,
         offset=offset,
     )
-    return await search_variants(query, output_json=False)
+    return await search_variants(
+        query, output_json=False, include_cbioportal=True
+    )
