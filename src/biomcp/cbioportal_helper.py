@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 async def get_cbioportal_summary_for_genes(
-    genes: list[str] | None,
-    request_params: dict | None = None
+    genes: list[str] | None, request_params: dict | None = None
 ) -> str | None:
     """Get cBioPortal summary for given genes.
 
@@ -70,5 +69,7 @@ async def get_variant_cbioportal_summary(gene: str | None) -> str | None:
         return None
 
     except Exception as e:
-        logger.warning(f"Failed to get cBioPortal summary for variant search: {e}")
+        logger.warning(
+            f"Failed to get cBioPortal summary for variant search: {e}"
+        )
         return None

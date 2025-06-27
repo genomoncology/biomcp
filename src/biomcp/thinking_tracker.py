@@ -8,7 +8,7 @@ best practices.
 from contextvars import ContextVar
 
 # Track if thinking has been used in current context
-thinking_used: ContextVar[bool] = ContextVar('thinking_used', default=False)
+thinking_used: ContextVar[bool] = ContextVar("thinking_used", default=False)
 
 
 def mark_thinking_used() -> None:

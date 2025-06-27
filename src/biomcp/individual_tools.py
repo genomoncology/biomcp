@@ -52,7 +52,9 @@ async def article_searcher(
     ] = None,
     variants: Annotated[
         list[str] | str | None,
-        Field(description="Variant strings to search for (e.g., 'V600E', 'p.D277Y')"),
+        Field(
+            description="Variant strings to search for (e.g., 'V600E', 'p.D277Y')"
+        ),
     ] = None,
     include_preprints: Annotated[
         bool,
@@ -60,7 +62,9 @@ async def article_searcher(
     ] = True,
     include_cbioportal: Annotated[
         bool,
-        Field(description="Include cBioPortal cancer genomics summary when searching by gene"),
+        Field(
+            description="Include cBioPortal cancer genomics summary when searching by gene"
+        ),
     ] = True,
     page: Annotated[
         int,
@@ -140,7 +144,7 @@ async def article_getter(
     """
     return await _article_details(
         call_benefit="Fetch detailed article information for analysis",
-        pmid=pmid
+        pmid=pmid,
     )
 
 
@@ -165,7 +169,14 @@ async def trial_searcher(
         Field(description="Filter by recruiting status"),
     ] = None,
     phase: Annotated[
-        Literal["EARLY_PHASE1", "PHASE1", "PHASE2", "PHASE3", "PHASE4", "NOT_APPLICABLE"]
+        Literal[
+            "EARLY_PHASE1",
+            "PHASE1",
+            "PHASE2",
+            "PHASE3",
+            "PHASE4",
+            "NOT_APPLICABLE",
+        ]
         | None,
         Field(description="Filter by clinical trial phase"),
     ] = None,
@@ -241,13 +252,21 @@ async def trial_searcher(
     """
     # Validate location parameters
     if location and (lat is not None or long is not None):
-        raise ValueError("Use either location term OR lat/long coordinates, not both")
+        raise ValueError(
+            "Use either location term OR lat/long coordinates, not both"
+        )
 
-    if (lat is not None and long is None) or (lat is None and long is not None):
-        raise ValueError("Both latitude and longitude must be provided together")
+    if (lat is not None and long is None) or (
+        lat is None and long is not None
+    ):
+        raise ValueError(
+            "Both latitude and longitude must be provided together"
+        )
 
     if distance is not None and (lat is None or long is None):
-        raise ValueError("Distance parameter requires both latitude and longitude")
+        raise ValueError(
+            "Distance parameter requires both latitude and longitude"
+        )
 
     # Convert single values to lists
     conditions = ensure_list(conditions) if conditions else None
@@ -294,33 +313,37 @@ async def trial_getter(
     # Get all sections
     protocol = await _trial_protocol(
         call_benefit="Fetch comprehensive trial details for analysis",
-        nct_id=nct_id
+        nct_id=nct_id,
     )
     if protocol:
         results.append(protocol)
 
     locations = await _trial_locations(
         call_benefit="Fetch comprehensive trial details for analysis",
-        nct_id=nct_id
+        nct_id=nct_id,
     )
     if locations:
         results.append(locations)
 
     outcomes = await _trial_outcomes(
         call_benefit="Fetch comprehensive trial details for analysis",
-        nct_id=nct_id
+        nct_id=nct_id,
     )
     if outcomes:
         results.append(outcomes)
 
     references = await _trial_references(
         call_benefit="Fetch comprehensive trial details for analysis",
-        nct_id=nct_id
+        nct_id=nct_id,
     )
     if references:
         results.append(references)
 
-    return "\n\n".join(results) if results else f"No data found for trial {nct_id}"
+    return (
+        "\n\n".join(results)
+        if results
+        else f"No data found for trial {nct_id}"
+    )
 
 
 @mcp_app.tool()
@@ -342,7 +365,7 @@ async def trial_protocol_getter(
     """
     return await _trial_protocol(
         call_benefit="Fetch trial protocol information for eligibility assessment",
-        nct_id=nct_id
+        nct_id=nct_id,
     )
 
 
@@ -366,7 +389,7 @@ async def trial_references_getter(
     """
     return await _trial_references(
         call_benefit="Fetch trial publications and references for evidence review",
-        nct_id=nct_id
+        nct_id=nct_id,
     )
 
 
@@ -390,7 +413,7 @@ async def trial_outcomes_getter(
     """
     return await _trial_outcomes(
         call_benefit="Fetch trial outcome measures and results for efficacy assessment",
-        nct_id=nct_id
+        nct_id=nct_id,
     )
 
 
@@ -414,7 +437,7 @@ async def trial_locations_getter(
     """
     return await _trial_locations(
         call_benefit="Fetch trial locations and contacts for enrollment information",
-        nct_id=nct_id
+        nct_id=nct_id,
     )
 
 
@@ -484,7 +507,9 @@ async def variant_searcher(
     ] = None,
     include_cbioportal: Annotated[
         bool,
-        Field(description="Include cBioPortal cancer genomics summary when searching by gene"),
+        Field(
+            description="Include cBioPortal cancer genomics summary when searching by gene"
+        ),
     ] = True,
     page: Annotated[
         int,
