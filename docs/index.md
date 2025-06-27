@@ -61,20 +61,25 @@ Through MCP, AI assistants can seamlessly invoke BioMCP tools during conversatio
 
 ## MCP Tools and Capabilities
 
-BioMCP exposes the following tools through the MCP interface:
+BioMCP provides 13 specialized tools through the MCP interface:
 
-### Clinical Trial Tools
+### Core Tools (3)
 
-- `trial_searcher`: Search for trials by condition, intervention, location, phase, etc.
-- `trial_protocol`: Get detailed protocol information for specific trials
-- `trial_locations`: Find where trials are conducted
-- `trial_outcomes`: Access trial results and outcome data
-- `trial_references`: Find publications related to specific trials
+#### Think Tool (CRITICAL - ALWAYS USE FIRST!)
 
-### Literature Tools
+- `think`: A sequential thinking tool for systematic analysis of biomedical problems. **MUST be used BEFORE any search operations** to ensure comprehensive research planning and analysis.
 
-- `article_searcher`: Find biomedical articles with automatic cBioPortal integration for gene searches
-- `article_details`: Retrieve detailed article content and metadata
+#### Unified Tools
+
+- `search`: Powerful unified search across all biomedical data sources with cross-domain query support
+- `fetch`: Retrieve detailed information for specific articles, trials, or variants
+
+### Individual Tools (10)
+
+#### Article Tools (2)
+
+- `article_searcher`: Search PubMed/PubTator3 and preprints with automatic cBioPortal integration
+- `article_getter`: Fetch detailed article content and metadata
 
 **Note**: When searching articles with gene parameters, cBioPortal data is automatically included, providing:
 
@@ -82,14 +87,19 @@ BioMCP exposes the following tools through the MCP interface:
 - Mutation-specific search capabilities (e.g., BRAF V600E)
 - Dynamic cancer type categorization
 
-### Genomic Tools
+#### Clinical Trial Tools (5)
 
-- `variant_searcher`: Search for genetic variants with filtering options
-- `variant_details`: Get comprehensive annotations for specific variants
+- `trial_searcher`: Search for trials by condition, intervention, location, phase, etc.
+- `trial_getter`: Fetch all details for a specific trial
+- `trial_protocol_getter`: Get protocol information only
+- `trial_references_getter`: Find publications related to trials
+- `trial_outcomes_getter`: Access trial results and outcome data
+- `trial_locations_getter`: Find where trials are conducted
 
-### Sequential Thinking Tool
+#### Genomic Variant Tools (2)
 
-- `sequential_thinking`: A problem-solving tool for dynamic and reflective thinking, helping analyze complex biomedical problems through a flexible, adaptive process
+- `variant_searcher`: Search MyVariant.info with clinical and functional filters
+- `variant_getter`: Get comprehensive annotations including TCGA, 1000 Genomes, and cBioPortal data
 
 ## MCP Resources
 

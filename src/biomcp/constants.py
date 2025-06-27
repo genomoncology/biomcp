@@ -121,7 +121,7 @@ HTTP_ERROR_CODE_UNSUPPORTED_METHOD = 405
 # ============================================================================
 
 # Valid domains for search
-VALID_DOMAINS = ["article", "trial", "variant", "thinking"]
+VALID_DOMAINS = ["article", "trial", "variant"]
 VALID_DOMAINS_PLURAL = ["articles", "trials", "variants"]
 
 # Domain mappings for unified search

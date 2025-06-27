@@ -16,10 +16,6 @@ from biomcp.constants import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_TITLE,
     ERROR_DOMAIN_REQUIRED,
-    ERROR_NEXT_THOUGHT_REQUIRED,
-    ERROR_THOUGHT_NUMBER_REQUIRED,
-    ERROR_THOUGHT_REQUIRED,
-    ERROR_TOTAL_THOUGHTS_REQUIRED,
     ESTIMATED_ADDITIONAL_RESULTS,
     MAX_RESULTS_PER_DOMAIN_DEFAULT,
     TRIAL_DETAIL_SECTIONS,
@@ -33,12 +29,12 @@ from biomcp.exceptions import (
     QueryParsingError,
     ResultParsingError,
     SearchExecutionError,
-    ThinkingError,
 )
 from biomcp.metrics import track_performance
 from biomcp.parameter_parser import ParameterParser
 from biomcp.query_parser import QueryParser
 from biomcp.query_router import QueryRouter, execute_routing_plan
+from biomcp.thinking_tracker import get_thinking_reminder
 from biomcp.trials import getter as trial_getter
 
 logger = logging.getLogger(__name__)
@@ -103,6 +99,17 @@ def format_results(
             # Skip malformed results
             continue
 
+    # Add thinking reminder if needed (as first result)
+    reminder = get_thinking_reminder()
+    if reminder and formatted_data:
+        reminder_result = {
+            "id": "thinking-reminder",
+            "title": "⚠️ Research Best Practice Reminder",
+            "text": reminder,
+            "url": "",
+        }
+        formatted_data.insert(0, reminder_result)
+
     # Return OpenAI MCP compliant format
     return {"results": formatted_data}
 
@@ -115,13 +122,13 @@ def format_results(
 async def search(  # noqa: C901
     call_benefit: str,
     query: Annotated[
-        str | None,
+        str,
         "Unified search query (e.g., 'gene:BRAF AND trials.condition:melanoma'). If provided, other parameters are ignored.",
-    ] = None,
+    ] = "",
     domain: Annotated[
-        Literal["article", "trial", "variant", "thinking"] | None,
+        Literal["article", "trial", "variant"] | None,
         Field(
-            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS (NOT articles about variants), 'thinking' for sequential reasoning"
+            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS (NOT articles about variants)"
         ),
     ] = None,
     genes: Annotated[list[str] | str | None, "Gene symbols"] = None,
@@ -163,51 +170,16 @@ async def search(  # noqa: C901
     get_schema: Annotated[
         bool, "Return searchable fields schema instead of results"
     ] = False,
-    # Sequential thinking parameters (when domain="thinking")
-    thought: Annotated[
-        str | None,
-        Field(description="Current thinking step (for thinking domain)"),
-    ] = None,
-    thoughtNumber: Annotated[
-        int | None,
-        Field(
-            description="Current thought number, start at 1 (for thinking domain)"
-        ),
-    ] = None,
-    totalThoughts: Annotated[
-        int | None,
-        Field(
-            description="Estimated total thoughts needed (for thinking domain)"
-        ),
-    ] = None,
-    nextThoughtNeeded: Annotated[
-        bool | None,
-        Field(
-            description="Whether more thinking is needed (for thinking domain)"
-        ),
-    ] = None,
 ) -> dict:
-    """Search biomedical literature, clinical trials, and genetic variants with integrated AI reasoning.
+    """Search biomedical literature, clinical trials, and genetic variants.
 
-    This tool provides comprehensive access to biomedical data from PubMed/PubTator3, ClinicalTrials.gov,
-    and MyVariant.info. It supports three powerful search modes:
+    ⚠️ IMPORTANT: Have you used the 'think' tool first? If not, STOP and use it NOW!
+    The 'think' tool is REQUIRED for proper research planning and should be your FIRST step.
 
-    ## 1. SEQUENTIAL THINKING MODE (Recommended for Complex Queries)
-    Use domain="thinking" to engage systematic AI reasoning before searching.
-    This is ESSENTIAL for complex biomedical research questions.
+    This tool provides access to biomedical data from PubMed/PubTator3, ClinicalTrials.gov,
+    and MyVariant.info. It supports two search modes:
 
-    Example:
-    ```
-    await search(
-        domain="thinking",
-        thought="I need to analyze the relationship between BRAF mutations and melanoma treatment options...",
-        thoughtNumber=1,
-        totalThoughts=3,
-        nextThoughtNeeded=True
-    )
-    ```
-
-    ## 2. UNIFIED QUERY LANGUAGE
+    ## 1. UNIFIED QUERY LANGUAGE
     Use the 'query' parameter with field-based syntax for precise cross-domain searches.
 
     Syntax:
@@ -230,7 +202,7 @@ async def search(  # noqa: C901
     )
     ```
 
-    ## 3. DOMAIN-SPECIFIC SEARCH
+    ## 2. DOMAIN-SPECIFIC SEARCH
     Use the 'domain' parameter with specific filters for targeted searches.
 
     Domains:
@@ -255,7 +227,7 @@ async def search(  # noqa: C901
     - Common mistake: Using domain="variant" when you want articles about a variant
 
     ## IMPORTANT NOTES:
-    - ALWAYS start with sequential thinking (domain="thinking") for research questions
+    - For complex research questions, use the separate 'think' tool for systematic analysis
     - The tool returns results in OpenAI MCP format: {"results": [{"id", "title", "text", "url"}, ...]}
     - Search results do NOT include metadata (per OpenAI MCP specification)
     - Use the fetch tool to get detailed metadata for specific records
@@ -287,39 +259,8 @@ async def search(  # noqa: C901
         parser = QueryParser()
         return parser.get_schema()
 
-    # Handle sequential thinking domain
-    if domain == "thinking":
-        if not thought:
-            raise ThinkingError(thoughtNumber or 0, ERROR_THOUGHT_REQUIRED)
-        if thoughtNumber is None:
-            raise ThinkingError(0, ERROR_THOUGHT_NUMBER_REQUIRED)
-        if totalThoughts is None:
-            raise ThinkingError(thoughtNumber, ERROR_TOTAL_THOUGHTS_REQUIRED)
-        if nextThoughtNeeded is None:
-            raise ThinkingError(thoughtNumber, ERROR_NEXT_THOUGHT_REQUIRED)
-
-        logger.debug(
-            f"Processing thinking step {thoughtNumber}/{totalThoughts}"
-        )
-
-        from biomcp.thinking.sequential import _sequential_thinking
-
-        result = await _sequential_thinking(
-            thought=thought,
-            thoughtNumber=thoughtNumber,
-            totalThoughts=totalThoughts,
-            nextThoughtNeeded=nextThoughtNeeded,
-        )
-
-        return {
-            "domain": "thinking",
-            "result": result,
-            "thoughtNumber": thoughtNumber,
-            "nextThoughtNeeded": nextThoughtNeeded,
-        }
-
     # Determine search mode
-    if query:
+    if query and query.strip():
         # Unified query language mode
         logger.info(f"Using unified query mode: {query}")
         return await _unified_search(

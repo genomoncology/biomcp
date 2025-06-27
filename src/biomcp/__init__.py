@@ -11,14 +11,19 @@ from . import thinking
 from . import query_parser
 from . import query_router
 from . import router
+from . import thinking_tool
+from . import individual_tools
+from . import cbioportal_helper
 
 
 __all__ = [
     "StrEnum",
     "articles",
+    "cbioportal_helper",
     "constants",
     "ensure_list",
     "http_client",
+    "individual_tools",
     "logger",
     "mcp_app",
     "query_parser",
@@ -27,6 +32,7 @@ __all__ = [
     "resources",
     "router",
     "thinking",
+    "thinking_tool",
     "trials",
     "variants",
 ]

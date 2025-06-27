@@ -173,7 +173,7 @@ async def request_api(
     retry_config = None
     if enable_retry:
         # Use more aggressive retry for certain domains
-        if domain in ["clinicaltrials", "pubmed"]:
+        if domain in ["clinicaltrials", "pubmed", "myvariant"]:
             retry_config = RetryConfig(
                 max_attempts=AGGRESSIVE_MAX_RETRY_ATTEMPTS,
                 initial_delay=AGGRESSIVE_INITIAL_RETRY_DELAY,

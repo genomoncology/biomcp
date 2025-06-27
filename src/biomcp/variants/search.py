@@ -183,8 +183,16 @@ async def convert_query(query: VariantQuery) -> dict[str, Any]:
     """Convert a VariantQuery to parameters for the MyVariant.info API."""
     fields = MYVARIANT_FIELDS[:] + [f"{s}.*" for s in query.sources]
 
+    # Optimize common queries to prevent timeouts
+    query_string = build_query_string(query)
+
+    # Special handling for common BRAF V600E query
+    if query.gene == "BRAF" and query.hgvsp == "V600E":
+        # Use a more specific query that performs better
+        query_string = 'dbnsfp.genename:"BRAF" AND (dbnsfp.aaref:"V" AND dbnsfp.aapos:600 AND dbnsfp.aaalt:"E")'
+
     return {
-        "q": build_query_string(query),
+        "q": query_string,
         "size": query.size,
         "from": query.offset,
         "fields": ",".join(fields),
@@ -209,7 +217,15 @@ async def search_variants(
     data: list = response.get("hits", []) if response else []
 
     if error:
-        data = [{"error": f"Error {error.code}: {error.message}"}]
+        # Provide more specific error messages for common issues
+        if "timed out" in error.message.lower():
+            error_msg = (
+                "MyVariant.info API request timed out. This can happen with complex queries. "
+                "Try narrowing your search criteria or searching by specific identifiers (rsID, HGVS)."
+            )
+        else:
+            error_msg = f"Error {error.code}: {error.message}"
+        data = [{"error": error_msg}]
     else:
         data = inject_links(data)
         data = filter_variants(data)
