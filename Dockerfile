@@ -4,8 +4,8 @@ FROM python:3.11-slim
 # set work directory
 WORKDIR /app
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential && rm -rf /var/lib/apt/lists/*
+# Install build dependencies and git (needed for AlphaGenome)
+RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential git && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements (pyproject.toml, etc.)
 COPY pyproject.toml .
@@ -20,6 +20,11 @@ COPY tox.ini .
 
 # Install the package with worker dependencies
 RUN pip install --upgrade pip && pip install .[worker]
+
+# Clone and install AlphaGenome
+RUN git clone https://github.com/google-deepmind/alphagenome.git /tmp/alphagenome && \
+    pip install /tmp/alphagenome && \
+    rm -rf /tmp/alphagenome
 
 # Expose port for remote MCP connections
 EXPOSE 8000

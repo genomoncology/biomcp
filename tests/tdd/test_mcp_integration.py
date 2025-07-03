@@ -17,8 +17,8 @@ class TestMCPIntegration:
         # Get the registered tools
         tools = await mcp_app.list_tools()
 
-        # Should have 13 tools (2 unified + 1 think + 10 individual)
-        assert len(tools) == 13
+        # Should have 14 tools (2 unified + 1 think + 11 individual)
+        assert len(tools) == 14
 
         # Check tool names
         tool_names = [tool.name for tool in tools]
@@ -37,6 +37,7 @@ class TestMCPIntegration:
         assert "trial_locations_getter" in tool_names
         assert "variant_searcher" in tool_names
         assert "variant_getter" in tool_names
+        assert "alphagenome_predictor" in tool_names
 
     async def test_mcp_search_tool_schema(self):
         """Test the search tool schema."""

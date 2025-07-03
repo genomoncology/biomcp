@@ -119,6 +119,83 @@ Get a variant by rsID as JSON:
 biomcp variant get rs113488022 --json
 ```
 
+## Predict Command (`predict`)
+
+Predict variant effects on gene regulation using Google DeepMind's AlphaGenome model. This advanced feature uses AI to predict how genetic variants affect gene expression, chromatin accessibility, splicing, and other regulatory mechanisms.
+
+### Prerequisites
+
+1. **Install AlphaGenome** (optional dependency):
+
+   ```bash
+   git clone https://github.com/google-deepmind/alphagenome.git
+   cd alphagenome && pip install .
+   ```
+
+2. **API Key**: Get a free API key from [DeepMind AlphaGenome](https://deepmind.google.com/science/alphagenome) and set:
+   ```bash
+   export ALPHAGENOME_API_KEY='your-api-key'
+   ```
+
+### Usage
+
+```bash
+biomcp variant predict [OPTIONS] CHROMOSOME POSITION REFERENCE ALTERNATE
+```
+
+#### Arguments
+
+- `CHROMOSOME`: Chromosome name (e.g., chr7, chrX) [required]
+- `POSITION`: 1-based genomic position [required]
+- `REFERENCE`: Reference allele(s) (e.g., A, ATG) [required]
+- `ALTERNATE`: Alternate allele(s) (e.g., T, A) [required]
+
+#### Options
+
+- `-i, --interval INTEGER`: Size of genomic interval to analyze in base pairs (default: 100000, max: 1000000)
+- `-t, --tissue TEXT`: UBERON ontology terms for tissue-specific predictions. Can be used multiple times.
+- `--help`: Show help message and exit
+
+#### Examples
+
+Predict effects of BRAF V600E mutation:
+
+```bash
+biomcp variant predict chr7 140753336 A T
+```
+
+Predict with tissue-specific context (breast tissue):
+
+```bash
+biomcp variant predict chr7 140753336 A T --tissue UBERON:0002367
+```
+
+Use larger analysis window (500kb):
+
+```bash
+biomcp variant predict chr7 140753336 A T --interval 500000
+```
+
+Multiple tissue contexts:
+
+```bash
+biomcp variant predict chr7 140753336 A T --tissue UBERON:0002367 --tissue UBERON:0001157
+```
+
+### Output
+
+AlphaGenome predictions include:
+
+- **Gene Expression**: Log₂ fold changes in RNA-seq signals
+- **Chromatin Accessibility**: Changes in ATAC-seq/DNase-seq signals
+- **Splicing**: Potential splice site alterations
+- **Promoter Activity**: CAGE signal changes
+- **Summary Statistics**: Number of affected regulatory tracks
+
+Results show the most significant effects across all analyzed regulatory modalities, helping understand the variant's potential functional impact.
+
+> **📚 Further Reading**: For detailed setup instructions and advanced usage examples, see the [AlphaGenome Setup Guide](../tutorials/alphagenome-setup.md) and [AlphaGenome Prompt Examples](../tutorials/alphagenome-prompts.md).
+
 ## Output Format
 
 By default, both search and get output variant information in Markdown format, designed for readability. This includes key annotations and automatically generated links to external databases like dbSNP, ClinVar, Ensembl, UCSC Genome Browser, etc., where applicable.

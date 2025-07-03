@@ -1,6 +1,11 @@
 import sys
 
+from dotenv import load_dotenv
+
 from .cli import app
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def main():
