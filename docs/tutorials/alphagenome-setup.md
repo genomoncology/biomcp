@@ -33,6 +33,7 @@ AlphaGenome is a state-of-the-art AI model that predicts how genetic variants af
 #### Option A: Using .env file (Recommended)
 
 1. Create a `.env` file in your BioMCP directory:
+
    ```bash
    cd ~/code/biomcp  # or your BioMCP installation directory
    echo 'ALPHAGENOME_API_KEY=your-api-key-here' >> .env
@@ -43,6 +44,7 @@ AlphaGenome is a state-of-the-art AI model that predicts how genetic variants af
 #### Option B: Environment Variable
 
 Set it in your shell profile (`~/.zshrc` or `~/.bashrc`):
+
 ```bash
 export ALPHAGENOME_API_KEY='your-api-key-here'
 ```
@@ -50,6 +52,7 @@ export ALPHAGENOME_API_KEY='your-api-key-here'
 #### Option C: Claude Desktop Configuration
 
 Add to your Claude Desktop MCP settings:
+
 ```json
 "biomcp": {
   "command": "uv",
@@ -69,12 +72,14 @@ Add to your Claude Desktop MCP settings:
 ### Step 3: Install AlphaGenome
 
 1. Clone the AlphaGenome repository:
+
    ```bash
    cd ~/code  # or any directory you prefer
    git clone https://github.com/google-deepmind/alphagenome.git
    ```
 
 2. Install AlphaGenome in BioMCP's environment:
+
    ```bash
    cd ~/code/biomcp  # Navigate to BioMCP directory
    uv pip install ~/code/alphagenome
@@ -88,11 +93,13 @@ Add to your Claude Desktop MCP settings:
 ### Step 4: Test the Integration
 
 Test via CLI:
+
 ```bash
 uv run biomcp variant predict chr7 140753336 A T
 ```
 
 Expected output:
+
 ```
 ## AlphaGenome Variant Effect Predictions
 
@@ -127,24 +134,29 @@ biomcp variant predict chr7 140753336 A T --threshold 0.3
 Once configured, you can use these prompts in Claude:
 
 #### Known Pathogenic Variants
+
 - "Use alphagenome_predictor to analyze the regulatory effects of the BRAF V600E mutation (chr7:140753336 A>T)"
 - "Predict how the TP53 R175H mutation (chr17:7675088 C>T) affects gene expression and chromatin accessibility"
 - "What are the predicted regulatory impacts of the EGFR T790M mutation (chr7:55181378 C>T)?"
 
 #### Non-coding Variant Analysis
+
 - "Analyze this promoter variant using AlphaGenome: chr1:45797505 G>A in the MUTYH gene promoter"
 - "Use alphagenome_predictor to assess this enhancer variant: chr8:128748315 T>C near the MYC gene"
 - "Predict the regulatory effects of this 5' UTR variant: chr17:41244936 G>A in BRCA1"
 
 #### Splicing Analysis
+
 - "Use AlphaGenome to predict if this intronic variant affects splicing: chr2:215593426 A>G in the BARD1 gene"
 - "Analyze these variants near splice sites for potential splicing alterations: chr11:108198135 C>T (ATM)"
 
 #### Research Workflows
+
 - "I found a variant of uncertain significance: chr9:21971076 C>T in CDKN2A. First use variant_getter to see known annotations, then use alphagenome_predictor to assess regulatory impacts"
 - "Compare the predicted effects of these BRCA1 variants: chr17:41245237 G>A vs chr17:41244936 G>A"
 
 #### Multi-variant Analysis
+
 - "I have variants from whole genome sequencing. Analyze these for regulatory effects: chr3:178936091 G>A, chr12:25398285 C>T, chr19:11224301 G>T"
 
 ## Advanced Usage
@@ -175,15 +187,17 @@ result = await alphagenome_predictor(
 ### Interval Sizes
 
 AlphaGenome supports specific interval sizes:
+
 - 2,048 bp (2kb) - Very local effects
-- 16,384 bp (16kb) - Local regulatory elements  
+- 16,384 bp (16kb) - Local regulatory elements
 - 131,072 bp (128kb) - Default, captures most regulatory elements
 - 524,288 bp (512kb) - Extended regulatory landscape
 - 1,048,576 bp (1Mb) - Long-range interactions
 
 Choose based on your hypothesis:
+
 - Promoter variants: 16kb
-- Enhancer variants: 128kb-512kb  
+- Enhancer variants: 128kb-512kb
 - Long-range regulatory: 1Mb
 
 **Note**: If you request a size larger than 1Mb, the system automatically uses 1Mb. If you request a size between supported values, it rounds up to the next supported size.
@@ -191,6 +205,7 @@ Choose based on your hypothesis:
 ### Interpreting Results
 
 **Gene Expression (log₂ fold change)**:
+
 - \> +1.0: Strong increase (2x or more)
 - +0.5 to +1.0: Moderate increase
 - -0.5 to +0.5: Minimal change
@@ -198,10 +213,12 @@ Choose based on your hypothesis:
 - < -1.0: Strong decrease (2x or less)
 
 **Chromatin Accessibility**:
+
 - Positive values: More open chromatin (increased accessibility)
 - Negative values: More closed chromatin (decreased accessibility)
 
 **Summary Statistics**:
+
 - Total tracks: Number of cell types/conditions analyzed
 - Significant changes: Tracks with |log₂| > 0.5 (default threshold)
 - Custom threshold: You can adjust the significance threshold using the `--threshold` parameter
@@ -209,19 +226,23 @@ Choose based on your hypothesis:
 ## Troubleshooting
 
 ### "AlphaGenome API key not found"
+
 - Check your `.env` file exists and contains `ALPHAGENOME_API_KEY=your-key`
 - Ensure you're running commands from the BioMCP directory
 - Try: `cat .env | grep ALPHAGENOME` to verify
 
 ### "AlphaGenome not installed"
+
 - Make sure you installed AlphaGenome: `uv pip install ~/code/alphagenome`
 - Check installation: `uv pip list | grep alphagenome`
 
 ### "Sequence length X not supported"
+
 - Use one of the supported sizes: 2048, 16384, 131072, 524288, 1048576
 - The tool automatically rounds up to the nearest supported size
 
 ### Protobuf warnings
+
 - You may see warnings like "Protobuf gencode version 5.27.2 is exactly one major version older..."
 - These warnings are harmless and don't affect functionality
 - They occur because AlphaGenome's proto files were compiled with an older protobuf version

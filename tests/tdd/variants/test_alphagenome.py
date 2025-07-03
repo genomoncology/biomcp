@@ -10,7 +10,7 @@ from biomcp.variants.alphagenome import predict_variant_effects
 @pytest.mark.asyncio
 async def test_predict_variant_effects_no_api_key():
     """Test that missing API key returns helpful error message."""
-    with patch.dict('os.environ', {}, clear=True):
+    with patch.dict("os.environ", {}, clear=True):
         result = await predict_variant_effects(
             chromosome="chr7",
             position=140753336,
@@ -29,9 +29,10 @@ async def test_predict_variant_effects_not_installed():
     # Since AlphaGenome might be installed in test environments, we need to test both cases
     # We'll set a dummy API key and check what error we get
     import os
-    original_key = os.environ.get('ALPHAGENOME_API_KEY')
+
+    original_key = os.environ.get("ALPHAGENOME_API_KEY")
     try:
-        os.environ['ALPHAGENOME_API_KEY'] = 'test-key'
+        os.environ["ALPHAGENOME_API_KEY"] = "test-key"
 
         result = await predict_variant_effects(
             chromosome="chr7",
@@ -48,7 +49,8 @@ async def test_predict_variant_effects_not_installed():
         assert any([
             "AlphaGenome not installed" in result,
             "AlphaGenome prediction failed" in result,
-            "API key not valid" in result  # This can happen with invalid test keys
+            "API key not valid"
+            in result,  # This can happen with invalid test keys
         ])
 
         if "AlphaGenome not installed" in result:
@@ -57,16 +59,16 @@ async def test_predict_variant_effects_not_installed():
     finally:
         # Restore original key
         if original_key is None:
-            os.environ.pop('ALPHAGENOME_API_KEY', None)
+            os.environ.pop("ALPHAGENOME_API_KEY", None)
         else:
-            os.environ['ALPHAGENOME_API_KEY'] = original_key
+            os.environ["ALPHAGENOME_API_KEY"] = original_key
 
 
 @pytest.mark.asyncio
 async def test_predict_variant_effects_basic_parameters():
     """Test that function accepts the expected parameters."""
     # This tests the function interface without requiring AlphaGenome
-    with patch.dict('os.environ', {}, clear=True):
+    with patch.dict("os.environ", {}, clear=True):
         # Test with all parameters
         result = await predict_variant_effects(
             chromosome="chrX",

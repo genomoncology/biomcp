@@ -25,7 +25,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MCP_MODE=worker  # Can be 'stdio' or 'worker'
+      - MCP_MODE=worker # Can be 'stdio' or 'worker'
       - ALPHAGENOME_API_KEY=${ALPHAGENOME_API_KEY}
     restart: unless-stopped
 ```
@@ -77,11 +77,13 @@ http://localhost:8000
 The Dockerfile includes these AlphaGenome-specific changes:
 
 1. **Git Installation**: Required to clone AlphaGenome repository
+
    ```dockerfile
    RUN apt-get update && apt-get install -y git
    ```
 
 2. **AlphaGenome Installation**: Cloned and installed during build
+
    ```dockerfile
    RUN git clone https://github.com/google-deepmind/alphagenome.git /tmp/alphagenome && \
        pip install /tmp/alphagenome && \

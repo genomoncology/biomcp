@@ -21,6 +21,7 @@ VALID_NUCLEOTIDES = set("ACGT")
 
 class VariantPrediction(TypedDict):
     """Type definition for variant prediction results."""
+
     gene_expression: dict[str, float]
     chromatin_accessibility: dict[str, float]
     splicing_effects: list[str]
@@ -105,30 +106,28 @@ async def predict_variant_effects(
 
         # Create interval and variant objects
         interval = genome.Interval(
-            chromosome=chromosome,
-            start=interval_start,
-            end=interval_end
+            chromosome=chromosome, start=interval_start, end=interval_end
         )
 
         variant = genome.Variant(
             chromosome=chromosome,
             position=position,
             reference_bases=reference,
-            alternate_bases=alternate
+            alternate_bases=alternate,
         )
 
         # Get recommended scorers for human
-        scorers = variant_scorers.get_recommended_scorers(organism='human')
+        scorers = variant_scorers.get_recommended_scorers(organism="human")
 
         # Make prediction
         scores = model.score_variant(
-            interval=interval,
-            variant=variant,
-            variant_scorers=scorers
+            interval=interval, variant=variant, variant_scorers=scorers
         )
 
         # Format results
-        return _format_predictions(variant, scores, interval_size, significance_threshold)
+        return _format_predictions(
+            variant, scores, interval_size, significance_threshold
+        )
 
     except Exception as e:
         logger.error(f"AlphaGenome prediction failed: {e}", exc_info=True)
@@ -147,7 +146,7 @@ def _format_predictions(
     variant: Any,
     scores: list[Any],
     interval_size: int,
-    significance_threshold: float = DEFAULT_SIGNIFICANCE_THRESHOLD
+    significance_threshold: float = DEFAULT_SIGNIFICANCE_THRESHOLD,
 ) -> str:
     """Format AlphaGenome predictions into markdown.
 
@@ -176,37 +175,57 @@ def _format_predictions(
         # Group scores by output type
         if not scores_df.empty:
             # Gene expression effects
-            expr_scores = scores_df[scores_df['output_type'].str.contains('RNA_SEQ', na=False)]
+            expr_scores = scores_df[
+                scores_df["output_type"].str.contains("RNA_SEQ", na=False)
+            ]
             if not expr_scores.empty:
-                top_expr = expr_scores.loc[expr_scores['raw_score'].abs().idxmax()]
-                gene = top_expr.get('gene_name', 'Unknown')
-                score = top_expr['raw_score']
+                top_expr = expr_scores.loc[
+                    expr_scores["raw_score"].abs().idxmax()
+                ]
+                gene = top_expr.get("gene_name", "Unknown")
+                score = top_expr["raw_score"]
                 direction = "↓ decreases" if score < 0 else "↑ increases"
                 lines.append("\n### Gene Expression")
-                lines.append(f"- **{gene}**: {score:+.2f} log₂ fold change ({direction} expression)")
+                lines.append(
+                    f"- **{gene}**: {score:+.2f} log₂ fold change ({direction} expression)"
+                )
 
             # Chromatin accessibility
-            chrom_scores = scores_df[scores_df['output_type'].str.contains('ATAC|DNASE', na=False)]
+            chrom_scores = scores_df[
+                scores_df["output_type"].str.contains("ATAC|DNASE", na=False)
+            ]
             if not chrom_scores.empty:
-                top_chrom = chrom_scores.loc[chrom_scores['raw_score'].abs().idxmax()]
-                score = top_chrom['raw_score']
-                track = top_chrom.get('track_name', 'tissue')
+                top_chrom = chrom_scores.loc[
+                    chrom_scores["raw_score"].abs().idxmax()
+                ]
+                score = top_chrom["raw_score"]
+                track = top_chrom.get("track_name", "tissue")
                 direction = "↓ decreases" if score < 0 else "↑ increases"
                 lines.append("\n### Chromatin Accessibility")
-                lines.append(f"- **{track}**: {score:+.2f} log₂ change ({direction} accessibility)")
+                lines.append(
+                    f"- **{track}**: {score:+.2f} log₂ change ({direction} accessibility)"
+                )
 
             # Splicing effects
-            splice_scores = scores_df[scores_df['output_type'].str.contains('SPLICE', na=False)]
+            splice_scores = scores_df[
+                scores_df["output_type"].str.contains("SPLICE", na=False)
+            ]
             if not splice_scores.empty:
                 lines.append("\n### Splicing")
                 lines.append("- Potential splicing alterations detected")
 
             # Summary statistics
             total_tracks = len(scores_df)
-            significant = len(scores_df[scores_df['raw_score'].abs() > significance_threshold])
+            significant = len(
+                scores_df[
+                    scores_df["raw_score"].abs() > significance_threshold
+                ]
+            )
             lines.append("\n### Summary")
             lines.append(f"- Analyzed {total_tracks} regulatory tracks")
-            lines.append(f"- {significant} tracks show substantial changes (|log₂| > {significance_threshold})")
+            lines.append(
+                f"- {significant} tracks show substantial changes (|log₂| > {significance_threshold})"
+            )
         else:
             lines.append("\n*No significant regulatory effects predicted*")
 
