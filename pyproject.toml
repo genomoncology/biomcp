@@ -54,6 +54,7 @@ dev = [
     "tomlkit>=0.13.2",
     "assertpy>=1.1",
     "twine>=4.0.0",
+    "pandas>=2.0.0",  # Used for mocking AlphaGenome responses in tests
 ]
 
 [project.optional-dependencies]
@@ -204,5 +205,6 @@ exclude = [
 ]
 
 [tool.deptry.per_rule_ignores]
+DEP001 = ["alphagenome"]  # Optional dependency, must be installed manually
 DEP002 = ["uvicorn"]
 DEP003 = ["biomcp", "alphagenome"]
