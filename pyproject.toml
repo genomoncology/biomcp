@@ -24,6 +24,7 @@ dependencies = [
     "platformdirs>=4.3.6",
     "psutil>=7.0.0",
     "pydantic>=2.10.6",
+    "python-dotenv>=1.0.0",
     "rich>=14.0.0",
     "typer>=0.15.2",
     "uvicorn>=0.34.2",
@@ -53,6 +54,7 @@ dev = [
     "tomlkit>=0.13.2",
     "assertpy>=1.1",
     "twine>=4.0.0",
+    "pandas>=2.0.0",  # Used for mocking AlphaGenome responses in tests
 ]
 
 [project.optional-dependencies]
@@ -62,6 +64,13 @@ api = [
 worker = [
     "fastapi>=0.110.0",
     "uvicorn>=0.28.0",
+]
+
+# AlphaGenome must be installed manually from GitHub:
+# git clone https://github.com/google-deepmind/alphagenome.git
+# cd alphagenome && pip install .
+alphagenome = [
+    # AlphaGenome package installed from GitHub (see comment above)
 ]
 
 [build-system]
@@ -99,6 +108,10 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
+filterwarnings = [
+    # Ignore protobuf version warnings from AlphaGenome
+    "ignore:Protobuf gencode version.*is exactly one major version older.*:UserWarning",
 ]
 
 [tool.ruff]
@@ -192,5 +205,6 @@ exclude = [
 ]
 
 [tool.deptry.per_rule_ignores]
+DEP001 = ["alphagenome"]  # Optional dependency, must be installed manually
 DEP002 = ["uvicorn"]
-DEP003 = ["biomcp"]
+DEP003 = ["biomcp", "alphagenome"]

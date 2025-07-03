@@ -115,10 +115,18 @@ BioMCP provides the following resources through the MCP interface:
 
 ## Tutorials
 
+### Getting Started
+
 - [**Claude Desktop Tutorial**](tutorials/claude-desktop.md) - Set up and use BioMCP with Claude Desktop
 - [**MCP Inspector Tutorial**](tutorials/mcp-inspector.md) - Test and debug BioMCP directly
 - [**Python SDK Tutorial**](tutorials/python-sdk.md) - Use BioMCP as a Python library
 - [**MCP Client Tutorial**](tutorials/mcp-client.md) - Integrate with MCP clients programmatically
+
+### Advanced Features
+
+- [**AlphaGenome Setup Guide**](tutorials/alphagenome-setup.md) - Configure Google DeepMind's AlphaGenome for variant effect prediction
+- [**AlphaGenome Prompt Examples**](tutorials/alphagenome-prompts.md) - Example prompts and workflows for variant analysis with AI
+- [**AlphaGenome with Docker**](tutorials/docker-alphagenome.md) - Run AlphaGenome in Docker containers
 
 ## Verification and Testing
 

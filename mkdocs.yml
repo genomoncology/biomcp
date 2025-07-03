@@ -10,29 +10,32 @@ copyright: Maintained by <a href="https://genomoncology.com">genomoncology</a>.
 nav:
   - Home: index.md
   - Tutorials:
+      - AlphaGenome Prompts: tutorials/alphagenome-prompts.md
+      - AlphaGenome Docker: tutorials/docker-alphagenome.md
+      - AlphaGenome Setup: tutorials/alphagenome-setup.md
       - Claude Desktop: tutorials/claude-desktop.md
       - Claude Desktop, for Macos and containerized: tutorials/macos-claude-desktop-dockerized-biomcp.md
+      - Cloudflare Worker Deployment: tutorials/cloudflare-worker-deployment.md
+      - Cursor IDE: tutorials/cursor-ide.md
+      - Logging with BigQuery: tutorials/bigquery_logging.md
+      - MCP Client: tutorials/mcp-client.md
       - MCP Inspector: tutorials/mcp-inspector.md
       - Python SDK: tutorials/python-sdk.md
-      - MCP Client: tutorials/mcp-client.md
-      - Cursor IDE: tutorials/cursor-ide.md
-      - Cloudflare Worker Deployment: tutorials/cloudflare-worker-deployment.md
       - Setting Up Stytch OAuth for BioMCP: tutorials/stytch_oauth_setup.md
-      - Logging with BigQuery: tutorials/bigquery_logging.md
   - CLI Reference:
-      - Trials: cli/trials.md
       - Articles: cli/articles.md
-      - Variants: cli/variants.md
       - Health Check: cli/health.md
+      - Trials: cli/trials.md
+      - Variants: cli/variants.md
   - API Reference:
-      - ClinicalTrials.gov: apis/clinicaltrials_gov.md
-      - PubTator3: apis/pubtator3_api.md
-      - MyVariant.info: apis/myvariant_info.md
       - cBioPortal: apis/cbioportal.md
+      - ClinicalTrials.gov: apis/clinicaltrials_gov.md
+      - MyVariant.info: apis/myvariant_info.md
+      - PubTator3: apis/pubtator3_api.md
   - Blog:
-      - What is BioMCP?: blog/what-is-biomcp.md
       - AI Assisted Clinical Trial Search: blog/ai-assisted-clinical-trial-search-analysis.md
       - Deep Researcher Persona: blog/researcher-persona-resource.md
+      - What is BioMCP?: blog/what-is-biomcp.md
   - Policies:
       - Privacy Policy: policies/biomcp-privacy.md
       - Security Policy: policies/biomcp-security.md

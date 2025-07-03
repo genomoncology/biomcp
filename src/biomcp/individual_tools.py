@@ -596,3 +596,85 @@ async def variant_getter(
         variant_id=variant_id,
         include_external=include_external,
     )
+
+
+@mcp_app.tool()
+@track_performance("biomcp.alphagenome_predictor")
+async def alphagenome_predictor(
+    chromosome: Annotated[
+        str,
+        Field(description="Chromosome (e.g., 'chr7', 'chrX')"),
+    ],
+    position: Annotated[
+        int,
+        Field(description="1-based genomic position of the variant"),
+    ],
+    reference: Annotated[
+        str,
+        Field(description="Reference allele(s) (e.g., 'A', 'ATG')"),
+    ],
+    alternate: Annotated[
+        str,
+        Field(description="Alternate allele(s) (e.g., 'T', 'A')"),
+    ],
+    interval_size: Annotated[
+        int,
+        Field(
+            description="Size of genomic interval to analyze in bp (max 1,000,000)",
+            ge=2000,
+            le=1000000,
+        ),
+    ] = 131072,
+    tissue_types: Annotated[
+        list[str] | str | None,
+        Field(
+            description="UBERON ontology terms for tissue-specific predictions (e.g., 'UBERON:0002367' for external ear)"
+        ),
+    ] = None,
+    significance_threshold: Annotated[
+        float,
+        Field(
+            description="Threshold for significant log2 fold changes (default: 0.5)",
+            ge=0.0,
+            le=5.0,
+        ),
+    ] = 0.5,
+) -> str:
+    """Predict variant effects on gene regulation using Google DeepMind's AlphaGenome.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to plan your analysis strategy!
+
+    AlphaGenome provides state-of-the-art predictions for how genetic variants
+    affect gene regulation, including:
+    - Gene expression changes (RNA-seq)
+    - Chromatin accessibility impacts (ATAC-seq, DNase-seq)
+    - Splicing alterations
+    - Promoter activity changes (CAGE)
+
+    This tool requires:
+    1. AlphaGenome to be installed (see error message for instructions)
+    2. An API key from https://deepmind.google.com/science/alphagenome
+
+    Example usage:
+    - Predict regulatory effects of BRAF V600E mutation: chr7:140753336 A>T
+    - Assess non-coding variant impact on gene expression
+    - Evaluate promoter variants in specific tissues
+
+    Note: This is an optional tool that enhances variant interpretation
+    with AI predictions. Standard annotations remain available via variant_getter.
+    """
+    from biomcp.variants.alphagenome import predict_variant_effects
+
+    # Convert tissue_types to list if needed
+    tissue_types_list = ensure_list(tissue_types) if tissue_types else None
+
+    # Call the prediction function
+    return await predict_variant_effects(
+        chromosome=chromosome,
+        position=position,
+        reference=reference,
+        alternate=alternate,
+        interval_size=interval_size,
+        tissue_types=tissue_types_list,
+        significance_threshold=significance_threshold,
+    )

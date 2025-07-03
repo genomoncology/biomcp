@@ -193,3 +193,81 @@ def search_variant_cmd(
 
     result = asyncio.run(search.search_variants(query, output_json))
     typer.echo(result)
+
+
+@variant_app.command("predict")
+def predict_variant_effects(
+    chromosome: Annotated[
+        str,
+        typer.Argument(help="Chromosome (e.g., chr7, chrX)"),
+    ],
+    position: Annotated[
+        int,
+        typer.Argument(help="1-based genomic position"),
+    ],
+    reference: Annotated[
+        str,
+        typer.Argument(help="Reference allele(s) (e.g., A, ATG)"),
+    ],
+    alternate: Annotated[
+        str,
+        typer.Argument(help="Alternate allele(s) (e.g., T, A)"),
+    ],
+    interval_size: Annotated[
+        int,
+        typer.Option(
+            "--interval",
+            "-i",
+            help="Analysis interval size in bp (max 1000000)",
+            min=2000,
+            max=1000000,
+        ),
+    ] = 131072,
+    tissue: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--tissue",
+            "-t",
+            help="UBERON ontology terms for tissue-specific predictions",
+        ),
+    ] = None,
+    threshold: Annotated[
+        float,
+        typer.Option(
+            "--threshold",
+            help="Significance threshold for log2 fold changes",
+            min=0.0,
+            max=5.0,
+        ),
+    ] = 0.5,
+):
+    """
+    Predict variant effects using Google DeepMind's AlphaGenome.
+
+    Predicts how genetic variants affect gene regulation including:
+    - Gene expression changes
+    - Chromatin accessibility
+    - Splicing alterations
+    - Promoter activity
+
+    Requires AlphaGenome API key in ALPHAGENOME_API_KEY environment variable.
+
+    Examples:
+        Predict BRAF V600E: biomcp variant predict chr7 140753336 A T
+        With tissue: biomcp variant predict chr7 140753336 A T --tissue UBERON:0002367
+        Large interval: biomcp variant predict chr7 140753336 A T --interval 500000
+    """
+    from ..variants.alphagenome import predict_variant_effects
+
+    result = asyncio.run(
+        predict_variant_effects(
+            chromosome=chromosome,
+            position=position,
+            reference=reference,
+            alternate=alternate,
+            interval_size=interval_size,
+            tissue_types=tissue,
+            significance_threshold=threshold,
+        )
+    )
+    typer.echo(result)

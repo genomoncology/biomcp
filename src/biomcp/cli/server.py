@@ -2,8 +2,12 @@ from enum import Enum
 from typing import Annotated
 
 import typer
+from dotenv import load_dotenv
 
 from .. import logger, mcp_app  # mcp_app is already instantiated in core.py
+
+# Load environment variables from .env file
+load_dotenv()
 
 server_app = typer.Typer(help="Server operations")
 
