@@ -37,6 +37,7 @@ async def predict_variant_effects(
     interval_size: int = 131_072,
     tissue_types: list[str] | None = None,
     significance_threshold: float = DEFAULT_SIGNIFICANCE_THRESHOLD,
+    api_key: str | None = None,
 ) -> str:
     """
     Predict variant effects using AlphaGenome.
@@ -49,6 +50,7 @@ async def predict_variant_effects(
         interval_size: Size of genomic context window (max 1,000,000)
         tissue_types: Optional UBERON ontology terms for tissue-specific predictions
         significance_threshold: Threshold for significant changes (default 0.5)
+        api_key: Optional API key (if not provided, uses ALPHAGENOME_API_KEY env var)
 
     Returns:
         Formatted markdown string with predictions
@@ -58,15 +60,23 @@ async def predict_variant_effects(
     """
     # Validate inputs
     _validate_inputs(chromosome, position, reference, alternate)
-    # Check for API key
-    api_key = os.getenv("ALPHAGENOME_API_KEY")
+
+    # Check for API key (prefer parameter over environment variable)
+    if not api_key:
+        api_key = os.getenv("ALPHAGENOME_API_KEY")
+
     if not api_key:
         return (
-            "❌ **AlphaGenome API key not found**\n\n"
-            "To use AlphaGenome predictions:\n"
-            "1. Get a free API key from https://deepmind.google.com/science/alphagenome\n"
-            "2. Set environment variable: `export ALPHAGENOME_API_KEY='your-key'`\n\n"
-            "Standard variant annotations are still available via `variant_searcher`."
+            "❌ **AlphaGenome API key required**\n\n"
+            "I need an API key to use AlphaGenome. Please provide it by either:\n\n"
+            "**Option 1: Include your key in your request**\n"
+            'Say: "My AlphaGenome API key is YOUR_KEY_HERE" and I\'ll use it for this prediction.\n\n'
+            "**Option 2: Set it as an environment variable (for persistent use)**\n"
+            "```bash\n"
+            "export ALPHAGENOME_API_KEY='your-key'\n"
+            "```\n\n"
+            "Get a free API key at: https://deepmind.google.com/science/alphagenome\n\n"
+            "**ACTION REQUIRED**: Please provide your API key using Option 1 above to continue."
         )
 
     # Try to import AlphaGenome
