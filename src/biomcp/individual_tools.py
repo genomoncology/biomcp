@@ -639,6 +639,12 @@ async def alphagenome_predictor(
             le=5.0,
         ),
     ] = 0.5,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="AlphaGenome API key. Check if user mentioned 'my AlphaGenome API key is...' in their message. If not provided here and no env var is set, user will be prompted to provide one."
+        ),
+    ] = None,
 ) -> str:
     """Predict variant effects on gene regulation using Google DeepMind's AlphaGenome.
 
@@ -654,6 +660,10 @@ async def alphagenome_predictor(
     This tool requires:
     1. AlphaGenome to be installed (see error message for instructions)
     2. An API key from https://deepmind.google.com/science/alphagenome
+
+    API Key Options:
+    - Provide directly via the api_key parameter
+    - Or set ALPHAGENOME_API_KEY environment variable
 
     Example usage:
     - Predict regulatory effects of BRAF V600E mutation: chr7:140753336 A>T
@@ -677,4 +687,5 @@ async def alphagenome_predictor(
         interval_size=interval_size,
         tissue_types=tissue_types_list,
         significance_threshold=significance_threshold,
+        api_key=api_key,
     )

@@ -82,7 +82,7 @@ class TestIntervalSizeCalculation:
                 alternate="T",
                 interval_size=2000000,  # Larger than max
             )
-            assert "AlphaGenome API key not found" in result
+            assert "AlphaGenome API key required" in result
 
 
 class TestCaching:
@@ -111,8 +111,8 @@ class TestCaching:
             )
 
             # Both should show API key error
-            assert "AlphaGenome API key not found" in result1
-            assert "AlphaGenome API key not found" in result2
+            assert "AlphaGenome API key required" in result1
+            assert "AlphaGenome API key required" in result2
 
 
 class TestErrorHandling:
@@ -177,7 +177,7 @@ class TestThresholdParameter:
             )
 
             # Should work (get API key error, not parameter error)
-            assert "AlphaGenome API key not found" in result
+            assert "AlphaGenome API key required" in result
 
     @pytest.mark.asyncio
     async def test_default_threshold(self):
@@ -192,7 +192,7 @@ class TestThresholdParameter:
             )
 
             # Should work with default
-            assert "AlphaGenome API key not found" in result
+            assert "AlphaGenome API key required" in result
 
 
 class TestIntegration:

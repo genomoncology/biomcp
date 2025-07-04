@@ -10,8 +10,9 @@ copyright: Maintained by <a href="https://genomoncology.com">genomoncology</a>.
 nav:
   - Home: index.md
   - Tutorials:
-      - AlphaGenome Prompts: tutorials/alphagenome-prompts.md
+      - AlphaGenome API Key Handling: tutorials/alphagenome-api-key-handling.md
       - AlphaGenome Docker: tutorials/docker-alphagenome.md
+      - AlphaGenome Prompts: tutorials/alphagenome-prompts.md
       - AlphaGenome Setup: tutorials/alphagenome-setup.md
       - Claude Desktop: tutorials/claude-desktop.md
       - Claude Desktop, for Macos and containerized: tutorials/macos-claude-desktop-dockerized-biomcp.md

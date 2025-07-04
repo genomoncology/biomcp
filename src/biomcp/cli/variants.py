@@ -240,6 +240,14 @@ def predict_variant_effects(
             max=5.0,
         ),
     ] = 0.5,
+    api_key: Annotated[
+        str | None,
+        typer.Option(
+            "--api-key",
+            help="AlphaGenome API key (overrides ALPHAGENOME_API_KEY env var)",
+            envvar="ALPHAGENOME_API_KEY",
+        ),
+    ] = None,
 ):
     """
     Predict variant effects using Google DeepMind's AlphaGenome.
@@ -250,10 +258,11 @@ def predict_variant_effects(
     - Splicing alterations
     - Promoter activity
 
-    Requires AlphaGenome API key in ALPHAGENOME_API_KEY environment variable.
+    Requires AlphaGenome API key via --api-key or ALPHAGENOME_API_KEY env var.
 
     Examples:
         Predict BRAF V600E: biomcp variant predict chr7 140753336 A T
+        With API key: biomcp variant predict chr7 140753336 A T --api-key YOUR_KEY
         With tissue: biomcp variant predict chr7 140753336 A T --tissue UBERON:0002367
         Large interval: biomcp variant predict chr7 140753336 A T --interval 500000
     """
@@ -268,6 +277,7 @@ def predict_variant_effects(
             interval_size=interval_size,
             tissue_types=tissue,
             significance_threshold=threshold,
+            api_key=api_key,
         )
     )
     typer.echo(result)

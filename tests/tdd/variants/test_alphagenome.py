@@ -18,7 +18,7 @@ async def test_predict_variant_effects_no_api_key():
             alternate="T",
         )
 
-        assert "AlphaGenome API key not found" in result
+        assert "AlphaGenome API key required" in result
         assert "https://deepmind.google.com/science/alphagenome" in result
         assert "ALPHAGENOME_API_KEY" in result
 
@@ -80,4 +80,4 @@ async def test_predict_variant_effects_basic_parameters():
         )
 
         # Should get API key error (not import error), proving parameters were accepted
-        assert "AlphaGenome API key not found" in result
+        assert "AlphaGenome API key required" in result
