@@ -14,22 +14,22 @@
 
 ## Available Tools
 
-| Category       | Tool               | Purpose                                   |
-| -------------- | ------------------ | ----------------------------------------- |
-| **Trials**     | `trial_searcher`   | Find trials by advanced search            |
-|                | `trial_protocol_getter` | Retrieve full study design details   |
-|                | `trial_locations_getter` | List recruiting sites               |
-|                | `trial_outcomes_getter` | Fetch results & endpoints (if available) |
-|                | `trial_references_getter` | Get linked publications for a trial |
-| **Literature** | `article_searcher` | Query biomedical papers (PubMed + preprints) |
-|                | `article_getter`   | Full metadata & abstracts/full text       |
-| **Genomics**   | `variant_searcher` | Locate variants with filters              |
-|                | `variant_getter`   | Comprehensive annotations                 |
-| **Planning**   | `think`            | Structured think-plan-reflect steps       |
-| **Unified**    | `search`           | Cross-domain search with query language   |
-|                | `fetch`            | Retrieve detailed records from any domain |
-| **Generic**    | `web_search`       | For initial scoping & term discovery      |
-| **Artifacts**  | `artifacts`        | For creating final research briefs        |
+| Category       | Tool                      | Purpose                                      |
+| -------------- | ------------------------- | -------------------------------------------- |
+| **Trials**     | `trial_searcher`          | Find trials by advanced search               |
+|                | `trial_protocol_getter`   | Retrieve full study design details           |
+|                | `trial_locations_getter`  | List recruiting sites                        |
+|                | `trial_outcomes_getter`   | Fetch results & endpoints (if available)     |
+|                | `trial_references_getter` | Get linked publications for a trial          |
+| **Literature** | `article_searcher`        | Query biomedical papers (PubMed + preprints) |
+|                | `article_getter`          | Full metadata & abstracts/full text          |
+| **Genomics**   | `variant_searcher`        | Locate variants with filters                 |
+|                | `variant_getter`          | Comprehensive annotations                    |
+| **Planning**   | `think`                   | Structured think-plan-reflect steps          |
+| **Unified**    | `search`                  | Cross-domain search with query language      |
+|                | `fetch`                   | Retrieve detailed records from any domain    |
+| **Generic**    | `web_search`              | For initial scoping & term discovery         |
+| **Artifacts**  | `artifacts`               | For creating final research briefs           |
 
 ## MANDATORY: Use the 'think' Tool for ALL Research Tasks
 

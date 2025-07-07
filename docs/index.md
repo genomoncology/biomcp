@@ -88,6 +88,7 @@ BioMCP provides 13 specialized tools through the MCP interface:
 - Dynamic cancer type categorization
 
 **NEW: OR Logic for Keywords**: The article searcher now supports OR logic using pipe separators in keywords:
+
 - `"R173|Arg173|p.R173"` finds articles with any variant notation
 - `"immunotherapy|checkpoint inhibitor"` matches either term
 - Multiple keywords are still combined with AND logic
