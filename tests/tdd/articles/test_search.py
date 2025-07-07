@@ -51,6 +51,27 @@ async def test_convert_search_query(anyio_backend):
     assert pubtator_request.size == 40
 
 
+async def test_convert_search_query_with_or_logic(anyio_backend):
+    """Test that keywords with pipe separators are converted to OR queries."""
+    pubmed_request = PubmedRequest(
+        genes=["PTEN"],
+        keywords=["R173|Arg173|p.R173", "mutation"],
+    )
+    pubtator_request = await convert_request(request=pubmed_request)
+
+    query_text = pubtator_request.text
+
+    # Check that OR logic is properly formatted
+    assert "(R173 OR Arg173 OR p.R173)" in query_text
+    assert "mutation" in query_text
+    assert "PTEN" in query_text or "@GENE_PTEN" in query_text
+
+    # Check overall structure
+    assert (
+        query_text.count(" AND ") >= 2
+    )  # At least 2 AND operators for 3 terms
+
+
 async def test_search(anyio_backend):
     """Test search with real API call - may be flaky due to network dependency.
 

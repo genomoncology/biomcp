@@ -235,6 +235,7 @@ async def search(  # noqa: C901
     - Use explain_query=True to understand query parsing (unified mode)
     - Domain-specific searches use AND logic for multiple values
     - For OR logic, use the unified query language
+    - NEW: Article search keywords support OR with pipe separator: "R173|Arg173|p.R173"
     - Remember: domain="article" finds LITERATURE, domain="variant" finds DATABASE RECORDS
 
     ## RETURN FORMAT:

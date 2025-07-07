@@ -96,8 +96,19 @@ class SearchResponse(BaseModel):
 
 
 async def convert_request(request: PubmedRequest) -> PubtatorRequest:
-    query_parts = request.keywords[:]
+    query_parts = []
 
+    # Process keywords with OR logic support
+    for keyword in request.keywords:
+        if "|" in keyword:
+            # Handle OR within a keyword (e.g., "R173|Arg173|p.R173")
+            or_terms = [term.strip() for term in keyword.split("|")]
+            or_query = "(" + " OR ".join(or_terms) + ")"
+            query_parts.append(or_query)
+        else:
+            query_parts.append(keyword)
+
+    # Process other concepts (these remain AND logic)
     for concept, value in request.iter_concepts():
         entity = await autocomplete(
             request=EntityRequest(concept=concept, query=value),
@@ -213,6 +224,9 @@ async def _article_searcher(
       chemical ("Cisplatin"), or variant ("BRAF V600E") categories
     - Parameters can be provided as lists or comma-separated strings
     - Results include both peer-reviewed and preprint articles by default
+    - Keywords support OR logic using the pipe (|) separator:
+      - Example: "R173|Arg173|p.R173" finds articles with any of these notations
+      - Multiple keywords are still combined with AND logic
 
     Returns:
     Markdown formatted list of matching articles, with peer-reviewed articles listed first.
