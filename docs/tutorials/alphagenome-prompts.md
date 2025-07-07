@@ -2,6 +2,22 @@
 
 This guide provides example prompts for using AlphaGenome through BioMCP to analyze genetic variants. These prompts are designed for use with AI assistants like Claude that have BioMCP integrated.
 
+## Including Your API Key
+
+When using AlphaGenome through an AI assistant, include your API key in your request:
+
+```
+Analyze BRAF V600E mutation effects. My AlphaGenome API key is YOUR_KEY_HERE
+```
+
+Or for multiple analyses:
+
+```
+My AlphaGenome API key is YOUR_KEY_HERE. Please analyze these variants:
+1. BRAF V600E (chr7:140753336 A>T)
+2. TP53 R273H (chr17:7577121 C>T)
+```
+
 ## Basic Variant Analysis
 
 ### Known Pathogenic Variants

@@ -18,9 +18,16 @@ check: ## Run code quality tools.
 	@uv run deptry .
 
 .PHONY: test
-test: ## Test the code with pytest
+test: ## Test the code with pytest and JavaScript tests
 	@echo "🚀 Testing code: Running pytest"
 	@uv run python -m pytest -x --ff
+	@echo "🚀 Testing JavaScript: Running worker sanitization tests"
+	@node --test tests/tdd/workers/test_worker_sanitization.js
+
+.PHONY: test-js
+test-js: ## Test JavaScript code only
+	@echo "🚀 Testing JavaScript: Running worker sanitization tests"
+	@node --test tests/tdd/workers/test_worker_sanitization.js
 
 .PHONY: cov
 cov: ## Generate HTML coverage report

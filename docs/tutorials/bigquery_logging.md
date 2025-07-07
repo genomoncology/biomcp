@@ -104,6 +104,47 @@ To access and analyze the logs:
   - Regularly audit logs to ensure compliance with HIPAA and other privacy regulations
   - Remember that BigQuery logs are not designed for storing protected health information
 
+### Automatic Sanitization
+
+BioMCP automatically sanitizes sensitive data before logging to BigQuery:
+
+- **API Keys and Secrets**: Fields containing `api_key`, `apiKey`, `api-key`, `token`, `secret`, or `password` are automatically redacted
+- **Nested Objects**: Sanitization works recursively through nested objects and arrays
+- **Case-Insensitive**: Field name matching is case-insensitive to catch variations
+- **Preserved Structure**: The original request structure is maintained with sensitive values replaced by `[REDACTED]`
+
+Example of sanitization:
+
+```javascript
+// Original request
+{
+  "params": {
+    "arguments": {
+      "api_key": "AIzaSyB1234567890",
+      "gene": "BRAF"
+    }
+  }
+}
+
+// Sanitized for BigQuery
+{
+  "params": {
+    "arguments": {
+      "api_key": "[REDACTED]",
+      "gene": "BRAF"
+    }
+  }
+}
+```
+
+### Excluded Queries
+
+Certain types of queries are automatically excluded from BigQuery logging:
+
+- **Think Tool Calls**: Any calls to the `think` tool are not logged
+- **Thinking Domain**: Queries with `domain="thinking"` or `domain="think"` are excluded
+- **Privacy-First Design**: This ensures that internal reasoning and analysis steps remain private
+
 ## Troubleshooting
 
 - **Authentication Failures**: Verify that the service account key is correctly formatted and has the necessary permissions
@@ -116,5 +157,31 @@ The worker includes the following key functions for BigQuery logging:
 
 - `getBQToken()`: Fetches and caches a BigQuery OAuth token
 - `insertEvent()`: Inserts a single row into BigQuery via streaming insert
+- `sanitizeObject()`: Recursively sanitizes sensitive fields from objects before logging
 
 These functions handle the authentication and data insertion process automatically.
+
+## Testing
+
+BioMCP includes comprehensive tests for the BigQuery logging functionality:
+
+### JavaScript Tests
+
+The sanitization logic is tested using Node.js built-in test framework:
+
+```bash
+# Run JavaScript worker tests
+make test-js
+
+# Or run directly
+node --test tests/tdd/workers/test_worker_sanitization.js
+```
+
+Tests cover:
+
+- API key redaction
+- Nested sensitive field handling
+- Array sanitization
+- Case-insensitive field matching
+- Think tool detection
+- Domain-based filtering

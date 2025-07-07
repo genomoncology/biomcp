@@ -39,7 +39,7 @@ async def handle_article_search(
         result_str = await search_articles_unified(
             request,
             include_pubmed=True,
-            include_preprints=False,
+            include_preprints=True,  # Changed to match individual tool default
             output_json=True,
         )
     except Exception as e:

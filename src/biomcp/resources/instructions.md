@@ -61,11 +61,40 @@ rearrangements in advanced NSCLC..."), the assistant should follow these steps:
   - **Step 1:** Use ClinicalTrials.gov to retrieve clinical trial data
     related to the query.
   - **Step 2:** Use PubMed (via PubTator3) to fetch relevant literature
-    discussing outcomes or synergy.
+    discussing outcomes or synergy. Note: Preprints from bioRxiv/medRxiv
+    are included by default, and cBioPortal cancer genomics data is
+    automatically integrated for gene-based searches.
   - **Step 3:** Query MyVariant.info for variant annotations (noting
     limitations for gene fusions if applicable).
 - **Transparency:** Clearly indicate which tool is being called for which part
   of the query.
+
+#### Search Syntax Enhancement: OR Logic for Keywords
+
+When searching articles, the keywords parameter now supports OR logic using the pipe (|) separator:
+
+**Syntax**: `keyword1|keyword2|keyword3`
+
+**Examples**:
+
+- `"R173|Arg173|p.R173"` - Finds articles mentioning any of these variant notations
+- `"V600E|p.V600E|c.1799T>A"` - Handles different mutation nomenclatures
+- `"immunotherapy|checkpoint inhibitor|PD-1"` - Searches for related treatment terms
+- `"NSCLC|non-small cell lung cancer"` - Covers abbreviations and full terms
+
+**Important Notes**:
+
+- OR logic only applies within a single keyword parameter
+- Multiple keywords are still combined with AND logic
+- Example: keywords=["BRAF|B-RAF", "therapy|treatment"] means:
+  - (BRAF OR B-RAF) AND (therapy OR treatment)
+
+This feature is particularly useful for:
+
+- Handling different nomenclatures for the same concept
+- Searching for synonyms or related terms
+- Dealing with abbreviations and full names
+- Finding articles that use different notations for variants
 
 ### C. Execute and Synthesize Results
 

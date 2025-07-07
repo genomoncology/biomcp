@@ -30,7 +30,27 @@ AlphaGenome is a state-of-the-art AI model that predicts how genetic variants af
 
 ### Step 2: Configure the API Key
 
-#### Option A: Using .env file (Recommended)
+You have three options for providing your API key:
+
+#### Option A: Per-Request (Recommended for AI Assistants)
+
+Include your API key directly in your request to the AI assistant:
+
+```
+"Predict effects of BRAF V600E. My AlphaGenome API key is YOUR_KEY_HERE"
+```
+
+See the [API Key Handling Guide](alphagenome-api-key-handling.md) for detailed examples.
+
+#### Option B: Environment Variable (Personal Use)
+
+Set it in your shell profile (`~/.zshrc` or `~/.bashrc`):
+
+```bash
+export ALPHAGENOME_API_KEY='your-api-key-here'
+```
+
+#### Option C: Using .env file (Development)
 
 1. Create a `.env` file in your BioMCP directory:
 
@@ -40,14 +60,6 @@ AlphaGenome is a state-of-the-art AI model that predicts how genetic variants af
    ```
 
 2. Replace `your-api-key-here` with your actual API key
-
-#### Option B: Environment Variable
-
-Set it in your shell profile (`~/.zshrc` or `~/.bashrc`):
-
-```bash
-export ALPHAGENOME_API_KEY='your-api-key-here'
-```
 
 #### Option C: Claude Desktop Configuration
 

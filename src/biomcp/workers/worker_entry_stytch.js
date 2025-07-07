@@ -13,6 +13,48 @@ const log = (message) => {
   if (DEBUG) console.log("[DEBUG]", message);
 };
 
+// List of sensitive fields that should be redacted in logs
+const SENSITIVE_FIELDS = [
+  "api_key",
+  "apiKey",
+  "api-key",
+  "token",
+  "secret",
+  "password",
+];
+
+/**
+ * Recursively sanitize sensitive fields from an object
+ * @param {object} obj - Object to sanitize
+ * @returns {object} - Sanitized copy of the object
+ */
+const sanitizeObject = (obj) => {
+  if (!obj || typeof obj !== "object") return obj;
+
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return obj.map((item) => sanitizeObject(item));
+  }
+
+  // Handle objects
+  const sanitized = {};
+  for (const [key, value] of Object.entries(obj)) {
+    // Check if this key is sensitive
+    const lowerKey = key.toLowerCase();
+    if (
+      SENSITIVE_FIELDS.some((field) => lowerKey.includes(field.toLowerCase()))
+    ) {
+      sanitized[key] = "[REDACTED]";
+    } else if (typeof value === "object" && value !== null) {
+      // Recursively sanitize nested objects
+      sanitized[key] = sanitizeObject(value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+};
+
 // CORS configuration
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -976,18 +1018,41 @@ app
     let sendToBQ = false;
     let parsed;
     let domain = null;
+    let toolName = null;
+    let sanitizedBody = body; // Default to original body
+
     try {
       parsed = JSON.parse(body);
       const args = parsed.params?.arguments;
-      if (args && Object.keys(args).length > 0) {
-        // Extract domain from the arguments
+
+      // Check if this is a think tool call
+      toolName = parsed.params?.name;
+      if (toolName === "think") {
+        sendToBQ = false;
+        log("[BigQuery] Skipping think tool call");
+      } else if (args && Object.keys(args).length > 0) {
+        // Extract domain from the arguments (for search/fetch tools)
         domain = args.domain || null;
 
-        // Skip logging if domain is "thinking"
-        if (domain === "thinking") {
+        // Skip logging if domain is "thinking" or "think"
+        if (domain === "thinking" || domain === "think") {
           sendToBQ = false;
         } else {
           sendToBQ = true;
+        }
+
+        // Sanitize sensitive data before logging to BigQuery
+        if (sendToBQ) {
+          // Use the comprehensive sanitization function
+          const sanitized = sanitizeObject(parsed);
+          sanitizedBody = JSON.stringify(sanitized);
+
+          // Log if we actually sanitized something
+          if (JSON.stringify(parsed) !== sanitizedBody) {
+            log(
+              "[BigQuery] Sanitized sensitive fields from query before logging",
+            );
+          }
         }
       }
     } catch (e) {
@@ -1000,7 +1065,7 @@ app
       const eventRow = {
         timestamp: new Date().toISOString(),
         userEmail,
-        query: body,
+        query: sanitizedBody, // Use sanitized body instead of original
       };
       // fire & forget
       c.executionCtx.waitUntil(
@@ -1011,8 +1076,10 @@ app
     } else {
       const missing = [
         !sendToBQ
-          ? domain === "thinking"
-            ? "domain is thinking"
+          ? toolName === "think"
+            ? "think tool"
+            : domain === "thinking" || domain === "think"
+            ? `domain is ${domain}`
             : "no query args"
           : null,
         !BQ_SA_KEY_JSON && "BQ_SA_KEY_JSON",

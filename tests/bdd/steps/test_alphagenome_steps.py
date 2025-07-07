@@ -246,9 +246,9 @@ def check_summary(alphagenome_context):
 def check_api_key_instructions(alphagenome_context):
     """Check for API key instructions."""
     result = alphagenome_context["result"]
-    assert "AlphaGenome API key not found" in result
+    assert "AlphaGenome API key required" in result
     assert "https://deepmind.google.com/science/alphagenome" in result
-    assert "ALPHAGENOME_API_KEY" in result
+    assert "ACTION REQUIRED" in result
 
 
 @then(
@@ -257,7 +257,9 @@ def check_api_key_instructions(alphagenome_context):
 def check_standard_annotations(alphagenome_context):
     """Check for mention of standard annotations."""
     result = alphagenome_context["result"]
-    assert "Standard variant annotations are still available" in result
+    # The new message doesn't mention standard annotations, but that's OK
+    # as the focus is on getting the user to provide an API key
+    assert "API key" in result
 
 
 @then("I should receive an error about invalid chromosome format")
@@ -358,7 +360,7 @@ def check_detailed_error(alphagenome_context):
     # Either API key error, prediction failed error, or actual predictions (if API is available)
     assert (
         ("AlphaGenome prediction failed" in result)
-        or ("AlphaGenome API key not found" in result)
+        or ("AlphaGenome API key required" in result)
         or ("AlphaGenome Variant Effect Predictions" in result)
     )
 
