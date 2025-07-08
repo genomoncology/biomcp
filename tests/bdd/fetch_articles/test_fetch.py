@@ -40,3 +40,22 @@ def step_impl(cli_result):
     assert cli_result == [
         {"error": 'Error 400: {"detail":"Could not retrieve publications"}'}
     ]
+
+
+@then("the first article should have a DOI field")
+def check_doi_field(cli_result):
+    """Check that the first article has a DOI field."""
+    article = cli_result[0]
+    doi = article.get("doi")
+    assert doi is not None, "DOI field is missing"
+    assert doi.startswith("10."), f"Invalid DOI format: {doi}"
+
+
+@then("the source should be Europe PMC")
+def check_europe_pmc_source(cli_result):
+    """Check that the article source is Europe PMC."""
+    article = cli_result[0]
+    source = article.get("source")
+    assert (
+        source == "Europe PMC"
+    ), f"Expected source 'Europe PMC', got '{source}'"

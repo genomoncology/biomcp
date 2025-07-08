@@ -132,8 +132,9 @@ search(domain="variant", gene="TP53", significance="pathogenic")
 Retrieve full details for a single article, trial, or variant:
 
 ```python
-# Fetch article details
-fetch(domain="article", id="34567890")
+# Fetch article details (supports both PMID and DOI)
+fetch(domain="article", id="34567890")  # PMID
+fetch(domain="article", id="10.1101/2024.01.20.23288905")  # DOI
 
 # Fetch trial with all sections
 fetch(domain="trial", id="NCT04280705", detail="all")
@@ -155,7 +156,7 @@ For users who prefer direct access to specific functionality, BioMCP also provid
 #### Article Tools (2)
 
 - **article_searcher**: Search PubMed/PubTator3 and preprints
-- **article_getter**: Fetch detailed article information
+- **article_getter**: Fetch detailed article information (supports PMID and DOI)
 
 #### Trial Tools (5)
 

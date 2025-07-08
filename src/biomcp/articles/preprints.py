@@ -315,6 +315,65 @@ class EuropePMCClient:
         return [result.to_result_item() for result in response.results]
 
 
+async def fetch_europe_pmc_article(
+    doi: str,
+    output_json: bool = False,
+) -> str:
+    """Fetch a single article from Europe PMC by DOI."""
+    # Europe PMC search API can fetch article details by DOI
+    request = EuropePMCRequest(
+        query=f'DOI:"{doi}"',
+        pageSize=1,
+        src="PPR",  # Preprints source
+    )
+
+    params = request.model_dump(exclude_none=True)
+
+    response, error = await http_client.request_api(
+        url=EUROPE_PMC_BASE_URL,
+        method="GET",
+        request=params,
+        response_model_type=EuropePMCResponse,
+        domain="europepmc",
+    )
+
+    if error:
+        data: list[dict[str, Any]] = [
+            {"error": f"Error {error.code}: {error.message}"}
+        ]
+    elif response and response.results:
+        # Convert Europe PMC result to Article format for consistency
+        europe_pmc_result = response.results[0]
+        article_data = {
+            "pmid": None,  # Europe PMC preprints don't have PMIDs
+            "pmcid": europe_pmc_result.pmcid,
+            "doi": europe_pmc_result.doi,
+            "title": europe_pmc_result.title,
+            "journal": f"{europe_pmc_result.journalTitle or 'Preprint Server'} (preprint)",
+            "date": europe_pmc_result.firstPublicationDate
+            or europe_pmc_result.pubYear,
+            "authors": [
+                author.strip()
+                for author in (europe_pmc_result.authorString or "").split(",")
+            ],
+            "abstract": europe_pmc_result.abstractText,
+            "full_text": "",  # Europe PMC API doesn't provide full text for preprints
+            "pubmed_url": None,
+            "pmc_url": f"https://europepmc.org/article/PPR/{doi}"
+            if doi
+            else None,
+            "source": "Europe PMC",
+        }
+        data = [article_data]
+    else:
+        data = [{"error": "Article not found in Europe PMC"}]
+
+    if data and not output_json:
+        return render.to_markdown(data)
+    else:
+        return json.dumps(data, indent=2)
+
+
 async def search_preprints(
     request: PubmedRequest,
     include_biorxiv: bool = True,

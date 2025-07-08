@@ -129,18 +129,24 @@ async def article_searcher(
 async def article_getter(
     pmid: Annotated[
         str,
-        Field(description="PubMed ID (e.g., '38768446' or 'PMC11193658')"),
+        Field(
+            description="Article identifier - either a PubMed ID (e.g., '38768446' or 'PMC11193658') or DOI (e.g., '10.1101/2024.01.20.23288905')"
+        ),
     ],
 ) -> str:
-    """Fetch detailed information for a specific PubMed article.
+    """Fetch detailed information for a specific article.
 
-    Retrieves the full abstract and available text for a PubMed article by its ID.
-    Supports both PMID and PMC IDs.
+    Retrieves the full abstract and available text for an article by its identifier.
+    Supports:
+    - PubMed IDs (PMID) for published articles
+    - PMC IDs for articles in PubMed Central
+    - DOIs for preprints from Europe PMC
 
     Returns formatted text including:
     - Title
     - Abstract
-    - Full text (when available from PMC)
+    - Full text (when available from PMC for published articles)
+    - Source information (PubMed or Europe PMC)
     """
     return await _article_details(
         call_benefit="Fetch detailed article information for analysis",

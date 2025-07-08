@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Annotated
 
 import typer
@@ -8,6 +9,36 @@ from ..articles.search import PubmedRequest, search_articles
 from ..articles.unified import search_articles_unified
 
 article_app = typer.Typer(help="Search and retrieve biomedical articles.")
+
+
+async def get_article_details(
+    identifier: str, output_json: bool = False
+) -> str:
+    """Get article details handling both PMIDs and DOIs with proper output format."""
+    # Use the fetch module functions directly to control output format
+    if fetch.is_doi(identifier):
+        from ..articles.preprints import fetch_europe_pmc_article
+
+        return await fetch_europe_pmc_article(
+            identifier, output_json=output_json
+        )
+    elif fetch.is_pmid(identifier):
+        return await fetch.fetch_articles(
+            [int(identifier)], full=True, output_json=output_json
+        )
+    else:
+        # Unknown identifier format
+        error_data = [
+            {
+                "error": f"Invalid identifier format: {identifier}. Expected either a PMID (numeric) or DOI (10.xxxx/xxxx format)."
+            }
+        ]
+        if output_json:
+            return json.dumps(error_data, indent=2)
+        else:
+            from .. import render
+
+            return render.to_markdown(error_data)
 
 
 @article_app.command("search")
@@ -102,10 +133,10 @@ def search_article(
 
 @article_app.command("get")
 def get_article(
-    pmids: Annotated[
-        list[int],
+    identifiers: Annotated[
+        list[str],
         typer.Argument(
-            help="PubMed IDs of articles to retrieve",
+            help="Article identifiers - PubMed IDs (e.g., 38768446) or DOIs (e.g., 10.1101/2024.01.20.23288905)",
         ),
     ],
     full: Annotated[
@@ -113,7 +144,7 @@ def get_article(
         typer.Option(
             "--full",
             "-f",
-            help="Whether to fetch full article text",
+            help="Whether to fetch full article text (PubMed only)",
         ),
     ] = False,
     output_json: Annotated[
@@ -127,7 +158,45 @@ def get_article(
     ] = False,
 ):
     """
-    Retrieve batch of articles with a list of PubMed IDs.
+    Retrieve articles by PubMed ID or DOI.
+
+    Supports:
+    - PubMed IDs for published articles (e.g., 38768446)
+    - DOIs for Europe PMC preprints (e.g., 10.1101/2024.01.20.23288905)
+
+    For multiple articles, results are returned as a list.
     """
-    result = asyncio.run(fetch.fetch_articles(pmids, full, output_json))
+    # Handle single identifier
+    if len(identifiers) == 1:
+        result = asyncio.run(
+            get_article_details(identifiers[0], output_json=output_json)
+        )
+    else:
+        # For multiple identifiers, we need to handle them individually
+        # since they might be a mix of PMIDs and DOIs
+        results = []
+        for identifier in identifiers:
+            article_result = asyncio.run(
+                get_article_details(identifier, output_json=True)
+            )
+            # Parse the result and add to list
+            try:
+                article_data = json.loads(article_result)
+                if isinstance(article_data, list):
+                    results.extend(article_data)
+                else:
+                    results.append(article_data)
+            except json.JSONDecodeError:
+                # This shouldn't happen with our new function
+                results.append({
+                    "error": f"Failed to parse result for {identifier}"
+                })
+
+        if output_json:
+            result = json.dumps(results, indent=2)
+        else:
+            from .. import render
+
+            result = render.to_markdown(results)
+
     typer.echo(result)

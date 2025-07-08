@@ -477,7 +477,7 @@ async def fetch(  # noqa: C901
     detailed analysis and research.
 
     ## IDENTIFIER FORMATS:
-    - Articles: PMID (PubMed ID) - e.g., "35271234"
+    - Articles: PMID (PubMed ID) - e.g., "35271234" OR DOI - e.g., "10.1101/2024.01.20.23288905"
     - Trials: NCT ID (ClinicalTrials.gov ID) - e.g., "NCT04280705"
     - Variants: HGVS notation or dbSNP ID - e.g., "chr7:g.140453136A>T" or "rs121913254"
 
@@ -485,8 +485,9 @@ async def fetch(  # noqa: C901
 
     ### Articles (domain="article"):
     - Returns full article metadata, abstract, and full text when available
-    - Includes annotations for genes, diseases, chemicals, and variants
-    - detail="full" attempts to retrieve full text content
+    - Supports both PubMed articles (via PMID) and Europe PMC preprints (via DOI)
+    - Includes annotations for genes, diseases, chemicals, and variants (PubMed only)
+    - detail="full" attempts to retrieve full text content (PubMed only)
 
     ### Clinical Trials (domain="trial"):
     - detail=None or "protocol": Core study information
@@ -549,23 +550,13 @@ async def fetch(  # noqa: C901
     if domain == "article":
         logger.debug("Fetching article details")
         try:
-            from biomcp.articles.fetch import fetch_articles
+            from biomcp.articles.fetch import _article_details
 
-            # Convert id_ to int if it's a string
-            try:
-                pmid = int(id_)
-            except ValueError:
-                raise InvalidParameterError(
-                    "id_", id_, "valid PMID (integer)"
-                ) from None
-
-            result_str = await fetch_articles(
-                pmids=[pmid],
-                full=True,  # Always fetch full text when available
-                output_json=True,
+            # The _article_details function handles both PMIDs and DOIs
+            result_str = await _article_details(
+                call_benefit=call_benefit,
+                pmid=id_,
             )
-        except InvalidParameterError:
-            raise
         except Exception as e:
             logger.error(f"Article fetch failed: {e}")
             raise SearchExecutionError("article", e) from e
@@ -585,6 +576,10 @@ async def fetch(  # noqa: C901
             return {"error": "Article not found"}
 
         article = articles[0]
+
+        # Check if the article is actually an error response
+        if "error" in article:
+            return {"error": article["error"]}
 
         # Format according to OpenAI MCP standard
         full_text = article.get("full_text", "")
