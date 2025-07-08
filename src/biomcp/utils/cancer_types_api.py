@@ -2,11 +2,8 @@
 
 import logging
 
-import httpx
-
-from ..utils.rate_limiter import cbioportal_limiter
+from ..utils.cbio_http_adapter import CBioHTTPAdapter
 from ..utils.request_cache import request_cache
-from ..variants.external import CBIO_BASE_URL, CBIO_TOKEN
 
 logger = logging.getLogger(__name__)
 
@@ -14,15 +11,9 @@ logger = logging.getLogger(__name__)
 class CancerTypeAPIClient:
     """Client for fetching cancer types from cBioPortal API."""
 
-    def __init__(self, base_url: str = CBIO_BASE_URL):
+    def __init__(self):
         """Initialize the cancer type API client."""
-        self.base_url = base_url.rstrip("/")
-        self.headers = {"Accept": "application/json"}
-        if CBIO_TOKEN:
-            if CBIO_TOKEN.startswith("Bearer "):
-                self.headers["Authorization"] = CBIO_TOKEN
-            else:
-                self.headers["Authorization"] = f"Bearer {CBIO_TOKEN}"
+        self.http_adapter = CBioHTTPAdapter()
         # Cache for cancer types
         self._cancer_types_cache: dict[str, str] | None = None
 
@@ -37,21 +28,17 @@ class CancerTypeAPIClient:
             return self._cancer_types_cache
 
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                await cbioportal_limiter.wait_if_needed("cbioportal")
-                resp = await client.get(
-                    f"{self.base_url}/cancer-types",
-                    headers=self.headers,
-                )
+            cancer_types, error = await self.http_adapter.get(
+                "/cancer-types",
+                endpoint_key="cbioportal_cancer_types",
+                cache_ttl=86400,  # 24 hours
+            )
 
-                if resp.status_code != 200:
-                    logger.error(
-                        f"Failed to fetch cancer types: {resp.status_code}"
-                    )
-                    return {}
+            if error:
+                logger.error(f"Failed to fetch cancer types: {error.message}")
+                return {}
 
-                cancer_types = resp.json()
-
+            if cancer_types:
                 # Build mapping from ID to name
                 result = {}
                 for ct in cancer_types:
@@ -69,6 +56,8 @@ class CancerTypeAPIClient:
                 self._cancer_types_cache = result
                 logger.info(f"Loaded {len(result)} cancer types from API")
                 return result
+
+            return {}
 
         except Exception as e:
             logger.error(f"Error fetching cancer types: {e}")
@@ -109,33 +98,29 @@ class CancerTypeAPIClient:
             Cancer type name or "Unknown"
         """
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                await cbioportal_limiter.wait_if_needed("cbioportal")
-                resp = await client.get(
-                    f"{self.base_url}/studies/{study_id}",
-                    headers=self.headers,
-                )
+            study_data, error = await self.http_adapter.get(
+                f"/studies/{study_id}",
+                endpoint_key="cbioportal_studies",
+                cache_ttl=3600,  # 1 hour
+            )
 
-                if resp.status_code != 200:
-                    logger.debug(f"Study {study_id} not found")
-                    return "Unknown"
-
-                study_data = resp.json()
-                cancer_type_id = study_data.get("cancerType", {}).get(
-                    "cancerTypeId", ""
-                )
-
-                if cancer_type_id and cancer_type_id != "unknown":
-                    return await self.get_cancer_type_name(cancer_type_id)
-
-                # Fallback to the cancer type name directly
-                cancer_type_name = study_data.get("cancerType", {}).get(
-                    "name", ""
-                )
-                if cancer_type_name:
-                    return cancer_type_name
-
+            if error or not study_data:
+                logger.debug(f"Study {study_id} not found")
                 return "Unknown"
+
+            cancer_type_id = study_data.get("cancerType", {}).get(
+                "cancerTypeId", ""
+            )
+
+            if cancer_type_id and cancer_type_id != "unknown":
+                return await self.get_cancer_type_name(cancer_type_id)
+
+            # Fallback to the cancer type name directly
+            cancer_type_name = study_data.get("cancerType", {}).get("name", "")
+            if cancer_type_name:
+                return cancer_type_name
+
+            return "Unknown"
 
         except Exception as e:
             logger.debug(f"Error fetching study {study_id}: {e}")

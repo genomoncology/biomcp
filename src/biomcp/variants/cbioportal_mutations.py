@@ -4,16 +4,14 @@ import logging
 from collections import Counter, defaultdict
 from typing import Any, cast
 
-import httpx
 from pydantic import BaseModel, Field
 
 from ..utils.cancer_types_api import get_cancer_type_client
+from ..utils.cbio_http_adapter import CBioHTTPAdapter
 from ..utils.gene_validator import is_valid_gene_symbol, sanitize_gene_symbol
 from ..utils.metrics import track_api_call
 from ..utils.mutation_filter import MutationFilter
-from ..utils.rate_limiter import cbioportal_limiter
 from ..utils.request_cache import request_cache
-from .external import CBIO_BASE_URL, CBIO_TOKEN
 
 logger = logging.getLogger(__name__)
 
@@ -59,34 +57,17 @@ class MutationSearchResult(BaseModel):
 class CBioPortalMutationClient:
     """Client for mutation-specific searches in cBioPortal."""
 
-    def __init__(self, base_url: str = CBIO_BASE_URL):
+    def __init__(self):
         """Initialize the mutation search client."""
-        self.base_url = base_url.rstrip("/")
-        self.headers = {"Accept": "application/json"}
-        if CBIO_TOKEN:
-            if CBIO_TOKEN.startswith("Bearer "):
-                self.headers["Authorization"] = CBIO_TOKEN
-            else:
-                self.headers["Authorization"] = f"Bearer {CBIO_TOKEN}"
-        # HTTP client with connection pooling
-        self._client: httpx.AsyncClient | None = None
+        self.http_adapter = CBioHTTPAdapter()
 
     async def __aenter__(self):
         """Async context manager entry."""
-        if not self._client:
-            self._client = httpx.AsyncClient(
-                limits=httpx.Limits(
-                    max_connections=10, max_keepalive_connections=5
-                ),
-                timeout=httpx.Timeout(60.0),
-            )
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
-        if self._client:
-            await self._client.aclose()
-            self._client = None
+        pass  # No cleanup needed with centralized client
 
     @request_cache(ttl=1800)  # Cache for 30 minutes
     @track_api_call("cbioportal_mutation_search")
@@ -116,55 +97,33 @@ class CBioPortalMutationClient:
         gene = sanitize_gene_symbol(gene)
 
         try:
-            # Use existing client or create temporary one
-            use_temp_client = self._client is None
-            if use_temp_client:
-                async with httpx.AsyncClient(
-                    limits=httpx.Limits(
-                        max_connections=10, max_keepalive_connections=5
-                    ),
-                    timeout=httpx.Timeout(60.0),
-                ) as temp_client:
-                    return await self._search_mutations_with_client(
-                        temp_client, gene, mutation, pattern, max_studies
-                    )
-            else:
-                if self._client:
-                    return await self._search_mutations_with_client(
-                        self._client, gene, mutation, pattern, max_studies
-                    )
-                else:
-                    # Should not happen but handle for type safety
-                    raise RuntimeError("Client not initialized")
-
-        except httpx.TimeoutException:
+            return await self._search_mutations_with_adapter(
+                gene, mutation, pattern, max_studies
+            )
+        except TimeoutError:
             logger.error(f"Timeout searching mutations for {gene}")
             return None
         except Exception as e:
             logger.error(f"Error searching mutations for {gene}: {e}")
             return None
 
-    async def _search_mutations_with_client(
+    async def _search_mutations_with_adapter(
         self,
-        client: httpx.AsyncClient,
         gene: str,
         mutation: str | None,
         pattern: str | None,
         max_studies: int,
     ) -> MutationSearchResult | None:
-        """Perform the actual mutation search with a given client."""
+        """Perform the actual mutation search with the adapter."""
         # Get gene info
-        await cbioportal_limiter.wait_if_needed("cbioportal")
-        gene_resp = await client.get(
-            f"{self.base_url}/genes/{gene}",
-            headers=self.headers,
+        gene_data, error = await self.http_adapter.get(
+            f"/genes/{gene}", endpoint_key="cbioportal_genes"
         )
 
-        if gene_resp.status_code != 200:
+        if error or not gene_data:
             logger.warning(f"Gene {gene} not found in cBioPortal")
             return None
 
-        gene_data = gene_resp.json()
         entrez_id = gene_data.get("entrezGeneId")
 
         if not entrez_id:
@@ -173,27 +132,22 @@ class CBioPortalMutationClient:
 
         # Get all mutation profiles
         logger.info(f"Fetching mutation profiles for {gene}")
-        await cbioportal_limiter.wait_if_needed("cbioportal")
-        profiles_resp = await client.get(
-            f"{self.base_url}/molecular-profiles",
+        all_profiles, prof_error = await self.http_adapter.get(
+            "/molecular-profiles",
             params={"molecularAlterationType": "MUTATION_EXTENDED"},
-            headers=self.headers,
+            endpoint_key="cbioportal_molecular_profiles",
         )
 
-        if profiles_resp.status_code != 200:
+        if prof_error or not all_profiles:
             logger.error("Failed to fetch molecular profiles")
             return None
-
-        all_profiles = profiles_resp.json()
         profile_ids = [p["molecularProfileId"] for p in all_profiles]
 
         # Batch fetch mutations (this is the slow part)
         logger.info(
             f"Fetching mutations for {gene} across {len(profile_ids)} profiles"
         )
-        mutations = await self._fetch_all_mutations(
-            client, profile_ids, entrez_id
-        )
+        mutations = await self._fetch_all_mutations(profile_ids, entrez_id)
 
         if not mutations:
             logger.info(f"No mutations found for {gene}")
@@ -204,7 +158,7 @@ class CBioPortalMutationClient:
         filtered_mutations = mutation_filter.filter_mutations(mutations)
 
         # Get study information
-        studies_info = await self._get_studies_info(client)
+        studies_info = await self._get_studies_info()
 
         # Aggregate results by study
         study_mutations = self._aggregate_by_study(
@@ -235,30 +189,25 @@ class CBioPortalMutationClient:
     @track_api_call("cbioportal_fetch_mutations")
     async def _fetch_all_mutations(
         self,
-        client: httpx.AsyncClient,
         profile_ids: list[str],
         entrez_id: int,
     ) -> list[MutationHit]:
         """Fetch all mutations for a gene across all profiles."""
-        # Use the mutations/fetch endpoint with POST
-        await cbioportal_limiter.wait_if_needed("cbioportal")
 
         try:
-            resp = await client.post(
-                f"{self.base_url}/mutations/fetch",
-                json={
+            raw_mutations, error = await self.http_adapter.post(
+                "/mutations/fetch",
+                data={
                     "molecularProfileIds": profile_ids,
                     "entrezGeneIds": [entrez_id],
                 },
-                headers={**self.headers, "Content-Type": "application/json"},
-                timeout=60.0,
+                endpoint_key="cbioportal_mutations",
+                cache_ttl=1800,  # Cache for 30 minutes
             )
 
-            if resp.status_code != 200:
-                logger.error(f"Failed to fetch mutations: {resp.status_code}")
+            if error or not raw_mutations:
+                logger.error(f"Failed to fetch mutations: {error}")
                 return []
-
-            raw_mutations = resp.json()
 
             # Convert to MutationHit objects
             mutations = []
@@ -294,22 +243,18 @@ class CBioPortalMutationClient:
             logger.error(f"Error fetching mutations: {e}")
             return []
 
-    async def _get_studies_info(
-        self, client: httpx.AsyncClient
-    ) -> dict[str, dict[str, Any]]:
+    async def _get_studies_info(self) -> dict[str, dict[str, Any]]:
         """Get information about all studies."""
-        await cbioportal_limiter.wait_if_needed("cbioportal")
 
         try:
-            resp = await client.get(
-                f"{self.base_url}/studies",
-                headers=self.headers,
+            studies, error = await self.http_adapter.get(
+                "/studies",
+                endpoint_key="cbioportal_studies",
+                cache_ttl=3600,  # Cache for 1 hour
             )
 
-            if resp.status_code != 200:
+            if error or not studies:
                 return {}
-
-            studies = resp.json()
             study_info = {}
             cancer_type_client = get_cancer_type_client()
 

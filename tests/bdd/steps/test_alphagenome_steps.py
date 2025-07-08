@@ -357,9 +357,10 @@ def check_tissue_context(alphagenome_context):
 def check_detailed_error(alphagenome_context):
     """Check for detailed error message."""
     result = alphagenome_context["result"]
-    # Either API key error, prediction failed error, or actual predictions (if API is available)
+    # Either not installed, API key error, prediction failed error, or actual predictions (if API is available)
     assert (
-        ("AlphaGenome prediction failed" in result)
+        ("AlphaGenome not installed" in result)
+        or ("AlphaGenome prediction failed" in result)
         or ("AlphaGenome API key required" in result)
         or ("AlphaGenome Variant Effect Predictions" in result)
     )
@@ -369,7 +370,7 @@ def check_detailed_error(alphagenome_context):
 def check_error_context(alphagenome_context):
     """Check that error includes variant details."""
     result = alphagenome_context["result"]
-    # Context is only in prediction failed errors, not API key errors
+    # Context is only in prediction failed errors, not API key errors or not installed errors
     if "AlphaGenome prediction failed" in result:
         assert "Context:" in result
         assert "chr7:140753336 A>T" in result

@@ -147,16 +147,6 @@ class TestFormatResults:
 class TestSearchFunction:
     """Test the unified search function."""
 
-    @pytest.mark.skip(reason="Thinking is now a separate tool")
-    async def test_search_thinking_domain(self):
-        """Test search with thinking domain."""
-        pass
-
-    @pytest.mark.skip(reason="Thinking is now a separate tool")
-    async def test_search_thinking_missing_params(self):
-        """Test thinking domain with missing required parameters."""
-        pass
-
     async def test_search_article_domain(self):
         """Test search with article domain."""
         mock_result = json.dumps([

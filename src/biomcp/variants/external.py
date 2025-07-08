@@ -3,17 +3,16 @@
 import asyncio
 import json
 import logging
-import os
 import re
 from typing import Any
 from urllib.parse import quote
 
-import httpx
 from pydantic import BaseModel, Field
 
 from .. import http_client
-from .cancer_types import MAX_STUDIES_PER_GENE, get_cancer_keywords
-from .retry_utils import RetryableHTTPClient
+
+# Import CBioPortalVariantData from the new module
+from .cbio_external_client import CBioPortalVariantData
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +24,7 @@ GDC_SSMS_ENDPOINT = f"{GDC_BASE}/ssms"  # Simple Somatic Mutations
 ENSEMBL_REST_BASE = "https://rest.ensembl.org"
 ENSEMBL_VARIATION_ENDPOINT = f"{ENSEMBL_REST_BASE}/variation/human"
 
-# cBioPortal API endpoints
-CBIO_BASE_URL = os.getenv("CBIO_BASE_URL", "https://www.cbioportal.org/api")
-CBIO_TOKEN = os.getenv("CBIO_TOKEN")
+# Import constants
 
 
 class TCGAVariantData(BaseModel):
@@ -61,34 +58,7 @@ class ThousandGenomesData(BaseModel):
     most_severe_consequence: str | None = None
 
 
-class CBioPortalVariantData(BaseModel):
-    """cBioPortal variant annotation data."""
-
-    total_cases: int | None = Field(
-        None, description="Total number of cases with this variant"
-    )
-    studies: list[str] = Field(
-        default_factory=list,
-        description="List of studies containing this variant",
-    )
-    cancer_type_distribution: dict[str, int] = Field(
-        default_factory=dict,
-        description="Distribution of mutation across cancer types",
-    )
-    mutation_types: dict[str, int] = Field(
-        default_factory=dict,
-        description="Distribution of mutation types (missense, nonsense, etc)",
-    )
-    hotspot_count: int = Field(
-        0, description="Number of samples where this is a known hotspot"
-    )
-    mean_vaf: float | None = Field(
-        None, description="Mean variant allele frequency across samples"
-    )
-    sample_types: dict[str, int] = Field(
-        default_factory=dict,
-        description="Distribution across sample types (primary, metastatic)",
-    )
+# CBioPortalVariantData is now imported from cbio_external_client.py
 
 
 class EnhancedVariantAnnotation(BaseModel):
@@ -383,380 +353,16 @@ class ThousandGenomesClient:
             return None
 
 
-class CBioPortalClient:
-    """Client for cBioPortal API."""
-
-    def __init__(self):
-        self.base_url = CBIO_BASE_URL
-        self.headers = {}
-        if CBIO_TOKEN:
-            # Validate token format
-            if not CBIO_TOKEN.startswith("Bearer "):
-                logger.warning(
-                    "CBIO_TOKEN should include 'Bearer ' prefix. Adding it."
-                )
-                self.headers["Authorization"] = f"Bearer {CBIO_TOKEN}"
-            else:
-                self.headers["Authorization"] = CBIO_TOKEN
-        # Cache for study metadata
-        self._study_cache: dict[str, dict[str, Any]] = {}
-        # Retry client for resilient API calls
-        self._retry_client = RetryableHTTPClient()
-
-    async def get_variant_data(
-        self, gene_aa: str
-    ) -> CBioPortalVariantData | None:
-        """Fetch variant data from cBioPortal.
-
-        Args:
-            gene_aa: Gene and AA change format (e.g., "BRAF V600E")
-        """
-        logger.info(
-            f"CBioPortalClient.get_variant_data called with: {gene_aa}"
-        )
-        try:
-            # Split gene and AA change
-            parts = gene_aa.split(" ", 1)
-            if len(parts) != 2:
-                logger.warning(f"Invalid gene_aa format: {gene_aa}")
-                return None
-
-            gene, aa_change = parts
-            logger.info(f"Extracted gene={gene}, aa_change={aa_change}")
-
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                # Parallel fetch: gene info and molecular profiles
-                gene_url = f"{self.base_url}/genes/{gene}"
-                profiles_url = f"{self.base_url}/molecular-profiles"
-
-                logger.info(
-                    "Fetching gene info and molecular profiles in parallel"
-                )
-
-                # Create tasks for parallel execution
-                gene_task = client.get(gene_url, headers=self.headers)
-                profiles_task = client.get(profiles_url, headers=self.headers)
-
-                # Execute in parallel
-                gene_resp, profiles_resp = await asyncio.gather(
-                    gene_task, profiles_task, return_exceptions=True
-                )
-
-                # Handle gene response
-                if isinstance(gene_resp, Exception):
-                    logger.warning(
-                        f"Failed to fetch gene info for {gene}: {type(gene_resp).__name__}: {gene_resp}"
-                    )
-                    return None
-
-                if gene_resp is None:
-                    logger.warning(
-                        f"Gene lookup failed for {gene} at {gene_url} after retries"
-                    )
-                    return None
-
-                gene_response = gene_resp.json()
-                logger.info(f"Gene response: {gene_response}")
-
-                gene_id = gene_response.get("entrezGeneId")
-                if not gene_id:
-                    logger.warning(
-                        f"No entrezGeneId in gene response: {gene_response}"
-                    )
-                    return None
-
-                logger.info(f"Got entrezGeneId: {gene_id}")
-
-                # Handle profiles response
-                if isinstance(profiles_resp, Exception):
-                    logger.warning(
-                        f"Failed to fetch molecular profiles: "
-                        f"{type(profiles_resp).__name__}: {profiles_resp}"
-                    )
-                    return None
-
-                if profiles_resp is None:
-                    logger.warning(
-                        f"Failed to fetch molecular profiles from {profiles_url} after retries"
-                    )
-                    return None
-
-                profiles = profiles_resp.json()
-
-                # Get cancer keywords from configuration
-                cancer_keywords = get_cancer_keywords(gene)
-
-                # Collect mutation profiles to query
-                mutation_profiles = []
-                for p in profiles:
-                    if p.get("molecularAlterationType") == "MUTATION_EXTENDED":
-                        study_id = p.get("studyId", "").lower()
-                        if any(
-                            keyword in study_id for keyword in cancer_keywords
-                        ):
-                            mutation_profiles.append(p)
-                            if len(mutation_profiles) >= MAX_STUDIES_PER_GENE:
-                                break
-
-                logger.info(
-                    f"Found {len(mutation_profiles)} relevant mutation profiles"
-                )
-
-                if not mutation_profiles:
-                    logger.warning("No relevant mutation profiles found")
-                    return None
-
-                # Get unique study IDs
-                unique_study_ids = list({
-                    p.get("studyId")
-                    for p in mutation_profiles[:10]
-                    if p.get("studyId")
-                })
-
-                # Fetch study metadata in parallel
-                study_cancer_types = await self._fetch_study_metadata_parallel(
-                    client, unique_study_ids
-                )
-
-                # Query mutations from profiles in parallel
-                mutation_tasks = []
-                for profile in mutation_profiles[:10]:
-                    profile_id = profile.get("molecularProfileId")
-                    study_id = profile.get("studyId")
-
-                    if profile_id and study_id:
-                        url = f"{self.base_url}/molecular-profiles/{profile_id}/mutations"
-                        params = {
-                            "sampleListId": f"{study_id}_all",
-                            "geneIdType": "ENTREZ_GENE_ID",
-                            "geneIds": str(gene_id),
-                            "projection": "SUMMARY",
-                        }
-                        task = client.get(
-                            url, params=params, headers=self.headers
-                        )
-                        mutation_tasks.append((task, profile_id, study_id))
-
-                # Execute all mutation queries in parallel
-                all_mutations = []
-                if mutation_tasks:
-                    tasks_only = [t[0] for t in mutation_tasks]
-                    responses = await asyncio.gather(
-                        *tasks_only, return_exceptions=True
-                    )
-
-                    for (_, profile_id, study_id), resp in zip(
-                        mutation_tasks, responses, strict=False
-                    ):
-                        if isinstance(resp, Exception):
-                            logger.debug(
-                                f"Failed to get mutations from {profile_id}: {type(resp).__name__}"
-                            )
-                        elif resp and resp.status_code == 200:
-                            mutations = resp.json()
-                            if mutations:
-                                all_mutations.extend(mutations)
-                                logger.debug(
-                                    f"Got {len(mutations)} mutations from {study_id}"
-                                )
-                        else:
-                            logger.debug(
-                                f"Failed to get mutations from {profile_id}: HTTP {resp.status_code}"
-                            )
-
-                logger.info(
-                    f"Got {len(all_mutations)} total mutations across all profiles"
-                )
-
-            # Process the mutations
-            if not all_mutations:
-                logger.warning("No mutations found")
-                return None
-
-            # Process mutations to extract detailed information
-            study_samples: dict[str, set[str]] = {}
-            cancer_type_counts: dict[str, int] = {}
-            mutation_type_counts: dict[str, int] = {}
-            sample_type_counts: dict[str, int] = {}
-            hotspot_count = 0
-            vaf_values = []
-
-            matching_mutations = []
-
-            for mut in all_mutations:
-                # Check if protein change matches
-                protein_change = mut.get("proteinChange", "")
-                if not protein_change:
-                    continue
-
-                logger.debug(
-                    f"Checking mutation: proteinChange='{protein_change}' against '{aa_change}'"
-                )
-
-                # Check if this matches our AA change
-                if not protein_change.upper().endswith(aa_change.upper()):
-                    continue
-
-                logger.info(f"Found matching mutation: {protein_change}")
-                matching_mutations.append(mut)
-
-                # Extract study and sample info
-                study_id = mut.get("studyId", "unknown")
-                sample_id = mut.get("sampleId")
-
-                if sample_id:
-                    if study_id not in study_samples:
-                        study_samples[study_id] = set()
-                    study_samples[study_id].add(sample_id)
-
-                    # Extract cancer type from study metadata
-                    cancer_type = study_cancer_types.get(study_id, "Unknown")
-                    cancer_type_counts[cancer_type] = (
-                        cancer_type_counts.get(cancer_type, 0) + 1
-                    )
-
-                    # Extract mutation type
-                    mutation_type = mut.get("mutationType", "Unknown")
-                    mutation_type_counts[mutation_type] = (
-                        mutation_type_counts.get(mutation_type, 0) + 1
-                    )
-
-                    # Check if hotspot - use keyword field since isHotspot might not be present
-                    keyword = mut.get("keyword", "")
-                    if "hotspot" in keyword.lower() or mut.get(
-                        "isHotspot", False
-                    ):
-                        hotspot_count += 1
-
-                    # Calculate VAF if data available
-                    tumor_alt = mut.get("tumorAltCount")
-                    tumor_ref = mut.get("tumorRefCount")
-                    if (
-                        tumor_alt is not None
-                        and tumor_ref is not None
-                        and (tumor_alt + tumor_ref) > 0
-                    ):
-                        vaf = tumor_alt / (tumor_alt + tumor_ref)
-                        vaf_values.append(vaf)
-
-                    # For sample type, we'd need clinical data which is too many API calls
-                    # Default to Unknown for now
-                    sample_type = "Unknown"
-                    sample_type_counts[sample_type] = (
-                        sample_type_counts.get(sample_type, 0) + 1
-                    )
-
-            # Count total unique samples across all studies
-            hit_studies = []
-            total_cases = 0
-            for study_id, samples in study_samples.items():
-                hit_studies.append(study_id)
-                total_cases += len(samples)
-                logger.info(f"Study {study_id}: {len(samples)} unique samples")
-
-            logger.info(f"Total cases across all studies: {total_cases}")
-            if total_cases == 0:
-                logger.warning("No cases found with this mutation")
-                return None
-
-            # Calculate mean VAF
-            mean_vaf = None
-            if vaf_values:
-                mean_vaf = round(sum(vaf_values) / len(vaf_values), 3)
-
-            result = CBioPortalVariantData(
-                total_cases=total_cases,
-                studies=hit_studies,
-                cancer_type_distribution=cancer_type_counts,
-                mutation_types=mutation_type_counts,
-                hotspot_count=hotspot_count,
-                mean_vaf=mean_vaf,
-                sample_types=sample_type_counts,
-            )
-            logger.info(f"Returning CBioPortalVariantData: {result}")
-            return result
-
-        except (KeyError, ValueError, TypeError, IndexError) as e:
-            # Log the error for debugging while gracefully handling API response issues
-            logger.warning(
-                f"Failed to fetch cBioPortal data for {gene_aa}: {type(e).__name__}: {e}"
-            )
-            return None
-        except Exception as e:
-            # Catch any other unexpected errors
-            logger.error(
-                f"Unexpected error in cBioPortal data fetch for {gene_aa}: {type(e).__name__}: {e}",
-                exc_info=True,
-            )
-            return None
-
-    async def _fetch_study_metadata_parallel(
-        self, client: httpx.AsyncClient, study_ids: list[str]
-    ) -> dict[str, str]:
-        """Fetch study metadata in parallel for cancer type information.
-
-        Args:
-            client: HTTP client instance
-            study_ids: List of study IDs to fetch
-
-        Returns:
-            Dict mapping study ID to cancer type name
-        """
-        # Check cache first
-        study_cancer_types = {}
-        uncached_ids = []
-
-        for study_id in study_ids:
-            if study_id in self._study_cache:
-                cached_data = self._study_cache[study_id]
-                cancer_type = cached_data.get("cancerType", {})
-                study_cancer_types[study_id] = cancer_type.get(
-                    "name", "Unknown"
-                )
-            else:
-                uncached_ids.append(study_id)
-
-        # Fetch uncached studies in parallel
-        if uncached_ids:
-            tasks = [
-                client.get(
-                    f"{self.base_url}/studies/{study_id}", headers=self.headers
-                )
-                for study_id in uncached_ids
-            ]
-
-            responses = await asyncio.gather(*tasks, return_exceptions=True)
-
-            for study_id, resp in zip(uncached_ids, responses, strict=False):
-                if isinstance(resp, Exception):
-                    logger.debug(
-                        f"Failed to fetch study {study_id}: {type(resp).__name__}"
-                    )
-                    study_cancer_types[study_id] = "Unknown"
-                elif resp and resp.status_code == 200:
-                    study_data = resp.json()
-                    # Cache the study data
-                    self._study_cache[study_id] = study_data
-                    cancer_type = study_data.get("cancerType", {})
-                    study_cancer_types[study_id] = cancer_type.get(
-                        "name", "Unknown"
-                    )
-                else:
-                    logger.debug(
-                        f"Failed to fetch study {study_id}: HTTP {resp.status_code}"
-                    )
-                    study_cancer_types[study_id] = "Unknown"
-
-        return study_cancer_types
-
-
 class ExternalVariantAggregator:
     """Aggregates variant data from multiple external sources."""
 
     def __init__(self):
         self.tcga_client = TCGAClient()
         self.thousand_genomes_client = ThousandGenomesClient()
-        self.cbioportal_client = CBioPortalClient()
+        # Import here to avoid circular imports
+        from .cbio_external_client import CBioPortalExternalClient
+
+        self.cbioportal_client = CBioPortalExternalClient()
 
     def _extract_gene_aa_change(
         self, variant_data: dict[str, Any]

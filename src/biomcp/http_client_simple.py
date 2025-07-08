@@ -1,5 +1,7 @@
 """Helper functions for simpler HTTP client operations."""
 
+import contextlib
+import json
 import ssl
 
 import httpx
@@ -10,6 +12,7 @@ async def execute_http_request(
     url: str,
     params: dict,
     verify: ssl.SSLContext | str | bool,
+    headers: dict[str, str] | None = None,
 ) -> tuple[int, str]:
     """Execute the actual HTTP request.
 
@@ -29,10 +32,16 @@ async def execute_http_request(
     from .constants import HTTP_TIMEOUT_SECONDS
 
     try:
+        # Extract custom headers from params if present
+        custom_headers = headers or {}
+        if "_headers" in params:
+            with contextlib.suppress(json.JSONDecodeError, TypeError):
+                custom_headers.update(json.loads(params.pop("_headers")))
+
         # Use the configured timeout from constants
         timeout = httpx.Timeout(HTTP_TIMEOUT_SECONDS)
         async with httpx.AsyncClient(
-            verify=verify, http2=False, timeout=timeout
+            verify=verify, http2=False, timeout=timeout, headers=custom_headers
         ) as client:
             if method.upper() == "GET":
                 resp = await client.get(url, params=params)
