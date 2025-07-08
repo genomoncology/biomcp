@@ -58,7 +58,9 @@ class CBioPortalExternalClient:
         Args:
             gene_aa: Gene and AA change format (e.g., "BRAF V600E")
         """
-        logger.info(f"CBioPortalExternalClient.get_variant_data called with: {gene_aa}")
+        logger.info(
+            f"CBioPortalExternalClient.get_variant_data called with: {gene_aa}"
+        )
         try:
             # Split gene and AA change
             parts = gene_aa.split(" ", 1)
@@ -81,12 +83,16 @@ class CBioPortalExternalClient:
                 return CBioPortalVariantData()
 
             # Fetch mutations
-            mutations_data = await self._fetch_mutations(gene_id, mutation_profiles)
+            mutations_data = await self._fetch_mutations(
+                gene_id, mutation_profiles
+            )
             if not mutations_data:
                 return CBioPortalVariantData()
 
             # Filter mutations by AA change
-            matching_mutations = self._filter_mutations_by_aa_change(mutations_data, aa_change)
+            matching_mutations = self._filter_mutations_by_aa_change(
+                mutations_data, aa_change
+            )
             if not matching_mutations:
                 return None
 
@@ -111,7 +117,7 @@ class CBioPortalExternalClient:
         gene_data, gene_error = await self.http_adapter.get(
             f"/genes/{gene}",
             endpoint_key="cbioportal_genes",
-            cache_ttl=3600  # 1 hour
+            cache_ttl=3600,  # 1 hour
         )
 
         if gene_error or not gene_data:
@@ -138,7 +144,7 @@ class CBioPortalExternalClient:
         profiles, prof_error = await self.http_adapter.get(
             "/molecular-profiles",
             endpoint_key="cbioportal_molecular_profiles",
-            cache_ttl=3600  # 1 hour
+            cache_ttl=3600,  # 1 hour
         )
 
         if prof_error or not profiles:
@@ -154,17 +160,24 @@ class CBioPortalExternalClient:
             return []
 
         for p in profiles:
-            if isinstance(p, dict) and p.get("molecularAlterationType") == "MUTATION_EXTENDED":
+            if (
+                isinstance(p, dict)
+                and p.get("molecularAlterationType") == "MUTATION_EXTENDED"
+            ):
                 study_id = p.get("studyId", "").lower()
                 if any(keyword in study_id for keyword in cancer_keywords):
                     mutation_profiles.append(p)
                     if len(mutation_profiles) >= MAX_STUDIES_PER_GENE:
                         break
 
-        logger.info(f"Found {len(mutation_profiles)} relevant mutation profiles")
+        logger.info(
+            f"Found {len(mutation_profiles)} relevant mutation profiles"
+        )
         return mutation_profiles
 
-    async def _fetch_mutations(self, gene_id: int, mutation_profiles: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    async def _fetch_mutations(
+        self, gene_id: int, mutation_profiles: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Fetch mutations for a gene from mutation profiles.
 
         Args:
@@ -184,7 +197,7 @@ class CBioPortalExternalClient:
                 "molecularProfileIds": profile_ids,
             },
             endpoint_key="cbioportal_mutations",
-            cache_ttl=1800  # 30 minutes
+            cache_ttl=1800,  # 30 minutes
         )
 
         if mut_error or not mutations_data:
@@ -196,7 +209,9 @@ class CBioPortalExternalClient:
 
         return mutations_data
 
-    def _filter_mutations_by_aa_change(self, mutations_data: list[dict[str, Any]], aa_change: str) -> list[dict[str, Any]]:
+    def _filter_mutations_by_aa_change(
+        self, mutations_data: list[dict[str, Any]], aa_change: str
+    ) -> list[dict[str, Any]]:
         """Filter mutations by amino acid change.
 
         Args:
@@ -217,7 +232,9 @@ class CBioPortalExternalClient:
         logger.info(f"Found {len(matching_mutations)} matching mutations")
         return matching_mutations
 
-    async def _aggregate_mutation_data(self, matching_mutations: list[dict[str, Any]]) -> CBioPortalVariantData:
+    async def _aggregate_mutation_data(
+        self, matching_mutations: list[dict[str, Any]]
+    ) -> CBioPortalVariantData:
         """Aggregate mutation data into summary statistics.
 
         Args:
@@ -234,7 +251,9 @@ class CBioPortalExternalClient:
         })
 
         # Fetch study metadata in parallel
-        study_cancer_types = await self._fetch_study_metadata_parallel(study_ids)
+        study_cancer_types = await self._fetch_study_metadata_parallel(
+            study_ids
+        )
 
         # Aggregate data
         sample_ids: set[str] = set()
@@ -253,11 +272,15 @@ class CBioPortalExternalClient:
             study_id = mut.get("studyId", "")
             if study_id in study_cancer_types:
                 cancer_type = study_cancer_types[study_id]
-                cancer_type_dist[cancer_type] = cancer_type_dist.get(cancer_type, 0) + 1
+                cancer_type_dist[cancer_type] = (
+                    cancer_type_dist.get(cancer_type, 0) + 1
+                )
 
             # Count mutation types
             mut_type = mut.get("mutationType", "Unknown")
-            mutation_type_dist[mut_type] = mutation_type_dist.get(mut_type, 0) + 1
+            mutation_type_dist[mut_type] = (
+                mutation_type_dist.get(mut_type, 0) + 1
+            )
 
             # Calculate VAF if data available
             tumor_alt = mut.get("tumorAltCount")
@@ -272,7 +295,9 @@ class CBioPortalExternalClient:
 
             # Count sample types
             sample_type = mut.get("sampleType", "Unknown")
-            sample_type_dist[sample_type] = sample_type_dist.get(sample_type, 0) + 1
+            sample_type_dist[sample_type] = (
+                sample_type_dist.get(sample_type, 0) + 1
+            )
 
         # Calculate mean VAF
         mean_vaf = None
@@ -280,7 +305,9 @@ class CBioPortalExternalClient:
             mean_vaf = round(sum(vaf_values) / len(vaf_values), 3)
 
         # Check for hotspots (simplified - just check if it's a common mutation)
-        hotspot_count = len(matching_mutations) if len(matching_mutations) > 10 else 0
+        hotspot_count = (
+            len(matching_mutations) if len(matching_mutations) > 10 else 0
+        )
 
         return CBioPortalVariantData(
             total_cases=len(sample_ids),
@@ -346,7 +373,9 @@ class CBioPortalExternalClient:
             if study_id in self._study_cache:
                 study_data = self._study_cache[study_id]
                 cancer_type = study_data.get("cancerType", {})
-                study_cancer_types[study_id] = cancer_type.get("name", "Unknown")
+                study_cancer_types[study_id] = cancer_type.get(
+                    "name", "Unknown"
+                )
             else:
                 uncached_ids.append(study_id)
 
@@ -358,26 +387,34 @@ class CBioPortalExternalClient:
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for study_id, result in zip(uncached_ids[:10], results, strict=False):
+            for study_id, result in zip(
+                uncached_ids[:10], results, strict=False
+            ):
                 if isinstance(result, Exception):
-                    logger.debug(f"Failed to fetch study {study_id}: {type(result).__name__}")
+                    logger.debug(
+                        f"Failed to fetch study {study_id}: {type(result).__name__}"
+                    )
                     study_cancer_types[study_id] = "Unknown"
                 elif isinstance(result, dict):
                     # Cache the study data
                     self._study_cache[study_id] = result
                     cancer_type = result.get("cancerType", {})
-                    study_cancer_types[study_id] = cancer_type.get("name", "Unknown")
+                    study_cancer_types[study_id] = cancer_type.get(
+                        "name", "Unknown"
+                    )
                 else:
                     study_cancer_types[study_id] = "Unknown"
 
         return study_cancer_types
 
-    async def _fetch_single_study(self, study_id: str) -> dict[str, Any] | None:
+    async def _fetch_single_study(
+        self, study_id: str
+    ) -> dict[str, Any] | None:
         """Fetch metadata for a single study."""
         study_data, error = await self.http_adapter.get(
             f"/studies/{study_id}",
             endpoint_key="cbioportal_studies",
-            cache_ttl=3600  # 1 hour
+            cache_ttl=3600,  # 1 hour
         )
 
         if error or not study_data:

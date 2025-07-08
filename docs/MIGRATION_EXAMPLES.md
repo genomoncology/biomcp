@@ -5,6 +5,7 @@ This guide provides examples of migrating from direct HTTP library usage to the 
 ## Basic GET Request
 
 ### Before (httpx)
+
 ```python
 import httpx
 
@@ -19,6 +20,7 @@ async def get_gene_info(gene_symbol: str) -> dict:
 ```
 
 ### After (Centralized Client)
+
 ```python
 from biomcp import http_client
 
@@ -38,6 +40,7 @@ async def get_gene_info(gene_symbol: str) -> dict | None:
 ## POST Request with JSON Body
 
 ### Before (httpx)
+
 ```python
 async def search_variants(query: dict) -> list:
     async with httpx.AsyncClient() as client:
@@ -51,6 +54,7 @@ async def search_variants(query: dict) -> list:
 ```
 
 ### After (Centralized Client)
+
 ```python
 async def search_variants(query: dict) -> list:
     # Headers can be passed via adapter or request
@@ -69,6 +73,7 @@ async def search_variants(query: dict) -> list:
 ## Retry Logic
 
 ### Before (Manual Retry)
+
 ```python
 import asyncio
 import httpx
@@ -94,6 +99,7 @@ async def fetch_with_retry(url: str, max_retries: int = 3):
 ```
 
 ### After (Built-in Retry)
+
 ```python
 async def fetch_with_retry(url: str):
     # Retry is built into the centralized client
@@ -109,11 +115,12 @@ async def fetch_with_retry(url: str):
 ## Authenticated Requests
 
 ### Before (Direct Headers)
+
 ```python
 class APIClient:
     def __init__(self, api_key: str):
         self.headers = {"Authorization": f"Bearer {api_key}"}
-        
+
     async def get_data(self, endpoint: str):
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -124,6 +131,7 @@ class APIClient:
 ```
 
 ### After (Using Adapter)
+
 ```python
 from biomcp import http_client
 import json
@@ -132,13 +140,13 @@ class APIAdapter:
     def __init__(self, api_key: str):
         self.base_url = "https://api.example.com"
         self.headers = {"Authorization": f"Bearer {api_key}"}
-        
+
     async def get_data(self, endpoint: str):
         # Pass headers through request
         request_data = {
             "_headers": json.dumps(self.headers)
         }
-        
+
         data, error = await http_client.request_api(
             url=f"{self.base_url}/{endpoint}",
             request=request_data,
@@ -150,6 +158,7 @@ class APIAdapter:
 ## Parallel Requests
 
 ### Before (asyncio.gather)
+
 ```python
 async def fetch_multiple_genes(gene_list: list[str]):
     async with httpx.AsyncClient() as client:
@@ -158,7 +167,7 @@ async def fetch_multiple_genes(gene_list: list[str]):
             for gene in gene_list
         ]
         responses = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         results = []
         for resp in responses:
             if isinstance(resp, Exception):
@@ -169,6 +178,7 @@ async def fetch_multiple_genes(gene_list: list[str]):
 ```
 
 ### After (Same Pattern, Better Error Handling)
+
 ```python
 async def fetch_multiple_genes(gene_list: list[str]):
     tasks = [
@@ -179,9 +189,9 @@ async def fetch_multiple_genes(gene_list: list[str]):
         )
         for gene in gene_list
     ]
-    
+
     results = await asyncio.gather(*tasks)
-    
+
     # Process results with consistent error handling
     gene_data = []
     for gene, (data, error) in zip(gene_list, results):
@@ -190,30 +200,32 @@ async def fetch_multiple_genes(gene_list: list[str]):
             gene_data.append(None)
         else:
             gene_data.append(data)
-            
+
     return gene_data
 ```
 
 ## Session Management
 
 ### Before (Reusing Client)
+
 ```python
 class DataFetcher:
     def __init__(self):
         self.client = httpx.AsyncClient(timeout=30.0)
-        
+
     async def fetch_many(self, urls: list[str]):
         results = []
         for url in urls:
             resp = await self.client.get(url)
             results.append(resp.json())
         return results
-        
+
     async def close(self):
         await self.client.aclose()
 ```
 
 ### After (Connection Pooling is Automatic)
+
 ```python
 class DataFetcher:
     async def fetch_many(self, urls: list[str]):
@@ -235,6 +247,7 @@ class DataFetcher:
 ## Error Type Handling
 
 ### Before (Multiple Exception Types)
+
 ```python
 try:
     response = await client.get(url)
@@ -255,6 +268,7 @@ except json.JSONDecodeError:
 ```
 
 ### After (Unified Error Handling)
+
 ```python
 data, error = await http_client.request_api(url, {}, domain="example")
 

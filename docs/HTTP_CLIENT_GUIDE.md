@@ -3,6 +3,7 @@
 ## Overview
 
 BioMCP uses a centralized HTTP client for all external API calls. This provides:
+
 - Consistent error handling and retry logic
 - Request/response caching
 - Rate limiting per domain
@@ -13,6 +14,7 @@ BioMCP uses a centralized HTTP client for all external API calls. This provides:
 ## Migration from Direct HTTP Libraries
 
 ### Before (Direct httpx usage):
+
 ```python
 import httpx
 
@@ -24,6 +26,7 @@ async def fetch_gene(gene: str):
 ```
 
 ### After (Centralized client):
+
 ```python
 from biomcp import http_client
 
@@ -72,13 +75,13 @@ from biomcp.http_client import RequestError
 
 class MyAPIAdapter:
     """Adapter for MyAPI using centralized HTTP client."""
-    
+
     def __init__(self):
         self.base_url = "https://api.example.com"
-        
+
     async def get_resource(self, resource_id: str) -> tuple[dict | None, RequestError | None]:
         """Fetch a resource by ID.
-        
+
         Returns:
             Tuple of (data, error) where one is always None
         """
@@ -132,6 +135,7 @@ The circuit breaker prevents cascading failures:
 - **Half-Open**: Testing if service recovered
 
 Configure thresholds:
+
 ```python
 CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5  # Open after 5 failures
 CIRCUIT_BREAKER_RECOVERY_TIMEOUT = 60  # Try again after 60 seconds
@@ -147,6 +151,7 @@ biomcp run
 ```
 
 In offline mode:
+
 - Only cached responses are returned
 - No external HTTP requests are made
 - Missing cache entries return None with appropriate error
@@ -175,7 +180,7 @@ import asyncio
 
 # Fetch multiple resources concurrently
 tasks = [
-    http_client.request_api(f"/resource/{i}", {}, domain="example") 
+    http_client.request_api(f"/resource/{i}", {}, domain="example")
     for i in range(10)
 ]
 results = await asyncio.gather(*tasks)
@@ -186,12 +191,14 @@ results = await asyncio.gather(*tasks)
 ### Request Metrics
 
 The client tracks metrics per endpoint:
+
 - Request count
 - Error count
 - Cache hit/miss ratio
 - Average response time
 
 Access metrics:
+
 ```python
 from biomcp.http_client import get_metrics
 metrics = get_metrics()

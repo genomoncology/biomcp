@@ -163,16 +163,16 @@ BioMCP connects to 8 external domains across 18 endpoints.
 
 ## Domain Summary
 
-| Domain | Category | Endpoints |
-|--------|----------|-----------|
-| api.biorxiv.org | biomedical_literature | 2 |
-| api.gdc.cancer.gov | variant_databases | 2 |
-| clinicaltrials.gov | clinical_trials | 1 |
-| myvariant.info | variant_databases | 2 |
-| rest.ensembl.org | variant_databases | 1 |
-| www.cbioportal.org | cancer_genomics | 6 |
-| www.ebi.ac.uk | biomedical_literature | 1 |
-| www.ncbi.nlm.nih.gov | biomedical_literature | 3 |
+| Domain               | Category              | Endpoints |
+| -------------------- | --------------------- | --------- |
+| api.biorxiv.org      | biomedical_literature | 2         |
+| api.gdc.cancer.gov   | variant_databases     | 2         |
+| clinicaltrials.gov   | clinical_trials       | 1         |
+| myvariant.info       | variant_databases     | 2         |
+| rest.ensembl.org     | variant_databases     | 1         |
+| www.cbioportal.org   | cancer_genomics       | 6         |
+| www.ebi.ac.uk        | biomedical_literature | 1         |
+| www.ncbi.nlm.nih.gov | biomedical_literature | 3         |
 
 ## Compliance and Privacy
 
@@ -188,5 +188,5 @@ All endpoints accessed by BioMCP:
 For air-gapped or restricted environments, BioMCP supports:
 
 - Offline mode via `BIOMCP_OFFLINE=true` environment variable
-- Custom proxy configuration via standard HTTP(S)_PROXY variables
+- Custom proxy configuration via standard HTTP(S)\_PROXY variables
 - SSL certificate pinning for enhanced security

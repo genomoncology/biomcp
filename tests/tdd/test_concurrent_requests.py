@@ -23,7 +23,7 @@ class TestConcurrentRequests:
                 http_client.request_api(
                     url=f"https://api.example.com/resource/{i}",
                     request={},
-                    domain="example"
+                    domain="example",
                 )
                 for i in range(10)
             ]
@@ -56,9 +56,15 @@ class TestConcurrentRequests:
 
             # Make requests to different domains
             tasks = [
-                http_client.request_api("https://domain1.com/api", {}, domain="domain1"),
-                http_client.request_api("https://domain2.com/api", {}, domain="domain2"),
-                http_client.request_api("https://domain3.com/api", {}, domain="domain3"),
+                http_client.request_api(
+                    "https://domain1.com/api", {}, domain="domain1"
+                ),
+                http_client.request_api(
+                    "https://domain2.com/api", {}, domain="domain2"
+                ),
+                http_client.request_api(
+                    "https://domain3.com/api", {}, domain="domain3"
+                ),
             ]
 
             results = await asyncio.gather(*tasks)
@@ -79,7 +85,7 @@ class TestConcurrentRequests:
                 url="https://api.example.com/data",
                 request={},
                 domain="example",
-                cache_ttl=60
+                cache_ttl=60,
             )
 
             # Reset call count
@@ -91,7 +97,7 @@ class TestConcurrentRequests:
                     url="https://api.example.com/data",
                     request={},
                     domain="example",
-                    cache_ttl=60
+                    cache_ttl=60,
                 )
                 for _ in range(5)
             ]
@@ -118,7 +124,7 @@ class TestConcurrentRequests:
                 http_client.request_api(
                     url=f"https://failing.com/api/{i}",
                     request={},
-                    domain="failing"
+                    domain="failing",
                 )
                 for i in range(10)
             ]
@@ -134,7 +140,7 @@ class TestConcurrentRequests:
             _, error = await http_client.request_api(
                 url="https://failing.com/api/test",
                 request={},
-                domain="failing"
+                domain="failing",
             )
 
             assert error is not None

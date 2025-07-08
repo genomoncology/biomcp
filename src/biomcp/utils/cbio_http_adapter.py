@@ -45,7 +45,7 @@ class CBioHTTPAdapter:
         path: str,
         params: dict[str, Any] | None = None,
         endpoint_key: str = "cbioportal_api",
-        cache_ttl: int = 900  # 15 minutes default
+        cache_ttl: int = 900,  # 15 minutes default
     ) -> tuple[dict[str, Any] | None, RequestError | None]:
         """Make a GET request to cBioPortal API.
 
@@ -73,7 +73,7 @@ class CBioHTTPAdapter:
             domain="cbioportal",  # For rate limiting
             endpoint_key=endpoint_key,
             cache_ttl=cache_ttl,
-            enable_retry=True
+            enable_retry=True,
         )
 
         return result, error
@@ -83,7 +83,7 @@ class CBioHTTPAdapter:
         path: str,
         data: dict[str, Any],
         endpoint_key: str = "cbioportal_api",
-        cache_ttl: int = 0  # No caching for POST by default
+        cache_ttl: int = 0,  # No caching for POST by default
     ) -> tuple[dict[str, Any] | None, RequestError | None]:
         """Make a POST request to cBioPortal API.
 
@@ -109,7 +109,7 @@ class CBioHTTPAdapter:
             domain="cbioportal",
             endpoint_key=endpoint_key,
             cache_ttl=cache_ttl,
-            enable_retry=True
+            enable_retry=True,
         )
 
         return result, error

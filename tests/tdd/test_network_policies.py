@@ -76,7 +76,7 @@ class TestEndpointRegistry:
             description="Test endpoint",
             compliance_notes="Test compliance",
             rate_limit="10 requests/second",
-            authentication="API key required"
+            authentication="API key required",
         )
 
         assert endpoint.domain == "api.example.com"
@@ -133,7 +133,7 @@ class TestEndpointTracking:
                 url="https://www.ncbi.nlm.nih.gov/research/pubtator3-api/search/",
                 request={"text": "BRAF"},
                 endpoint_key="pubtator3_search",
-                cache_ttl=0
+                cache_ttl=0,
             )
 
             assert result == {"data": "test"}
@@ -147,7 +147,7 @@ class TestEndpointTracking:
                 url="https://api.example.com/test",
                 request={"test": "data"},
                 endpoint_key="invalid_endpoint_key",
-                cache_ttl=0
+                cache_ttl=0,
             )
 
     @pytest.mark.asyncio
@@ -160,7 +160,7 @@ class TestEndpointTracking:
             result, error = await request_api(
                 url="https://api.example.com/test",
                 request={"test": "data"},
-                cache_ttl=0
+                cache_ttl=0,
             )
 
             assert result == {"data": "test"}
@@ -172,13 +172,18 @@ class TestHTTPImportChecks:
 
     def test_check_script_exists(self):
         """Test that the check script exists."""
-        script_path = Path(__file__).parent.parent.parent / "scripts" / "check_http_imports.py"
+        script_path = (
+            Path(__file__).parent.parent.parent
+            / "scripts"
+            / "check_http_imports.py"
+        )
         assert script_path.exists()
 
     def test_allowed_files_configured(self):
         """Test that allowed files are properly configured."""
         # Import the script module
         import sys
+
         script_path = Path(__file__).parent.parent.parent / "scripts"
         sys.path.insert(0, str(script_path))
 

@@ -65,8 +65,8 @@ class EndpointRegistry:
                 data_types=[DataType.RESEARCH_ARTICLES],
                 description="PubTator3 API for searching biomedical literature with entity annotations",
                 compliance_notes="Public NIH/NCBI service, no PII transmitted",
-                rate_limit="20 requests/second"
-            )
+                rate_limit="20 requests/second",
+            ),
         )
 
         self.register(
@@ -77,8 +77,8 @@ class EndpointRegistry:
                 data_types=[DataType.RESEARCH_ARTICLES],
                 description="PubTator3 API for fetching full article annotations in BioC-JSON format",
                 compliance_notes="Public NIH/NCBI service, no PII transmitted",
-                rate_limit="20 requests/second"
-            )
+                rate_limit="20 requests/second",
+            ),
         )
 
         self.register(
@@ -89,8 +89,8 @@ class EndpointRegistry:
                 data_types=[DataType.GENE_ANNOTATIONS],
                 description="PubTator3 API for entity name autocomplete suggestions",
                 compliance_notes="Public NIH/NCBI service, no PII transmitted",
-                rate_limit="20 requests/second"
-            )
+                rate_limit="20 requests/second",
+            ),
         )
 
         # ClinicalTrials.gov
@@ -102,8 +102,8 @@ class EndpointRegistry:
                 data_types=[DataType.CLINICAL_TRIAL_DATA],
                 description="ClinicalTrials.gov API v2 for searching clinical trials",
                 compliance_notes="Public NIH service, may contain trial participant criteria",
-                rate_limit="10 requests/second"
-            )
+                rate_limit="10 requests/second",
+            ),
         )
 
         # MyVariant.info
@@ -115,8 +115,8 @@ class EndpointRegistry:
                 data_types=[DataType.GENETIC_VARIANTS],
                 description="MyVariant.info API for querying genetic variants",
                 compliance_notes="Public service aggregating variant databases, no patient data",
-                rate_limit="1000 requests/hour (anonymous)"
-            )
+                rate_limit="1000 requests/hour (anonymous)",
+            ),
         )
 
         self.register(
@@ -127,8 +127,8 @@ class EndpointRegistry:
                 data_types=[DataType.GENETIC_VARIANTS],
                 description="MyVariant.info API for fetching specific variant details",
                 compliance_notes="Public service aggregating variant databases, no patient data",
-                rate_limit="1000 requests/hour (anonymous)"
-            )
+                rate_limit="1000 requests/hour (anonymous)",
+            ),
         )
 
         # Preprint servers
@@ -140,8 +140,8 @@ class EndpointRegistry:
                 data_types=[DataType.RESEARCH_ARTICLES],
                 description="bioRxiv API for searching biology preprints",
                 compliance_notes="Public preprint server, no PII transmitted",
-                rate_limit="Not specified"
-            )
+                rate_limit="Not specified",
+            ),
         )
 
         self.register(
@@ -152,8 +152,8 @@ class EndpointRegistry:
                 data_types=[DataType.RESEARCH_ARTICLES],
                 description="medRxiv API for searching medical preprints",
                 compliance_notes="Public preprint server, no PII transmitted",
-                rate_limit="Not specified"
-            )
+                rate_limit="Not specified",
+            ),
         )
 
         self.register(
@@ -164,8 +164,8 @@ class EndpointRegistry:
                 data_types=[DataType.RESEARCH_ARTICLES],
                 description="Europe PMC REST API for searching biomedical literature",
                 compliance_notes="Public EMBL-EBI service, no PII transmitted",
-                rate_limit="Not specified"
-            )
+                rate_limit="Not specified",
+            ),
         )
 
         # External variant sources
@@ -177,8 +177,8 @@ class EndpointRegistry:
                 data_types=[DataType.CANCER_MUTATIONS],
                 description="NCI GDC API for somatic mutations",
                 compliance_notes="Public NCI service, aggregate cancer genomics data",
-                rate_limit="Not specified"
-            )
+                rate_limit="Not specified",
+            ),
         )
 
         self.register(
@@ -189,8 +189,8 @@ class EndpointRegistry:
                 data_types=[DataType.CANCER_MUTATIONS],
                 description="NCI GDC API for mutation occurrences in cancer samples",
                 compliance_notes="Public NCI service, aggregate cancer genomics data",
-                rate_limit="Not specified"
-            )
+                rate_limit="Not specified",
+            ),
         )
 
         self.register(
@@ -201,8 +201,8 @@ class EndpointRegistry:
                 data_types=[DataType.GENETIC_VARIANTS],
                 description="Ensembl REST API for human genetic variation data",
                 compliance_notes="Public EMBL-EBI service, population genetics data",
-                rate_limit="15 requests/second"
-            )
+                rate_limit="15 requests/second",
+            ),
         )
 
         self.register(
@@ -210,12 +210,15 @@ class EndpointRegistry:
             EndpointInfo(
                 url="https://www.cbioportal.org/api",
                 category=EndpointCategory.CANCER_GENOMICS,
-                data_types=[DataType.CANCER_MUTATIONS, DataType.CLINICAL_TRIAL_DATA],
+                data_types=[
+                    DataType.CANCER_MUTATIONS,
+                    DataType.CLINICAL_TRIAL_DATA,
+                ],
                 description="cBioPortal API for cancer genomics data",
                 compliance_notes="Public MSKCC/Dana-Farber service, aggregate cancer genomics",
                 rate_limit="5 requests/second",
-                authentication="Optional API token for increased rate limits"
-            )
+                authentication="Optional API token for increased rate limits",
+            ),
         )
 
         # Specific cBioPortal endpoints
@@ -227,8 +230,8 @@ class EndpointRegistry:
                 data_types=[DataType.GENE_ANNOTATIONS],
                 description="cBioPortal API for gene information",
                 compliance_notes="Public MSKCC/Dana-Farber service, gene metadata",
-                rate_limit="5 requests/second"
-            )
+                rate_limit="5 requests/second",
+            ),
         )
 
         self.register(
@@ -239,8 +242,8 @@ class EndpointRegistry:
                 data_types=[DataType.CANCER_MUTATIONS],
                 description="cBioPortal API for cancer type hierarchy",
                 compliance_notes="Public MSKCC/Dana-Farber service, cancer type metadata",
-                rate_limit="5 requests/second"
-            )
+                rate_limit="5 requests/second",
+            ),
         )
 
         self.register(
@@ -251,8 +254,8 @@ class EndpointRegistry:
                 data_types=[DataType.CANCER_MUTATIONS],
                 description="cBioPortal API for molecular profiles",
                 compliance_notes="Public MSKCC/Dana-Farber service, study metadata",
-                rate_limit="5 requests/second"
-            )
+                rate_limit="5 requests/second",
+            ),
         )
 
         self.register(
@@ -263,8 +266,8 @@ class EndpointRegistry:
                 data_types=[DataType.CANCER_MUTATIONS],
                 description="cBioPortal API for mutation data",
                 compliance_notes="Public MSKCC/Dana-Farber service, aggregate mutation data",
-                rate_limit="5 requests/second"
-            )
+                rate_limit="5 requests/second",
+            ),
         )
 
         self.register(
@@ -272,11 +275,14 @@ class EndpointRegistry:
             EndpointInfo(
                 url="https://www.cbioportal.org/api/studies",
                 category=EndpointCategory.CANCER_GENOMICS,
-                data_types=[DataType.CLINICAL_TRIAL_DATA, DataType.CANCER_MUTATIONS],
+                data_types=[
+                    DataType.CLINICAL_TRIAL_DATA,
+                    DataType.CANCER_MUTATIONS,
+                ],
                 description="cBioPortal API for cancer studies",
                 compliance_notes="Public MSKCC/Dana-Farber service, study metadata",
-                rate_limit="5 requests/second"
-            )
+                rate_limit="5 requests/second",
+            ),
         )
 
     def register(self, key: str, endpoint: EndpointInfo):
@@ -296,7 +302,9 @@ class EndpointRegistry:
         """
         return self._endpoints.copy()
 
-    def get_endpoints_by_category(self, category: EndpointCategory) -> dict[str, EndpointInfo]:
+    def get_endpoints_by_category(
+        self, category: EndpointCategory
+    ) -> dict[str, EndpointInfo]:
         """Get endpoints filtered by category.
 
         Args:
@@ -331,7 +339,7 @@ class EndpointRegistry:
             f"BioMCP connects to {len(self.get_unique_domains())} external domains across {len(self._endpoints)} endpoints.",
             "",
             "## Endpoints by Category",
-            ""
+            "",
         ]
 
         # Group by category
@@ -348,14 +356,22 @@ class EndpointRegistry:
                 lines.append("")
                 lines.append(f"- **URL**: `{info.url}`")
                 lines.append(f"- **Description**: {info.description}")
-                lines.append(f"- **Data Types**: {', '.join(dt.value for dt in info.data_types)}")
-                lines.append(f"- **Rate Limit**: {info.rate_limit or 'Not specified'}")
+                lines.append(
+                    f"- **Data Types**: {', '.join(dt.value for dt in info.data_types)}"
+                )
+                lines.append(
+                    f"- **Rate Limit**: {info.rate_limit or 'Not specified'}"
+                )
 
                 if info.authentication:
-                    lines.append(f"- **Authentication**: {info.authentication}")
+                    lines.append(
+                        f"- **Authentication**: {info.authentication}"
+                    )
 
                 if info.compliance_notes:
-                    lines.append(f"- **Compliance Notes**: {info.compliance_notes}")
+                    lines.append(
+                        f"- **Compliance Notes**: {info.compliance_notes}"
+                    )
 
                 lines.append("")
 
@@ -363,8 +379,8 @@ class EndpointRegistry:
         lines.extend([
             "## Domain Summary",
             "",
-            "| Domain | Category | Endpoints |",
-            "|--------|----------|-----------|"
+            "| Domain               | Category              | Endpoints |",
+            "| -------------------- | --------------------- | --------- |",
         ])
 
         domain_stats: dict[str, dict[str, Any]] = {}
@@ -373,12 +389,16 @@ class EndpointRegistry:
             if domain not in domain_stats:
                 domain_stats[domain] = {
                     "category": info.category.value,
-                    "count": 0
+                    "count": 0,
                 }
-            domain_stats[domain]["count"] = int(domain_stats[domain]["count"]) + 1
+            domain_stats[domain]["count"] = (
+                int(domain_stats[domain]["count"]) + 1
+            )
 
         for domain, stats in sorted(domain_stats.items()):
-            lines.append(f"| {domain} | {stats['category']} | {stats['count']} |")
+            lines.append(
+                f"| {domain} | {stats['category']} | {stats['count']} |"
+            )
 
         lines.extend([
             "",
@@ -396,9 +416,9 @@ class EndpointRegistry:
             "For air-gapped or restricted environments, BioMCP supports:",
             "",
             "- Offline mode via `BIOMCP_OFFLINE=true` environment variable",
-            "- Custom proxy configuration via standard HTTP(S)_PROXY variables",
+            "- Custom proxy configuration via standard HTTP(S)\\_PROXY variables",
             "- SSL certificate pinning for enhanced security",
-            ""
+            "",
         ])
 
         return "\n".join(lines)
@@ -406,7 +426,10 @@ class EndpointRegistry:
     def save_markdown_report(self, output_path: Path | None = None):
         """Save markdown report to file."""
         if output_path is None:
-            output_path = Path(__file__).parent.parent.parent / "THIRD_PARTY_ENDPOINTS.md"
+            output_path = (
+                Path(__file__).parent.parent.parent
+                / "THIRD_PARTY_ENDPOINTS.md"
+            )
 
         output_path.write_text(self.generate_markdown_report())
         return output_path
