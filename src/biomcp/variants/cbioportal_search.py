@@ -4,14 +4,12 @@ import asyncio
 import logging
 from typing import Any
 
-import httpx
 from pydantic import BaseModel, Field
 
+from ..utils.cbio_http_adapter import CBioHTTPAdapter
 from ..utils.gene_validator import is_valid_gene_symbol, sanitize_gene_symbol
-from ..utils.rate_limiter import cbioportal_limiter
 from ..utils.request_cache import request_cache
 from .cancer_types import get_cancer_keywords
-from .external import CBIO_BASE_URL, CBIO_TOKEN
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +45,7 @@ class CBioPortalSearchClient:
     """Client for cBioPortal search operations."""
 
     def __init__(self):
-        self.base_url = CBIO_BASE_URL
-        self.headers = {}
-        if CBIO_TOKEN:
-            if not CBIO_TOKEN.startswith("Bearer "):
-                self.headers["Authorization"] = f"Bearer {CBIO_TOKEN}"
-            else:
-                self.headers["Authorization"] = CBIO_TOKEN
+        self.http_adapter = CBioHTTPAdapter()
 
     @request_cache(ttl=900)  # Cache for 15 minutes
     async def get_gene_search_summary(
@@ -76,82 +68,73 @@ class CBioPortalSearchClient:
         gene = sanitize_gene_symbol(gene)
 
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                # Apply rate limiting
-                await cbioportal_limiter.wait_if_needed("cbioportal")
+            # Get gene info first
+            gene_data, error = await self.http_adapter.get(
+                f"/genes/{gene}", endpoint_key="cbioportal_genes"
+            )
+            if error or not gene_data:
+                logger.warning(f"Gene {gene} not found in cBioPortal")
+                return None
 
-                # Get gene info first
-                gene_resp = await client.get(
-                    f"{self.base_url}/genes/{gene}", headers=self.headers
-                )
-                if gene_resp.status_code != 200:
-                    logger.warning(f"Gene {gene} not found in cBioPortal")
-                    return None
+            gene_id = gene_data.get("entrezGeneId")
 
-                gene_data = gene_resp.json()
-                gene_id = gene_data.get("entrezGeneId")
+            if not gene_id:
+                return None
 
-                if not gene_id:
-                    return None
+            # Get cancer type keywords for this gene
+            cancer_keywords = get_cancer_keywords(gene)
 
-                # Get cancer type keywords for this gene
-                cancer_keywords = get_cancer_keywords(gene)
+            # Get relevant molecular profiles in parallel with cancer types
+            profiles_task = self._get_relevant_profiles(gene, cancer_keywords)
+            cancer_types_task = self._get_cancer_types()
 
-                # Get relevant molecular profiles in parallel with cancer types
-                profiles_task = self._get_relevant_profiles(
-                    client, gene, cancer_keywords
-                )
-                cancer_types_task = self._get_cancer_types(client)
+            profiles, cancer_types = await asyncio.gather(
+                profiles_task, cancer_types_task
+            )
 
-                profiles, cancer_types = await asyncio.gather(
-                    profiles_task, cancer_types_task
-                )
+            if not profiles:
+                logger.info(f"No relevant profiles found for {gene}")
+                return None
 
-                if not profiles:
-                    logger.info(f"No relevant profiles found for {gene}")
-                    return None
+            # Query mutations from top studies
+            selected_profiles = profiles[:max_studies]
+            mutation_summary = await self._get_mutation_summary(
+                gene_id, selected_profiles, cancer_types
+            )
 
-                # Query mutations from top studies
-                selected_profiles = profiles[:max_studies]
-                mutation_summary = await self._get_mutation_summary(
-                    client, gene_id, selected_profiles, cancer_types
-                )
-
-                # Build summary
-                summary = CBioPortalSearchSummary(
-                    gene=gene,
-                    total_mutations=mutation_summary.get("total_mutations", 0),
-                    total_samples_tested=mutation_summary.get(
-                        "total_samples", 0
+            # Build summary
+            summary = CBioPortalSearchSummary(
+                gene=gene,
+                total_mutations=mutation_summary.get("total_mutations", 0),
+                total_samples_tested=mutation_summary.get("total_samples", 0),
+                mutation_frequency=mutation_summary.get("frequency", 0.0),
+                hotspots=mutation_summary.get("hotspots", []),
+                cancer_distribution=mutation_summary.get(
+                    "cancer_distribution", {}
+                ),
+                study_coverage={
+                    "total_studies": len(profiles),
+                    "queried_studies": len(selected_profiles),
+                    "studies_with_data": mutation_summary.get(
+                        "studies_with_data", 0
                     ),
-                    mutation_frequency=mutation_summary.get("frequency", 0.0),
-                    hotspots=mutation_summary.get("hotspots", []),
-                    cancer_distribution=mutation_summary.get(
-                        "cancer_distribution", {}
-                    ),
-                    study_coverage={
-                        "total_studies": len(profiles),
-                        "queried_studies": len(selected_profiles),
-                        "studies_with_data": mutation_summary.get(
-                            "studies_with_data", 0
-                        ),
-                    },
-                    top_studies=[
-                        p.get("studyId", "")
-                        for p in selected_profiles
-                        if p.get("studyId")
-                    ][:5],
-                )
+                },
+                top_studies=[
+                    p.get("studyId", "")
+                    for p in selected_profiles
+                    if p.get("studyId")
+                ][:5],
+            )
 
-                return summary
+            return summary
 
-        except httpx.TimeoutException:
+        except TimeoutError:
             logger.error(
                 f"cBioPortal API timeout for gene {gene}. "
                 "The API may be slow or unavailable. Try again later."
             )
             return None
-        except httpx.NetworkError as e:
+        except ConnectionError as e:
             logger.error(
                 f"Network error accessing cBioPortal for gene {gene}: {e}. "
                 "Check your internet connection."
@@ -165,19 +148,18 @@ class CBioPortalSearchClient:
             )
             return None
 
-    async def _get_cancer_types(
-        self, client: httpx.AsyncClient
-    ) -> dict[str, dict[str, Any]]:
+    async def _get_cancer_types(self) -> dict[str, dict[str, Any]]:
         """Get cancer type hierarchy (cached)."""
         if _cancer_type_cache:
             return _cancer_type_cache
 
         try:
-            resp = await client.get(
-                f"{self.base_url}/cancer-types", headers=self.headers
+            cancer_types, error = await self.http_adapter.get(
+                "/cancer-types",
+                endpoint_key="cbioportal_cancer_types",
+                cache_ttl=86400,  # Cache for 24 hours
             )
-            if resp.status_code == 200:
-                cancer_types = resp.json()
+            if not error and cancer_types:
                 # Build lookup by ID
                 for ct in cancer_types:
                     ct_id = ct.get("cancerTypeId")
@@ -191,24 +173,21 @@ class CBioPortalSearchClient:
 
     async def _get_relevant_profiles(
         self,
-        client: httpx.AsyncClient,
         gene: str,
         cancer_keywords: list[str],
     ) -> list[dict[str, Any]]:
         """Get molecular profiles relevant to the gene."""
         try:
             # Get all mutation profiles
-            await cbioportal_limiter.wait_if_needed("cbioportal")
-            resp = await client.get(
-                f"{self.base_url}/molecular-profiles",
+            all_profiles, error = await self.http_adapter.get(
+                "/molecular-profiles",
                 params={"molecularAlterationType": "MUTATION_EXTENDED"},
-                headers=self.headers,
+                endpoint_key="cbioportal_molecular_profiles",
+                cache_ttl=3600,  # Cache for 1 hour
             )
 
-            if resp.status_code != 200:
+            if error or not all_profiles:
                 return []
-
-            all_profiles = resp.json()
 
             # Filter by cancer keywords
             relevant_profiles = []
@@ -245,7 +224,6 @@ class CBioPortalSearchClient:
 
     async def _get_mutation_summary(
         self,
-        client: httpx.AsyncClient,
         gene_id: int,
         profiles: list[dict[str, Any]],
         cancer_types: dict[str, dict[str, Any]],
@@ -258,7 +236,7 @@ class CBioPortalSearchClient:
             study_id = profile.get("studyId")
             if profile_id and study_id:
                 task = self._get_profile_mutations(
-                    client, gene_id, profile_id, study_id
+                    gene_id, profile_id, study_id
                 )
                 mutation_tasks.append((task, study_id))
 
@@ -277,7 +255,6 @@ class CBioPortalSearchClient:
             list(zip(results, [t[1] for t in mutation_tasks], strict=False)),
             cancer_types,
             self,
-            client,
         )
 
         # Calculate frequency
@@ -303,7 +280,6 @@ class CBioPortalSearchClient:
 
     async def _get_profile_mutations(
         self,
-        client: httpx.AsyncClient,
         gene_id: int,
         profile_id: str,
         study_id: str,
@@ -311,32 +287,29 @@ class CBioPortalSearchClient:
         """Get mutations for a gene in a specific profile."""
         try:
             # Get sample count for the study
-            samples_resp = await client.get(
-                f"{self.base_url}/studies/{study_id}/samples",
+            samples, samples_error = await self.http_adapter.get(
+                f"/studies/{study_id}/samples",
                 params={"projection": "SUMMARY"},
-                headers=self.headers,
+                endpoint_key="cbioportal_studies",
+                cache_ttl=3600,  # Cache for 1 hour
             )
 
-            sample_count = (
-                len(samples_resp.json())
-                if samples_resp.status_code == 200
-                else 0
-            )
+            sample_count = len(samples) if samples and not samples_error else 0
 
             # Get mutations
-            mut_resp = await client.get(
-                f"{self.base_url}/molecular-profiles/{profile_id}/mutations",
+            mutations, mut_error = await self.http_adapter.get(
+                f"/molecular-profiles/{profile_id}/mutations",
                 params={
                     "sampleListId": f"{study_id}_all",
                     "geneIdType": "ENTREZ_GENE_ID",
                     "geneIds": str(gene_id),
                     "projection": "SUMMARY",
                 },
-                headers=self.headers,
+                endpoint_key="cbioportal_mutations",
+                cache_ttl=900,  # Cache for 15 minutes
             )
 
-            if mut_resp.status_code == 200:
-                mutations = mut_resp.json()
+            if not mut_error and mutations:
                 return {"mutations": mutations, "sample_count": sample_count}
 
         except Exception as e:
@@ -348,17 +321,17 @@ class CBioPortalSearchClient:
 
     async def _get_study_cancer_type(
         self,
-        client: httpx.AsyncClient,
         study_id: str,
         cancer_types: dict[str, dict[str, Any]],
     ) -> str:
         """Get cancer type name for a study."""
         try:
-            resp = await client.get(
-                f"{self.base_url}/studies/{study_id}", headers=self.headers
+            study, error = await self.http_adapter.get(
+                f"/studies/{study_id}",
+                endpoint_key="cbioportal_studies",
+                cache_ttl=3600,  # Cache for 1 hour
             )
-            if resp.status_code == 200:
-                study = resp.json()
+            if not error and study:
                 cancer_type_id = study.get("cancerTypeId")
                 if cancer_type_id and cancer_type_id in cancer_types:
                     return cancer_types[cancer_type_id].get("name", "Unknown")

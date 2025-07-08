@@ -37,6 +37,11 @@ nav:
       - AI Assisted Clinical Trial Search: blog/ai-assisted-clinical-trial-search-analysis.md
       - Deep Researcher Persona: blog/researcher-persona-resource.md
       - What is BioMCP?: blog/what-is-biomcp.md
+  - Developer Guides:
+      - Error Handling: ERROR_HANDLING.md
+      - HTTP Client Guide: HTTP_CLIENT_GUIDE.md
+      - Integration Testing: INTEGRATION_TESTING.md
+      - Migration Examples: MIGRATION_EXAMPLES.md
   - Policies:
       - Privacy Policy: policies/biomcp-privacy.md
       - Security Policy: policies/biomcp-security.md

@@ -2,8 +2,8 @@
 
 import pytest
 
+from biomcp.variants.cbio_external_client import CBioPortalExternalClient
 from biomcp.variants.external import (
-    CBioPortalClient,
     ExternalVariantAggregator,
     TCGAClient,
     ThousandGenomesClient,
@@ -137,7 +137,7 @@ class TestCBioPortalIntegration:
     @pytest.mark.integration
     async def test_braf_v600e_variant(self):
         """Test fetching BRAF V600E data from cBioPortal."""
-        client = CBioPortalClient()
+        client = CBioPortalExternalClient()
 
         result = await client.get_variant_data("BRAF V600E")
 
@@ -170,7 +170,7 @@ class TestCBioPortalIntegration:
     @pytest.mark.integration
     async def test_kras_g12d_variant(self):
         """Test fetching KRAS G12D data from cBioPortal."""
-        client = CBioPortalClient()
+        client = CBioPortalExternalClient()
 
         result = await client.get_variant_data("KRAS G12D")
 
@@ -186,7 +186,7 @@ class TestCBioPortalIntegration:
     @pytest.mark.integration
     async def test_invalid_variant(self):
         """Test cBioPortal response for invalid variant."""
-        client = CBioPortalClient()
+        client = CBioPortalExternalClient()
 
         # Invalid gene name
         result = await client.get_variant_data("FAKEGENE V600E")

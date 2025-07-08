@@ -55,6 +55,7 @@ dev = [
     "assertpy>=1.1",
     "twine>=4.0.0",
     "pandas>=2.0.0",  # Used for mocking AlphaGenome responses in tests
+    "PyYAML>=6.0.0",  # Used for mkdocs.yml parsing in scripts
 ]
 
 [project.optional-dependencies]
@@ -200,8 +201,9 @@ exclude = [
   ".direnv",
   "tests",
   ".git",
-    "build",
-    "dist",
+  "build",
+  "dist",
+  "scripts",
 ]
 
 [tool.deptry.per_rule_ignores]

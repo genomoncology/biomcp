@@ -4,9 +4,11 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from biomcp.variants.external import (
-    CBioPortalClient,
+from biomcp.variants.cbio_external_client import (
+    CBioPortalExternalClient,
     CBioPortalVariantData,
+)
+from biomcp.variants.external import (
     EnhancedVariantAnnotation,
     ExternalVariantAggregator,
     TCGAClient,
@@ -143,14 +145,14 @@ class TestThousandGenomesClient:
         assert "OTHER" not in str(result)
 
 
-class TestCBioPortalClient:
+class TestCBioPortalExternalClient:
     """Tests for cBioPortal client."""
 
     @pytest.mark.asyncio
     @pytest.mark.integration
     async def test_get_variant_data_success(self):
         """Test successful cBioPortal variant data retrieval using real API."""
-        client = CBioPortalClient()
+        client = CBioPortalExternalClient()
 
         # Test with a known variant
         result = await client.get_variant_data("BRAF V600E")
@@ -179,7 +181,7 @@ class TestCBioPortalClient:
     @pytest.mark.integration
     async def test_get_variant_data_not_found(self):
         """Test cBioPortal variant data when not found using real API."""
-        client = CBioPortalClient()
+        client = CBioPortalExternalClient()
 
         # Test with a variant that's extremely rare or doesn't exist
         result = await client.get_variant_data("BRAF X999Z")
@@ -191,7 +193,7 @@ class TestCBioPortalClient:
     @pytest.mark.integration
     async def test_get_variant_data_invalid_format(self):
         """Test cBioPortal with invalid gene/AA format."""
-        client = CBioPortalClient()
+        client = CBioPortalExternalClient()
 
         result = await client.get_variant_data("InvalidFormat")
 
@@ -201,7 +203,7 @@ class TestCBioPortalClient:
     @pytest.mark.integration
     async def test_get_variant_data_gene_not_found(self):
         """Test cBioPortal when gene is not found."""
-        client = CBioPortalClient()
+        client = CBioPortalExternalClient()
 
         # Test with a non-existent gene
         result = await client.get_variant_data("FAKEGENE123 V600E")

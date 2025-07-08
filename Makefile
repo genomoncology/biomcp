@@ -50,12 +50,21 @@ publish: build ## Publish a release to PyPI.
 	@uvx twine upload -r pypi dist/*
 
 .PHONY: docs-test
-docs-test: ## Test if documentation can be built without warnings or errors
+docs-test: check-docs ## Test if documentation can be built without warnings or errors
 	@uv run mkdocs build -s
 
+.PHONY: check-docs
+check-docs: ## Check that all docs are in mkdocs.yml
+	@uv run python scripts/check_docs_in_mkdocs.py
+
 .PHONY: docs
-docs: ## Build and serve the documentation
+docs: update-endpoints ## Build and serve the documentation
 	@uv run mkdocs serve
+
+.PHONY: update-endpoints
+update-endpoints: ## Update THIRD_PARTY_ENDPOINTS.md from endpoint registry
+	@echo "🚀 Updating THIRD_PARTY_ENDPOINTS.md"
+	@uv run python scripts/generate_endpoints_doc.py
 
 .PHONY: help
 help:

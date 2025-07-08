@@ -13,7 +13,6 @@ async def process_mutation_results(
     mutation_results: list[tuple[Any, str]],
     cancer_types_lookup: dict[str, dict[str, Any]],
     client: Any,
-    http_client: Any,
 ) -> dict[str, Any]:
     """Process mutation results from multiple studies.
 
@@ -51,7 +50,7 @@ async def process_mutation_results(
 
                 # Process mutations for hotspots and cancer types
                 study_cancer_type = await client._get_study_cancer_type(
-                    http_client, study_id, cancer_types_lookup
+                    study_id, cancer_types_lookup
                 )
                 _update_hotspot_counts(
                     mutations, hotspot_counts, study_cancer_type

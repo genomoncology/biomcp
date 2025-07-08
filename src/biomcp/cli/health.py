@@ -8,7 +8,6 @@ import platform
 import socket
 from typing import Any
 
-import httpx
 import typer
 from rich.console import Console
 from rich.panel import Panel
@@ -168,8 +167,15 @@ def check_python_environment() -> dict:
         "python_version": platform.python_version(),
         "platform": platform.platform(),
         "system": platform.system(),
-        "httpx_version": httpx.__version__,
     }
+
+    # Check for httpx version without importing it
+    try:
+        import importlib.metadata
+
+        env_info["httpx_version"] = importlib.metadata.version("httpx")
+    except (ImportError, importlib.metadata.PackageNotFoundError):
+        env_info["httpx_version"] = "Unknown"
 
     if PSUTIL_AVAILABLE:
         env_info["psutil_version"] = psutil.__version__

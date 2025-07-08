@@ -16,6 +16,28 @@ repos:
         args: [--exit-non-zero-on-fix]
       - id: ruff-format
 
+  - repo: local
+    hooks:
+      - id: update-endpoints-doc
+        name: Update THIRD_PARTY_ENDPOINTS.md
+        entry: uv run python scripts/generate_endpoints_doc.py
+        language: system
+        pass_filenames: false
+        files: 'src/biomcp/utils/endpoint_registry\.py$'
+      - id: check-http-imports
+        name: Check for direct HTTP library imports
+        entry: uv run python scripts/check_http_imports.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: '\.py$'
+      - id: check-docs-in-mkdocs
+        name: Check documentation files are in mkdocs.yml
+        entry: uv run python scripts/check_docs_in_mkdocs.py
+        language: system
+        pass_filenames: false
+        files: '^docs/.*\.md$|^mkdocs\.yml$'
+
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: "v3.0.3"
     hooks:

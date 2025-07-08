@@ -295,6 +295,14 @@ Learn more: [GenomOncology](https://genomoncology.com/)
 
 For comprehensive documentation, visit [https://biomcp.org](https://biomcp.org)
 
+### Developer Guides
+
+- [HTTP Client Guide](./docs/HTTP_CLIENT_GUIDE.md) - Using the centralized HTTP client
+- [Migration Examples](./docs/MIGRATION_EXAMPLES.md) - Migrating from direct HTTP usage
+- [Error Handling Guide](./docs/ERROR_HANDLING.md) - Comprehensive error handling patterns
+- [Integration Testing Guide](./docs/INTEGRATION_TESTING.md) - Best practices for reliable integration tests
+- [Third-Party Endpoints](./THIRD_PARTY_ENDPOINTS.md) - Complete list of external APIs used
+
 ## BioMCP Examples Repo
 
 Looking to see BioMCP in action?

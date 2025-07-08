@@ -31,6 +31,7 @@ from .retry import (
     is_retryable_status,
     with_retry,
 )
+from .utils.endpoint_registry import get_registry
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -87,6 +88,7 @@ async def call_http(
     params: dict,
     verify: ssl.SSLContext | str | bool = True,
     retry_config: RetryConfig | None = None,
+    headers: dict[str, str] | None = None,
 ) -> tuple[int, str]:
     """Make HTTP request with optional retry logic.
 
@@ -121,7 +123,9 @@ async def call_http(
             async with Timer(
                 "http_request", tags={"method": method, "host": host}
             ):
-                return await execute_http_request(method, url, params, verify)
+                return await execute_http_request(
+                    method, url, params, verify, headers
+                )
 
         status, text = await _execute_with_breaker()
 
@@ -146,6 +150,85 @@ async def call_http(
         return await _make_request()
 
 
+def _handle_offline_mode(
+    url: str,
+    method: str,
+    request: BaseModel | dict,
+    cache_ttl: int,
+    response_model_type: type[T] | None,
+) -> tuple[T | None, RequestError | None] | None:
+    """Handle offline mode logic. Returns None if not in offline mode."""
+    if os.getenv("BIOMCP_OFFLINE", "").lower() not in ("true", "1", "yes"):
+        return None
+
+    # In offline mode, only return cached responses
+    if cache_ttl > 0:
+        cache_key = generate_cache_key(
+            method,
+            url,
+            request
+            if isinstance(request, dict)
+            else request.model_dump(exclude_none=True, by_alias=True),
+        )
+        cached_content = get_cached_response(cache_key)
+        if cached_content:
+            return parse_response(200, cached_content, response_model_type)
+
+    return None, RequestError(
+        code=503,
+        message=f"Offline mode enabled (BIOMCP_OFFLINE=true). Cannot fetch from {url}",
+    )
+
+
+def _validate_endpoint(endpoint_key: str | None) -> None:
+    """Validate endpoint key if provided."""
+    if endpoint_key:
+        registry = get_registry()
+        if endpoint_key not in registry.get_all_endpoints():
+            raise ValueError(
+                f"Unknown endpoint key: {endpoint_key}. Please register in endpoint_registry.py"
+            )
+
+
+def _prepare_request_params(
+    request: BaseModel | dict,
+) -> tuple[dict, dict | None]:
+    """Convert request to params dict and extract headers."""
+    if isinstance(request, BaseModel):
+        params = request.model_dump(exclude_none=True, by_alias=True)
+    else:
+        params = request.copy() if isinstance(request, dict) else request
+
+    # Extract headers if present
+    headers = None
+    if isinstance(params, dict) and "_headers" in params:
+        try:
+            import json
+
+            headers = json.loads(params.pop("_headers"))
+        except (json.JSONDecodeError, TypeError):
+            pass  # Ignore invalid headers
+
+    return params, headers
+
+
+def _get_retry_config(
+    enable_retry: bool, domain: str | None
+) -> RetryConfig | None:
+    """Get retry configuration based on settings."""
+    if not enable_retry:
+        return None
+
+    # Use more aggressive retry for certain domains
+    if domain in ["clinicaltrials", "pubmed", "myvariant"]:
+        return RetryConfig(
+            max_attempts=AGGRESSIVE_MAX_RETRY_ATTEMPTS,
+            initial_delay=AGGRESSIVE_INITIAL_RETRY_DELAY,
+            max_delay=AGGRESSIVE_MAX_RETRY_DELAY,
+        )
+    return RetryConfig()  # Default settings
+
+
 async def request_api(
     url: str,
     request: BaseModel | dict,
@@ -155,41 +238,41 @@ async def request_api(
     tls_version: TLSVersion | None = None,
     domain: str | None = None,
     enable_retry: bool = True,
+    endpoint_key: str | None = None,
 ) -> tuple[T | None, RequestError | None]:
+    # Handle offline mode
+    offline_result = _handle_offline_mode(
+        url, method, request, cache_ttl, response_model_type
+    )
+    if offline_result is not None:
+        return offline_result
+
+    # Validate endpoint
+    _validate_endpoint(endpoint_key)
+
     # Apply rate limiting if domain is specified
     if domain:
         async with domain_limiter.limit(domain):
             pass  # Rate limit acquired
 
+    # Prepare request
     verify = get_ssl_context(tls_version) if tls_version else True
-
-    # Convert request to params dic
-    if isinstance(request, BaseModel):
-        params = request.model_dump(exclude_none=True, by_alias=True)
-    else:
-        params = request
-
-    # Configure retry logic if enabled
-    retry_config = None
-    if enable_retry:
-        # Use more aggressive retry for certain domains
-        if domain in ["clinicaltrials", "pubmed", "myvariant"]:
-            retry_config = RetryConfig(
-                max_attempts=AGGRESSIVE_MAX_RETRY_ATTEMPTS,
-                initial_delay=AGGRESSIVE_INITIAL_RETRY_DELAY,
-                max_delay=AGGRESSIVE_MAX_RETRY_DELAY,
-            )
-        else:
-            retry_config = RetryConfig()  # Default settings
+    params, headers = _prepare_request_params(request)
+    retry_config = _get_retry_config(enable_retry, domain)
 
     # Short-circuit if caching disabled
     if cache_ttl == 0:
         status, content = await call_http(
-            method, url, params, verify=verify, retry_config=retry_config
+            method,
+            url,
+            params,
+            verify=verify,
+            retry_config=retry_config,
+            headers=headers,
         )
         return parse_response(status, content, response_model_type)
 
-    # Else caching enabled:
+    # Handle caching
     cache_key = generate_cache_key(method, url, params)
     cached_content = get_cached_response(cache_key)
 
@@ -198,7 +281,12 @@ async def request_api(
 
     # Make HTTP request if not cached
     status, content = await call_http(
-        method, url, params, verify=verify, retry_config=retry_config
+        method,
+        url,
+        params,
+        verify=verify,
+        retry_config=retry_config,
+        headers=headers,
     )
     parsed_response = parse_response(status, content, response_model_type)
 
