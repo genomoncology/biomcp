@@ -339,13 +339,15 @@ class TestFetchFunction:
             assert "metadata" in result
 
     async def test_fetch_article_invalid_pmid(self):
-        """Test fetching article with invalid PMID."""
-        with pytest.raises(InvalidParameterError) as exc_info:
-            await fetch(
-                call_benefit="Test", domain="article", id_="not_a_number"
-            )
+        """Test fetching article with invalid identifier."""
+        result = await fetch(
+            call_benefit="Test", domain="article", id_="not_a_number"
+        )
 
-        assert "valid PMID" in str(exc_info.value)
+        # Should return an error since "not_a_number" is neither a valid PMID nor DOI
+        assert "error" in result
+        assert "Invalid identifier format" in result["error"]
+        assert "not_a_number" in result["error"]
 
     async def test_fetch_trial_all_sections(self):
         """Test fetching trial with all sections."""

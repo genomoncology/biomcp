@@ -1,4 +1,5 @@
 import json
+import re
 from ssl import TLSVersion
 from typing import Annotated, Any
 
@@ -193,6 +194,19 @@ async def fetch_articles(
         return json.dumps(data, indent=2)
 
 
+def is_doi(identifier: str) -> bool:
+    """Check if the identifier is a DOI."""
+    # DOI pattern: starts with 10. followed by numbers/slash/alphanumeric
+    doi_pattern = r"^10\.\d{4,9}/[\-._;()/:\w]+$"
+    return bool(re.match(doi_pattern, str(identifier)))
+
+
+def is_pmid(identifier: str) -> bool:
+    """Check if the identifier is a PubMed ID."""
+    # PMID is a numeric string
+    return str(identifier).isdigit()
+
+
 async def _article_details(
     call_benefit: Annotated[
         str,
@@ -201,16 +215,35 @@ async def _article_details(
     pmid,
 ) -> str:
     """
-    Retrieves details for a single PubMed article given its
-    PubMed ID (PMID).
+    Retrieves details for a single article given its identifier.
 
     Parameters:
     - call_benefit: Define and summarize why this function is being called and the intended benefit
-    - pmid: A single PubMed ID (e.g., 34397683)
+    - pmid: An article identifier - either a PubMed ID (e.g., 34397683) or DOI (e.g., 10.1101/2024.01.20.23288905)
 
-    Process: Calls the PubTator3 API to fetch the article's
-             title, abstract, and full text (if available).
-    Output: A Markdown formatted string containing the
-            retrieved article content.
+    Process:
+    - For PMIDs: Calls the PubTator3 API to fetch the article's title, abstract, and full text (if available)
+    - For DOIs: Calls Europe PMC API to fetch preprint details
+
+    Output: A Markdown formatted string containing the retrieved article content.
     """
-    return await fetch_articles([pmid], full=True)
+    identifier = str(pmid)
+
+    # Check if it's a DOI (Europe PMC preprint)
+    if is_doi(identifier):
+        from .preprints import fetch_europe_pmc_article
+
+        return await fetch_europe_pmc_article(identifier)
+    # Check if it's a PMID (PubMed article)
+    elif is_pmid(identifier):
+        return await fetch_articles([int(identifier)], full=True)
+    else:
+        # Unknown identifier format
+        return json.dumps(
+            [
+                {
+                    "error": f"Invalid identifier format: {identifier}. Expected either a PMID (numeric) or DOI (10.xxxx/xxxx format)."
+                }
+            ],
+            indent=2,
+        )

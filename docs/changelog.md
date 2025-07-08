@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **Europe PMC DOI Support for Article Fetching**:
+  - `article_getter` tool now accepts DOIs in addition to PMIDs
+  - `fetch` unified tool supports DOIs for the article domain
+  - CLI `biomcp article get` command accepts both PMIDs and DOIs
+  - Automatically routes DOIs to Europe PMC API for preprint retrieval
+  - Supports mixed lists of PMIDs and DOIs in batch requests
+
+### Fixed
+
+- **Preprint Fetch Error**: Fixed "Error 400: Could not retrieve publications" when trying to fetch Europe PMC preprints found in search results
+  - Added DOI detection logic to distinguish from PMIDs
+  - Implemented Europe PMC article fetch functionality
+  - Updated routing logic in both unified and individual tools
+
 ## [0.4.0] - 2025-06-27
 
 ### Added

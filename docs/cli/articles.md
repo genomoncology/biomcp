@@ -72,21 +72,24 @@ biomcp article search --gene BRAF --json
 
 ## Get Command (`get`)
 
-Retrieve detailed information (abstract, metadata) for specific articles using their PubMed IDs (PMIDs).
+Retrieve detailed information (abstract, metadata) for specific articles using their PubMed IDs (PMIDs) or DOIs.
 
 ### Usage
 
 ```bash
-biomcp article get [OPTIONS] PMIDS...
+biomcp article get [OPTIONS] IDENTIFIERS...
 ```
 
 #### Arguments
 
-- `PMIDS`: One or more PubMed IDs (integers) of the articles to retrieve. [required]
+- `IDENTIFIERS`: One or more article identifiers to retrieve. Supports:
+  - PubMed IDs (e.g., 38768446)
+  - DOIs for Europe PMC preprints (e.g., 10.1101/2024.01.20.23288905)
+    [required]
 
 #### Options
 
-- `-f, --full`: Attempt to retrieve full text if available via the API (Abstract is always retrieved). [default: False]
+- `-f, --full`: Attempt to retrieve full text if available via the API (PubMed only). Abstract is always retrieved. [default: False]
 - `-j, --json`: Render output in JSON format instead of Markdown.
 - `--help`: Show help message and exit.
 
@@ -114,4 +117,16 @@ Get results as JSON:
 
 ```bash
 biomcp article get 21717063 --json
+```
+
+Get preprint by DOI from Europe PMC:
+
+```bash
+biomcp article get 10.1101/2024.01.20.23288905
+```
+
+Mix PMIDs and DOIs in a single request:
+
+```bash
+biomcp article get 21717063 10.1101/2024.01.20.23288905 --json
 ```
