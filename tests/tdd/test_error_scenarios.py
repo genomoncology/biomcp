@@ -12,6 +12,18 @@ from biomcp.rate_limiter import RateLimiter
 from biomcp.router import format_results
 
 
+@pytest.fixture(autouse=True)
+def enable_metrics_for_concurrent_test(monkeypatch):
+    """Enable metrics for concurrent test."""
+    monkeypatch.setenv("BIOMCP_METRICS_ENABLED", "true")
+    # Force reload of the module to pick up the new env var
+    import importlib
+
+    import biomcp.metrics
+
+    importlib.reload(biomcp.metrics)
+
+
 def test_format_results_invalid_domain():
     """Test format_results with invalid domain."""
     with pytest.raises(InvalidDomainError) as exc_info:

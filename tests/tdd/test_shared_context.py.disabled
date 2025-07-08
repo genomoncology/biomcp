@@ -1,0 +1,183 @@
+"""Tests for shared context functionality."""
+
+from unittest.mock import patch
+
+import pytest
+
+from biomcp.shared_context import SearchContext, SearchContextManager
+
+
+@pytest.fixture
+def search_context():
+    """Create a fresh search context."""
+    return SearchContext()
+
+
+@pytest.mark.asyncio
+async def test_gene_validation_caching(search_context):
+    """Test that gene validations are cached."""
+    # Mock the autocomplete function
+    with patch("biomcp.shared_context.autocomplete") as mock_autocomplete:
+        mock_autocomplete.return_value = {
+            "entities": [{"query": "BRAF", "concept": "gene"}]
+        }
+
+        # First validation should call autocomplete
+        result1 = await search_context.validate_gene("BRAF")
+        assert result1 is True
+        mock_autocomplete.assert_called_once()
+
+        # Second validation should use cache
+        result2 = await search_context.validate_gene("BRAF")
+        assert result2 is True
+        # Still only called once
+        assert mock_autocomplete.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_invalid_gene_caching(search_context):
+    """Test that invalid genes are also cached."""
+    with patch("biomcp.shared_context.autocomplete") as mock_autocomplete:
+        mock_autocomplete.return_value = {"entities": []}
+
+        # First check
+        result1 = await search_context.validate_gene("INVALID")
+        assert result1 is False
+
+        # Second check should use cache
+        result2 = await search_context.validate_gene("INVALID")
+        assert result2 is False
+
+        # Only called once
+        assert mock_autocomplete.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_gene_validation_error_handling(search_context):
+    """Test error handling in gene validation."""
+    with patch("biomcp.shared_context.autocomplete") as mock_autocomplete:
+        mock_autocomplete.side_effect = Exception("API error")
+
+        # Should return False on error
+        result = await search_context.validate_gene("BRAF")
+        assert result is False
+
+        # Should be cached as invalid
+        assert search_context.validated_genes["BRAF"] is False
+
+
+def test_context_manager_basic():
+    """Test basic context manager functionality."""
+    with SearchContextManager() as context:
+        assert isinstance(context, SearchContext)
+        assert SearchContextManager._instance is context
+
+    # Context should be cleared after exit
+    assert SearchContextManager._instance is None
+
+
+def test_context_manager_singleton():
+    """Test that context manager provides singleton within context."""
+    with SearchContextManager() as context1, SearchContextManager() as context2:
+        # Nested context should return same instance
+        assert context1 is context2
+
+
+def test_context_manager_reset():
+    """Test that context is reset between uses."""
+    # First use
+    with SearchContextManager() as context1:
+        context1.validated_genes["TEST"] = True
+
+    # Second use should have fresh context
+    with SearchContextManager() as context2:
+        assert "TEST" not in context2.validated_genes
+
+
+@pytest.mark.asyncio
+async def test_mixed_entity_validation(search_context):
+    """Test validation of different entity types."""
+    with patch("biomcp.shared_context.autocomplete") as mock_autocomplete:
+        # Mock different responses for different concepts
+        def autocomplete_side_effect(request, output_json=False):
+            if request.concept == "gene":
+                return {"entities": [{"query": request.query, "concept": "gene"}]}
+            elif request.concept == "disease":
+                return {"entities": [{"query": request.query, "concept": "disease"}]}
+            return {"entities": []}
+
+        mock_autocomplete.side_effect = autocomplete_side_effect
+
+        # Validate different entities
+        assert await search_context.validate_gene("BRAF") is True
+
+        # Gene validation should not affect disease validation
+        assert mock_autocomplete.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_case_sensitivity(search_context):
+    """Test that validation is case-sensitive."""
+    with patch("biomcp.shared_context.autocomplete") as mock_autocomplete:
+        mock_autocomplete.return_value = {
+            "entities": [{"query": "BRAF", "concept": "gene"}]
+        }
+
+        # Validate uppercase
+        assert await search_context.validate_gene("BRAF") is True
+
+        # Lowercase should be separate validation
+        mock_autocomplete.return_value = {"entities": []}
+        assert await search_context.validate_gene("braf") is False
+
+        # Both should be cached separately
+        assert search_context.validated_genes["BRAF"] is True
+        assert search_context.validated_genes["braf"] is False
+
+
+@pytest.mark.asyncio
+async def test_empty_gene_validation(search_context):
+    """Test validation of empty or None genes."""
+    assert await search_context.validate_gene("") is False
+    assert await search_context.validate_gene(None) is False
+
+    # Should be cached
+    assert search_context.validated_genes[""] is False
+    assert search_context.validated_genes[None] is False
+
+
+@pytest.mark.asyncio
+async def test_concurrent_validation(search_context):
+    """Test concurrent validation of the same gene."""
+    with patch("biomcp.shared_context.autocomplete") as mock_autocomplete:
+        mock_autocomplete.return_value = {
+            "entities": [{"query": "BRAF", "concept": "gene"}]
+        }
+
+        # Simulate concurrent validation
+        import asyncio
+        tasks = [
+            search_context.validate_gene("BRAF")
+            for _ in range(5)
+        ]
+
+        results = await asyncio.gather(*tasks)
+
+        # All should return True
+        assert all(results)
+
+        # But autocomplete should only be called once
+        # (This tests that caching works even under concurrent access)
+        assert mock_autocomplete.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_validation_with_special_characters(search_context):
+    """Test validation of genes with special characters."""
+    with patch("biomcp.shared_context.autocomplete") as mock_autocomplete:
+        mock_autocomplete.return_value = {
+            "entities": [{"query": "HLA-A", "concept": "gene"}]
+        }
+
+        assert await search_context.validate_gene("HLA-A") is True
+        assert "HLA-A" in search_context.validated_genes

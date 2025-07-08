@@ -19,6 +19,7 @@ ALLOWED_FILES = {
     "http_client_simple.py",
     "http_client_test.py",
     "test_http_client.py",
+    "connection_pool.py",  # Connection pooling infrastructure
 }
 
 # Additional allowed patterns (for version checks, etc.)

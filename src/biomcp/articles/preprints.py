@@ -11,7 +11,11 @@ from pydantic import BaseModel, Field
 from .. import http_client, render
 from ..constants import (
     BIORXIV_BASE_URL,
+    BIORXIV_DEFAULT_DAYS_BACK,
+    BIORXIV_MAX_PAGES,
+    BIORXIV_RESULTS_PER_PAGE,
     EUROPE_PMC_BASE_URL,
+    EUROPE_PMC_PAGE_SIZE,
     MEDRXIV_BASE_URL,
     SYSTEM_PAGE_SIZE,
 )
@@ -218,101 +222,170 @@ class BiorxivClient:
 
     IMPORTANT LIMITATION: bioRxiv/medRxiv APIs do not provide a search endpoint.
     This implementation works around this limitation by:
-    1. Fetching all articles from the current year (January 1 to today)
+    1. Fetching articles from a date range (last 365 days by default)
     2. Filtering results client-side based on query match in title/abstract
 
-    This approach has significant limitations:
-    - Only searches articles from the current year
-    - Downloads potentially large amounts of data to filter client-side
-    - May miss relevant older preprints
-    - Performance degrades as the year progresses (more articles to fetch)
+    This approach has limitations but is optimized for performance:
+    - Searches up to 1 year of preprints by default (configurable)
+    - Uses pagination to avoid fetching all results at once
+    - May still miss older preprints beyond the date range
 
-    Consider using Europe PMC for more comprehensive preprint search capabilities.
+    Consider using Europe PMC for more comprehensive preprint search capabilities,
+    as it has proper search functionality without date limitations.
     """
 
-    async def search(
-        self, query: str, server: str = "biorxiv"
+    async def search(  # noqa: C901
+        self,
+        query: str,
+        server: str = "biorxiv",
+        days_back: int = BIORXIV_DEFAULT_DAYS_BACK,
     ) -> list[ResultItem]:
         """Search bioRxiv or medRxiv for articles.
 
         Note: Due to API limitations, this performs client-side filtering on
-        articles from the current year only. See class docstring for details.
+        recent articles only. See class docstring for details.
         """
+        if not query:
+            return []
+
         base_url = (
             BIORXIV_BASE_URL if server == "biorxiv" else MEDRXIV_BASE_URL
         )
 
-        # bioRxiv API doesn't have direct search, so we get recent articles
-        # and filter client-side (not ideal but it's what's available)
+        # Optimize by only fetching recent articles (last 30 days by default)
+        from datetime import timedelta
+
         today = datetime.now()
-        interval = f"{today.year}-01-01/{today.year}-{today.month:02d}-{today.day:02d}"
+        start_date = today - timedelta(days=days_back)
+        interval = f"{start_date.year}-{start_date.month:02d}-{start_date.day:02d}/{today.year}-{today.month:02d}-{today.day:02d}"
 
-        request = BiorxivRequest(query=query, interval=interval, cursor=0)
+        # Prepare query terms for better matching
+        query_terms = query.lower().split()
 
-        url = f"{base_url}/{request.interval}/{request.cursor}"
-
-        response, error = await http_client.request_api(
-            url=url,
-            method="GET",
-            request={},
-            response_model_type=BiorxivResponse,
-            domain="biorxiv",
+        filtered_results = []
+        cursor = 0
+        max_pages = (
+            BIORXIV_MAX_PAGES  # Limit pagination to avoid excessive API calls
         )
 
-        if error or not response:
-            logger.warning(
-                f"Failed to fetch {server} articles for query '{query}': {error if error else 'No response'}"
+        for page in range(max_pages):
+            request = BiorxivRequest(
+                query=query, interval=interval, cursor=cursor
             )
-            return []
+            url = f"{base_url}/{request.interval}/{request.cursor}"
 
-        # Filter results based on query
-        query_lower = query.lower()
-        filtered_results = []
+            response, error = await http_client.request_api(
+                url=url,
+                method="GET",
+                request={},
+                response_model_type=BiorxivResponse,
+                domain="biorxiv",
+                cache_ttl=300,  # Cache for 5 minutes
+            )
 
-        for result in response.collection:
-            # Check if query matches title or abstract
-            if query_lower and query:
-                title_match = (
-                    result.title and query_lower in result.title.lower()
+            if error or not response:
+                logger.warning(
+                    f"Failed to fetch {server} articles page {page} for query '{query}': {error if error else 'No response'}"
                 )
-                abstract_match = (
-                    result.abstract and query_lower in result.abstract.lower()
-                )
-                if not (title_match or abstract_match):
-                    continue
+                break
 
-            filtered_results.append(result.to_result_item())
+            # Filter results based on query
+            page_filtered = 0
+            for result in response.collection:
+                # Create searchable text from title and abstract
+                searchable_text = ""
+                if result.title:
+                    searchable_text += result.title.lower() + " "
+                if result.abstract:
+                    searchable_text += result.abstract.lower()
 
-        return filtered_results
+                # Check if all query terms are present (AND logic)
+                if all(term in searchable_text for term in query_terms):
+                    filtered_results.append(result.to_result_item())
+                    page_filtered += 1
+
+                    # Stop if we have enough results
+                    if len(filtered_results) >= SYSTEM_PAGE_SIZE:
+                        return filtered_results[:SYSTEM_PAGE_SIZE]
+
+            # If this page had no matches and we have some results, stop pagination
+            if page_filtered == 0 and filtered_results:
+                break
+
+            # Move to next page
+            cursor += len(response.collection)
+
+            # Stop if we've processed all available results
+            if (
+                len(response.collection) < BIORXIV_RESULTS_PER_PAGE
+            ):  # bioRxiv typically returns this many per page
+                break
+
+        return filtered_results[:SYSTEM_PAGE_SIZE]
 
 
 class EuropePMCClient:
     """Client for Europe PMC API."""
 
-    async def search(self, query: str) -> list[ResultItem]:
-        """Search Europe PMC for preprints."""
-        request = EuropePMCRequest(
-            query=f"(SRC:PPR) AND ({query})" if query else "SRC:PPR",
-            pageSize=SYSTEM_PAGE_SIZE,
-        )
+    async def search(
+        self, query: str, max_results: int = SYSTEM_PAGE_SIZE
+    ) -> list[ResultItem]:
+        """Search Europe PMC for preprints with pagination support."""
+        results: list[ResultItem] = []
+        cursor_mark = "*"
+        page_size = min(
+            EUROPE_PMC_PAGE_SIZE, max_results
+        )  # Europe PMC optimal page size
 
-        params = request.model_dump(exclude_none=True)
-
-        response, error = await http_client.request_api(
-            url=EUROPE_PMC_BASE_URL,
-            method="GET",
-            request=params,
-            response_model_type=EuropePMCResponse,
-            domain="europepmc",
-        )
-
-        if error or not response:
-            logger.warning(
-                f"Failed to fetch Europe PMC preprints for query '{query}': {error if error else 'No response'}"
+        while len(results) < max_results:
+            request = EuropePMCRequest(
+                query=f"(SRC:PPR) AND ({query})" if query else "SRC:PPR",
+                pageSize=page_size,
+                cursorMark=cursor_mark,
             )
-            return []
 
-        return [result.to_result_item() for result in response.results]
+            params = request.model_dump(exclude_none=True)
+
+            response, error = await http_client.request_api(
+                url=EUROPE_PMC_BASE_URL,
+                method="GET",
+                request=params,
+                response_model_type=EuropePMCResponse,
+                domain="europepmc",
+                cache_ttl=300,  # Cache for 5 minutes
+            )
+
+            if error or not response:
+                logger.warning(
+                    f"Failed to fetch Europe PMC preprints for query '{query}': {error if error else 'No response'}"
+                )
+                break
+
+            # Add results
+            page_results = [
+                result.to_result_item() for result in response.results
+            ]
+            results.extend(page_results)
+
+            # Check if we have more pages
+            if (
+                not response.nextCursorMark
+                or response.nextCursorMark == cursor_mark
+            ):
+                break
+
+            # Check if we got fewer results than requested (last page)
+            if len(page_results) < page_size:
+                break
+
+            cursor_mark = response.nextCursorMark
+
+            # Adjust page size for last request if needed
+            remaining = max_results - len(results)
+            if remaining < page_size:
+                page_size = remaining
+
+        return results[:max_results]
 
 
 async def fetch_europe_pmc_article(

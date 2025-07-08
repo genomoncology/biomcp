@@ -19,8 +19,8 @@ check: ## Run code quality tools.
 
 .PHONY: test
 test: ## Test the code with pytest and JavaScript tests
-	@echo "🚀 Testing code: Running pytest"
-	@uv run python -m pytest -x --ff
+	@echo "🚀 Testing code: Running pytest with parallel execution"
+	@uv run python -m pytest -x --ff -n auto --dist loadscope
 	@echo "🚀 Testing JavaScript: Running worker sanitization tests"
 	@node --test tests/tdd/workers/test_worker_sanitization.js
 

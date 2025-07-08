@@ -1,3 +1,4 @@
+import asyncio
 import json
 from collections.abc import Generator
 from typing import Annotated, Any, get_args
@@ -108,15 +109,29 @@ async def convert_request(request: PubmedRequest) -> PubtatorRequest:
         else:
             query_parts.append(keyword)
 
-    # Process other concepts (these remain AND logic)
+    # Create all autocomplete tasks in parallel
+    autocomplete_tasks = []
+    concept_values = []
+
     for concept, value in request.iter_concepts():
-        entity = await autocomplete(
+        task = autocomplete(
             request=EntityRequest(concept=concept, query=value),
         )
-        if entity:
-            query_parts.append(entity.entity_id)
-        else:
-            query_parts.append(value)
+        autocomplete_tasks.append(task)
+        concept_values.append((concept, value))
+
+    # Execute all autocomplete calls in parallel
+    if autocomplete_tasks:
+        entities = await asyncio.gather(*autocomplete_tasks)
+
+        # Process results
+        for (_concept, value), entity in zip(
+            concept_values, entities, strict=False
+        ):
+            if entity:
+                query_parts.append(entity.entity_id)
+            else:
+                query_parts.append(value)
 
     query_text = " AND ".join(query_parts)
 
@@ -146,14 +161,19 @@ async def search_articles(
 ) -> str:
     pubtator_request = await convert_request(request)
 
-    response, error = await http_client.request_api(
+    # Start the search request
+    search_task = http_client.request_api(
         url=PUBTATOR3_SEARCH_URL,
         request=pubtator_request,
         response_model_type=SearchResponse,
         domain="article",
     )
 
+    # Execute search first
+    response, error = await search_task
+
     if response:
+        # Now fetch abstracts (still sequential but could be parallelized with other operations)
         await add_abstracts(response)
         # Add source field to PubMed results
         for result in response.results:

@@ -180,7 +180,9 @@ class TestArticleDetailsRouting:
 
             result = await _article_details("Test", test_pmid)
 
-            mock_fetch_articles.assert_called_once_with([35271234], full=True, output_json=True)
+            mock_fetch_articles.assert_called_once_with(
+                [35271234], full=True, output_json=True
+            )
             assert result == "PubTator result"
 
     @pytest.mark.asyncio

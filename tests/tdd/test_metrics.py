@@ -19,6 +19,18 @@ from biomcp.metrics import (
 )
 
 
+@pytest.fixture(autouse=True)
+def enable_metrics(monkeypatch):
+    """Enable metrics for all tests in this module."""
+    monkeypatch.setenv("BIOMCP_METRICS_ENABLED", "true")
+    # Force reload of the module to pick up the new env var
+    import importlib
+
+    import biomcp.metrics
+
+    importlib.reload(biomcp.metrics)
+
+
 def test_metric_sample():
     """Test MetricSample dataclass."""
     sample = MetricSample(
