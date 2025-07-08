@@ -205,6 +205,10 @@ async def _article_searcher(
     include_preprints: Annotated[
         bool, "Include preprint articles from bioRxiv/medRxiv and Europe PMC"
     ] = True,
+    include_cbioportal: Annotated[
+        bool,
+        "Include cBioPortal cancer genomics summary when searching by gene",
+    ] = True,
 ) -> str:
     """
     Searches for articles across PubMed and preprint servers.
@@ -217,6 +221,7 @@ async def _article_searcher(
     - keywords: List of other keywords for filtering results
     - variants: List of variants for filtering results
     - include_preprints: Include results from preprint servers (default: True)
+    - include_cbioportal: Include cBioPortal summaries for gene searches (default: True)
 
     Notes:
     - Use full terms ("Non-small cell lung carcinoma") over abbreviations ("NSCLC")
@@ -248,4 +253,5 @@ async def _article_searcher(
         request,
         include_pubmed=True,
         include_preprints=include_preprints,
+        include_cbioportal=include_cbioportal,
     )

@@ -124,6 +124,7 @@ async def search_articles_unified(
     request: PubmedRequest,
     include_pubmed: bool = True,
     include_preprints: bool = False,
+    include_cbioportal: bool = True,
     output_json: bool = False,
 ) -> str:
     """Search for articles across PubMed and preprint sources."""
@@ -156,8 +157,10 @@ async def search_articles_unified(
         reverse=True,
     )
 
-    # Get cBioPortal summary if genes are specified
-    cbioportal_summary = await _get_cbioportal_summary(request)
+    # Get cBioPortal summary if genes are specified and enabled
+    cbioportal_summary = None
+    if include_cbioportal:
+        cbioportal_summary = await _get_cbioportal_summary(request)
 
     if unique_articles and not output_json:
         result = render.to_markdown(unique_articles)
