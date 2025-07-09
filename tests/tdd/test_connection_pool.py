@@ -154,6 +154,7 @@ async def test_global_close_all_pools():
 
     # Verify cleanup (this is implementation-specific)
     from biomcp.connection_pool import _pool_manager
+
     assert len(_pool_manager._loop_pools) == 0
 
 

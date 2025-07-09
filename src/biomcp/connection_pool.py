@@ -47,13 +47,13 @@ class EventLoopConnectionPools:
 
     def __init__(self):
         # Use weak references to avoid keeping event loops alive
-        self._loop_pools: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+        self._loop_pools: weakref.WeakKeyDictionary = (
+            weakref.WeakKeyDictionary()
+        )
         self._lock = asyncio.Lock()
 
     async def get_pool(
-        self,
-        verify: ssl.SSLContext | str | bool,
-        timeout: httpx.Timeout
+        self, verify: ssl.SSLContext | str | bool, timeout: httpx.Timeout
     ) -> httpx.AsyncClient:
         """Get or create a connection pool for the current event loop."""
         try:
@@ -91,7 +91,7 @@ class EventLoopConnectionPools:
         self,
         verify: ssl.SSLContext | str | bool,
         timeout: httpx.Timeout,
-        pooled: bool = True
+        pooled: bool = True,
     ) -> httpx.AsyncClient:
         """Create a new HTTP client."""
         if pooled:
@@ -126,6 +126,7 @@ class EventLoopConnectionPools:
                     if client and not client.is_closed:
                         # Close synchronously since loop might be gone
                         import contextlib
+
                         with contextlib.suppress(Exception):
                             client._transport.close()
 

@@ -18,6 +18,7 @@ BioMCP has been optimized for high-performance biomedical data retrieval through
 HTTP connections are now reused across requests, eliminating connection establishment overhead.
 
 **Configuration:**
+
 - `BIOMCP_USE_CONNECTION_POOL` - Enable/disable pooling (default: "true")
 - Automatically manages pools per event loop
 - Graceful cleanup on shutdown
@@ -29,6 +30,7 @@ HTTP connections are now reused across requests, eliminating connection establis
 Tests now run in parallel using pytest-xdist, dramatically reducing test suite execution time.
 
 **Usage:**
+
 ```bash
 make test  # Automatically uses parallel execution
 ```
@@ -40,6 +42,7 @@ make test  # Automatically uses parallel execution
 Multiple API requests are batched together when possible, particularly for cBioPortal queries.
 
 **Features:**
+
 - Automatic batching based on size/time thresholds
 - Configurable batch size (default: 5 for cBioPortal)
 - Error isolation per request
@@ -55,6 +58,7 @@ Multiple caching layers optimize repeated queries:
 - **Shared validation context:** Eliminates redundant gene/entity validations
 
 **Configuration:**
+
 - Cache size: 1000 entries (configurable)
 - TTL: 5-30 minutes depending on data type
 
@@ -81,25 +85,26 @@ Europe PMC searches now use pagination for large result sets:
 Performance metrics are only collected when explicitly enabled, reducing overhead.
 
 **Configuration:**
+
 - `BIOMCP_METRICS_ENABLED` - Enable metrics (default: "false")
 
 ## Performance Benchmarks
 
 ### API Response Times
 
-| Operation | Before | After | Improvement |
-|-----------|--------|-------|-------------|
-| Single gene search | 850ms | 320ms | 62% |
-| Bulk variant lookup | 4.2s | 1.1s | 74% |
-| Article search with cBioPortal | 2.1s | 780ms | 63% |
+| Operation                      | Before | After | Improvement |
+| ------------------------------ | ------ | ----- | ----------- |
+| Single gene search             | 850ms  | 320ms | 62%         |
+| Bulk variant lookup            | 4.2s   | 1.1s  | 74%         |
+| Article search with cBioPortal | 2.1s   | 780ms | 63%         |
 
 ### Resource Usage
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Memory (idle) | 145MB | 152MB | +5% |
-| Memory (peak) | 512MB | 385MB | -25% |
-| CPU (avg) | 35% | 28% | -20% |
+| Metric        | Before | After | Improvement |
+| ------------- | ------ | ----- | ----------- |
+| Memory (idle) | 145MB  | 152MB | +5%         |
+| Memory (peak) | 512MB  | 385MB | -25%        |
+| CPU (avg)     | 35%    | 28%   | -20%        |
 
 ## Best Practices
 
@@ -113,6 +118,7 @@ Performance metrics are only collected when explicitly enabled, reducing overhea
 ### Connection Pool Issues
 
 If experiencing connection errors:
+
 1. Disable pooling: `export BIOMCP_USE_CONNECTION_POOL=false`
 2. Check for firewall/proxy issues
 3. Verify SSL certificates
@@ -120,6 +126,7 @@ If experiencing connection errors:
 ### Memory Usage
 
 If memory usage is high:
+
 1. Reduce cache size in `request_cache.py`
 2. Lower connection pool limits
 3. Disable prefetching by removing the lifespan hook
@@ -127,6 +134,7 @@ If memory usage is high:
 ### Performance Regression
 
 To identify performance issues:
+
 1. Enable metrics: `export BIOMCP_METRICS_ENABLED=true`
 2. Check slow operations in logs
 3. Profile with `py-spy` or similar tools
@@ -134,6 +142,7 @@ To identify performance issues:
 ## Future Optimizations
 
 Planned improvements include:
+
 - GraphQL batching for complex queries
 - Redis integration for distributed caching
 - WebSocket support for real-time updates

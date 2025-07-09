@@ -7,6 +7,7 @@ The BioMCP test suite consists of 422 tests (389 unit tests + 33 integration tes
 ## Slowest Tests Identified
 
 ### Unit Tests (Top 10 Slowest)
+
 1. **5.18s** - `test_search_articles_unified_markdown_output` (test_unified.py)
 2. **3.24s** - `test_unified_search_execution` (test_router.py)
 3. **2.28s** - `test_pten_r173_search_limitations` (test_pten_r173_search.py)
@@ -19,6 +20,7 @@ The BioMCP test suite consists of 422 tests (389 unit tests + 33 integration tes
 10. **1.10s** - `test_rate_limit_replenishment` (utils/test_rate_limiter.py)
 
 ### Integration Tests (Top 5 Slowest)
+
 1. **4.22s** - `test_search_braf_v600e` (cBioPortal mutation search)
 2. **3.88s** - `test_search_specific_mutation_srsf2_f57y` (cBioPortal mutation search)
 3. **1.99s** - `test_aggregate_all_sources` (External variant aggregator)
@@ -28,32 +30,38 @@ The BioMCP test suite consists of 422 tests (389 unit tests + 33 integration tes
 ## Performance Bottleneck Categories
 
 ### 1. **Complex Mock Setup Tests** (5-3 seconds)
+
 - Tests that set up multiple mocks and complex test data
 - Example: `test_search_articles_unified_markdown_output`
 - These tests mock multiple services (PubMed, preprints, cBioPortal)
 
 ### 2. **Search Simulation Tests** (2-3 seconds)
+
 - Tests that simulate full search workflows
 - Example: `test_unified_search_execution`, `test_pten_r173_search_limitations`
 - These likely process large amounts of test data
 
 ### 3. **Real API Integration Tests** (1-4 seconds)
+
 - Tests marked with `@pytest.mark.integration` that make actual API calls
 - Examples: cBioPortal, 1000 Genomes, TCGA integration tests
 - Network latency and API response times contribute to slowness
 
 ### 4. **Rate Limiter Tests** (1+ second)
+
 - Tests that use `asyncio.sleep()` to test timing behavior
 - Examples: `test_rate_limit_replenishment`, `test_wait_if_needed`
 - These tests intentionally wait to verify rate limiting
 
 ### 5. **Variant Search Tests** (1-2 seconds)
+
 - Complex variant search tests with multiple filters
 - Processing and filtering large result sets
 
 ## Optimization Recommendations
 
 ### 1. **Parallelize Integration Tests**
+
 ```bash
 # Use pytest-xdist for parallel test execution
 uv add pytest-xdist --dev
@@ -61,9 +69,11 @@ pytest -n auto -m "integration"
 ```
 
 ### 2. **Mock External Services More Efficiently**
+
 - Create shared fixtures for common mock setups
 - Use `pytest.fixture(scope="module")` for expensive mock data
 - Example refactoring:
+
 ```python
 @pytest.fixture(scope="module")
 def pubmed_mock_data():
@@ -72,8 +82,10 @@ def pubmed_mock_data():
 ```
 
 ### 3. **Reduce Sleep Times in Rate Limiter Tests**
+
 - Use time mocking instead of real sleeps
 - Example using `freezegun` or `time-machine`:
+
 ```python
 from time_machine import travel
 
@@ -83,12 +95,15 @@ async def test_rate_limit_replenishment():
 ```
 
 ### 4. **Cache Test Data**
+
 - Load large test datasets once per session
 - Use `pytest.fixture(scope="session")` for shared test data
 
 ### 5. **Split Integration Tests**
+
 - Create separate test suites for different external services
 - Run critical path tests frequently, comprehensive tests in CI only
+
 ```bash
 # Quick tests
 pytest -m "not integration and not slow"
@@ -98,6 +113,7 @@ pytest
 ```
 
 ### 6. **Add Test Timing Markers**
+
 ```python
 # Mark slow tests explicitly
 @pytest.mark.slow
@@ -107,6 +123,7 @@ async def test_comprehensive_search():
 ```
 
 ### 7. **Profile Individual Slow Tests**
+
 ```bash
 # Profile specific test
 pytest tests/tdd/articles/test_unified.py::TestUnifiedSearch::test_search_articles_unified_markdown_output --profile
@@ -122,6 +139,7 @@ pytest tests/tdd/articles/test_unified.py::TestUnifiedSearch::test_search_articl
 ## Monitoring Test Performance
 
 Add to CI/CD pipeline:
+
 ```yaml
 - name: Run tests with timing
   run: |
@@ -132,6 +150,7 @@ Add to CI/CD pipeline:
 ## Conclusion
 
 The test suite is well-structured with clear separation between unit and integration tests. The main performance bottlenecks are:
+
 1. Complex mock setups (can be optimized with better fixtures)
 2. Real API calls in integration tests (necessary but can be parallelized)
 3. Time-based tests (can be mocked)

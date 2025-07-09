@@ -31,7 +31,19 @@ from .constants import (
 logger = logging.getLogger(__name__)
 
 # Common genes that are frequently searched
-COMMON_GENES = ["BRAF", "EGFR", "TP53", "KRAS", "ALK", "ROS1", "MET", "RET", "NTRK1", "NTRK2", "NTRK3"]
+COMMON_GENES = [
+    "BRAF",
+    "EGFR",
+    "TP53",
+    "KRAS",
+    "ALK",
+    "ROS1",
+    "MET",
+    "RET",
+    "NTRK1",
+    "NTRK2",
+    "NTRK3",
+]
 
 # Common cancer types
 COMMON_DISEASES = [
@@ -71,7 +83,9 @@ class PrefetchManager:
         self._is_prefetching = True
         try:
             # Start prefetch task
-            self._prefetch_task = asyncio.create_task(self._prefetch_common_queries())
+            self._prefetch_task = asyncio.create_task(
+                self._prefetch_common_queries()
+            )
         except Exception as e:
             logger.warning(f"Failed to start prefetching: {e}")
             self._is_prefetching = False
@@ -86,18 +100,24 @@ class PrefetchManager:
             tasks = []
 
             # Prefetch gene autocomplete
-            for gene in COMMON_GENES[:PREFETCH_TOP_GENES]:  # Limit to avoid overload
+            for gene in COMMON_GENES[
+                :PREFETCH_TOP_GENES
+            ]:  # Limit to avoid overload
                 request = EntityRequest(concept="gene", query=gene, limit=1)
                 tasks.append(autocomplete(request))
 
             # Prefetch disease autocomplete
             for disease in COMMON_DISEASES[:PREFETCH_TOP_DISEASES]:
-                request = EntityRequest(concept="disease", query=disease, limit=1)
+                request = EntityRequest(
+                    concept="disease", query=disease, limit=1
+                )
                 tasks.append(autocomplete(request))
 
             # Prefetch chemical autocomplete
             for chemical in COMMON_CHEMICALS[:PREFETCH_TOP_CHEMICALS]:
-                request = EntityRequest(concept="chemical", query=chemical, limit=1)
+                request = EntityRequest(
+                    concept="chemical", query=chemical, limit=1
+                )
                 tasks.append(autocomplete(request))
 
             # Execute all autocomplete prefetches
@@ -109,7 +129,9 @@ class PrefetchManager:
             cbio_tasks = []
 
             for gene in COMMON_GENES[:PREFETCH_TOP_GENES]:  # Top genes
-                cbio_tasks.append(cbio_client.get_gene_search_summary(gene, max_studies=5))
+                cbio_tasks.append(
+                    cbio_client.get_gene_search_summary(gene, max_studies=5)
+                )
 
             if cbio_tasks:
                 await asyncio.gather(*cbio_tasks, return_exceptions=True)
