@@ -26,12 +26,8 @@ sse_app = mcp_app.sse_app()
 app.mount("/", sse_app)
 
 
-# Keep your logging middleware if needed
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    logger.info(f"Received {request.method} request to {request.url.path}")
-    response = await call_next(request)
-    return response
+# Remove the problematic middleware that causes ASGI errors
+# The logging can be done at the endpoint level if needed
 
 
 # Add any additional custom endpoints if needed

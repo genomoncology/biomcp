@@ -3,6 +3,7 @@
 import asyncio
 import functools
 import logging
+import os
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -16,6 +17,11 @@ from .constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Check if metrics are enabled via environment variable
+METRICS_ENABLED = (
+    os.getenv("BIOMCP_METRICS_ENABLED", "false").lower() == "true"
+)
 
 
 @dataclass
@@ -197,6 +203,8 @@ async def record_metric(
 ) -> None:
     """Record a metric to the global collector.
 
+    Note: This is a no-op if BIOMCP_METRICS_ENABLED is not set to true.
+
     Args:
         name: Metric name
         duration: Duration in seconds
@@ -204,7 +212,8 @@ async def record_metric(
         error: Error message if failed
         tags: Additional metadata tags
     """
-    await _metrics_collector.record(name, duration, success, error, tags)
+    if METRICS_ENABLED:
+        await _metrics_collector.record(name, duration, success, error, tags)
 
 
 async def get_metric_summary(name: str) -> MetricSummary | None:
@@ -332,8 +341,8 @@ class Timer:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Stop timing and record metric."""
-        if self.start_time is None:
-            return
+        if self.start_time is None or not METRICS_ENABLED:
+            return False
 
         duration = time.perf_counter() - self.start_time
         success = exc_type is None
@@ -373,8 +382,8 @@ class Timer:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async exit."""
-        if self.start_time is None:
-            return
+        if self.start_time is None or not METRICS_ENABLED:
+            return False
 
         duration = time.perf_counter() - self.start_time
         success = exc_type is None

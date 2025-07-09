@@ -105,6 +105,7 @@ async def article_searcher(
         keywords=keywords,
         variants=variants,
         include_preprints=include_preprints,
+        include_cbioportal=include_cbioportal,
     )
 
     # Add cBioPortal summary if searching by gene

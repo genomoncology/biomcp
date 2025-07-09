@@ -229,21 +229,42 @@ class CBioPortalSearchClient:
         cancer_types: dict[str, dict[str, Any]],
     ) -> dict[str, Any]:
         """Get mutation summary across selected profiles."""
-        # Query mutations from each profile
-        mutation_tasks = []
-        for profile in profiles:
-            profile_id = profile.get("molecularProfileId")
-            study_id = profile.get("studyId")
-            if profile_id and study_id:
-                task = self._get_profile_mutations(
-                    gene_id, profile_id, study_id
-                )
-                mutation_tasks.append((task, study_id))
-
-        # Execute in parallel
-        results = await asyncio.gather(
-            *[t[0] for t in mutation_tasks], return_exceptions=True
+        # Batch mutations queries for better performance
+        BATCH_SIZE = (
+            5  # Process 5 profiles at a time to avoid overwhelming the API
         )
+
+        mutation_results = []
+        study_ids = []
+
+        for i in range(0, len(profiles), BATCH_SIZE):
+            batch = profiles[i : i + BATCH_SIZE]
+            batch_tasks = []
+            batch_study_ids = []
+
+            for profile in batch:
+                profile_id = profile.get("molecularProfileId")
+                study_id = profile.get("studyId")
+                if profile_id and study_id:
+                    task = self._get_profile_mutations(
+                        gene_id, profile_id, study_id
+                    )
+                    batch_tasks.append(task)
+                    batch_study_ids.append(study_id)
+
+            if batch_tasks:
+                # Execute batch in parallel
+                batch_results = await asyncio.gather(
+                    *batch_tasks, return_exceptions=True
+                )
+                mutation_results.extend(batch_results)
+                study_ids.extend(batch_study_ids)
+
+                # Small delay between batches to avoid rate limiting
+                if i + BATCH_SIZE < len(profiles):
+                    await asyncio.sleep(0.05)  # 50ms delay
+
+        results = mutation_results
 
         # Process results using helper function
         from .cbioportal_search_helpers import (
@@ -252,7 +273,7 @@ class CBioPortalSearchClient:
         )
 
         mutation_data = await process_mutation_results(
-            list(zip(results, [t[1] for t in mutation_tasks], strict=False)),
+            list(zip(results, study_ids, strict=False)),
             cancer_types,
             self,
         )

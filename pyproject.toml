@@ -38,6 +38,7 @@ Documentation = "https://genomoncology.com/biomcp/"
 [dependency-groups]
 dev = [
     "pytest>=7.2.0",
+    "pytest-xdist>=3.5.0",
     "pre-commit>=2.20.0",
     "tox-uv>=1.11.3",
     "deptry>=0.22.0",

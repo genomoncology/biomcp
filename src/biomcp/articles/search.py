@@ -1,10 +1,11 @@
+import asyncio
 import json
 from collections.abc import Generator
 from typing import Annotated, Any, get_args
 
 from pydantic import BaseModel, Field, computed_field
 
-from .. import ensure_list, http_client, render
+from .. import http_client, render
 from ..constants import PUBTATOR3_SEARCH_URL, SYSTEM_PAGE_SIZE
 from ..core import PublicationState
 from .autocomplete import Concept, EntityRequest, autocomplete
@@ -108,15 +109,29 @@ async def convert_request(request: PubmedRequest) -> PubtatorRequest:
         else:
             query_parts.append(keyword)
 
-    # Process other concepts (these remain AND logic)
+    # Create all autocomplete tasks in parallel
+    autocomplete_tasks = []
+    concept_values = []
+
     for concept, value in request.iter_concepts():
-        entity = await autocomplete(
+        task = autocomplete(
             request=EntityRequest(concept=concept, query=value),
         )
-        if entity:
-            query_parts.append(entity.entity_id)
-        else:
-            query_parts.append(value)
+        autocomplete_tasks.append(task)
+        concept_values.append((concept, value))
+
+    # Execute all autocomplete calls in parallel
+    if autocomplete_tasks:
+        entities = await asyncio.gather(*autocomplete_tasks)
+
+        # Process results
+        for (_concept, value), entity in zip(
+            concept_values, entities, strict=False
+        ):
+            if entity:
+                query_parts.append(entity.entity_id)
+            else:
+                query_parts.append(value)
 
     query_text = " AND ".join(query_parts)
 
@@ -146,14 +161,19 @@ async def search_articles(
 ) -> str:
     pubtator_request = await convert_request(request)
 
-    response, error = await http_client.request_api(
+    # Start the search request
+    search_task = http_client.request_api(
         url=PUBTATOR3_SEARCH_URL,
         request=pubtator_request,
         response_model_type=SearchResponse,
         domain="article",
     )
 
+    # Execute search first
+    response, error = await search_task
+
     if response:
+        # Now fetch abstracts (still sequential but could be parallelized with other operations)
         await add_abstracts(response)
         # Add source field to PubMed results
         for result in response.results:
@@ -205,6 +225,10 @@ async def _article_searcher(
     include_preprints: Annotated[
         bool, "Include preprint articles from bioRxiv/medRxiv and Europe PMC"
     ] = True,
+    include_cbioportal: Annotated[
+        bool,
+        "Include cBioPortal cancer genomics summary when searching by gene",
+    ] = True,
 ) -> str:
     """
     Searches for articles across PubMed and preprint servers.
@@ -217,6 +241,7 @@ async def _article_searcher(
     - keywords: List of other keywords for filtering results
     - variants: List of variants for filtering results
     - include_preprints: Include results from preprint servers (default: True)
+    - include_cbioportal: Include cBioPortal summaries for gene searches (default: True)
 
     Notes:
     - Use full terms ("Non-small cell lung carcinoma") over abbreviations ("NSCLC")
@@ -233,19 +258,16 @@ async def _article_searcher(
     Limited to max 80 results (40 from each source).
     """
     # Import here to avoid circular dependency
-    from .unified import search_articles_unified
+    from .search_optimized import article_searcher_optimized
 
-    # Convert individual parameters to a PubmedRequest object
-    request = PubmedRequest(
-        chemicals=ensure_list(chemicals, split_strings=True),
-        diseases=ensure_list(diseases, split_strings=True),
-        genes=ensure_list(genes, split_strings=True),
-        keywords=ensure_list(keywords, split_strings=True),
-        variants=ensure_list(variants, split_strings=True),
-    )
-
-    return await search_articles_unified(
-        request,
-        include_pubmed=True,
+    # Use the optimized version with caching
+    return await article_searcher_optimized(
+        call_benefit=call_benefit,
+        chemicals=chemicals,
+        diseases=diseases,
+        genes=genes,
+        keywords=keywords,
+        variants=variants,
         include_preprints=include_preprints,
+        include_cbioportal=include_cbioportal,
     )

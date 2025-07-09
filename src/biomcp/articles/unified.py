@@ -3,6 +3,8 @@
 import asyncio
 import json
 import logging
+from collections.abc import Coroutine
+from typing import Any
 
 from .. import render
 from .preprints import search_preprints
@@ -39,23 +41,28 @@ def _parse_search_results(results: list) -> list[dict]:
     return all_articles
 
 
-def _extract_mutation_pattern(
+async def _extract_mutation_pattern(
     keywords: list[str],
 ) -> tuple[str | None, str | None]:
-    """Extract mutation pattern from keywords."""
+    """Extract mutation pattern from keywords asynchronously."""
     if not keywords:
         return None, None
 
+    # Use asyncio.to_thread for CPU-bound regex operations
     import re
 
-    for keyword in keywords:
-        # Check for specific mutations (e.g., F57Y, V600E)
-        if re.match(r"^[A-Z]\d+[A-Z*]$", keyword):
-            if keyword.endswith("*"):
-                return keyword, None  # mutation_pattern
-            else:
-                return None, keyword  # specific_mutation
-    return None, None
+    def _extract_sync():
+        for keyword in keywords:
+            # Check for specific mutations (e.g., F57Y, V600E)
+            if re.match(r"^[A-Z]\d+[A-Z*]$", keyword):
+                if keyword.endswith("*"):
+                    return keyword, None  # mutation_pattern
+                else:
+                    return None, keyword  # specific_mutation
+        return None, None
+
+    # Run CPU-bound operation in thread pool
+    return await asyncio.to_thread(_extract_sync)
 
 
 async def _get_mutation_summary(
@@ -102,7 +109,7 @@ async def _get_cbioportal_summary(request: PubmedRequest) -> str | None:
 
     try:
         gene = request.genes[0]
-        mutation_pattern, specific_mutation = _extract_mutation_pattern(
+        mutation_pattern, specific_mutation = await _extract_mutation_pattern(
             request.keywords
         )
 
@@ -120,58 +127,94 @@ async def _get_cbioportal_summary(request: PubmedRequest) -> str | None:
         return None
 
 
-async def search_articles_unified(
+async def search_articles_unified(  # noqa: C901
     request: PubmedRequest,
     include_pubmed: bool = True,
     include_preprints: bool = False,
+    include_cbioportal: bool = True,
     output_json: bool = False,
 ) -> str:
     """Search for articles across PubMed and preprint sources."""
-    tasks = []
+    # Import here to avoid circular imports
+    from ..shared_context import SearchContextManager
 
-    if include_pubmed:
-        tasks.append(search_articles(request, output_json=True))
+    # Use shared context to avoid redundant validations
+    with SearchContextManager() as context:
+        # Pre-validate genes once
+        if request.genes:
+            valid_genes = []
+            for gene in request.genes:
+                if await context.validate_gene(gene):
+                    valid_genes.append(gene)
+            request.genes = valid_genes
 
-    if include_preprints:
-        tasks.append(search_preprints(request, output_json=True))
+        tasks: list[Coroutine[Any, Any, Any]] = []
+        task_labels = []
 
-    if not tasks:
-        return json.dumps([]) if output_json else render.to_markdown([])
+        if include_pubmed:
+            tasks.append(search_articles(request, output_json=True))
+            task_labels.append("pubmed")
 
-    # Run searches in parallel
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+        if include_preprints:
+            tasks.append(search_preprints(request, output_json=True))
+            task_labels.append("preprints")
 
-    # Parse and deduplicate results
-    all_articles = _parse_search_results(results)
-    unique_articles = _deduplicate_articles(all_articles)
+        # Add cBioPortal to parallel execution
+        if include_cbioportal and request.genes:
+            tasks.append(_get_cbioportal_summary(request))
+            task_labels.append("cbioportal")
 
-    # Sort by publication state (peer-reviewed first) and then by date
-    unique_articles.sort(
-        key=lambda x: (
-            0
-            if x.get("publication_state", "peer_reviewed") == "peer_reviewed"
-            else 1,
-            x.get("date", "0000-00-00"),
-        ),
-        reverse=True,
-    )
+        if not tasks:
+            return json.dumps([]) if output_json else render.to_markdown([])
 
-    # Get cBioPortal summary if genes are specified
-    cbioportal_summary = await _get_cbioportal_summary(request)
+        # Run all operations in parallel
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    if unique_articles and not output_json:
-        result = render.to_markdown(unique_articles)
-        if cbioportal_summary:
-            # Add cBioPortal summary at the beginning
-            result = cbioportal_summary + "\n\n---\n\n" + result
-        return result
-    else:
-        if cbioportal_summary:
-            return json.dumps(
-                {
-                    "cbioportal_summary": cbioportal_summary,
-                    "articles": unique_articles,
-                },
-                indent=2,
-            )
-        return json.dumps(unique_articles, indent=2)
+        # Create result map for easier processing
+        result_map = dict(zip(task_labels, results, strict=False))
+
+        # Extract cBioPortal summary if it was included
+        cbioportal_summary: str | None = None
+        if "cbioportal" in result_map:
+            result = result_map["cbioportal"]
+            if not isinstance(result, Exception) and isinstance(result, str):
+                cbioportal_summary = result
+
+        # Parse article search results
+        article_results = []
+        for label, result in result_map.items():
+            if label != "cbioportal" and not isinstance(result, Exception):
+                article_results.append(result)
+
+        # Parse and deduplicate results
+        all_articles = _parse_search_results(article_results)
+        unique_articles = _deduplicate_articles(all_articles)
+
+        # Sort by publication state (peer-reviewed first) and then by date
+        unique_articles.sort(
+            key=lambda x: (
+                0
+                if x.get("publication_state", "peer_reviewed")
+                == "peer_reviewed"
+                else 1,
+                x.get("date", "0000-00-00"),
+            ),
+            reverse=True,
+        )
+
+        if unique_articles and not output_json:
+            result = render.to_markdown(unique_articles)
+            if cbioportal_summary and isinstance(cbioportal_summary, str):
+                # Add cBioPortal summary at the beginning
+                result = cbioportal_summary + "\n\n---\n\n" + result
+            return result
+        else:
+            if cbioportal_summary:
+                return json.dumps(
+                    {
+                        "cbioportal_summary": cbioportal_summary,
+                        "articles": unique_articles,
+                    },
+                    indent=2,
+                )
+            return json.dumps(unique_articles, indent=2)

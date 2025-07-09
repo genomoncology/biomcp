@@ -234,16 +234,20 @@ async def test_retry_with_delay_progression():
 
 
 @pytest.mark.asyncio
-async def test_integration_with_http_client():
+async def test_integration_with_http_client(monkeypatch):
     """Test retry integration with HTTP client."""
     from biomcp.http_client import call_http
+
+    # Disable connection pooling for this test
+    monkeypatch.setenv("BIOMCP_USE_CONNECTION_POOL", "false")
 
     # Test 1: Connection error retry
     with patch(
         "biomcp.http_client_simple.httpx.AsyncClient"
     ) as mock_client_class:
         mock_client = AsyncMock()
-        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value = mock_client
+        mock_client.aclose = AsyncMock()  # Mock aclose method
 
         # Simulate connection errors then success
         call_count = 0
@@ -279,7 +283,8 @@ async def test_integration_with_http_client():
         "biomcp.http_client_simple.httpx.AsyncClient"
     ) as mock_client_class:
         mock_client = AsyncMock()
-        mock_client_class.return_value.__aenter__.return_value = mock_client
+        mock_client_class.return_value = mock_client
+        mock_client.aclose = AsyncMock()  # Mock aclose method
 
         # Simulate timeout errors
         mock_client.get.side_effect = httpx.TimeoutException(

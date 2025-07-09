@@ -42,6 +42,7 @@ nav:
       - HTTP Client Guide: HTTP_CLIENT_GUIDE.md
       - Integration Testing: INTEGRATION_TESTING.md
       - Migration Examples: MIGRATION_EXAMPLES.md
+      - Performance Optimizations: performance-optimizations.md
   - Policies:
       - Privacy Policy: policies/biomcp-privacy.md
       - Security Policy: policies/biomcp-security.md

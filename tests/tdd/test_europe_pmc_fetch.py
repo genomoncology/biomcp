@@ -165,7 +165,7 @@ class TestArticleDetailsRouting:
 
             result = await _article_details("Test", test_doi)
 
-            mock_europe_pmc.assert_called_once_with(test_doi)
+            mock_europe_pmc.assert_called_once_with(test_doi, output_json=True)
             assert result == "Europe PMC result"
 
     @pytest.mark.asyncio
@@ -180,7 +180,9 @@ class TestArticleDetailsRouting:
 
             result = await _article_details("Test", test_pmid)
 
-            mock_fetch_articles.assert_called_once_with([35271234], full=True)
+            mock_fetch_articles.assert_called_once_with(
+                [35271234], full=True, output_json=True
+            )
             assert result == "PubTator result"
 
     @pytest.mark.asyncio

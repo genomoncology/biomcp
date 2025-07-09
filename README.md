@@ -227,6 +227,10 @@ BioMCP supports optional environment variables for enhanced functionality:
 # cBioPortal API authentication (optional)
 export CBIO_TOKEN="your-api-token"  # For authenticated access
 export CBIO_BASE_URL="https://www.cbioportal.org/api"  # Custom API endpoint
+
+# Performance tuning
+export BIOMCP_USE_CONNECTION_POOL="true"  # Enable HTTP connection pooling (default: true)
+export BIOMCP_METRICS_ENABLED="false"     # Enable performance metrics (default: false)
 ```
 
 Note: All APIs work without authentication, but tokens may provide higher rate limits.

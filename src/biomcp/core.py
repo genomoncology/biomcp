@@ -1,15 +1,44 @@
 """Core module for BioMCP containing shared resources."""
 
+from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.logging import get_logger
 
-# Initialize the MCP app here
+from .logging_filter import setup_logging_filters
+
+# Set up logger first
+logger = get_logger(__name__)
+
+# Set up logging filters to suppress non-critical ASGI errors
+setup_logging_filters()
+
+
+# Define a lifespan function for startup tasks
+@asynccontextmanager
+async def lifespan(mcp):
+    """Lifespan context manager for startup/shutdown tasks."""
+    # Startup
+    try:
+        from .prefetch import start_prefetching
+
+        await start_prefetching()
+    except Exception as e:
+        # Don't fail startup if prefetching fails
+        logger.warning(f"Prefetching failed: {e}")
+
+    yield
+
+    # Shutdown (if needed)
+
+
+# Initialize the MCP app with lifespan
 mcp_app = FastMCP(
     name="BioMCP - Biomedical Model Context Protocol Server",
     description="Biomedical research server with integrated sequential thinking. Use search(domain='thinking') to activate systematic step-by-step analysis before making biomedical queries.",
+    lifespan=lifespan,
 )
 
 
@@ -69,8 +98,9 @@ def ensure_list(value: Any, split_strings: bool = False) -> list[Any]:
     return [value]
 
 
-logger = get_logger("httpx")
-logger.setLevel("WARN")
+# Set httpx logger to warn level only
+httpx_logger = get_logger("httpx")
+httpx_logger.setLevel("WARN")
 
-logger = get_logger(__name__)
+# Set main logger level
 logger.setLevel("INFO")

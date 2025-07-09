@@ -116,6 +116,30 @@ HTTP_TIMEOUT_SECONDS = 120.0
 HTTP_ERROR_CODE_NETWORK = 599
 HTTP_ERROR_CODE_UNSUPPORTED_METHOD = 405
 
+# Batching and Pagination Configuration
+DEFAULT_BATCH_SIZE = 10
+DEFAULT_BATCH_TIMEOUT = 0.1
+CBIOPORTAL_BATCH_SIZE = 5
+EUROPE_PMC_PAGE_SIZE = 25
+BIORXIV_MAX_PAGES = 3
+BIORXIV_RESULTS_PER_PAGE = 30
+BIORXIV_DEFAULT_DAYS_BACK = 365
+
+# Prefetching Configuration
+PREFETCH_TOP_GENES = 5
+PREFETCH_TOP_DISEASES = 3
+PREFETCH_TOP_CHEMICALS = 3
+PREFETCH_TIMEOUT = 2.0
+
+# Cache Configuration
+REQUEST_CACHE_MAX_SIZE = 1000
+CACHE_KEY_SAMPLE_SIZE = 100
+
+# Connection Pool Configuration
+CONNECTION_POOL_MAX_KEEPALIVE = 20
+CONNECTION_POOL_MAX_CONNECTIONS = 100
+CONNECTION_POOL_KEEPALIVE_EXPIRY = 30
+
 # ============================================================================
 # Domain Configuration
 # ============================================================================

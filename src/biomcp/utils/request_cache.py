@@ -2,16 +2,65 @@
 
 import asyncio
 import time
+from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from typing import Any, TypeVar
 
-# Simple in-memory cache with TTL
-_cache: dict[str, tuple[Any, float]] = {}
-_cache_lock = asyncio.Lock()
+
+# LRU cache with size limit
+class LRUCache:
+    """Simple LRU cache with TTL support."""
+
+    def __init__(self, max_size: int = 1000):
+        self.cache: OrderedDict[str, tuple[Any, float]] = OrderedDict()
+        self.max_size = max_size
+        self._lock = asyncio.Lock()
+
+    async def get(self, key: str) -> Any | None:
+        """Get item from cache if not expired."""
+        async with self._lock:
+            if key not in self.cache:
+                return None
+
+            value, expiry = self.cache[key]
+            if time.time() > expiry:
+                del self.cache[key]
+                return None
+
+            # Move to end (most recently used)
+            self.cache.move_to_end(key)
+            return value
+
+    async def set(self, key: str, value: Any, ttl: float):
+        """Set item in cache with TTL."""
+        async with self._lock:
+            # Remove oldest items if at capacity
+            while len(self.cache) >= self.max_size:
+                self.cache.popitem(last=False)
+
+            expiry = time.time() + ttl
+            self.cache[key] = (value, expiry)
+
+
+# Global LRU cache instance
+_cache = LRUCache(max_size=1000)
 
 # Default TTL in seconds (15 minutes)
 DEFAULT_TTL = 900
+
+# Named caches for different purposes
+_named_caches: dict[str, LRUCache] = {}
+
+
+def get_cache(
+    name: str, ttl_seconds: int = 300, max_size: int = 100
+) -> LRUCache:
+    """Get or create a named cache."""
+    if name not in _named_caches:
+        _named_caches[name] = LRUCache(max_size=max_size)
+    return _named_caches[name]
+
 
 T = TypeVar("T")
 
@@ -25,21 +74,12 @@ def cache_key(*args, **kwargs) -> str:
 
 async def get_cached(key: str) -> Any | None:
     """Get a value from cache if not expired."""
-    async with _cache_lock:
-        if key in _cache:
-            value, expiry = _cache[key]
-            if time.time() < expiry:
-                return value
-            else:
-                # Remove expired entry
-                del _cache[key]
-    return None
+    return await _cache.get(key)
 
 
 async def set_cached(key: str, value: Any, ttl: int = DEFAULT_TTL) -> None:
     """Set a value in cache with TTL."""
-    async with _cache_lock:
-        _cache[key] = (value, time.time() + ttl)
+    await _cache.set(key, value, ttl)
 
 
 def request_cache(ttl: int = DEFAULT_TTL) -> Callable:
@@ -83,5 +123,5 @@ def request_cache(ttl: int = DEFAULT_TTL) -> Callable:
 
 async def clear_cache() -> None:
     """Clear all cached entries."""
-    async with _cache_lock:
-        _cache.clear()
+    # Use the LRU cache's clear method
+    _cache.cache.clear()

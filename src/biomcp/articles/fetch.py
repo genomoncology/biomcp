@@ -225,7 +225,7 @@ async def _article_details(
     - For PMIDs: Calls the PubTator3 API to fetch the article's title, abstract, and full text (if available)
     - For DOIs: Calls Europe PMC API to fetch preprint details
 
-    Output: A Markdown formatted string containing the retrieved article content.
+    Output: A JSON formatted string containing the retrieved article content.
     """
     identifier = str(pmid)
 
@@ -233,10 +233,12 @@ async def _article_details(
     if is_doi(identifier):
         from .preprints import fetch_europe_pmc_article
 
-        return await fetch_europe_pmc_article(identifier)
+        return await fetch_europe_pmc_article(identifier, output_json=True)
     # Check if it's a PMID (PubMed article)
     elif is_pmid(identifier):
-        return await fetch_articles([int(identifier)], full=True)
+        return await fetch_articles(
+            [int(identifier)], full=True, output_json=True
+        )
     else:
         # Unknown identifier format
         return json.dumps(

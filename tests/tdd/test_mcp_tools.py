@@ -17,7 +17,7 @@ class TestArticleSearcherMCPTool:
         mock_results = [{"title": "Test Article", "pmid": 12345}]
 
         with patch(
-            "biomcp.articles.unified.search_articles_unified"
+            "biomcp.articles.search_optimized.article_searcher_optimized"
         ) as mock_search:
             mock_search.return_value = json.dumps(mock_results)
 
@@ -34,26 +34,22 @@ class TestArticleSearcherMCPTool:
             # Verify the function was called
             mock_search.assert_called_once()
 
-            # Check the request object was created properly
-            args = mock_search.call_args[0]
-            request = args[0]
-
-            assert request.chemicals == ["aspirin", "ibuprofen"]
-            assert request.diseases == ["cancer", "diabetes"]
-            assert request.genes == ["BRAF", "TP53"]
-            assert request.keywords == ["mutation", "therapy"]
-            assert request.variants == ["V600E", "R175H"]
-
-            # Check other parameters
+            # Check the parameters were passed correctly
             kwargs = mock_search.call_args[1]
-            assert kwargs["include_pubmed"] is True
+            assert kwargs["call_benefit"] == "Testing search functionality"
+            assert kwargs["chemicals"] == "aspirin,ibuprofen"
+            assert kwargs["diseases"] == "cancer,diabetes"
+            assert kwargs["genes"] == "BRAF,TP53"
+            assert kwargs["keywords"] == "mutation,therapy"
+            assert kwargs["variants"] == "V600E,R175H"
             assert kwargs["include_preprints"] is True
+            assert kwargs.get("include_cbioportal", True) is True
 
     @pytest.mark.asyncio
     async def test_article_searcher_with_lists(self):
         """Test article_searcher with list inputs."""
         with patch(
-            "biomcp.articles.unified.search_articles_unified"
+            "biomcp.articles.search_optimized.article_searcher_optimized"
         ) as mock_search:
             mock_search.return_value = "## Results"
 
@@ -66,42 +62,37 @@ class TestArticleSearcherMCPTool:
             )
 
             # Check list parameters were passed correctly
-            args = mock_search.call_args[0]
-            request = args[0]
-
-            assert request.chemicals == ["drug1", "drug2"]
-            assert request.diseases == ["disease1"]
-            assert request.genes == ["GENE1"]
-
-            # Check include_preprints was respected
             kwargs = mock_search.call_args[1]
+            assert kwargs["call_benefit"] == "Testing with lists"
+            assert kwargs["chemicals"] == ["drug1", "drug2"]
+            assert kwargs["diseases"] == ["disease1"]
+            assert kwargs["genes"] == ["GENE1"]
             assert kwargs["include_preprints"] is False
 
     @pytest.mark.asyncio
     async def test_article_searcher_minimal_params(self):
         """Test article_searcher with minimal parameters."""
         with patch(
-            "biomcp.articles.unified.search_articles_unified"
+            "biomcp.articles.search_optimized.article_searcher_optimized"
         ) as mock_search:
             mock_search.return_value = "## No results"
 
             await _article_searcher(call_benefit="Minimal test")
 
             # Should still work with no search parameters
-            args = mock_search.call_args[0]
-            request = args[0]
-
-            assert request.chemicals == []
-            assert request.diseases == []
-            assert request.genes == []
-            assert request.keywords == []
-            assert request.variants == []
+            kwargs = mock_search.call_args[1]
+            assert kwargs["call_benefit"] == "Minimal test"
+            assert kwargs.get("chemicals") is None
+            assert kwargs.get("diseases") is None
+            assert kwargs.get("genes") is None
+            assert kwargs.get("keywords") is None
+            assert kwargs.get("variants") is None
 
     @pytest.mark.asyncio
     async def test_article_searcher_empty_strings(self):
         """Test article_searcher with empty strings."""
         with patch(
-            "biomcp.articles.unified.search_articles_unified"
+            "biomcp.articles.search_optimized.article_searcher_optimized"
         ) as mock_search:
             mock_search.return_value = "## Results"
 
@@ -112,10 +103,9 @@ class TestArticleSearcherMCPTool:
                 genes="",
             )
 
-            # Empty strings with split_strings=True result in lists with empty string
-            args = mock_search.call_args[0]
-            request = args[0]
-
-            assert request.chemicals == [""]
-            assert request.diseases == [""]
-            assert request.genes == [""]
+            # Empty strings are passed through
+            kwargs = mock_search.call_args[1]
+            assert kwargs["call_benefit"] == "Empty string test"
+            assert kwargs["chemicals"] == ""
+            assert kwargs["diseases"] == ""
+            assert kwargs["genes"] == ""

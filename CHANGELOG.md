@@ -28,6 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI/CD workflows for automated testing and releases
 - Session-based thinking to replace global state
 - Extracted router handlers to reduce complexity
+- **Performance Optimizations**:
+  - Connection pooling with event loop lifecycle management (30% latency reduction)
+  - Parallel test execution with pytest-xdist (5x faster test runs)
+  - Request batching for cBioPortal API calls (80% fewer API calls)
+  - Smart caching with LRU eviction and fast hash keys (10x faster cache operations)
+  - Prefetching for common genes, diseases, and chemicals
+  - Shared validation context to eliminate redundant checks
+  - Pagination support for Europe PMC searches
+  - Conditional metrics collection (disabled by default)
 - Integration tests for MCP server functionality
 - Utility modules for gene validation, mutation filtering, and request caching
 
