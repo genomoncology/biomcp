@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 
 from .. import logger, mcp_app
 
-app = FastAPI(title="BioMCP Worker")
+app = FastAPI(title="BioMCP Worker", version="0.1.10")
 
 # Add CORS middleware
 app.add_middleware(

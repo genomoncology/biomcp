@@ -45,9 +45,15 @@ class TestMCPIntegration:
         search_tool = next(t for t in tools if t.name == "search")
 
         # Check required parameters
-        assert "call_benefit" in search_tool.inputSchema["properties"]
-        assert "domain" in search_tool.inputSchema["properties"]
         assert "query" in search_tool.inputSchema["properties"]
+        assert "domain" in search_tool.inputSchema["properties"]
+        assert "call_benefit" in search_tool.inputSchema["properties"]
+        # Verify query is required (no default value)
+        assert "query" in search_tool.inputSchema.get("required", [])
+        # Verify call_benefit is optional
+        assert "call_benefit" not in search_tool.inputSchema.get(
+            "required", []
+        )
 
         # Check domain enum values
         domain_schema = search_tool.inputSchema["properties"]["domain"]
@@ -64,11 +70,14 @@ class TestMCPIntegration:
         tools = await mcp_app.list_tools()
         fetch_tool = next(t for t in tools if t.name == "fetch")
 
-        # Check required parameters
+        # Check required parameters - only id should be required
         required = fetch_tool.inputSchema["required"]
-        assert "call_benefit" in required
-        assert "domain" in required
-        assert "id_" in required
+        assert "id" in required
+        assert len(required) == 1  # Only id should be required
+        # Check optional parameters are present
+        assert "domain" in fetch_tool.inputSchema["properties"]
+        assert "call_benefit" in fetch_tool.inputSchema["properties"]
+        assert "detail" in fetch_tool.inputSchema["properties"]
 
         # Check domain enum values (no thinking for fetch)
         domain_schema = fetch_tool.inputSchema["properties"]["domain"]
@@ -103,7 +112,7 @@ class TestMCPIntegration:
 
             # Call the search function
             result = await search(
-                call_benefit="Testing MCP integration",
+                query="",
                 domain="article",
                 genes="BRAF",
                 page_size=10,
@@ -135,9 +144,8 @@ class TestMCPIntegration:
 
             # Call the fetch function
             result = await fetch(
-                call_benefit="Testing variant fetch",
                 domain="variant",
-                id_="rs121913529",
+                id="rs121913529",
             )
 
             # Verify the result structure
@@ -163,7 +171,6 @@ class TestMCPIntegration:
 
             # Call search with unified query
             result = await search(
-                call_benefit="Testing unified search",
                 query="gene:BRAF AND disease:cancer",
                 max_results_per_domain=10,
             )
@@ -209,7 +216,7 @@ class TestMCPIntegration:
         # Test with invalid domain
         with pytest.raises(InvalidDomainError) as exc_info:
             await search(
-                call_benefit="Testing error",
+                query="",
                 domain="invalid_domain",
             )
 
@@ -234,9 +241,8 @@ class TestMCPIntegration:
             from biomcp.router import fetch
 
             result = await fetch(
-                call_benefit="Testing trial fetch",
                 domain="trial",
-                id_="NCT123",
+                id="NCT123",
                 detail="all",
             )
 
@@ -259,7 +265,7 @@ class TestMCPIntegration:
 
             # Test with various parameter formats
             await search(
-                call_benefit="Testing parameters",
+                query="",
                 domain="article",
                 genes='["BRAF", "KRAS"]',  # JSON string
                 diseases="cancer,melanoma",  # Comma-separated

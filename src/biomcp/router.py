@@ -120,11 +120,16 @@ def format_results(
 @mcp_app.tool()
 @track_performance("biomcp.search")
 async def search(  # noqa: C901
-    call_benefit: str,
     query: Annotated[
         str,
         "Unified search query (e.g., 'gene:BRAF AND trials.condition:melanoma'). If provided, other parameters are ignored.",
-    ] = "",
+    ],
+    call_benefit: Annotated[
+        str | None,
+        Field(
+            description="Brief explanation of why this search is being performed and expected benefit. Helps improve search accuracy and provides context for analytics. Highly recommended for better results."
+        ),
+    ] = None,
     domain: Annotated[
         Literal["article", "trial", "variant"] | None,
         Field(
@@ -456,12 +461,19 @@ async def search(  # noqa: C901
 @mcp_app.tool()
 @track_performance("biomcp.fetch")
 async def fetch(  # noqa: C901
-    call_benefit: str,
+    id: Annotated[str, "PMID / NCT ID / Variant ID / DOI"],  # noqa: A002
     domain: Annotated[
-        Literal["article", "trial", "variant"],
-        Field(description="Domain of the record"),
-    ],
-    id_: Annotated[str, "PMID / NCT ID / Variant ID"],
+        Literal["article", "trial", "variant"] | None,
+        Field(
+            description="Domain of the record (auto-detected if not provided)"
+        ),
+    ] = None,
+    call_benefit: Annotated[
+        str | None,
+        Field(
+            description="Brief explanation of why this fetch is being performed and expected benefit. Helps provide context for analytics and improves result relevance."
+        ),
+    ] = None,
     detail: Annotated[
         Literal[
             "protocol", "locations", "outcomes", "references", "all", "full"
@@ -480,6 +492,12 @@ async def fetch(  # noqa: C901
     - Articles: PMID (PubMed ID) - e.g., "35271234" OR DOI - e.g., "10.1101/2024.01.20.23288905"
     - Trials: NCT ID (ClinicalTrials.gov ID) - e.g., "NCT04280705"
     - Variants: HGVS notation or dbSNP ID - e.g., "chr7:g.140453136A>T" or "rs121913254"
+
+    The domain is automatically detected from the ID format if not provided:
+    - NCT* → trial
+    - Contains "/" with numeric prefix (DOI) → article
+    - Pure numeric → article (PMID)
+    - rs* or contains ':' or 'g.' → variant
 
     ## DOMAIN-SPECIFIC OPTIONS:
 
@@ -520,32 +538,65 @@ async def fetch(  # noqa: C901
 
     ## EXAMPLES:
 
-    Fetch article with annotations:
+    Fetch article by PMID (domain auto-detected):
     ```
-    await fetch(
-        domain="article",
-        id_="35271234"
-    )
+    await fetch(id="35271234")
     ```
 
-    Fetch complete trial information:
+    Fetch article by DOI (domain auto-detected):
+    ```
+    await fetch(id="10.1101/2024.01.20.23288905")
+    ```
+
+    Fetch complete trial information (domain auto-detected):
     ```
     await fetch(
-        domain="trial",
-        id_="NCT04280705",
+        id="NCT04280705",
         detail="all"
     )
     ```
 
     Fetch variant with clinical interpretations:
     ```
+    await fetch(id="rs121913254")
+    ```
+
+    Explicitly specify domain (optional):
+    ```
     await fetch(
         domain="variant",
-        id_="rs121913254"
+        id="chr7:g.140453136A>T"
     )
     ```
     """
-    logger.info(f"Fetch called for {domain} with id={id_}, detail={detail}")
+    # Auto-detect domain if not provided
+    if domain is None:
+        # Try to infer domain from ID format
+        if id.upper().startswith("NCT"):
+            domain = "trial"
+            logger.info(f"Auto-detected domain 'trial' from NCT ID: {id}")
+        elif "/" in id and id.split("/")[0].replace(".", "").isdigit():
+            # DOI format (e.g., 10.1038/nature12373) - treat as article
+            domain = "article"
+            logger.info(f"Auto-detected domain 'article' from DOI: {id}")
+        elif id.isdigit():
+            # Numeric ID - likely PMID
+            domain = "article"
+            logger.info(
+                f"Auto-detected domain 'article' from numeric ID: {id}"
+            )
+        elif id.startswith("rs") or ":" in id or "g." in id:
+            # rsID or HGVS notation
+            domain = "variant"
+            logger.info(f"Auto-detected domain 'variant' from ID format: {id}")
+        else:
+            # Default to article if we can't determine
+            domain = "article"
+            logger.warning(
+                f"Could not auto-detect domain for ID '{id}', defaulting to 'article'"
+            )
+
+    logger.info(f"Fetch called for {domain} with id={id}, detail={detail}")
 
     if domain == "article":
         logger.debug("Fetching article details")
@@ -554,8 +605,9 @@ async def fetch(  # noqa: C901
 
             # The _article_details function handles both PMIDs and DOIs
             result_str = await _article_details(
-                call_benefit=call_benefit,
-                pmid=id_,
+                call_benefit=call_benefit
+                or "Fetching article details via MCP tool",
+                pmid=id,
             )
         except Exception as e:
             logger.error(f"Article fetch failed: {e}")
@@ -587,11 +639,11 @@ async def fetch(  # noqa: C901
         text_content = full_text if full_text else abstract
 
         return {
-            "id": str(article.get("pmid", id_)),
+            "id": str(article.get("pmid", id)),
             "title": article.get("title", DEFAULT_TITLE),
             "text": text_content,
             "url": article.get(
-                "url", f"https://pubmed.ncbi.nlm.nih.gov/{id_}/"
+                "url", f"https://pubmed.ncbi.nlm.nih.gov/{id}/"
             ),
             "metadata": {
                 "pmid": article.get("pmid"),
@@ -619,7 +671,7 @@ async def fetch(  # noqa: C901
         try:
             # Always fetch protocol for basic info - get JSON format
             protocol_json = await trial_getter.get_trial(
-                nct_id=id_,
+                nct_id=id,
                 module=trial_getter.Module.PROTOCOL,
                 output_json=True,
             )
@@ -628,14 +680,14 @@ async def fetch(  # noqa: C901
             try:
                 protocol_data = json.loads(protocol_json)
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse protocol JSON for {id_}: {e}")
+                logger.error(f"Failed to parse protocol JSON for {id}: {e}")
                 return {
-                    "id": id_,
-                    "title": f"Clinical Trial {id_}",
+                    "id": id,
+                    "title": f"Clinical Trial {id}",
                     "text": f"Error parsing trial data: {e}",
-                    "url": f"https://clinicaltrials.gov/study/{id_}",
+                    "url": f"https://clinicaltrials.gov/study/{id}",
                     "metadata": {
-                        "nct_id": id_,
+                        "nct_id": id,
                         "error": f"JSON parse error: {e}",
                     },
                 }
@@ -643,15 +695,15 @@ async def fetch(  # noqa: C901
             # Check for errors in the response
             if "error" in protocol_data:
                 return {
-                    "id": id_,
-                    "title": f"Clinical Trial {id_}",
+                    "id": id,
+                    "title": f"Clinical Trial {id}",
                     "text": protocol_data.get(
                         "details",
                         protocol_data.get("error", "Trial not found"),
                     ),
-                    "url": f"https://clinicaltrials.gov/study/{id_}",
+                    "url": f"https://clinicaltrials.gov/study/{id}",
                     "metadata": {
-                        "nct_id": id_,
+                        "nct_id": id,
                         "error": protocol_data.get("error"),
                     },
                 }
@@ -671,7 +723,7 @@ async def fetch(  # noqa: C901
             arms_module = protocol_section.get("armsInterventionsModule", {})
 
             # Add basic protocol info to text
-            title = id_module.get("briefTitle", f"Clinical Trial {id_}")
+            title = id_module.get("briefTitle", f"Clinical Trial {id}")
             text_parts.append(f"Study Title: {title}")
 
             # Conditions
@@ -702,14 +754,14 @@ async def fetch(  # noqa: C901
             text_parts.append(f"\nSummary: {brief_summary}")
 
             # Prepare metadata
-            metadata = {"nct_id": id_, "protocol": protocol_data}
+            metadata = {"nct_id": id, "protocol": protocol_data}
 
             if detail in ("all", "locations", "outcomes", "references"):
                 # Fetch additional sections as needed
                 if detail == "all" or detail == "locations":
                     try:
                         locations_json = await trial_getter.get_trial(
-                            nct_id=id_,
+                            nct_id=id,
                             module=trial_getter.Module.LOCATIONS,
                             output_json=True,
                         )
@@ -729,14 +781,14 @@ async def fetch(  # noqa: C901
                                 )
                     except Exception as e:
                         logger.warning(
-                            f"Failed to fetch locations for {id_}: {e}"
+                            f"Failed to fetch locations for {id}: {e}"
                         )
                         metadata["locations"] = []
 
                 if detail == "all" or detail == "outcomes":
                     try:
                         outcomes_json = await trial_getter.get_trial(
-                            nct_id=id_,
+                            nct_id=id,
                             module=trial_getter.Module.OUTCOMES,
                             output_json=True,
                         )
@@ -762,14 +814,14 @@ async def fetch(  # noqa: C901
                                 )
                     except Exception as e:
                         logger.warning(
-                            f"Failed to fetch outcomes for {id_}: {e}"
+                            f"Failed to fetch outcomes for {id}: {e}"
                         )
                         metadata["outcomes"] = {}
 
                 if detail == "all" or detail == "references":
                     try:
                         references_json = await trial_getter.get_trial(
-                            nct_id=id_,
+                            nct_id=id,
                             module=trial_getter.Module.REFERENCES,
                             output_json=True,
                         )
@@ -789,16 +841,16 @@ async def fetch(  # noqa: C901
                                 )
                     except Exception as e:
                         logger.warning(
-                            f"Failed to fetch references for {id_}: {e}"
+                            f"Failed to fetch references for {id}: {e}"
                         )
                         metadata["references"] = []
 
             # Return OpenAI MCP compliant format
             return {
-                "id": id_,
+                "id": id,
                 "title": title,
                 "text": "\n".join(text_parts),
-                "url": f"https://clinicaltrials.gov/study/{id_}",
+                "url": f"https://clinicaltrials.gov/study/{id}",
                 "metadata": metadata,
             }
 
@@ -812,7 +864,7 @@ async def fetch(  # noqa: C901
             from biomcp.variants.getter import get_variant
 
             result_str = await get_variant(
-                variant_id=id_,
+                variant_id=id,
                 output_json=True,
                 include_external=True,
             )
@@ -842,7 +894,7 @@ async def fetch(  # noqa: C901
         text_parts = []
 
         # Basic variant info
-        text_parts.append(f"Variant: {variant_data.get('_id', id_)}")
+        text_parts.append(f"Variant: {variant_data.get('_id', id)}")
 
         # Gene information
         if variant_data.get("gene"):
@@ -899,12 +951,12 @@ async def fetch(  # noqa: C901
         if not url and variant_data.get("dbsnp", {}).get("rsid"):
             url = f"https://www.ncbi.nlm.nih.gov/snp/{variant_data['dbsnp']['rsid']}"
         elif not url:
-            url = f"https://myvariant.info/v1/variant/{id_}"
+            url = f"https://myvariant.info/v1/variant/{id}"
 
         # Return OpenAI MCP compliant format
         return {
-            "id": variant_data.get("_id", id_),
-            "title": f"Variant {variant_data.get('_id', id_)}",
+            "id": variant_data.get("_id", id),
+            "title": f"Variant {variant_data.get('_id', id)}",
             "text": "\n".join(text_parts),
             "url": url,
             "metadata": variant_data,

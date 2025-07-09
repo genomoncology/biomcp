@@ -38,6 +38,7 @@ async def lifespan(mcp):
 mcp_app = FastMCP(
     name="BioMCP - Biomedical Model Context Protocol Server",
     description="Biomedical research server with integrated sequential thinking. Use search(domain='thinking') to activate systematic step-by-step analysis before making biomedical queries.",
+    version="0.1.10",
     lifespan=lifespan,
 )
 

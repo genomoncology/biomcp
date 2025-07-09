@@ -8,10 +8,6 @@ from biomcp.metrics import get_all_metrics, get_metric_summary
 
 @mcp_app.tool()
 async def get_performance_metrics(
-    call_benefit: Annotated[
-        str,
-        "Define and summarize why this function is being called and the intended benefit",
-    ],
     metric_name: Annotated[
         str | None,
         "Specific metric name to retrieve, or None for all metrics",
@@ -26,7 +22,6 @@ async def get_performance_metrics(
     - Domain-specific performance breakdown
 
     Parameters:
-        call_benefit: Why metrics are being retrieved
         metric_name: Optional specific metric to retrieve
 
     Returns:

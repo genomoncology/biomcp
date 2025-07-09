@@ -306,6 +306,25 @@ For comprehensive documentation, visit [https://biomcp.org](https://biomcp.org)
 - [Error Handling Guide](./docs/ERROR_HANDLING.md) - Comprehensive error handling patterns
 - [Integration Testing Guide](./docs/INTEGRATION_TESTING.md) - Best practices for reliable integration tests
 - [Third-Party Endpoints](./THIRD_PARTY_ENDPOINTS.md) - Complete list of external APIs used
+- [Testing Guide](./docs/development/testing.md) - Running tests and understanding test categories
+
+## Development
+
+### Running Tests
+
+```bash
+# Run all tests (including integration tests)
+make test
+
+# Run only unit tests (excluding integration tests)
+uv run python -m pytest tests -m "not integration"
+
+# Run only integration tests
+uv run python -m pytest tests -m "integration"
+```
+
+**Note**: Integration tests make real API calls and may fail due to network issues or rate limiting.
+In CI/CD, integration tests are run separately and allowed to fail without blocking the build.
 
 ## BioMCP Examples Repo
 
