@@ -43,6 +43,7 @@ nav:
       - Integration Testing: INTEGRATION_TESTING.md
       - Migration Examples: MIGRATION_EXAMPLES.md
       - Performance Optimizations: performance-optimizations.md
+      - Testing: development/testing.md
   - Policies:
       - Privacy Policy: policies/biomcp-privacy.md
       - Security Policy: policies/biomcp-security.md

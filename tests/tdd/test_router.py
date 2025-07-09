@@ -161,7 +161,7 @@ class TestSearchFunction:
             # Mock thinking tracker to prevent reminder
             with patch("biomcp.router.get_thinking_reminder", return_value=""):
                 result = await search(
-                    call_benefit="Test articles",
+                    query="",
                     domain="article",
                     genes="BRAF",
                     diseases=["cancer"],
@@ -190,7 +190,7 @@ class TestSearchFunction:
             # Mock thinking tracker to prevent reminder
             with patch("biomcp.router.get_thinking_reminder", return_value=""):
                 result = await search(
-                    call_benefit="Test trials",
+                    query="",
                     domain="trial",
                     conditions=["cancer"],
                     phase="Phase 3",
@@ -212,7 +212,7 @@ class TestSearchFunction:
             # Mock thinking tracker to prevent reminder
             with patch("biomcp.router.get_thinking_reminder", return_value=""):
                 result = await search(
-                    call_benefit="Test variants",
+                    query="",
                     domain="variant",
                     genes="BRAF",
                     significance="pathogenic",
@@ -230,7 +230,6 @@ class TestSearchFunction:
             }
 
             result = await search(
-                call_benefit="Test unified",
                 query="gene:BRAF AND disease:cancer",
                 max_results_per_domain=20,
             )
@@ -246,18 +245,18 @@ class TestSearchFunction:
     async def test_search_no_domain_or_query(self):
         """Test search without domain or query raises error."""
         with pytest.raises(InvalidParameterError) as exc_info:
-            await search(call_benefit="Test")
+            await search(query="")
 
         assert "query or domain" in str(exc_info.value)
 
     async def test_search_invalid_domain(self):
         """Test search with invalid domain."""
         with pytest.raises(InvalidDomainError):
-            await search(call_benefit="Test", domain="invalid_domain")
+            await search(query="", domain="invalid_domain")
 
     async def test_search_get_schema(self):
         """Test search with get_schema flag."""
-        result = await search(call_benefit="Get schema", get_schema=True)
+        result = await search(query="", get_schema=True)
 
         assert "domains" in result
         assert "cross_domain_fields" in result
@@ -268,7 +267,7 @@ class TestSearchFunction:
         """Test search with invalid pagination parameters."""
         with pytest.raises(InvalidParameterError) as exc_info:
             await search(
-                call_benefit="Test",
+                query="",
                 domain="article",
                 page=0,  # Invalid - must be >= 1
                 page_size=10,
@@ -287,7 +286,7 @@ class TestSearchFunction:
 
             # Test with JSON array string
             await search(
-                call_benefit="Test",
+                query="",
                 domain="article",
                 genes='["BRAF", "KRAS"]',
                 diseases="cancer,melanoma",  # Comma-separated
@@ -318,9 +317,8 @@ class TestFetchFunction:
             mock_fetch.return_value = mock_result
 
             result = await fetch(
-                call_benefit="Test fetch",
                 domain="article",
-                id_="12345",
+                id="12345",
             )
 
             assert result["id"] == "12345"
@@ -330,9 +328,7 @@ class TestFetchFunction:
 
     async def test_fetch_article_invalid_pmid(self):
         """Test fetching article with invalid identifier."""
-        result = await fetch(
-            call_benefit="Test", domain="article", id_="not_a_number"
-        )
+        result = await fetch(domain="article", id="not_a_number")
 
         # Should return an error since "not_a_number" is neither a valid PMID nor DOI
         assert "error" in result
@@ -363,9 +359,7 @@ class TestFetchFunction:
             mock_o.return_value = mock_outcomes
             mock_r.return_value = mock_references
 
-            result = await fetch(
-                call_benefit="Test", domain="trial", id_="NCT123", detail="all"
-            )
+            result = await fetch(domain="trial", id="NCT123", detail="all")
 
             assert result["id"] == "NCT123"
             assert "metadata" in result
@@ -377,9 +371,8 @@ class TestFetchFunction:
         """Test fetching trial with invalid detail parameter."""
         with pytest.raises(InvalidParameterError) as exc_info:
             await fetch(
-                call_benefit="Test",
                 domain="trial",
-                id_="NCT123",
+                id="NCT123",
                 detail="invalid_section",
             )
 
@@ -400,9 +393,7 @@ class TestFetchFunction:
         with patch("biomcp.variants.getter.get_variant") as mock_get:
             mock_get.return_value = mock_result
 
-            result = await fetch(
-                call_benefit="Test", domain="variant", id_="rs123"
-            )
+            result = await fetch(domain="variant", id="rs123")
 
             assert result["id"] == "rs123"
             assert "TCGA Data: Available" in result["text"]
@@ -417,16 +408,14 @@ class TestFetchFunction:
         with patch("biomcp.variants.getter.get_variant") as mock_get:
             mock_get.return_value = mock_result
 
-            result = await fetch(
-                call_benefit="Test", domain="variant", id_="rs123"
-            )
+            result = await fetch(domain="variant", id="rs123")
 
             assert result["id"] == "rs123"
 
     async def test_fetch_invalid_domain(self):
         """Test fetch with invalid domain."""
         with pytest.raises(InvalidDomainError):
-            await fetch(call_benefit="Test", domain="invalid", id_="123")
+            await fetch(domain="invalid", id="123")
 
     async def test_fetch_error_handling(self):
         """Test fetch error handling."""
@@ -434,9 +423,64 @@ class TestFetchFunction:
             mock_fetch.side_effect = Exception("API Error")
 
             with pytest.raises(SearchExecutionError) as exc_info:
-                await fetch(call_benefit="Test", domain="article", id_="123")
+                await fetch(domain="article", id="123")
 
             assert "Failed to execute search" in str(exc_info.value)
+
+    async def test_fetch_domain_auto_detection_pmid(self):
+        """Test domain auto-detection for PMID."""
+        with patch("biomcp.articles.fetch._article_details") as mock_fetch:
+            mock_fetch.return_value = json.dumps([
+                {"pmid": "12345", "title": "Test"}
+            ])
+
+            # Numeric ID should auto-detect as article
+            result = await fetch(id="12345")
+            assert result["id"] == "12345"
+            mock_fetch.assert_called_once()
+
+    async def test_fetch_domain_auto_detection_nct(self):
+        """Test domain auto-detection for NCT ID."""
+        with patch("biomcp.trials.getter.get_trial") as mock_get:
+            mock_get.return_value = json.dumps({
+                "protocolSection": {
+                    "identificationModule": {"briefTitle": "Test Trial"}
+                }
+            })
+
+            # NCT ID should auto-detect as trial
+            result = await fetch(id="NCT12345")
+            assert "NCT12345" in result["url"]
+            mock_get.assert_called()
+
+    async def test_fetch_domain_auto_detection_doi(self):
+        """Test domain auto-detection for DOI."""
+        with patch("biomcp.articles.fetch._article_details") as mock_fetch:
+            mock_fetch.return_value = json.dumps([
+                {"doi": "10.1038/nature12345", "title": "Test"}
+            ])
+
+            # DOI should auto-detect as article
+            await fetch(id="10.1038/nature12345")
+            mock_fetch.assert_called_once()
+
+    async def test_fetch_domain_auto_detection_variant(self):
+        """Test domain auto-detection for variant IDs."""
+        with patch("biomcp.variants.getter.get_variant") as mock_get:
+            mock_get.return_value = json.dumps([{"_id": "rs12345"}])
+
+            # rsID should auto-detect as variant
+            await fetch(id="rs12345")
+            mock_get.assert_called_once()
+
+        # Test HGVS notation
+        with patch("biomcp.variants.getter.get_variant") as mock_get:
+            mock_get.return_value = json.dumps([
+                {"_id": "chr7:g.140453136A>T"}
+            ])
+
+            await fetch(id="chr7:g.140453136A>T")
+            mock_get.assert_called_once()
 
 
 @pytest.mark.asyncio

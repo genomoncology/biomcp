@@ -61,15 +61,23 @@ MCP resource will be added as text.
 You should see at least 10 tools that can be accessed with BioMCP, including
 the built-in sequential thinking tool.
 
-### Tool Parameters
+### Optional Parameters for Better Results
 
-Most BioMCP data retrieval tools include a required `call_benefit` parameter that helps the model explain why it's using a particular tool. When using these tools, you must provide:
+The `search` and `fetch` tools include optional parameters:
 
-- `call_benefit`: A brief description of why the tool is being called and what benefit is expected from using it
+**For search and fetch tools:**
 
-This parameter helps improve tool usage transparency and allows for better reasoning about tool selection.
+- `call_benefit`: Helps the AI think about why it's making the call, improving accuracy and providing context for analytics
 
-Note: The `sequential_thinking` tool does not require the `call_benefit` parameter as it has its own structured parameters for managing the thinking process.
+**For fetch tool:**
+
+- `domain`: Usually not needed as BioMCP automatically detects the domain from the ID format:
+  - NCT12345 → trial
+  - 12345678 → article (PMID)
+  - 10.1038/nature12345 → article (DOI)
+  - rs12345 → variant
+
+When using these tools, the AI will automatically provide this context when it understands the benefit.
 
 ### Example Queries
 

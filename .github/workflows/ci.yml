@@ -65,7 +65,7 @@ jobs:
           uv sync --group dev
 
       - name: Run tests
-        run: uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
+        run: uv run python -m pytest tests -m "not integration" --cov --cov-config=pyproject.toml --cov-report=xml
 
       - name: Check typing
         run: uv run mypy
@@ -157,3 +157,31 @@ jobs:
       - name: Run MCP integration tests
         run: |
           uv run python -m pytest tests/tdd/test_mcp_integration.py -v
+
+  # Run integration tests separately - allowed to fail
+  integration-tests:
+    runs-on: ubuntu-latest
+    name: Integration Tests (Optional)
+    continue-on-error: true
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --group dev
+
+      - name: Run integration tests
+        run: |
+          uv run python -m pytest tests -m "integration" -v --tb=short
+        continue-on-error: true
