@@ -7,8 +7,13 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.logging import get_logger
 
+from .logging_filter import setup_logging_filters
+
 # Set up logger first
 logger = get_logger(__name__)
+
+# Set up logging filters to suppress non-critical ASGI errors
+setup_logging_filters()
 
 
 # Define a lifespan function for startup tasks

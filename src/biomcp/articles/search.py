@@ -5,7 +5,7 @@ from typing import Annotated, Any, get_args
 
 from pydantic import BaseModel, Field, computed_field
 
-from .. import ensure_list, http_client, render
+from .. import http_client, render
 from ..constants import PUBTATOR3_SEARCH_URL, SYSTEM_PAGE_SIZE
 from ..core import PublicationState
 from .autocomplete import Concept, EntityRequest, autocomplete
@@ -258,20 +258,16 @@ async def _article_searcher(
     Limited to max 80 results (40 from each source).
     """
     # Import here to avoid circular dependency
-    from .unified import search_articles_unified
+    from .search_optimized import article_searcher_optimized
 
-    # Convert individual parameters to a PubmedRequest object
-    request = PubmedRequest(
-        chemicals=ensure_list(chemicals, split_strings=True),
-        diseases=ensure_list(diseases, split_strings=True),
-        genes=ensure_list(genes, split_strings=True),
-        keywords=ensure_list(keywords, split_strings=True),
-        variants=ensure_list(variants, split_strings=True),
-    )
-
-    return await search_articles_unified(
-        request,
-        include_pubmed=True,
+    # Use the optimized version with caching
+    return await article_searcher_optimized(
+        call_benefit=call_benefit,
+        chemicals=chemicals,
+        diseases=diseases,
+        genes=genes,
+        keywords=keywords,
+        variants=variants,
         include_preprints=include_preprints,
         include_cbioportal=include_cbioportal,
     )

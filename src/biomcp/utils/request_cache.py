@@ -49,6 +49,19 @@ _cache = LRUCache(max_size=1000)
 # Default TTL in seconds (15 minutes)
 DEFAULT_TTL = 900
 
+# Named caches for different purposes
+_named_caches: dict[str, LRUCache] = {}
+
+
+def get_cache(
+    name: str, ttl_seconds: int = 300, max_size: int = 100
+) -> LRUCache:
+    """Get or create a named cache."""
+    if name not in _named_caches:
+        _named_caches[name] = LRUCache(max_size=max_size)
+    return _named_caches[name]
+
+
 T = TypeVar("T")
 
 
