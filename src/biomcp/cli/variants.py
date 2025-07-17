@@ -250,21 +250,26 @@ def predict_variant_effects(
     ] = None,
 ):
     """
-    Predict variant effects using Google DeepMind's AlphaGenome.
-
-    Predicts how genetic variants affect gene regulation including:
-    - Gene expression changes
-    - Chromatin accessibility
-    - Splicing alterations
-    - Promoter activity
-
-    Requires AlphaGenome API key via --api-key or ALPHAGENOME_API_KEY env var.
-
+    Predict variant effects using Google DeepMind's AlphaGenome:\n
+    - Gene expression changes\n
+    - Chromatin accessibility\n
+    - Splicing alterations\n
+    - Promoter activity\n
+    \n
+    Requires AlphaGenome API key via --api-key or ALPHAGENOME_API_KEY env var.\n
+    \n
     Examples:
-        Predict BRAF V600E: biomcp variant predict chr7 140753336 A T
-        With API key: biomcp variant predict chr7 140753336 A T --api-key YOUR_KEY
-        With tissue: biomcp variant predict chr7 140753336 A T --tissue UBERON:0002367
-        Large interval: biomcp variant predict chr7 140753336 A T --interval 500000
+    \n\t# Predict BRAF V600E mutation
+    \n\tbiomcp variant predict chr7 140753336 A T
+    \n
+    \n\t# With API key specified
+    \n\tbiomcp variant predict chr7 140753336 A T --api-key YOUR_KEY
+    \n
+    \n\t# With tissue-specific predictions
+    \n\tbiomcp variant predict chr7 140753336 A T --tissue UBERON:0002367
+    \n
+    \n\t# With larger analysis interval
+    \n\tbiomcp variant predict chr7 140753336 A T --interval 500000
     """
     from ..variants.alphagenome import predict_variant_effects
 

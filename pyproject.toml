@@ -1,6 +1,6 @@
 [project]
 name = "biomcp-python"
-version = "0.1.10"
+version = "0.4.6"
 description = "Biomedical Model Context Protocol Server"
 authors = [{ name = "Ian Maurer", email = "imaurer@gmail.com" }]
 readme = "README.md"
@@ -28,6 +28,7 @@ dependencies = [
     "rich>=14.0.0",
     "typer>=0.15.2",
     "uvicorn>=0.34.2",
+    "alphagenome @ git+https://github.com/google-deepmind/alphagenome.git",
 ]
 
 [project.urls]
@@ -66,13 +67,6 @@ api = [
 worker = [
     "fastapi>=0.110.0",
     "uvicorn>=0.28.0",
-]
-
-# AlphaGenome must be installed manually from GitHub:
-# git clone https://github.com/google-deepmind/alphagenome.git
-# cd alphagenome && pip install .
-alphagenome = [
-    # AlphaGenome package installed from GitHub (see comment above)
 ]
 
 [build-system]
