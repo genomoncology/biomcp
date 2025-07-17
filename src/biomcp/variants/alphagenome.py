@@ -81,6 +81,15 @@ async def predict_variant_effects(
 
     # Try to import AlphaGenome
     try:
+        # Suppress protobuf version warnings
+        import warnings
+
+        warnings.filterwarnings(
+            "ignore",
+            category=UserWarning,
+            module="google.protobuf.runtime_version",
+        )
+
         from alphagenome.data import genome
         from alphagenome.models import dna_client, variant_scorers
     except ImportError:
