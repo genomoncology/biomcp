@@ -41,7 +41,9 @@ class TestUnifiedBioThingsSearch:
 
         assert "results" in results
         # Skip thinking reminder if present
-        actual_results = [r for r in results["results"] if r["id"] != "thinking-reminder"]
+        actual_results = [
+            r for r in results["results"] if r["id"] != "thinking-reminder"
+        ]
         assert len(actual_results) == 1
         assert actual_results[0]["id"] == "673"
         assert "BRAF" in actual_results[0]["title"]
@@ -77,7 +79,9 @@ class TestUnifiedBioThingsSearch:
 
         assert "results" in results
         # Skip thinking reminder if present
-        actual_results = [r for r in results["results"] if r["id"] != "thinking-reminder"]
+        actual_results = [
+            r for r in results["results"] if r["id"] != "thinking-reminder"
+        ]
         assert len(actual_results) == 1
         assert actual_results[0]["id"] == "CHEMBL941"
         assert "Imatinib" in actual_results[0]["title"]
@@ -109,11 +113,15 @@ class TestUnifiedBioThingsSearch:
         )
 
         # Test disease search
-        results = await search(query="", domain="disease", keywords=["melanoma"])
+        results = await search(
+            query="", domain="disease", keywords=["melanoma"]
+        )
 
         assert "results" in results
         # Skip thinking reminder if present
-        actual_results = [r for r in results["results"] if r["id"] != "thinking-reminder"]
+        actual_results = [
+            r for r in results["results"] if r["id"] != "thinking-reminder"
+        ]
         assert len(actual_results) == 1
         assert actual_results[0]["id"] == "MONDO:0005105"
         assert "melanoma" in actual_results[0]["title"]
@@ -305,6 +313,7 @@ class TestBioThingsErrorCases:
     @pytest.mark.asyncio
     async def test_gene_api_failure(self, monkeypatch):
         """Test handling of API failures for gene search."""
+
         class MockBioThingsClient:
             async def _query_gene(self, query):
                 raise Exception("API connection failed")
@@ -322,6 +331,7 @@ class TestBioThingsErrorCases:
     @pytest.mark.asyncio
     async def test_drug_not_found(self, monkeypatch):
         """Test handling when drug is not found."""
+
         class MockBioThingsClient:
             async def _query_drug(self, query):
                 return []  # No results
@@ -330,14 +340,19 @@ class TestBioThingsErrorCases:
             "biomcp.router.BioThingsClient", MockBioThingsClient
         )
 
-        results = await search(query="", domain="drug", keywords=["nonexistent"])
+        results = await search(
+            query="", domain="drug", keywords=["nonexistent"]
+        )
         assert "results" in results
-        actual_results = [r for r in results["results"] if r["id"] != "thinking-reminder"]
+        actual_results = [
+            r for r in results["results"] if r["id"] != "thinking-reminder"
+        ]
         assert len(actual_results) == 0
 
     @pytest.mark.asyncio
     async def test_disease_invalid_id(self, monkeypatch):
         """Test handling of invalid disease ID in fetch."""
+
         class MockBioThingsClient:
             async def get_disease_info(self, disease_id):
                 return None  # Not found
@@ -366,6 +381,7 @@ class TestBioThingsErrorCases:
 
             async def _get_gene_by_id(self, gene_id):
                 from biomcp.integrations.biothings_client import GeneInfo
+
                 return GeneInfo(**mock_gene_details)
 
         monkeypatch.setattr(
@@ -374,7 +390,9 @@ class TestBioThingsErrorCases:
 
         results = await search(query="", domain="gene", keywords=["673"])
         assert "results" in results
-        actual_results = [r for r in results["results"] if r["id"] != "thinking-reminder"]
+        actual_results = [
+            r for r in results["results"] if r["id"] != "thinking-reminder"
+        ]
         assert len(actual_results) == 1
         # Should handle missing data gracefully
         assert actual_results[0]["id"] == "673"

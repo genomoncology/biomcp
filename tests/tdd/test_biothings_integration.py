@@ -24,7 +24,9 @@ class TestGeneInfo:
     """Test gene information retrieval."""
 
     @pytest.mark.asyncio
-    async def test_get_gene_by_symbol(self, biothings_client, mock_http_client):
+    async def test_get_gene_by_symbol(
+        self, biothings_client, mock_http_client
+    ):
         """Test getting gene info by symbol."""
         # Mock query response
         mock_http_client.request_api = AsyncMock(
@@ -131,7 +133,9 @@ class TestDiseaseInfo:
     """Test disease information retrieval."""
 
     @pytest.mark.asyncio
-    async def test_get_disease_by_name(self, biothings_client, mock_http_client):
+    async def test_get_disease_by_name(
+        self, biothings_client, mock_http_client
+    ):
         """Test getting disease info by name."""
         # Mock query response
         mock_http_client.request_api = AsyncMock(
@@ -199,7 +203,9 @@ class TestDiseaseInfo:
         assert result.disease_id == "MONDO:0016575"
 
     @pytest.mark.asyncio
-    async def test_get_disease_synonyms(self, biothings_client, mock_http_client):
+    async def test_get_disease_synonyms(
+        self, biothings_client, mock_http_client
+    ):
         """Test getting disease synonyms for query expansion."""
         mock_http_client.request_api = AsyncMock(
             side_effect=[
@@ -252,7 +258,11 @@ class TestTrialSynonymExpansion:
             # Mock synonym expansion
             mock_instance = mock_client.return_value
             mock_instance.get_disease_synonyms = AsyncMock(
-                return_value=["GIST", "gastrointestinal stromal tumor", "GI stromal tumor"]
+                return_value=[
+                    "GIST",
+                    "gastrointestinal stromal tumor",
+                    "GI stromal tumor",
+                ]
             )
 
             query = TrialQuery(
@@ -289,7 +299,9 @@ class TestErrorHandling:
     """Test error handling in BioThings integration."""
 
     @pytest.mark.asyncio
-    async def test_api_error_handling(self, biothings_client, mock_http_client):
+    async def test_api_error_handling(
+        self, biothings_client, mock_http_client
+    ):
         """Test handling of API errors."""
         from biomcp.http_client import RequestError
 
@@ -304,7 +316,9 @@ class TestErrorHandling:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_invalid_response_format(self, biothings_client, mock_http_client):
+    async def test_invalid_response_format(
+        self, biothings_client, mock_http_client
+    ):
         """Test handling of invalid API responses."""
         mock_http_client.request_api = AsyncMock(
             return_value=({"invalid": "response"}, None)

@@ -22,23 +22,16 @@ class TestDrugGetter:
                 "description": "Imatinib is a tyrosine kinase inhibitor...",
                 "indication": "Treatment of chronic myeloid leukemia...",
                 "mechanism_of_action": "Inhibits BCR-ABL tyrosine kinase...",
-                "products": {
-                    "name": ["Gleevec", "Glivec"]
-                }
+                "products": {"name": ["Gleevec", "Glivec"]},
             },
             "chembl": {
                 "molecule_chembl_id": "CHEMBL941",
-                "pref_name": "IMATINIB"
+                "pref_name": "IMATINIB",
             },
-            "pubchem": {
-                "cid": 5291
-            },
-            "chebi": {
-                "id": "CHEBI:45783",
-                "name": "imatinib"
-            },
+            "pubchem": {"cid": 5291},
+            "chebi": {"id": "CHEBI:45783", "name": "imatinib"},
             "inchikey": "KTUFNOKKBVMGRW-UHFFFAOYSA-N",
-            "formula": "C29H31N7O"
+            "formula": "C29H31N7O",
         }
 
     @pytest.mark.asyncio
@@ -50,7 +43,7 @@ class TestDrugGetter:
             # Query response
             ({"hits": [{"_id": "CHEMBL941"}]}, None),
             # Get response
-            (mock_drug_response, None)
+            (mock_drug_response, None),
         ]
 
         async def mock_request_api(url, request, method, domain):
@@ -74,6 +67,7 @@ class TestDrugGetter:
     @pytest.mark.asyncio
     async def test_get_drug_by_id(self, monkeypatch, mock_drug_response):
         """Test getting drug by DrugBank ID."""
+
         # Mock the API call
         async def mock_request_api(url, request, method, domain):
             return (mock_drug_response, None)
@@ -88,6 +82,7 @@ class TestDrugGetter:
     @pytest.mark.asyncio
     async def test_get_drug_json_output(self, monkeypatch, mock_drug_response):
         """Test getting drug with JSON output."""
+
         # Mock the API call
         async def mock_request_api(url, request, method, domain):
             return (mock_drug_response, None)
@@ -100,11 +95,15 @@ class TestDrugGetter:
         assert data["drug_id"] == "CHEMBL941"
         assert data["name"] == "Imatinib"
         assert data["drugbank_id"] == "DB00619"
-        assert data["_links"]["DrugBank"] == "https://www.drugbank.ca/drugs/DB00619"
+        assert (
+            data["_links"]["DrugBank"]
+            == "https://www.drugbank.ca/drugs/DB00619"
+        )
 
     @pytest.mark.asyncio
     async def test_drug_not_found(self, monkeypatch):
         """Test drug not found."""
+
         # Mock the API call
         async def mock_request_api(url, request, method, domain):
             return ({"hits": []}, None)
@@ -122,10 +121,7 @@ class TestDrugGetter:
         mock_response = {
             "_id": "TEST001",
             "name": "TestDrug",
-            "drugbank": {
-                "id": "DB99999",
-                "description": long_desc
-            }
+            "drugbank": {"id": "DB99999", "description": long_desc},
         }
 
         async def mock_request_api(url, request, method, domain):
@@ -142,6 +138,7 @@ class TestDrugGetter:
     @pytest.mark.asyncio
     async def test_drug_error_handling(self, monkeypatch):
         """Test error handling."""
+
         # Mock the API call to raise an exception
         async def mock_request_api(url, request, method, domain):
             raise Exception("API error")

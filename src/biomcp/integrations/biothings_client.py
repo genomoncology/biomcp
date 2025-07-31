@@ -132,7 +132,7 @@ class BioThingsClient:
     async def _query_gene(self, symbol: str) -> list[dict[str, Any]] | None:
         """Query MyGene.info for a gene symbol."""
         params = {
-            "q": f'symbol:{quote(symbol)}',
+            "q": f"symbol:{quote(symbol)}",
             "species": "human",
             "fields": "_id,symbol,name,taxid",
             "size": 5,
@@ -158,7 +158,16 @@ class BioThingsClient:
     ) -> GeneInfo | None:
         """Get gene details by ID from MyGene.info."""
         if fields is None:
-            fields = ["symbol", "name", "summary", "alias", "type_of_gene", "ensembl", "refseq", "entrezgene"]
+            fields = [
+                "symbol",
+                "name",
+                "summary",
+                "alias",
+                "type_of_gene",
+                "ensembl",
+                "refseq",
+                "entrezgene",
+            ]
 
         params = {"fields": ",".join(fields)}
 
@@ -242,7 +251,9 @@ class BioThingsClient:
                 disease_id_or_name.upper().startswith(prefix)
                 for prefix in ["MONDO:", "DOID:", "OMIM:", "MESH:"]
             ):
-                return await self._get_disease_by_id(disease_id_or_name, fields)
+                return await self._get_disease_by_id(
+                    disease_id_or_name, fields
+                )
 
             # Otherwise, query by name
             query_result = await self._query_disease(disease_id_or_name)
@@ -288,7 +299,14 @@ class BioThingsClient:
     ) -> DiseaseInfo | None:
         """Get disease details by ID from MyDisease.info."""
         if fields is None:
-            fields = ["name", "mondo", "definition", "synonyms", "xrefs", "phenotypes"]
+            fields = [
+                "name",
+                "mondo",
+                "definition",
+                "synonyms",
+                "xrefs",
+                "phenotypes",
+            ]
 
         params = {"fields": ",".join(fields)}
 
@@ -305,7 +323,10 @@ class BioThingsClient:
         try:
             # Extract definition from mondo if available
             if "mondo" in response and isinstance(response["mondo"], dict):
-                if "definition" in response["mondo"] and "definition" not in response:
+                if (
+                    "definition" in response["mondo"]
+                    and "definition" not in response
+                ):
                     response["definition"] = response["mondo"]["definition"]
                 # Extract synonyms from mondo
                 if "synonym" in response["mondo"]:
@@ -351,7 +372,9 @@ class BioThingsClient:
                 seen.add(syn.lower())
                 unique_synonyms.append(syn)
 
-        return unique_synonyms[:5]  # Limit to top 5 to avoid overly broad searches
+        return unique_synonyms[
+            :5
+        ]  # Limit to top 5 to avoid overly broad searches
 
     async def get_drug_info(
         self, drug_id_or_name: str, fields: list[str] | None = None
@@ -433,9 +456,18 @@ class BioThingsClient:
         """Get drug details by ID from MyChem.info."""
         if fields is None:
             fields = [
-                "name", "drugbank", "chebi", "chembl", "pubchem",
-                "unii", "inchikey", "formula", "description",
-                "indication", "pharmacology", "mechanism_of_action"
+                "name",
+                "drugbank",
+                "chebi",
+                "chembl",
+                "pubchem",
+                "unii",
+                "inchikey",
+                "formula",
+                "description",
+                "indication",
+                "pharmacology",
+                "mechanism_of_action",
             ]
 
         params = {"fields": ",".join(fields)}
@@ -493,7 +525,9 @@ class BioThingsClient:
     def _extract_chembl_fields(self, response: dict[str, Any]) -> None:
         """Extract ChEMBL fields from response."""
         if "chembl" in response and isinstance(response["chembl"], dict):
-            response["chembl_id"] = response["chembl"].get("molecule_chembl_id")
+            response["chembl_id"] = response["chembl"].get(
+                "molecule_chembl_id"
+            )
             if not response.get("name"):
                 response["name"] = response["chembl"].get("pref_name")
 
@@ -512,7 +546,9 @@ class BioThingsClient:
             if not response.get("name") and unii_data.get("display_name"):
                 response["name"] = unii_data["display_name"]
             # Use NCIT description if no description
-            if not response.get("description") and unii_data.get("ncit_description"):
+            if not response.get("description") and unii_data.get(
+                "ncit_description"
+            ):
                 response["description"] = unii_data["ncit_description"]
 
     async def get_variant_info(

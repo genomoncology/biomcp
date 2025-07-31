@@ -34,9 +34,13 @@ async def get_gene(
         if not gene_info:
             error_data = {
                 "error": f"Gene '{gene_id_or_symbol}' not found",
-                "suggestion": "Please check the gene symbol or ID"
+                "suggestion": "Please check the gene symbol or ID",
             }
-            return json.dumps(error_data, indent=2) if output_json else to_markdown([error_data])
+            return (
+                json.dumps(error_data, indent=2)
+                if output_json
+                else to_markdown([error_data])
+            )
 
         # Convert to dict for rendering
         result = gene_info.model_dump(exclude_none=True)
@@ -50,7 +54,9 @@ async def get_gene(
 
         # Format aliases nicely
         if gene_info.alias:
-            result["alias"] = ", ".join(gene_info.alias[:10])  # Limit to first 10
+            result["alias"] = ", ".join(
+                gene_info.alias[:10]
+            )  # Limit to first 10
             if len(gene_info.alias) > 10:
                 result["alias"] += f" (and {len(gene_info.alias) - 10} more)"
 
@@ -63,9 +69,13 @@ async def get_gene(
         logger.error(f"Error fetching gene info for {gene_id_or_symbol}: {e}")
         error_data = {
             "error": "Failed to retrieve gene information",
-            "details": str(e)
+            "details": str(e),
         }
-        return json.dumps(error_data, indent=2) if output_json else to_markdown([error_data])
+        return (
+            json.dumps(error_data, indent=2)
+            if output_json
+            else to_markdown([error_data])
+        )
 
 
 async def _gene_details(
@@ -75,7 +85,7 @@ async def _gene_details(
     ],
     gene_id_or_symbol: Annotated[
         str,
-        Field(description="Gene symbol (e.g., TP53, BRAF) or ID (e.g., 7157)")
+        Field(description="Gene symbol (e.g., TP53, BRAF) or ID (e.g., 7157)"),
     ],
 ) -> str:
     """

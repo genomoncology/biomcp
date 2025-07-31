@@ -54,12 +54,16 @@ class TestRealBioThingsAPIs:
         if result is None:
             # API might be down or melanoma might not be found directly
             # Try a more specific search
-            result = await client.get_disease_info("MONDO:0005105")  # MONDO ID for melanoma
+            result = await client.get_disease_info(
+                "MONDO:0005105"
+            )  # MONDO ID for melanoma
 
         assert result is not None, "Disease info should be returned"
         # The API may return subtypes of melanoma
         if result.name:
-            assert "melanoma" in result.name.lower() or (result.definition and "melanoma" in result.definition.lower())
+            assert "melanoma" in result.name.lower() or (
+                result.definition and "melanoma" in result.definition.lower()
+            )
         assert result.disease_id is not None
         # Synonyms might be empty for specific subtypes
         assert result.synonyms is not None
@@ -72,12 +76,17 @@ class TestRealBioThingsAPIs:
         if result is None:
             # API might be down or GIST might not be found directly
             # Try the full name
-            result = await client.get_disease_info("gastrointestinal stromal tumor")
+            result = await client.get_disease_info(
+                "gastrointestinal stromal tumor"
+            )
 
         assert result is not None, "Disease info should be returned"
         # GIST might return as a variant name
         if result.name:
-            assert "gist" in result.name.lower() or "stromal" in result.name.lower()
+            assert (
+                "gist" in result.name.lower()
+                or "stromal" in result.name.lower()
+            )
         assert result.disease_id is not None
         # GIST should have synonyms including full name if available
         assert result.synonyms is not None
@@ -106,7 +115,9 @@ class TestRealBioThingsAPIs:
     async def test_batch_genes(self, client):
         """Test batch gene retrieval."""
         # Skip batch test as it requires special POST encoding
-        pytest.skip("Batch API requires form-encoded POST - needs implementation update")
+        pytest.skip(
+            "Batch API requires form-encoded POST - needs implementation update"
+        )
 
     @pytest.mark.asyncio
     async def test_invalid_gene(self, client):
@@ -135,7 +146,7 @@ class TestRealBioThingsAPIs:
             result.drugbank_id,
             result.chembl_id,
             result.chebi_id,
-            result.pubchem_cid
+            result.pubchem_cid,
         ])
 
     @pytest.mark.asyncio
@@ -153,7 +164,7 @@ class TestRealBioThingsAPIs:
             result.drugbank_id,
             result.chembl_id,
             result.chebi_id,
-            result.pubchem_cid
+            result.pubchem_cid,
         ])
 
     @pytest.mark.asyncio
@@ -163,7 +174,9 @@ class TestRealBioThingsAPIs:
 
         assert result is not None
         assert result.drugbank_id == "DB00945"
-        assert result.name is not None  # Could be Acetylsalicylic acid or similar
+        assert (
+            result.name is not None
+        )  # Could be Acetylsalicylic acid or similar
 
     @pytest.mark.asyncio
     async def test_invalid_drug(self, client):
@@ -283,4 +296,7 @@ class TestDrugToolIntegration:
         assert data["drugbank_id"] == "DB00619"
         assert "_links" in data
         # Should have at least one database link
-        assert any(key in data["_links"] for key in ["DrugBank", "ChEMBL", "PubChem", "ChEBI"])
+        assert any(
+            key in data["_links"]
+            for key in ["DrugBank", "ChEMBL", "PubChem", "ChEBI"]
+        )

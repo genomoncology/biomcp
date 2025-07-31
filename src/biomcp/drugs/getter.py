@@ -13,17 +13,25 @@ def _add_drug_links(drug_info, result: dict) -> None:
     links = {}
 
     if drug_info.drugbank_id:
-        links["DrugBank"] = f"https://www.drugbank.ca/drugs/{drug_info.drugbank_id}"
+        links["DrugBank"] = (
+            f"https://www.drugbank.ca/drugs/{drug_info.drugbank_id}"
+        )
 
     if drug_info.chembl_id:
-        links["ChEMBL"] = f"https://www.ebi.ac.uk/chembl/compound_report_card/{drug_info.chembl_id}/"
+        links["ChEMBL"] = (
+            f"https://www.ebi.ac.uk/chembl/compound_report_card/{drug_info.chembl_id}/"
+        )
 
     if drug_info.pubchem_cid:
-        links["PubChem"] = f"https://pubchem.ncbi.nlm.nih.gov/compound/{drug_info.pubchem_cid}"
+        links["PubChem"] = (
+            f"https://pubchem.ncbi.nlm.nih.gov/compound/{drug_info.pubchem_cid}"
+        )
 
     if drug_info.chebi_id:
         chebi_id = drug_info.chebi_id.replace("CHEBI:", "")
-        links["ChEBI"] = f"https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:{chebi_id}"
+        links["ChEBI"] = (
+            f"https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:{chebi_id}"
+        )
 
     if links:
         result["_links"] = links
@@ -152,4 +160,3 @@ async def _drug_details(drug_id_or_name: str) -> str:
         Formatted drug information with external database links
     """
     return await get_drug(drug_id_or_name, output_json=False)
-
