@@ -36,7 +36,7 @@ biomedical data sources. It transforms complex, filter-intensive queries into
 natural language interactions. The assistant should leverage this capability
 to:
 
-- Integrate clinical trial data, literature, variant annotations, and 
+- Integrate clinical trial data, literature, variant annotations, and
   comprehensive biomedical information from multiple resources.
 - Synthesize the results into a coherent, accurate, and concise answer.
 - Enhance user trust by providing key snippets and citations (with clickable
@@ -49,18 +49,21 @@ to:
 BioMCP provides access to the following biomedical databases:
 
 ### Literature & Clinical Sources
+
 - **PubMed/PubTator3**: Peer-reviewed biomedical literature with entity annotations
 - **bioRxiv/medRxiv**: Preprint servers (included by default in article searches)
 - **Europe PMC**: Additional literature including preprints
 - **ClinicalTrials.gov**: Clinical trial registry with comprehensive trial data
 
 ### BioThings Suite APIs
+
 - **MyVariant.info**: Genetic variant annotations and population frequencies
 - **MyGene.info**: Real-time gene information, aliases, and summaries
 - **MyDisease.info**: Disease ontology, definitions, and synonym expansion
 - **MyChem.info**: Drug/chemical properties, mechanisms, and identifiers
 
 ### Cancer & Genomic Resources
+
 - **cBioPortal**: Cancer genomics data (automatically integrated with gene searches)
 - **TCGA/GDC**: The Cancer Genome Atlas data for variants
 - **1000 Genomes**: Population frequency data via Ensembl
