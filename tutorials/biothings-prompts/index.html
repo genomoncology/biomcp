@@ -12,13 +12,13 @@
         <meta name="author" content="Ian Maurer">
       
       
-        <link rel="canonical" href="https://biomcp.org/tutorials/claude-code-biomcp-alphagenome/">
+        <link rel="canonical" href="https://biomcp.org/tutorials/biothings-prompts/">
       
       
-        <link rel="prev" href="../biothings-prompts/">
+        <link rel="prev" href="../alphagenome-setup/">
       
       
-        <link rel="next" href="../claude-desktop/">
+        <link rel="next" href="../claude-code-biomcp-alphagenome/">
       
       
       <link rel="icon" href="../../assets/favicon.ico">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Claude Code with BioMCP - BioMCP</title>
+        <title>BioThings Integration Prompts - BioMCP</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#using-claude-code-with-biomcp-for-alphagenome-variant-analysis" class="md-skip">
+        <a href="#biothings-integration-example-prompts" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Claude Code with BioMCP
+              BioThings Integration Prompts
             
           </span>
         </div>
@@ -411,29 +411,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../biothings-prompts/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    BioThings Integration Prompts
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -451,7 +428,7 @@
   
   
   <span class="md-ellipsis">
-    Claude Code with BioMCP
+    BioThings Integration Prompts
     
   </span>
   
@@ -464,7 +441,7 @@
   
   
   <span class="md-ellipsis">
-    Claude Code with BioMCP
+    BioThings Integration Prompts
     
   </span>
   
@@ -487,64 +464,46 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#overview-of-biothings-suite" class="md-nav__link">
     <span class="md-ellipsis">
-      Prerequisites
+      Overview of BioThings Suite
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#setup-overview" class="md-nav__link">
+  <a href="#gene-information-retrieval" class="md-nav__link">
     <span class="md-ellipsis">
-      Setup Overview
+      Gene Information Retrieval
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#part-1-mcp-server-setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      Part 1: MCP Server Setup
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Part 1: MCP Server Setup">
+    <nav class="md-nav" aria-label="Gene Information Retrieval">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#step-1-install-biomcp-cli" class="md-nav__link">
+  <a href="#basic-gene-lookup" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1: Install BioMCP CLI
+      Basic Gene Lookup
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#step-2-configure-mcp-server" class="md-nav__link">
+  <a href="#gene-by-id" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 2: Configure MCP Server
+      Gene by ID
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#step-3-set-environment-variable" class="md-nav__link">
+  <a href="#gene-context-for-research" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 3: Set Environment Variable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-4-install-alphagenome" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 4: Install AlphaGenome
+      Gene Context for Research
     </span>
   </a>
   
@@ -556,85 +515,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#part-2-testing-with-claude-code" class="md-nav__link">
+  <a href="#disease-information-retrieval" class="md-nav__link">
     <span class="md-ellipsis">
-      Part 2: Testing with Claude Code
+      Disease Information Retrieval
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Part 2: Testing with Claude Code">
+    <nav class="md-nav" aria-label="Disease Information Retrieval">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#example-dlg1-exon-skipping-variant" class="md-nav__link">
+  <a href="#basic-disease-lookup" class="md-nav__link">
     <span class="md-ellipsis">
-      Example: DLG1 Exon Skipping Variant
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Example: DLG1 Exon Skipping Variant">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-mcp-server-recommended" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using MCP Server (Recommended)
+      Basic Disease Lookup
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#using-cli-interface" class="md-nav__link">
+  <a href="#disease-by-ontology-id" class="md-nav__link">
     <span class="md-ellipsis">
-      Using CLI Interface
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#part-3-why-both-interfaces-matter" class="md-nav__link">
-    <span class="md-ellipsis">
-      Part 3: Why Both Interfaces Matter
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Part 3: Why Both Interfaces Matter">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#mcp-server-advantages" class="md-nav__link">
-    <span class="md-ellipsis">
-      MCP Server Advantages 🔌
+      Disease by Ontology ID
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#cli-advantages" class="md-nav__link">
+  <a href="#disease-synonyms-for-research" class="md-nav__link">
     <span class="md-ellipsis">
-      CLI Advantages 💻
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#claude-code-perspective" class="md-nav__link">
-    <span class="md-ellipsis">
-      Claude Code Perspective
+      Disease Synonyms for Research
     </span>
   </a>
   
@@ -646,37 +557,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#part-4-advanced-usage-examples" class="md-nav__link">
+  <a href="#variant-information-retrieval-myvariantinfo" class="md-nav__link">
     <span class="md-ellipsis">
-      Part 4: Advanced Usage Examples
+      Variant Information Retrieval (MyVariant.info)
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Part 4: Advanced Usage Examples">
+    <nav class="md-nav" aria-label="Variant Information Retrieval (MyVariant.info)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#multi-variant-analysis" class="md-nav__link">
+  <a href="#basic-variant-lookup" class="md-nav__link">
     <span class="md-ellipsis">
-      Multi-Variant Analysis
+      Basic Variant Lookup
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#tissue-specific-analysis" class="md-nav__link">
+  <a href="#variant-search-with-filters" class="md-nav__link">
     <span class="md-ellipsis">
-      Tissue-Specific Analysis
+      Variant Search with Filters
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#combined-biomcp-workflow" class="md-nav__link">
+  <a href="#variant-with-cancer-context" class="md-nav__link">
     <span class="md-ellipsis">
-      Combined BioMCP Workflow
+      Variant with Cancer Context
     </span>
   </a>
   
@@ -688,28 +599,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#part-5-validation-and-quality-assurance" class="md-nav__link">
+  <a href="#drug-information-retrieval-mycheminfo" class="md-nav__link">
     <span class="md-ellipsis">
-      Part 5: Validation and Quality Assurance
+      Drug Information Retrieval (MyChem.info)
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Part 5: Validation and Quality Assurance">
+    <nav class="md-nav" aria-label="Drug Information Retrieval (MyChem.info)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#how-we-validated-the-integration" class="md-nav__link">
+  <a href="#basic-drug-lookup" class="md-nav__link">
     <span class="md-ellipsis">
-      How We Validated the Integration
+      Basic Drug Lookup
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#key-scientific-finding" class="md-nav__link">
+  <a href="#drug-by-id" class="md-nav__link">
     <span class="md-ellipsis">
-      Key Scientific Finding
+      Drug by ID
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drug-properties-and-mechanism" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Properties and Mechanism
     </span>
   </a>
   
@@ -721,37 +641,46 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#part-6-best-practices" class="md-nav__link">
+  <a href="#integrated-research-workflows" class="md-nav__link">
     <span class="md-ellipsis">
-      Part 6: Best Practices
+      Integrated Research Workflows
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Part 6: Best Practices">
+    <nav class="md-nav" aria-label="Integrated Research Workflows">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#for-mcp-usage" class="md-nav__link">
+  <a href="#variant-analysis-with-gene-context" class="md-nav__link">
     <span class="md-ellipsis">
-      For MCP Usage
+      Variant Analysis with Gene Context
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#for-cli-usage" class="md-nav__link">
+  <a href="#clinical-trial-search-with-disease-expansion" class="md-nav__link">
     <span class="md-ellipsis">
-      For CLI Usage
+      Clinical Trial Search with Disease Expansion
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#general-tips" class="md-nav__link">
+  <a href="#comprehensive-gene-disease-research" class="md-nav__link">
     <span class="md-ellipsis">
-      General Tips
+      Comprehensive Gene-Disease Research
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-gene-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multi-Gene Analysis
     </span>
   </a>
   
@@ -763,18 +692,189 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#conclusion" class="md-nav__link">
+  <a href="#advanced-use-cases" class="md-nav__link">
     <span class="md-ellipsis">
-      Conclusion
+      Advanced Use Cases
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Use Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gene-alias-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Gene Alias Resolution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disease-name-disambiguation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disease Name Disambiguation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trial-search-without-synonym-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trial Search Without Synonym Expansion
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integrated-literature-and-gene-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      Integrated Literature and Gene Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drug-target-research" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug-Target Research
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips-for-ai-assistants" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tips for AI Assistants
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#resources" class="md-nav__link">
+  <a href="#common-patterns" class="md-nav__link">
     <span class="md-ellipsis">
-      Resources
+      Common Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-gene-variant-clinical-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 1: Gene → Variant → Clinical Impact
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-disease-trials-locations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 2: Disease → Trials → Locations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-multi-gene-pathway-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 3: Multi-Gene Pathway Analysis
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unified-search-with-biothings-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unified Search with BioThings Domains
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Unified Search with BioThings Domains">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#domain-specific-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      Domain-Specific Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unified-query-language-with-biothings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unified Query Language with BioThings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cross-domain-gene-searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cross-Domain Gene Searches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cross-domain-disease-searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cross-Domain Disease Searches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combined-domain-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Combined Domain Queries
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unified-fetch" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unified Fetch
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error Handling
     </span>
   </a>
   
@@ -784,6 +884,29 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../claude-code-biomcp-alphagenome/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Claude Code with BioMCP
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -1827,64 +1950,46 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#overview-of-biothings-suite" class="md-nav__link">
     <span class="md-ellipsis">
-      Prerequisites
+      Overview of BioThings Suite
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#setup-overview" class="md-nav__link">
+  <a href="#gene-information-retrieval" class="md-nav__link">
     <span class="md-ellipsis">
-      Setup Overview
+      Gene Information Retrieval
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#part-1-mcp-server-setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      Part 1: MCP Server Setup
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Part 1: MCP Server Setup">
+    <nav class="md-nav" aria-label="Gene Information Retrieval">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#step-1-install-biomcp-cli" class="md-nav__link">
+  <a href="#basic-gene-lookup" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1: Install BioMCP CLI
+      Basic Gene Lookup
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#step-2-configure-mcp-server" class="md-nav__link">
+  <a href="#gene-by-id" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 2: Configure MCP Server
+      Gene by ID
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#step-3-set-environment-variable" class="md-nav__link">
+  <a href="#gene-context-for-research" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 3: Set Environment Variable
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-4-install-alphagenome" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 4: Install AlphaGenome
+      Gene Context for Research
     </span>
   </a>
   
@@ -1896,85 +2001,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#part-2-testing-with-claude-code" class="md-nav__link">
+  <a href="#disease-information-retrieval" class="md-nav__link">
     <span class="md-ellipsis">
-      Part 2: Testing with Claude Code
+      Disease Information Retrieval
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Part 2: Testing with Claude Code">
+    <nav class="md-nav" aria-label="Disease Information Retrieval">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#example-dlg1-exon-skipping-variant" class="md-nav__link">
+  <a href="#basic-disease-lookup" class="md-nav__link">
     <span class="md-ellipsis">
-      Example: DLG1 Exon Skipping Variant
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Example: DLG1 Exon Skipping Variant">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#using-mcp-server-recommended" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using MCP Server (Recommended)
+      Basic Disease Lookup
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#using-cli-interface" class="md-nav__link">
+  <a href="#disease-by-ontology-id" class="md-nav__link">
     <span class="md-ellipsis">
-      Using CLI Interface
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#part-3-why-both-interfaces-matter" class="md-nav__link">
-    <span class="md-ellipsis">
-      Part 3: Why Both Interfaces Matter
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Part 3: Why Both Interfaces Matter">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#mcp-server-advantages" class="md-nav__link">
-    <span class="md-ellipsis">
-      MCP Server Advantages 🔌
+      Disease by Ontology ID
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#cli-advantages" class="md-nav__link">
+  <a href="#disease-synonyms-for-research" class="md-nav__link">
     <span class="md-ellipsis">
-      CLI Advantages 💻
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#claude-code-perspective" class="md-nav__link">
-    <span class="md-ellipsis">
-      Claude Code Perspective
+      Disease Synonyms for Research
     </span>
   </a>
   
@@ -1986,37 +2043,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#part-4-advanced-usage-examples" class="md-nav__link">
+  <a href="#variant-information-retrieval-myvariantinfo" class="md-nav__link">
     <span class="md-ellipsis">
-      Part 4: Advanced Usage Examples
+      Variant Information Retrieval (MyVariant.info)
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Part 4: Advanced Usage Examples">
+    <nav class="md-nav" aria-label="Variant Information Retrieval (MyVariant.info)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#multi-variant-analysis" class="md-nav__link">
+  <a href="#basic-variant-lookup" class="md-nav__link">
     <span class="md-ellipsis">
-      Multi-Variant Analysis
+      Basic Variant Lookup
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#tissue-specific-analysis" class="md-nav__link">
+  <a href="#variant-search-with-filters" class="md-nav__link">
     <span class="md-ellipsis">
-      Tissue-Specific Analysis
+      Variant Search with Filters
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#combined-biomcp-workflow" class="md-nav__link">
+  <a href="#variant-with-cancer-context" class="md-nav__link">
     <span class="md-ellipsis">
-      Combined BioMCP Workflow
+      Variant with Cancer Context
     </span>
   </a>
   
@@ -2028,28 +2085,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#part-5-validation-and-quality-assurance" class="md-nav__link">
+  <a href="#drug-information-retrieval-mycheminfo" class="md-nav__link">
     <span class="md-ellipsis">
-      Part 5: Validation and Quality Assurance
+      Drug Information Retrieval (MyChem.info)
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Part 5: Validation and Quality Assurance">
+    <nav class="md-nav" aria-label="Drug Information Retrieval (MyChem.info)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#how-we-validated-the-integration" class="md-nav__link">
+  <a href="#basic-drug-lookup" class="md-nav__link">
     <span class="md-ellipsis">
-      How We Validated the Integration
+      Basic Drug Lookup
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#key-scientific-finding" class="md-nav__link">
+  <a href="#drug-by-id" class="md-nav__link">
     <span class="md-ellipsis">
-      Key Scientific Finding
+      Drug by ID
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drug-properties-and-mechanism" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Properties and Mechanism
     </span>
   </a>
   
@@ -2061,37 +2127,46 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#part-6-best-practices" class="md-nav__link">
+  <a href="#integrated-research-workflows" class="md-nav__link">
     <span class="md-ellipsis">
-      Part 6: Best Practices
+      Integrated Research Workflows
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Part 6: Best Practices">
+    <nav class="md-nav" aria-label="Integrated Research Workflows">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#for-mcp-usage" class="md-nav__link">
+  <a href="#variant-analysis-with-gene-context" class="md-nav__link">
     <span class="md-ellipsis">
-      For MCP Usage
+      Variant Analysis with Gene Context
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#for-cli-usage" class="md-nav__link">
+  <a href="#clinical-trial-search-with-disease-expansion" class="md-nav__link">
     <span class="md-ellipsis">
-      For CLI Usage
+      Clinical Trial Search with Disease Expansion
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#general-tips" class="md-nav__link">
+  <a href="#comprehensive-gene-disease-research" class="md-nav__link">
     <span class="md-ellipsis">
-      General Tips
+      Comprehensive Gene-Disease Research
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-gene-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multi-Gene Analysis
     </span>
   </a>
   
@@ -2103,18 +2178,189 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#conclusion" class="md-nav__link">
+  <a href="#advanced-use-cases" class="md-nav__link">
     <span class="md-ellipsis">
-      Conclusion
+      Advanced Use Cases
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Use Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gene-alias-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Gene Alias Resolution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disease-name-disambiguation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disease Name Disambiguation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trial-search-without-synonym-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trial Search Without Synonym Expansion
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#integrated-literature-and-gene-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      Integrated Literature and Gene Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drug-target-research" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug-Target Research
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips-for-ai-assistants" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tips for AI Assistants
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#resources" class="md-nav__link">
+  <a href="#common-patterns" class="md-nav__link">
     <span class="md-ellipsis">
-      Resources
+      Common Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-gene-variant-clinical-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 1: Gene → Variant → Clinical Impact
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-disease-trials-locations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 2: Disease → Trials → Locations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-multi-gene-pathway-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern 3: Multi-Gene Pathway Analysis
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unified-search-with-biothings-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unified Search with BioThings Domains
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Unified Search with BioThings Domains">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#domain-specific-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      Domain-Specific Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unified-query-language-with-biothings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unified Query Language with BioThings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cross-domain-gene-searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cross-Domain Gene Searches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cross-domain-disease-searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cross-Domain Disease Searches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combined-domain-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Combined Domain Queries
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unified-fetch" class="md-nav__link">
+    <span class="md-ellipsis">
+      Unified Fetch
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error Handling
     </span>
   </a>
   
@@ -2139,206 +2385,247 @@
   
 
 
-<h1 id="using-claude-code-with-biomcp-for-alphagenome-variant-analysis">Using Claude Code with BioMCP for AlphaGenome Variant Analysis<a class="headerlink" href="#using-claude-code-with-biomcp-for-alphagenome-variant-analysis" title="Permanent link">&para;</a></h1>
-<p>This tutorial demonstrates how to use Claude Code with BioMCP to analyze genetic variants using Google DeepMind's AlphaGenome. We'll explore both the MCP server integration and CLI approaches, showing how Claude Code can seamlessly work with both interfaces.</p>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<h1 id="biothings-integration-example-prompts">BioThings Integration Example Prompts<a class="headerlink" href="#biothings-integration-example-prompts" title="Permanent link">&para;</a></h1>
+<p>This guide provides example prompts for AI assistants to effectively use the BioThings suite integration in BioMCP.</p>
+<h2 id="overview-of-biothings-suite">Overview of BioThings Suite<a class="headerlink" href="#overview-of-biothings-suite" title="Permanent link">&para;</a></h2>
+<p>BioMCP integrates with the complete BioThings suite of APIs:</p>
 <ul>
-<li><strong>Claude Code</strong>: Latest version with MCP support</li>
-<li><strong>Python 3.11+</strong>: Required for BioMCP and AlphaGenome</li>
-<li><strong>uv</strong>: Modern Python package manager (<a href="https://docs.astral.sh/uv/getting-started/installation/">installation guide</a>)</li>
-<li><strong>AlphaGenome API Key</strong>: Get free access at <a href="https://deepmind.google.com/science/alphagenome">Google DeepMind AlphaGenome</a></li>
+<li><strong>MyGene.info</strong> - Gene information and annotations</li>
+<li><strong>MyDisease.info</strong> - Disease ontology and synonyms</li>
+<li><strong>MyVariant.info</strong> - Genetic variant annotations (pre-existing integration, enhanced with BioThings client)</li>
+<li><strong>MyChem.info</strong> - Drug/chemical information and annotations</li>
 </ul>
-<h2 id="setup-overview">Setup Overview<a class="headerlink" href="#setup-overview" title="Permanent link">&para;</a></h2>
-<p>BioMCP offers two interfaces that work perfectly with Claude Code:</p>
+<p>All four services share common infrastructure through the BioThings client module, providing consistent error handling, rate limiting, and response parsing.</p>
+<h2 id="gene-information-retrieval">Gene Information Retrieval<a class="headerlink" href="#gene-information-retrieval" title="Permanent link">&para;</a></h2>
+<h3 id="basic-gene-lookup">Basic Gene Lookup<a class="headerlink" href="#basic-gene-lookup" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&quot;What is the TP53 gene?&quot;
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>&quot;Tell me about BRAF&quot;
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>&quot;Get information on the EGFR gene&quot;
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>&quot;What does the BRCA1 gene do?&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>gene_getter("TP53")</code> → Returns official name, summary, aliases</p>
+<h3 id="gene-by-id">Gene by ID<a class="headerlink" href="#gene-by-id" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>&quot;Look up gene with Entrez ID 7157&quot;
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>&quot;What is gene 673?&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>gene_getter("7157")</code> → Returns TP53 information</p>
+<h3 id="gene-context-for-research">Gene Context for Research<a class="headerlink" href="#gene-context-for-research" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>&quot;I need to understand the KRAS gene before searching for mutations&quot;
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&quot;What type of protein does BRAF encode?&quot;
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>&quot;Give me the official name and aliases for MYC&quot;
+</code></pre></div>
+<h2 id="disease-information-retrieval">Disease Information Retrieval<a class="headerlink" href="#disease-information-retrieval" title="Permanent link">&para;</a></h2>
+<h3 id="basic-disease-lookup">Basic Disease Lookup<a class="headerlink" href="#basic-disease-lookup" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&quot;What is GIST?&quot;
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>&quot;Tell me about melanoma&quot;
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>&quot;Define non-small cell lung cancer&quot;
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>&quot;What is Erdheim-Chester disease?&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>disease_getter("GIST")</code> → Returns definition, synonyms, ontology IDs</p>
+<h3 id="disease-by-ontology-id">Disease by Ontology ID<a class="headerlink" href="#disease-by-ontology-id" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&quot;Look up disease MONDO:0018076&quot;
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>&quot;What is DOID:1909?&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>disease_getter("MONDO:0018076")</code> → Returns disease information</p>
+<h3 id="disease-synonyms-for-research">Disease Synonyms for Research<a class="headerlink" href="#disease-synonyms-for-research" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&quot;What are all the names for gastrointestinal stromal tumor?&quot;
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>&quot;Find synonyms for NSCLC&quot;
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>&quot;What other terms are used for melanoma?&quot;
+</code></pre></div>
+<h2 id="variant-information-retrieval-myvariantinfo">Variant Information Retrieval (MyVariant.info)<a class="headerlink" href="#variant-information-retrieval-myvariantinfo" title="Permanent link">&para;</a></h2>
+<p>MyVariant.info is part of the BioThings suite and provides comprehensive variant annotations. BioMCP has extensive integration with specialized features:</p>
+<h3 id="basic-variant-lookup">Basic Variant Lookup<a class="headerlink" href="#basic-variant-lookup" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>&quot;Get information about rs7412&quot;
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>&quot;What is the BRAF V600E variant?&quot;
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>&quot;Look up variant chr7:140453136-140453136&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>variant_getter("rs7412")</code> → Returns variant annotations with external database links</p>
+<h3 id="variant-search-with-filters">Variant Search with Filters<a class="headerlink" href="#variant-search-with-filters" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>&quot;Find pathogenic variants in TP53&quot;
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>&quot;Search for BRCA1 variants with high impact&quot;
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>&quot;Get all loss-of-function variants in KRAS&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>variant_searcher(gene="TP53", significance="pathogenic")</code> → Returns filtered variant list</p>
+<h3 id="variant-with-cancer-context">Variant with Cancer Context<a class="headerlink" href="#variant-with-cancer-context" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>&quot;What cancer types have BRAF V600E mutations?&quot;
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>&quot;Get TCGA data for TP53 R273H&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: Variant tools automatically integrate cBioPortal, TCGA, and 1000 Genomes data when available</p>
+<h2 id="drug-information-retrieval-mycheminfo">Drug Information Retrieval (MyChem.info)<a class="headerlink" href="#drug-information-retrieval-mycheminfo" title="Permanent link">&para;</a></h2>
+<p>MyChem.info is part of the BioThings suite and provides comprehensive drug/chemical information.</p>
+<h3 id="basic-drug-lookup">Basic Drug Lookup<a class="headerlink" href="#basic-drug-lookup" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>&quot;What is imatinib?&quot;
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>&quot;Tell me about aspirin&quot;
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>&quot;Get information on pembrolizumab&quot;
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>&quot;What does metformin do?&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>drug_getter("imatinib")</code> → Returns drug information with database links</p>
+<h3 id="drug-by-id">Drug by ID<a class="headerlink" href="#drug-by-id" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>&quot;Look up DrugBank ID DB00619&quot;
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>&quot;What is CHEMBL941?&quot;
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>&quot;Get details for PubChem CID 5291&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>drug_getter("DB00619")</code> → Returns drug details by identifier</p>
+<h3 id="drug-properties-and-mechanism">Drug Properties and Mechanism<a class="headerlink" href="#drug-properties-and-mechanism" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>&quot;What is the mechanism of action of imatinib?&quot;
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>&quot;Find the chemical formula for aspirin&quot;
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>&quot;What are the trade names for adalimumab?&quot;
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>&quot;How does pembrolizumab work?&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>drug_getter("pembrolizumab")</code> → Returns mechanism, indications, and properties</p>
+<h2 id="integrated-research-workflows">Integrated Research Workflows<a class="headerlink" href="#integrated-research-workflows" title="Permanent link">&para;</a></h2>
+<h3 id="variant-analysis-with-gene-context">Variant Analysis with Gene Context<a class="headerlink" href="#variant-analysis-with-gene-context" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>&quot;Analyze the BRAF V600E mutation - first tell me about the gene, then find pathogenic variants&quot;
+</code></pre></div>
+<p><strong>Expected tool sequence</strong>:</p>
 <ol>
-<li><strong>MCP Server</strong>: Integrated directly into Claude Code for seamless workflows</li>
-<li><strong>CLI</strong>: Command-line interface for direct terminal access</li>
+<li><code>think(thought="Analyzing BRAF V600E mutation", thoughtNumber=1)</code></li>
+<li><code>gene_getter("BRAF")</code> → Gene context</li>
+<li><code>variant_searcher(gene="BRAF", hgvsp="V600E", significance="pathogenic")</code> → Variant details</li>
 </ol>
-<p>Both produce identical results, giving you flexibility in how you work.</p>
-<h2 id="part-1-mcp-server-setup">Part 1: MCP Server Setup<a class="headerlink" href="#part-1-mcp-server-setup" title="Permanent link">&para;</a></h2>
-<h3 id="step-1-install-biomcp-cli">Step 1: Install BioMCP CLI<a class="headerlink" href="#step-1-install-biomcp-cli" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Install BioMCP CLI globally (note: biomcp-python, not biomcp!)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>-q<span class="w"> </span>biomcp-python
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Verify installation</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>biomcp<span class="w"> </span>--version
+<h3 id="clinical-trial-search-with-disease-expansion">Clinical Trial Search with Disease Expansion<a class="headerlink" href="#clinical-trial-search-with-disease-expansion" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>&quot;Find clinical trials for GIST patients&quot;
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>&quot;Search for trials treating gastrointestinal stromal tumors&quot;
 </code></pre></div>
-<h3 id="step-2-configure-mcp-server">Step 2: Configure MCP Server<a class="headerlink" href="#step-2-configure-mcp-server" title="Permanent link">&para;</a></h3>
-<p>Add BioMCP to your Claude Code MCP configuration:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Basic setup (requires ALPHAGENOME_API_KEY environment variable)</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>claude<span class="w"> </span>mcp<span class="w"> </span>add<span class="w"> </span>biomcp<span class="w"> </span>--<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>biomcp-python<span class="w"> </span>biomcp<span class="w"> </span>run
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Or with API key in configuration</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>claude<span class="w"> </span>mcp<span class="w"> </span>add<span class="w"> </span>biomcp<span class="w"> </span>-e<span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span>your-api-key-here<span class="w"> </span>--<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>biomcp-python<span class="w"> </span>biomcp<span class="w"> </span>run
-</code></pre></div>
-<p>Verify the setup:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>claude<span class="w"> </span>mcp<span class="w"> </span>list
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>claude<span class="w"> </span>mcp<span class="w"> </span>get<span class="w"> </span>biomcp
-</code></pre></div>
-<h3 id="step-3-set-environment-variable">Step 3: Set Environment Variable<a class="headerlink" href="#step-3-set-environment-variable" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Add to your shell profile (~/.zshrc or ~/.bashrc)</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s1">&#39;your-api-key-here&#39;</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Or set per-session</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s1">&#39;your-api-key-here&#39;</span>
-</code></pre></div>
-<h3 id="step-4-install-alphagenome">Step 4: Install AlphaGenome<a class="headerlink" href="#step-4-install-alphagenome" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Clone and install AlphaGenome</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/google-deepmind/alphagenome.git
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nb">cd</span><span class="w"> </span>alphagenome<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>.
-</code></pre></div>
-<h2 id="part-2-testing-with-claude-code">Part 2: Testing with Claude Code<a class="headerlink" href="#part-2-testing-with-claude-code" title="Permanent link">&para;</a></h2>
-<h3 id="example-dlg1-exon-skipping-variant">Example: DLG1 Exon Skipping Variant<a class="headerlink" href="#example-dlg1-exon-skipping-variant" title="Permanent link">&para;</a></h3>
-<p>Let's analyze the variant <code>chr3:197081044:TACTC&gt;T</code> from the AlphaGenome paper, which demonstrates exon skipping in the DLG1 gene.</p>
-<h4 id="using-mcp-server-recommended">Using MCP Server (Recommended)<a class="headerlink" href="#using-mcp-server-recommended" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Claude Code automatically uses MCP when available</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">mcp__biomcp__alphagenome_predictor</span><span class="p">(</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">chromosome</span><span class="o">=</span><span class="s2">&quot;chr3&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">position</span><span class="o">=</span><span class="mi">197081044</span><span class="p">,</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">reference</span><span class="o">=</span><span class="s2">&quot;TACTC&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">alternate</span><span class="o">=</span><span class="s2">&quot;T&quot;</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="p">)</span>
-</code></pre></div>
-<p><strong>Result:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gu">## AlphaGenome Variant Effect Predictions</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="gs">**Variant**</span>: chr3:197081044 TACTC&gt;T
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="gs">**Analysis window**</span>: 131,072 bp
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="gu">### Gene Expression</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="k">-</span><span class="w"> </span><span class="gs">**MELTF**</span>: +2.57 log₂ fold change (↑ increases expression)
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="gu">### Chromatin Accessibility</span>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="k">-</span><span class="w"> </span><span class="gs">**EFO:0005719 DNase-seq**</span>: +17.27 log₂ change (↑ increases accessibility)
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="gu">### Splicing</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="k">-</span><span class="w"> </span>Potential splicing alterations detected
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>
-<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="gu">### Summary</span>
-<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>
-<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="k">-</span><span class="w"> </span>Analyzed 11796 regulatory tracks
-<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="k">-</span><span class="w"> </span>6045 tracks show substantial changes (|log₂| &gt; 0.5)
-</code></pre></div>
-<h4 id="using-cli-interface">Using CLI Interface<a class="headerlink" href="#using-cli-interface" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Same analysis via CLI</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s1">&#39;your-api-key-here&#39;</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>uv<span class="w"> </span>run<span class="w"> </span>biomcp<span class="w"> </span>variant<span class="w"> </span>predict<span class="w"> </span>chr3<span class="w"> </span><span class="m">197081044</span><span class="w"> </span>TACTC<span class="w"> </span>T
-</code></pre></div>
-<p><strong>Result:</strong> Identical output to MCP server.</p>
-<h2 id="part-3-why-both-interfaces-matter">Part 3: Why Both Interfaces Matter<a class="headerlink" href="#part-3-why-both-interfaces-matter" title="Permanent link">&para;</a></h2>
-<h3 id="mcp-server-advantages">MCP Server Advantages 🔌<a class="headerlink" href="#mcp-server-advantages" title="Permanent link">&para;</a></h3>
+<p><strong>Expected tool usage</strong>:</p>
 <ul>
-<li><strong>Persistent State</strong>: No need to re-export environment variables</li>
-<li><strong>Workflow Integration</strong>: Seamless chaining with other biomedical tools</li>
-<li><strong>Structured Data</strong>: Direct programmatic access to results</li>
-<li><strong>Auto-Documentation</strong>: Built-in parameter validation</li>
+<li><code>trial_searcher(conditions=["GIST"], expand_synonyms=True)</code></li>
+<li>Automatically searches for: GIST OR "gastrointestinal stromal tumor" OR "GI stromal tumor"</li>
 </ul>
-<h3 id="cli-advantages">CLI Advantages 💻<a class="headerlink" href="#cli-advantages" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Immediate Access</strong>: No server setup required</li>
-<li><strong>Debugging</strong>: Direct command-line testing</li>
-<li><strong>Scripting</strong>: Easy integration into bash scripts</li>
-<li><strong>Standalone Use</strong>: Works without Claude Code</li>
-</ul>
-<h3 id="claude-code-perspective">Claude Code Perspective<a class="headerlink" href="#claude-code-perspective" title="Permanent link">&para;</a></h3>
-<p>As Claude Code, both interfaces work equally well. The <strong>MCP approach provides slight benefits</strong>:</p>
-<ul>
-<li>Results persist across conversation turns</li>
-<li>Built-in error handling and validation</li>
-<li>Automatic integration with thinking and search workflows</li>
-<li>No need to manage environment variables per session</li>
-</ul>
-<p><strong>Trade-off</strong>: MCP requires initial setup, while CLI is immediately available.</p>
-<h2 id="part-4-advanced-usage-examples">Part 4: Advanced Usage Examples<a class="headerlink" href="#part-4-advanced-usage-examples" title="Permanent link">&para;</a></h2>
-<h3 id="multi-variant-analysis">Multi-Variant Analysis<a class="headerlink" href="#multi-variant-analysis" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Analyze multiple variants from AlphaGenome paper</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">variants</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="p">(</span><span class="s2">&quot;chr3&quot;</span><span class="p">,</span> <span class="mi">197081044</span><span class="p">,</span> <span class="s2">&quot;TACTC&quot;</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">),</span>      <span class="c1"># DLG1 exon skipping</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="p">(</span><span class="s2">&quot;chr21&quot;</span><span class="p">,</span> <span class="mi">46126238</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">),</span>          <span class="c1"># COL6A2 splice junction</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="p">(</span><span class="s2">&quot;chr16&quot;</span><span class="p">,</span> <span class="mi">173694</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">)</span>             <span class="c1"># HBA2 polyadenylation</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="p">]</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="k">for</span> <span class="nb">chr</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">alt</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">:</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">mcp__biomcp__alphagenome_predictor</span><span class="p">(</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>        <span class="n">chromosome</span><span class="o">=</span><span class="nb">chr</span><span class="p">,</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>        <span class="n">position</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>        <span class="n">reference</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>        <span class="n">alternate</span><span class="o">=</span><span class="n">alt</span>
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>    <span class="p">)</span>
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Most affected gene: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<h3 id="comprehensive-gene-disease-research">Comprehensive Gene-Disease Research<a class="headerlink" href="#comprehensive-gene-disease-research" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>&quot;I&#39;m researching EGFR mutations in lung cancer. Start with the gene, then the disease, then find relevant trials&quot;
 </code></pre></div>
-<h3 id="tissue-specific-analysis">Tissue-Specific Analysis<a class="headerlink" href="#tissue-specific-analysis" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Analyze with tissue context</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">mcp__biomcp__alphagenome_predictor</span><span class="p">(</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">chromosome</span><span class="o">=</span><span class="s2">&quot;chr7&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="n">position</span><span class="o">=</span><span class="mi">140753336</span><span class="p">,</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="n">reference</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="n">alternate</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="n">tissue_types</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;UBERON:0000310&quot;</span><span class="p">]</span>  <span class="c1"># breast tissue</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="p">)</span>
-</code></pre></div>
-<h3 id="combined-biomcp-workflow">Combined BioMCP Workflow<a class="headerlink" href="#combined-biomcp-workflow" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># 1. First, search for known annotations</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">variant_data</span> <span class="o">=</span> <span class="n">mcp__biomcp__variant_searcher</span><span class="p">(</span><span class="n">gene</span><span class="o">=</span><span class="s2">&quot;BRAF&quot;</span><span class="p">)</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># 2. Then predict regulatory effects</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">regulatory_effects</span> <span class="o">=</span> <span class="n">mcp__biomcp__alphagenome_predictor</span><span class="p">(</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="n">chromosome</span><span class="o">=</span><span class="s2">&quot;chr7&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="n">position</span><span class="o">=</span><span class="mi">140753336</span><span class="p">,</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="n">reference</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="n">alternate</span><span class="o">=</span><span class="s2">&quot;T&quot;</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="p">)</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="c1"># 3. Search literature for context</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="n">literature</span> <span class="o">=</span> <span class="n">mcp__biomcp__article_searcher</span><span class="p">(</span>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>    <span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;BRAF&quot;</span><span class="p">],</span>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>    <span class="n">variants</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;V600E&quot;</span><span class="p">]</span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="p">)</span>
-</code></pre></div>
-<h2 id="part-5-validation-and-quality-assurance">Part 5: Validation and Quality Assurance<a class="headerlink" href="#part-5-validation-and-quality-assurance" title="Permanent link">&para;</a></h2>
-<h3 id="how-we-validated-the-integration">How We Validated the Integration<a class="headerlink" href="#how-we-validated-the-integration" title="Permanent link">&para;</a></h3>
+<p><strong>Expected tool sequence</strong>:</p>
 <ol>
-<li><strong>Raw API Testing</strong>: Directly tested Google's AlphaGenome API</li>
-<li><strong>Source Code Analysis</strong>: Verified BioMCP uses correct API methods (<code>score_variant</code> + <code>get_recommended_scorers</code>)</li>
-<li><strong>Cross-Validation</strong>: Confirmed identical results across all three approaches:</li>
-<li>Raw Python API: MELTF +2.57 log₂</li>
-<li>BioMCP CLI: MELTF +2.57 log₂</li>
-<li>BioMCP MCP: MELTF +2.57 log₂</li>
+<li><code>think(thought="Researching EGFR in lung cancer", thoughtNumber=1)</code></li>
+<li><code>gene_getter("EGFR")</code> → Gene information</li>
+<li><code>disease_getter("lung cancer")</code> → Disease context and synonyms</li>
+<li><code>trial_searcher(conditions=["lung cancer"], interventions=["EGFR inhibitor"])</code> → Trials with synonym expansion</li>
 </ol>
-<h3 id="key-scientific-finding">Key Scientific Finding<a class="headerlink" href="#key-scientific-finding" title="Permanent link">&para;</a></h3>
-<p>The variant <code>chr3:197081044:TACTC&gt;T</code> most strongly affects <strong>MELTF</strong> (+2.57 log₂ fold change), not DLG1 as initially expected. This demonstrates that AlphaGenome considers the full regulatory landscape, not just the nearest gene.</p>
-<h2 id="part-6-best-practices">Part 6: Best Practices<a class="headerlink" href="#part-6-best-practices" title="Permanent link">&para;</a></h2>
-<h3 id="for-mcp-usage">For MCP Usage<a class="headerlink" href="#for-mcp-usage" title="Permanent link">&para;</a></h3>
+<h3 id="multi-gene-analysis">Multi-Gene Analysis<a class="headerlink" href="#multi-gene-analysis" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>&quot;Compare TP53, BRAF, and KRAS genes&quot;
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>&quot;Tell me about the RAS family genes: KRAS, NRAS, HRAS&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: Multiple <code>gene_getter()</code> calls for each gene</p>
+<h2 id="advanced-use-cases">Advanced Use Cases<a class="headerlink" href="#advanced-use-cases" title="Permanent link">&para;</a></h2>
+<h3 id="gene-alias-resolution">Gene Alias Resolution<a class="headerlink" href="#gene-alias-resolution" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>&quot;What is the official name for the p53 gene?&quot;
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>&quot;Is TRP53 the same as TP53?&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>gene_getter("p53")</code> → Will resolve to TP53</p>
+<h3 id="disease-name-disambiguation">Disease Name Disambiguation<a class="headerlink" href="#disease-name-disambiguation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>&quot;Is GIST the same as gastrointestinal stromal tumor?&quot;
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>&quot;What&#39;s the MONDO ID for melanoma?&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>disease_getter("GIST")</code> → Shows all synonyms and IDs</p>
+<h3 id="trial-search-without-synonym-expansion">Trial Search Without Synonym Expansion<a class="headerlink" href="#trial-search-without-synonym-expansion" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>&quot;Find trials specifically mentioning &#39;GIST&#39; not other names&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: <code>trial_searcher(conditions=["GIST"], expand_synonyms=False)</code></p>
+<h3 id="integrated-literature-and-gene-search">Integrated Literature and Gene Search<a class="headerlink" href="#integrated-literature-and-gene-search" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>&quot;Find recent papers about TP53 mutations - first tell me about the gene&quot;
+</code></pre></div>
+<p><strong>Expected tool sequence</strong>:</p>
+<ol>
+<li><code>gene_getter("TP53")</code> → Gene context</li>
+<li><code>article_searcher(genes=["TP53"], keywords=["mutation"])</code> → Literature</li>
+</ol>
+<h3 id="drug-target-research">Drug-Target Research<a class="headerlink" href="#drug-target-research" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>&quot;I&#39;m researching imatinib for CML treatment. Get drug info, then find trials&quot;
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>&quot;What targets does pembrolizumab hit? Then find related articles&quot;
+</code></pre></div>
+<p><strong>Expected tool sequence</strong>:</p>
+<ol>
+<li><code>think(thought="Researching imatinib for CML", thoughtNumber=1)</code></li>
+<li><code>drug_getter("imatinib")</code> → Drug information and mechanism</li>
+<li><code>trial_searcher(interventions=["imatinib"], conditions=["chronic myeloid leukemia"])</code></li>
+</ol>
+<h2 id="tips-for-ai-assistants">Tips for AI Assistants<a class="headerlink" href="#tips-for-ai-assistants" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Always use think() first</strong> for complex biomedical queries</li>
+<li><strong>Gene context helps interpretation</strong>: Get gene info before analyzing variants</li>
+<li><strong>Disease synonyms improve search</strong>: Use expand_synonyms=True (default) for comprehensive results</li>
+<li><strong>Drug mechanisms matter</strong>: Get drug info before searching trials to understand targets</li>
+<li><strong>Real-time data</strong>: All BioThings data is fetched live, ensuring current information</li>
+<li><strong>Combine tools</strong>: Gene + disease + variant + drug tools work together for comprehensive analysis</li>
+</ol>
+<h2 id="common-patterns">Common Patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="pattern-1-gene-variant-clinical-impact">Pattern 1: Gene → Variant → Clinical Impact<a class="headerlink" href="#pattern-1-gene-variant-clinical-impact" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>gene_getter(&quot;BRAF&quot;) →
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>variant_searcher(gene=&quot;BRAF&quot;, significance=&quot;pathogenic&quot;) →
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>article_searcher(genes=[&quot;BRAF&quot;], diseases=[&quot;melanoma&quot;])
+</code></pre></div>
+<h3 id="pattern-2-disease-trials-locations">Pattern 2: Disease → Trials → Locations<a class="headerlink" href="#pattern-2-disease-trials-locations" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>disease_getter(&quot;NSCLC&quot;) →
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>trial_searcher(conditions=[&quot;NSCLC&quot;], expand_synonyms=True) →
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>trial_locations_getter(nct_id=&quot;NCT...&quot;)
+</code></pre></div>
+<h3 id="pattern-3-multi-gene-pathway-analysis">Pattern 3: Multi-Gene Pathway Analysis<a class="headerlink" href="#pattern-3-multi-gene-pathway-analysis" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>gene_getter(&quot;EGFR&quot;) →
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>gene_getter(&quot;KRAS&quot;) →
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>gene_getter(&quot;BRAF&quot;) →
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>article_searcher(genes=[&quot;EGFR&quot;, &quot;KRAS&quot;, &quot;BRAF&quot;], keywords=[&quot;pathway&quot;])
+</code></pre></div>
+<h2 id="unified-search-with-biothings-domains">Unified Search with BioThings Domains<a class="headerlink" href="#unified-search-with-biothings-domains" title="Permanent link">&para;</a></h2>
+<p>BioMCP's unified search now supports gene, drug, and disease domains alongside articles, trials, and variants:</p>
+<h3 id="domain-specific-search">Domain-Specific Search<a class="headerlink" href="#domain-specific-search" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>&quot;Search for BRAF in the gene domain&quot;
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>&quot;Find imatinib in drugs&quot;
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>&quot;Look up melanoma in diseases&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>:</p>
 <ul>
-<li>Use structured thinking with <code>mcp__biomcp__think</code> for complex analyses</li>
-<li>Leverage <code>call_benefit</code> parameter to improve result quality</li>
-<li>Chain multiple tools for comprehensive variant characterization</li>
+<li><code>search(domain="gene", keywords=["BRAF"])</code></li>
+<li><code>search(domain="drug", keywords=["imatinib"])</code></li>
+<li><code>search(domain="disease", keywords=["melanoma"])</code></li>
 </ul>
-<h3 id="for-cli-usage">For CLI Usage<a class="headerlink" href="#for-cli-usage" title="Permanent link">&para;</a></h3>
+<h3 id="unified-query-language-with-biothings">Unified Query Language with BioThings<a class="headerlink" href="#unified-query-language-with-biothings" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>&quot;genes.symbol:BRAF AND genes.type:protein-coding&quot;
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>&quot;drugs.tradename:gleevec&quot;
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>&quot;diseases.name:melanoma OR diseases.synonym:malignant melanoma&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>: Query parser automatically routes to appropriate domains</p>
+<h3 id="cross-domain-gene-searches">Cross-Domain Gene Searches<a class="headerlink" href="#cross-domain-gene-searches" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>&quot;gene:BRAF&quot;  # Searches articles, variants, genes, and trials
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>&quot;Search everything about TP53&quot;
+</code></pre></div>
+<p><strong>Expected behavior</strong>:</p>
 <ul>
-<li>Set <code>ALPHAGENOME_API_KEY</code> in your shell profile</li>
-<li>Use <code>--help</code> to explore all available parameters</li>
-<li>Combine with other CLI tools via pipes and scripts</li>
+<li>Gene queries trigger searches across multiple domains</li>
+<li>Results include gene info, variants, articles, and related trials</li>
 </ul>
-<h3 id="general-tips">General Tips<a class="headerlink" href="#general-tips" title="Permanent link">&para;</a></h3>
+<h3 id="cross-domain-disease-searches">Cross-Domain Disease Searches<a class="headerlink" href="#cross-domain-disease-searches" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>&quot;disease:melanoma&quot;  # Searches articles, trials, and diseases
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>&quot;Find all information about NSCLC&quot;
+</code></pre></div>
+<p><strong>Expected behavior</strong>:</p>
 <ul>
-<li>Start with default 131kb analysis window</li>
-<li>Use tissue-specific analysis when relevant</li>
-<li>Validate surprising results with literature search</li>
-<li>Consider both gene expression and chromatin accessibility effects</li>
+<li>Disease queries search articles, trials, and disease databases</li>
+<li>Disease synonyms are automatically expanded in trial searches</li>
 </ul>
-<h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
-<p>BioMCP's dual interface approach (MCP + CLI) provides robust variant analysis capabilities. Claude Code works seamlessly with both, offering flexibility for different workflows. The MCP integration provides slight advantages for interactive analysis, while the CLI excels for scripting and debugging.</p>
-<p>The combination of AlphaGenome's predictive power with BioMCP's comprehensive biomedical data access creates a powerful platform for genetic variant analysis and interpretation.</p>
-<h2 id="resources">Resources<a class="headerlink" href="#resources" title="Permanent link">&para;</a></h2>
+<h3 id="combined-domain-queries">Combined Domain Queries<a class="headerlink" href="#combined-domain-queries" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>&quot;gene:BRAF AND disease:melanoma&quot;
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>&quot;drugs.indication:leukemia AND trials.phase:3&quot;
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>&quot;genes.symbol:EGFR AND articles.year:&gt;2023&quot;
+</code></pre></div>
+<h3 id="unified-fetch">Unified Fetch<a class="headerlink" href="#unified-fetch" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>&quot;Fetch BRAF from gene domain&quot;
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>&quot;Get imatinib details from drugs&quot;
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>&quot;Retrieve melanoma information from diseases&quot;
+</code></pre></div>
+<p><strong>Expected tool usage</strong>:</p>
 <ul>
-<li><a href="https://biomcp.org">BioMCP Documentation</a></li>
-<li><a href="https://deepmind.google/science/alphagenome">AlphaGenome Paper</a></li>
-<li><a href="https://docs.anthropic.com/claude/docs/model-context-protocol">Claude Code MCP Guide</a></li>
-<li><a href="https://docs.astral.sh/uv/">uv Documentation</a></li>
+<li><code>fetch(id="BRAF", domain="gene")</code></li>
+<li><code>fetch(id="imatinib", domain="drug")</code></li>
+<li><code>fetch(id="melanoma", domain="disease")</code></li>
+</ul>
+<h2 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
+<p>If a gene/disease is not found:</p>
+<ul>
+<li>Check for typos or alternative names</li>
+<li>Try searching with partial names</li>
+<li>Use official symbols for genes (e.g., "TP53" not "p53 gene")</li>
+<li>For diseases, try both common and medical names</li>
 </ul>
 
 
