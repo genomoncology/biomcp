@@ -228,13 +228,179 @@ class VariantHandler:
         }
 
 
+class GeneHandler:
+    """Handles formatting for gene information results from MyGene.info."""
+
+    @staticmethod
+    def format_result(result: dict[str, Any]) -> dict[str, Any]:
+        """Format a single gene result.
+
+        Args:
+            result: Raw gene data from MyGene.info API
+
+        Returns:
+            Standardized gene result with id, title, snippet, url, and metadata
+        """
+        # Extract gene information
+        gene_id = result.get("_id", result.get("entrezgene", ""))
+        symbol = result.get("symbol", "")
+        name = result.get("name", "")
+        summary = result.get("summary", "")
+
+        # Build title
+        title = (
+            f"{symbol}: {name}"
+            if symbol and name
+            else symbol or name or DEFAULT_TITLE
+        )
+
+        # Create snippet from summary
+        snippet = (
+            summary[:SNIPPET_LENGTH] + "..."
+            if summary and len(summary) > SNIPPET_LENGTH
+            else summary
+        )
+
+        return {
+            RESULT_ID: str(gene_id),
+            RESULT_TITLE: title,
+            RESULT_SNIPPET: snippet or "No summary available",
+            RESULT_URL: f"https://www.genenames.org/data/gene-symbol-report/#!/symbol/{symbol}"
+            if symbol
+            else "",
+            RESULT_METADATA: {
+                "entrezgene": result.get("entrezgene"),
+                "symbol": symbol,
+                "name": name,
+                "type_of_gene": result.get("type_of_gene", ""),
+                "ensembl": result.get("ensembl", {}).get("gene")
+                if isinstance(result.get("ensembl"), dict)
+                else None,
+                "refseq": result.get("refseq", {}),
+            },
+        }
+
+
+class DrugHandler:
+    """Handles formatting for drug/chemical information results from MyChem.info."""
+
+    @staticmethod
+    def format_result(result: dict[str, Any]) -> dict[str, Any]:
+        """Format a single drug result.
+
+        Args:
+            result: Raw drug data from MyChem.info API
+
+        Returns:
+            Standardized drug result with id, title, snippet, url, and metadata
+        """
+        # Extract drug information
+        drug_id = result.get("_id", "")
+        name = result.get("name", "")
+        drugbank_id = result.get("drugbank_id", "")
+        description = result.get("description", "")
+        indication = result.get("indication", "")
+
+        # Build title
+        title = name or drug_id or DEFAULT_TITLE
+
+        # Create snippet from description or indication
+        snippet_text = indication or description
+        snippet = (
+            snippet_text[:SNIPPET_LENGTH] + "..."
+            if snippet_text and len(snippet_text) > SNIPPET_LENGTH
+            else snippet_text
+        )
+
+        # Determine URL based on available IDs
+        url = ""
+        if drugbank_id:
+            url = f"https://www.drugbank.ca/drugs/{drugbank_id}"
+        elif result.get("pubchem_cid"):
+            url = f"https://pubchem.ncbi.nlm.nih.gov/compound/{result['pubchem_cid']}"
+
+        return {
+            RESULT_ID: drug_id,
+            RESULT_TITLE: title,
+            RESULT_SNIPPET: snippet or "No description available",
+            RESULT_URL: url,
+            RESULT_METADATA: {
+                "drugbank_id": drugbank_id,
+                "chembl_id": result.get("chembl_id", ""),
+                "pubchem_cid": result.get("pubchem_cid", ""),
+                "chebi_id": result.get("chebi_id", ""),
+                "formula": result.get("formula", ""),
+                "tradename": result.get("tradename", []),
+            },
+        }
+
+
+class DiseaseHandler:
+    """Handles formatting for disease information results from MyDisease.info."""
+
+    @staticmethod
+    def format_result(result: dict[str, Any]) -> dict[str, Any]:
+        """Format a single disease result.
+
+        Args:
+            result: Raw disease data from MyDisease.info API
+
+        Returns:
+            Standardized disease result with id, title, snippet, url, and metadata
+        """
+        # Extract disease information
+        disease_id = result.get("_id", "")
+        name = result.get("name", "")
+        definition = result.get("definition", "")
+        mondo_info = result.get("mondo", {})
+
+        # Build title
+        title = name or disease_id or DEFAULT_TITLE
+
+        # Create snippet from definition
+        snippet = (
+            definition[:SNIPPET_LENGTH] + "..."
+            if definition and len(definition) > SNIPPET_LENGTH
+            else definition
+        )
+
+        # Extract MONDO ID for URL
+        mondo_id = mondo_info.get("id") if isinstance(mondo_info, dict) else ""
+        url = (
+            f"https://monarchinitiative.org/disease/{mondo_id}"
+            if mondo_id
+            else ""
+        )
+
+        return {
+            RESULT_ID: disease_id,
+            RESULT_TITLE: title,
+            RESULT_SNIPPET: snippet or "No definition available",
+            RESULT_URL: url,
+            RESULT_METADATA: {
+                "mondo_id": mondo_id,
+                "definition": definition,
+                "synonyms": result.get("synonyms", []),
+                "xrefs": result.get("xrefs", {}),
+                "phenotypes": len(result.get("phenotypes", [])),
+            },
+        }
+
+
 def get_domain_handler(
     domain: str,
-) -> type[ArticleHandler] | type[TrialHandler] | type[VariantHandler]:
+) -> (
+    type[ArticleHandler]
+    | type[TrialHandler]
+    | type[VariantHandler]
+    | type[GeneHandler]
+    | type[DrugHandler]
+    | type[DiseaseHandler]
+):
     """Get the appropriate handler class for a domain.
 
     Args:
-        domain: The domain name ('article', 'trial', or 'variant')
+        domain: The domain name ('article', 'trial', 'variant', 'gene', 'drug', 'disease')
 
     Returns:
         The handler class for the domain
@@ -243,11 +409,20 @@ def get_domain_handler(
         ValueError: If domain is not recognized
     """
     handlers: dict[
-        str, type[ArticleHandler] | type[TrialHandler] | type[VariantHandler]
+        str,
+        type[ArticleHandler]
+        | type[TrialHandler]
+        | type[VariantHandler]
+        | type[GeneHandler]
+        | type[DrugHandler]
+        | type[DiseaseHandler],
     ] = {
         "article": ArticleHandler,
         "trial": TrialHandler,
         "variant": VariantHandler,
+        "gene": GeneHandler,
+        "drug": DrugHandler,
+        "disease": DiseaseHandler,
     }
 
     handler = handlers.get(domain)

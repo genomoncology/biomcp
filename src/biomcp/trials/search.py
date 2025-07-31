@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .. import StrEnum, ensure_list, http_client, render
 from ..constants import CLINICAL_TRIALS_BASE_URL
+from ..integrations import BioThingsClient
 
 logger = logging.getLogger(__name__)
 
@@ -374,6 +375,10 @@ class TrialQuery(BaseModel):
         ge=1,
         le=1000,
     )
+    expand_synonyms: bool = Field(
+        default=True,
+        description="Expand condition searches with disease synonyms from MyDisease.info",
+    )
 
     @field_validator("recruiting_status", mode="before")
     @classmethod
@@ -504,7 +509,7 @@ def _build_brain_mets_essie(allow: bool) -> str:
     return ""
 
 
-def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
+async def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
     """Convert a TrialQuery object into a dict of query params
     for the ClinicalTrials.gov API (v2). Each key maps to one or
     more strings in a list, consistent with parse_qs outputs.
@@ -518,9 +523,42 @@ def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C901
     # Track whether we have other filters (for NCT ID intersection logic)
     has_other_filters = False
 
-    # Handle conditions, terms, interventions
+    # Handle conditions with optional synonym expansion
+    if query.conditions:
+        has_other_filters = True
+        expanded_conditions = []
+
+        if query.expand_synonyms:
+            # Expand each condition with synonyms
+            client = BioThingsClient()
+            for condition in query.conditions:
+                try:
+                    synonyms = await client.get_disease_synonyms(condition)
+                    expanded_conditions.extend(synonyms)
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to get synonyms for {condition}: {e}"
+                    )
+                    expanded_conditions.append(condition)
+        else:
+            expanded_conditions = query.conditions
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_conditions = []
+        for cond in expanded_conditions:
+            if cond.lower() not in seen:
+                seen.add(cond.lower())
+                unique_conditions.append(cond)
+
+        if len(unique_conditions) == 1:
+            params["query.cond"] = [unique_conditions[0]]
+        else:
+            # Join multiple terms with OR, wrapped in parentheses
+            params["query.cond"] = [f"({' OR '.join(unique_conditions)})"]
+
+    # Handle terms and interventions (no synonym expansion)
     for key, val in [
-        ("query.cond", query.conditions),
         ("query.term", query.terms),
         ("query.intr", query.interventions),
     ]:
@@ -708,7 +746,7 @@ async def search_trials(
     output_json: bool = False,
 ) -> str:
     """Search ClinicalTrials.gov for clinical trials."""
-    params = convert_query(query)
+    params = await convert_query(query)
 
     # Log filter mode if NCT IDs are present
     if query.nct_ids:
@@ -861,6 +899,10 @@ async def _trial_searcher(
         int | None,
         "Number of results per page (1-1000)",
     ] = None,
+    expand_synonyms: Annotated[
+        bool,
+        "Expand condition searches with disease synonyms from MyDisease.info",
+    ] = True,
 ) -> str:
     """
     Searches for clinical trials based on specified criteria.
@@ -896,6 +938,7 @@ async def _trial_searcher(
     - allow_brain_mets: Whether to allow trials that accept brain metastases
     - return_fields: Specific fields to return in the response - list or comma-separated string
     - page_size: Number of results per page (1-1000)
+    - expand_synonyms: Expand condition searches with disease synonyms from MyDisease.info
 
     Returns:
     Markdown formatted list of clinical trials
@@ -931,5 +974,6 @@ async def _trial_searcher(
         allow_brain_mets=allow_brain_mets,
         return_fields=ensure_list(return_fields, split_strings=True),
         page_size=page_size,
+        expand_synonyms=expand_synonyms,
     )
     return await search_trials(query, output_json=False)

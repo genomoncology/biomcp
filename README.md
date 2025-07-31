@@ -38,14 +38,18 @@ BioMCP integrates with multiple biomedical data sources:
 ### Clinical & Genomic Sources
 
 - **ClinicalTrials.gov** - Clinical trial registry and results database
-- **MyVariant.info** - Consolidated genetic variant annotation
+- **BioThings Suite** - Comprehensive biomedical data APIs:
+  - **MyVariant.info** - Consolidated genetic variant annotation
+  - **MyGene.info** - Real-time gene annotations and information
+  - **MyDisease.info** - Disease ontology and synonym information
+  - **MyChem.info** - Drug/chemical annotations and properties
 - **TCGA/GDC** - The Cancer Genome Atlas for cancer variant data
 - **1000 Genomes** - Population frequency data via Ensembl
 - **cBioPortal** - Cancer genomics portal with mutation occurrence data
 
 ## Available MCP Tools
 
-BioMCP provides 13 specialized tools for biomedical research:
+BioMCP provides 16 specialized tools for biomedical research:
 
 ### Core Tools (3)
 
@@ -149,9 +153,9 @@ fetch(domain="variant", id="rs113488022")
 - **Trials**: `detail` can be "protocol", "locations", "outcomes", "references", or "all"
 - **Variants**: Always returns full details
 
-### Individual Tools (10)
+### Individual Tools (12)
 
-For users who prefer direct access to specific functionality, BioMCP also provides 10 individual tools:
+For users who prefer direct access to specific functionality, BioMCP also provides 12 individual tools:
 
 #### Article Tools (2)
 
@@ -172,7 +176,13 @@ For users who prefer direct access to specific functionality, BioMCP also provid
 - **variant_searcher**: Search MyVariant.info database
 - **variant_getter**: Fetch comprehensive variant details
 
-**Note**: All individual tools that search by gene automatically include cBioPortal summaries when the `include_cbioportal` parameter is True (default).
+#### Gene, Disease & Drug Tools (3)
+
+- **gene_getter**: Get real-time gene information from MyGene.info
+- **disease_getter**: Get disease definitions and synonyms from MyDisease.info
+- **drug_getter**: Get drug/chemical information from MyChem.info
+
+**Note**: All individual tools that search by gene automatically include cBioPortal summaries when the `include_cbioportal` parameter is True (default). Trial searches can expand disease conditions with synonyms when `expand_synonyms` is True (default).
 
 ## Quick Start
 
@@ -294,6 +304,44 @@ Learn more: [GenomOncology](https://genomoncology.com/)
 <a href="https://glama.ai/mcp/servers/@genomoncology/biomcp">
 <img width="380" height="200" src="https://glama.ai/mcp/servers/@genomoncology/biomcp/badge" />
 </a>
+
+## Example Use Cases
+
+### Gene Information Retrieval
+
+```python
+# Get comprehensive gene information
+gene_getter(gene_id_or_symbol="TP53")
+# Returns: Official name, summary, aliases, links to databases
+```
+
+### Disease Synonym Expansion
+
+```python
+# Get disease information with synonyms
+disease_getter(disease_id_or_name="GIST")
+# Returns: "gastrointestinal stromal tumor" and other synonyms
+
+# Search trials with automatic synonym expansion
+trial_searcher(conditions=["GIST"], expand_synonyms=True)
+# Searches for: GIST OR "gastrointestinal stromal tumor" OR "GI stromal tumor"
+```
+
+### Integrated Biomedical Research
+
+```python
+# 1. Always start with thinking
+think(thought="Analyzing BRAF V600E in melanoma treatment", thoughtNumber=1)
+
+# 2. Get gene context
+gene_getter("BRAF")
+
+# 3. Search for pathogenic variants
+variant_searcher(gene="BRAF", hgvsp="V600E", significance="pathogenic")
+
+# 4. Find relevant clinical trials with disease expansion
+trial_searcher(conditions=["melanoma"], interventions=["BRAF inhibitor"])
+```
 
 ## Documentation
 

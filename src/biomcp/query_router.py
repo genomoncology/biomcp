@@ -29,6 +29,31 @@ class QueryRouter:
         field_mappings = {}
 
         # Check which domains are referenced
+        domains_referenced = self._get_referenced_domains(parsed_query)
+
+        # Build field mappings for each domain
+        domain_mappers = {
+            "articles": ("article_searcher", self._map_article_fields),
+            "trials": ("trial_searcher", self._map_trial_fields),
+            "variants": ("variant_searcher", self._map_variant_fields),
+            "genes": ("gene_searcher", self._map_gene_fields),
+            "drugs": ("drug_searcher", self._map_drug_fields),
+            "diseases": ("disease_searcher", self._map_disease_fields),
+        }
+
+        for domain, (tool_name, mapper_func) in domain_mappers.items():
+            if domain in domains_referenced:
+                tools_to_call.append(tool_name)
+                field_mappings[tool_name] = mapper_func(parsed_query)
+
+        return RoutingPlan(
+            tools_to_call=tools_to_call,
+            field_mappings=field_mappings,
+            coordination_strategy="parallel",
+        )
+
+    def _get_referenced_domains(self, parsed_query: ParsedQuery) -> set[str]:
+        """Get all domains referenced in the query."""
         domains_referenced = set()
 
         # Check domain-specific fields
@@ -38,40 +63,19 @@ class QueryRouter:
 
         # Check cross-domain fields (these trigger multiple searches)
         if parsed_query.cross_domain_fields:
-            # If we have cross-domain fields, search all relevant domains
-            if "gene" in parsed_query.cross_domain_fields:
-                domains_referenced.update(["articles", "variants"])
-                # Trials might also be relevant for gene searches
-                domains_referenced.add("trials")
-            if "disease" in parsed_query.cross_domain_fields:
-                domains_referenced.update(["articles", "trials"])
-            if "variant" in parsed_query.cross_domain_fields:
-                domains_referenced.update(["articles", "variants"])
+            cross_domain_mappings = {
+                "gene": ["articles", "variants", "genes", "trials"],
+                "disease": ["articles", "trials", "diseases"],
+                "variant": ["articles", "variants"],
+                "chemical": ["articles", "trials", "drugs"],
+                "drug": ["articles", "trials", "drugs"],
+            }
 
-        # Build field mappings for each domain
-        if "articles" in domains_referenced:
-            tools_to_call.append("article_searcher")
-            field_mappings["article_searcher"] = self._map_article_fields(
-                parsed_query
-            )
+            for field, domains in cross_domain_mappings.items():
+                if field in parsed_query.cross_domain_fields:
+                    domains_referenced.update(domains)
 
-        if "trials" in domains_referenced:
-            tools_to_call.append("trial_searcher")
-            field_mappings["trial_searcher"] = self._map_trial_fields(
-                parsed_query
-            )
-
-        if "variants" in domains_referenced:
-            tools_to_call.append("variant_searcher")
-            field_mappings["variant_searcher"] = self._map_variant_fields(
-                parsed_query
-            )
-
-        return RoutingPlan(
-            tools_to_call=tools_to_call,
-            field_mappings=field_mappings,
-            coordination_strategy="parallel",
-        )
+        return domains_referenced
 
     def _map_article_fields(self, parsed_query: ParsedQuery) -> dict[str, Any]:
         """Map query fields to article searcher parameters."""
@@ -177,6 +181,67 @@ class QueryRouter:
 
         return mapping
 
+    def _map_gene_fields(self, parsed_query: ParsedQuery) -> dict[str, Any]:
+        """Map query fields to gene searcher parameters."""
+        mapping: dict[str, Any] = {}
+
+        # Map cross-domain fields
+        if "gene" in parsed_query.cross_domain_fields:
+            mapping["query"] = parsed_query.cross_domain_fields["gene"]
+
+        # Map gene-specific fields
+        gene_fields = parsed_query.domain_specific_fields.get("genes", {})
+        if "symbol" in gene_fields:
+            mapping["query"] = gene_fields["symbol"]
+        elif "name" in gene_fields:
+            mapping["query"] = gene_fields["name"]
+        elif "type" in gene_fields:
+            mapping["type_of_gene"] = gene_fields["type"]
+
+        return mapping
+
+    def _map_drug_fields(self, parsed_query: ParsedQuery) -> dict[str, Any]:
+        """Map query fields to drug searcher parameters."""
+        mapping: dict[str, Any] = {}
+
+        # Map cross-domain fields
+        if "chemical" in parsed_query.cross_domain_fields:
+            mapping["query"] = parsed_query.cross_domain_fields["chemical"]
+        elif "drug" in parsed_query.cross_domain_fields:
+            mapping["query"] = parsed_query.cross_domain_fields["drug"]
+
+        # Map drug-specific fields
+        drug_fields = parsed_query.domain_specific_fields.get("drugs", {})
+        if "name" in drug_fields:
+            mapping["query"] = drug_fields["name"]
+        elif "tradename" in drug_fields:
+            mapping["query"] = drug_fields["tradename"]
+        elif "indication" in drug_fields:
+            mapping["indication"] = drug_fields["indication"]
+
+        return mapping
+
+    def _map_disease_fields(self, parsed_query: ParsedQuery) -> dict[str, Any]:
+        """Map query fields to disease searcher parameters."""
+        mapping: dict[str, Any] = {}
+
+        # Map cross-domain fields
+        if "disease" in parsed_query.cross_domain_fields:
+            mapping["query"] = parsed_query.cross_domain_fields["disease"]
+
+        # Map disease-specific fields
+        disease_fields = parsed_query.domain_specific_fields.get(
+            "diseases", {}
+        )
+        if "name" in disease_fields:
+            mapping["query"] = disease_fields["name"]
+        elif "mondo" in disease_fields:
+            mapping["query"] = disease_fields["mondo"]
+        elif "synonym" in disease_fields:
+            mapping["query"] = disease_fields["synonym"]
+
+        return mapping
+
 
 async def execute_routing_plan(
     plan: RoutingPlan, output_json: bool = True
@@ -212,6 +277,33 @@ async def execute_routing_plan(
             )
             task_names.append("variants")
 
+        elif tool_name == "gene_searcher":
+            # For gene search, we'll use the BioThingsClient directly
+            from biomcp.integrations.biothings_client import BioThingsClient
+
+            client = BioThingsClient()
+            query_str = params.get("query", "")
+            tasks.append(_search_genes(client, query_str, output_json))
+            task_names.append("genes")
+
+        elif tool_name == "drug_searcher":
+            # For drug search, we'll use the BioThingsClient directly
+            from biomcp.integrations.biothings_client import BioThingsClient
+
+            client = BioThingsClient()
+            query_str = params.get("query", "")
+            tasks.append(_search_drugs(client, query_str, output_json))
+            task_names.append("drugs")
+
+        elif tool_name == "disease_searcher":
+            # For disease search, we'll use the BioThingsClient directly
+            from biomcp.integrations.biothings_client import BioThingsClient
+
+            client = BioThingsClient()
+            query_str = params.get("query", "")
+            tasks.append(_search_diseases(client, query_str, output_json))
+            task_names.append("diseases")
+
     # Execute all searches in parallel
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -224,3 +316,72 @@ async def execute_routing_plan(
             output[name] = result
 
     return output
+
+
+async def _search_genes(client, query: str, output_json: bool) -> Any:
+    """Search for genes using BioThingsClient."""
+    results = await client._query_gene(query)
+    if not results:
+        return [] if output_json else "No genes found"
+
+    # Fetch full details for each result
+    detailed_results = []
+    for result in results[:10]:  # Limit to 10 results
+        gene_id = result.get("_id")
+        if gene_id:
+            full_gene = await client._get_gene_by_id(gene_id)
+            if full_gene:
+                detailed_results.append(full_gene.model_dump(by_alias=True))
+
+    if output_json:
+        import json
+
+        return json.dumps(detailed_results)
+    else:
+        return detailed_results
+
+
+async def _search_drugs(client, query: str, output_json: bool) -> Any:
+    """Search for drugs using BioThingsClient."""
+    results = await client._query_drug(query)
+    if not results:
+        return [] if output_json else "No drugs found"
+
+    # Fetch full details for each result
+    detailed_results = []
+    for result in results[:10]:  # Limit to 10 results
+        drug_id = result.get("_id")
+        if drug_id:
+            full_drug = await client._get_drug_by_id(drug_id)
+            if full_drug:
+                detailed_results.append(full_drug.model_dump(by_alias=True))
+
+    if output_json:
+        import json
+
+        return json.dumps(detailed_results)
+    else:
+        return detailed_results
+
+
+async def _search_diseases(client, query: str, output_json: bool) -> Any:
+    """Search for diseases using BioThingsClient."""
+    results = await client._query_disease(query)
+    if not results:
+        return [] if output_json else "No diseases found"
+
+    # Fetch full details for each result
+    detailed_results = []
+    for result in results[:10]:  # Limit to 10 results
+        disease_id = result.get("_id")
+        if disease_id:
+            full_disease = await client._get_disease_by_id(disease_id)
+            if full_disease:
+                detailed_results.append(full_disease.model_dump(by_alias=True))
+
+    if output_json:
+        import json
+
+        return json.dumps(detailed_results)
+    else:
+        return detailed_results

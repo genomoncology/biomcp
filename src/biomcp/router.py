@@ -30,6 +30,7 @@ from biomcp.exceptions import (
     ResultParsingError,
     SearchExecutionError,
 )
+from biomcp.integrations.biothings_client import BioThingsClient
 from biomcp.metrics import track_performance
 from biomcp.parameter_parser import ParameterParser
 from biomcp.query_parser import QueryParser
@@ -131,9 +132,10 @@ async def search(  # noqa: C901
         ),
     ] = None,
     domain: Annotated[
-        Literal["article", "trial", "variant"] | None,
+        Literal["article", "trial", "variant", "gene", "drug", "disease"]
+        | None,
         Field(
-            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS (NOT articles about variants)"
+            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS, 'gene' for gene information from MyGene.info, 'drug' for drug/chemical information from MyChem.info, 'disease' for disease information from MyDisease.info"
         ),
     ] = None,
     genes: Annotated[list[str] | str | None, "Gene symbols"] = None,
@@ -176,13 +178,14 @@ async def search(  # noqa: C901
         bool, "Return searchable fields schema instead of results"
     ] = False,
 ) -> dict:
-    """Search biomedical literature, clinical trials, and genetic variants.
+    """Search biomedical literature, clinical trials, genetic variants, genes, drugs, and diseases.
 
     ⚠️ IMPORTANT: Have you used the 'think' tool first? If not, STOP and use it NOW!
     The 'think' tool is REQUIRED for proper research planning and should be your FIRST step.
 
     This tool provides access to biomedical data from PubMed/PubTator3, ClinicalTrials.gov,
-    and MyVariant.info. It supports two search modes:
+    MyVariant.info, and the BioThings suite (MyGene.info, MyChem.info, MyDisease.info).
+    It supports two search modes:
 
     ## 1. UNIFIED QUERY LANGUAGE
     Use the 'query' parameter with field-based syntax for precise cross-domain searches.
@@ -214,6 +217,9 @@ async def search(  # noqa: C901
     - "article": Search PubMed/PubTator3 for research articles and preprints ABOUT genes, variants, diseases, or chemicals
     - "trial": Search ClinicalTrials.gov for clinical studies
     - "variant": Search MyVariant.info for genetic variant DATABASE RECORDS (population frequency, clinical significance, etc.) - NOT for articles about variants!
+    - "gene": Search MyGene.info for gene information (symbol, name, function, aliases)
+    - "drug": Search MyChem.info for drug/chemical information (names, formulas, indications)
+    - "disease": Search MyDisease.info for disease information (names, definitions, synonyms)
 
     Example:
     ```
@@ -451,6 +457,146 @@ async def search(  # noqa: C901
             total=total,
         )
 
+    elif domain == "gene":
+        logger.info("Executing gene search")
+        # Build the gene search query
+        query_str = keywords[0] if keywords else genes[0] if genes else ""
+
+        if not query_str:
+            raise InvalidParameterError(
+                "keywords or genes", None, "a gene symbol or search term"
+            )
+
+        try:
+            client = BioThingsClient()
+            # For search, query by symbol/name
+            results = await client._query_gene(query_str)
+
+            if not results:
+                items = []
+                total = 0
+            else:
+                # Fetch full details for each result (limited by page_size)
+                items = []
+                for result in results[:page_size]:
+                    gene_id = result.get("_id")
+                    if gene_id:
+                        full_gene = await client._get_gene_by_id(gene_id)
+                        if full_gene:
+                            items.append(full_gene.model_dump())
+
+                total = len(results)
+
+        except Exception as e:
+            logger.error(f"Gene search failed: {e}")
+            raise SearchExecutionError("gene", e) from e
+
+        logger.info(f"Gene search returned {len(items)} results")
+
+        return format_results(
+            items,
+            domain="gene",
+            page=page,
+            page_size=page_size,
+            total=total,
+        )
+
+    elif domain == "drug":
+        logger.info("Executing drug search")
+        # Build the drug search query
+        query_str = (
+            keywords[0] if keywords else chemicals[0] if chemicals else ""
+        )
+
+        if not query_str:
+            raise InvalidParameterError(
+                "keywords or chemicals", None, "a drug name or search term"
+            )
+
+        try:
+            client = BioThingsClient()
+            # For search, query by name
+            results = await client._query_drug(query_str)
+
+            if not results:
+                items = []
+                total = 0
+            else:
+                # Fetch full details for each result (limited by page_size)
+                items = []
+                for result in results[:page_size]:
+                    drug_id = result.get("_id")
+                    if drug_id:
+                        full_drug = await client._get_drug_by_id(drug_id)
+                        if full_drug:
+                            items.append(full_drug.model_dump(by_alias=True))
+
+                total = len(results)
+
+        except Exception as e:
+            logger.error(f"Drug search failed: {e}")
+            raise SearchExecutionError("drug", e) from e
+
+        logger.info(f"Drug search returned {len(items)} results")
+
+        return format_results(
+            items,
+            domain="drug",
+            page=page,
+            page_size=page_size,
+            total=total,
+        )
+
+    elif domain == "disease":
+        logger.info("Executing disease search")
+        # Build the disease search query
+        query_str = (
+            keywords[0] if keywords else diseases[0] if diseases else ""
+        )
+
+        if not query_str:
+            raise InvalidParameterError(
+                "keywords or diseases", None, "a disease name or search term"
+            )
+
+        try:
+            client = BioThingsClient()
+            # For search, query by name
+            results = await client._query_disease(query_str)
+
+            if not results:
+                items = []
+                total = 0
+            else:
+                # Fetch full details for each result (limited by page_size)
+                items = []
+                for result in results[:page_size]:
+                    disease_id = result.get("_id")
+                    if disease_id:
+                        full_disease = await client._get_disease_by_id(
+                            disease_id
+                        )
+                        if full_disease:
+                            items.append(
+                                full_disease.model_dump(by_alias=True)
+                            )
+
+                total = len(results)
+
+        except Exception as e:
+            logger.error(f"Disease search failed: {e}")
+            raise SearchExecutionError("disease", e) from e
+
+        logger.info(f"Disease search returned {len(items)} results")
+
+        return format_results(
+            items,
+            domain="disease",
+            page=page,
+            page_size=page_size,
+            total=total,
+        )
+
     else:
         raise InvalidDomainError(domain, VALID_DOMAINS)
 
@@ -461,9 +607,13 @@ async def search(  # noqa: C901
 @mcp_app.tool()
 @track_performance("biomcp.fetch")
 async def fetch(  # noqa: C901
-    id: Annotated[str, "PMID / NCT ID / Variant ID / DOI"],  # noqa: A002
+    id: Annotated[  # noqa: A002
+        str,
+        "PMID / NCT ID / Variant ID / DOI / Gene ID / Drug ID / Disease ID",
+    ],
     domain: Annotated[
-        Literal["article", "trial", "variant"] | None,
+        Literal["article", "trial", "variant", "gene", "drug", "disease"]
+        | None,
         Field(
             description="Domain of the record (auto-detected if not provided)"
         ),
@@ -484,20 +634,24 @@ async def fetch(  # noqa: C901
 ) -> dict:
     """Fetch comprehensive details for a specific biomedical record.
 
-    This tool retrieves full information for articles, clinical trials, or genetic variants
-    using their unique identifiers. It returns data in a standardized format suitable for
-    detailed analysis and research.
+    This tool retrieves full information for articles, clinical trials, genetic variants,
+    genes, drugs, or diseases using their unique identifiers. It returns data in a
+    standardized format suitable for detailed analysis and research.
 
     ## IDENTIFIER FORMATS:
     - Articles: PMID (PubMed ID) - e.g., "35271234" OR DOI - e.g., "10.1101/2024.01.20.23288905"
     - Trials: NCT ID (ClinicalTrials.gov ID) - e.g., "NCT04280705"
     - Variants: HGVS notation or dbSNP ID - e.g., "chr7:g.140453136A>T" or "rs121913254"
+    - Genes: Gene symbol or Entrez ID - e.g., "BRAF" or "673"
+    - Drugs: Drug name or ID - e.g., "imatinib" or "DB00619"
+    - Diseases: Disease name or ID - e.g., "melanoma" or "MONDO:0005105"
 
     The domain is automatically detected from the ID format if not provided:
     - NCT* → trial
     - Contains "/" with numeric prefix (DOI) → article
     - Pure numeric → article (PMID)
     - rs* or contains ':' or 'g.' → variant
+    - For genes, drugs, diseases: manual specification recommended
 
     ## DOMAIN-SPECIFIC OPTIONS:
 
@@ -520,6 +674,32 @@ async def fetch(  # noqa: C901
       - Population frequencies
       - Gene/protein effects
       - External database links
+    - detail parameter is ignored (always returns full data)
+
+    ### Genes (domain="gene"):
+    - Returns gene information from MyGene.info including:
+      - Gene symbol, name, and type
+      - Entrez ID and Ensembl IDs
+      - Gene summary and aliases
+      - RefSeq information
+    - detail parameter is ignored (always returns full data)
+
+    ### Drugs (domain="drug"):
+    - Returns drug/chemical information from MyChem.info including:
+      - Drug name and trade names
+      - Chemical formula and structure IDs
+      - Clinical indications
+      - Mechanism of action
+      - External database links (DrugBank, PubChem, ChEMBL)
+    - detail parameter is ignored (always returns full data)
+
+    ### Diseases (domain="disease"):
+    - Returns disease information from MyDisease.info including:
+      - Disease name and definition
+      - MONDO ontology ID
+      - Disease synonyms
+      - Cross-references to other databases
+      - Associated phenotypes
     - detail parameter is ignored (always returns full data)
 
     ## RETURN FORMAT:
@@ -961,6 +1141,165 @@ async def fetch(  # noqa: C901
             "url": url,
             "metadata": variant_data,
         }
+
+    elif domain == "gene":
+        logger.debug("Fetching gene details")
+        try:
+            client = BioThingsClient()
+            gene_info = await client.get_gene_info(id)
+
+            if not gene_info:
+                return {"error": f"Gene {id} not found"}
+
+            # Build comprehensive text description
+            text_parts = []
+            text_parts.append(f"Gene: {gene_info.symbol} ({gene_info.name})")
+
+            if gene_info.entrezgene:
+                text_parts.append(f"\nEntrez ID: {gene_info.entrezgene}")
+
+            if gene_info.type_of_gene:
+                text_parts.append(f"Type: {gene_info.type_of_gene}")
+
+            if gene_info.summary:
+                text_parts.append(f"\nSummary: {gene_info.summary}")
+
+            if gene_info.alias:
+                text_parts.append(f"\nAliases: {', '.join(gene_info.alias)}")
+
+            # URL
+            url = (
+                f"https://www.genenames.org/data/gene-symbol-report/#!/symbol/{gene_info.symbol}"
+                if gene_info.symbol
+                else ""
+            )
+
+            # Return OpenAI MCP compliant format
+            return {
+                "id": str(gene_info.gene_id),
+                "title": f"{gene_info.symbol}: {gene_info.name}"
+                if gene_info.symbol and gene_info.name
+                else gene_info.symbol or gene_info.name or DEFAULT_TITLE,
+                "text": "\n".join(text_parts),
+                "url": url,
+                "metadata": gene_info.model_dump(),
+            }
+
+        except Exception as e:
+            logger.error(f"Gene fetch failed: {e}")
+            raise SearchExecutionError("gene", e) from e
+
+    elif domain == "drug":
+        logger.debug("Fetching drug details")
+        try:
+            client = BioThingsClient()
+            drug_info = await client.get_drug_info(id)
+
+            if not drug_info:
+                return {"error": f"Drug {id} not found"}
+
+            # Build comprehensive text description
+            text_parts = []
+            text_parts.append(f"Drug: {drug_info.name}")
+
+            if drug_info.drugbank_id:
+                text_parts.append(f"\nDrugBank ID: {drug_info.drugbank_id}")
+
+            if drug_info.formula:
+                text_parts.append(f"Formula: {drug_info.formula}")
+
+            if drug_info.tradename:
+                text_parts.append(
+                    f"\nTrade Names: {', '.join(drug_info.tradename)}"
+                )
+
+            if drug_info.description:
+                text_parts.append(f"\nDescription: {drug_info.description}")
+
+            if drug_info.indication:
+                text_parts.append(f"\nIndication: {drug_info.indication}")
+
+            if drug_info.mechanism_of_action:
+                text_parts.append(
+                    f"\nMechanism of Action: {drug_info.mechanism_of_action}"
+                )
+
+            # URL
+            url = ""
+            if drug_info.drugbank_id:
+                url = f"https://www.drugbank.ca/drugs/{drug_info.drugbank_id}"
+            elif drug_info.pubchem_cid:
+                url = f"https://pubchem.ncbi.nlm.nih.gov/compound/{drug_info.pubchem_cid}"
+
+            # Return OpenAI MCP compliant format
+            return {
+                "id": drug_info.drug_id,
+                "title": drug_info.name or drug_info.drug_id or DEFAULT_TITLE,
+                "text": "\n".join(text_parts),
+                "url": url,
+                "metadata": drug_info.model_dump(),
+            }
+
+        except Exception as e:
+            logger.error(f"Drug fetch failed: {e}")
+            raise SearchExecutionError("drug", e) from e
+
+    elif domain == "disease":
+        logger.debug("Fetching disease details")
+        try:
+            client = BioThingsClient()
+            disease_info = await client.get_disease_info(id)
+
+            if not disease_info:
+                return {"error": f"Disease {id} not found"}
+
+            # Build comprehensive text description
+            text_parts = []
+            text_parts.append(f"Disease: {disease_info.name}")
+
+            if disease_info.mondo and isinstance(disease_info.mondo, dict):
+                mondo_id = disease_info.mondo.get("id")
+                if mondo_id:
+                    text_parts.append(f"\nMONDO ID: {mondo_id}")
+
+            if disease_info.definition:
+                text_parts.append(f"\nDefinition: {disease_info.definition}")
+
+            if disease_info.synonyms:
+                text_parts.append(
+                    f"\nSynonyms: {', '.join(disease_info.synonyms[:5])}"
+                )
+                if len(disease_info.synonyms) > 5:
+                    text_parts.append(
+                        f"  ... and {len(disease_info.synonyms) - 5} more"
+                    )
+
+            if disease_info.phenotypes:
+                text_parts.append(
+                    f"\nAssociated Phenotypes: {len(disease_info.phenotypes)}"
+                )
+
+            # URL
+            url = ""
+            if disease_info.mondo and isinstance(disease_info.mondo, dict):
+                mondo_id = disease_info.mondo.get("id")
+                if mondo_id:
+                    url = f"https://monarchinitiative.org/disease/{mondo_id}"
+
+            # Return OpenAI MCP compliant format
+            return {
+                "id": disease_info.disease_id,
+                "title": disease_info.name
+                or disease_info.disease_id
+                or DEFAULT_TITLE,
+                "text": "\n".join(text_parts),
+                "url": url,
+                "metadata": disease_info.model_dump(),
+            }
+
+        except Exception as e:
+            logger.error(f"Disease fetch failed: {e}")
+            raise SearchExecutionError("disease", e) from e
 
     # Invalid domain
     raise InvalidDomainError(domain, VALID_DOMAINS)

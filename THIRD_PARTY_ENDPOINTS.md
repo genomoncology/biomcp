@@ -4,7 +4,7 @@ _This file is auto-generated from the endpoint registry._
 
 ## Overview
 
-BioMCP connects to 8 external domains across 18 endpoints.
+BioMCP connects to 11 external domains across 24 endpoints.
 
 ## Endpoints by Category
 
@@ -94,6 +94,54 @@ BioMCP connects to 8 external domains across 18 endpoints.
 - **Rate Limit**: Not specified
 - **Compliance Notes**: Public NCI service, aggregate cancer genomics data
 
+#### mychem_chem
+
+- **URL**: `https://mychem.info/v1/chem`
+- **Description**: MyChem.info API for fetching specific drug/chemical details
+- **Data Types**: gene_annotations
+- **Rate Limit**: 10 requests/second
+- **Compliance Notes**: Public BioThings service, drug/chemical annotation data
+
+#### mychem_query
+
+- **URL**: `https://mychem.info/v1/query`
+- **Description**: MyChem.info API for querying drug/chemical information
+- **Data Types**: gene_annotations
+- **Rate Limit**: 10 requests/second
+- **Compliance Notes**: Public BioThings service, drug/chemical annotation data
+
+#### mydisease_disease
+
+- **URL**: `https://mydisease.info/v1/disease`
+- **Description**: MyDisease.info API for fetching specific disease details
+- **Data Types**: gene_annotations
+- **Rate Limit**: 10 requests/second
+- **Compliance Notes**: Public BioThings service, disease ontology data
+
+#### mydisease_query
+
+- **URL**: `https://mydisease.info/v1/query`
+- **Description**: MyDisease.info API for querying disease information
+- **Data Types**: gene_annotations
+- **Rate Limit**: 10 requests/second
+- **Compliance Notes**: Public BioThings service, disease ontology data
+
+#### mygene_gene
+
+- **URL**: `https://mygene.info/v3/gene`
+- **Description**: MyGene.info API for fetching specific gene details
+- **Data Types**: gene_annotations
+- **Rate Limit**: 10 requests/second
+- **Compliance Notes**: Public BioThings service, gene annotation data
+
+#### mygene_query
+
+- **URL**: `https://mygene.info/v3/query`
+- **Description**: MyGene.info API for querying gene information
+- **Data Types**: gene_annotations
+- **Rate Limit**: 10 requests/second
+- **Compliance Notes**: Public BioThings service, gene annotation data
+
 #### myvariant_query
 
 - **URL**: `https://myvariant.info/v1/query`
@@ -168,6 +216,9 @@ BioMCP connects to 8 external domains across 18 endpoints.
 | api.biorxiv.org      | biomedical_literature | 2         |
 | api.gdc.cancer.gov   | variant_databases     | 2         |
 | clinicaltrials.gov   | clinical_trials       | 1         |
+| mychem.info          | variant_databases     | 2         |
+| mydisease.info       | variant_databases     | 2         |
+| mygene.info          | variant_databases     | 2         |
 | myvariant.info       | variant_databases     | 2         |
 | rest.ensembl.org     | variant_databases     | 1         |
 | www.cbioportal.org   | cancer_genomics       | 6         |
