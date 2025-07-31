@@ -42,6 +42,7 @@ BioMCP integrates with multiple biomedical data sources:
   - **MyVariant.info** - Consolidated genetic variant annotation
   - **MyGene.info** - Real-time gene annotations and information
   - **MyDisease.info** - Disease ontology and synonym information
+  - **MyChem.info** - Drug/chemical annotations and properties
 - **TCGA/GDC** - The Cancer Genome Atlas for cancer variant data
 - **1000 Genomes** - Population frequency data via Ensembl
 - **cBioPortal** - Cancer genomics portal with mutation occurrence data
