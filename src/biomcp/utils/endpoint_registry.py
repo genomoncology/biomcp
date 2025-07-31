@@ -285,6 +285,79 @@ class EndpointRegistry:
             ),
         )
 
+        # BioThings Suite APIs
+        self.register(
+            "mygene_query",
+            EndpointInfo(
+                url="https://mygene.info/v3/query",
+                category=EndpointCategory.VARIANT_DATABASES,
+                data_types=[DataType.GENE_ANNOTATIONS],
+                description="MyGene.info API for querying gene information",
+                compliance_notes="Public BioThings service, gene annotation data",
+                rate_limit="10 requests/second",
+            ),
+        )
+
+        self.register(
+            "mygene_gene",
+            EndpointInfo(
+                url="https://mygene.info/v3/gene",
+                category=EndpointCategory.VARIANT_DATABASES,
+                data_types=[DataType.GENE_ANNOTATIONS],
+                description="MyGene.info API for fetching specific gene details",
+                compliance_notes="Public BioThings service, gene annotation data",
+                rate_limit="10 requests/second",
+            ),
+        )
+
+        self.register(
+            "mydisease_query",
+            EndpointInfo(
+                url="https://mydisease.info/v1/query",
+                category=EndpointCategory.VARIANT_DATABASES,
+                data_types=[DataType.GENE_ANNOTATIONS],
+                description="MyDisease.info API for querying disease information",
+                compliance_notes="Public BioThings service, disease ontology data",
+                rate_limit="10 requests/second",
+            ),
+        )
+
+        self.register(
+            "mydisease_disease",
+            EndpointInfo(
+                url="https://mydisease.info/v1/disease",
+                category=EndpointCategory.VARIANT_DATABASES,
+                data_types=[DataType.GENE_ANNOTATIONS],
+                description="MyDisease.info API for fetching specific disease details",
+                compliance_notes="Public BioThings service, disease ontology data",
+                rate_limit="10 requests/second",
+            ),
+        )
+
+        self.register(
+            "mychem_query",
+            EndpointInfo(
+                url="https://mychem.info/v1/query",
+                category=EndpointCategory.VARIANT_DATABASES,
+                data_types=[DataType.GENE_ANNOTATIONS],
+                description="MyChem.info API for querying drug/chemical information",
+                compliance_notes="Public BioThings service, drug/chemical annotation data",
+                rate_limit="10 requests/second",
+            ),
+        )
+
+        self.register(
+            "mychem_chem",
+            EndpointInfo(
+                url="https://mychem.info/v1/chem",
+                category=EndpointCategory.VARIANT_DATABASES,
+                data_types=[DataType.GENE_ANNOTATIONS],
+                description="MyChem.info API for fetching specific drug/chemical details",
+                compliance_notes="Public BioThings service, drug/chemical annotation data",
+                rate_limit="10 requests/second",
+            ),
+        )
+
     def register(self, key: str, endpoint: EndpointInfo):
         """Register an endpoint for tracking.
 

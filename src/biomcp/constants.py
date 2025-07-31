@@ -145,20 +145,33 @@ CONNECTION_POOL_KEEPALIVE_EXPIRY = 30
 # ============================================================================
 
 # Valid domains for search
-VALID_DOMAINS = ["article", "trial", "variant"]
-VALID_DOMAINS_PLURAL = ["articles", "trials", "variants"]
+VALID_DOMAINS = ["article", "trial", "variant", "gene", "drug", "disease"]
+VALID_DOMAINS_PLURAL = [
+    "articles",
+    "trials",
+    "variants",
+    "genes",
+    "drugs",
+    "diseases",
+]
 
 # Domain mappings for unified search
 DOMAIN_TO_PLURAL = {
     "article": "articles",
     "trial": "trials",
     "variant": "variants",
+    "gene": "genes",
+    "drug": "drugs",
+    "disease": "diseases",
 }
 
 PLURAL_TO_DOMAIN = {
     "articles": "article",
     "trials": "trial",
     "variants": "variant",
+    "genes": "gene",
+    "drugs": "drug",
+    "diseases": "disease",
 }
 
 # Trial detail sections

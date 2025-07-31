@@ -14,6 +14,7 @@ nav:
       - AlphaGenome Docker: tutorials/docker-alphagenome.md
       - AlphaGenome Prompts: tutorials/alphagenome-prompts.md
       - AlphaGenome Setup: tutorials/alphagenome-setup.md
+      - BioThings Integration Prompts: tutorials/biothings-prompts.md
       - Claude Code with BioMCP: tutorials/claude-code-biomcp-alphagenome.md
       - Claude Desktop: tutorials/claude-desktop.md
       - Claude Desktop, for Macos and containerized: tutorials/macos-claude-desktop-dockerized-biomcp.md

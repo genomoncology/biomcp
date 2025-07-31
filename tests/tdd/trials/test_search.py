@@ -26,10 +26,11 @@ from biomcp.trials.search import (
 )
 
 
-def test_convert_query_basic_parameters():
+@pytest.mark.asyncio
+async def test_convert_query_basic_parameters():
     """Test basic parameter conversion from TrialQuery to API format."""
     query = TrialQuery(conditions=["lung cancer"])
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "markupFormat" in params
     assert params["markupFormat"] == ["markdown"]
@@ -39,37 +40,45 @@ def test_convert_query_basic_parameters():
     assert "RECRUITING" in params["filter.overallStatus"][0]
 
 
-def test_convert_query_multiple_conditions():
+@pytest.mark.asyncio
+async def test_convert_query_multiple_conditions():
     """Test conversion of multiple conditions to API format."""
     query = TrialQuery(conditions=["lung cancer", "metastatic"])
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "query.cond" in params
-    assert "(lung cancer OR metastatic)" in params["query.cond"][0]
+    # The query should contain the original terms, but may have expanded synonyms
+    cond_value = params["query.cond"][0]
+    assert "lung cancer" in cond_value
+    assert "metastatic" in cond_value
+    assert cond_value.startswith("(") and cond_value.endswith(")")
 
 
-def test_convert_query_terms_parameter():
+@pytest.mark.asyncio
+async def test_convert_query_terms_parameter():
     """Test conversion of terms parameter to API format."""
     query = TrialQuery(terms=["immunotherapy"])
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "query.term" in params
     assert params["query.term"] == ["immunotherapy"]
 
 
-def test_convert_query_interventions_parameter():
+@pytest.mark.asyncio
+async def test_convert_query_interventions_parameter():
     """Test conversion of interventions parameter to API format."""
     query = TrialQuery(interventions=["pembrolizumab"])
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "query.intr" in params
     assert params["query.intr"] == ["pembrolizumab"]
 
 
-def test_convert_query_nct_ids():
+@pytest.mark.asyncio
+async def test_convert_query_nct_ids():
     """Test conversion of NCT IDs to API format."""
     query = TrialQuery(nct_ids=["NCT04179552"])
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "query.id" in params
     assert params["query.id"] == ["NCT04179552"]
@@ -77,18 +86,19 @@ def test_convert_query_nct_ids():
     # So we don't assert its absence
 
 
-def test_convert_query_recruiting_status():
+@pytest.mark.asyncio
+async def test_convert_query_recruiting_status():
     """Test conversion of recruiting status to API format."""
     # Test open status
     query = TrialQuery(recruiting_status=RecruitingStatus.OPEN)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.overallStatus" in params
     assert "RECRUITING" in params["filter.overallStatus"][0]
 
     # Test closed status
     query = TrialQuery(recruiting_status=RecruitingStatus.CLOSED)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.overallStatus" in params
     assert all(
@@ -98,46 +108,50 @@ def test_convert_query_recruiting_status():
 
     # Test any status
     query = TrialQuery(recruiting_status=RecruitingStatus.ANY)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.overallStatus" not in params
 
 
-def test_convert_query_location_parameters():
+@pytest.mark.asyncio
+async def test_convert_query_location_parameters():
     """Test conversion of location parameters to API format."""
     query = TrialQuery(lat=40.7128, long=-74.0060, distance=10)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.geo" in params
     assert params["filter.geo"] == ["distance(40.7128,-74.006,10mi)"]
 
 
-def test_convert_query_study_type():
+@pytest.mark.asyncio
+async def test_convert_query_study_type():
     """Test conversion of study type to API format."""
     query = TrialQuery(study_type=StudyType.INTERVENTIONAL)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.advanced" in params
     assert "AREA[StudyType]Interventional" in params["filter.advanced"][0]
 
 
-def test_convert_query_phase():
+@pytest.mark.asyncio
+async def test_convert_query_phase():
     """Test conversion of phase to API format."""
     query = TrialQuery(phase=TrialPhase.PHASE3)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.advanced" in params
     assert "AREA[Phase]PHASE3" in params["filter.advanced"][0]
 
 
-def test_convert_query_date_range():
+@pytest.mark.asyncio
+async def test_convert_query_date_range():
     """Test conversion of date range to API format."""
     query = TrialQuery(
         min_date="2020-01-01",
         max_date="2020-12-31",
         date_field=DateField.LAST_UPDATE,
     )
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.advanced" in params
     assert (
@@ -150,7 +164,7 @@ def test_convert_query_date_range():
         min_date="2021-01-01",
         date_field=DateField.STUDY_START,
     )
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.advanced" in params
     assert (
@@ -158,61 +172,67 @@ def test_convert_query_date_range():
     )
 
 
-def test_convert_query_sort_order():
+@pytest.mark.asyncio
+async def test_convert_query_sort_order():
     """Test conversion of sort order to API format."""
     query = TrialQuery(sort=SortOrder.RELEVANCE)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "sort" in params
     assert params["sort"] == ["@relevance"]
 
     query = TrialQuery(sort=SortOrder.LAST_UPDATE)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "sort" in params
     assert params["sort"] == ["LastUpdatePostDate:desc"]
 
 
-def test_convert_query_intervention_type():
+@pytest.mark.asyncio
+async def test_convert_query_intervention_type():
     """Test conversion of intervention type to API format."""
     query = TrialQuery(intervention_type=InterventionType.DRUG)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.advanced" in params
     assert "AREA[InterventionType]Drug" in params["filter.advanced"][0]
 
 
-def test_convert_query_sponsor_type():
+@pytest.mark.asyncio
+async def test_convert_query_sponsor_type():
     """Test conversion of sponsor type to API format."""
     query = TrialQuery(sponsor_type=SponsorType.ACADEMIC)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.advanced" in params
     assert "AREA[SponsorType]Academic" in params["filter.advanced"][0]
 
 
-def test_convert_query_study_design():
+@pytest.mark.asyncio
+async def test_convert_query_study_design():
     """Test conversion of study design to API format."""
     query = TrialQuery(study_design=StudyDesign.RANDOMIZED)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.advanced" in params
     assert "AREA[StudyDesign]Randomized" in params["filter.advanced"][0]
 
 
-def test_convert_query_age_group():
+@pytest.mark.asyncio
+async def test_convert_query_age_group():
     """Test conversion of age group to API format."""
     query = TrialQuery(age_group=AgeGroup.ADULT)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.advanced" in params
     assert "AREA[StdAge]Adult" in params["filter.advanced"][0]
 
 
-def test_convert_query_primary_purpose():
+@pytest.mark.asyncio
+async def test_convert_query_primary_purpose():
     """Test conversion of primary purpose to API format."""
     query = TrialQuery(primary_purpose=PrimaryPurpose.TREATMENT)
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "filter.advanced" in params
     assert (
@@ -220,16 +240,18 @@ def test_convert_query_primary_purpose():
     )
 
 
-def test_convert_query_next_page_hash():
+@pytest.mark.asyncio
+async def test_convert_query_next_page_hash():
     """Test conversion of next_page_hash to API format."""
     query = TrialQuery(next_page_hash="abc123")
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "pageToken" in params
     assert params["pageToken"] == ["abc123"]
 
 
-def test_convert_query_complex_parameters():
+@pytest.mark.asyncio
+async def test_convert_query_complex_parameters():
     """Test conversion of multiple parameters to API format."""
     query = TrialQuery(
         conditions=["diabetes"],
@@ -243,10 +265,11 @@ def test_convert_query_complex_parameters():
         age_group=AgeGroup.ADULT,
         sort=SortOrder.RELEVANCE,
     )
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "query.cond" in params
-    assert params["query.cond"] == ["diabetes"]
+    # Disease synonym expansion may add synonyms to diabetes
+    assert "diabetes" in params["query.cond"][0]
     assert "query.term" in params
     assert params["query.term"] == ["obesity"]
     assert "query.intr" in params
@@ -301,7 +324,8 @@ def test_trial_query_field_validation_recruiting_status():
 
 
 # noinspection PyTypeChecker
-def test_trial_query_field_validation_combined():
+@pytest.mark.asyncio
+async def test_trial_query_field_validation_combined():
     """Test combined parameters validation."""
     query = TrialQuery(
         conditions=["diabetes", "obesity"],
@@ -322,9 +346,13 @@ def test_trial_query_field_validation_combined():
     assert query.distance == 10
 
     # Check that the query can be converted to parameters properly
-    params = convert_query(query)
+    params = await convert_query(query)
     assert "query.cond" in params
-    assert "(diabetes OR obesity)" in params["query.cond"][0]
+    # The query should contain the original terms, but may have expanded synonyms
+    cond_value = params["query.cond"][0]
+    assert "diabetes" in cond_value
+    assert "obesity" in cond_value
+    assert cond_value.startswith("(") and cond_value.endswith(")")
     assert "query.intr" in params
     assert "metformin" in params["query.intr"][0]
     assert "filter.geo" in params
@@ -332,7 +360,8 @@ def test_trial_query_field_validation_combined():
 
 
 # noinspection PyTypeChecker
-def test_trial_query_field_validation_terms():
+@pytest.mark.asyncio
+async def test_trial_query_field_validation_terms():
     """Test terms parameter validation."""
     # Single term as string
     query = TrialQuery(terms="cancer")
@@ -343,13 +372,14 @@ def test_trial_query_field_validation_terms():
     assert query.terms == ["cancer", "therapy"]
 
     # Check parameter generation
-    params = convert_query(query)
+    params = await convert_query(query)
     assert "query.term" in params
     assert "(cancer OR therapy)" in params["query.term"][0]
 
 
 # noinspection PyTypeChecker
-def test_trial_query_field_validation_nct_ids():
+@pytest.mark.asyncio
+async def test_trial_query_field_validation_nct_ids():
     """Test NCT IDs parameter validation."""
     # Single NCT ID
     query = TrialQuery(nct_ids="NCT01234567")
@@ -360,13 +390,14 @@ def test_trial_query_field_validation_nct_ids():
     assert query.nct_ids == ["NCT01234567", "NCT89012345"]
 
     # Check parameter generation
-    params = convert_query(query)
+    params = await convert_query(query)
     assert "query.id" in params
     assert "NCT01234567,NCT89012345" in params["query.id"][0]
 
 
 # noinspection PyTypeChecker
-def test_trial_query_field_validation_date_range():
+@pytest.mark.asyncio
+async def test_trial_query_field_validation_date_range():
     """Test date range parameters validation."""
     # Min date only with date field
     query = TrialQuery(min_date="2020-01-01", date_field=DateField.STUDY_START)
@@ -384,7 +415,7 @@ def test_trial_query_field_validation_date_range():
     assert query.date_field == DateField.LAST_UPDATE
 
     # Check parameter generation
-    params = convert_query(query)
+    params = await convert_query(query)
     assert "filter.advanced" in params
     assert (
         "AREA[LastUpdatePostDate]RANGE[2020-01-01,2021-12-31]"
@@ -584,7 +615,8 @@ def test_build_brain_mets_essie():
     assert fragment == 'AREA[EligibilityCriteria](NOT "brain metastases")'
 
 
-def test_convert_query_with_eligibility_fields():
+@pytest.mark.asyncio
+async def test_convert_query_with_eligibility_fields():
     """Test conversion of query with new eligibility-focused fields."""
     query = TrialQuery(
         conditions=["lung cancer"],
@@ -596,7 +628,7 @@ def test_convert_query_with_eligibility_fields():
         line_of_therapy=LineOfTherapy.SECOND_LINE,
         allow_brain_mets=False,
     )
-    params = convert_query(query)
+    params = await convert_query(query)
 
     # Check that query.term contains all the Essie fragments
     assert "query.term" in params
@@ -633,14 +665,15 @@ def test_convert_query_with_eligibility_fields():
     assert " AND " in term
 
 
-def test_convert_query_with_custom_fields_and_page_size():
+@pytest.mark.asyncio
+async def test_convert_query_with_custom_fields_and_page_size():
     """Test conversion of query with custom return fields and page size."""
     query = TrialQuery(
         conditions=["diabetes"],
         return_fields=["NCTId", "BriefTitle", "OverallStatus"],
         page_size=100,
     )
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "fields" in params
     assert params["fields"] == ["NCTId,BriefTitle,OverallStatus"]
@@ -649,13 +682,14 @@ def test_convert_query_with_custom_fields_and_page_size():
     assert params["pageSize"] == ["100"]
 
 
-def test_convert_query_eligibility_with_existing_terms():
+@pytest.mark.asyncio
+async def test_convert_query_eligibility_with_existing_terms():
     """Test that eligibility Essie fragments are properly combined with existing terms."""
     query = TrialQuery(
         terms=["immunotherapy"],
         prior_therapies=["chemotherapy"],
     )
-    params = convert_query(query)
+    params = await convert_query(query)
 
     assert "query.term" in params
     term = params["query.term"][0]

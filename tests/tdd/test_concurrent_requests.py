@@ -1,7 +1,7 @@
 """Test concurrent request handling in the HTTP client."""
 
 import asyncio
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -14,16 +14,21 @@ class TestConcurrentRequests:
     @pytest.mark.asyncio
     async def test_concurrent_requests_same_domain(self):
         """Test multiple concurrent requests to the same domain."""
-        # Mock the call_http function
-        with patch("biomcp.http_client.call_http") as mock_call:
+        # Use patch instead of direct replacement
+        with patch(
+            "biomcp.http_client.call_http", new_callable=AsyncMock
+        ) as mock_call:
+            # Configure mock to return success
             mock_call.return_value = (200, '{"data": "response"}')
 
-            # Make 10 concurrent requests
+            # Make 10 concurrent requests with different URLs to avoid caching
+            # and disable caching explicitly
             tasks = [
                 http_client.request_api(
                     url=f"https://api.example.com/resource/{i}",
                     request={},
                     domain="example",
+                    cache_ttl=0,  # Disable caching
                 )
                 for i in range(10)
             ]
@@ -42,9 +47,11 @@ class TestConcurrentRequests:
     @pytest.mark.asyncio
     async def test_concurrent_requests_different_domains(self):
         """Test concurrent requests to different domains."""
-        with patch("biomcp.http_client.call_http") as mock_call:
+        with patch(
+            "biomcp.http_client.call_http", new_callable=AsyncMock
+        ) as mock_call:
             # Return different responses based on URL
-            def side_effect(method, url, *args, **kwargs):
+            async def side_effect(method, url, *args, **kwargs):
                 if "domain1" in url:
                     return (200, '{"source": "domain1"}')
                 elif "domain2" in url:
@@ -77,7 +84,9 @@ class TestConcurrentRequests:
     @pytest.mark.asyncio
     async def test_concurrent_cache_access(self):
         """Test that concurrent requests properly use cache."""
-        with patch("biomcp.http_client.call_http") as mock_call:
+        with patch(
+            "biomcp.http_client.call_http", new_callable=AsyncMock
+        ) as mock_call:
             mock_call.return_value = (200, '{"data": "cached"}')
 
             # First request to populate cache
@@ -115,7 +124,9 @@ class TestConcurrentRequests:
     @pytest.mark.asyncio
     async def test_concurrent_circuit_breaker(self):
         """Test circuit breaker behavior with concurrent failures."""
-        with patch("biomcp.http_client.call_http") as mock_call:
+        with patch(
+            "biomcp.http_client.call_http", new_callable=AsyncMock
+        ) as mock_call:
             # Simulate failures
             mock_call.return_value = (500, "Internal Server Error")
 

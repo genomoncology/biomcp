@@ -16,6 +16,9 @@ from biomcp.cbioportal_helper import (
     get_variant_cbioportal_summary,
 )
 from biomcp.core import ensure_list, mcp_app
+from biomcp.diseases.getter import _disease_details
+from biomcp.drugs.getter import _drug_details
+from biomcp.genes.getter import _gene_details
 from biomcp.metrics import track_performance
 from biomcp.trials.getter import (
     _trial_locations,
@@ -696,3 +699,115 @@ async def alphagenome_predictor(
         significance_threshold=significance_threshold,
         api_key=api_key,
     )
+
+
+# Gene Tools
+@mcp_app.tool()
+@track_performance("biomcp.gene_getter")
+async def gene_getter(
+    gene_id_or_symbol: Annotated[
+        str,
+        Field(
+            description="Gene symbol (e.g., 'TP53', 'BRAF') or Entrez ID (e.g., '7157')"
+        ),
+    ],
+) -> str:
+    """Get detailed gene information from MyGene.info.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to understand your research goal!
+
+    Provides real-time gene annotations including:
+    - Official gene name and symbol
+    - Gene summary/description
+    - Aliases and alternative names
+    - Gene type (protein-coding, etc.)
+    - Links to external databases
+
+    This tool fetches CURRENT gene information from MyGene.info, ensuring
+    you always have the latest annotations and nomenclature.
+
+    Example usage:
+    - Get information about TP53 tumor suppressor
+    - Look up BRAF kinase gene details
+    - Find the official name for a gene by its alias
+
+    Note: For genetic variants, use variant_searcher. For articles about genes, use article_searcher.
+    """
+    return await _gene_details(
+        call_benefit="Get up-to-date gene annotations and information",
+        gene_id_or_symbol=gene_id_or_symbol,
+    )
+
+
+# Disease Tools
+@mcp_app.tool()
+@track_performance("biomcp.disease_getter")
+async def disease_getter(
+    disease_id_or_name: Annotated[
+        str,
+        Field(
+            description="Disease name (e.g., 'melanoma', 'lung cancer') or ontology ID (e.g., 'MONDO:0016575', 'DOID:1909')"
+        ),
+    ],
+) -> str:
+    """Get detailed disease information from MyDisease.info.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to understand your research goal!
+
+    Provides real-time disease annotations including:
+    - Official disease name and definition
+    - Disease synonyms and alternative names
+    - Ontology mappings (MONDO, DOID, OMIM, etc.)
+    - Associated phenotypes
+    - Links to disease databases
+
+    This tool fetches CURRENT disease information from MyDisease.info, ensuring
+    you always have the latest ontology mappings and definitions.
+
+    Example usage:
+    - Get the definition of GIST (Gastrointestinal Stromal Tumor)
+    - Look up synonyms for melanoma
+    - Find the MONDO ID for a disease by name
+
+    Note: For clinical trials about diseases, use trial_searcher. For articles about diseases, use article_searcher.
+    """
+    return await _disease_details(
+        call_benefit="Get up-to-date disease definitions and ontology information",
+        disease_id_or_name=disease_id_or_name,
+    )
+
+
+@mcp_app.tool()
+@track_performance("biomcp.drug_getter")
+async def drug_getter(
+    drug_id_or_name: Annotated[
+        str,
+        Field(
+            description="Drug name (e.g., 'aspirin', 'imatinib') or ID (e.g., 'DB00945', 'CHEMBL941')"
+        ),
+    ],
+) -> str:
+    """Get detailed drug/chemical information from MyChem.info.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to understand your research goal!
+
+    This tool provides comprehensive drug information including:
+    - Chemical properties (formula, InChIKey)
+    - Drug identifiers (DrugBank, ChEMBL, PubChem)
+    - Trade names and brand names
+    - Clinical indications
+    - Mechanism of action
+    - Pharmacology details
+    - Links to drug databases
+
+    This tool fetches CURRENT drug information from MyChem.info, part of the
+    BioThings suite, ensuring you always have the latest drug data.
+
+    Example usage:
+    - Get information about imatinib (Gleevec)
+    - Look up details for DrugBank ID DB00619
+    - Find the mechanism of action for pembrolizumab
+
+    Note: For clinical trials about drugs, use trial_searcher. For articles about drugs, use article_searcher.
+    """
+    return await _drug_details(drug_id_or_name)

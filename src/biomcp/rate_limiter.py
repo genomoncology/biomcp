@@ -87,6 +87,13 @@ class DomainRateLimiter:
             "trial": {"rps": 10.0, "burst": 20},  # ClinicalTrials.gov standard
             "variant": {"rps": 15.0, "burst": 30},  # MyVariant.info moderate
             "thinking": {"rps": 50.0, "burst": 100},  # Local processing
+            "mygene": {"rps": 10.0, "burst": 20},  # MyGene.info
+            "mydisease": {"rps": 10.0, "burst": 20},  # MyDisease.info
+            "mychem": {"rps": 10.0, "burst": 20},  # MyChem.info
+            "myvariant": {
+                "rps": 15.0,
+                "burst": 30,
+            },  # MyVariant.info (same as variant)
         }
 
     def get_limiter(self, domain: str) -> RateLimiter:

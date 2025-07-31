@@ -225,12 +225,111 @@ class QueryParser:
             ),
         ]
 
+        # Gene-specific fields
+        gene_fields = [
+            FieldDefinition(
+                name="genes.symbol",
+                domain="genes",
+                type=FieldType.STRING,
+                operators=[Operator.EQ],
+                example_values=["BRAF", "TP53", "EGFR"],
+                description="Gene symbol",
+                underlying_api_field="symbol",
+            ),
+            FieldDefinition(
+                name="genes.name",
+                domain="genes",
+                type=FieldType.STRING,
+                operators=[Operator.EQ],
+                example_values=[
+                    "tumor protein p53",
+                    "epidermal growth factor receptor",
+                ],
+                description="Gene name",
+                underlying_api_field="name",
+            ),
+            FieldDefinition(
+                name="genes.type",
+                domain="genes",
+                type=FieldType.STRING,
+                operators=[Operator.EQ],
+                example_values=["protein-coding", "pseudo", "ncRNA"],
+                description="Gene type",
+                underlying_api_field="type_of_gene",
+            ),
+        ]
+
+        # Drug-specific fields
+        drug_fields = [
+            FieldDefinition(
+                name="drugs.name",
+                domain="drugs",
+                type=FieldType.STRING,
+                operators=[Operator.EQ],
+                example_values=["imatinib", "aspirin", "metformin"],
+                description="Drug name",
+                underlying_api_field="name",
+            ),
+            FieldDefinition(
+                name="drugs.tradename",
+                domain="drugs",
+                type=FieldType.STRING,
+                operators=[Operator.EQ],
+                example_values=["Gleevec", "Tylenol", "Lipitor"],
+                description="Drug trade name",
+                underlying_api_field="tradename",
+            ),
+            FieldDefinition(
+                name="drugs.indication",
+                domain="drugs",
+                type=FieldType.STRING,
+                operators=[Operator.EQ],
+                example_values=["leukemia", "hypertension", "diabetes"],
+                description="Drug indication",
+                underlying_api_field="indication",
+            ),
+        ]
+
+        # Disease-specific fields
+        disease_fields = [
+            FieldDefinition(
+                name="diseases.name",
+                domain="diseases",
+                type=FieldType.STRING,
+                operators=[Operator.EQ],
+                example_values=["melanoma", "breast cancer", "diabetes"],
+                description="Disease name",
+                underlying_api_field="name",
+            ),
+            FieldDefinition(
+                name="diseases.mondo",
+                domain="diseases",
+                type=FieldType.STRING,
+                operators=[Operator.EQ],
+                example_values=["MONDO:0005105", "MONDO:0007254"],
+                description="MONDO disease ID",
+                underlying_api_field="mondo_id",
+            ),
+            FieldDefinition(
+                name="diseases.synonym",
+                domain="diseases",
+                type=FieldType.STRING,
+                operators=[Operator.EQ],
+                example_values=["cancer", "tumor", "neoplasm"],
+                description="Disease synonym",
+                underlying_api_field="synonyms",
+            ),
+        ]
+
         # Build registry
         for field_list in [
             cross_domain_fields,
             trial_fields,
             article_fields,
             variant_fields,
+            gene_fields,
+            drug_fields,
+            disease_fields,
         ]:
             for field in field_list:
                 registry[field.name] = field
@@ -248,6 +347,9 @@ class QueryParser:
             "trials": {},
             "articles": {},
             "variants": {},
+            "genes": {},
+            "drugs": {},
+            "diseases": {},
         }
 
         for term in terms:
@@ -316,14 +418,31 @@ class QueryParser:
     def get_schema(self) -> dict[str, Any]:
         """Get the complete field schema for discovery."""
         schema: dict[str, Any] = {
-            "domains": ["trials", "articles", "variants"],
+            "domains": [
+                "trials",
+                "articles",
+                "variants",
+                "genes",
+                "drugs",
+                "diseases",
+            ],
             "cross_domain_fields": {},
-            "domain_fields": {"trials": {}, "articles": {}, "variants": {}},
+            "domain_fields": {
+                "trials": {},
+                "articles": {},
+                "variants": {},
+                "genes": {},
+                "drugs": {},
+                "diseases": {},
+            },
             "operators": [op.value for op in Operator],
             "examples": [
                 "gene:BRAF AND trials.condition:melanoma",
                 "articles.date:>2023 AND disease:cancer",
                 "variants.significance:pathogenic AND gene:TP53",
+                "genes.symbol:BRAF AND genes.type:protein-coding",
+                "drugs.tradename:gleevec",
+                "diseases.name:melanoma",
             ],
         }
 
