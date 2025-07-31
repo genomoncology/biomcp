@@ -7,6 +7,6 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MCP_MODE=worker # Can be set to 'stdio' or 'worker'
+      - MCP_MODE=streamable_http # Can be 'stdio', 'worker', 'http', or 'streamable_http'
       - ALPHAGENOME_API_KEY=${ALPHAGENOME_API_KEY:-}
     restart: unless-stopped

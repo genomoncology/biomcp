@@ -35,11 +35,11 @@ async def lifespan(mcp):
 
 
 # Initialize the MCP app with lifespan
+# Note: stateless_http=True is needed for proper streamable HTTP support
 mcp_app = FastMCP(
     name="BioMCP - Biomedical Model Context Protocol Server",
-    description="Biomedical research server with integrated sequential thinking. Use search(domain='thinking') to activate systematic step-by-step analysis before making biomedical queries.",
-    version="0.1.10",
     lifespan=lifespan,
+    stateless_http=True,  # Enable stateless HTTP for streamable transport
 )
 
 

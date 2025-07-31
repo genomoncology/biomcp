@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Streamable HTTP Transport Support** (#45):
+  - Enabled FastMCP's native `/mcp` endpoint for Streamable HTTP transport
+  - MCP specification compliant transport (2025-03-26 spec) via FastMCP 1.12.3+
+  - CLI support via `biomcp run --mode streamable_http` (uses native FastMCP implementation)
+  - Full backward compatibility with legacy SSE endpoints
+  - Databricks Managed Apps deployment example
+  - Cloudflare Worker updated with POST /mcp route for full spec compliance
+  - Simplified worker implementation to leverage FastMCP's built-in transport support
+
+### Changed
+
+- Enhanced CLI with additional transport modes (stdio, worker, http, streamable_http)
+- Added configurable host and port options for HTTP-based transports
+- Cloudflare Worker now supports both GET and POST methods on /mcp endpoint
+
 ## [0.4.6] - 2025-07-09
 
 ### Added

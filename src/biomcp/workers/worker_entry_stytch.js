@@ -1112,10 +1112,47 @@ app
   // MCP endpoint (alias for SSE, protected with bearer token authentication)
   .use("/mcp", stytchBearerTokenAuthMiddleware)
   .get("/mcp", (c) => {
-    log("MCP endpoint hit");
+    log("MCP GET endpoint hit");
     const REMOTE_MCP_SERVER_URL =
       c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
     return serveSSE(c.req, REMOTE_MCP_SERVER_URL);
+  })
+  .post("/mcp", async (c) => {
+    log("MCP POST endpoint hit - Streamable HTTP transport");
+    const REMOTE_MCP_SERVER_URL =
+      c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
+    const sid = new URL(c.req.url).searchParams.get("session_id");
+    
+    // Extract the original request for sanitization
+    const originalRequest = c.req.raw || c.req;
+    
+    // Create new request for logging (with sanitization)
+    const newRequest = new Request(originalRequest.url, {
+      method: originalRequest.method,
+      headers: originalRequest.headers,
+      body: originalRequest.body,
+    });
+    
+    // Log sanitized request details
+    try {
+      const bodyText = await newRequest.text();
+      const bodyJson = JSON.parse(bodyText);
+      const sanitizedBody = sanitizeObject(bodyJson);
+      log(`MCP POST request body: ${JSON.stringify(sanitizedBody)}`);
+      
+      // Create another request with the original body for forwarding
+      const forwardRequest = new Request(originalRequest.url, {
+        method: originalRequest.method,
+        headers: originalRequest.headers,
+        body: bodyText,
+      });
+      
+      return proxyPost(forwardRequest, REMOTE_MCP_SERVER_URL, "/mcp", sid || "default");
+    } catch (error) {
+      log(`Error processing MCP POST request: ${error}`);
+      // If we can't parse the body, forward as-is
+      return proxyPost(c.req, REMOTE_MCP_SERVER_URL, "/mcp", sid || "default");
+    }
   })
   .get("/events", (c) => {
     log("Events endpoint hit");
