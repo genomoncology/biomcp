@@ -7,6 +7,16 @@ import pytest
 
 from biomcp.cli.server import run_server
 
+# Check if worker module is available
+try:
+    import importlib.util
+
+    WORKER_AVAILABLE = (
+        importlib.util.find_spec("biomcp.workers.worker") is not None
+    )
+except ImportError:
+    WORKER_AVAILABLE = False
+
 
 class TestStreamableHTTP:
     """Test streamable HTTP transport functionality."""
@@ -23,6 +33,9 @@ class TestStreamableHTTP:
         """Get an available port for testing."""
         return 8765
 
+    @pytest.mark.skipif(
+        not WORKER_AVAILABLE, reason="Worker module not installed"
+    )
     def test_http_server_startup(self, test_port):
         """Test that HTTP server starts correctly with streamable HTTP mode."""
         with (
@@ -49,6 +62,9 @@ class TestStreamableHTTP:
             # Should call run with stdio transport
             mock_mcp_app.run.assert_called_once_with(transport="stdio")
 
+    @pytest.mark.skipif(
+        not WORKER_AVAILABLE, reason="Worker module not installed"
+    )
     def test_mcp_endpoint_configuration(self):
         """Test that /mcp endpoint is properly configured in HTTP mode."""
         # Test that the worker app is imported correctly
@@ -126,6 +142,9 @@ class TestStreamableHTTP:
         except ValueError as e:
             assert str(e) == "Test error"
 
+    @pytest.mark.skipif(
+        not WORKER_AVAILABLE, reason="Worker module not installed"
+    )
     def test_server_modes(self):
         """Test that all server modes are properly handled."""
         # Test worker mode
