@@ -6,11 +6,11 @@ This guide explains BioMCP's transport protocol options, with a focus on the new
 
 BioMCP supports multiple transport protocols to accommodate different deployment scenarios:
 
-| Transport | Use Case | Endpoint | Protocol Version |
-|-----------|----------|----------|------------------|
-| **STDIO** | Local development, direct Claude integration | N/A | All |
-| **Worker/SSE** | Legacy cloud deployments | `/sse` | Pre-2025 |
-| **Streamable HTTP** | Modern cloud deployments | `/mcp` | 2025-03-26+ |
+| Transport           | Use Case                                     | Endpoint | Protocol Version |
+| ------------------- | -------------------------------------------- | -------- | ---------------- |
+| **STDIO**           | Local development, direct Claude integration | N/A      | All              |
+| **Worker/SSE**      | Legacy cloud deployments                     | `/sse`   | Pre-2025         |
+| **Streamable HTTP** | Modern cloud deployments                     | `/mcp`   | 2025-03-26+      |
 
 ## Streamable HTTP Transport
 
@@ -32,7 +32,7 @@ graph LR
     B --> C{Response Type}
     C -->|Quick Operation| D[JSON Response]
     C -->|Long Operation| E[SSE Stream]
-    
+
     subgraph Session Management
         F[Session Store] -.->|session_id| B
     end
@@ -51,6 +51,7 @@ mcp_app = FastMCP(
 ```
 
 The transport is automatically handled by FastMCP 1.12.3+, providing:
+
 - Request routing
 - Session management
 - Response type negotiation
@@ -65,31 +66,42 @@ If you're currently using the legacy SSE transport, migrate to streamable HTTP:
 #### 1. Update Server Configuration
 
 **Before (SSE/Worker mode):**
+
 ```bash
 biomcp run --mode worker
 ```
 
 **After (Streamable HTTP):**
+
 ```bash
 biomcp run --mode streamable_http
-# or
-biomcp run --mode http  # alias for streamable_http
 ```
 
 #### 2. Update Client Configuration
 
 **MCP Inspector:**
+
 ```bash
 npx @modelcontextprotocol/inspector uv run --with . biomcp run --mode streamable_http
 ```
 
 **Claude Desktop Configuration:**
+
 ```json
 {
   "mcpServers": {
     "biomcp": {
       "command": "docker",
-      "args": ["run", "-p", "8000:8000", "biomcp:latest", "biomcp", "run", "--mode", "streamable_http"]
+      "args": [
+        "run",
+        "-p",
+        "8000:8000",
+        "biomcp:latest",
+        "biomcp",
+        "run",
+        "--mode",
+        "streamable_http"
+      ]
     }
   }
 }
@@ -112,6 +124,7 @@ The worker now supports both GET (legacy SSE) and POST (streamable HTTP) on the 
 ### Backward Compatibility
 
 All legacy endpoints remain functional:
+
 - `/sse` - Server-sent events transport
 - `/health` - Health check endpoint
 - `/events` - Event streaming endpoint
@@ -133,11 +146,11 @@ biomcp run --mode streamable_http --host 0.0.0.0 --port 8000
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MCP_TRANSPORT` | Override transport mode | None |
-| `MCP_HOST` | Server bind address | 0.0.0.0 |
-| `MCP_PORT` | Server port | 8000 |
+| Variable        | Description             | Default |
+| --------------- | ----------------------- | ------- |
+| `MCP_TRANSPORT` | Override transport mode | None    |
+| `MCP_HOST`      | Server bind address     | 0.0.0.0 |
+| `MCP_PORT`      | Server port             | 8000    |
 
 ## Session Management
 
@@ -155,6 +168,7 @@ Content-Type: application/json
 ```
 
 Sessions are:
+
 - Created automatically on first request
 - Maintained in server memory
 - Cleaned up after inactivity timeout
@@ -166,11 +180,11 @@ Sessions are:
 
 The server automatically selects the optimal response mode:
 
-| Operation Type | Response Mode | Example |
-|----------------|---------------|---------|
-| Quick queries | JSON | `search(limit=10)` |
-| Large results | SSE | `search(limit=1000)` |
-| Real-time updates | SSE | Thinking tool progress |
+| Operation Type    | Response Mode | Example                |
+| ----------------- | ------------- | ---------------------- |
+| Quick queries     | JSON          | `search(limit=10)`     |
+| Large results     | SSE           | `search(limit=1000)`   |
+| Real-time updates | SSE           | Thinking tool progress |
 
 ### Optimization Tips
 
@@ -184,21 +198,27 @@ The server automatically selects the optimal response mode:
 ### Common Issues
 
 #### 1. Connection Refused
+
 ```
 Error: connect ECONNREFUSED 127.0.0.1:8000
 ```
+
 **Solution**: Ensure server is running with `--host 0.0.0.0` for Docker deployments.
 
 #### 2. Session Not Found
+
 ```
 Error: Session 'xyz' not found
 ```
+
 **Solution**: Session may have expired. Omit session_id to create new session.
 
 #### 3. Timeout on Large Results
+
 ```
 Error: Request timeout after 30s
 ```
+
 **Solution**: Increase client timeout or reduce result size with `limit` parameter.
 
 ### Debug Mode
@@ -256,6 +276,7 @@ curl http://localhost:8000/health
 ### Metrics
 
 Monitor these key metrics:
+
 - Request rate on `/mcp` endpoint
 - Response time percentiles (p50, p95, p99)
 - Session count and duration
@@ -264,7 +285,5 @@ Monitor these key metrics:
 ## Next Steps
 
 - Review [MCP Specification](https://spec.modelcontextprotocol.io) for protocol details
-- Explore [Deployment Guide](./deployment.md) for production setup
-- Check [API Reference](./api-reference.md) for available tools
 
 For questions or issues, please visit our [GitHub repository](https://github.com/genomoncology/biomcp).

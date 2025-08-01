@@ -15,7 +15,6 @@ server_app = typer.Typer(help="Server operations")
 class ServerMode(str, Enum):
     STDIO = "stdio"
     WORKER = "worker"
-    HTTP = "http"
     STREAMABLE_HTTP = "streamable_http"
 
 
@@ -26,17 +25,12 @@ def run_stdio_server():
 
 
 def run_http_server(host: str, port: int, mode: ServerMode):
-    """Run server in HTTP-based mode (worker, http, or streamable_http)."""
+    """Run server in HTTP-based mode (worker or streamable_http)."""
     try:
         import uvicorn
 
         if mode == ServerMode.WORKER:
             logger.info("Starting MCP server with Worker/SSE transport")
-            from ..workers.worker import app
-        elif mode == ServerMode.HTTP:
-            logger.info(
-                f"Starting MCP server with basic HTTP transport on {host}:{port}"
-            )
             from ..workers.worker import app
         else:  # STREAMABLE_HTTP
             logger.info(
@@ -65,7 +59,7 @@ def run_server(
     mode: Annotated[
         ServerMode,
         typer.Option(
-            help="Server mode: stdio (local), worker (legacy SSE), http (basic HTTP), or streamable_http (MCP spec compliant)",
+            help="Server mode: stdio (local), worker (legacy SSE), or streamable_http (MCP spec compliant)",
             case_sensitive=False,
         ),
     ] = ServerMode.STDIO,

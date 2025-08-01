@@ -25,26 +25,19 @@ class TestStreamableHTTP:
 
     def test_http_server_startup(self, test_port):
         """Test that HTTP server starts correctly with streamable HTTP mode."""
-        with patch("biomcp.workers.worker.app") as mock_app, patch("uvicorn.run") as mock_uvicorn:
+        with (
+            patch("biomcp.workers.worker.app") as mock_app,
+            patch("uvicorn.run") as mock_uvicorn,
+        ):
             # Run server with streamable_http mode
-            run_server(mode="streamable_http", host="127.0.0.1", port=test_port)
+            run_server(
+                mode="streamable_http", host="127.0.0.1", port=test_port
+            )
 
             # Verify uvicorn was called with correct parameters
             mock_uvicorn.assert_called_once()
             assert mock_uvicorn.call_args[0][0] == mock_app
             assert mock_uvicorn.call_args[1]["host"] == "127.0.0.1"
-            assert mock_uvicorn.call_args[1]["port"] == test_port
-
-    def test_http_mode_alias(self, test_port):
-        """Test that 'http' mode behaves the same as 'streamable_http'."""
-        with patch("biomcp.workers.worker.app") as mock_app, patch("uvicorn.run") as mock_uvicorn:
-            # Run server with http mode
-            run_server(mode="http", host="0.0.0.0", port=test_port)  # noqa: S104
-
-            # Should behave the same as streamable_http
-            mock_uvicorn.assert_called_once()
-            assert mock_uvicorn.call_args[0][0] == mock_app
-            assert mock_uvicorn.call_args[1]["host"] == "0.0.0.0"  # noqa: S104
             assert mock_uvicorn.call_args[1]["port"] == test_port
 
     def test_stdio_mode_unchanged(self):
@@ -59,7 +52,10 @@ class TestStreamableHTTP:
     def test_mcp_endpoint_configuration(self):
         """Test that /mcp endpoint is properly configured in HTTP mode."""
         # Test that the worker app is imported correctly
-        with patch("biomcp.workers.worker.app") as mock_app, patch("uvicorn.run") as mock_uvicorn:
+        with (
+            patch("biomcp.workers.worker.app") as mock_app,
+            patch("uvicorn.run") as mock_uvicorn,
+        ):
             run_server(mode="streamable_http", host="127.0.0.1", port=8080)
 
             # Verify the correct app is passed to uvicorn
@@ -88,12 +84,16 @@ class TestStreamableHTTP:
         session_id = "test-session-123"
 
         # First request creates session
-        result1 = await mock_handle_request(session_id, {"method": "initialize"})
+        result1 = await mock_handle_request(
+            session_id, {"method": "initialize"}
+        )
         assert session_id in sessions
         assert result1["result"]["protocolVersion"] == "2025-03-26"
 
         # Second request uses existing session
-        result2 = await mock_handle_request(session_id, {"method": "tools/list"})
+        result2 = await mock_handle_request(
+            session_id, {"method": "tools/list"}
+        )
         assert len(sessions) == 1  # Still only one session
         assert "think" in result2["result"]["tools"]
 
@@ -107,11 +107,14 @@ class TestStreamableHTTP:
         # we can verify this by checking if the app exists and is a FastMCP instance
         assert mcp_app is not None
         assert hasattr(mcp_app, "name")
-        assert mcp_app.name == "BioMCP - Biomedical Model Context Protocol Server"
+        assert (
+            mcp_app.name == "BioMCP - Biomedical Model Context Protocol Server"
+        )
 
     @pytest.mark.asyncio
     async def test_error_handling(self):
         """Test error handling in streamable HTTP mode."""
+
         # Mock an error scenario
         async def mock_error_handler(request):
             """Mock handler that raises an error."""
@@ -126,7 +129,10 @@ class TestStreamableHTTP:
     def test_server_modes(self):
         """Test that all server modes are properly handled."""
         # Test worker mode
-        with patch("biomcp.workers.worker.app"), patch("uvicorn.run") as mock_uvicorn:
+        with (
+            patch("biomcp.workers.worker.app"),
+            patch("uvicorn.run") as mock_uvicorn,
+        ):
             run_server(mode="worker", host="localhost", port=3000)
             mock_uvicorn.assert_called_once()
 
@@ -178,6 +184,7 @@ class TestStreamableHTTPIntegration:
     @pytest.mark.asyncio
     async def test_sse_fallback(self):
         """Test that SSE is used for long-running operations."""
+
         # Mock a long-running operation
         async def mock_long_operation():
             """Simulate a long-running search."""
@@ -194,4 +201,3 @@ class TestStreamableHTTPIntegration:
         assert len(results) == 2
         assert results[0]["status"] == "searching"
         assert results[1]["status"] == "complete"
-

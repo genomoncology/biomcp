@@ -21,8 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Enhanced CLI with additional transport modes (stdio, worker, http, streamable_http)
+- Enhanced CLI with transport modes (stdio, worker, streamable_http)
 - Added configurable host and port options for HTTP-based transports
+- Simplified server modes by removing redundant `http` mode
 - Cloudflare Worker now supports both GET and POST methods on /mcp endpoint
 - Pinned FastMCP dependency to version range >=1.12.3,<2.0.0 for stability
 
