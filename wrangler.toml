@@ -1,0 +1,64 @@
+name = "biomcp-worker"
+main = "src/biomcp/workers/worker_entry_stytch.js"
+compatibility_date = "2025-04-28"
+
+[vars]
+# Environment variables for the worker
+# These can be overridden in several ways:
+# 1. In the Cloudflare dashboard under Workers & Pages > your-worker > Settings > Variables
+# 2. Using wrangler CLI: wrangler secret put REMOTE_MCP_SERVER_URL
+# 3. During local development: wrangler dev --var REMOTE_MCP_SERVER_URL="http://localhost:8000"
+# 4. In your CI/CD pipeline using environment variables with the format CF_REMOTE_MCP_SERVER_URL
+REMOTE_MCP_SERVER_URL = "http://localhost:8000"  # Replace with your MCP server URL in production
+
+# Stytch OAuth Configuration
+# Replace these placeholder values with your actual Stytch credentials
+# For development, use test credentials from https://stytch.com/dashboard
+# For production, use production credentials and api.stytch.com instead of test.stytch.com
+STYTCH_PROJECT_ID      = "project-test-xxxxxxxxxxxx"  # Replace with your Stytch Project ID
+STYTCH_SECRET          = "secret-test-xxxxxxxxxxxx"   # Replace with your Stytch Secret (use wrangler secret for production)
+STYTCH_PUBLIC_TOKEN    = "public-token-test-xxxxxxxxxxxx"  # Replace with your Stytch Public Token
+STYTCH_API_URL = "https://test.stytch.com/v1"  # Use https://api.stytch.com/v1 for production
+STYTCH_OAUTH_URL = "https://test.stytch.com/v1/public/oauth/google/start"  # Update for production
+
+# Debug mode - set to true for development, false for production
+DEBUG = false
+
+# JWT Secret for signing tokens - use a strong, unique secret in production
+# For production, set this as a secret: wrangler secret put JWT_SECRET
+JWT_SECRET = "replace-with-a-strong-secret-key"
+
+# BigQuery variables
+# For production, set these as secrets or environment variables:
+# wrangler secret put BQ_PROJECT_ID
+# wrangler secret put BQ_DATASET
+# wrangler secret put BQ_SA_KEY_JSON
+BQ_PROJECT_ID = "your-project-id"  # Replace with your actual project ID in production
+BQ_DATASET = "your_dataset_name"   # Replace with your actual dataset in production
+BQ_TABLE="worker_logs"
+
+# Sensitive variables should be stored in the Cloudflare dashboard under Workers & Pages > your-worker > Settings > Secrets
+# OR you can declare them using npx wrangler secret put BQ_SA_KEY_JSON
+# Potential secrets:
+# BQ_SA_KEY_JSON
+# STYTCH_SECRET
+
+
+# Note: The ability to allow plaintext connections is now configured in the Cloudflare dashboard
+# under Security settings for your Worker
+
+[build]
+command = ""
+
+[triggers]
+crons = []
+
+[observability.logs]
+enabled = true
+
+# KV namespace for storing OAuth tokens and state
+# Create your KV namespace with: wrangler kv:namespace create OAUTH_KV
+# Then replace the ID below with your namespace ID
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"  # Replace with your KV namespace ID
