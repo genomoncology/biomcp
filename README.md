@@ -299,10 +299,6 @@ Features of Streamable HTTP transport:
 docker run -p 8000:8000 biomcp:latest biomcp run --mode streamable_http
 ```
 
-#### Databricks Managed Apps
-
-See [examples/databricks_app/](./examples/databricks_app/) for deployment configuration.
-
 #### Cloudflare Workers
 
 The worker mode can be deployed to Cloudflare Workers for global edge deployment.

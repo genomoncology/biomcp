@@ -40,6 +40,7 @@ nav:
       - Deep Researcher Persona: blog/researcher-persona-resource.md
       - What is BioMCP?: blog/what-is-biomcp.md
   - Developer Guides:
+      - Transport Protocol: transport-protocol.md
       - Error Handling: ERROR_HANDLING.md
       - HTTP Client Guide: HTTP_CLIENT_GUIDE.md
       - Integration Testing: INTEGRATION_TESTING.md

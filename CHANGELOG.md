@@ -5,24 +5,62 @@ All notable changes to the BioMCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.0] - 2025-08-01
 
 ### Added
 
-- **Streamable HTTP Transport Support** (#45):
+- **Streamable HTTP Transport Support** (#45) - MCP specification version 2025-03-26:
   - Enabled FastMCP's native `/mcp` endpoint for Streamable HTTP transport
   - MCP specification compliant transport (2025-03-26 spec) via FastMCP 1.12.3+
   - CLI support via `biomcp run --mode streamable_http` (uses native FastMCP implementation)
   - Full backward compatibility with legacy SSE endpoints
-  - Databricks Managed Apps deployment example
   - Cloudflare Worker updated with POST /mcp route for full spec compliance
   - Simplified worker implementation to leverage FastMCP's built-in transport support
+  - Added comprehensive integration tests for streamable HTTP functionality
+  - New transport protocol documentation guide
 
 ### Changed
 
 - Enhanced CLI with additional transport modes (stdio, worker, http, streamable_http)
 - Added configurable host and port options for HTTP-based transports
 - Cloudflare Worker now supports both GET and POST methods on /mcp endpoint
+- Pinned FastMCP dependency to version range >=1.12.3,<2.0.0 for stability
+
+### Migration Notes
+
+- **From SSE to Streamable HTTP**: Update your server startup from `--mode worker` to `--mode streamable_http`
+- **Docker deployments**: Ensure you're using `--host 0.0.0.0` for proper container networking
+- **Cloudflare Workers**: The worker now automatically handles both transport types on `/mcp`
+- See the new [Transport Protocol Guide](https://biomcp.org/transport-protocol/) for detailed migration instructions
+
+## [0.5.0] - 2025-08-01
+
+### Added
+
+- **BioThings Integration** for real-time biomedical data access:
+  - **New MCP Tools** (3 tools added, total now 17):
+    - `gene_getter`: Query MyGene.info for gene information (symbols, names, summaries)
+    - `drug_getter`: Query MyChem.info for drug/chemical data (formulas, indications, mechanisms)
+    - `disease_getter`: Query MyDisease.info for disease information (definitions, synonyms, ontologies)
+  - **Unified Search/Fetch Enhancement**:
+    - Added `gene`, `drug`, `disease` as new searchable domains alongside article, trial, variant
+    - Integrated into unified search syntax: `search(domain="gene", keywords=["BRAF"])`
+    - Query language support: `gene:BRAF`, `drug:pembrolizumab`, `disease:melanoma`
+    - Full fetch support: `fetch(domain="drug", id="DB00945")`
+  - **Clinical Trial Enhancement**:
+    - Automatic disease synonym expansion for trial searches
+    - Real-time synonym lookup from MyDisease.info
+    - Example: searching for "GIST" automatically includes "gastrointestinal stromal tumor"
+  - **Smart Caching & Performance**:
+    - Batch operations for multiple gene/drug lookups
+    - Intelligent caching with TTL (gene: 24h, drug: 48h, disease: 72h)
+    - Rate limiting to respect API guidelines
+
+### Changed
+
+- Trial search now expands disease terms by default (disable with `expand_synonyms=False`)
+- Enhanced error handling for BioThings API responses
+- Improved network reliability with automatic retries
 
 ## [0.4.6] - 2025-07-09
 
