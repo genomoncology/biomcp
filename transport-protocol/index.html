@@ -12,13 +12,13 @@
         <meta name="author" content="Ian Maurer">
       
       
-        <link rel="canonical" href="https://biomcp.org/HTTP_CLIENT_GUIDE/">
+        <link rel="canonical" href="https://biomcp.org/transport-protocol/">
       
       
-        <link rel="prev" href="../ERROR_HANDLING/">
+        <link rel="prev" href="../blog/what-is-biomcp/">
       
       
-        <link rel="next" href="../INTEGRATION_TESTING/">
+        <link rel="next" href="../error-handling/">
       
       
       <link rel="icon" href="../assets/favicon.ico">
@@ -26,7 +26,7 @@
     
     
       
-        <title>HTTP Client Guide - BioMCP</title>
+        <title>Transport Protocol - BioMCP</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#biomcp-http-client-guide" class="md-skip">
+        <a href="#transport-protocol-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              HTTP Client Guide
+              Transport Protocol
             
           </span>
         </div>
@@ -1097,29 +1097,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../ERROR_HANDLING/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Error Handling
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1137,7 +1114,7 @@
   
   
   <span class="md-ellipsis">
-    HTTP Client Guide
+    Transport Protocol
     
   </span>
   
@@ -1150,7 +1127,7 @@
   
   
   <span class="md-ellipsis">
-    HTTP Client Guide
+    Transport Protocol
     
   </span>
   
@@ -1182,28 +1159,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#migration-from-direct-http-libraries" class="md-nav__link">
+  <a href="#streamable-http-transport" class="md-nav__link">
     <span class="md-ellipsis">
-      Migration from Direct HTTP Libraries
+      Streamable HTTP Transport
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Migration from Direct HTTP Libraries">
+    <nav class="md-nav" aria-label="Streamable HTTP Transport">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#before-direct-httpx-usage" class="md-nav__link">
+  <a href="#what-is-streamable-http" class="md-nav__link">
     <span class="md-ellipsis">
-      Before (Direct httpx usage):
+      What is Streamable HTTP?
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#after-centralized-client" class="md-nav__link">
+  <a href="#architecture" class="md-nav__link">
     <span class="md-ellipsis">
-      After (Centralized client):
+      Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementation Details
     </span>
   </a>
   
@@ -1215,19 +1201,61 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
+  <a href="#migration-guide" class="md-nav__link">
     <span class="md-ellipsis">
-      Error Handling
+      Migration Guide
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Error Handling">
+    <nav class="md-nav" aria-label="Migration Guide">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#error-handling-guidelines" class="md-nav__link">
+  <a href="#from-sse-to-streamable-http" class="md-nav__link">
     <span class="md-ellipsis">
-      Error Handling Guidelines
+      From SSE to Streamable HTTP
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="From SSE to Streamable HTTP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-update-server-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Update Server Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-update-client-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Update Client Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-update-cloudflare-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Update Cloudflare Worker
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backward-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Backward Compatibility
     </span>
   </a>
   
@@ -1239,28 +1267,160 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#creating-domain-specific-adapters" class="md-nav__link">
+  <a href="#configuration-options" class="md-nav__link">
     <span class="md-ellipsis">
-      Creating Domain-Specific Adapters
+      Configuration Options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#server-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Server Modes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment Variables
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#session-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session Management
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#performance-considerations" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration
+      Performance Considerations
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Configuration">
+    <nav class="md-nav" aria-label="Performance Considerations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#cache-ttl-time-to-live" class="md-nav__link">
+  <a href="#response-mode-selection" class="md-nav__link">
     <span class="md-ellipsis">
-      Cache TTL (Time To Live)
+      Response Mode Selection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optimization-tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      Optimization Tips
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-connection-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Connection Refused
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-session-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Session Not Found
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-timeout-on-large-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Timeout on Large Results
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debug Mode
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security Considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      Authentication
     </span>
   </a>
   
@@ -1276,9 +1436,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#circuit-breaker" class="md-nav__link">
+  <a href="#cors-configuration" class="md-nav__link">
     <span class="md-ellipsis">
-      Circuit Breaker
+      CORS Configuration
     </span>
   </a>
   
@@ -1290,37 +1450,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#offline-mode" class="md-nav__link">
+  <a href="#monitoring" class="md-nav__link">
     <span class="md-ellipsis">
-      Offline Mode
+      Monitoring
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#performance-tuning" class="md-nav__link">
-    <span class="md-ellipsis">
-      Performance Tuning
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Performance Tuning">
+    <nav class="md-nav" aria-label="Monitoring">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#connection-pooling" class="md-nav__link">
+  <a href="#health-checks" class="md-nav__link">
     <span class="md-ellipsis">
-      Connection Pooling
+      Health Checks
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#concurrent-requests" class="md-nav__link">
+  <a href="#metrics" class="md-nav__link">
     <span class="md-ellipsis">
-      Concurrent Requests
+      Metrics
     </span>
   </a>
   
@@ -1332,51 +1483,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#monitoring-and-debugging" class="md-nav__link">
+  <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
-      Monitoring and Debugging
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Monitoring and Debugging">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#request-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      Request Metrics
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#debug-logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      Debug Logging
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
-    <span class="md-ellipsis">
-      Best Practices
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#endpoint-registration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Endpoint Registration
+      Next Steps
     </span>
   </a>
   
@@ -1398,7 +1507,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../INTEGRATION_TESTING/" class="md-nav__link">
+      <a href="../error-handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Error Handling
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../http-client-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    HTTP Client Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration-testing/" class="md-nav__link">
         
   
   
@@ -1421,7 +1576,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../MIGRATION_EXAMPLES/" class="md-nav__link">
+      <a href="../migration-examples/" class="md-nav__link">
         
   
   
@@ -1752,28 +1907,37 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#migration-from-direct-http-libraries" class="md-nav__link">
+  <a href="#streamable-http-transport" class="md-nav__link">
     <span class="md-ellipsis">
-      Migration from Direct HTTP Libraries
+      Streamable HTTP Transport
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Migration from Direct HTTP Libraries">
+    <nav class="md-nav" aria-label="Streamable HTTP Transport">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#before-direct-httpx-usage" class="md-nav__link">
+  <a href="#what-is-streamable-http" class="md-nav__link">
     <span class="md-ellipsis">
-      Before (Direct httpx usage):
+      What is Streamable HTTP?
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#after-centralized-client" class="md-nav__link">
+  <a href="#architecture" class="md-nav__link">
     <span class="md-ellipsis">
-      After (Centralized client):
+      Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementation Details
     </span>
   </a>
   
@@ -1785,19 +1949,61 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#error-handling" class="md-nav__link">
+  <a href="#migration-guide" class="md-nav__link">
     <span class="md-ellipsis">
-      Error Handling
+      Migration Guide
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Error Handling">
+    <nav class="md-nav" aria-label="Migration Guide">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#error-handling-guidelines" class="md-nav__link">
+  <a href="#from-sse-to-streamable-http" class="md-nav__link">
     <span class="md-ellipsis">
-      Error Handling Guidelines
+      From SSE to Streamable HTTP
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="From SSE to Streamable HTTP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-update-server-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Update Server Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-update-client-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Update Client Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-update-cloudflare-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Update Cloudflare Worker
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backward-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Backward Compatibility
     </span>
   </a>
   
@@ -1809,28 +2015,160 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#creating-domain-specific-adapters" class="md-nav__link">
+  <a href="#configuration-options" class="md-nav__link">
     <span class="md-ellipsis">
-      Creating Domain-Specific Adapters
+      Configuration Options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#server-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Server Modes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment Variables
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#session-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session Management
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#performance-considerations" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration
+      Performance Considerations
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Configuration">
+    <nav class="md-nav" aria-label="Performance Considerations">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#cache-ttl-time-to-live" class="md-nav__link">
+  <a href="#response-mode-selection" class="md-nav__link">
     <span class="md-ellipsis">
-      Cache TTL (Time To Live)
+      Response Mode Selection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optimization-tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      Optimization Tips
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-connection-refused" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Connection Refused
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-session-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Session Not Found
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-timeout-on-large-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Timeout on Large Results
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debug Mode
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Security Considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      Authentication
     </span>
   </a>
   
@@ -1846,9 +2184,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#circuit-breaker" class="md-nav__link">
+  <a href="#cors-configuration" class="md-nav__link">
     <span class="md-ellipsis">
-      Circuit Breaker
+      CORS Configuration
     </span>
   </a>
   
@@ -1860,37 +2198,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#offline-mode" class="md-nav__link">
+  <a href="#monitoring" class="md-nav__link">
     <span class="md-ellipsis">
-      Offline Mode
+      Monitoring
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#performance-tuning" class="md-nav__link">
-    <span class="md-ellipsis">
-      Performance Tuning
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Performance Tuning">
+    <nav class="md-nav" aria-label="Monitoring">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#connection-pooling" class="md-nav__link">
+  <a href="#health-checks" class="md-nav__link">
     <span class="md-ellipsis">
-      Connection Pooling
+      Health Checks
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#concurrent-requests" class="md-nav__link">
+  <a href="#metrics" class="md-nav__link">
     <span class="md-ellipsis">
-      Concurrent Requests
+      Metrics
     </span>
   </a>
   
@@ -1902,51 +2231,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#monitoring-and-debugging" class="md-nav__link">
+  <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
-      Monitoring and Debugging
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Monitoring and Debugging">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#request-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      Request Metrics
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#debug-logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      Debug Logging
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
-    <span class="md-ellipsis">
-      Best Practices
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#endpoint-registration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Endpoint Registration
+      Next Steps
     </span>
   </a>
   
@@ -1971,195 +2258,279 @@
   
 
 
-<h1 id="biomcp-http-client-guide">BioMCP HTTP Client Guide<a class="headerlink" href="#biomcp-http-client-guide" title="Permanent link">&para;</a></h1>
+<h1 id="transport-protocol-guide">Transport Protocol Guide<a class="headerlink" href="#transport-protocol-guide" title="Permanent link">&para;</a></h1>
+<p>This guide explains BioMCP's transport protocol options, with a focus on the new Streamable HTTP transport that provides better scalability and reliability for production deployments.</p>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>BioMCP uses a centralized HTTP client for all external API calls. This provides:</p>
+<p>BioMCP supports multiple transport protocols to accommodate different deployment scenarios:</p>
+<table>
+<thead>
+<tr>
+<th>Transport</th>
+<th>Use Case</th>
+<th>Endpoint</th>
+<th>Protocol Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>STDIO</strong></td>
+<td>Local development, direct Claude integration</td>
+<td>N/A</td>
+<td>All</td>
+</tr>
+<tr>
+<td><strong>Worker/SSE</strong></td>
+<td>Legacy cloud deployments</td>
+<td><code>/sse</code></td>
+<td>Pre-2025</td>
+</tr>
+<tr>
+<td><strong>Streamable HTTP</strong></td>
+<td>Modern cloud deployments</td>
+<td><code>/mcp</code></td>
+<td>2025-03-26+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="streamable-http-transport">Streamable HTTP Transport<a class="headerlink" href="#streamable-http-transport" title="Permanent link">&para;</a></h2>
+<h3 id="what-is-streamable-http">What is Streamable HTTP?<a class="headerlink" href="#what-is-streamable-http" title="Permanent link">&para;</a></h3>
+<p>Streamable HTTP is the latest MCP transport protocol (specification version 2025-03-26) that provides:</p>
 <ul>
-<li>Consistent error handling and retry logic</li>
-<li>Request/response caching</li>
-<li>Rate limiting per domain</li>
-<li>Circuit breaker for fault tolerance</li>
-<li>Offline mode support</li>
-<li>Comprehensive endpoint tracking</li>
+<li><strong>Single endpoint</strong> (<code>/mcp</code>) for all operations</li>
+<li><strong>Dynamic response modes</strong>: JSON for quick operations, SSE for long-running tasks</li>
+<li><strong>Session management</strong> via <code>session_id</code> query parameter</li>
+<li><strong>Better scalability</strong>: No permanent connections required</li>
+<li><strong>Automatic reconnection</strong> and session recovery</li>
 </ul>
-<h2 id="migration-from-direct-http-libraries">Migration from Direct HTTP Libraries<a class="headerlink" href="#migration-from-direct-http-libraries" title="Permanent link">&para;</a></h2>
-<h3 id="before-direct-httpx-usage">Before (Direct httpx usage):<a class="headerlink" href="#before-direct-httpx-usage" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">httpx</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fetch_gene</span><span class="p">(</span><span class="n">gene</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="k">async</span> <span class="k">with</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;https://api.example.com/genes/</span><span class="si">{</span><span class="n">gene</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+<h3 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>graph LR
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    A[MCP Client] --&gt;|POST /mcp| B[BioMCP Server]
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    B --&gt; C{Response Type}
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    C --&gt;|Quick Operation| D[JSON Response]
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    C --&gt;|Long Operation| E[SSE Stream]
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    subgraph Session Management
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        F[Session Store] -.-&gt;|session_id| B
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    end
 </code></pre></div>
-<h3 id="after-centralized-client">After (Centralized client):<a class="headerlink" href="#after-centralized-client" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">biomcp</span><span class="w"> </span><span class="kn">import</span> <span class="n">http_client</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fetch_gene</span><span class="p">(</span><span class="n">gene</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">http_client</span><span class="o">.</span><span class="n">request_api</span><span class="p">(</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;https://api.example.com/genes/</span><span class="si">{</span><span class="n">gene</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        <span class="n">request</span><span class="o">=</span><span class="p">{},</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        <span class="n">domain</span><span class="o">=</span><span class="s2">&quot;example&quot;</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="p">)</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        <span class="c1"># Handle error consistently</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>        <span class="k">return</span> <span class="kc">None</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="k">return</span> <span class="n">data</span>
+<h3 id="implementation-details">Implementation Details<a class="headerlink" href="#implementation-details" title="Permanent link">&para;</a></h3>
+<p>BioMCP leverages FastMCP's native streamable HTTP support:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># In core.py</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">mcp_app</span> <span class="o">=</span> <span class="n">FastMCP</span><span class="p">(</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;BioMCP&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">stateless_http</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Enables streamable HTTP</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">)</span>
 </code></pre></div>
-<h2 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
-<p>The centralized client uses a consistent error handling pattern:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">result</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">http_client</span><span class="o">.</span><span class="n">request_api</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">if</span> <span class="n">error</span><span class="p">:</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="c1"># error is a RequestError object with:</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="c1"># - error.code: HTTP status code or error type</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="c1"># - error.message: Human-readable error message</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="c1"># - error.details: Additional context</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Request failed: </span><span class="si">{</span><span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># or handle appropriately</span>
-</code></pre></div>
-<h3 id="error-handling-guidelines">Error Handling Guidelines<a class="headerlink" href="#error-handling-guidelines" title="Permanent link">&para;</a></h3>
-<ol>
-<li><strong>For optional data</strong>: Return <code>None</code> when the data is not critical</li>
-<li><strong>For required data</strong>: Raise an exception or return an error to the caller</li>
-<li><strong>For batch operations</strong>: Collect errors and report at the end</li>
-<li><strong>For user-facing operations</strong>: Provide clear, actionable error messages</li>
-</ol>
-<h2 id="creating-domain-specific-adapters">Creating Domain-Specific Adapters<a class="headerlink" href="#creating-domain-specific-adapters" title="Permanent link">&para;</a></h2>
-<p>For complex APIs, create an adapter class:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">biomcp</span><span class="w"> </span><span class="kn">import</span> <span class="n">http_client</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">biomcp.http_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequestError</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyAPIAdapter</span><span class="p">:</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Adapter for MyAPI using centralized HTTP client.&quot;&quot;&quot;</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">base_url</span> <span class="o">=</span> <span class="s2">&quot;https://api.example.com&quot;</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">RequestError</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetch a resource by ID.</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="sd">        Returns:</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="sd">            Tuple of (data, error) where one is always None</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>        <span class="k">return</span> <span class="k">await</span> <span class="n">http_client</span><span class="o">.</span><span class="n">request_api</span><span class="p">(</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>            <span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/resources/</span><span class="si">{</span><span class="n">resource_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>            <span class="n">request</span><span class="o">=</span><span class="p">{},</span>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>            <span class="n">domain</span><span class="o">=</span><span class="s2">&quot;example&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>            <span class="n">endpoint_key</span><span class="o">=</span><span class="s2">&quot;example_resources&quot;</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>        <span class="p">)</span>
-</code></pre></div>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<h3 id="cache-ttl-time-to-live">Cache TTL (Time To Live)<a class="headerlink" href="#cache-ttl-time-to-live" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Cache for 1 hour (3600 seconds)</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">http_client</span><span class="o">.</span><span class="n">request_api</span><span class="p">(</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">request</span><span class="o">=</span><span class="n">request</span><span class="p">,</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">cache_ttl</span><span class="o">=</span><span class="mi">3600</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">)</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># Disable caching for this request</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">http_client</span><span class="o">.</span><span class="n">request_api</span><span class="p">(</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="n">request</span><span class="o">=</span><span class="n">request</span><span class="p">,</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">cache_ttl</span><span class="o">=</span><span class="mi">0</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="p">)</span>
-</code></pre></div>
-<h3 id="rate-limiting">Rate Limiting<a class="headerlink" href="#rate-limiting" title="Permanent link">&para;</a></h3>
-<p>Rate limits are configured per domain in <code>http_client.py</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Default rate limits</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">rate_limits</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="s2">&quot;ncbi.nlm.nih.gov&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>  <span class="c1"># 20 requests/second</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="s2">&quot;clinicaltrials.gov&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>  <span class="c1"># 10 requests/second</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="s2">&quot;myvariant.info&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="o">/</span><span class="mi">3600</span><span class="p">,</span>  <span class="c1"># 1000 requests/hour</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="circuit-breaker">Circuit Breaker<a class="headerlink" href="#circuit-breaker" title="Permanent link">&para;</a></h3>
-<p>The circuit breaker prevents cascading failures:</p>
+<p>The transport is automatically handled by FastMCP 1.12.3+, providing:</p>
 <ul>
-<li><strong>Closed</strong>: Normal operation</li>
-<li><strong>Open</strong>: Failing fast after threshold exceeded</li>
-<li><strong>Half-Open</strong>: Testing if service recovered</li>
+<li>Request routing</li>
+<li>Session management</li>
+<li>Response type negotiation</li>
+<li>Error handling</li>
 </ul>
-<p>Configure thresholds:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">CIRCUIT_BREAKER_FAILURE_THRESHOLD</span> <span class="o">=</span> <span class="mi">5</span>  <span class="c1"># Open after 5 failures</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">CIRCUIT_BREAKER_RECOVERY_TIMEOUT</span> <span class="o">=</span> <span class="mi">60</span>  <span class="c1"># Try again after 60 seconds</span>
+<h2 id="migration-guide">Migration Guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h2>
+<h3 id="from-sse-to-streamable-http">From SSE to Streamable HTTP<a class="headerlink" href="#from-sse-to-streamable-http" title="Permanent link">&para;</a></h3>
+<p>If you're currently using the legacy SSE transport, migrate to streamable HTTP:</p>
+<h4 id="1-update-server-configuration">1. Update Server Configuration<a class="headerlink" href="#1-update-server-configuration" title="Permanent link">&para;</a></h4>
+<p><strong>Before (SSE/Worker mode):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>run<span class="w"> </span>--mode<span class="w"> </span>worker
 </code></pre></div>
-<h2 id="offline-mode">Offline Mode<a class="headerlink" href="#offline-mode" title="Permanent link">&para;</a></h2>
-<p>Enable offline mode to only serve cached responses:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_OFFLINE</span><span class="o">=</span><span class="nb">true</span>
+<p><strong>After (Streamable HTTP):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>run<span class="w"> </span>--mode<span class="w"> </span>streamable_http
+</code></pre></div>
+<h4 id="2-update-client-configuration">2. Update Client Configuration<a class="headerlink" href="#2-update-client-configuration" title="Permanent link">&para;</a></h4>
+<p><strong>MCP Inspector:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>npx<span class="w"> </span>@modelcontextprotocol/inspector<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>.<span class="w"> </span>biomcp<span class="w"> </span>run<span class="w"> </span>--mode<span class="w"> </span>streamable_http
+</code></pre></div>
+<p><strong>Claude Desktop Configuration:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">&quot;biomcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;docker&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">        </span><span class="s2">&quot;run&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">        </span><span class="s2">&quot;-p&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">        </span><span class="s2">&quot;8000:8000&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="s2">&quot;biomcp:latest&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">        </span><span class="s2">&quot;biomcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">        </span><span class="s2">&quot;run&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">        </span><span class="s2">&quot;--mode&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">        </span><span class="s2">&quot;streamable_http&quot;</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">      </span><span class="p">]</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="p">}</span>
+</code></pre></div>
+<h4 id="3-update-cloudflare-worker">3. Update Cloudflare Worker<a class="headerlink" href="#3-update-cloudflare-worker" title="Permanent link">&para;</a></h4>
+<p>The worker now supports both GET (legacy SSE) and POST (streamable HTTP) on the <code>/mcp</code> endpoint:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Automatically routes based on method</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">&quot;/mcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="c1">// Legacy SSE transport</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="p">})</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="s2">&quot;/mcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="p">(</span><span class="nx">c</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="c1">// Streamable HTTP transport</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">})</span>
+</code></pre></div>
+<h3 id="backward-compatibility">Backward Compatibility<a class="headerlink" href="#backward-compatibility" title="Permanent link">&para;</a></h3>
+<p>All legacy endpoints remain functional:</p>
+<ul>
+<li><code>/sse</code> - Server-sent events transport</li>
+<li><code>/health</code> - Health check endpoint</li>
+<li><code>/events</code> - Event streaming endpoint</li>
+</ul>
+<h2 id="configuration-options">Configuration Options<a class="headerlink" href="#configuration-options" title="Permanent link">&para;</a></h2>
+<h3 id="server-modes">Server Modes<a class="headerlink" href="#server-modes" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Local development (STDIO)</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>run
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Legacy SSE transport</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>biomcp<span class="w"> </span>run<span class="w"> </span>--mode<span class="w"> </span>worker
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># Modern streamable HTTP</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>biomcp<span class="w"> </span>run<span class="w"> </span>--mode<span class="w"> </span>streamable_http<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
 </code></pre></div>
-<p>In offline mode:</p>
+<h3 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MCP_TRANSPORT</code></td>
+<td>Override transport mode</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>MCP_HOST</code></td>
+<td>Server bind address</td>
+<td>0.0.0.0</td>
+</tr>
+<tr>
+<td><code>MCP_PORT</code></td>
+<td>Server port</td>
+<td>8000</td>
+</tr>
+</tbody>
+</table>
+<h2 id="session-management">Session Management<a class="headerlink" href="#session-management" title="Permanent link">&para;</a></h2>
+<p>Streamable HTTP uses session IDs to maintain state across requests:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nf">POST</span> <span class="nn">/mcp?session_id=abc123</span> <span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="p">{</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">&quot;jsonrpc&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;initialize&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="nt">&quot;params&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">...</span><span class="p">}</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="p">}</span>
+</code></pre></div>
+<p>Sessions are:</p>
 <ul>
-<li>Only cached responses are returned</li>
-<li>No external HTTP requests are made</li>
-<li>Missing cache entries return None with appropriate error</li>
+<li>Created automatically on first request</li>
+<li>Maintained in server memory</li>
+<li>Cleaned up after inactivity timeout</li>
+<li>Isolated between different clients</li>
 </ul>
-<h2 id="performance-tuning">Performance Tuning<a class="headerlink" href="#performance-tuning" title="Permanent link">&para;</a></h2>
-<h3 id="connection-pooling">Connection Pooling<a class="headerlink" href="#connection-pooling" title="Permanent link">&para;</a></h3>
-<p>The HTTP client maintains connection pools per domain:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Configure in http_client_simple.py</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">limits</span> <span class="o">=</span> <span class="n">httpx</span><span class="o">.</span><span class="n">Limits</span><span class="p">(</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">max_keepalive_connections</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">max_connections</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">keepalive_expiry</span><span class="o">=</span><span class="mi">30</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="p">)</span>
-</code></pre></div>
-<h3 id="concurrent-requests">Concurrent Requests<a class="headerlink" href="#concurrent-requests" title="Permanent link">&para;</a></h3>
-<p>For parallel requests to the same API:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># Fetch multiple resources concurrently</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="n">http_client</span><span class="o">.</span><span class="n">request_api</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/resource/</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{},</span> <span class="n">domain</span><span class="o">=</span><span class="s2">&quot;example&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="p">]</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="monitoring-and-debugging">Monitoring and Debugging<a class="headerlink" href="#monitoring-and-debugging" title="Permanent link">&para;</a></h2>
-<h3 id="request-metrics">Request Metrics<a class="headerlink" href="#request-metrics" title="Permanent link">&para;</a></h3>
-<p>The client tracks metrics per endpoint:</p>
-<ul>
-<li>Request count</li>
-<li>Error count</li>
-<li>Cache hit/miss ratio</li>
-<li>Average response time</li>
-</ul>
-<p>Access metrics:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">biomcp.http_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_metrics</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">metrics</span> <span class="o">=</span> <span class="n">get_metrics</span><span class="p">()</span>
-</code></pre></div>
-<h3 id="debug-logging">Debug Logging<a class="headerlink" href="#debug-logging" title="Permanent link">&para;</a></h3>
-<p>Enable debug logging to see all HTTP requests:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;biomcp.http_client&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<h2 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="response-mode-selection">Response Mode Selection<a class="headerlink" href="#response-mode-selection" title="Permanent link">&para;</a></h3>
+<p>The server automatically selects the optimal response mode:</p>
+<table>
+<thead>
+<tr>
+<th>Operation Type</th>
+<th>Response Mode</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quick queries</td>
+<td>JSON</td>
+<td><code>search(limit=10)</code></td>
+</tr>
+<tr>
+<td>Large results</td>
+<td>SSE</td>
+<td><code>search(limit=1000)</code></td>
+</tr>
+<tr>
+<td>Real-time updates</td>
+<td>SSE</td>
+<td>Thinking tool progress</td>
+</tr>
+</tbody>
+</table>
+<h3 id="optimization-tips">Optimization Tips<a class="headerlink" href="#optimization-tips" title="Permanent link">&para;</a></h3>
 <ol>
-<li><strong>Always use the centralized client</strong> for external HTTP calls</li>
-<li><strong>Register new endpoints</strong> in the endpoint registry</li>
-<li><strong>Set appropriate cache TTLs</strong> based on data volatility</li>
-<li><strong>Handle errors gracefully</strong> with user-friendly messages</li>
-<li><strong>Test with offline mode</strong> to ensure cache coverage</li>
-<li><strong>Monitor rate limits</strong> to avoid API throttling</li>
-<li><strong>Use domain-specific adapters</strong> for complex APIs</li>
+<li><strong>Use session IDs</strong> for related requests to avoid re-initialization</li>
+<li><strong>Batch operations</strong> when possible to reduce round trips</li>
+<li><strong>Set appropriate timeouts</strong> for long-running operations</li>
+<li><strong>Monitor response times</strong> to identify bottlenecks</li>
 </ol>
-<h2 id="endpoint-registration">Endpoint Registration<a class="headerlink" href="#endpoint-registration" title="Permanent link">&para;</a></h2>
-<p>Register new endpoints in <code>endpoint_registry.py</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="s2">&quot;my_api_endpoint&quot;</span><span class="p">,</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="n">EndpointInfo</span><span class="p">(</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://api.example.com/v1/data&quot;</span><span class="p">,</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>        <span class="n">category</span><span class="o">=</span><span class="n">EndpointCategory</span><span class="o">.</span><span class="n">BIOMEDICAL_LITERATURE</span><span class="p">,</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>        <span class="n">data_types</span><span class="o">=</span><span class="p">[</span><span class="n">DataType</span><span class="o">.</span><span class="n">RESEARCH_ARTICLES</span><span class="p">],</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;My API for fetching data&quot;</span><span class="p">,</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>        <span class="n">compliance_notes</span><span class="o">=</span><span class="s2">&quot;Public API, no PII&quot;</span><span class="p">,</span>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>        <span class="n">rate_limit</span><span class="o">=</span><span class="s2">&quot;100 requests/minute&quot;</span>
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    <span class="p">)</span>
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="p">)</span>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="common-issues">Common Issues<a class="headerlink" href="#common-issues" title="Permanent link">&para;</a></h3>
+<h4 id="1-connection-refused">1. Connection Refused<a class="headerlink" href="#1-connection-refused" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Error: connect ECONNREFUSED 127.0.0.1:8000
 </code></pre></div>
-<p>This ensures the endpoint is documented and tracked properly.</p>
+<p><strong>Solution</strong>: Ensure server is running with <code>--host 0.0.0.0</code> for Docker deployments.</p>
+<h4 id="2-session-not-found">2. Session Not Found<a class="headerlink" href="#2-session-not-found" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Error: Session &#39;xyz&#39; not found
+</code></pre></div>
+<p><strong>Solution</strong>: Session may have expired. Omit session_id to create new session.</p>
+<h4 id="3-timeout-on-large-results">3. Timeout on Large Results<a class="headerlink" href="#3-timeout-on-large-results" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Error: Request timeout after 30s
+</code></pre></div>
+<p><strong>Solution</strong>: Increase client timeout or reduce result size with <code>limit</code> parameter.</p>
+<h3 id="debug-mode">Debug Mode<a class="headerlink" href="#debug-mode" title="Permanent link">&para;</a></h3>
+<p>Enable debug logging to troubleshoot transport issues:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nv">LOG_LEVEL</span><span class="o">=</span>debug<span class="w"> </span>biomcp<span class="w"> </span>run<span class="w"> </span>--mode<span class="w"> </span>streamable_http
+</code></pre></div>
+<h2 id="security-considerations">Security Considerations<a class="headerlink" href="#security-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h3>
+<p>BioMCP does not implement authentication at the transport layer. Secure your deployment using:</p>
+<ul>
+<li><strong>API Gateway</strong>: AWS API Gateway, Kong, etc.</li>
+<li><strong>Reverse Proxy</strong>: Nginx with auth modules</li>
+<li><strong>Cloud IAM</strong>: Platform-specific access controls</li>
+</ul>
+<h3 id="rate-limiting">Rate Limiting<a class="headerlink" href="#rate-limiting" title="Permanent link">&para;</a></h3>
+<p>Implement rate limiting at the infrastructure layer:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Nginx example</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">limit_req_zone</span><span class="w"> </span><span class="nv">$binary_remote_addr</span><span class="w"> </span><span class="s">zone=mcp:10m</span><span class="w"> </span><span class="s">rate=10r/s</span><span class="p">;</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="k">location</span><span class="w"> </span><span class="s">/mcp</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="kn">limit_req</span><span class="w"> </span><span class="s">zone=mcp</span><span class="w"> </span><span class="s">burst=20</span><span class="p">;</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://biomcp:8000</span><span class="p">;</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="cors-configuration">CORS Configuration<a class="headerlink" href="#cors-configuration" title="Permanent link">&para;</a></h3>
+<p>For browser-based clients, configure CORS headers:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Handled automatically by FastMCP when stateless_http=True</span>
+</code></pre></div>
+<h2 id="monitoring">Monitoring<a class="headerlink" href="#monitoring" title="Permanent link">&para;</a></h2>
+<h3 id="health-checks">Health Checks<a class="headerlink" href="#health-checks" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Check server health</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>curl<span class="w"> </span>http://localhost:8000/health
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="c1"># Response</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="o">{</span><span class="s2">&quot;status&quot;</span>:<span class="w"> </span><span class="s2">&quot;ok&quot;</span>,<span class="w"> </span><span class="s2">&quot;transport&quot;</span>:<span class="w"> </span><span class="s2">&quot;streamable_http&quot;</span><span class="o">}</span>
+</code></pre></div>
+<h3 id="metrics">Metrics<a class="headerlink" href="#metrics" title="Permanent link">&para;</a></h3>
+<p>Monitor these key metrics:</p>
+<ul>
+<li>Request rate on <code>/mcp</code> endpoint</li>
+<li>Response time percentiles (p50, p95, p99)</li>
+<li>Session count and duration</li>
+<li>Error rate by error type</li>
+</ul>
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Review <a href="https://spec.modelcontextprotocol.io">MCP Specification</a> for protocol details</li>
+</ul>
+<p>For questions or issues, please visit our <a href="https://github.com/genomoncology/biomcp">GitHub repository</a>.</p>
 
 
 

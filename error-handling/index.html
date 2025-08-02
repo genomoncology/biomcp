@@ -12,13 +12,13 @@
         <meta name="author" content="Ian Maurer">
       
       
-        <link rel="canonical" href="https://biomcp.org/INTEGRATION_TESTING/">
+        <link rel="canonical" href="https://biomcp.org/error-handling/">
       
       
-        <link rel="prev" href="../HTTP_CLIENT_GUIDE/">
+        <link rel="prev" href="../transport-protocol/">
       
       
-        <link rel="next" href="../MIGRATION_EXAMPLES/">
+        <link rel="next" href="../http-client-guide/">
       
       
       <link rel="icon" href="../assets/favicon.ico">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Integration Testing - BioMCP</title>
+        <title>Error Handling - BioMCP</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#integration-testing-guide" class="md-skip">
+        <a href="#error-handling-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Integration Testing
+              Error Handling
             
           </span>
         </div>
@@ -1100,35 +1100,12 @@
   
   
     <li class="md-nav__item">
-      <a href="../ERROR_HANDLING/" class="md-nav__link">
+      <a href="../transport-protocol/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Error Handling
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../HTTP_CLIENT_GUIDE/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    HTTP Client Guide
+    Transport Protocol
     
   </span>
   
@@ -1160,7 +1137,7 @@
   
   
   <span class="md-ellipsis">
-    Integration Testing
+    Error Handling
     
   </span>
   
@@ -1173,7 +1150,7 @@
   
   
   <span class="md-ellipsis">
-    Integration Testing
+    Error Handling
     
   </span>
   
@@ -1205,289 +1182,64 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-integration-tests" class="md-nav__link">
+  <a href="#error-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      Running Integration Tests
+      Error Structure
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Running Integration Tests">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#run-all-tests-including-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Run All Tests (Including Integration)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#run-only-integration-tests" class="md-nav__link">
-    <span class="md-ellipsis">
-      Run Only Integration Tests
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skip-integration-tests" class="md-nav__link">
-    <span class="md-ellipsis">
-      Skip Integration Tests
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#handling-flaky-tests" class="md-nav__link">
+  <a href="#error-types" class="md-nav__link">
     <span class="md-ellipsis">
-      Handling Flaky Tests
+      Error Types
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Handling Flaky Tests">
+    <nav class="md-nav" aria-label="Error Types">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-api-unavailability" class="md-nav__link">
+  <a href="#network-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      1. API Unavailability
+      Network Errors
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-rate-limiting" class="md-nav__link">
+  <a href="#http-status-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      2. Rate Limiting
+      HTTP Status Errors
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-data-changes" class="md-nav__link">
+  <a href="#circuit-breaker-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Data Changes
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-design-principles" class="md-nav__link">
-    <span class="md-ellipsis">
-      Test Design Principles
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Test Design Principles">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-graceful-skipping" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Graceful Skipping
+      Circuit Breaker Errors
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-flexible-assertions" class="md-nav__link">
+  <a href="#offline-mode-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      2. Flexible Assertions
+      Offline Mode Errors
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-retry-logic" class="md-nav__link">
+  <a href="#parse-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Retry Logic
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-cache-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. Cache Management
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-integration-test-patterns" class="md-nav__link">
-    <span class="md-ellipsis">
-      Common Integration Test Patterns
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Integration Test Patterns">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#testing-search-functionality" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Search Functionality
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#testing-data-retrieval" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Data Retrieval
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#debugging-failed-integration-tests" class="md-nav__link">
-    <span class="md-ellipsis">
-      Debugging Failed Integration Tests
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Debugging Failed Integration Tests">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-enable-debug-logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Enable Debug Logging
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-check-api-status" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Check API Status
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-inspect-response-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Inspect Response Data
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#environment-variables-for-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Environment Variables for Testing
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Environment Variables for Testing">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#api-tokens" class="md-nav__link">
-    <span class="md-ellipsis">
-      API Tokens
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#offline-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Offline Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-timeouts" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Timeouts
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cicd-considerations" class="md-nav__link">
-    <span class="md-ellipsis">
-      CI/CD Considerations
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="CI/CD Considerations">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-separate-test-runs" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Separate Test Runs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-scheduled-runs" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Scheduled Runs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-result-monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Result Monitoring
+      Parse Errors
     </span>
   </a>
   
@@ -1502,6 +1254,141 @@
   <a href="#best-practices" class="md-nav__link">
     <span class="md-ellipsis">
       Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-always-check-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Always Check Errors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-provide-context-in-error-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Provide Context in Error Messages
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-graceful-degradation" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Graceful Degradation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-user-friendly-error-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. User-Friendly Error Messages
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-error-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing Error Conditions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing Error Conditions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-simulate-network-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Simulate Network Errors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-test-circuit-breaker" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Test Circuit Breaker
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-test-offline-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Test Offline Mode
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retry-with-backoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      Retry with Backoff
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Caching
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rate-limiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rate Limiting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging
     </span>
   </a>
   
@@ -1523,7 +1410,53 @@
   
   
     <li class="md-nav__item">
-      <a href="../MIGRATION_EXAMPLES/" class="md-nav__link">
+      <a href="../http-client-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    HTTP Client Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integration Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration-examples/" class="md-nav__link">
         
   
   
@@ -1854,289 +1787,64 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#running-integration-tests" class="md-nav__link">
+  <a href="#error-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      Running Integration Tests
+      Error Structure
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Running Integration Tests">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#run-all-tests-including-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Run All Tests (Including Integration)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#run-only-integration-tests" class="md-nav__link">
-    <span class="md-ellipsis">
-      Run Only Integration Tests
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#skip-integration-tests" class="md-nav__link">
-    <span class="md-ellipsis">
-      Skip Integration Tests
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#handling-flaky-tests" class="md-nav__link">
+  <a href="#error-types" class="md-nav__link">
     <span class="md-ellipsis">
-      Handling Flaky Tests
+      Error Types
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Handling Flaky Tests">
+    <nav class="md-nav" aria-label="Error Types">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-api-unavailability" class="md-nav__link">
+  <a href="#network-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      1. API Unavailability
+      Network Errors
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-rate-limiting" class="md-nav__link">
+  <a href="#http-status-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      2. Rate Limiting
+      HTTP Status Errors
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-data-changes" class="md-nav__link">
+  <a href="#circuit-breaker-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Data Changes
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#test-design-principles" class="md-nav__link">
-    <span class="md-ellipsis">
-      Test Design Principles
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Test Design Principles">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-graceful-skipping" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Graceful Skipping
+      Circuit Breaker Errors
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-flexible-assertions" class="md-nav__link">
+  <a href="#offline-mode-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      2. Flexible Assertions
+      Offline Mode Errors
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-retry-logic" class="md-nav__link">
+  <a href="#parse-errors" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Retry Logic
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-cache-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      4. Cache Management
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-integration-test-patterns" class="md-nav__link">
-    <span class="md-ellipsis">
-      Common Integration Test Patterns
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Common Integration Test Patterns">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#testing-search-functionality" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Search Functionality
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#testing-data-retrieval" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing Data Retrieval
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#debugging-failed-integration-tests" class="md-nav__link">
-    <span class="md-ellipsis">
-      Debugging Failed Integration Tests
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Debugging Failed Integration Tests">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-enable-debug-logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Enable Debug Logging
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-check-api-status" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Check API Status
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-inspect-response-data" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Inspect Response Data
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#environment-variables-for-testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Environment Variables for Testing
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Environment Variables for Testing">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#api-tokens" class="md-nav__link">
-    <span class="md-ellipsis">
-      API Tokens
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#offline-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      Offline Mode
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-timeouts" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom Timeouts
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cicd-considerations" class="md-nav__link">
-    <span class="md-ellipsis">
-      CI/CD Considerations
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="CI/CD Considerations">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-separate-test-runs" class="md-nav__link">
-    <span class="md-ellipsis">
-      1. Separate Test Runs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-scheduled-runs" class="md-nav__link">
-    <span class="md-ellipsis">
-      2. Scheduled Runs
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-result-monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      3. Result Monitoring
+      Parse Errors
     </span>
   </a>
   
@@ -2151,6 +1859,141 @@
   <a href="#best-practices" class="md-nav__link">
     <span class="md-ellipsis">
       Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-always-check-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Always Check Errors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-provide-context-in-error-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Provide Context in Error Messages
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-graceful-degradation" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Graceful Degradation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-user-friendly-error-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. User-Friendly Error Messages
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-error-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Testing Error Conditions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing Error Conditions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-simulate-network-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Simulate Network Errors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-test-circuit-breaker" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Test Circuit Breaker
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-test-offline-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Test Offline Mode
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#retry-with-backoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      Retry with Backoff
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Caching
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rate-limiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rate Limiting
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging
     </span>
   </a>
   
@@ -2175,156 +2018,155 @@
   
 
 
-<h1 id="integration-testing-guide">Integration Testing Guide<a class="headerlink" href="#integration-testing-guide" title="Permanent link">&para;</a></h1>
+<h1 id="error-handling-guide">Error Handling Guide<a class="headerlink" href="#error-handling-guide" title="Permanent link">&para;</a></h1>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>BioMCP includes integration tests that make real API calls to external services. These tests verify that our integrations work correctly with live data but can be affected by API availability, rate limits, and data changes.</p>
-<h2 id="running-integration-tests">Running Integration Tests<a class="headerlink" href="#running-integration-tests" title="Permanent link">&para;</a></h2>
-<h3 id="run-all-tests-including-integration">Run All Tests (Including Integration)<a class="headerlink" href="#run-all-tests-including-integration" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>make<span class="w"> </span><span class="nb">test</span>
+<p>BioMCP uses a consistent error handling pattern across all HTTP operations. This guide explains the error types, when they occur, and how to handle them.</p>
+<h2 id="error-structure">Error Structure<a class="headerlink" href="#error-structure" title="Permanent link">&para;</a></h2>
+<p>All HTTP operations return a tuple: <code>(data, error)</code> where one is always <code>None</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">http_client</span><span class="o">.</span><span class="n">request_api</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">if</span> <span class="n">error</span><span class="p">:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="c1"># Handle error</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Request failed: </span><span class="si">{</span><span class="n">error</span><span class="o">.</span><span class="n">code</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="c1"># Process data</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">process_result</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </code></pre></div>
-<h3 id="run-only-integration-tests">Run Only Integration Tests<a class="headerlink" href="#run-only-integration-tests" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pytest<span class="w"> </span>-m<span class="w"> </span>integration
-</code></pre></div>
-<h3 id="skip-integration-tests">Skip Integration Tests<a class="headerlink" href="#skip-integration-tests" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not integration&quot;</span>
-</code></pre></div>
-<h2 id="handling-flaky-tests">Handling Flaky Tests<a class="headerlink" href="#handling-flaky-tests" title="Permanent link">&para;</a></h2>
-<p>Integration tests may fail or skip for various reasons:</p>
-<h3 id="1-api-unavailability">1. API Unavailability<a class="headerlink" href="#1-api-unavailability" title="Permanent link">&para;</a></h3>
-<p><strong>Symptom</strong>: Tests skip with "API returned no data" message
-<strong>Cause</strong>: The external service is down or experiencing issues
-<strong>Action</strong>: Re-run tests later or check service status</p>
-<h3 id="2-rate-limiting">2. Rate Limiting<a class="headerlink" href="#2-rate-limiting" title="Permanent link">&para;</a></h3>
-<p><strong>Symptom</strong>: Multiple test failures after initial successes
-<strong>Cause</strong>: Too many requests in a short time
-<strong>Action</strong>: Run tests with delays between them or use API tokens</p>
-<h3 id="3-data-changes">3. Data Changes<a class="headerlink" href="#3-data-changes" title="Permanent link">&para;</a></h3>
-<p><strong>Symptom</strong>: Assertions about specific data fail
-<strong>Cause</strong>: The external data has changed (e.g., new mutations discovered)
-<strong>Action</strong>: Update tests to use more flexible assertions</p>
-<h2 id="test-design-principles">Test Design Principles<a class="headerlink" href="#test-design-principles" title="Permanent link">&para;</a></h2>
-<h3 id="1-graceful-skipping">1. Graceful Skipping<a class="headerlink" href="#1-graceful-skipping" title="Permanent link">&para;</a></h3>
-<p>Tests should skip rather than fail when:</p>
+<h2 id="error-types">Error Types<a class="headerlink" href="#error-types" title="Permanent link">&para;</a></h2>
+<h3 id="network-errors">Network Errors<a class="headerlink" href="#network-errors" title="Permanent link">&para;</a></h3>
 <ul>
-<li>API returns no data</li>
-<li>Service is unavailable</li>
-<li>Rate limits are hit</li>
+<li><strong>When</strong>: Connection timeout, DNS resolution failure, network unreachable</li>
+<li><strong>Error Code</strong>: Various HTTP client exceptions</li>
+<li><strong>Handling</strong>: Retry with exponential backoff or fail gracefully</li>
 </ul>
-<p>Example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">data</span> <span class="ow">or</span> <span class="n">data</span><span class="o">.</span><span class="n">total_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">pytest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;API returned no data - possible service issue&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="2-flexible-assertions">2. Flexible Assertions<a class="headerlink" href="#2-flexible-assertions" title="Permanent link">&para;</a></h3>
-<p>Avoid assertions on specific data values that might change:</p>
-<p>❌ <strong>Bad</strong>: Expecting exact mutation counts</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">assert</span> <span class="n">summary</span><span class="o">.</span><span class="n">total_mutations</span> <span class="o">==</span> <span class="mi">1234</span>
-</code></pre></div>
-<p>✅ <strong>Good</strong>: Checking data exists and has reasonable structure</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">assert</span> <span class="n">summary</span><span class="o">.</span><span class="n">total_mutations</span> <span class="o">&gt;</span> <span class="mi">0</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="s1">&#39;hotspots&#39;</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="3-retry-logic">3. Retry Logic<a class="headerlink" href="#3-retry-logic" title="Permanent link">&para;</a></h3>
-<p>For critical tests, implement retry with delay:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fetch_with_retry</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">max_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_attempts</span><span class="p">):</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>        <span class="k">if</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>            <span class="k">return</span> <span class="n">result</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>        <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_attempts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="k">return</span> <span class="kc">None</span>
-</code></pre></div>
-<h3 id="4-cache-management">4. Cache Management<a class="headerlink" href="#4-cache-management" title="Permanent link">&para;</a></h3>
-<p>Clear caches before tests to ensure fresh data:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">biomcp.utils.request_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_cache</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">await</span> <span class="n">clear_cache</span><span class="p">()</span>
-</code></pre></div>
-<h2 id="common-integration-test-patterns">Common Integration Test Patterns<a class="headerlink" href="#common-integration-test-patterns" title="Permanent link">&para;</a></h2>
-<h3 id="testing-search-functionality">Testing Search Functionality<a class="headerlink" href="#testing-search-functionality" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">integration</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_gene_search</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">client</span> <span class="o">=</span> <span class="n">SearchClient</span><span class="p">()</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s2">&quot;BRAF&quot;</span><span class="p">)</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="c1"># Flexible assertions</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="k">assert</span> <span class="n">results</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="k">if</span> <span class="n">results</span><span class="o">.</span><span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>        <span class="k">assert</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">gene_symbol</span> <span class="o">==</span> <span class="s2">&quot;BRAF&quot;</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>        <span class="n">pytest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;No results returned - API may be unavailable&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="testing-data-retrieval">Testing Data Retrieval<a class="headerlink" href="#testing-data-retrieval" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">integration</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_variant_details</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">client</span> <span class="o">=</span> <span class="n">VariantClient</span><span class="p">()</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="n">variant</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get_variant</span><span class="p">(</span><span class="s2">&quot;rs121913529&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">variant</span><span class="p">:</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>        <span class="n">pytest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;Variant not found - may have been removed from database&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    <span class="c1"># Check structure, not specific values</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="s1">&#39;chromosome&#39;</span><span class="p">)</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="s1">&#39;position&#39;</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="debugging-failed-integration-tests">Debugging Failed Integration Tests<a class="headerlink" href="#debugging-failed-integration-tests" title="Permanent link">&para;</a></h2>
-<h3 id="1-enable-debug-logging">1. Enable Debug Logging<a class="headerlink" href="#1-enable-debug-logging" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nv">BIOMCP_LOG_LEVEL</span><span class="o">=</span>DEBUG<span class="w"> </span>pytest<span class="w"> </span>tests/integration/test_failing.py<span class="w"> </span>-v
-</code></pre></div>
-<h3 id="2-check-api-status">2. Check API Status<a class="headerlink" href="#2-check-api-status" title="Permanent link">&para;</a></h3>
-<p>Many services provide status pages:</p>
+<h3 id="http-status-errors">HTTP Status Errors<a class="headerlink" href="#http-status-errors" title="Permanent link">&para;</a></h3>
 <ul>
-<li>PubMed: https://www.ncbi.nlm.nih.gov/home/about/website-updates/</li>
-<li>ClinicalTrials.gov: https://clinicaltrials.gov/about/announcements</li>
-<li>cBioPortal: https://www.cbioportal.org/</li>
+<li><strong>When</strong>: Server returns 4xx or 5xx status codes</li>
+<li><strong>Error Codes</strong>:</li>
+<li><code>400-499</code>: Client errors (bad request, unauthorized, not found)</li>
+<li><code>500-599</code>: Server errors (internal error, service unavailable)</li>
+<li><strong>Handling</strong>:</li>
+<li>4xx: Fix request parameters or authentication</li>
+<li>5xx: Retry with backoff or use cached data</li>
 </ul>
-<h3 id="3-inspect-response-data">3. Inspect Response Data<a class="headerlink" href="#3-inspect-response-data" title="Permanent link">&para;</a></h3>
-<p>Add debugging output to see actual responses:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">expected_data</span><span class="p">:</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected response: </span><span class="si">{</span><span class="n">response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="n">pytest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;Data structure changed&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h2 id="environment-variables-for-testing">Environment Variables for Testing<a class="headerlink" href="#environment-variables-for-testing" title="Permanent link">&para;</a></h2>
-<h3 id="api-tokens">API Tokens<a class="headerlink" href="#api-tokens" title="Permanent link">&para;</a></h3>
-<p>Some services provide higher rate limits with authentication:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">CBIO_TOKEN</span><span class="o">=</span><span class="s2">&quot;your-token-here&quot;</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PUBMED_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-key-here&quot;</span>
-</code></pre></div>
-<h3 id="offline-mode">Offline Mode<a class="headerlink" href="#offline-mode" title="Permanent link">&para;</a></h3>
-<p>Test offline behavior:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_OFFLINE</span><span class="o">=</span><span class="nb">true</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>pytest<span class="w"> </span>tests/
-</code></pre></div>
-<h3 id="custom-timeouts">Custom Timeouts<a class="headerlink" href="#custom-timeouts" title="Permanent link">&para;</a></h3>
-<p>Adjust timeouts for slow connections:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_REQUEST_TIMEOUT</span><span class="o">=</span><span class="m">60</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>pytest<span class="w"> </span>tests/integration/
-</code></pre></div>
-<h2 id="cicd-considerations">CI/CD Considerations<a class="headerlink" href="#cicd-considerations" title="Permanent link">&para;</a></h2>
-<h3 id="1-separate-test-runs">1. Separate Test Runs<a class="headerlink" href="#1-separate-test-runs" title="Permanent link">&para;</a></h3>
-<p>Run integration tests separately in CI:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Unit Tests</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pytest -m &quot;not integration&quot;</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Integration Tests</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pytest -m integration</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="nt">continue-on-error</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</code></pre></div>
-<h3 id="2-scheduled-runs">2. Scheduled Runs<a class="headerlink" href="#2-scheduled-runs" title="Permanent link">&para;</a></h3>
-<p>Run integration tests on a schedule to detect API changes:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">on</span><span class="p">:</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nt">schedule</span><span class="p">:</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">cron</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;0</span><span class="nv"> </span><span class="s">6</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*&quot;</span><span class="w"> </span><span class="c1"># Daily at 6 AM</span>
-</code></pre></div>
-<h3 id="3-result-monitoring">3. Result Monitoring<a class="headerlink" href="#3-result-monitoring" title="Permanent link">&para;</a></h3>
-<p>Track integration test success rates over time to identify patterns.</p>
+<h3 id="circuit-breaker-errors">Circuit Breaker Errors<a class="headerlink" href="#circuit-breaker-errors" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>When</strong>: Too many consecutive failures to a domain</li>
+<li><strong>Error</strong>: Circuit breaker opens to prevent cascading failures</li>
+<li><strong>Handling</strong>: Wait for recovery timeout or use alternative data source</li>
+</ul>
+<h3 id="offline-mode-errors">Offline Mode Errors<a class="headerlink" href="#offline-mode-errors" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>When</strong>: <code>BIOMCP_OFFLINE=true</code> and no cached data available</li>
+<li><strong>Error</strong>: Request blocked in offline mode</li>
+<li><strong>Handling</strong>: Use cached data only or inform user about offline status</li>
+</ul>
+<h3 id="parse-errors">Parse Errors<a class="headerlink" href="#parse-errors" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>When</strong>: Response is not valid JSON or doesn't match expected schema</li>
+<li><strong>Error</strong>: JSON decode error or validation error</li>
+<li><strong>Handling</strong>: Log error and treat as service issue</li>
+</ul>
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
-<ol>
-<li><strong>Keep integration tests focused</strong> - Test integration points, not business logic</li>
-<li><strong>Use reasonable timeouts</strong> - Don't wait forever for slow APIs</li>
-<li><strong>Document expected failures</strong> - Add comments explaining why tests might skip</li>
-<li><strong>Monitor external changes</strong> - Subscribe to API change notifications</li>
-<li><strong>Provide escape hatches</strong> - Allow skipping integration tests when needed</li>
-</ol>
+<h3 id="1-always-check-errors">1. Always Check Errors<a class="headerlink" href="#1-always-check-errors" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># ❌ Bad - ignoring error</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">data</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="k">await</span> <span class="n">http_client</span><span class="o">.</span><span class="n">request_api</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">process</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># data might be None!</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># ✅ Good - checking error</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">http_client</span><span class="o">.</span><span class="n">request_api</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">if</span> <span class="n">error</span><span class="p">:</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to fetch data: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="k">return</span> <span class="kc">None</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">process</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="2-provide-context-in-error-messages">2. Provide Context in Error Messages<a class="headerlink" href="#2-provide-context-in-error-messages" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># ❌ Bad - generic error</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">if</span> <span class="n">error</span><span class="p">:</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Request failed&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># ✅ Good - contextual error</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">if</span> <span class="n">error</span><span class="p">:</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to fetch gene </span><span class="si">{</span><span class="n">gene_id</span><span class="si">}</span><span class="s2"> from cBioPortal: </span><span class="si">{</span><span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="3-graceful-degradation">3. Graceful Degradation<a class="headerlink" href="#3-graceful-degradation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_variant_with_fallback</span><span class="p">(</span><span class="n">variant_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="c1"># Try primary source</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">primary_source</span><span class="o">.</span><span class="n">get_variant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">error</span><span class="p">:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        <span class="k">return</span> <span class="n">data</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Primary source failed: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">, trying secondary&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="c1"># Try secondary source</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">secondary_source</span><span class="o">.</span><span class="n">get_variant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">)</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">error</span><span class="p">:</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        <span class="k">return</span> <span class="n">data</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="c1"># Use cached data as last resort</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="k">return</span> <span class="n">get_cached_variant</span><span class="p">(</span><span class="n">variant_id</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="4-user-friendly-error-messages">4. User-Friendly Error Messages<a class="headerlink" href="#4-user-friendly-error-messages" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">format_error_for_user</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="n">RequestError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="k">if</span> <span class="n">error</span><span class="o">.</span><span class="n">code</span> <span class="o">&gt;=</span> <span class="mi">500</span><span class="p">:</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>        <span class="k">return</span> <span class="s2">&quot;The service is temporarily unavailable. Please try again later.&quot;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="k">elif</span> <span class="n">error</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>        <span class="k">return</span> <span class="s2">&quot;The requested data was not found.&quot;</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="k">elif</span> <span class="n">error</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="mi">401</span><span class="p">:</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span class="k">return</span> <span class="s2">&quot;Authentication required. Please check your credentials.&quot;</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="k">elif</span> <span class="s2">&quot;OFFLINE&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">):</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>        <span class="k">return</span> <span class="s2">&quot;You are in offline mode. Only cached data is available.&quot;</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>        <span class="k">return</span> <span class="s2">&quot;An error occurred while fetching data. Please try again.&quot;</span>
+</code></pre></div>
+<h2 id="testing-error-conditions">Testing Error Conditions<a class="headerlink" href="#testing-error-conditions" title="Permanent link">&para;</a></h2>
+<h3 id="1-simulate-network-errors">1. Simulate Network Errors<a class="headerlink" href="#1-simulate-network-errors" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s2">&quot;biomcp.http_client.call_http&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock</span><span class="p">:</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">mock</span><span class="o">.</span><span class="n">side_effect</span> <span class="o">=</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Network error&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">()</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="k">assert</span> <span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="k">assert</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span>
+</code></pre></div>
+<h3 id="2-test-circuit-breaker">2. Test Circuit Breaker<a class="headerlink" href="#2-test-circuit-breaker" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Simulate multiple failures</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s2">&quot;biomcp.http_client.call_http&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock</span><span class="p">:</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>        <span class="n">mock</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="s2">&quot;Server Error&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>        <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">()</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># Circuit should be open</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">()</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">assert</span> <span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="k">assert</span> <span class="s2">&quot;circuit&quot;</span> <span class="ow">in</span> <span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</code></pre></div>
+<h3 id="3-test-offline-mode">3. Test Offline Mode<a class="headerlink" href="#3-test-offline-mode" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">with</span> <span class="n">patch</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;BIOMCP_OFFLINE&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">}):</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">data</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">()</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="c1"># Should only return cached data or error</span>
+</code></pre></div>
+<h2 id="common-patterns">Common Patterns<a class="headerlink" href="#common-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="retry-with-backoff">Retry with Backoff<a class="headerlink" href="#retry-with-backoff" title="Permanent link">&para;</a></h3>
+<p>The centralized HTTP client automatically retries with exponential backoff for:</p>
+<ul>
+<li>Network errors</li>
+<li>5xx server errors</li>
+<li>Rate limit errors (429)</li>
+</ul>
+<h3 id="caching">Caching<a class="headerlink" href="#caching" title="Permanent link">&para;</a></h3>
+<p>Failed requests don't overwrite cached data, ensuring availability during outages.</p>
+<h3 id="rate-limiting">Rate Limiting<a class="headerlink" href="#rate-limiting" title="Permanent link">&para;</a></h3>
+<p>Requests are automatically rate-limited per domain to prevent overwhelming services.</p>
+<h2 id="debugging">Debugging<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h2>
+<p>Enable debug logging to see all HTTP requests and errors:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;biomcp.http_client&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+</code></pre></div>
+<p>This will show:</p>
+<ul>
+<li>All HTTP requests with URLs and methods</li>
+<li>Response status codes and times</li>
+<li>Error details and retry attempts</li>
+<li>Circuit breaker state changes</li>
+</ul>
 
 
 
