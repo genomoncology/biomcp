@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simplified server modes by removing redundant `http` mode
 - Cloudflare Worker now supports both GET and POST methods on /mcp endpoint
 - Pinned FastMCP dependency to version range >=1.12.3,<2.0.0 for stability
+- Standardized documentation file naming to lowercase with hyphens for consistency
 
 ### Migration Notes
 

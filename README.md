@@ -409,10 +409,10 @@ For comprehensive documentation, visit [https://biomcp.org](https://biomcp.org)
 
 ### Developer Guides
 
-- [HTTP Client Guide](./docs/HTTP_CLIENT_GUIDE.md) - Using the centralized HTTP client
-- [Migration Examples](./docs/MIGRATION_EXAMPLES.md) - Migrating from direct HTTP usage
-- [Error Handling Guide](./docs/ERROR_HANDLING.md) - Comprehensive error handling patterns
-- [Integration Testing Guide](./docs/INTEGRATION_TESTING.md) - Best practices for reliable integration tests
+- [HTTP Client Guide](./docs/http-client-guide.md) - Using the centralized HTTP client
+- [Migration Examples](./docs/migration-examples.md) - Migrating from direct HTTP usage
+- [Error Handling Guide](./docs/error-handling.md) - Comprehensive error handling patterns
+- [Integration Testing Guide](./docs/integration-testing.md) - Best practices for reliable integration tests
 - [Third-Party Endpoints](./THIRD_PARTY_ENDPOINTS.md) - Complete list of external APIs used
 - [Testing Guide](./docs/development/testing.md) - Running tests and understanding test categories
 
