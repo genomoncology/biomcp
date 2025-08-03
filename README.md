@@ -243,66 +243,6 @@ export BIOMCP_USE_CONNECTION_POOL="true"  # Enable HTTP connection pooling (defa
 export BIOMCP_METRICS_ENABLED="false"     # Enable performance metrics (default: false)
 ```
 
-## Running BioMCP Server
-
-BioMCP supports multiple transport protocols to suit different deployment scenarios:
-
-### Local Development (STDIO)
-
-For direct integration with Claude Desktop or local MCP clients:
-
-```bash
-# Default STDIO mode for local development
-biomcp run
-
-# Or explicitly specify STDIO
-biomcp run --mode stdio
-```
-
-### HTTP Server Mode
-
-BioMCP supports multiple HTTP transport protocols:
-
-#### Legacy SSE Transport (Worker Mode)
-
-For backward compatibility with existing SSE clients:
-
-```bash
-biomcp run --mode worker
-# Server available at http://localhost:8000/sse
-```
-
-#### Streamable HTTP Transport (Recommended)
-
-The new MCP-compliant Streamable HTTP transport provides optimal performance and standards compliance:
-
-```bash
-biomcp run --mode streamable_http
-
-# Custom host and port
-biomcp run --mode streamable_http --host 127.0.0.1 --port 8080
-```
-
-Features of Streamable HTTP transport:
-
-- Single `/mcp` endpoint for all operations
-- Dynamic response mode (JSON for quick operations, SSE for long-running)
-- Session management support (future)
-- Full MCP specification compliance (2025-03-26)
-- Better scalability for cloud deployments
-
-### Deployment Options
-
-#### Docker
-
-```bash
-docker run -p 8000:8000 biomcp:latest biomcp run --mode streamable_http
-```
-
-#### Cloudflare Workers
-
-The worker mode can be deployed to Cloudflare Workers for global edge deployment.
-
 Note: All APIs work without authentication, but tokens may provide higher rate limits.
 
 ## Command Line Interface
@@ -409,10 +349,10 @@ For comprehensive documentation, visit [https://biomcp.org](https://biomcp.org)
 
 ### Developer Guides
 
-- [HTTP Client Guide](./docs/http-client-guide.md) - Using the centralized HTTP client
-- [Migration Examples](./docs/migration-examples.md) - Migrating from direct HTTP usage
-- [Error Handling Guide](./docs/error-handling.md) - Comprehensive error handling patterns
-- [Integration Testing Guide](./docs/integration-testing.md) - Best practices for reliable integration tests
+- [HTTP Client Guide](./docs/HTTP_CLIENT_GUIDE.md) - Using the centralized HTTP client
+- [Migration Examples](./docs/MIGRATION_EXAMPLES.md) - Migrating from direct HTTP usage
+- [Error Handling Guide](./docs/ERROR_HANDLING.md) - Comprehensive error handling patterns
+- [Integration Testing Guide](./docs/INTEGRATION_TESTING.md) - Best practices for reliable integration tests
 - [Third-Party Endpoints](./THIRD_PARTY_ENDPOINTS.md) - Complete list of external APIs used
 - [Testing Guide](./docs/development/testing.md) - Running tests and understanding test categories
 

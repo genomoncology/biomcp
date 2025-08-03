@@ -8,10 +8,6 @@ import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from "jose";
 // Configuration variables - will be overridden by env values
 let DEBUG = false; // Default value, will be updated from env
 
-// Constants
-const DEFAULT_SESSION_ID = "default";
-const MAX_SESSION_ID_LENGTH = 128;
-
 // Helper functions
 const log = (message) => {
   if (DEBUG) console.log("[DEBUG]", message);
@@ -57,96 +53,6 @@ const sanitizeObject = (obj) => {
     }
   }
   return sanitized;
-};
-
-/**
- * Validate and sanitize session ID
- * @param {string} sessionId - Session ID from query parameter
- * @returns {string} - Sanitized session ID or 'default'
- */
-const validateSessionId = (sessionId) => {
-  if (!sessionId) return DEFAULT_SESSION_ID;
-
-  // Limit length to prevent DoS
-  if (sessionId.length > MAX_SESSION_ID_LENGTH) {
-    log(`Session ID too long (${sessionId.length} chars), using default`);
-    return DEFAULT_SESSION_ID;
-  }
-
-  // Remove potentially dangerous characters
-  const sanitized = sessionId.replace(/[^a-zA-Z0-9\-_]/g, "");
-  if (sanitized !== sessionId) {
-    log(`Session ID contained invalid characters, sanitized: ${sanitized}`);
-  }
-
-  return sanitized || DEFAULT_SESSION_ID;
-};
-
-/**
- * Process MCP request with proper error handling
- * @param {Request} request - The incoming request
- * @param {string} remoteUrl - Remote MCP server URL
- * @param {string} sessionId - Validated session ID
- * @returns {Response} - Proxy response or error
- */
-const processMcpRequest = async (request, remoteUrl, sessionId) => {
-  try {
-    // Clone request for logging
-    const bodyText = await request.clone().text();
-
-    // Validate it's JSON
-    let bodyJson;
-    try {
-      bodyJson = JSON.parse(bodyText);
-    } catch (e) {
-      return new Response(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          error: {
-            code: -32700,
-            message: "Parse error",
-            data: "Invalid JSON",
-          },
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
-    }
-
-    // Log sanitized request
-    const sanitizedBody = sanitizeObject(bodyJson);
-    log(`MCP POST request body: ${JSON.stringify(sanitizedBody)}`);
-
-    // Validate required JSONRPC fields
-    if (!bodyJson.jsonrpc || !bodyJson.method) {
-      return new Response(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          error: {
-            code: -32600,
-            message: "Invalid Request",
-            data: "Missing required fields: jsonrpc, method",
-          },
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
-    }
-
-    // Forward to remote server
-    return proxyPost(request, remoteUrl, "/mcp", sessionId);
-  } catch (error) {
-    log(`Error processing MCP request: ${error}`);
-    return new Response(
-      JSON.stringify({
-        jsonrpc: "2.0",
-        error: {
-          code: -32603,
-          message: "Internal error",
-          data: error.message,
-        },
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
-  }
 };
 
 // CORS configuration
@@ -1206,22 +1112,10 @@ app
   // MCP endpoint (alias for SSE, protected with bearer token authentication)
   .use("/mcp", stytchBearerTokenAuthMiddleware)
   .get("/mcp", (c) => {
-    log("MCP GET endpoint hit");
+    log("MCP endpoint hit");
     const REMOTE_MCP_SERVER_URL =
       c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
     return serveSSE(c.req, REMOTE_MCP_SERVER_URL);
-  })
-  .post("/mcp", async (c) => {
-    log("MCP POST endpoint hit - Streamable HTTP transport");
-    const REMOTE_MCP_SERVER_URL =
-      c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
-
-    // Extract and validate session ID
-    const rawSessionId = new URL(c.req.url).searchParams.get("session_id");
-    const sessionId = validateSessionId(rawSessionId);
-
-    // Process the request with proper validation and error handling
-    return processMcpRequest(c.req, REMOTE_MCP_SERVER_URL, sessionId);
   })
   .get("/events", (c) => {
     log("Events endpoint hit");

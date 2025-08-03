@@ -40,11 +40,10 @@ nav:
       - Deep Researcher Persona: blog/researcher-persona-resource.md
       - What is BioMCP?: blog/what-is-biomcp.md
   - Developer Guides:
-      - Transport Protocol: transport-protocol.md
-      - Error Handling: error-handling.md
-      - HTTP Client Guide: http-client-guide.md
-      - Integration Testing: integration-testing.md
-      - Migration Examples: migration-examples.md
+      - Error Handling: ERROR_HANDLING.md
+      - HTTP Client Guide: HTTP_CLIENT_GUIDE.md
+      - Integration Testing: INTEGRATION_TESTING.md
+      - Migration Examples: MIGRATION_EXAMPLES.md
       - Performance Optimizations: performance-optimizations.md
       - Testing: development/testing.md
   - Policies:
