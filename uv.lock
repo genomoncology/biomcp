@@ -18,8 +18,8 @@ wheels = [
 
 [[package]]
 name = "alphagenome"
-version = "0.0.2"
-source = { git = "https://github.com/google-deepmind/alphagenome.git#4b4aef270af75dcdfeffb9b61ff2b52b3697b7f8" }
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "absl-py" },
     { name = "anndata" },
@@ -39,6 +39,10 @@ dependencies = [
     { name = "typeguard" },
     { name = "typing-extensions" },
     { name = "zstandard" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1f/3e/5d674804d7d288a7932f2e7a292a0a49f59f1b3da99d8eb4decb03d0e02d/alphagenome-0.1.0.tar.gz", hash = "sha256:ff6370d1c3c0e6fdd1c81e03bb2b16356ca7ccb97f64f1d24163221581f05bc4", size = 7879016 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d5/ff/54f6611117c9309308be102e67bb9eebf8bd46c2ea5b3d9c81e5a78f9fc9/alphagenome-0.1.0-py3-none-any.whl", hash = "sha256:554f7b5137d9de741a038d8f327f51ae5370e0de1d20449a71c2c4ae17fbf413", size = 161450 },
 ]
 
 [[package]]
@@ -190,7 +194,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "alphagenome", git = "https://github.com/google-deepmind/alphagenome.git" },
+    { name = "alphagenome", specifier = ">=0.1.0" },
     { name = "certifi", specifier = ">=2025.1.31" },
     { name = "diskcache", specifier = ">=5.6.3" },
     { name = "fastapi", marker = "extra == 'worker'", specifier = ">=0.110.0" },
@@ -669,7 +673,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749 }
 wheels = [

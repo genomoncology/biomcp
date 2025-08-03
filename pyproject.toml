@@ -28,7 +28,7 @@ dependencies = [
     "rich>=14.0.0",
     "typer>=0.15.2",
     "uvicorn>=0.34.2",
-    "alphagenome @ git+https://github.com/google-deepmind/alphagenome.git",
+    "alphagenome>=0.1.0",
 ]
 
 [project.urls]
