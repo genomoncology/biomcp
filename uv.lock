@@ -18,8 +18,8 @@ wheels = [
 
 [[package]]
 name = "alphagenome"
-version = "0.0.2"
-source = { git = "https://github.com/google-deepmind/alphagenome.git#4b4aef270af75dcdfeffb9b61ff2b52b3697b7f8" }
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "absl-py" },
     { name = "anndata" },
@@ -39,6 +39,10 @@ dependencies = [
     { name = "typeguard" },
     { name = "typing-extensions" },
     { name = "zstandard" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1f/3e/5d674804d7d288a7932f2e7a292a0a49f59f1b3da99d8eb4decb03d0e02d/alphagenome-0.1.0.tar.gz", hash = "sha256:ff6370d1c3c0e6fdd1c81e03bb2b16356ca7ccb97f64f1d24163221581f05bc4", size = 7879016 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d5/ff/54f6611117c9309308be102e67bb9eebf8bd46c2ea5b3d9c81e5a78f9fc9/alphagenome-0.1.0-py3-none-any.whl", hash = "sha256:554f7b5137d9de741a038d8f327f51ae5370e0de1d20449a71c2c4ae17fbf413", size = 161450 },
 ]
 
 [[package]]
@@ -199,7 +203,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "alphagenome", git = "https://github.com/google-deepmind/alphagenome.git" },
+    { name = "alphagenome", specifier = ">=0.1.0" },
     { name = "certifi", specifier = ">=2025.1.31" },
     { name = "diskcache", specifier = ">=5.6.3" },
     { name = "fastapi", marker = "extra == 'worker'", specifier = ">=0.110.0" },
@@ -2970,16 +2974,16 @@ wheels = [
 
 [[package]]
 name = "virtualenv"
-version = "20.32.0"
+version = "20.33.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "distlib" },
     { name = "filelock" },
     { name = "platformdirs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a9/96/0834f30fa08dca3738614e6a9d42752b6420ee94e58971d702118f7cfd30/virtualenv-20.32.0.tar.gz", hash = "sha256:886bf75cadfdc964674e6e33eb74d787dff31ca314ceace03ca5810620f4ecf0", size = 6076970 }
+sdist = { url = "https://files.pythonhosted.org/packages/db/2e/8a70dcbe8bf15213a08f9b0325ede04faca5d362922ae0d62ef0fa4b069d/virtualenv-20.33.0.tar.gz", hash = "sha256:47e0c0d2ef1801fce721708ccdf2a28b9403fa2307c3268aebd03225976f61d2", size = 6082069 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/c6/f8f28009920a736d0df434b52e9feebfb4d702ba942f15338cb4a83eafc1/virtualenv-20.32.0-py3-none-any.whl", hash = "sha256:2c310aecb62e5aa1b06103ed7c2977b81e042695de2697d01017ff0f1034af56", size = 6057761 },
+    { url = "https://files.pythonhosted.org/packages/43/87/b22cf40cdf7e2b2bf83f38a94d2c90c5ad6c304896e5a12d0c08a602eb59/virtualenv-20.33.0-py3-none-any.whl", hash = "sha256:106b6baa8ab1b526d5a9b71165c85c456fbd49b16976c88e2bc9352ee3bc5d3f", size = 6060205 },
 ]
 
 [[package]]
