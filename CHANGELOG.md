@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 biomcp organization search "MD Anderson" --api-key YOUR_KEY
 biomcp organization get 12345 --api-key YOUR_KEY
 
-# Intervention search/get  
+# Intervention search/get
 biomcp intervention search pembrolizumab --type Drug --api-key YOUR_KEY
 biomcp intervention get 67890 --api-key YOUR_KEY
 
