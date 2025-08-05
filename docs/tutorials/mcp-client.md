@@ -100,7 +100,7 @@ For a complete example of integrating BioMCP with an MCP client, see:
 
 ## Available Tools
 
-BioMCP exposes 13 tools through the MCP interface:
+BioMCP exposes 24 tools through the MCP interface:
 
 ### Core Tools (3)
 
@@ -112,7 +112,7 @@ BioMCP exposes 13 tools through the MCP interface:
    - `search`: Unified search across all biomedical data sources
    - `fetch`: Retrieve detailed information for any domain
 
-### Individual Tools (10)
+### Individual Tools (21)
 
 1. **Article Tools**
 
@@ -129,8 +129,24 @@ BioMCP exposes 13 tools through the MCP interface:
    - `trial_locations_getter`: Get trial location information
 
 3. **Variant Tools**
+
    - `variant_searcher`: Search genetic variants with cBioPortal integration
    - `variant_getter`: Get detailed variant information
+   - `alphagenome_predictor`: Predict variant effects with AlphaGenome
+
+4. **NCI-Specific Tools**
+
+   - `nci_organization_searcher`: Search NCI organization database
+   - `nci_organization_getter`: Get organization details
+   - `nci_intervention_searcher`: Search NCI intervention database
+   - `nci_intervention_getter`: Get intervention details
+   - `nci_biomarker_searcher`: Search biomarkers used in trials
+   - `nci_disease_searcher`: Search NCI cancer disease vocabulary
+
+5. **BioThings Tools**
+   - `gene_getter`: Get gene information from MyGene.info
+   - `disease_getter`: Get disease information from MyDisease.info
+   - `drug_getter`: Get drug information from MyChem.info
 
 ## Integration Options
 

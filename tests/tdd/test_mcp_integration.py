@@ -17,8 +17,8 @@ class TestMCPIntegration:
         # Get the registered tools
         tools = await mcp_app.list_tools()
 
-        # Should have 17 tools (2 unified + 1 think + 14 individual)
-        assert len(tools) == 17
+        # Should have 23 tools (2 unified + 1 think + 20 individual)
+        assert len(tools) == 23
 
         # Check tool names
         tool_names = [tool.name for tool in tools]

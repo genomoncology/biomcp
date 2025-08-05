@@ -38,6 +38,10 @@ BioMCP integrates with multiple biomedical data sources:
 ### Clinical & Genomic Sources
 
 - **ClinicalTrials.gov** - Clinical trial registry and results database
+- **NCI Clinical Trials Search API** - National Cancer Institute's curated cancer trials database
+  - Advanced search filters (biomarkers, prior therapies, brain metastases)
+  - Organization and intervention databases
+  - Disease vocabulary with synonyms
 - **BioThings Suite** - Comprehensive biomedical data APIs:
   - **MyVariant.info** - Consolidated genetic variant annotation
   - **MyGene.info** - Real-time gene annotations and information
@@ -49,7 +53,7 @@ BioMCP integrates with multiple biomedical data sources:
 
 ## Available MCP Tools
 
-BioMCP provides 16 specialized tools for biomedical research:
+BioMCP provides 24 specialized tools for biomedical research:
 
 ### Core Tools (3)
 
@@ -153,9 +157,9 @@ fetch(domain="variant", id="rs113488022")
 - **Trials**: `detail` can be "protocol", "locations", "outcomes", "references", or "all"
 - **Variants**: Always returns full details
 
-### Individual Tools (12)
+### Individual Tools (21)
 
-For users who prefer direct access to specific functionality, BioMCP also provides 12 individual tools:
+For users who prefer direct access to specific functionality, BioMCP also provides 21 individual tools:
 
 #### Article Tools (2)
 
@@ -164,17 +168,26 @@ For users who prefer direct access to specific functionality, BioMCP also provid
 
 #### Trial Tools (5)
 
-- **trial_searcher**: Search ClinicalTrials.gov
-- **trial_getter**: Fetch all trial details
-- **trial_protocol_getter**: Fetch protocol information only
-- **trial_references_getter**: Fetch trial publications
-- **trial_outcomes_getter**: Fetch outcome measures and results
-- **trial_locations_getter**: Fetch site locations and contacts
+- **trial_searcher**: Search ClinicalTrials.gov or NCI CTS API (via source parameter)
+- **trial_getter**: Fetch all trial details from either source
+- **trial_protocol_getter**: Fetch protocol information only (ClinicalTrials.gov)
+- **trial_references_getter**: Fetch trial publications (ClinicalTrials.gov)
+- **trial_outcomes_getter**: Fetch outcome measures and results (ClinicalTrials.gov)
+- **trial_locations_getter**: Fetch site locations and contacts (ClinicalTrials.gov)
 
 #### Variant Tools (2)
 
 - **variant_searcher**: Search MyVariant.info database
 - **variant_getter**: Fetch comprehensive variant details
+
+#### NCI-Specific Tools (6)
+
+- **nci_organization_searcher**: Search NCI's organization database
+- **nci_organization_getter**: Get organization details by ID
+- **nci_intervention_searcher**: Search NCI's intervention database (drugs, devices, procedures)
+- **nci_intervention_getter**: Get intervention details by ID
+- **nci_biomarker_searcher**: Search biomarkers used in trial eligibility criteria
+- **nci_disease_searcher**: Search NCI's controlled vocabulary of cancer conditions
 
 #### Gene, Disease & Drug Tools (3)
 
@@ -323,12 +336,22 @@ biomcp article get 21717063 --full
 
 # Clinical trial examples
 biomcp trial search --condition "Lung Cancer" --phase PHASE3
+biomcp trial search --condition melanoma --source nci --api-key YOUR_KEY  # Use NCI API
 biomcp trial get NCT04280705 Protocol
+biomcp trial get NCT04280705 --source nci --api-key YOUR_KEY  # Get from NCI
 
 # Variant examples with external annotations
 biomcp variant search --gene TP53 --significance pathogenic
 biomcp variant get rs113488022  # Includes TCGA, 1000 Genomes, and cBioPortal data by default
 biomcp variant get rs113488022 --no-external  # Core annotations only
+
+# NCI-specific examples (requires NCI API key)
+biomcp organization search "MD Anderson" --api-key YOUR_KEY
+biomcp organization get ORG123456 --api-key YOUR_KEY
+biomcp intervention search pembrolizumab --api-key YOUR_KEY
+biomcp intervention search --type Device --api-key YOUR_KEY
+biomcp biomarker search "PD-L1" --api-key YOUR_KEY
+biomcp disease search melanoma --source nci --api-key YOUR_KEY
 ```
 
 ## Testing & Verification

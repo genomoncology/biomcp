@@ -811,3 +811,446 @@ async def drug_getter(
     Note: For clinical trials about drugs, use trial_searcher. For articles about drugs, use article_searcher.
     """
     return await _drug_details(drug_id_or_name)
+
+
+# NCI-Specific Tools
+@mcp_app.tool()
+@track_performance("biomcp.nci_organization_searcher")
+async def nci_organization_searcher(
+    name: Annotated[
+        str | None,
+        Field(
+            description="Organization name to search for (partial match supported)"
+        ),
+    ] = None,
+    organization_type: Annotated[
+        str | None,
+        Field(
+            description="Type of organization (e.g., 'Academic', 'Industry', 'Government')"
+        ),
+    ] = None,
+    city: Annotated[
+        str | None,
+        Field(
+            description="City where organization is located. IMPORTANT: Always use with state to avoid API errors"
+        ),
+    ] = None,
+    state: Annotated[
+        str | None,
+        Field(
+            description="State/province code (e.g., 'CA', 'NY'). IMPORTANT: Always use with city to avoid API errors"
+        ),
+    ] = None,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="NCI API key. Check if user mentioned 'my NCI API key is...' in their message. If not provided here and no env var is set, user will be prompted to provide one."
+        ),
+    ] = None,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    page_size: Annotated[
+        int,
+        Field(description="Results per page", ge=1, le=100),
+    ] = 20,
+) -> str:
+    """Search for organizations in the NCI Clinical Trials database.
+
+    Searches the National Cancer Institute's curated database of organizations
+    involved in cancer clinical trials. This includes:
+    - Academic medical centers
+    - Community hospitals
+    - Industry sponsors
+    - Government facilities
+    - Research networks
+
+    Requires NCI API key from: https://clinicaltrialsapi.cancer.gov/
+
+    IMPORTANT: To avoid API errors, always use city AND state together when searching by location.
+    The NCI API has limitations on broad searches.
+
+    Example usage:
+    - Find cancer centers in Boston, MA (city AND state)
+    - Search for "MD Anderson" in Houston, TX
+    - List academic organizations in Cleveland, OH
+    - Search by organization name alone (without location)
+    """
+    from biomcp.integrations.cts_api import CTSAPIError
+    from biomcp.organizations import search_organizations
+    from biomcp.organizations.search import format_organization_results
+
+    try:
+        results = await search_organizations(
+            name=name,
+            org_type=organization_type,
+            city=city,
+            state=state,
+            page_size=page_size,
+            page=page,
+            api_key=api_key,
+        )
+        return format_organization_results(results)
+    except CTSAPIError as e:
+        # Check for Elasticsearch bucket limit error
+        error_msg = str(e)
+        if "too_many_buckets_exception" in error_msg or "75000" in error_msg:
+            return (
+                "⚠️ **Search Too Broad**\n\n"
+                "The NCI API cannot process this search because it returns too many results.\n\n"
+                "**To fix this, try:**\n"
+                "1. **Always use city AND state together** for location searches\n"
+                "2. Add an organization name (even partial) to narrow results\n"
+                "3. Use multiple filters together (name + location, or name + type)\n\n"
+                "**Examples that work:**\n"
+                "- `nci_organization_searcher(city='Cleveland', state='OH')`\n"
+                "- `nci_organization_searcher(name='Cleveland Clinic')`\n"
+                "- `nci_organization_searcher(name='cancer', city='Boston', state='MA')`\n"
+                "- `nci_organization_searcher(organization_type='Academic', city='Houston', state='TX')`"
+            )
+        raise
+
+
+@mcp_app.tool()
+@track_performance("biomcp.nci_organization_getter")
+async def nci_organization_getter(
+    organization_id: Annotated[
+        str,
+        Field(description="NCI organization ID (e.g., 'NCI-2011-03337')"),
+    ],
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="NCI API key. Check if user mentioned 'my NCI API key is...' in their message. If not provided here and no env var is set, user will be prompted to provide one."
+        ),
+    ] = None,
+) -> str:
+    """Get detailed information about a specific organization from NCI.
+
+    Retrieves comprehensive details about an organization including:
+    - Full name and aliases
+    - Address and contact information
+    - Organization type and role
+    - Associated clinical trials
+    - Research focus areas
+
+    Requires NCI API key from: https://clinicaltrialsapi.cancer.gov/
+
+    Example usage:
+    - Get details about a specific cancer center
+    - Find contact information for trial sponsors
+    - View organization's trial portfolio
+    """
+    from biomcp.organizations import get_organization
+    from biomcp.organizations.getter import format_organization_details
+
+    org_data = await get_organization(
+        org_id=organization_id,
+        api_key=api_key,
+    )
+
+    return format_organization_details(org_data)
+
+
+@mcp_app.tool()
+@track_performance("biomcp.nci_intervention_searcher")
+async def nci_intervention_searcher(
+    name: Annotated[
+        str | None,
+        Field(
+            description="Intervention name to search for (e.g., 'pembrolizumab')"
+        ),
+    ] = None,
+    intervention_type: Annotated[
+        str | None,
+        Field(
+            description="Type of intervention: 'Drug', 'Device', 'Biological', 'Procedure', 'Radiation', 'Behavioral', 'Genetic', 'Dietary', 'Other'"
+        ),
+    ] = None,
+    synonyms: Annotated[
+        bool,
+        Field(description="Include synonym matches in search"),
+    ] = True,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="NCI API key. Check if user mentioned 'my NCI API key is...' in their message. If not provided here and no env var is set, user will be prompted to provide one."
+        ),
+    ] = None,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    page_size: Annotated[
+        int | None,
+        Field(
+            description="Results per page. If not specified, returns all matching results.",
+            ge=1,
+            le=100,
+        ),
+    ] = None,
+) -> str:
+    """Search for interventions in the NCI Clinical Trials database.
+
+    Searches the National Cancer Institute's curated database of interventions
+    used in cancer clinical trials. This includes:
+    - FDA-approved drugs
+    - Investigational agents
+    - Medical devices
+    - Surgical procedures
+    - Radiation therapies
+    - Behavioral interventions
+
+    Requires NCI API key from: https://clinicaltrialsapi.cancer.gov/
+
+    Example usage:
+    - Find all trials using pembrolizumab
+    - Search for CAR-T cell therapies
+    - List radiation therapy protocols
+    - Find dietary interventions
+    """
+    from biomcp.integrations.cts_api import CTSAPIError
+    from biomcp.interventions import search_interventions
+    from biomcp.interventions.search import format_intervention_results
+
+    try:
+        results = await search_interventions(
+            name=name,
+            intervention_type=intervention_type,
+            synonyms=synonyms,
+            page_size=page_size,
+            page=page,
+            api_key=api_key,
+        )
+        return format_intervention_results(results)
+    except CTSAPIError as e:
+        # Check for Elasticsearch bucket limit error
+        error_msg = str(e)
+        if "too_many_buckets_exception" in error_msg or "75000" in error_msg:
+            return (
+                "⚠️ **Search Too Broad**\n\n"
+                "The NCI API cannot process this search because it returns too many results.\n\n"
+                "**Try adding more specific filters:**\n"
+                "- Add an intervention name (even partial)\n"
+                "- Specify an intervention type (e.g., 'Drug', 'Device')\n"
+                "- Search for a specific drug or therapy name\n\n"
+                "**Example searches that work better:**\n"
+                "- Search for 'pembrolizumab' instead of all drugs\n"
+                "- Search for 'CAR-T' to find CAR-T cell therapies\n"
+                "- Filter by type: Drug, Device, Procedure, etc."
+            )
+        raise
+
+
+@mcp_app.tool()
+@track_performance("biomcp.nci_intervention_getter")
+async def nci_intervention_getter(
+    intervention_id: Annotated[
+        str,
+        Field(description="NCI intervention ID (e.g., 'INT123456')"),
+    ],
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="NCI API key. Check if user mentioned 'my NCI API key is...' in their message. If not provided here and no env var is set, user will be prompted to provide one."
+        ),
+    ] = None,
+) -> str:
+    """Get detailed information about a specific intervention from NCI.
+
+    Retrieves comprehensive details about an intervention including:
+    - Full name and synonyms
+    - Intervention type and category
+    - Mechanism of action (for drugs)
+    - FDA approval status
+    - Associated clinical trials
+    - Combination therapies
+
+    Requires NCI API key from: https://clinicaltrialsapi.cancer.gov/
+
+    Example usage:
+    - Get details about a specific drug
+    - Find all trials using a device
+    - View combination therapy protocols
+    """
+    from biomcp.interventions import get_intervention
+    from biomcp.interventions.getter import format_intervention_details
+
+    intervention_data = await get_intervention(
+        intervention_id=intervention_id,
+        api_key=api_key,
+    )
+
+    return format_intervention_details(intervention_data)
+
+
+# Biomarker Tools
+@mcp_app.tool()
+@track_performance("biomcp.nci_biomarker_searcher")
+async def nci_biomarker_searcher(
+    name: Annotated[
+        str | None,
+        Field(
+            description="Biomarker name to search for (e.g., 'PD-L1', 'EGFR mutation')"
+        ),
+    ] = None,
+    biomarker_type: Annotated[
+        str | None,
+        Field(description="Type of biomarker ('reference_gene' or 'branch')"),
+    ] = None,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="NCI API key. Check if user mentioned 'my NCI API key is...' in their message. If not provided here and no env var is set, user will be prompted to provide one."
+        ),
+    ] = None,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    page_size: Annotated[
+        int,
+        Field(description="Results per page", ge=1, le=100),
+    ] = 20,
+) -> str:
+    """Search for biomarkers in the NCI Clinical Trials database.
+
+    Searches for biomarkers used in clinical trial eligibility criteria.
+    This is essential for precision medicine trials that select patients
+    based on specific biomarker characteristics.
+
+    Biomarker examples:
+    - Gene mutations (e.g., BRAF V600E, EGFR T790M)
+    - Protein expression (e.g., PD-L1 ≥ 50%, HER2 positive)
+    - Gene fusions (e.g., ALK fusion, ROS1 fusion)
+    - Other molecular markers (e.g., MSI-H, TMB-high)
+
+    Requires NCI API key from: https://clinicaltrialsapi.cancer.gov/
+
+    Note: Biomarker data availability may be limited in CTRP.
+    Results focus on biomarkers used in trial eligibility criteria.
+
+    Example usage:
+    - Search for PD-L1 expression biomarkers
+    - Find trials requiring EGFR mutations
+    - Look up biomarkers tested by NGS
+    - Search for HER2 expression markers
+    """
+    from biomcp.biomarkers import search_biomarkers
+    from biomcp.biomarkers.search import format_biomarker_results
+    from biomcp.integrations.cts_api import CTSAPIError
+
+    try:
+        results = await search_biomarkers(
+            name=name,
+            biomarker_type=biomarker_type,
+            page_size=page_size,
+            page=page,
+            api_key=api_key,
+        )
+        return format_biomarker_results(results)
+    except CTSAPIError as e:
+        # Check for Elasticsearch bucket limit error
+        error_msg = str(e)
+        if "too_many_buckets_exception" in error_msg or "75000" in error_msg:
+            return (
+                "⚠️ **Search Too Broad**\n\n"
+                "The NCI API cannot process this search because it returns too many results.\n\n"
+                "**Try adding more specific filters:**\n"
+                "- Add a biomarker name (even partial)\n"
+                "- Specify a gene symbol\n"
+                "- Add an assay type (e.g., 'IHC', 'NGS')\n\n"
+                "**Example searches that work:**\n"
+                "- `nci_biomarker_searcher(name='PD-L1')`\n"
+                "- `nci_biomarker_searcher(gene='EGFR', biomarker_type='mutation')`\n"
+                "- `nci_biomarker_searcher(assay_type='IHC')`"
+            )
+        raise
+
+
+# NCI Disease Tools
+@mcp_app.tool()
+@track_performance("biomcp.nci_disease_searcher")
+async def nci_disease_searcher(
+    name: Annotated[
+        str | None,
+        Field(description="Disease name to search for (partial match)"),
+    ] = None,
+    include_synonyms: Annotated[
+        bool,
+        Field(description="Include synonym matches in search"),
+    ] = True,
+    category: Annotated[
+        str | None,
+        Field(description="Disease category/type filter"),
+    ] = None,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="NCI API key. Check if user mentioned 'my NCI API key is...' in their message. If not provided here and no env var is set, user will be prompted to provide one."
+        ),
+    ] = None,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    page_size: Annotated[
+        int,
+        Field(description="Results per page", ge=1, le=100),
+    ] = 20,
+) -> str:
+    """Search NCI's controlled vocabulary of cancer conditions.
+
+    Searches the National Cancer Institute's curated database of cancer
+    conditions and diseases used in clinical trials. This is different from
+    the general disease_getter tool which uses MyDisease.info.
+
+    NCI's disease vocabulary provides:
+    - Official cancer terminology used in trials
+    - Disease synonyms and alternative names
+    - Hierarchical disease classifications
+    - Standardized disease codes for trial matching
+
+    Requires NCI API key from: https://clinicaltrialsapi.cancer.gov/
+
+    Example usage:
+    - Search for specific cancer types (e.g., "melanoma")
+    - Find all lung cancer subtypes
+    - Look up official names for disease synonyms
+    - Get standardized disease terms for trial searches
+
+    Note: This is specifically for NCI's cancer disease vocabulary.
+    For general disease information, use the disease_getter tool.
+    """
+    from biomcp.diseases import search_diseases
+    from biomcp.diseases.search import format_disease_results
+    from biomcp.integrations.cts_api import CTSAPIError
+
+    try:
+        results = await search_diseases(
+            name=name,
+            include_synonyms=include_synonyms,
+            category=category,
+            page_size=page_size,
+            page=page,
+            api_key=api_key,
+        )
+        return format_disease_results(results)
+    except CTSAPIError as e:
+        # Check for Elasticsearch bucket limit error
+        error_msg = str(e)
+        if "too_many_buckets_exception" in error_msg or "75000" in error_msg:
+            return (
+                "⚠️ **Search Too Broad**\n\n"
+                "The NCI API cannot process this search because it returns too many results.\n\n"
+                "**Try adding more specific filters:**\n"
+                "- Add a disease name (even partial)\n"
+                "- Specify a disease category\n"
+                "- Use more specific search terms\n\n"
+                "**Example searches that work:**\n"
+                "- `nci_disease_searcher(name='melanoma')`\n"
+                "- `nci_disease_searcher(name='lung', category='maintype')`\n"
+                "- `nci_disease_searcher(name='NSCLC')`"
+            )
+        raise

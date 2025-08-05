@@ -977,3 +977,36 @@ async def _trial_searcher(
         expand_synonyms=expand_synonyms,
     )
     return await search_trials(query, output_json=False)
+
+
+async def search_trials_unified(
+    query: TrialQuery,
+    source: str = "clinicaltrials",
+    api_key: str | None = None,
+    output_json: bool = False,
+) -> str:
+    """
+    Search for clinical trials using either ClinicalTrials.gov or NCI CTS API.
+
+    Args:
+        query: TrialQuery object with search parameters
+        source: Data source - "clinicaltrials" (default) or "nci"
+        api_key: API key for NCI (required if source="nci")
+        output_json: Return raw JSON instead of formatted markdown
+
+    Returns:
+        Formatted markdown or JSON string with results
+    """
+    if source == "nci":
+        # Import here to avoid circular imports
+        from .nci_search import format_nci_trial_results, search_trials_nci
+
+        results = await search_trials_nci(query, api_key)
+
+        if output_json:
+            return json.dumps(results, indent=2)
+        else:
+            return format_nci_trial_results(results)
+    else:
+        # Default to ClinicalTrials.gov
+        return await search_trials(query, output_json)

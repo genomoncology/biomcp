@@ -61,7 +61,7 @@ Through MCP, AI assistants can seamlessly invoke BioMCP tools during conversatio
 
 ## MCP Tools and Capabilities
 
-BioMCP provides 13 specialized tools through the MCP interface:
+BioMCP provides 24 specialized tools through the MCP interface:
 
 ### Core Tools (3)
 
@@ -74,7 +74,7 @@ BioMCP provides 13 specialized tools through the MCP interface:
 - `search`: Powerful unified search across all biomedical data sources with cross-domain query support
 - `fetch`: Retrieve detailed information for specific articles, trials, or variants
 
-### Individual Tools (10)
+### Individual Tools (21)
 
 #### Article Tools (2)
 
@@ -102,10 +102,26 @@ BioMCP provides 13 specialized tools through the MCP interface:
 - `trial_outcomes_getter`: Access trial results and outcome data
 - `trial_locations_getter`: Find where trials are conducted
 
-#### Genomic Variant Tools (2)
+#### Genomic Variant Tools (3)
 
 - `variant_searcher`: Search MyVariant.info with clinical and functional filters
 - `variant_getter`: Get comprehensive annotations including TCGA, 1000 Genomes, and cBioPortal data
+- `alphagenome_predictor`: Predict variant effects on gene regulation using Google DeepMind's AlphaGenome
+
+#### NCI-Specific Tools (6)
+
+- `nci_organization_searcher`: Search NCI's organization database for cancer centers and research facilities
+- `nci_organization_getter`: Get detailed information about specific organizations
+- `nci_intervention_searcher`: Search NCI's intervention database for drugs, devices, and procedures
+- `nci_intervention_getter`: Get detailed information about specific interventions
+- `nci_biomarker_searcher`: Search biomarkers used in trial eligibility criteria
+- `nci_disease_searcher`: Search NCI's controlled vocabulary of cancer conditions
+
+#### BioThings Tools (3)
+
+- `gene_getter`: Get real-time gene information from MyGene.info
+- `disease_getter`: Get disease definitions and synonyms from MyDisease.info
+- `drug_getter`: Get drug/chemical information from MyChem.info
 
 ## MCP Resources
 
@@ -133,6 +149,11 @@ BioMCP provides the following resources through the MCP interface:
 - [**AlphaGenome Setup Guide**](tutorials/alphagenome-setup.md) - Configure Google DeepMind's AlphaGenome for variant effect prediction
 - [**AlphaGenome Prompt Examples**](tutorials/alphagenome-prompts.md) - Example prompts and workflows for variant analysis with AI
 - [**AlphaGenome with Docker**](tutorials/docker-alphagenome.md) - Run AlphaGenome in Docker containers
+
+### Example Prompts
+
+- [**BioThings Prompt Examples**](tutorials/biothings-prompts.md) - Example prompts for gene, disease, and drug information retrieval
+- [**NCI Tools Prompt Examples**](tutorials/nci-prompts.md) - Example prompts for NCI organization and intervention searches
 
 ## Verification and Testing
 

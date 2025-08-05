@@ -21,6 +21,16 @@ PUBTATOR3_AUTOCOMPLETE_URL = f"{PUBTATOR3_BASE_URL}/entity/autocomplete/"
 CLINICAL_TRIALS_BASE_URL = "https://clinicaltrials.gov/api/v2/studies"
 CLINICAL_TRIALS_STUDY_URL = "https://clinicaltrials.gov/study/"
 
+# NCI Clinical Trials Search API
+# https://clinicaltrialsapi.cancer.gov/api/v2
+NCI_CTS_BASE_URL = "https://clinicaltrialsapi.cancer.gov/api/v2"
+NCI_TRIALS_URL = f"{NCI_CTS_BASE_URL}/trials"
+NCI_ORGANIZATIONS_URL = f"{NCI_CTS_BASE_URL}/organizations"
+NCI_DISEASES_URL = f"{NCI_CTS_BASE_URL}/diseases"
+NCI_INTERVENTIONS_URL = f"{NCI_CTS_BASE_URL}/interventions"
+NCI_BIOMARKERS_URL = f"{NCI_CTS_BASE_URL}/biomarkers"
+NCI_API_KEY_ENV = "NCI_API_KEY"
+
 # MyVariant.info API
 # https://docs.myvariant.info/
 MYVARIANT_BASE_URL = "https://myvariant.info/v1"
@@ -145,7 +155,18 @@ CONNECTION_POOL_KEEPALIVE_EXPIRY = 30
 # ============================================================================
 
 # Valid domains for search
-VALID_DOMAINS = ["article", "trial", "variant", "gene", "drug", "disease"]
+VALID_DOMAINS = [
+    "article",
+    "trial",
+    "variant",
+    "gene",
+    "drug",
+    "disease",
+    "nci_organization",
+    "nci_intervention",
+    "nci_biomarker",
+    "nci_disease",
+]
 VALID_DOMAINS_PLURAL = [
     "articles",
     "trials",
@@ -153,6 +174,10 @@ VALID_DOMAINS_PLURAL = [
     "genes",
     "drugs",
     "diseases",
+    "nci_organizations",
+    "nci_interventions",
+    "nci_biomarkers",
+    "nci_diseases",
 ]
 
 # Domain mappings for unified search
@@ -163,6 +188,10 @@ DOMAIN_TO_PLURAL = {
     "gene": "genes",
     "drug": "drugs",
     "disease": "diseases",
+    "nci_organization": "nci_organizations",
+    "nci_intervention": "nci_interventions",
+    "nci_biomarker": "nci_biomarkers",
+    "nci_disease": "nci_diseases",
 }
 
 PLURAL_TO_DOMAIN = {
@@ -172,6 +201,10 @@ PLURAL_TO_DOMAIN = {
     "genes": "gene",
     "drugs": "drug",
     "diseases": "disease",
+    "nci_organizations": "nci_organization",
+    "nci_interventions": "nci_intervention",
+    "nci_biomarkers": "nci_biomarker",
+    "nci_diseases": "nci_disease",
 }
 
 # Trial detail sections

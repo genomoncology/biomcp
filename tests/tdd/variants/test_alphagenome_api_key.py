@@ -19,15 +19,6 @@ async def test_api_key_parameter_overrides_env_var():
         mock_client = MagicMock()
         mock_scorers = MagicMock()
 
-        # Track which API key was used
-        api_keys_used = []
-
-        def track_create(api_key):
-            api_keys_used.append(api_key)
-            return MagicMock()
-
-        mock_client.create.side_effect = track_create
-
         # Mock successful prediction
         test_scores_df = pd.DataFrame({
             "output_type": ["RNA_SEQ"],
@@ -36,16 +27,33 @@ async def test_api_key_parameter_overrides_env_var():
             "track_name": [None],
         })
 
+        # Track which API key was used
+        api_keys_used = []
+
+        def track_create(api_key):
+            api_keys_used.append(api_key)
+            mock_model = MagicMock()
+            mock_model.score_variant.return_value = test_scores_df
+            return mock_model
+
+        mock_client.create.side_effect = track_create
+
         mock_scorers.tidy_scores.return_value = test_scores_df
         mock_scorers.get_recommended_scorers.return_value = []
+
+        # Create a mock module with the correct attributes
+        mock_models = MagicMock()
+        mock_models.dna_client = mock_client
+        mock_models.variant_scorers = mock_scorers
+
+        mock_data = MagicMock()
+        mock_data.genome = mock_genome
 
         with patch.dict(
             "sys.modules",
             {
-                "alphagenome.data": MagicMock(genome=mock_genome),
-                "alphagenome.models": MagicMock(
-                    dna_client=mock_client, variant_scorers=mock_scorers
-                ),
+                "alphagenome.data": mock_data,
+                "alphagenome.models": mock_models,
             },
         ):
             # Test with parameter API key
@@ -88,15 +96,6 @@ async def test_env_var_used_when_no_parameter():
         mock_client = MagicMock()
         mock_scorers = MagicMock()
 
-        # Track which API key was used
-        api_keys_used = []
-
-        def track_create(api_key):
-            api_keys_used.append(api_key)
-            return MagicMock()
-
-        mock_client.create.side_effect = track_create
-
         # Mock successful prediction
         test_scores_df = pd.DataFrame({
             "output_type": ["RNA_SEQ"],
@@ -105,16 +104,33 @@ async def test_env_var_used_when_no_parameter():
             "track_name": [None],
         })
 
+        # Track which API key was used
+        api_keys_used = []
+
+        def track_create(api_key):
+            api_keys_used.append(api_key)
+            mock_model = MagicMock()
+            mock_model.score_variant.return_value = test_scores_df
+            return mock_model
+
+        mock_client.create.side_effect = track_create
+
         mock_scorers.tidy_scores.return_value = test_scores_df
         mock_scorers.get_recommended_scorers.return_value = []
+
+        # Create a mock module with the correct attributes
+        mock_models = MagicMock()
+        mock_models.dna_client = mock_client
+        mock_models.variant_scorers = mock_scorers
+
+        mock_data = MagicMock()
+        mock_data.genome = mock_genome
 
         with patch.dict(
             "sys.modules",
             {
-                "alphagenome.data": MagicMock(genome=mock_genome),
-                "alphagenome.models": MagicMock(
-                    dna_client=mock_client, variant_scorers=mock_scorers
-                ),
+                "alphagenome.data": mock_data,
+                "alphagenome.models": mock_models,
             },
         ):
             # Test without parameter API key

@@ -4,7 +4,11 @@ from typing import Annotated
 import typer
 
 from .articles import article_app
+from .biomarkers import biomarker_app
+from .diseases import disease_app
 from .health import health_app
+from .interventions import intervention_app
+from .organizations import organization_app
 from .server import run_server
 from .trials import trial_app
 from .variants import variant_app
@@ -53,6 +57,30 @@ app.add_typer(
 app.add_typer(
     health_app,
     name="health",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    organization_app,
+    name="organization",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    intervention_app,
+    name="intervention",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    biomarker_app,
+    name="biomarker",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    disease_app,
+    name="disease",
     no_args_is_help=True,
 )
 

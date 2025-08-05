@@ -14,6 +14,7 @@ class Module(StrEnum):
     LOCATIONS = "Locations"
     REFERENCES = "References"
     OUTCOMES = "Outcomes"
+    ALL = "All"
 
 
 modules: dict[Module, list[str]] = {
@@ -31,6 +32,21 @@ modules: dict[Module, list[str]] = {
     Module.LOCATIONS: ["ContactsLocationsModule"],
     Module.REFERENCES: ["ReferencesModule"],
     Module.OUTCOMES: ["OutcomesModule", "ResultsSection"],
+    Module.ALL: [
+        "IdentificationModule",
+        "StatusModule",
+        "SponsorCollaboratorsModule",
+        "OversightModule",
+        "DescriptionModule",
+        "ConditionsModule",
+        "DesignModule",
+        "ArmsInterventionsModule",
+        "EligibilityModule",
+        "ContactsLocationsModule",
+        "ReferencesModule",
+        "OutcomesModule",
+        "ResultsSection",
+    ],
 }
 
 
@@ -203,3 +219,73 @@ async def _trial_references(
             (e.g., result publication). Returns error if invalid.
     """
     return await get_trial(nct_id, Module.REFERENCES)
+
+
+async def get_trial_unified(
+    nct_id: str,
+    source: str = "clinicaltrials",
+    api_key: str | None = None,
+    sections: list[str] | None = None,
+) -> str:
+    """
+    Get trial details from either ClinicalTrials.gov or NCI CTS API.
+
+    Args:
+        nct_id: NCT identifier (e.g., "NCT04280705")
+        source: Data source - "clinicaltrials" (default) or "nci"
+        api_key: API key for NCI (required if source="nci")
+        sections: List of sections to include (for clinicaltrials.gov)
+                 Options: ["protocol", "locations", "outcomes", "references", "all"]
+
+    Returns:
+        Formatted markdown string with trial details
+    """
+    if source == "nci":
+        # Import here to avoid circular imports
+        from .nci_getter import format_nci_trial_details, get_trial_nci
+
+        trial_data = await get_trial_nci(nct_id, api_key)
+        return await format_nci_trial_details(trial_data, api_key)
+    else:
+        # Default to ClinicalTrials.gov
+        if sections and "all" in sections:
+            return await get_trial(nct_id, Module.ALL)
+        elif sections:
+            # Get specific sections
+            results = []
+            for section in sections:
+                if section == "protocol":
+                    results.append(
+                        await _trial_protocol(
+                            call_benefit=f"Getting protocol information for trial {nct_id}",
+                            nct_id=nct_id,
+                        )
+                    )
+                elif section == "locations":
+                    results.append(
+                        await _trial_locations(
+                            call_benefit=f"Getting locations for trial {nct_id}",
+                            nct_id=nct_id,
+                        )
+                    )
+                elif section == "outcomes":
+                    results.append(
+                        await _trial_outcomes(
+                            call_benefit=f"Getting outcomes for trial {nct_id}",
+                            nct_id=nct_id,
+                        )
+                    )
+                elif section == "references":
+                    results.append(
+                        await _trial_references(
+                            call_benefit=f"Getting references for trial {nct_id}",
+                            nct_id=nct_id,
+                        )
+                    )
+            return "\n\n---\n\n".join(results)
+        else:
+            # Default to protocol only
+            return await _trial_protocol(
+                call_benefit=f"Getting trial protocol details for {nct_id}",
+                nct_id=nct_id,
+            )

@@ -132,10 +132,21 @@ async def search(  # noqa: C901
         ),
     ] = None,
     domain: Annotated[
-        Literal["article", "trial", "variant", "gene", "drug", "disease"]
+        Literal[
+            "article",
+            "trial",
+            "variant",
+            "gene",
+            "drug",
+            "disease",
+            "nci_organization",
+            "nci_intervention",
+            "nci_biomarker",
+            "nci_disease",
+        ]
         | None,
         Field(
-            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS, 'gene' for gene information from MyGene.info, 'drug' for drug/chemical information from MyChem.info, 'disease' for disease information from MyDisease.info"
+            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS, 'gene' for gene information from MyGene.info, 'drug' for drug/chemical information from MyChem.info, 'disease' for disease information from MyDisease.info, 'nci_organization' for NCI cancer centers/sponsors, 'nci_intervention' for NCI drugs/devices/procedures, 'nci_biomarker' for NCI trial eligibility biomarkers, 'nci_disease' for NCI cancer vocabulary"
         ),
     ] = None,
     genes: Annotated[list[str] | str | None, "Gene symbols"] = None,
@@ -177,6 +188,12 @@ async def search(  # noqa: C901
     get_schema: Annotated[
         bool, "Return searchable fields schema instead of results"
     ] = False,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="NCI API key for searching NCI domains (nci_organization, nci_intervention, nci_biomarker, nci_disease). Required for NCI searches. Get a free key at: https://clinicaltrialsapi.cancer.gov/"
+        ),
+    ] = None,
 ) -> dict:
     """Search biomedical literature, clinical trials, genetic variants, genes, drugs, and diseases.
 
@@ -220,6 +237,10 @@ async def search(  # noqa: C901
     - "gene": Search MyGene.info for gene information (symbol, name, function, aliases)
     - "drug": Search MyChem.info for drug/chemical information (names, formulas, indications)
     - "disease": Search MyDisease.info for disease information (names, definitions, synonyms)
+    - "nci_organization": Search NCI database for cancer centers, hospitals, and research sponsors (requires API key)
+    - "nci_intervention": Search NCI database for drugs, devices, procedures used in cancer trials (requires API key)
+    - "nci_biomarker": Search NCI database for biomarkers used in trial eligibility criteria (requires API key)
+    - "nci_disease": Search NCI controlled vocabulary for cancer conditions and terms (requires API key)
 
     Example:
     ```
@@ -597,6 +618,119 @@ async def search(  # noqa: C901
             total=total,
         )
 
+    elif domain == "nci_organization":
+        from .router_handlers import handle_nci_organization_search
+
+        # Extract NCI-specific parameters
+        organization_type = keywords[0] if keywords else None
+        city = None
+        state = None
+        name = keywords[0] if keywords else None
+
+        # Try to parse location from keywords
+        if keywords and len(keywords) >= 2:
+            # Assume last two keywords might be city, state
+            city = keywords[-2]
+            state = keywords[-1]
+            if len(state) == 2 and state.isupper():
+                # Likely a state code
+                name = " ".join(keywords[:-2]) if len(keywords) > 2 else None
+            else:
+                # Not a state code, use all as name
+                city = None
+                state = None
+                name = " ".join(keywords)
+
+        items, total = await handle_nci_organization_search(
+            name=name,
+            organization_type=organization_type,
+            city=city,
+            state=state,
+            api_key=api_key,
+            page=page,
+            page_size=page_size,
+        )
+
+        return format_results(
+            items,
+            domain="nci_organization",
+            page=page,
+            page_size=page_size,
+            total=total,
+        )
+
+    elif domain == "nci_intervention":
+        from .router_handlers import handle_nci_intervention_search
+
+        # Extract parameters
+        name = keywords[0] if keywords else None
+        intervention_type = None  # Could be parsed from additional params
+
+        items, total = await handle_nci_intervention_search(
+            name=name,
+            intervention_type=intervention_type,
+            synonyms=True,
+            api_key=api_key,
+            page=page,
+            page_size=page_size,
+        )
+
+        return format_results(
+            items,
+            domain="nci_intervention",
+            page=page,
+            page_size=page_size,
+            total=total,
+        )
+
+    elif domain == "nci_biomarker":
+        from .router_handlers import handle_nci_biomarker_search
+
+        # Extract parameters
+        name = keywords[0] if keywords else None
+        gene = genes[0] if genes else None
+
+        items, total = await handle_nci_biomarker_search(
+            name=name,
+            gene=gene,
+            biomarker_type=None,
+            assay_type=None,
+            api_key=api_key,
+            page=page,
+            page_size=page_size,
+        )
+
+        return format_results(
+            items,
+            domain="nci_biomarker",
+            page=page,
+            page_size=page_size,
+            total=total,
+        )
+
+    elif domain == "nci_disease":
+        from .router_handlers import handle_nci_disease_search
+
+        # Extract parameters
+        name = diseases[0] if diseases else keywords[0] if keywords else None
+
+        items, total = await handle_nci_disease_search(
+            name=name,
+            include_synonyms=True,
+            category=None,
+            api_key=api_key,
+            page=page,
+            page_size=page_size,
+        )
+
+        return format_results(
+            items,
+            domain="nci_disease",
+            page=page,
+            page_size=page_size,
+            total=total,
+        )
+
     else:
         raise InvalidDomainError(domain, VALID_DOMAINS)
 
@@ -609,10 +743,21 @@ async def search(  # noqa: C901
 async def fetch(  # noqa: C901
     id: Annotated[  # noqa: A002
         str,
-        "PMID / NCT ID / Variant ID / DOI / Gene ID / Drug ID / Disease ID",
+        "PMID / NCT ID / Variant ID / DOI / Gene ID / Drug ID / Disease ID / NCI Organization ID / NCI Intervention ID / NCI Disease ID",
     ],
     domain: Annotated[
-        Literal["article", "trial", "variant", "gene", "drug", "disease"]
+        Literal[
+            "article",
+            "trial",
+            "variant",
+            "gene",
+            "drug",
+            "disease",
+            "nci_organization",
+            "nci_intervention",
+            "nci_biomarker",
+            "nci_disease",
+        ]
         | None,
         Field(
             description="Domain of the record (auto-detected if not provided)"
@@ -631,6 +776,12 @@ async def fetch(  # noqa: C901
         | None,
         "Specific section to retrieve (trials) or 'full' (articles)",
     ] = None,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="NCI API key for fetching NCI records (nci_organization, nci_intervention, nci_disease). Required for NCI fetches. Get a free key at: https://clinicaltrialsapi.cancer.gov/"
+        ),
+    ] = None,
 ) -> dict:
     """Fetch comprehensive details for a specific biomedical record.
 
@@ -645,6 +796,9 @@ async def fetch(  # noqa: C901
     - Genes: Gene symbol or Entrez ID - e.g., "BRAF" or "673"
     - Drugs: Drug name or ID - e.g., "imatinib" or "DB00619"
     - Diseases: Disease name or ID - e.g., "melanoma" or "MONDO:0005105"
+    - NCI Organizations: NCI organization ID - e.g., "NCI-2011-03337"
+    - NCI Interventions: NCI intervention ID - e.g., "INT123456"
+    - NCI Diseases: NCI disease ID - e.g., "C4872"
 
     The domain is automatically detected from the ID format if not provided:
     - NCT* → trial
@@ -700,6 +854,34 @@ async def fetch(  # noqa: C901
       - Disease synonyms
       - Cross-references to other databases
       - Associated phenotypes
+    - detail parameter is ignored (always returns full data)
+
+    ### NCI Organizations (domain="nci_organization"):
+    - Returns organization information from NCI database including:
+      - Organization name and type
+      - Full address and contact information
+      - Research focus areas
+      - Associated clinical trials
+    - Requires NCI API key
+    - detail parameter is ignored (always returns full data)
+
+    ### NCI Interventions (domain="nci_intervention"):
+    - Returns intervention information from NCI database including:
+      - Intervention name and type
+      - Synonyms and alternative names
+      - Mechanism of action (for drugs)
+      - FDA approval status
+      - Associated clinical trials
+    - Requires NCI API key
+    - detail parameter is ignored (always returns full data)
+
+    ### NCI Diseases (domain="nci_disease"):
+    - Returns disease information from NCI controlled vocabulary including:
+      - Preferred disease name
+      - Disease category and classification
+      - All known synonyms
+      - Cross-reference codes (ICD, SNOMED)
+    - Requires NCI API key
     - detail parameter is ignored (always returns full data)
 
     ## RETURN FORMAT:
@@ -1300,6 +1482,115 @@ async def fetch(  # noqa: C901
         except Exception as e:
             logger.error(f"Disease fetch failed: {e}")
             raise SearchExecutionError("disease", e) from e
+
+    elif domain == "nci_organization":
+        logger.debug("Fetching NCI organization details")
+        try:
+            from biomcp.organizations import get_organization
+            from biomcp.organizations.getter import format_organization_details
+
+            org_data = await get_organization(
+                org_id=id,
+                api_key=api_key,
+            )
+
+            # Format the details
+            formatted_text = format_organization_details(org_data)
+
+            # Return OpenAI MCP compliant format
+            return {
+                "id": id,
+                "title": org_data.get("name", "Unknown Organization"),
+                "text": formatted_text,
+                "url": "",  # NCI doesn't provide direct URLs
+                "metadata": org_data,
+            }
+
+        except Exception as e:
+            logger.error(f"NCI organization fetch failed: {e}")
+            raise SearchExecutionError("nci_organization", e) from e
+
+    elif domain == "nci_intervention":
+        logger.debug("Fetching NCI intervention details")
+        try:
+            from biomcp.interventions import get_intervention
+            from biomcp.interventions.getter import format_intervention_details
+
+            intervention_data = await get_intervention(
+                intervention_id=id,
+                api_key=api_key,
+            )
+
+            # Format the details
+            formatted_text = format_intervention_details(intervention_data)
+
+            # Return OpenAI MCP compliant format
+            return {
+                "id": id,
+                "title": intervention_data.get("name", "Unknown Intervention"),
+                "text": formatted_text,
+                "url": "",  # NCI doesn't provide direct URLs
+                "metadata": intervention_data,
+            }
+
+        except Exception as e:
+            logger.error(f"NCI intervention fetch failed: {e}")
+            raise SearchExecutionError("nci_intervention", e) from e
+
+    elif domain == "nci_disease":
+        logger.debug("Fetching NCI disease details")
+        try:
+            from biomcp.diseases import get_disease_by_id
+
+            disease_data = await get_disease_by_id(
+                disease_id=id,
+                api_key=api_key,
+            )
+
+            # Build text description
+            text_parts = []
+            text_parts.append(
+                f"Disease: {disease_data.get('name', 'Unknown Disease')}"
+            )
+
+            if disease_data.get("category"):
+                text_parts.append(f"\nCategory: {disease_data['category']}")
+
+            if disease_data.get("synonyms"):
+                synonyms = disease_data["synonyms"]
+                if isinstance(synonyms, list) and synonyms:
+                    text_parts.append(f"\nSynonyms: {', '.join(synonyms[:5])}")
+                    if len(synonyms) > 5:
+                        text_parts.append(
+                            f"  ... and {len(synonyms) - 5} more"
+                        )
+
+            if disease_data.get("codes"):
+                codes = disease_data["codes"]
+                if isinstance(codes, dict):
+                    code_items = [
+                        f"{system}: {code}" for system, code in codes.items()
+                    ]
+                    if code_items:
+                        text_parts.append(f"\nCodes: {', '.join(code_items)}")
+
+            # Return OpenAI MCP compliant format
+            return {
+                "id": id,
+                "title": disease_data.get(
+                    "name",
+                    disease_data.get("preferred_name", "Unknown Disease"),
+                ),
+                "text": "\n".join(text_parts),
+                "url": "",  # NCI doesn't provide direct URLs
+                "metadata": disease_data,
+            }
+
+        except Exception as e:
+            logger.error(f"NCI disease fetch failed: {e}")
+            raise SearchExecutionError("nci_disease", e) from e
+
+    # Note: nci_biomarker doesn't support fetching by ID, only searching
 
     # Invalid domain
     raise InvalidDomainError(domain, VALID_DOMAINS)

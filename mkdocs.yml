@@ -23,6 +23,7 @@ nav:
       - Logging with BigQuery: tutorials/bigquery_logging.md
       - MCP Client: tutorials/mcp-client.md
       - MCP Inspector: tutorials/mcp-inspector.md
+      - NCI Prompts: tutorials/nci-prompts.md
       - Python SDK: tutorials/python-sdk.md
       - Setting Up Stytch OAuth for BioMCP: tutorials/stytch_oauth_setup.md
   - CLI Reference:

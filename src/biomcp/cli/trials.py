@@ -5,7 +5,7 @@ from typing import Annotated
 
 import typer
 
-from ..trials.getter import Module, get_trial
+from ..trials.getter import Module
 from ..trials.search import (
     AgeGroup,
     DateField,
@@ -19,7 +19,6 @@ from ..trials.search import (
     StudyType,
     TrialPhase,
     TrialQuery,
-    search_trials,
 )
 
 trial_app = typer.Typer(help="Clinical trial operations")
@@ -46,12 +45,59 @@ def get_trial_cli(
             case_sensitive=False,
         ),
     ] = False,
+    source: Annotated[
+        str,
+        typer.Option(
+            "--source",
+            help="Data source: 'clinicaltrials' (default) or 'nci'",
+            show_choices=True,
+        ),
+    ] = "clinicaltrials",
+    api_key: Annotated[
+        str | None,
+        typer.Option(
+            "--api-key",
+            help="NCI API key (required if source='nci', overrides NCI_API_KEY env var)",
+            envvar="NCI_API_KEY",
+        ),
+    ] = None,
 ):
-    """Get trial information by NCT ID and optional module."""
-    result = asyncio.run(
-        get_trial(nct_id, module or Module.PROTOCOL, output_json)
-    )
-    typer.echo(result)
+    """Get trial information by NCT ID from ClinicalTrials.gov or NCI CTS API."""
+    # Import here to avoid circular imports
+    from ..trials.getter import get_trial_unified
+
+    # Check if NCI source requires API key
+    if source == "nci" and not api_key:
+        from ..integrations.cts_api import get_api_key_instructions
+
+        typer.echo(get_api_key_instructions())
+        raise typer.Exit(1)
+
+    # For ClinicalTrials.gov, use the direct get_trial function when JSON is requested
+    if source == "clinicaltrials" and output_json:
+        from ..trials.getter import get_trial
+
+        if module is None:
+            result = asyncio.run(get_trial(nct_id, output_json=True))
+        else:
+            result = asyncio.run(
+                get_trial(nct_id, module=module, output_json=True)
+            )
+        typer.echo(result)
+    else:
+        # Map module to sections for unified getter
+        sections = None
+        if source == "clinicaltrials" and module:
+            sections = (
+                ["all"] if module == Module.ALL else [module.value.lower()]
+            )
+
+        result = asyncio.run(
+            get_trial_unified(
+                nct_id, source=source, api_key=api_key, sections=sections
+            )
+        )
+        typer.echo(result)
 
 
 @trial_app.command("search")
@@ -320,8 +366,24 @@ def search_trials_cli(
             max=1000,
         ),
     ] = None,
+    source: Annotated[
+        str,
+        typer.Option(
+            "--source",
+            help="Data source: 'clinicaltrials' (default) or 'nci'",
+            show_choices=True,
+        ),
+    ] = "clinicaltrials",
+    api_key: Annotated[
+        str | None,
+        typer.Option(
+            "--api-key",
+            help="NCI API key (required if source='nci', overrides NCI_API_KEY env var)",
+            envvar="NCI_API_KEY",
+        ),
+    ] = None,
 ):
-    """Search for clinical trials."""
+    """Search for clinical trials from ClinicalTrials.gov or NCI CTS API."""
     # Parse biomarker expression from CLI format
     biomarker_expression = None
     if biomarker:
@@ -363,5 +425,19 @@ def search_trials_cli(
         page_size=page_size,
     )
 
-    result = asyncio.run(search_trials(query, output_json))
+    # Import here to avoid circular imports
+    from ..trials.search import search_trials_unified
+
+    # Check if NCI source requires API key
+    if source == "nci" and not api_key:
+        from ..integrations.cts_api import get_api_key_instructions
+
+        typer.echo(get_api_key_instructions())
+        raise typer.Exit(1)
+
+    result = asyncio.run(
+        search_trials_unified(
+            query, source=source, api_key=api_key, output_json=output_json
+        )
+    )
     typer.echo(result)

@@ -387,6 +387,191 @@ class DiseaseHandler:
         }
 
 
+class NCIOrganizationHandler:
+    """Handles formatting for NCI organization results."""
+
+    @staticmethod
+    def format_result(result: dict[str, Any]) -> dict[str, Any]:
+        """Format a single NCI organization result.
+
+        Args:
+            result: Raw organization data from NCI CTS API
+
+        Returns:
+            Standardized organization result with id, title, snippet, url, and metadata
+        """
+        org_id = result.get("id", result.get("org_id", ""))
+        name = result.get("name", "Unknown Organization")
+        org_type = result.get("type", result.get("category", ""))
+        city = result.get("city", "")
+        state = result.get("state", "")
+
+        # Build location string
+        location_parts = [p for p in [city, state] if p]
+        location = ", ".join(location_parts) if location_parts else ""
+
+        # Create snippet
+        snippet_parts = []
+        if org_type:
+            snippet_parts.append(f"Type: {org_type}")
+        if location:
+            snippet_parts.append(f"Location: {location}")
+        snippet = " | ".join(snippet_parts) or "No details available"
+
+        return {
+            RESULT_ID: org_id,
+            RESULT_TITLE: name,
+            RESULT_SNIPPET: snippet,
+            RESULT_URL: "",  # NCI doesn't provide direct URLs to organizations
+            RESULT_METADATA: {
+                "type": org_type,
+                "city": city,
+                "state": state,
+                "country": result.get("country", ""),
+            },
+        }
+
+
+class NCIInterventionHandler:
+    """Handles formatting for NCI intervention results."""
+
+    @staticmethod
+    def format_result(result: dict[str, Any]) -> dict[str, Any]:
+        """Format a single NCI intervention result.
+
+        Args:
+            result: Raw intervention data from NCI CTS API
+
+        Returns:
+            Standardized intervention result with id, title, snippet, url, and metadata
+        """
+        int_id = result.get("id", result.get("intervention_id", ""))
+        name = result.get("name", "Unknown Intervention")
+        int_type = result.get("type", result.get("category", ""))
+        synonyms = result.get("synonyms", [])
+
+        # Create snippet
+        snippet_parts = []
+        if int_type:
+            snippet_parts.append(f"Type: {int_type}")
+        if synonyms:
+            if isinstance(synonyms, list) and synonyms:
+                snippet_parts.append(
+                    f"Also known as: {', '.join(synonyms[:3])}"
+                )
+            elif isinstance(synonyms, str):
+                snippet_parts.append(f"Also known as: {synonyms}")
+        snippet = " | ".join(snippet_parts) or "No details available"
+
+        return {
+            RESULT_ID: int_id,
+            RESULT_TITLE: name,
+            RESULT_SNIPPET: snippet,
+            RESULT_URL: "",  # NCI doesn't provide direct URLs to interventions
+            RESULT_METADATA: {
+                "type": int_type,
+                "synonyms": synonyms,
+                "description": result.get("description", ""),
+            },
+        }
+
+
+class NCIBiomarkerHandler:
+    """Handles formatting for NCI biomarker results."""
+
+    @staticmethod
+    def format_result(result: dict[str, Any]) -> dict[str, Any]:
+        """Format a single NCI biomarker result.
+
+        Args:
+            result: Raw biomarker data from NCI CTS API
+
+        Returns:
+            Standardized biomarker result with id, title, snippet, url, and metadata
+        """
+        bio_id = result.get("id", result.get("biomarker_id", ""))
+        name = result.get("name", "Unknown Biomarker")
+        gene = result.get("gene", result.get("gene_symbol", ""))
+        bio_type = result.get("type", result.get("category", ""))
+        assay_type = result.get("assay_type", "")
+
+        # Build title
+        title = name
+        if gene and gene not in name:
+            title = f"{gene} - {name}"
+
+        # Create snippet
+        snippet_parts = []
+        if bio_type:
+            snippet_parts.append(f"Type: {bio_type}")
+        if assay_type:
+            snippet_parts.append(f"Assay: {assay_type}")
+        snippet = (
+            " | ".join(snippet_parts) or "Biomarker for trial eligibility"
+        )
+
+        return {
+            RESULT_ID: bio_id,
+            RESULT_TITLE: title,
+            RESULT_SNIPPET: snippet,
+            RESULT_URL: "",  # NCI doesn't provide direct URLs to biomarkers
+            RESULT_METADATA: {
+                "gene": gene,
+                "type": bio_type,
+                "assay_type": assay_type,
+                "trial_count": result.get("trial_count", 0),
+            },
+        }
+
+
+class NCIDiseaseHandler:
+    """Handles formatting for NCI disease vocabulary results."""
+
+    @staticmethod
+    def format_result(result: dict[str, Any]) -> dict[str, Any]:
+        """Format a single NCI disease result.
+
+        Args:
+            result: Raw disease data from NCI CTS API
+
+        Returns:
+            Standardized disease result with id, title, snippet, url, and metadata
+        """
+        disease_id = result.get("id", result.get("disease_id", ""))
+        name = result.get(
+            "name", result.get("preferred_name", "Unknown Disease")
+        )
+        category = result.get("category", result.get("type", ""))
+        synonyms = result.get("synonyms", [])
+
+        # Create snippet
+        snippet_parts = []
+        if category:
+            snippet_parts.append(f"Category: {category}")
+        if synonyms:
+            if isinstance(synonyms, list) and synonyms:
+                snippet_parts.append(
+                    f"Also known as: {', '.join(synonyms[:3])}"
+                )
+                if len(synonyms) > 3:
+                    snippet_parts.append(f"and {len(synonyms) - 3} more")
+            elif isinstance(synonyms, str):
+                snippet_parts.append(f"Also known as: {synonyms}")
+        snippet = " | ".join(snippet_parts) or "NCI cancer vocabulary term"
+
+        return {
+            RESULT_ID: disease_id,
+            RESULT_TITLE: name,
+            RESULT_SNIPPET: snippet,
+            RESULT_URL: "",  # NCI doesn't provide direct URLs to disease terms
+            RESULT_METADATA: {
+                "category": category,
+                "synonyms": synonyms,
+                "codes": result.get("codes", {}),
+            },
+        }
+
+
 def get_domain_handler(
     domain: str,
 ) -> (
@@ -396,11 +581,16 @@ def get_domain_handler(
     | type[GeneHandler]
     | type[DrugHandler]
     | type[DiseaseHandler]
+    | type[NCIOrganizationHandler]
+    | type[NCIInterventionHandler]
+    | type[NCIBiomarkerHandler]
+    | type[NCIDiseaseHandler]
 ):
     """Get the appropriate handler class for a domain.
 
     Args:
-        domain: The domain name ('article', 'trial', 'variant', 'gene', 'drug', 'disease')
+        domain: The domain name ('article', 'trial', 'variant', 'gene', 'drug', 'disease',
+                               'nci_organization', 'nci_intervention', 'nci_biomarker', 'nci_disease')
 
     Returns:
         The handler class for the domain
@@ -415,7 +605,11 @@ def get_domain_handler(
         | type[VariantHandler]
         | type[GeneHandler]
         | type[DrugHandler]
-        | type[DiseaseHandler],
+        | type[DiseaseHandler]
+        | type[NCIOrganizationHandler]
+        | type[NCIInterventionHandler]
+        | type[NCIBiomarkerHandler]
+        | type[NCIDiseaseHandler],
     ] = {
         "article": ArticleHandler,
         "trial": TrialHandler,
@@ -423,6 +617,10 @@ def get_domain_handler(
         "gene": GeneHandler,
         "drug": DrugHandler,
         "disease": DiseaseHandler,
+        "nci_organization": NCIOrganizationHandler,
+        "nci_intervention": NCIInterventionHandler,
+        "nci_biomarker": NCIBiomarkerHandler,
+        "nci_disease": NCIDiseaseHandler,
     }
 
     handler = handlers.get(domain)

@@ -108,6 +108,9 @@ markers = [
 filterwarnings = [
     # Ignore protobuf version warnings from AlphaGenome
     "ignore:Protobuf gencode version.*is exactly one major version older.*:UserWarning",
+    # Ignore false positive warning from pytest-xdist about coroutines
+    # This occurs during parallel test execution when mock objects are cleaned up
+    "ignore:coroutine 'search_trials_unified' was never awaited:RuntimeWarning",
 ]
 
 [tool.ruff]
