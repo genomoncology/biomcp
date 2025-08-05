@@ -9,6 +9,7 @@ from typing import Any
 
 from ..constants import NCI_BIOMARKERS_URL
 from ..integrations.cts_api import CTSAPIError, make_cts_request
+from ..utils import parse_or_query
 
 logger = logging.getLogger(__name__)
 
@@ -206,6 +207,96 @@ def _format_single_biomarker(biomarker: dict[str, Any]) -> list[str]:
 
     lines.append("")
     return lines
+
+
+async def search_biomarkers_with_or(
+    name_query: str,
+    eligibility_criterion: str | None = None,
+    biomarker_type: str | None = None,
+    codes: list[str] | None = None,
+    assay_purpose: str | None = None,
+    include: list[str] | None = None,
+    sort: str | None = None,
+    order: str | None = None,
+    page_size: int = 20,
+    page: int = 1,
+    api_key: str | None = None,
+) -> dict[str, Any]:
+    """
+    Search for biomarkers with OR query support.
+
+    This function handles OR queries by making multiple API calls and combining results.
+    For example: "PD-L1 OR CD274 OR programmed death ligand 1" will search for each term.
+
+    Args:
+        name_query: Name query that may contain OR operators
+        Other args same as search_biomarkers
+
+    Returns:
+        Combined results from all searches with duplicates removed
+    """
+    # Check if this is an OR query
+    if " OR " in name_query or " or " in name_query:
+        search_terms = parse_or_query(name_query)
+        logger.info(f"Parsed OR query into terms: {search_terms}")
+    else:
+        # Single term search
+        search_terms = [name_query]
+
+    # Collect all unique biomarkers
+    all_biomarkers = {}
+    total_found = 0
+
+    # Search for each term
+    for term in search_terms:
+        logger.info(f"Searching biomarkers for term: {term}")
+        try:
+            results = await search_biomarkers(
+                name=term,
+                eligibility_criterion=eligibility_criterion,
+                biomarker_type=biomarker_type,
+                codes=codes,
+                assay_purpose=assay_purpose,
+                include=include,
+                sort=sort,
+                order=order,
+                page_size=page_size,  # Get full page size for each term
+                page=page,
+                api_key=api_key,
+            )
+
+            # Add unique biomarkers (deduplicate by ID)
+            for biomarker in results.get("biomarkers", []):
+                bio_id = biomarker.get("id", biomarker.get("biomarker_id"))
+                if bio_id and bio_id not in all_biomarkers:
+                    all_biomarkers[bio_id] = biomarker
+
+            total_found += results.get("total", 0)
+
+        except Exception as e:
+            logger.warning(f"Failed to search for term '{term}': {e}")
+            # Continue with other terms
+
+    # Convert back to list and apply pagination
+    unique_biomarkers = list(all_biomarkers.values())
+
+    # Sort if requested (by name by default for consistent results)
+    if sort == "name" or sort is None:
+        unique_biomarkers.sort(key=lambda x: x.get("name", "").lower())
+
+    # Apply pagination to combined results
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    paginated_biomarkers = unique_biomarkers[start_idx:end_idx]
+
+    return {
+        "biomarkers": paginated_biomarkers,
+        "total": len(unique_biomarkers),
+        "page": page,
+        "page_size": page_size,
+        "search_terms": search_terms,  # Include what we searched for
+        "total_found_across_terms": total_found,  # Total before deduplication
+    }
 
 
 def format_biomarker_results(results: dict[str, Any]) -> str:

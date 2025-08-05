@@ -4,6 +4,6 @@ Note: CTRP documentation indicates biomarker data may have limited public availa
 This module focuses on trial eligibility biomarkers.
 """
 
-from .search import search_biomarkers
+from .search import search_biomarkers, search_biomarkers_with_or
 
-__all__ = ["search_biomarkers"]
+__all__ = ["search_biomarkers", "search_biomarkers_with_or"]

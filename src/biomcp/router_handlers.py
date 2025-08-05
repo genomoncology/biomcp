@@ -225,17 +225,32 @@ async def handle_nci_organization_search(
     logger.info("Executing NCI organization search")
 
     try:
-        from biomcp.organizations import search_organizations
-
-        results = await search_organizations(
-            name=name,
-            org_type=organization_type,
-            city=city,
-            state=state,
-            page_size=page_size,
-            page=page,
-            api_key=api_key,
+        from biomcp.organizations import (
+            search_organizations,
+            search_organizations_with_or,
         )
+
+        # Check if name contains OR query
+        if name and (" OR " in name or " or " in name):
+            results = await search_organizations_with_or(
+                name_query=name,
+                org_type=organization_type,
+                city=city,
+                state=state,
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
+        else:
+            results = await search_organizations(
+                name=name,
+                org_type=organization_type,
+                city=city,
+                state=state,
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
 
         items = results.get("organizations", [])
         total = results.get("total", len(items))
@@ -260,16 +275,30 @@ async def handle_nci_intervention_search(
     logger.info("Executing NCI intervention search")
 
     try:
-        from biomcp.interventions import search_interventions
-
-        results = await search_interventions(
-            name=name,
-            intervention_type=intervention_type,
-            synonyms=synonyms,
-            page_size=page_size,
-            page=page,
-            api_key=api_key,
+        from biomcp.interventions import (
+            search_interventions,
+            search_interventions_with_or,
         )
+
+        # Check if name contains OR query
+        if name and (" OR " in name or " or " in name):
+            results = await search_interventions_with_or(
+                name_query=name,
+                intervention_type=intervention_type,
+                synonyms=synonyms,
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
+        else:
+            results = await search_interventions(
+                name=name,
+                intervention_type=intervention_type,
+                synonyms=synonyms,
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
 
         items = results.get("interventions", [])
         total = results.get("total", len(items))
@@ -295,17 +324,32 @@ async def handle_nci_biomarker_search(
     logger.info("Executing NCI biomarker search")
 
     try:
-        from biomcp.biomarkers import search_biomarkers
-
-        results = await search_biomarkers(
-            name=name,
-            eligibility_criterion=gene,  # Map gene to eligibility_criterion
-            biomarker_type=biomarker_type,
-            assay_purpose=assay_type,  # Map assay_type to assay_purpose
-            page_size=page_size,
-            page=page,
-            api_key=api_key,
+        from biomcp.biomarkers import (
+            search_biomarkers,
+            search_biomarkers_with_or,
         )
+
+        # Check if name contains OR query
+        if name and (" OR " in name or " or " in name):
+            results = await search_biomarkers_with_or(
+                name_query=name,
+                eligibility_criterion=gene,  # Map gene to eligibility_criterion
+                biomarker_type=biomarker_type,
+                assay_purpose=assay_type,  # Map assay_type to assay_purpose
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
+        else:
+            results = await search_biomarkers(
+                name=name,
+                eligibility_criterion=gene,  # Map gene to eligibility_criterion
+                biomarker_type=biomarker_type,
+                assay_purpose=assay_type,  # Map assay_type to assay_purpose
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
 
         items = results.get("biomarkers", [])
         total = results.get("total", len(items))
@@ -330,16 +374,27 @@ async def handle_nci_disease_search(
     logger.info("Executing NCI disease search")
 
     try:
-        from biomcp.diseases import search_diseases
+        from biomcp.diseases import search_diseases, search_diseases_with_or
 
-        results = await search_diseases(
-            name=name,
-            include_synonyms=include_synonyms,
-            category=category,
-            page_size=page_size,
-            page=page,
-            api_key=api_key,
-        )
+        # Check if name contains OR query
+        if name and (" OR " in name or " or " in name):
+            results = await search_diseases_with_or(
+                name_query=name,
+                include_synonyms=include_synonyms,
+                category=category,
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
+        else:
+            results = await search_diseases(
+                name=name,
+                include_synonyms=include_synonyms,
+                category=category,
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
 
         items = results.get("diseases", [])
         total = results.get("total", len(items))

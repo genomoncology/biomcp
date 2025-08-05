@@ -5,6 +5,7 @@ from typing import Any
 
 from ..constants import NCI_INTERVENTIONS_URL
 from ..integrations.cts_api import CTSAPIError, make_cts_request
+from ..utils import parse_or_query
 
 logger = logging.getLogger(__name__)
 
@@ -233,3 +234,97 @@ def format_intervention_results(results: dict[str, Any]) -> str:
         lines.append("")
 
     return "\n".join(lines)
+
+
+async def search_interventions_with_or(
+    name_query: str,
+    intervention_type: str | None = None,
+    category: str | None = None,
+    codes: list[str] | None = None,
+    include: list[str] | None = None,
+    sort: str | None = None,
+    order: str | None = None,
+    synonyms: bool = True,
+    page_size: int | None = None,
+    page: int = 1,
+    api_key: str | None = None,
+) -> dict[str, Any]:
+    """
+    Search for interventions with OR query support.
+
+    This function handles OR queries by making multiple API calls and combining results.
+    For example: "pembrolizumab OR nivolumab" will search for each term.
+
+    Args:
+        name_query: Name query that may contain OR operators
+        Other args same as search_interventions
+
+    Returns:
+        Combined results from all searches with duplicates removed
+    """
+    # Check if this is an OR query
+    if " OR " in name_query or " or " in name_query:
+        search_terms = parse_or_query(name_query)
+        logger.info(f"Parsed OR query into terms: {search_terms}")
+    else:
+        # Single term search
+        search_terms = [name_query]
+
+    # Collect all unique interventions
+    all_interventions = {}
+    total_found = 0
+
+    # Search for each term
+    for term in search_terms:
+        logger.info(f"Searching interventions for term: {term}")
+        try:
+            results = await search_interventions(
+                name=term,
+                intervention_type=intervention_type,
+                category=category,
+                codes=codes,
+                include=include,
+                sort=sort,
+                order=order,
+                synonyms=synonyms,
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
+
+            # Add unique interventions (deduplicate by ID)
+            for intervention in results.get("interventions", []):
+                int_id = intervention.get(
+                    "id", intervention.get("intervention_id")
+                )
+                if int_id and int_id not in all_interventions:
+                    all_interventions[int_id] = intervention
+
+            total_found += results.get("total", 0)
+
+        except Exception as e:
+            logger.warning(f"Failed to search for term '{term}': {e}")
+            # Continue with other terms
+
+    # Convert back to list and apply pagination
+    unique_interventions = list(all_interventions.values())
+
+    # Sort by name for consistent results
+    unique_interventions.sort(key=lambda x: x.get("name", "").lower())
+
+    # Apply pagination to combined results
+    if page_size:
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        paginated_interventions = unique_interventions[start_idx:end_idx]
+    else:
+        paginated_interventions = unique_interventions
+
+    return {
+        "interventions": paginated_interventions,
+        "total": len(unique_interventions),
+        "page": page,
+        "page_size": page_size,
+        "search_terms": search_terms,  # Include what we searched for
+        "total_found_across_terms": total_found,  # Total before deduplication
+    }

@@ -294,15 +294,39 @@ async def search(  # noqa: C901
 
     # Determine search mode
     if query and query.strip():
-        # Unified query language mode
-        logger.info(f"Using unified query mode: {query}")
-        return await _unified_search(
-            query=query,
-            max_results_per_domain=max_results_per_domain
-            or MAX_RESULTS_PER_DOMAIN_DEFAULT,
-            domains=None,
-            explain_query=explain_query,
+        # Check if this is a unified query (contains field syntax like "gene:" or "AND")
+        is_unified_query = any(
+            marker in query for marker in [":", " AND ", " OR "]
         )
+
+        # Check if this is an NCI domain
+        nci_domains = [
+            "nci_biomarker",
+            "nci_organization",
+            "nci_intervention",
+            "nci_disease",
+        ]
+        is_nci_domain = domain in nci_domains if domain else False
+
+        if not domain or (domain and is_unified_query and not is_nci_domain):
+            # Use unified query mode if:
+            # 1. No domain specified, OR
+            # 2. Domain specified but query has field syntax AND it's not an NCI domain
+            logger.info(f"Using unified query mode: {query}")
+            return await _unified_search(
+                query=query,
+                max_results_per_domain=max_results_per_domain
+                or MAX_RESULTS_PER_DOMAIN_DEFAULT,
+                domains=None,
+                explain_query=explain_query,
+            )
+        elif domain:
+            # Domain-specific search with query as keyword
+            logger.info(
+                f"Domain-specific search with query as keyword: domain={domain}, query={query}"
+            )
+            # Convert query to keywords parameter for domain-specific search
+            keywords = [query]
 
     # Legacy domain-based search
     if not domain:

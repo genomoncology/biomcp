@@ -5,6 +5,7 @@ from typing import Any
 
 from ..constants import NCI_DISEASES_URL
 from ..integrations.cts_api import CTSAPIError, make_cts_request
+from ..utils import parse_or_query
 
 logger = logging.getLogger(__name__)
 
@@ -273,3 +274,98 @@ def format_disease_results(results: dict[str, Any]) -> str:
         lines.extend(_format_single_disease(disease))
 
     return "\n".join(lines)
+
+
+async def search_diseases_with_or(
+    name_query: str,
+    include_synonyms: bool = True,
+    category: str | None = None,
+    disease_type: str | None = None,
+    codes: list[str] | None = None,
+    parent_ids: list[str] | None = None,
+    ancestor_ids: list[str] | None = None,
+    include: list[str] | None = None,
+    sort: str | None = None,
+    order: str | None = None,
+    page_size: int = 20,
+    page: int = 1,
+    api_key: str | None = None,
+) -> dict[str, Any]:
+    """
+    Search for diseases with OR query support.
+
+    This function handles OR queries by making multiple API calls and combining results.
+    For example: "melanoma OR lung cancer" will search for each term.
+
+    Args:
+        name_query: Name query that may contain OR operators
+        Other args same as search_diseases
+
+    Returns:
+        Combined results from all searches with duplicates removed
+    """
+    # Check if this is an OR query
+    if " OR " in name_query or " or " in name_query:
+        search_terms = parse_or_query(name_query)
+        logger.info(f"Parsed OR query into terms: {search_terms}")
+    else:
+        # Single term search
+        search_terms = [name_query]
+
+    # Collect all unique diseases
+    all_diseases = {}
+    total_found = 0
+
+    # Search for each term
+    for term in search_terms:
+        logger.info(f"Searching diseases for term: {term}")
+        try:
+            results = await search_diseases(
+                name=term,
+                include_synonyms=include_synonyms,
+                category=category,
+                disease_type=disease_type,
+                codes=codes,
+                parent_ids=parent_ids,
+                ancestor_ids=ancestor_ids,
+                include=include,
+                sort=sort,
+                order=order,
+                page_size=page_size,
+                page=page,
+                api_key=api_key,
+            )
+
+            # Add unique diseases (deduplicate by ID)
+            for disease in results.get("diseases", []):
+                disease_id = disease.get("id", disease.get("disease_id"))
+                if disease_id and disease_id not in all_diseases:
+                    all_diseases[disease_id] = disease
+
+            total_found += results.get("total", 0)
+
+        except Exception as e:
+            logger.warning(f"Failed to search for term '{term}': {e}")
+            # Continue with other terms
+
+    # Convert back to list and apply pagination
+    unique_diseases = list(all_diseases.values())
+
+    # Sort by name for consistent results
+    unique_diseases.sort(
+        key=lambda x: x.get("name", x.get("preferred_name", "")).lower()
+    )
+
+    # Apply pagination to combined results
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    paginated_diseases = unique_diseases[start_idx:end_idx]
+
+    return {
+        "diseases": paginated_diseases,
+        "total": len(unique_diseases),
+        "page": page,
+        "page_size": page_size,
+        "search_terms": search_terms,  # Include what we searched for
+        "total_found_across_terms": total_found,  # Total before deduplication
+    }
