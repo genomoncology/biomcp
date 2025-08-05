@@ -13,7 +13,7 @@ genes, variants, diseases, chemicals, etc.).
 
 > **CLI Documentation**: For information on using these APIs through the BioMCP
 > command line interface, see
-> the [Articles CLI Documentation](../cli/articles.md).
+> the [Articles CLI Documentation](../user-guides/01-command-line-interface.md#article-commands).
 
 ## API Workflow
 

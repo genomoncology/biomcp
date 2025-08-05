@@ -44,7 +44,7 @@ The fastest way to get started with BioMCP is to set it up with Claude Desktop:
 
 4. **Start chatting with Claude** about biomedical topics!
 
-For detailed setup instructions and examples, see our [Claude Desktop Tutorial](tutorials/claude-desktop.md).
+For detailed setup instructions and examples, see our [Claude Desktop Integration Guide](getting-started/02-claude-desktop-integration.md).
 
 ## What is BioMCP?
 
@@ -139,16 +139,16 @@ BioMCP provides the following resources through the MCP interface:
 
 ### Getting Started
 
-- [**Claude Desktop Tutorial**](tutorials/claude-desktop.md) - Set up and use BioMCP with Claude Desktop
-- [**MCP Inspector Tutorial**](tutorials/mcp-inspector.md) - Test and debug BioMCP directly
-- [**Python SDK Tutorial**](tutorials/python-sdk.md) - Use BioMCP as a Python library
-- [**MCP Client Tutorial**](tutorials/mcp-client.md) - Integrate with MCP clients programmatically
+- [**CLI Quickstart**](getting-started/01-quickstart-cli.md) - Get started with BioMCP command-line interface
+- [**Claude Desktop Integration**](getting-started/02-claude-desktop-integration.md) - Set up and use BioMCP with Claude Desktop
+- [**Authentication and API Keys**](getting-started/03-authentication-and-api-keys.md) - Configure API keys for enhanced features
+- [**MCP Tools Reference**](user-guides/02-mcp-tools-reference.md) - Complete reference for all BioMCP MCP tools
 
 ### Advanced Features
 
-- [**AlphaGenome Setup Guide**](tutorials/alphagenome-setup.md) - Configure Google DeepMind's AlphaGenome for variant effect prediction
-- [**AlphaGenome Prompt Examples**](tutorials/alphagenome-prompts.md) - Example prompts and workflows for variant analysis with AI
-- [**AlphaGenome with Docker**](tutorials/docker-alphagenome.md) - Run AlphaGenome in Docker containers
+- [**Predict Variant Effects with AlphaGenome**](how-to-guides/04-predict-variant-effects-with-alphagenome.md) - Configure and use Google DeepMind's AlphaGenome for variant effect prediction
+- [**Claude Code with BioMCP AlphaGenome**](tutorials/claude-code-biomcp-alphagenome.md) - Complete tutorial for using Claude Code with BioMCP and AlphaGenome
+- [**Server Deployment**](developer-guides/01-server-deployment.md) - Deploy BioMCP server in production environments
 
 ### Example Prompts
 
@@ -163,7 +163,7 @@ The easiest way to test your BioMCP setup is with the MCP Inspector:
 npx @modelcontextprotocol/inspector uv run --with biomcp-python biomcp run
 ```
 
-This launches a web interface where you can test each BioMCP tool directly. For detailed instructions, see the [MCP Inspector Tutorial](tutorials/mcp-inspector.md).
+This launches a web interface where you can test each BioMCP tool directly. For detailed instructions, see the [Integrating with IDEs and Clients](user-guides/03-integrating-with-ides-and-clients.md) guide.
 
 ## Additional Usage Options
 
@@ -190,11 +190,11 @@ For programmatic access, BioMCP can be used as a Python library:
 pip install biomcp-python
 ```
 
-See the [Python SDK Tutorial](tutorials/python-sdk.md) for code examples.
+See the [Command Line Interface](user-guides/01-command-line-interface.md) guide for more details.
 
 ### MCP Client Integration
 
-For developers building MCP-compatible applications, BioMCP can be integrated using the MCP client libraries. See the [MCP Client Tutorial](tutorials/mcp-client.md) for details.
+For developers building MCP-compatible applications, BioMCP can be integrated using the MCP client libraries. See the [Integrating with IDEs and Clients](user-guides/03-integrating-with-ides-and-clients.md) guide for details.
 
 ## License
 

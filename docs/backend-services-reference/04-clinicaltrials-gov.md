@@ -1,6 +1,6 @@
 # ClinicalTrials.gov API
 
-This document outlines the key aspects of the public ClinicalTrials.gov v2 API utilized by BioMCP. Understanding these details can be helpful for advanced users interpreting BioMCP results or for developers extending its capabilities. BioMCP's CLI commands often simplify or combine these parameters for ease of use; refer to the [Trials CLI Documentation](../cli/trials.md) for specific command options.
+This document outlines the key aspects of the public ClinicalTrials.gov v2 API utilized by BioMCP. Understanding these details can be helpful for advanced users interpreting BioMCP results or for developers extending its capabilities. BioMCP's CLI commands often simplify or combine these parameters for ease of use; refer to the [Trials CLI Documentation](../user-guides/01-command-line-interface.md#trial-commands) for specific command options.
 
 ## Overview
 
@@ -9,7 +9,7 @@ access to clinical trial information. This document outlines the API
 implementation details for searching and retrieving clinical trial data.
 
 > **CLI Documentation**: For information on using these APIs through the BioMCP
-> command line interface, see the [Trials CLI Documentation](../cli/trials.md).
+> command line interface, see the [Trials CLI Documentation](../user-guides/01-command-line-interface.md#trial-commands).
 
 ## API Endpoints
 

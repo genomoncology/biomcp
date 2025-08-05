@@ -62,9 +62,10 @@ docs: update-endpoints ## Build and serve the documentation
 	@uv run mkdocs serve
 
 .PHONY: update-endpoints
-update-endpoints: ## Update THIRD_PARTY_ENDPOINTS.md from endpoint registry
-	@echo "🚀 Updating THIRD_PARTY_ENDPOINTS.md"
+update-endpoints: ## Update third-party endpoints documentation
+	@echo "🚀 Updating third-party endpoints documentation"
 	@uv run python scripts/generate_endpoints_doc.py
+	@uv run python docs/developer-guides/generate_endpoints.py
 
 .PHONY: help
 help:
