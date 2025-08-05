@@ -5,6 +5,60 @@ All notable changes to the BioMCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2025-08-05
+
+### Added
+
+- **NCI Clinical Trials Search API Integration** - Enhanced cancer trial search capabilities:
+  - Dual source support for trial search/getter tools (ClinicalTrials.gov + NCI)
+  - NCI API key handling via `NCI_API_KEY` environment variable or parameter
+  - Advanced trial filters: biomarkers, prior therapy, brain metastases acceptance
+  - **6 New MCP Tools** for NCI-specific searches:
+    - `nci_organization_searcher` / `nci_organization_getter`: Cancer centers, hospitals, research institutions
+    - `nci_intervention_searcher` / `nci_intervention_getter`: Drugs, devices, procedures, biologicals
+    - `nci_biomarker_searcher`: Trial eligibility biomarkers (reference genes, branches)
+    - `nci_disease_searcher`: NCI's controlled vocabulary of cancer conditions
+  - **OR Query Support**: All NCI endpoints support OR queries (e.g., "PD-L1 OR CD274")
+  - Real-time access to NCI's curated cancer trials database
+  - Automatic cBioPortal integration for gene searches
+  - Proper NCI parameter mapping (org_city, org_state_or_province, etc.)
+  - Comprehensive error handling for Elasticsearch limits
+
+### Changed
+
+- Enhanced unified search router to properly handle NCI domains
+- Trial search/getter tools now accept `source` parameter ("clinicaltrials" or "nci")
+- Improved domain-specific search logic for query+domain combinations
+
+### Added CLI Commands
+
+```bash
+# Organization search/get
+biomcp organization search "MD Anderson" --api-key YOUR_KEY
+biomcp organization get 12345 --api-key YOUR_KEY
+
+# Intervention search/get  
+biomcp intervention search pembrolizumab --type Drug --api-key YOUR_KEY
+biomcp intervention get 67890 --api-key YOUR_KEY
+
+# Biomarker search
+biomcp biomarker search --name "PD-L1" --api-key YOUR_KEY
+
+# Disease search
+biomcp disease search melanoma --source nci --api-key YOUR_KEY
+
+# Enhanced trial commands with source selection
+biomcp trial search --condition melanoma --source nci --api-key YOUR_KEY
+biomcp trial get NCT04280705 --source nci --api-key YOUR_KEY
+```
+
+### Documentation
+
+- Added NCI tutorial with example prompts: `docs/tutorials/nci-prompts.md`
+- Created API parameter reference: `docs/api-changes/nci-api-parameters.md`
+- Updated CLAUDE.md with NCI usage instructions and parameter notes
+- Requires NCI API key from: https://clinicaltrialsapi.cancer.gov/
+
 ## [0.6.0] - 2025-08-01
 
 ### Added
@@ -306,7 +360,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input validation using Pydantic models
 - Safe string handling in all API calls
 
-[Unreleased]: https://github.com/genomoncology/biomcp/compare/v0.4.6...HEAD
+[Unreleased]: https://github.com/genomoncology/biomcp/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/genomoncology/biomcp/releases/tag/v0.6.2
+[0.6.0]: https://github.com/genomoncology/biomcp/releases/tag/v0.6.0
+[0.5.0]: https://github.com/genomoncology/biomcp/releases/tag/v0.5.0
 [0.4.6]: https://github.com/genomoncology/biomcp/releases/tag/v0.4.6
 [0.4.5]: https://github.com/genomoncology/biomcp/releases/tag/v0.4.5
 [0.4.4]: https://github.com/genomoncology/biomcp/releases/tag/v0.4.4
