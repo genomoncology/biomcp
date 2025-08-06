@@ -14,7 +14,7 @@
       <span class="badge-new">NEW</span>
       Remote BioMCP Now Available!
     </h2>
-    <p>Connect to BioMCP instantly through Claude Desktop - no installation required!</p>
+    <p>Connect to BioMCP instantly through Claude - no installation required!</p>
 
     <div class="announcement-features">
       <div class="feature-item">
