@@ -6,8 +6,8 @@ This guide walks you through searching biomedical literature with automatic canc
 
 When searching for articles about genes, BioMCP automatically enriches your results with:
 
-- **cBioPortal Summary**: Mutation frequencies, hotspots, and cancer type distribution
-- **PubMed Articles**: Peer-reviewed research with entity annotations
+- **cBioPortal Summary**: Mutation frequencies, hotspots, and cancer type distribution ([API Reference](../backend-services-reference/03-cbioportal.md))
+- **PubMed Articles**: Peer-reviewed research with entity annotations ([PubTator3 Reference](../backend-services-reference/06-pubtator3.md))
 - **Preprints**: Latest findings from bioRxiv and medRxiv
 
 ## Basic Article Search

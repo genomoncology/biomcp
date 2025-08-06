@@ -4,6 +4,8 @@
 
 **The 'think' tool must be your FIRST action when using BioMCP. This is not optional.**
 
+For detailed technical documentation on the think tool parameters and usage, see the [MCP Tools Reference - Think Tool](../user-guides/02-mcp-tools-reference.md#3-think).
+
 ## Why Sequential Thinking?
 
 Biomedical research is inherently complex, requiring systematic analysis of interconnected data from multiple sources. The think tool enforces a structured approach that:

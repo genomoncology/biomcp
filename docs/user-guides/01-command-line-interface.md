@@ -41,6 +41,8 @@ Options:
 
 ## Article Commands
 
+For practical examples and workflows, see [How to Find Articles and cBioPortal Data](../how-to-guides/01-find-articles-and-cbioportal-data.md).
+
 ### article search
 
 Search PubMed/PubTator3 for biomedical literature with automatic cBioPortal integration.
@@ -104,6 +106,8 @@ biomcp article get "10.1101/2024.01.20.23288905"
 ```
 
 ## Trial Commands
+
+For practical examples and workflows, see [How to Find Trials with NCI and BioThings](../how-to-guides/02-find-trials-with-nci-and-biothings.md).
 
 ### trial search
 
@@ -202,6 +206,11 @@ biomcp trial get NCT04280705 --source nci --api-key YOUR_KEY
 ```
 
 ## Variant Commands
+
+For practical examples and workflows, see:
+
+- [Get Comprehensive Variant Annotations](../how-to-guides/03-get-comprehensive-variant-annotations.md)
+- [Predict Variant Effects with AlphaGenome](../how-to-guides/04-predict-variant-effects-with-alphagenome.md)
 
 ### variant search
 
@@ -309,6 +318,8 @@ biomcp variant predict chr7 140753336 A T --api-key YOUR_KEY
 
 ## Gene/Drug/Disease Commands
 
+For practical examples using BioThings integration, see [How to Find Trials with NCI and BioThings](../how-to-guides/02-find-trials-with-nci-and-biothings.md#biothings-integration-for-enhanced-search).
+
 ### gene get
 
 Retrieve gene information from MyGene.info.
@@ -359,7 +370,10 @@ biomcp disease get "non-small cell lung cancer"
 
 ## NCI-Specific Commands
 
-These commands require an NCI API key.
+These commands require an NCI API key. For setup instructions and usage examples, see:
+
+- [Authentication and API Keys](../getting-started/03-authentication-and-api-keys.md#nci-clinical-trials-api)
+- [How to Find Trials with NCI and BioThings](../how-to-guides/02-find-trials-with-nci-and-biothings.md#using-nci-api-advanced-features)
 
 ### organization search
 
@@ -428,6 +442,8 @@ biomcp biomarker search --gene EGFR \
 ```
 
 ## Health Command
+
+For monitoring API status before bulk operations, see the [Performance Optimizations Guide](../developer-guides/07-performance-optimizations.md).
 
 ### health check
 

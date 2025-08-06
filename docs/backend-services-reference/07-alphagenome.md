@@ -2,6 +2,10 @@
 
 Google DeepMind's AlphaGenome provides AI-powered predictions of variant effects on gene regulation, chromatin accessibility, and splicing.
 
+## Usage Guide
+
+For a step-by-step tutorial on using AlphaGenome for variant effect prediction, see [How to Predict Variant Effects with AlphaGenome](../how-to-guides/04-predict-variant-effects-with-alphagenome.md).
+
 ## Overview
 
 AlphaGenome predicts regulatory effects of genetic variants by analyzing:

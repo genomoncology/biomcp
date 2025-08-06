@@ -1,0 +1,24 @@
+// Example privacy-conscious analytics configuration
+// Rename to matomo.js and update with your instance details
+
+// Matomo (formerly Piwik) - Open Source Analytics
+var _paq = window._paq = window._paq || [];
+
+// Privacy-conscious configuration
+_paq.push(['disableCookies']); // No cookies
+_paq.push(['setDoNotTrack', true]); // Respect DNT
+_paq.push(['trackPageView']);
+_paq.push(['enableLinkTracking']);
+
+(function() {
+  // Replace with your Matomo instance URL
+  var u="//your-matomo-instance.com/";
+  _paq.push(['setTrackerUrl', u+'matomo.php']);
+  _paq.push(['setSiteId', '1']); // Replace with your site ID
+
+  var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+  g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+})();
+
+// Alternative: Simple page view counter without tracking
+// Could be implemented with a privacy-respecting service

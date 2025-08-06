@@ -1,0 +1,128 @@
+BioMCP System Architecture
+==========================
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                              USER INTERFACES                             │
+├────────────────┬───────────────────┬───────────────┬───────────────────┤
+│                │                   │               │                   │
+│   CLI Tool     │  Claude Desktop   │  Python SDK   │   Custom Client   │
+│  (biomcp)      │   (MCP Client)    │   (async)     │    (your app)     │
+│                │                   │               │                   │
+└────────┬───────┴─────────┬─────────┴───────┬───────┴───────────┬───────┘
+         │                 │                 │                   │
+         └─────────────────┴─────────────────┴───────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                            BioMCP CORE SERVER                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────────┐  │
+│  │   Router    │  │ Rate Limiter │  │ Cache Manager│  │   Logger   │  │
+│  │             │  │              │  │              │  │            │  │
+│  └──────┬──────┘  └──────────────┘  └──────────────┘  └────────────┘  │
+│         │                                                               │
+│         ▼                                                               │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                      Domain Handlers                             │   │
+│  ├─────────────┬─────────────┬─────────────┬──────────────────────┤   │
+│  │  Articles   │   Trials    │  Variants   │  Genes/Drugs/Disease │   │
+│  │  Handler    │   Handler   │  Handler    │      Handler         │   │
+│  └──────┬──────┴──────┬──────┴──────┬──────┴──────────┬───────────┘   │
+│         │             │             │                 │                 │
+└─────────┼─────────────┼─────────────┼─────────────────┼─────────────────┘
+          │             │             │                 │
+          ▼             ▼             ▼                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          EXTERNAL DATA SOURCES                           │
+├─────────────┬─────────────┬─────────────┬──────────────────────────────┤
+│             │             │             │                              │
+│  PubMed/    │ Clinical    │ MyVariant   │        BioThings Suite       │
+│  PubTator3  │ Trials.gov  │   .info     │  (MyGene/MyDisease/MyChem)  │
+│             │    + NCI    │             │                              │
+│             │             │             │                              │
+├─────────────┴─────────────┴─────────────┴──────────────────────────────┤
+│                                                                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                 │
+│  │  cBioPortal  │  │  AlphaGenome │  │  Europe PMC  │                 │
+│  │   (Cancer)   │  │ (Predictions)│  │  (Preprints) │                 │
+│  └──────────────┘  └──────────────┘  └──────────────┘                 │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+Data Flow Example: Article Search with Gene
+===========================================
+
+User: "biomcp article search --gene BRAF --disease melanoma"
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ Parse Command │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ Check Cache   │──── Hit ────→ Return Cached
+                    └───────┬───────┘
+                            │ Miss
+                            ▼
+                ┌───────────────────────┐
+                │ Entity Autocomplete   │
+                │ (BRAF → Gene:673)     │
+                └───────────┬───────────┘
+                            │
+                ┌───────────┴───────────┐
+                │                       │
+                ▼                       ▼
+        ┌──────────────┐      ┌──────────────┐
+        │  PubTator3   │      │  cBioPortal  │
+        │   Search     │      │  Gene Query  │
+        └──────┬───────┘      └──────┬───────┘
+                │                       │
+                └───────────┬───────────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ Merge Results │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ Format Output │
+                    └───────┬───────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │ Store in Cache│
+                    └───────┬───────┘
+                            │
+                            ▼
+                        Return to User
+
+
+Key Components
+==============
+
+1. USER INTERFACES
+   - CLI: Command-line interface for direct use
+   - Claude Desktop: MCP client integration
+   - Python SDK: Programmatic async access
+   - Custom Client: Your own MCP implementation
+
+2. CORE SERVER
+   - Router: Directs requests to appropriate handlers
+   - Rate Limiter: Prevents API abuse
+   - Cache Manager: Reduces redundant API calls
+   - Logger: Tracks usage and errors
+
+3. DOMAIN HANDLERS
+   - Articles: PubMed/PubTator3 + cBioPortal integration
+   - Trials: ClinicalTrials.gov + NCI CTS
+   - Variants: MyVariant.info + AlphaGenome
+   - Genes/Drugs/Disease: BioThings suite
+
+4. EXTERNAL SOURCES
+   - All data comes from authoritative biomedical databases
+   - No data is stored locally (except cache)
+   - Real-time queries ensure current information

@@ -12,6 +12,8 @@ AlphaGenome predicts how DNA variants affect:
 - **Regulatory Elements**: Impact on enhancers, promoters, and TFBS
 - **3D Chromatin**: Changes in chromatin interactions
 
+For technical details on the AlphaGenome integration, see the [AlphaGenome API Reference](../backend-services-reference/07-alphagenome.md).
+
 ## Setup and API Key
 
 ### Get Your API Key
@@ -19,6 +21,8 @@ AlphaGenome predicts how DNA variants affect:
 1. Visit [AlphaGenome Portal](https://deepmind.google.com/science/alphagenome)
 2. Register for non-commercial use
 3. Receive API key via email
+
+For detailed setup instructions, see [Authentication and API Keys](../getting-started/03-authentication-and-api-keys.md#alphagenome).
 
 ### Configure API Key
 

@@ -1,47 +1,22 @@
 # What is BioMCP?
 
-In the rapidly evolving landscape of artificial intelligence, the power of
-large language models (LLMs) like ChatGPT and Claude has transformed how we
-interact with information. However, these models face a significant limitation:
-without context, they remain static and incomplete, especially in complex
-domains like healthcare and biomedical research.
+BioMCP is an open-source implementation of the Model Context Protocol (MCP) designed for biomedical research. It connects AI assistants to specialized biomedical databases, enabling natural language access to complex scientific data.
 
-This is where BioMCP comes in – an open-source implementation of the Model
-Context Protocol (MCP) specifically designed for biomedical applications. But
-what exactly does that mean, and why does it matter?
+[![Watch: What is BioMCP?](../blog/images/what_is_biomcp_thumbnail.png)](https://www.youtube.com/watch?v=bKxOWrWUUhM)
 
-Video Link:
-[![▶️ Watch the video](../blog/images/what_is_biomcp_thumbnail.png)](https://www.youtube.com/watch?v=bKxOWrWUUhM)
+## The Bridge to Biomedical Data
 
-## Bridging the Gap Between AI and Specialized Knowledge
+BioMCP provides AI assistants with direct access to specialized biomedical databases that aren't available through general web search. Built on Anthropic's Model Context Protocol standard, it creates a toolbox that enables natural language queries across multiple scientific data sources.
 
-BioMCP serves as a crucial bridge connecting AI assistants and agents to
-specialized biomedical data sources. While LLMs have been trained on vast
-amounts of public data and now have web search capabilities, they often lack
-the specialized context needed for biomedical research.
+## Connected Data Sources
 
-The Model Context Protocol, recently released by Anthropic, has emerged as a
-standard for empowering LLMs with tools, resources, and prompts. BioMCP builds
-on this foundation, creating a specialized toolbox that enables AI systems to
-access and interpret complex biomedical information through natural language
-conversation.
-
-## What Can BioMCP Access?
-
-BioMCP provides seamless connections to three critical biomedical resources:
-
-1. **Clinical Trials** - Through the ClinicalTrials.gov API, researchers can
-   discover active trials for specific drugs, diseases, or locations. The AI
-   assistant parses natural language queries into structured search parameters,
-   retrieving and explaining relevant trials.
-
-2. **Genomic Variants** - Using the MyVariant.info API, BioMCP enables rich
-   filtering, sorting, and identification of specific genomic variants, making
-   complex genomic data accessible through conversation.
-
-3. **Research Literature** - BioMCP connects to PubMed through PubTator3, which
-   excels at recognizing biomedical entities like drugs, diseases, genes, and
-   variants, dramatically improving search relevance and retrieval.
+- **PubMed/PubTator3**: 30M+ research articles with entity recognition for genes, diseases, drugs, and variants
+- **ClinicalTrials.gov**: 400K+ clinical trials searchable by condition, location, phase, and eligibility
+- **MyVariant.info**: Comprehensive variant annotations with clinical significance
+- **cBioPortal**: Cancer genomics data automatically integrated with searches
+- **BioThings APIs**: Real-time gene, drug, and disease information
+- **NCI CTS API**: Enhanced cancer trial search with biomarker filtering
+- **AlphaGenome**: Variant effect predictions using Google DeepMind's AI
 
 ## How Does It Transform Research?
 

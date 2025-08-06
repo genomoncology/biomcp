@@ -2,6 +2,12 @@
 
 BioMCP provides 24 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.
 
+## Related Guides
+
+- **Conceptual Overview**: [Sequential Thinking with the Think Tool](../concepts/03-sequential-thinking-with-the-think-tool.md)
+- **Practical Examples**: See the [How-to Guides](../how-to-guides/01-find-articles-and-cbioportal-data.md) for real-world usage patterns
+- **Integration Setup**: [Claude Desktop Integration](../getting-started/02-claude-desktop-integration.md)
+
 ## Tool Categories
 
 | Category            | Count | Tools                                                         |

@@ -30,7 +30,8 @@ pip install biomcp
 Let's search for recent articles about BRAF mutations in melanoma:
 
 ```bash
-biomcp article search --gene BRAF --disease melanoma --limit 5
+biomcp article search \
+  --gene BRAF --disease melanoma --limit 5
 ```
 
 This command:
@@ -60,7 +61,9 @@ The search returns:
 Find active trials for lung cancer:
 
 ```bash
-biomcp trial search --condition "lung cancer" --status RECRUITING --limit 5
+biomcp trial search \
+  --condition "lung cancer" \
+  --status RECRUITING --limit 5
 ```
 
 ### Get Gene Information
@@ -84,7 +87,9 @@ biomcp drug get imatinib
 Find pathogenic variants in the BRCA1 gene:
 
 ```bash
-biomcp variant search --gene BRCA1 --significance pathogenic --limit 5
+biomcp variant search \
+  --gene BRCA1 --significance pathogenic \
+  --limit 5
 ```
 
 ## Next Steps
@@ -111,7 +116,9 @@ See [Authentication and API Keys](03-authentication-and-api-keys.md) for detaile
 - **Combine Multiple Filters**:
 
   ```bash
-  biomcp article search --gene EGFR --disease "lung cancer" --chemical erlotinib
+  biomcp article search \
+    --gene EGFR --disease "lung cancer" \
+    --chemical erlotinib
   ```
 
 - **Use OR Logic in Keywords**:
@@ -145,14 +152,19 @@ biomcp article search --help
 
 ```bash
 # Find articles about EGFR T790M resistance mutation
-biomcp article search --gene EGFR --keyword "T790M|p.T790M" --disease "lung cancer"
+biomcp article search --gene EGFR \
+  --keyword "T790M|p.T790M" \
+  --disease "lung cancer"
 ```
 
 ### 2. Find Trials for a Patient
 
 ```bash
 # Active trials for HER2-positive breast cancer
-biomcp trial search --condition "breast cancer" --keyword "HER2 positive" --status RECRUITING
+biomcp trial search \
+  --condition "breast cancer" \
+  --keyword "HER2 positive" \
+  --status RECRUITING
 ```
 
 ### 3. Investigate Drug Mechanisms
@@ -191,12 +203,14 @@ If you encounter rate limit errors:
 - Consider setting up API keys for higher limits
 - Use the `--limit` parameter to reduce result count
 
-## What's Next?
+## Next Steps
 
-Now that you've run your first searches, explore:
+Now that you've run your first searches, explore these resources:
 
-1. [Claude Desktop Integration](02-claude-desktop-integration.md) - Use BioMCP with AI assistants
-2. [MCP Tools Reference](../user-guides/02-mcp-tools-reference.md) - Complete tool documentation
-3. [How-to Guides](../how-to-guides/01-find-articles-and-cbioportal-data.md) - Step-by-step tutorials for complex tasks
+1. **[Complete CLI Reference](../user-guides/01-command-line-interface.md)** - Comprehensive documentation for all commands and options
+2. **[Claude Desktop Integration](02-claude-desktop-integration.md)** - Use BioMCP with AI assistants
+3. **[Set up API Keys](03-authentication-and-api-keys.md)** - Enable advanced features with NCI, AlphaGenome, and cBioPortal
+4. **[How-to Guides](../how-to-guides/01-find-articles-and-cbioportal-data.md)** - Step-by-step tutorials for complex research workflows
+5. **[Deep Researcher Persona](../concepts/02-the-deep-researcher-persona.md)** - Learn about BioMCP's philosophy and methodology
 
 Happy researching! 🧬🔬

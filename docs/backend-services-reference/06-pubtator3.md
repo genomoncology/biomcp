@@ -15,6 +15,10 @@ genes, variants, diseases, chemicals, etc.).
 > command line interface, see
 > the [Articles CLI Documentation](../user-guides/01-command-line-interface.md#article-commands).
 
+## Usage Guide
+
+For practical examples of searching articles with PubTator3, see [How to Find Articles and cBioPortal Data](../how-to-guides/01-find-articles-and-cbioportal-data.md).
+
 ## API Workflow
 
 The PubTator3 integration follows a three-step workflow:

@@ -6,10 +6,10 @@ This guide demonstrates how to retrieve and interpret genetic variant informatio
 
 BioMCP provides variant annotations from multiple sources:
 
-- **MyVariant.info**: Core variant database with clinical significance
+- **MyVariant.info**: Core variant database with clinical significance ([BioThings Reference](../backend-services-reference/02-biothings-suite.md))
 - **External Annotations**: TCGA cancer data, 1000 Genomes population frequencies
-- **cBioPortal Integration**: Cancer-specific mutation context
-- **BioThings Links**: Connected gene, disease, and drug information
+- **cBioPortal Integration**: Cancer-specific mutation context ([API Reference](../backend-services-reference/03-cbioportal.md))
+- **BioThings Links**: Connected gene, disease, and drug information ([BioThings Suite](../backend-services-reference/02-biothings-suite.md))
 
 ## Basic Variant Lookup
 
@@ -143,6 +143,8 @@ high_impact = await variant_searcher(
 
 ## External Database Integration
 
+For technical details on external data sources, see the [BioThings Suite Reference](../backend-services-reference/02-biothings-suite.md).
+
 ### TCGA Cancer Data
 
 Variants automatically include TCGA annotations when available:
@@ -183,6 +185,8 @@ if variant.consequences:
 ```
 
 ## Integration with Other BioMCP Tools
+
+BioMCP's unified architecture allows seamless integration between variant data and other biomedical information. For implementation details, see the [Transport Protocol Guide](../developer-guides/04-transport-protocol.md).
 
 ### Variant to Gene Information
 

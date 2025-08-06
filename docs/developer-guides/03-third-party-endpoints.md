@@ -213,17 +213,17 @@ BioMCP connects to 11 external domains across 24 endpoints.
 
 | Domain               | Category              | Endpoints |
 | -------------------- | --------------------- | --------- |
-| api.biorxiv.org      | biomedical_literature | 2         |
-| api.gdc.cancer.gov   | variant_databases     | 2         |
-| clinicaltrials.gov   | clinical_trials       | 1         |
-| mychem.info          | variant_databases     | 2         |
-| mydisease.info       | variant_databases     | 2         |
-| mygene.info          | variant_databases     | 2         |
-| myvariant.info       | variant_databases     | 2         |
-| rest.ensembl.org     | variant_databases     | 1         |
-| www.cbioportal.org   | cancer_genomics       | 6         |
-| www.ebi.ac.uk        | biomedical_literature | 1         |
-| www.ncbi.nlm.nih.gov | biomedical_literature | 3         |
+| api.biorxiv.org | biomedical_literature | 2 |
+| api.gdc.cancer.gov | variant_databases | 2 |
+| clinicaltrials.gov | clinical_trials | 1 |
+| mychem.info | variant_databases | 2 |
+| mydisease.info | variant_databases | 2 |
+| mygene.info | variant_databases | 2 |
+| myvariant.info | variant_databases | 2 |
+| rest.ensembl.org | variant_databases | 1 |
+| www.cbioportal.org | cancer_genomics | 6 |
+| www.ebi.ac.uk | biomedical_literature | 1 |
+| www.ncbi.nlm.nih.gov | biomedical_literature | 3 |
 
 ## Compliance and Privacy
 

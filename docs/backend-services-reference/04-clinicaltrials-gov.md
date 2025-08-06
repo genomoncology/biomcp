@@ -83,22 +83,9 @@ This ensures that specifying NCT IDs restricts results rather than expanding the
 
 ### Query Building
 
-When constructing API queries, parameters must be properly formatted according
-to the API documentation.
+When constructing API queries, parameters must be properly formatted according to the API documentation.
 
-Example query creation:
-
-```python
-def build_query_params(conditions=None, interventions=None, terms=None):
-    params = {}
-    if conditions:
-        params["query.cond"] = " ".join(conditions)
-    if interventions:
-        params["query.intr"] = " ".join(interventions)
-    if terms:
-        params["query.term"] = " ".join(terms)
-    return params
-```
+For implementation details on query building in BioMCP, see the [HTTP Client Developer Guide](../developer-guides/06-http-client-and-caching.md).
 
 ### Response Parsing
 
@@ -117,19 +104,13 @@ response include:
 
 ### Error Handling
 
-Comprehensive error handling is implemented for API responses:
+The API returns standard HTTP status codes. Common error scenarios include:
 
-```python
-def handle_api_response(response):
-    if response.status_code == 200:
-        return response.json()
-    elif response.status_code == 404:
-        raise ValueError("Trial not found")
-    elif response.status_code == 429:
-        raise RateLimitExceeded("Rate limit exceeded, please try again later")
-    else:
-        raise APIError(f"API error: {response.status_code}")
-```
+- **404**: Trial not found
+- **429**: Rate limit exceeded
+- **400**: Invalid query parameters
+
+For implementation details on error handling in BioMCP, see the [Error Handling Developer Guide](../developer-guides/05-error-handling.md).
 
 ## Authentication
 

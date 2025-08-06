@@ -26,17 +26,14 @@ Streamable HTTP is the latest MCP transport protocol (specification version 2025
 
 ### Architecture
 
-```mermaid
-graph LR
-    A[MCP Client] -->|POST /mcp| B[BioMCP Server]
-    B --> C{Response Type}
-    C -->|Quick Operation| D[JSON Response]
-    C -->|Long Operation| E[SSE Stream]
+The Streamable HTTP transport follows this flow:
 
-    subgraph Session Management
-        F[Session Store] -.->|session_id| B
-    end
-```
+1. **MCP Client** sends POST request to `/mcp` endpoint
+2. **BioMCP Server** processes the request
+3. **Response Type** determined by operation:
+   - Quick operations return JSON response
+   - Long operations return SSE stream
+4. **Session Management** maintains state via session_id parameter
 
 ### Implementation Details
 

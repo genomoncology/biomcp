@@ -111,16 +111,7 @@ Public cBioPortal instance works without authentication but may have rate limits
 
 ## CLI Usage
 
-```bash
-# Gene-level search with cBioPortal summary
-biomcp article search --gene BRAF --disease melanoma
-
-# Mutation-specific search
-biomcp article search --gene BRAF --keyword V600E
-
-# Wildcard pattern search
-biomcp article search --gene SRSF2 --keyword "F57*"
-```
+For detailed command-line options for searching articles with cBioPortal integration, see the [CLI User Guide](../user-guides/01-command-line-interface.md#article-commands).
 
 ## Performance Considerations
 

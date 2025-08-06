@@ -2,6 +2,13 @@
 
 The BioThings Suite provides unified access to biomedical annotations across genes, variants, diseases, and drugs through a consistent API interface.
 
+## Usage Examples
+
+For practical examples using the BioThings APIs, see:
+
+- [How to Find Trials with NCI and BioThings](../how-to-guides/02-find-trials-with-nci-and-biothings.md#biothings-integration-for-enhanced-search)
+- [Get Comprehensive Variant Annotations](../how-to-guides/03-get-comprehensive-variant-annotations.md#integration-with-other-biomcp-tools)
+
 ## Overview
 
 BioMCP integrates with four BioThings APIs:

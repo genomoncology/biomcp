@@ -6,9 +6,9 @@ This guide demonstrates how to search for clinical trials using BioMCP's dual da
 
 BioMCP provides access to clinical trials through:
 
-- **ClinicalTrials.gov**: Default source with comprehensive U.S. and international trials
-- **NCI CTS API**: Advanced cancer trial search with biomarker filtering (requires API key)
-- **BioThings Integration**: Automatic disease synonym expansion for better coverage
+- **ClinicalTrials.gov**: Default source with comprehensive U.S. and international trials ([API Reference](../backend-services-reference/04-clinicaltrials-gov.md))
+- **NCI CTS API**: Advanced cancer trial search with biomarker filtering (requires API key) ([API Reference](../backend-services-reference/05-nci-cts-api.md))
+- **BioThings Integration**: Automatic disease synonym expansion for better coverage ([BioThings Reference](../backend-services-reference/02-biothings-suite.md))
 
 ## Basic Trial Search
 
@@ -113,11 +113,11 @@ biomcp trial search \
   --status RECRUITING
 ```
 
-## Using NCI Advanced Features
+## Using NCI API Advanced Features
 
 ### Setup NCI API Key
 
-Get your key from [api.cancer.gov](https://api.cancer.gov):
+Get your key from [api.cancer.gov](https://api.cancer.gov). For detailed setup instructions, see [Authentication and API Keys](../getting-started/03-authentication-and-api-keys.md#nci-clinical-trials-api):
 
 ```bash
 export NCI_API_KEY="your-key-here"
@@ -154,9 +154,13 @@ trials = await trial_searcher(
 )
 ```
 
-## BioThings Disease Synonym Expansion
+## BioThings Integration for Enhanced Search
 
-### Automatic Synonym Expansion
+For technical details on the BioThings APIs, see:
+
+- [BioThings Suite Reference](../backend-services-reference/02-biothings-suite.md)
+
+### Automatic Disease Synonym Expansion
 
 BioMCP automatically expands disease terms using MyDisease.info:
 
