@@ -11,13 +11,15 @@
 ## What Can You Do with BioMCP?
 
 ### Search Research Literature
+
 Find articles about genes, variants, diseases, and drugs with automatic cancer genomics data from cBioPortal
 
 ```bash
 biomcp article search --gene BRAF --disease melanoma
 ```
 
-### Discover Clinical Trials  
+### Discover Clinical Trials
+
 Search active trials by condition, location, phase, and eligibility criteria including genetic biomarkers
 
 ```bash
@@ -25,6 +27,7 @@ biomcp trial search --condition "lung cancer" --status RECRUITING
 ```
 
 ### Analyze Genetic Variants
+
 Query variant databases, predict effects, and understand clinical significance
 
 ```bash
@@ -32,6 +35,7 @@ biomcp variant search --gene TP53 --significance pathogenic
 ```
 
 ### AI-Powered Analysis
+
 Use with Claude Desktop for conversational biomedical research with sequential thinking
 
 ```python
@@ -46,9 +50,9 @@ Use with Claude Desktop for conversational biomedical research with sequential t
 === "Claude Desktop (Recommended)"
 
     **Best for**: Conversational research, complex queries, AI-assisted analysis
-    
+
     1. **Install Claude Desktop** from [claude.ai/desktop](https://claude.ai/desktop)
-    
+
     2. **Configure BioMCP**:
        ```json
        {
@@ -56,77 +60,80 @@ Use with Claude Desktop for conversational biomedical research with sequential t
            "biomcp": {
              "command": "uv",
              "args": [
-        "run", "--with", "biomcp-python", 
+        "run", "--with", "biomcp-python",
         "biomcp", "run"
       ]
            }
          }
        }
        ```
-    
+
     3. **Start researching**: Ask Claude about any biomedical topic!
-    
+
     [Full Claude Desktop Guide →](getting-started/02-claude-desktop-integration.md)
 
 === "Command Line"
 
     **Best for**: Direct queries, scripting, automation
-    
+
     1. **Install BioMCP**:
        ```bash
        # Using uv (recommended)
        uv tool install biomcp
-       
+
        # Or using pip
        pip install biomcp-python
        ```
-    
+
     2. **Run your first search**:
        ```bash
        biomcp article search \
          --gene BRAF --disease melanoma \
          --limit 5
        ```
-    
+
     [CLI Reference →](user-guides/01-command-line-interface.md)
 
 === "Python SDK"
 
     **Best for**: Integration, custom applications, bulk operations
-    
+
     1. **Install the package**:
        ```bash
        pip install biomcp-python
        ```
-    
+
     2. **Use in your code**:
        ```python
        from biomcp import BioMCPClient
-       
+
        async with BioMCPClient() as client:
            articles = await client.articles.search(
-               genes=["BRAF"], 
+               genes=["BRAF"],
                diseases=["melanoma"]
            )
        ```
-    
+
     [Python SDK Docs →](apis/python-sdk.md)
 
 ## Key Features
 
 ### Unified Search Across Databases
+
 - **PubMed/PubTator3**: 30M+ research articles with entity recognition
-- **ClinicalTrials.gov**: 400K+ clinical trials worldwide  
+- **ClinicalTrials.gov**: 400K+ clinical trials worldwide
 - **MyVariant.info**: Comprehensive variant annotations
 - **cBioPortal**: Automatic cancer genomics integration
 
 ### Intelligent Query Processing
+
 - Natural language to structured queries
 - Automatic synonym expansion
 - OR logic support for flexible matching
 - Cross-domain relationship discovery
 
 ### Built for AI Integration
+
 - 24 specialized MCP tools
 - Sequential thinking for complex analysis
 - Streaming responses for real-time updates
@@ -137,6 +144,7 @@ Use with Claude Desktop for conversational biomedical research with sequential t
 ## Learn by Example
 
 ### Find Articles About a Specific Mutation
+
 ```bash
 # Search for BRAF V600E mutations
 biomcp article search --gene BRAF \
@@ -144,6 +152,7 @@ biomcp article search --gene BRAF \
 ```
 
 ### Discover Trials Near You
+
 ```bash
 # Find cancer trials in Boston area
 biomcp trial search --condition cancer \
@@ -152,6 +161,7 @@ biomcp trial search --condition cancer \
 ```
 
 ### Get Gene Information
+
 ```bash
 # Get comprehensive gene data
 biomcp gene get TP53
@@ -162,19 +172,23 @@ biomcp gene get TP53
 ## Popular Workflows
 
 ### Literature Review
-Systematic search across papers, preprints, and clinical trials  
+
+Systematic search across papers, preprints, and clinical trials
 [Workflow Guide →](workflows/all-workflows.md#1-literature-review-workflow)
 
 ### Variant Interpretation
-From variant ID to clinical significance and treatment implications  
+
+From variant ID to clinical significance and treatment implications
 [Workflow Guide →](workflows/all-workflows.md#3-variant-interpretation-workflow)
 
 ### Trial Matching
-Find eligible trials based on patient criteria and biomarkers  
+
+Find eligible trials based on patient criteria and biomarkers
 [Workflow Guide →](workflows/all-workflows.md#2-clinical-trial-matching-workflow)
 
 ### Drug Research
-Connect drugs to targets, trials, and research literature  
+
+Connect drugs to targets, trials, and research literature
 [Workflow Guide →](workflows/all-workflows.md)
 
 ## Advanced Features
@@ -187,7 +201,7 @@ Connect drugs to targets, trials, and research literature
 ## Documentation
 
 - **[Getting Started](getting-started/01-quickstart-cli.md)** - Installation and first steps
-- **[User Guides](user-guides/01-command-line-interface.md)** - Detailed usage instructions  
+- **[User Guides](user-guides/01-command-line-interface.md)** - Detailed usage instructions
 - **[API Reference](apis/overview.md)** - Technical documentation
 - **[FAQ](faq-condensed.md)** - Quick answers to common questions
 
