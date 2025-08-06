@@ -26,6 +26,7 @@ nav:
       - Searching Organizations: how-to-guides/06-search-nci-organizations-and-interventions.md
       - Research Workflows: workflows/all-workflows.md
       - Examples:
+          - Remote Connection: tutorials/remote-connection.md
           - BioThings Examples: tutorials/biothings-prompts.md
           - NCI Examples: tutorials/nci-prompts.md
           - AlphaGenome Tutorial: tutorials/claude-code-biomcp-alphagenome.md
@@ -150,12 +151,9 @@ extra:
 
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/announcement.css
 
 # extra_javascript: (removed - no third-party dependencies)
-# Uncomment below to enable privacy-conscious analytics
-# extra_javascript:
-#   - javascripts/matomo.js
-
 markdown_extensions:
   - toc:
       permalink: true

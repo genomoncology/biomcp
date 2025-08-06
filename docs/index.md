@@ -8,6 +8,40 @@
 
 ### Built and Maintained by <a href="https://www.genomoncology.com"><img src="./assets/logo.png" width=200 valign="middle" /></a>
 
+<div class="announcement-banner">
+  <div class="announcement-content">
+    <h2>
+      <span class="badge-new">NEW</span>
+      Remote BioMCP Now Available!
+    </h2>
+    <p>Connect to BioMCP instantly through Claude Desktop - no installation required!</p>
+
+    <div class="announcement-features">
+      <div class="feature-item">
+        <strong>🚀 Instant Access</strong>
+        <span>Start using BioMCP in under 2 minutes</span>
+      </div>
+      <div class="feature-item">
+        <strong>☁️ Cloud-Powered</strong>
+        <span>Always up-to-date with latest features</span>
+      </div>
+      <div class="feature-item">
+        <strong>🔒 Secure Auth</strong>
+        <span>Google OAuth authentication</span>
+      </div>
+      <div class="feature-item">
+        <strong>🛠️ 23+ Tools</strong>
+        <span>Full suite of biomedical research tools</span>
+      </div>
+    </div>
+
+    <a href="tutorials/remote-connection/" class="cta-button">
+      Connect to Remote BioMCP Now
+    </a>
+
+  </div>
+</div>
+
 ## What Can You Do with BioMCP?
 
 ### Search Research Literature
