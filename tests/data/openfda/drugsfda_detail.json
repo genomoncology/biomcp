@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "results": {
+      "skip": 0,
+      "limit": 1,
+      "total": 1
+    }
+  },
+  "results": [
+    {
+      "application_number": "BLA125514",
+      "sponsor_name": "MERCK SHARP DOHME",
+      "openfda": {
+        "application_number": ["BLA125514"],
+        "brand_name": ["KEYTRUDA"],
+        "generic_name": ["PEMBROLIZUMAB"],
+        "manufacturer_name": ["Merck Sharp & Dohme Corp."],
+        "substance_name": ["PEMBROLIZUMAB"],
+        "product_ndc": ["0006-3026-02", "0006-3029-02"],
+        "spl_set_id": ["c0e2de11-29e0-48a1-92f0-d9cb4dd56b15"],
+        "unii": ["DPT0O3T46P"]
+      },
+      "products": [
+        {
+          "product_number": "001",
+          "reference_drug": "Yes",
+          "brand_name": "KEYTRUDA",
+          "active_ingredients": [
+            {
+              "name": "PEMBROLIZUMAB",
+              "strength": "100MG/4ML"
+            }
+          ],
+          "reference_standard": "Yes",
+          "dosage_form": "INJECTION, SOLUTION",
+          "route": "INTRAVENOUS",
+          "marketing_status": "Prescription"
+        },
+        {
+          "product_number": "002",
+          "reference_drug": "Yes",
+          "brand_name": "KEYTRUDA",
+          "active_ingredients": [
+            {
+              "name": "PEMBROLIZUMAB",
+              "strength": "50MG/VIAL"
+            }
+          ],
+          "reference_standard": "Yes",
+          "dosage_form": "INJECTION, POWDER, LYOPHILIZED, FOR SOLUTION",
+          "route": "INTRAVENOUS",
+          "marketing_status": "Prescription"
+        }
+      ],
+      "submissions": [
+        {
+          "submission_type": "BLA",
+          "submission_number": "125514",
+          "submission_status": "AP",
+          "submission_status_date": "20140904",
+          "review_priority": "P",
+          "submission_class_code": "BLA",
+          "submission_class_code_description": "Biologic License Application",
+          "application_docs": [
+            {
+              "id": "52674",
+              "url": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2014/125514lbl.pdf",
+              "date": "20140905",
+              "type": "Label"
+            }
+          ]
+        },
+        {
+          "submission_type": "SUPPL",
+          "submission_number": "109",
+          "submission_status": "AP",
+          "submission_status_date": "20230316",
+          "submission_class_code": "SUPPL",
+          "submission_class_code_description": "Supplement"
+        }
+      ]
+    }
+  ]
+}

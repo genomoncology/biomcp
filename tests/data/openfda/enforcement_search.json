@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "results": {
+      "skip": 0,
+      "limit": 10,
+      "total": 45
+    }
+  },
+  "results": [
+    {
+      "country": "United States",
+      "city": "Princeton",
+      "reason_for_recall": "Presence of N-Nitrosodimethylamine (NDMA) impurity",
+      "address_1": "One Merck Drive",
+      "address_2": "",
+      "product_quantity": "5,432 bottles",
+      "code_info": "Lot numbers: AB1234, CD5678, EF9012",
+      "center_classification_date": "20230615",
+      "distribution_pattern": "Nationwide",
+      "state": "NJ",
+      "product_description": "Valsartan Tablets USP, 160 mg, 90 count bottles",
+      "report_date": "20230622",
+      "classification": "Class II",
+      "openfda": {
+        "application_number": ["ANDA090802"],
+        "brand_name": ["VALSARTAN"],
+        "generic_name": ["VALSARTAN"],
+        "manufacturer_name": ["Mylan Pharmaceuticals Inc."]
+      },
+      "recalling_firm": "Mylan Pharmaceuticals Inc.",
+      "recall_number": "D-0001-2023",
+      "initial_firm_notification": "Letter",
+      "product_type": "Drugs",
+      "event_id": "91234",
+      "recall_initiation_date": "20230610",
+      "postal_code": "08540",
+      "voluntary_mandated": "Voluntary: Firm Initiated",
+      "status": "Ongoing"
+    },
+    {
+      "country": "United States",
+      "city": "New York",
+      "reason_for_recall": "Contamination with foreign substance",
+      "product_quantity": "10,000 units",
+      "classification": "Class I",
+      "product_description": "Metformin Hydrochloride Extended-Release Tablets, 500 mg",
+      "report_date": "20230515",
+      "recalling_firm": "Generic Pharma Corp",
+      "recall_number": "D-0002-2023",
+      "recall_initiation_date": "20230510",
+      "status": "Completed"
+    }
+  ]
+}

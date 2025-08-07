@@ -462,3 +462,20 @@ You should provide your API key when:
 - Results are limited by FDA's data availability and reporting patterns
 - The AI should suggest when additional data sources might provide complementary information
 - With an API key, you can make 240 requests/minute vs 40 without
+
+## Known Limitations
+
+### Drug Shortage Data
+
+**Important:** The FDA does not currently provide a machine-readable API for drug shortage data. The shortage search tools will return an informative message directing users to the FDA's web-based shortage database. This is a limitation of FDA's current data infrastructure, not a bug in BioMCP.
+
+Alternative resources for drug shortage information:
+
+- FDA Drug Shortages Database: https://www.accessdata.fda.gov/scripts/drugshortages/
+- ASHP Drug Shortages: https://www.ashp.org/drug-shortages/current-shortages
+
+### Other Limitations
+
+- Device adverse event reports use abbreviated device names (e.g., "F1CDX" instead of "FoundationOne CDx")
+- Adverse event reports represent voluntary submissions and may not reflect true incidence rates
+- Recall information may have a delay of 24-48 hours from initial FDA announcement

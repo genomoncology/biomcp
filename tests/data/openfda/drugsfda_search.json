@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "results": {
+      "skip": 0,
+      "limit": 10,
+      "total": 25
+    }
+  },
+  "results": [
+    {
+      "application_number": "BLA125514",
+      "sponsor_name": "MERCK SHARP DOHME",
+      "openfda": {
+        "application_number": ["BLA125514"],
+        "brand_name": ["KEYTRUDA"],
+        "generic_name": ["PEMBROLIZUMAB"],
+        "manufacturer_name": ["Merck Sharp & Dohme Corp."],
+        "substance_name": ["PEMBROLIZUMAB"]
+      },
+      "products": [
+        {
+          "product_number": "001",
+          "reference_drug": "Yes",
+          "brand_name": "KEYTRUDA",
+          "active_ingredients": [
+            {
+              "name": "PEMBROLIZUMAB",
+              "strength": "100MG/4ML"
+            }
+          ],
+          "reference_standard": "Yes",
+          "dosage_form": "INJECTION, SOLUTION",
+          "route": "INTRAVENOUS",
+          "marketing_status": "Prescription"
+        }
+      ],
+      "submissions": [
+        {
+          "submission_type": "BLA",
+          "submission_number": "125514",
+          "submission_status": "AP",
+          "submission_status_date": "20140904",
+          "submission_class_code": "BLA",
+          "submission_class_code_description": "Biologic License Application"
+        }
+      ]
+    }
+  ]
+}

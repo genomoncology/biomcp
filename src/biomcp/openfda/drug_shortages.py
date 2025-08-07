@@ -61,7 +61,7 @@ async def _fetch_shortage_data() -> dict[str, Any] | None:
 
         if error:
             logger.error(f"API error: {error}")
-            return _get_mock_shortage_data()
+            return None  # Don't return mock data in production
 
         if response and hasattr(response, "model_dump"):
             data = response.model_dump()
@@ -77,55 +77,7 @@ async def _fetch_shortage_data() -> dict[str, Any] | None:
 
     except Exception as e:
         logger.error(f"Failed to fetch shortage data: {e}")
-        # Return mock data structure for now
-        # In production, this would fetch from the actual FDA endpoint
-        return _get_mock_shortage_data()
-
-
-def _get_mock_shortage_data() -> dict[str, Any]:
-    """
-    Get mock shortage data for development/testing.
-    Replace with actual FDA data structure when available.
-    """
-    return {
-        "_fetched_at": datetime.now().isoformat(),
-        "shortages": [
-            {
-                "generic_name": "Cisplatin Injection",
-                "brand_names": ["Platinol"],
-                "manufacturers": ["Pfizer", "Teva"],
-                "status": "Current Shortage",
-                "shortage_start_date": "2023-02-10",
-                "estimated_resolution": "Q2 2024",
-                "reason": "Manufacturing delays and increased demand",
-                "therapeutic_category": "Oncology",
-                "notes": "Limited supplies available through allocation",
-            },
-            {
-                "generic_name": "Ampicillin/Sulbactam Injection",
-                "brand_names": ["Unasyn"],
-                "manufacturers": ["Pfizer"],
-                "status": "Resolved",
-                "shortage_start_date": "2023-06-15",
-                "resolution_date": "2023-11-30",
-                "reason": "Manufacturing issue",
-                "therapeutic_category": "Anti-infective",
-                "notes": "Shortage resolved as of November 2023",
-            },
-            {
-                "generic_name": "Methotrexate Injection",
-                "brand_names": [],
-                "manufacturers": ["Various"],
-                "status": "Current Shortage",
-                "shortage_start_date": "2023-03-01",
-                "estimated_resolution": "Unknown",
-                "reason": "Increased demand",
-                "therapeutic_category": "Oncology/Rheumatology",
-                "notes": "Multiple manufacturers experiencing supply constraints",
-            },
-        ],
-        "last_updated": datetime.now().isoformat(),
-    }
+        return None  # Don't return mock data in production
 
 
 async def _get_cached_shortage_data() -> dict[str, Any] | None:
@@ -199,7 +151,15 @@ async def search_drug_shortages(
     data = await _get_cached_shortage_data()
 
     if not data:
-        return "⚠️ Unable to retrieve drug shortage data at this time."
+        return (
+            "⚠️ **Drug Shortage Data Temporarily Unavailable**\n\n"
+            "The FDA drug shortage database cannot be accessed at this time. "
+            "This feature requires FDA to provide a machine-readable API endpoint.\n\n"
+            "**Alternative Options:**\n"
+            "• Visit FDA Drug Shortages Database: https://www.accessdata.fda.gov/scripts/drugshortages/\n"
+            "• Check ASHP Drug Shortages: https://www.ashp.org/drug-shortages/current-shortages\n\n"
+            "Note: FDA currently provides shortage data only as PDF/HTML, not as a queryable API."
+        )
 
     shortages = data.get("shortages", [])
 
@@ -264,7 +224,15 @@ async def get_drug_shortage(
     data = await _get_cached_shortage_data()
 
     if not data:
-        return "⚠️ Unable to retrieve drug shortage data at this time."
+        return (
+            "⚠️ **Drug Shortage Data Temporarily Unavailable**\n\n"
+            "The FDA drug shortage database cannot be accessed at this time. "
+            "This feature requires FDA to provide a machine-readable API endpoint.\n\n"
+            "**Alternative Options:**\n"
+            "• Visit FDA Drug Shortages Database: https://www.accessdata.fda.gov/scripts/drugshortages/\n"
+            "• Check ASHP Drug Shortages: https://www.ashp.org/drug-shortages/current-shortages\n\n"
+            "Note: FDA currently provides shortage data only as PDF/HTML, not as a queryable API."
+        )
 
     shortages = data.get("shortages", [])
 

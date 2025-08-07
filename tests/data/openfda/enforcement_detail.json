@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "results": {
+      "skip": 0,
+      "limit": 1,
+      "total": 1
+    }
+  },
+  "results": [
+    {
+      "country": "United States",
+      "city": "Princeton",
+      "reason_for_recall": "Presence of N-Nitrosodimethylamine (NDMA) impurity above the acceptable daily intake limit",
+      "address_1": "One Merck Drive",
+      "address_2": "Building 5",
+      "product_quantity": "5,432 bottles",
+      "code_info": "Lot numbers: AB1234 (Exp 12/2024), CD5678 (Exp 01/2025), EF9012 (Exp 02/2025)",
+      "center_classification_date": "20230615",
+      "distribution_pattern": "Nationwide distribution to wholesalers and retail pharmacies in all 50 states",
+      "state": "NJ",
+      "product_description": "Valsartan Tablets USP, 160 mg, 90 count bottles, NDC 0378-5160-90",
+      "report_date": "20230622",
+      "classification": "Class II",
+      "openfda": {
+        "application_number": ["ANDA090802"],
+        "brand_name": ["VALSARTAN"],
+        "generic_name": ["VALSARTAN"],
+        "manufacturer_name": ["Mylan Pharmaceuticals Inc."],
+        "product_ndc": ["0378-5160"],
+        "package_ndc": ["0378-5160-90"],
+        "unii": ["80M03YXJ7I"],
+        "spl_set_id": ["4b5c5f6d-7e8f-9g0h-1i2j-3k4l5m6n7o8p"]
+      },
+      "more_code_info": "Manufacturing dates: January 2023 - March 2023",
+      "recalling_firm": "Mylan Pharmaceuticals Inc.",
+      "recall_number": "D-0001-2023",
+      "initial_firm_notification": "Letter",
+      "product_type": "Drugs",
+      "event_id": "91234",
+      "termination_date": "",
+      "recall_initiation_date": "20230610",
+      "postal_code": "08540-0004",
+      "voluntary_mandated": "Voluntary: Firm Initiated",
+      "status": "Ongoing"
+    }
+  ]
+}

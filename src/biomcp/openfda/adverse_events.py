@@ -18,6 +18,11 @@ from .constants import (
     OPENFDA_DRUG_EVENTS_URL,
     OPENFDA_MAX_LIMIT,
 )
+from .exceptions import (
+    OpenFDAConnectionError,
+    OpenFDARateLimitError,
+    OpenFDATimeoutError,
+)
 from .utils import clean_text, make_openfda_request
 
 logger = logging.getLogger(__name__)
@@ -47,7 +52,7 @@ def _build_search_query(
     return " AND ".join(search_parts)
 
 
-async def search_adverse_events(
+async def search_adverse_events(  # noqa: C901
     drug: str | None = None,
     reaction: str | None = None,
     serious: bool | None = None,
@@ -87,9 +92,33 @@ async def search_adverse_events(
         "skip": skip,
     }
 
-    response, error = await make_openfda_request(
-        OPENFDA_DRUG_EVENTS_URL, params, "openfda_adverse_events", api_key
-    )
+    try:
+        response, error = await make_openfda_request(
+            OPENFDA_DRUG_EVENTS_URL, params, "openfda_adverse_events", api_key
+        )
+    except OpenFDARateLimitError:
+        return (
+            "⚠️ **FDA API Rate Limit Exceeded**\n\n"
+            "You've exceeded the FDA's rate limit. Options:\n"
+            "• Wait a moment and try again\n"
+            "• Provide an FDA API key for higher limits (240/min vs 40/min)\n"
+            "• Get a free key at: https://open.fda.gov/apis/authentication/"
+        )
+    except OpenFDATimeoutError:
+        return (
+            "⏱️ **Request Timeout**\n\n"
+            "The FDA API is taking too long to respond. This may be due to:\n"
+            "• High server load\n"
+            "• Complex query\n"
+            "• Network issues\n\n"
+            "Please try again in a moment."
+        )
+    except OpenFDAConnectionError as e:
+        return (
+            "🔌 **Connection Error**\n\n"
+            f"Unable to connect to FDA API: {e}\n\n"
+            "Please check your internet connection and try again."
+        )
 
     if error:
         return f"⚠️ Error searching adverse events: {error}"

@@ -14,6 +14,14 @@ def build_drug_search_query(drug: str) -> str:
 
 def build_class_search_query(recall_class: str) -> str | None:
     """Build search query for recall classification."""
+    # Handle various input formats
+    recall_class = recall_class.strip()
+
+    # If already in "Class X" format, use it directly
+    if recall_class.upper().startswith("CLASS "):
+        return f'classification:"{recall_class.title()}"'
+
+    # Map single digits/numerals to Class format
     class_map = {
         "1": "Class I",
         "I": "Class I",
