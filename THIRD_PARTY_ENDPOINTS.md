@@ -4,7 +4,7 @@ _This file is auto-generated from the endpoint registry._
 
 ## Overview
 
-BioMCP connects to 11 external domains across 24 endpoints.
+BioMCP connects to 14 external domains across 35 endpoints.
 
 ## Endpoints by Category
 
@@ -67,6 +67,51 @@ BioMCP connects to 11 external domains across 24 endpoints.
 - **Data Types**: clinical_trial_data
 - **Rate Limit**: 10 requests/second
 - **Compliance Notes**: Public NIH service, may contain trial participant criteria
+
+#### nci_biomarkers
+
+- **URL**: `https://clinicaltrialsapi.cancer.gov/api/v2/biomarkers`
+- **Description**: NCI API for biomarkers used in clinical trials
+- **Data Types**: clinical_trial_data
+- **Rate Limit**: Not specified
+- **Authentication**: Optional NCI_API_KEY for increased access
+- **Compliance Notes**: Public NCI service, biomarker metadata
+
+#### nci_diseases
+
+- **URL**: `https://clinicaltrialsapi.cancer.gov/api/v2/diseases`
+- **Description**: NCI API for cancer disease vocabulary
+- **Data Types**: clinical_trial_data
+- **Rate Limit**: Not specified
+- **Authentication**: Optional NCI_API_KEY for increased access
+- **Compliance Notes**: Public NCI service, disease ontology
+
+#### nci_interventions
+
+- **URL**: `https://clinicaltrialsapi.cancer.gov/api/v2/interventions`
+- **Description**: NCI API for cancer treatment interventions
+- **Data Types**: clinical_trial_data
+- **Rate Limit**: Not specified
+- **Authentication**: Optional NCI_API_KEY for increased access
+- **Compliance Notes**: Public NCI service, intervention metadata
+
+#### nci_organizations
+
+- **URL**: `https://clinicaltrialsapi.cancer.gov/api/v2/organizations`
+- **Description**: NCI API for cancer research organizations
+- **Data Types**: clinical_trial_data
+- **Rate Limit**: Not specified
+- **Authentication**: Optional NCI_API_KEY for increased access
+- **Compliance Notes**: Public NCI service, organization metadata
+
+#### nci_trials
+
+- **URL**: `https://clinicaltrialsapi.cancer.gov/api/v2/trials`
+- **Description**: NCI Clinical Trials Search API for cancer trials
+- **Data Types**: clinical_trial_data
+- **Rate Limit**: Not specified
+- **Authentication**: Optional NCI_API_KEY for increased access
+- **Compliance Notes**: Public NCI service, cancer trial data
 
 ### Variant Databases
 
@@ -209,21 +254,80 @@ BioMCP connects to 11 external domains across 24 endpoints.
 - **Rate Limit**: 5 requests/second
 - **Compliance Notes**: Public MSKCC/Dana-Farber service, study metadata
 
+### Regulatory Data
+
+#### fda_drug_shortages
+
+- **URL**: `https://www.fda.gov/media/169066/download`
+- **Description**: FDA Drug Shortages database (cached locally)
+- **Data Types**: drug_labels
+- **Rate Limit**: Cached with 24-hour TTL
+- **Authentication**: None required
+- **Compliance Notes**: Public FDA service, drug shortage status information
+
+#### openfda_device_events
+
+- **URL**: `https://api.fda.gov/device/event.json`
+- **Description**: FDA MAUDE database for medical device adverse events
+- **Data Types**: device_events
+- **Rate Limit**: 40 requests/minute (240 with API key)
+- **Authentication**: Optional OPENFDA_API_KEY for increased rate limits
+- **Compliance Notes**: Public FDA service, device malfunction and adverse event reports
+
+#### openfda_drug_enforcement
+
+- **URL**: `https://api.fda.gov/drug/enforcement.json`
+- **Description**: FDA Enforcement database for drug recall information
+- **Data Types**: adverse_events
+- **Rate Limit**: 40 requests/minute (240 with API key)
+- **Authentication**: Optional OPENFDA_API_KEY for increased rate limits
+- **Compliance Notes**: Public FDA service, drug recall and enforcement actions
+
+#### openfda_drug_events
+
+- **URL**: `https://api.fda.gov/drug/event.json`
+- **Description**: FDA Adverse Event Reporting System (FAERS) for drug safety data
+- **Data Types**: adverse_events
+- **Rate Limit**: 40 requests/minute (240 with API key)
+- **Authentication**: Optional OPENFDA_API_KEY for increased rate limits
+- **Compliance Notes**: Public FDA service, voluntary adverse event reports, no PII
+
+#### openfda_drug_labels
+
+- **URL**: `https://api.fda.gov/drug/label.json`
+- **Description**: FDA Structured Product Labeling (SPL) for drug prescribing information
+- **Data Types**: drug_labels
+- **Rate Limit**: 40 requests/minute (240 with API key)
+- **Authentication**: Optional OPENFDA_API_KEY for increased rate limits
+- **Compliance Notes**: Public FDA service, official drug labeling data
+
+#### openfda_drugsfda
+
+- **URL**: `https://api.fda.gov/drug/drugsfda.json`
+- **Description**: FDA Drugs@FDA database for drug approval information
+- **Data Types**: drug_labels
+- **Rate Limit**: 40 requests/minute (240 with API key)
+- **Authentication**: Optional OPENFDA_API_KEY for increased rate limits
+- **Compliance Notes**: Public FDA service, official drug approval records
+
 ## Domain Summary
 
-| Domain               | Category              | Endpoints |
-| -------------------- | --------------------- | --------- |
-| api.biorxiv.org      | biomedical_literature | 2         |
-| api.gdc.cancer.gov   | variant_databases     | 2         |
-| clinicaltrials.gov   | clinical_trials       | 1         |
-| mychem.info          | variant_databases     | 2         |
-| mydisease.info       | variant_databases     | 2         |
-| mygene.info          | variant_databases     | 2         |
-| myvariant.info       | variant_databases     | 2         |
-| rest.ensembl.org     | variant_databases     | 1         |
-| www.cbioportal.org   | cancer_genomics       | 6         |
-| www.ebi.ac.uk        | biomedical_literature | 1         |
-| www.ncbi.nlm.nih.gov | biomedical_literature | 3         |
+| Domain                       | Category              | Endpoints |
+| ---------------------------- | --------------------- | --------- |
+| api.biorxiv.org              | biomedical_literature | 2         |
+| api.fda.gov                  | regulatory_data       | 5         |
+| api.gdc.cancer.gov           | variant_databases     | 2         |
+| clinicaltrials.gov           | clinical_trials       | 1         |
+| clinicaltrialsapi.cancer.gov | clinical_trials       | 5         |
+| mychem.info                  | variant_databases     | 2         |
+| mydisease.info               | variant_databases     | 2         |
+| mygene.info                  | variant_databases     | 2         |
+| myvariant.info               | variant_databases     | 2         |
+| rest.ensembl.org             | variant_databases     | 1         |
+| www.cbioportal.org           | cancer_genomics       | 6         |
+| www.ebi.ac.uk                | biomedical_literature | 1         |
+| www.fda.gov                  | regulatory_data       | 1         |
+| www.ncbi.nlm.nih.gov         | biomedical_literature | 3         |
 
 ## Compliance and Privacy
 

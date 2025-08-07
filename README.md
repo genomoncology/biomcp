@@ -51,6 +51,13 @@ BioMCP integrates with multiple biomedical data sources:
 - **1000 Genomes** - Population frequency data via Ensembl
 - **cBioPortal** - Cancer genomics portal with mutation occurrence data
 
+### Regulatory & Safety Sources
+
+- **OpenFDA** - FDA regulatory and safety data:
+  - **Drug Adverse Events (FAERS)** - Post-market drug safety reports
+  - **Drug Labels (SPL)** - Official prescribing information
+  - **Device Events (MAUDE)** - Medical device adverse events, with genomic device filtering
+
 ## Available MCP Tools
 
 BioMCP provides 24 specialized tools for biomedical research:

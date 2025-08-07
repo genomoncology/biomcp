@@ -15,6 +15,7 @@ class EndpointCategory(str, Enum):
     VARIANT_DATABASES = "variant_databases"
     CANCER_GENOMICS = "cancer_genomics"
     HEALTH_MONITORING = "health_monitoring"
+    REGULATORY_DATA = "regulatory_data"
 
 
 class DataType(str, Enum):
@@ -26,6 +27,9 @@ class DataType(str, Enum):
     CANCER_MUTATIONS = "cancer_mutations"
     GENE_ANNOTATIONS = "gene_annotations"
     SERVICE_STATUS = "service_status"
+    ADVERSE_EVENTS = "adverse_events"
+    DRUG_LABELS = "drug_labels"
+    DEVICE_EVENTS = "device_events"
 
 
 @dataclass
@@ -355,6 +359,153 @@ class EndpointRegistry:
                 description="MyChem.info API for fetching specific drug/chemical details",
                 compliance_notes="Public BioThings service, drug/chemical annotation data",
                 rate_limit="10 requests/second",
+            ),
+        )
+
+        # NCI Clinical Trials Search API
+        self.register(
+            "nci_trials",
+            EndpointInfo(
+                url="https://clinicaltrialsapi.cancer.gov/api/v2/trials",
+                category=EndpointCategory.CLINICAL_TRIALS,
+                data_types=[DataType.CLINICAL_TRIAL_DATA],
+                description="NCI Clinical Trials Search API for cancer trials",
+                compliance_notes="Public NCI service, cancer trial data",
+                rate_limit="Not specified",
+                authentication="Optional NCI_API_KEY for increased access",
+            ),
+        )
+
+        self.register(
+            "nci_organizations",
+            EndpointInfo(
+                url="https://clinicaltrialsapi.cancer.gov/api/v2/organizations",
+                category=EndpointCategory.CLINICAL_TRIALS,
+                data_types=[DataType.CLINICAL_TRIAL_DATA],
+                description="NCI API for cancer research organizations",
+                compliance_notes="Public NCI service, organization metadata",
+                rate_limit="Not specified",
+                authentication="Optional NCI_API_KEY for increased access",
+            ),
+        )
+
+        self.register(
+            "nci_diseases",
+            EndpointInfo(
+                url="https://clinicaltrialsapi.cancer.gov/api/v2/diseases",
+                category=EndpointCategory.CLINICAL_TRIALS,
+                data_types=[DataType.CLINICAL_TRIAL_DATA],
+                description="NCI API for cancer disease vocabulary",
+                compliance_notes="Public NCI service, disease ontology",
+                rate_limit="Not specified",
+                authentication="Optional NCI_API_KEY for increased access",
+            ),
+        )
+
+        self.register(
+            "nci_interventions",
+            EndpointInfo(
+                url="https://clinicaltrialsapi.cancer.gov/api/v2/interventions",
+                category=EndpointCategory.CLINICAL_TRIALS,
+                data_types=[DataType.CLINICAL_TRIAL_DATA],
+                description="NCI API for cancer treatment interventions",
+                compliance_notes="Public NCI service, intervention metadata",
+                rate_limit="Not specified",
+                authentication="Optional NCI_API_KEY for increased access",
+            ),
+        )
+
+        self.register(
+            "nci_biomarkers",
+            EndpointInfo(
+                url="https://clinicaltrialsapi.cancer.gov/api/v2/biomarkers",
+                category=EndpointCategory.CLINICAL_TRIALS,
+                data_types=[DataType.CLINICAL_TRIAL_DATA],
+                description="NCI API for biomarkers used in clinical trials",
+                compliance_notes="Public NCI service, biomarker metadata",
+                rate_limit="Not specified",
+                authentication="Optional NCI_API_KEY for increased access",
+            ),
+        )
+
+        # OpenFDA APIs
+        self.register(
+            "openfda_drug_events",
+            EndpointInfo(
+                url="https://api.fda.gov/drug/event.json",
+                category=EndpointCategory.REGULATORY_DATA,
+                data_types=[DataType.ADVERSE_EVENTS],
+                description="FDA Adverse Event Reporting System (FAERS) for drug safety data",
+                compliance_notes="Public FDA service, voluntary adverse event reports, no PII",
+                rate_limit="40 requests/minute (240 with API key)",
+                authentication="Optional OPENFDA_API_KEY for increased rate limits",
+            ),
+        )
+
+        self.register(
+            "openfda_drug_labels",
+            EndpointInfo(
+                url="https://api.fda.gov/drug/label.json",
+                category=EndpointCategory.REGULATORY_DATA,
+                data_types=[DataType.DRUG_LABELS],
+                description="FDA Structured Product Labeling (SPL) for drug prescribing information",
+                compliance_notes="Public FDA service, official drug labeling data",
+                rate_limit="40 requests/minute (240 with API key)",
+                authentication="Optional OPENFDA_API_KEY for increased rate limits",
+            ),
+        )
+
+        self.register(
+            "openfda_device_events",
+            EndpointInfo(
+                url="https://api.fda.gov/device/event.json",
+                category=EndpointCategory.REGULATORY_DATA,
+                data_types=[DataType.DEVICE_EVENTS],
+                description="FDA MAUDE database for medical device adverse events",
+                compliance_notes="Public FDA service, device malfunction and adverse event reports",
+                rate_limit="40 requests/minute (240 with API key)",
+                authentication="Optional OPENFDA_API_KEY for increased rate limits",
+            ),
+        )
+
+        self.register(
+            "openfda_drugsfda",
+            EndpointInfo(
+                url="https://api.fda.gov/drug/drugsfda.json",
+                category=EndpointCategory.REGULATORY_DATA,
+                data_types=[DataType.DRUG_LABELS],
+                description="FDA Drugs@FDA database for drug approval information",
+                compliance_notes="Public FDA service, official drug approval records",
+                rate_limit="40 requests/minute (240 with API key)",
+                authentication="Optional OPENFDA_API_KEY for increased rate limits",
+            ),
+        )
+
+        self.register(
+            "openfda_drug_enforcement",
+            EndpointInfo(
+                url="https://api.fda.gov/drug/enforcement.json",
+                category=EndpointCategory.REGULATORY_DATA,
+                data_types=[DataType.ADVERSE_EVENTS],
+                description="FDA Enforcement database for drug recall information",
+                compliance_notes="Public FDA service, drug recall and enforcement actions",
+                rate_limit="40 requests/minute (240 with API key)",
+                authentication="Optional OPENFDA_API_KEY for increased rate limits",
+            ),
+        )
+
+        # Note: Drug shortage endpoint is not yet available via OpenFDA
+        # Using placeholder for future migration when FDA provides official endpoint
+        self.register(
+            "fda_drug_shortages",
+            EndpointInfo(
+                url="https://www.fda.gov/media/169066/download",
+                category=EndpointCategory.REGULATORY_DATA,
+                data_types=[DataType.DRUG_LABELS],
+                description="FDA Drug Shortages database (cached locally)",
+                compliance_notes="Public FDA service, drug shortage status information",
+                rate_limit="Cached with 24-hour TTL",
+                authentication="None required",
             ),
         )
 

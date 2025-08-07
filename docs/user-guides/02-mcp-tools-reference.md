@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-BioMCP provides 24 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.
+BioMCP provides 35 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.
 
 ## Related Guides
 
@@ -10,14 +10,15 @@ BioMCP provides 24 specialized tools for biomedical research through the Model C
 
 ## Tool Categories
 
-| Category            | Count | Tools                                                         |
-| ------------------- | ----- | ------------------------------------------------------------- |
-| **Core Tools**      | 3     | `search`, `fetch`, `think`                                    |
-| **Article Tools**   | 2     | `article_searcher`, `article_getter`                          |
-| **Trial Tools**     | 6     | `trial_searcher`, `trial_getter`, + 4 detail getters          |
-| **Variant Tools**   | 3     | `variant_searcher`, `variant_getter`, `alphagenome_predictor` |
-| **BioThings Tools** | 3     | `gene_getter`, `disease_getter`, `drug_getter`                |
-| **NCI Tools**       | 6     | Organization, intervention, biomarker, and disease tools      |
+| Category            | Count | Tools                                                          |
+| ------------------- | ----- | -------------------------------------------------------------- |
+| **Core Tools**      | 3     | `search`, `fetch`, `think`                                     |
+| **Article Tools**   | 2     | `article_searcher`, `article_getter`                           |
+| **Trial Tools**     | 6     | `trial_searcher`, `trial_getter`, + 4 detail getters           |
+| **Variant Tools**   | 3     | `variant_searcher`, `variant_getter`, `alphagenome_predictor`  |
+| **BioThings Tools** | 3     | `gene_getter`, `disease_getter`, `drug_getter`                 |
+| **NCI Tools**       | 6     | Organization, intervention, biomarker, and disease tools       |
+| **OpenFDA Tools**   | 12    | Adverse events, labels, devices, approvals, recalls, shortages |
 
 ## Core Unified Tools
 
@@ -437,6 +438,194 @@ nci_disease_searcher(
 ) -> str
 ```
 
+## OpenFDA Tools
+
+All OpenFDA tools support optional API keys for higher rate limits (240/min vs 40/min). Get a free key at [open.fda.gov/apis/authentication](https://open.fda.gov/apis/authentication/).
+
+### 24. openfda_adverse_searcher
+
+**Search FDA Adverse Event Reporting System (FAERS).**
+
+```python
+openfda_adverse_searcher(
+    drug: str = None,
+    reaction: str = None,
+    serious: bool = None,        # Filter serious events only
+    limit: int = 25,
+    skip: int = 0,
+    api_key: str = None          # Optional OpenFDA API key
+) -> str
+```
+
+**Example:**
+
+```python
+# Find serious bleeding events for warfarin
+openfda_adverse_searcher(
+    drug="warfarin",
+    reaction="bleeding",
+    serious=True,
+    api_key="your-key"  # Optional
+)
+```
+
+### 25. openfda_adverse_getter
+
+**Get detailed adverse event report.**
+
+```python
+openfda_adverse_getter(
+    report_id: str,              # Safety report ID
+    api_key: str = None
+) -> str
+```
+
+### 26. openfda_label_searcher
+
+**Search FDA drug product labels.**
+
+```python
+openfda_label_searcher(
+    name: str = None,
+    indication: str = None,      # Search by indication
+    boxed_warning: bool = False, # Filter for boxed warnings
+    section: str = None,         # Specific label section
+    limit: int = 25,
+    skip: int = 0,
+    api_key: str = None
+) -> str
+```
+
+### 27. openfda_label_getter
+
+**Get complete drug label information.**
+
+```python
+openfda_label_getter(
+    set_id: str,                 # Label set ID
+    sections: list[str] = None,  # Specific sections to retrieve
+    api_key: str = None
+) -> str
+```
+
+**Label Sections:** `indications_and_usage`, `contraindications`, `warnings_and_precautions`, `dosage_and_administration`, `adverse_reactions`, `drug_interactions`, `pregnancy`, `pediatric_use`, `geriatric_use`
+
+### 28. openfda_device_searcher
+
+**Search FDA device adverse event reports (MAUDE).**
+
+```python
+openfda_device_searcher(
+    device: str = None,
+    manufacturer: str = None,
+    problem: str = None,
+    product_code: str = None,    # FDA product code
+    genomics_only: bool = True,  # Filter genomic/diagnostic devices
+    limit: int = 25,
+    skip: int = 0,
+    api_key: str = None
+) -> str
+```
+
+**Note:** FDA uses abbreviated device names (e.g., "F1CDX" for "FoundationOne CDx").
+
+### 29. openfda_device_getter
+
+**Get detailed device event report.**
+
+```python
+openfda_device_getter(
+    mdr_report_key: str,         # MDR report key
+    api_key: str = None
+) -> str
+```
+
+### 30. openfda_approval_searcher
+
+**Search FDA drug approval records (Drugs@FDA).**
+
+```python
+openfda_approval_searcher(
+    drug: str = None,
+    application_number: str = None,  # NDA/BLA number
+    approval_year: str = None,       # YYYY format
+    limit: int = 25,
+    skip: int = 0,
+    api_key: str = None
+) -> str
+```
+
+### 31. openfda_approval_getter
+
+**Get drug approval details.**
+
+```python
+openfda_approval_getter(
+    application_number: str,     # NDA/BLA number
+    api_key: str = None
+) -> str
+```
+
+### 32. openfda_recall_searcher
+
+**Search FDA drug recall records.**
+
+```python
+openfda_recall_searcher(
+    drug: str = None,
+    recall_class: str = None,    # "1", "2", or "3"
+    status: str = None,          # "ongoing" or "completed"
+    reason: str = None,
+    since_date: str = None,      # YYYYMMDD format
+    limit: int = 25,
+    skip: int = 0,
+    api_key: str = None
+) -> str
+```
+
+**Recall Classes:**
+
+- Class 1: Dangerous or defective products that could cause serious health problems or death
+- Class 2: Products that might cause temporary health problems or pose slight threat
+- Class 3: Products unlikely to cause adverse health consequences
+
+### 33. openfda_recall_getter
+
+**Get drug recall details.**
+
+```python
+openfda_recall_getter(
+    recall_number: str,          # FDA recall number
+    api_key: str = None
+) -> str
+```
+
+### 34. openfda_shortage_searcher
+
+**Search FDA drug shortage database.**
+
+```python
+openfda_shortage_searcher(
+    drug: str = None,
+    status: str = None,          # "current" or "resolved"
+    therapeutic_category: str = None,
+    limit: int = 25,
+    skip: int = 0,
+    api_key: str = None
+) -> str
+```
+
+### 35. openfda_shortage_getter
+
+**Get drug shortage details.**
+
+```python
+openfda_shortage_getter(
+    drug_name: str,
+    api_key: str = None
+) -> str
+```
+
 ## Best Practices
 
 ### 1. Always Think First
@@ -518,17 +707,23 @@ All tools include comprehensive error handling:
 
 ## Tool Selection Guide
 
-| If you need to...              | Use this tool                                  |
-| ------------------------------ | ---------------------------------------------- |
-| Search across multiple domains | `search` with query language                   |
-| Get any record by ID           | `fetch` with auto-detection                    |
-| Plan your research approach    | `think` (always first!)                        |
-| Find recent papers             | `article_searcher`                             |
-| Locate clinical trials         | `trial_searcher`                               |
-| Analyze genetic variants       | `variant_searcher` + `variant_getter`          |
-| Predict variant effects        | `alphagenome_predictor`                        |
-| Get gene/drug/disease info     | `gene_getter`, `drug_getter`, `disease_getter` |
-| Access NCI databases           | `nci_*` tools with API key                     |
+| If you need to...              | Use this tool                                     |
+| ------------------------------ | ------------------------------------------------- |
+| Search across multiple domains | `search` with query language                      |
+| Get any record by ID           | `fetch` with auto-detection                       |
+| Plan your research approach    | `think` (always first!)                           |
+| Find recent papers             | `article_searcher`                                |
+| Locate clinical trials         | `trial_searcher`                                  |
+| Analyze genetic variants       | `variant_searcher` + `variant_getter`             |
+| Predict variant effects        | `alphagenome_predictor`                           |
+| Get gene/drug/disease info     | `gene_getter`, `drug_getter`, `disease_getter`    |
+| Access NCI databases           | `nci_*` tools with API key                        |
+| Check drug adverse events      | `openfda_adverse_searcher`                        |
+| Review FDA drug labels         | `openfda_label_searcher` + `openfda_label_getter` |
+| Investigate device issues      | `openfda_device_searcher`                         |
+| Find drug approvals            | `openfda_approval_searcher`                       |
+| Check drug recalls             | `openfda_recall_searcher`                         |
+| Monitor drug shortages         | `openfda_shortage_searcher`                       |
 
 ## Next Steps
 

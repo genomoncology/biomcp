@@ -17,8 +17,8 @@ class TestMCPIntegration:
         # Get the registered tools
         tools = await mcp_app.list_tools()
 
-        # Should have 23 tools (2 unified + 1 think + 20 individual)
-        assert len(tools) == 23
+        # Should have 35 tools (2 unified + 1 think + 32 individual including OpenFDA)
+        assert len(tools) == 35
 
         # Check tool names
         tool_names = [tool.name for tool in tools]
@@ -41,6 +41,19 @@ class TestMCPIntegration:
         assert "gene_getter" in tool_names
         assert "drug_getter" in tool_names
         assert "disease_getter" in tool_names
+        # OpenFDA tools
+        assert "openfda_adverse_searcher" in tool_names
+        assert "openfda_adverse_getter" in tool_names
+        assert "openfda_label_searcher" in tool_names
+        assert "openfda_label_getter" in tool_names
+        assert "openfda_device_searcher" in tool_names
+        assert "openfda_device_getter" in tool_names
+        assert "openfda_approval_searcher" in tool_names
+        assert "openfda_approval_getter" in tool_names
+        assert "openfda_recall_searcher" in tool_names
+        assert "openfda_recall_getter" in tool_names
+        assert "openfda_shortage_searcher" in tool_names
+        assert "openfda_shortage_getter" in tool_names
 
     async def test_mcp_search_tool_schema(self):
         """Test the search tool schema."""

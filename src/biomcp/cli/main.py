@@ -8,6 +8,7 @@ from .biomarkers import biomarker_app
 from .diseases import disease_app
 from .health import health_app
 from .interventions import intervention_app
+from .openfda import openfda_app
 from .organizations import organization_app
 from .server import run_server
 from .trials import trial_app
@@ -81,6 +82,12 @@ app.add_typer(
 app.add_typer(
     disease_app,
     name="disease",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    openfda_app,
+    name="openfda",
     no_args_is_help=True,
 )
 

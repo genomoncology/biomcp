@@ -30,6 +30,7 @@ nav:
           - BioThings Examples: tutorials/biothings-prompts.md
           - NCI Examples: tutorials/nci-prompts.md
           - AlphaGenome Tutorial: tutorials/claude-code-biomcp-alphagenome.md
+          - OpenFDA Examples: tutorials/openfda-prompts.md
       - Concepts:
           - Deep Researcher: concepts/02-the-deep-researcher-persona.md
           - Sequential Thinking: concepts/03-sequential-thinking-with-the-think-tool.md
@@ -57,6 +58,7 @@ nav:
           - BioThings Suite: backend-services-reference/02-biothings-suite.md
           - cBioPortal: backend-services-reference/03-cbioportal.md
           - AlphaGenome: backend-services-reference/07-alphagenome.md
+          - OpenFDA: tutorials/openfda-integration.md
       - Development:
           - Contributing: developer-guides/02-contributing-and-testing.md
           - Deployment: developer-guides/01-server-deployment.md

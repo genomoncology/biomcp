@@ -1254,3 +1254,555 @@ async def nci_disease_searcher(
                 "- `nci_disease_searcher(name='NSCLC')`"
             )
         raise
+
+
+# OpenFDA Tools
+@mcp_app.tool()
+@track_performance("biomcp.openfda_adverse_searcher")
+async def openfda_adverse_searcher(
+    drug: Annotated[
+        str | None,
+        Field(description="Drug name to search for adverse events"),
+    ] = None,
+    reaction: Annotated[
+        str | None,
+        Field(description="Adverse reaction term to search for"),
+    ] = None,
+    serious: Annotated[
+        bool | None,
+        Field(description="Filter for serious events only"),
+    ] = None,
+    limit: Annotated[
+        int,
+        Field(description="Maximum number of results", ge=1, le=100),
+    ] = 25,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Search FDA adverse event reports (FAERS) for drug safety information.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to plan your research strategy!
+
+    Searches FDA's Adverse Event Reporting System for:
+    - Drug side effects and adverse reactions
+    - Serious event reports (death, hospitalization, disability)
+    - Safety signal patterns across patient populations
+
+    Note: These reports do not establish causation - they are voluntary reports
+    that may contain incomplete or unverified information.
+    """
+    from biomcp.openfda import search_adverse_events
+
+    skip = (page - 1) * limit
+    return await search_adverse_events(
+        drug=drug,
+        reaction=reaction,
+        serious=serious,
+        limit=limit,
+        skip=skip,
+        api_key=api_key,
+    )
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_adverse_getter")
+async def openfda_adverse_getter(
+    report_id: Annotated[
+        str,
+        Field(description="Safety report ID"),
+    ],
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Get detailed information for a specific FDA adverse event report.
+
+    Retrieves complete details including:
+    - Patient demographics and medical history
+    - All drugs involved and dosages
+    - Complete list of adverse reactions
+    - Event narrative and outcomes
+    - Reporter information
+    """
+    from biomcp.openfda import get_adverse_event
+
+    return await get_adverse_event(report_id, api_key=api_key)
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_label_searcher")
+async def openfda_label_searcher(
+    name: Annotated[
+        str | None,
+        Field(description="Drug name to search for"),
+    ] = None,
+    indication: Annotated[
+        str | None,
+        Field(description="Search for drugs indicated for this condition"),
+    ] = None,
+    boxed_warning: Annotated[
+        bool,
+        Field(description="Filter for drugs with boxed warnings"),
+    ] = False,
+    section: Annotated[
+        str | None,
+        Field(
+            description="Specific label section (e.g., 'contraindications', 'warnings')"
+        ),
+    ] = None,
+    limit: Annotated[
+        int,
+        Field(description="Maximum number of results", ge=1, le=100),
+    ] = 25,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Search FDA drug product labels (SPL) for prescribing information.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to plan your research strategy!
+
+    Searches official FDA drug labels for:
+    - Approved indications and usage
+    - Dosage and administration guidelines
+    - Contraindications and warnings
+    - Drug interactions and adverse reactions
+    - Special population considerations
+
+    Label sections include: indications, dosage, contraindications, warnings,
+    adverse, interactions, pregnancy, pediatric, geriatric, overdose
+    """
+    from biomcp.openfda import search_drug_labels
+
+    skip = (page - 1) * limit
+    return await search_drug_labels(
+        name=name,
+        indication=indication,
+        boxed_warning=boxed_warning,
+        section=section,
+        limit=limit,
+        skip=skip,
+        api_key=api_key,
+    )
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_label_getter")
+async def openfda_label_getter(
+    set_id: Annotated[
+        str,
+        Field(description="Label set ID"),
+    ],
+    sections: Annotated[
+        list[str] | None,
+        Field(
+            description="Specific sections to retrieve (default: key sections)"
+        ),
+    ] = None,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Get complete FDA drug label information by set ID.
+
+    Retrieves the full prescribing information including:
+    - Complete indications and usage text
+    - Detailed dosing instructions
+    - All warnings and precautions
+    - Clinical pharmacology and studies
+    - Manufacturing and storage information
+
+    Specify sections to retrieve specific parts, or leave empty for default key sections.
+    """
+    from biomcp.openfda import get_drug_label
+
+    return await get_drug_label(set_id, sections, api_key=api_key)
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_device_searcher")
+async def openfda_device_searcher(
+    device: Annotated[
+        str | None,
+        Field(description="Device name to search for"),
+    ] = None,
+    manufacturer: Annotated[
+        str | None,
+        Field(description="Manufacturer name"),
+    ] = None,
+    problem: Annotated[
+        str | None,
+        Field(description="Device problem description"),
+    ] = None,
+    product_code: Annotated[
+        str | None,
+        Field(description="FDA product code"),
+    ] = None,
+    genomics_only: Annotated[
+        bool,
+        Field(description="Filter to genomic/diagnostic devices only"),
+    ] = True,
+    limit: Annotated[
+        int,
+        Field(description="Maximum number of results", ge=1, le=100),
+    ] = 25,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Search FDA device adverse event reports (MAUDE) for medical device issues.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to plan your research strategy!
+
+    Searches FDA's device adverse event database for:
+    - Device malfunctions and failures
+    - Patient injuries related to devices
+    - Genomic test and diagnostic device issues
+
+    By default, filters to genomic/diagnostic devices relevant to precision medicine.
+    Set genomics_only=False to search all medical devices.
+    """
+    from biomcp.openfda import search_device_events
+
+    skip = (page - 1) * limit
+    return await search_device_events(
+        device=device,
+        manufacturer=manufacturer,
+        problem=problem,
+        product_code=product_code,
+        genomics_only=genomics_only,
+        limit=limit,
+        skip=skip,
+        api_key=api_key,
+    )
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_device_getter")
+async def openfda_device_getter(
+    mdr_report_key: Annotated[
+        str,
+        Field(description="MDR report key"),
+    ],
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Get detailed information for a specific FDA device event report.
+
+    Retrieves complete device event details including:
+    - Device identification and specifications
+    - Complete event narrative
+    - Patient outcomes and impacts
+    - Manufacturer analysis and actions
+    - Remedial actions taken
+    """
+    from biomcp.openfda import get_device_event
+
+    return await get_device_event(mdr_report_key, api_key=api_key)
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_approval_searcher")
+async def openfda_approval_searcher(
+    drug: Annotated[
+        str | None,
+        Field(description="Drug name (brand or generic) to search for"),
+    ] = None,
+    application_number: Annotated[
+        str | None,
+        Field(description="NDA or BLA application number"),
+    ] = None,
+    approval_year: Annotated[
+        str | None,
+        Field(description="Year of approval (YYYY format)"),
+    ] = None,
+    limit: Annotated[
+        int,
+        Field(description="Maximum number of results", ge=1, le=100),
+    ] = 25,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Search FDA drug approval records from Drugs@FDA database.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to plan your research strategy!
+
+    Returns information about:
+    - Application numbers and sponsors
+    - Brand and generic names
+    - Product formulations and strengths
+    - Marketing status and approval dates
+    - Submission history
+
+    Useful for verifying if a drug is FDA-approved and when.
+    """
+    from biomcp.openfda import search_drug_approvals
+
+    skip = (page - 1) * limit
+    return await search_drug_approvals(
+        drug=drug,
+        application_number=application_number,
+        approval_year=approval_year,
+        limit=limit,
+        skip=skip,
+        api_key=api_key,
+    )
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_approval_getter")
+async def openfda_approval_getter(
+    application_number: Annotated[
+        str,
+        Field(description="NDA or BLA application number"),
+    ],
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Get detailed FDA drug approval information for a specific application.
+
+    Returns comprehensive approval details including:
+    - Full product list with dosage forms and strengths
+    - Complete submission history
+    - Marketing status timeline
+    - Therapeutic equivalence codes
+    - Pharmacologic class information
+    """
+    from biomcp.openfda import get_drug_approval
+
+    return await get_drug_approval(application_number, api_key=api_key)
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_recall_searcher")
+async def openfda_recall_searcher(
+    drug: Annotated[
+        str | None,
+        Field(description="Drug name to search for recalls"),
+    ] = None,
+    recall_class: Annotated[
+        str | None,
+        Field(
+            description="Recall classification (1=most serious, 2=moderate, 3=least serious)"
+        ),
+    ] = None,
+    status: Annotated[
+        str | None,
+        Field(description="Recall status (ongoing, completed, terminated)"),
+    ] = None,
+    reason: Annotated[
+        str | None,
+        Field(description="Search text in recall reason"),
+    ] = None,
+    since_date: Annotated[
+        str | None,
+        Field(description="Show recalls after this date (YYYYMMDD format)"),
+    ] = None,
+    limit: Annotated[
+        int,
+        Field(description="Maximum number of results", ge=1, le=100),
+    ] = 25,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Search FDA drug recall records from the Enforcement database.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to plan your research strategy!
+
+    Returns recall information including:
+    - Classification (Class I, II, or III)
+    - Recall reason and description
+    - Product identification
+    - Distribution information
+    - Recalling firm details
+    - Current status
+
+    Class I = most serious (death/serious harm)
+    Class II = moderate (temporary/reversible harm)
+    Class III = least serious (unlikely to cause harm)
+    """
+    from biomcp.openfda import search_drug_recalls
+
+    skip = (page - 1) * limit
+    return await search_drug_recalls(
+        drug=drug,
+        recall_class=recall_class,
+        status=status,
+        reason=reason,
+        since_date=since_date,
+        limit=limit,
+        skip=skip,
+        api_key=api_key,
+    )
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_recall_getter")
+async def openfda_recall_getter(
+    recall_number: Annotated[
+        str,
+        Field(description="FDA recall number"),
+    ],
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Get detailed FDA drug recall information for a specific recall.
+
+    Returns complete recall details including:
+    - Full product description and code information
+    - Complete reason for recall
+    - Distribution pattern and locations
+    - Quantity of product recalled
+    - Firm information and actions taken
+    - Timeline of recall events
+    """
+    from biomcp.openfda import get_drug_recall
+
+    return await get_drug_recall(recall_number, api_key=api_key)
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_shortage_searcher")
+async def openfda_shortage_searcher(
+    drug: Annotated[
+        str | None,
+        Field(description="Drug name (generic or brand) to search"),
+    ] = None,
+    status: Annotated[
+        str | None,
+        Field(description="Shortage status (current or resolved)"),
+    ] = None,
+    therapeutic_category: Annotated[
+        str | None,
+        Field(
+            description="Therapeutic category (e.g., Oncology, Anti-infective)"
+        ),
+    ] = None,
+    limit: Annotated[
+        int,
+        Field(description="Maximum number of results", ge=1, le=100),
+    ] = 25,
+    page: Annotated[
+        int,
+        Field(description="Page number (1-based)", ge=1),
+    ] = 1,
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Search FDA drug shortage records.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to plan your research strategy!
+
+    Returns shortage information including:
+    - Current shortage status
+    - Shortage start and resolution dates
+    - Reason for shortage
+    - Therapeutic category
+    - Manufacturer information
+    - Estimated resolution timeline
+
+    Note: Shortage data is cached and updated periodically.
+    Check FDA.gov for most current information.
+    """
+    from biomcp.openfda import search_drug_shortages
+
+    skip = (page - 1) * limit
+    return await search_drug_shortages(
+        drug=drug,
+        status=status,
+        therapeutic_category=therapeutic_category,
+        limit=limit,
+        skip=skip,
+        api_key=api_key,
+    )
+
+
+@mcp_app.tool()
+@track_performance("biomcp.openfda_shortage_getter")
+async def openfda_shortage_getter(
+    drug: Annotated[
+        str,
+        Field(description="Drug name (generic or brand)"),
+    ],
+    api_key: Annotated[
+        str | None,
+        Field(
+            description="Optional OpenFDA API key (overrides OPENFDA_API_KEY env var)"
+        ),
+    ] = None,
+) -> str:
+    """Get detailed FDA drug shortage information for a specific drug.
+
+    Returns comprehensive shortage details including:
+    - Complete timeline of shortage
+    - Detailed reason for shortage
+    - All affected manufacturers
+    - Alternative products if available
+    - Resolution status and estimates
+    - Additional notes and recommendations
+
+    Data is updated periodically from FDA shortage database.
+    """
+    from biomcp.openfda import get_drug_shortage
+
+    return await get_drug_shortage(drug, api_key=api_key)
