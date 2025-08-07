@@ -19,6 +19,8 @@ from .exceptions import (
     OpenFDATimeoutError,
     OpenFDAValidationError,
 )
+from .input_validation import build_safe_query
+from .rate_limiter import FDA_CIRCUIT_BREAKER, FDA_RATE_LIMITER, FDA_SEMAPHORE
 from .validation import sanitize_response, validate_fda_response
 
 logger = logging.getLogger(__name__)
@@ -54,9 +56,12 @@ async def make_openfda_request(  # noqa: C901
     Returns:
         Tuple of (response_data, error_message)
     """
-    # Check cache first
-    if is_cacheable_request(endpoint, params):
-        cached_response = get_cached_response(endpoint, params)
+    # Validate and sanitize input parameters
+    safe_params = build_safe_query(params)
+
+    # Check cache first (with safe params)
+    if is_cacheable_request(endpoint, safe_params):
+        cached_response = get_cached_response(endpoint, safe_params)
         if cached_response:
             return cached_response, None
 
@@ -64,16 +69,28 @@ async def make_openfda_request(  # noqa: C901
     if not api_key:
         api_key = get_api_key()
     if api_key:
-        params["api_key"] = api_key
+        safe_params["api_key"] = api_key
 
     last_error = None
     delay = initial_delay
 
     for attempt in range(max_retries + 1):
         try:
-            response, error = await request_api(
-                url=endpoint, request=params, method="GET", domain=domain
-            )
+            # Apply rate limiting and circuit breaker
+            async with FDA_SEMAPHORE:
+                await FDA_RATE_LIMITER.acquire()
+
+                # Check circuit breaker state
+                if FDA_CIRCUIT_BREAKER.is_open:
+                    state = FDA_CIRCUIT_BREAKER.get_state()
+                    return None, f"FDA API circuit breaker is open: {state}"
+
+                response, error = await request_api(
+                    url=endpoint,
+                    request=safe_params,
+                    method="GET",
+                    domain=domain,
+                )
 
             if error:
                 error_msg = (
@@ -116,8 +133,8 @@ async def make_openfda_request(  # noqa: C901
                     return None, str(e)
 
                 # Cache successful response
-                if is_cacheable_request(endpoint, params):
-                    set_cached_response(endpoint, params, response)
+                if is_cacheable_request(endpoint, safe_params):
+                    set_cached_response(endpoint, safe_params, response)
 
             return response, None
 

@@ -4,6 +4,7 @@ Helper functions for OpenFDA drug labels to reduce complexity.
 
 from typing import Any
 
+from .input_validation import sanitize_input
 from .utils import clean_text, extract_drug_names, truncate_text
 
 
@@ -17,6 +18,10 @@ def build_label_search_query(
     search_parts = []
 
     if name:
+        # Sanitize input to prevent injection
+        name = sanitize_input(name, max_length=100)
+
+    if name:
         name_query = (
             f'(openfda.brand_name:"{name}" OR '
             f'openfda.generic_name:"{name}" OR '
@@ -25,7 +30,10 @@ def build_label_search_query(
         search_parts.append(name_query)
 
     if indication:
-        search_parts.append(f'indications_and_usage:"{indication}"')
+        # Sanitize indication input
+        indication = sanitize_input(indication, max_length=200)
+        if indication:
+            search_parts.append(f'indications_and_usage:"{indication}"')
 
     if boxed_warning:
         search_parts.append("_exists_:boxed_warning")

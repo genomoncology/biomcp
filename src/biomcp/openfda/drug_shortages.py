@@ -5,6 +5,7 @@ Note: FDA does not yet provide an OpenFDA endpoint for drug shortages.
 This module fetches from the FDA Drug Shortages JSON feed and caches it locally.
 """
 
+import fcntl
 import json
 import logging
 import os
@@ -94,7 +95,13 @@ async def _get_cached_shortage_data() -> dict[str, Any] | None:
     if CACHE_FILE.exists():
         try:
             with open(CACHE_FILE) as f:
-                data = json.load(f)
+                # Acquire shared lock for reading
+                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+                try:
+                    data = json.load(f)
+                finally:
+                    # Release lock
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
             # Check cache age
             fetched_at = datetime.fromisoformat(data.get("_fetched_at", ""))
@@ -114,13 +121,27 @@ async def _get_cached_shortage_data() -> dict[str, Any] | None:
     data = await _fetch_shortage_data()
 
     if data:
-        # Save to cache
+        # Save to cache with exclusive lock
         try:
-            with open(CACHE_FILE, "w") as f:
-                json.dump(data, f, indent=2)
+            # Use atomic write with temp file
+            temp_file = CACHE_FILE.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
+                # Acquire exclusive lock for writing
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                try:
+                    json.dump(data, f, indent=2)
+                finally:
+                    # Release lock
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+            # Atomic rename
+            temp_file.replace(CACHE_FILE)
             logger.debug(f"Saved shortage data to cache: {CACHE_FILE}")
         except (OSError, json.JSONDecodeError) as e:
             logger.warning(f"Failed to save cache: {e}")
+            # Clean up temp file if it exists
+            if temp_file.exists():
+                temp_file.unlink()
 
     return data
 
@@ -367,6 +388,9 @@ def _format_shortage_detail(shortage: dict[str, Any]) -> list[str]:
     # Alternatives if available
     if alternatives := shortage.get("alternatives"):
         output.append("\n### Alternative Products")
-        output.append(alternatives)
+        if isinstance(alternatives, list):
+            output.append(", ".join(alternatives))
+        else:
+            output.append(str(alternatives))
 
     return output

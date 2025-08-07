@@ -23,6 +23,7 @@ from .exceptions import (
     OpenFDARateLimitError,
     OpenFDATimeoutError,
 )
+from .input_validation import sanitize_input
 from .utils import clean_text, make_openfda_request
 
 logger = logging.getLogger(__name__)
@@ -35,15 +36,23 @@ def _build_search_query(
     search_parts = []
 
     if drug:
-        drug_query = (
-            f'(patient.drug.medicinalproduct:"{drug}" OR '
-            f'patient.drug.openfda.brand_name:"{drug}" OR '
-            f'patient.drug.openfda.generic_name:"{drug}")'
-        )
-        search_parts.append(drug_query)
+        # Sanitize drug input to prevent injection
+        drug = sanitize_input(drug, max_length=100)
+        if drug:
+            drug_query = (
+                f'(patient.drug.medicinalproduct:"{drug}" OR '
+                f'patient.drug.openfda.brand_name:"{drug}" OR '
+                f'patient.drug.openfda.generic_name:"{drug}")'
+            )
+            search_parts.append(drug_query)
 
     if reaction:
-        search_parts.append(f'patient.reaction.reactionmeddrapt:"{reaction}"')
+        # Sanitize reaction input
+        reaction = sanitize_input(reaction, max_length=200)
+        if reaction:
+            search_parts.append(
+                f'patient.reaction.reactionmeddrapt:"{reaction}"'
+            )
 
     if serious is not None:
         serious_value = "1" if serious else "2"

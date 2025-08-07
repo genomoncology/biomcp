@@ -69,6 +69,8 @@ nav:
           - HTTP Client: developer-guides/06-http-client-and-caching.md
           - Performance: developer-guides/07-performance-optimizations.md
           - Third-Party APIs: developer-guides/03-third-party-endpoints.md
+      - Security:
+          - FDA Integration Security: FDA_SECURITY.md
 
   - About:
       - Blog:

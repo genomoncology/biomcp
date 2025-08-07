@@ -17,15 +17,15 @@ logger = logging.getLogger(__name__)
 # Cache configuration
 CACHE_TTL_MINUTES = int(os.environ.get("BIOMCP_FDA_CACHE_TTL", "15"))
 MAX_CACHE_SIZE = int(os.environ.get("BIOMCP_FDA_MAX_CACHE_SIZE", "100"))
+MAX_RESPONSE_SIZE = int(
+    os.environ.get("BIOMCP_FDA_MAX_RESPONSE_SIZE", str(1024 * 1024))
+)  # 1MB default
 
 # Global cache dictionary
 _cache: dict[str, tuple[Any, datetime]] = {}
 
 
-def _generate_cache_key(
-    endpoint: str,
-    params: dict[str, Any]
-) -> str:
+def _generate_cache_key(endpoint: str, params: dict[str, Any]) -> str:
     """
     Generate a unique cache key for an API request.
 
@@ -36,8 +36,15 @@ def _generate_cache_key(
     Returns:
         A unique hash key for the request
     """
+    # Remove sensitive parameters before hashing
+    safe_params = {
+        k: v
+        for k, v in params.items()
+        if k.lower() not in ["api_key", "apikey", "key", "token", "secret"]
+    }
+
     # Sort params for consistent hashing
-    sorted_params = json.dumps(params, sort_keys=True)
+    sorted_params = json.dumps(safe_params, sort_keys=True)
     combined = f"{endpoint}:{sorted_params}"
 
     # Use SHA256 for cache key
@@ -45,8 +52,7 @@ def _generate_cache_key(
 
 
 def get_cached_response(
-    endpoint: str,
-    params: dict[str, Any]
+    endpoint: str, params: dict[str, Any]
 ) -> dict[str, Any] | None:
     """
     Retrieve a cached response if available and not expired.
@@ -79,9 +85,7 @@ def get_cached_response(
 
 
 def set_cached_response(
-    endpoint: str,
-    params: dict[str, Any],
-    response: dict[str, Any]
+    endpoint: str, params: dict[str, Any], response: dict[str, Any]
 ) -> None:
     """
     Store a response in the cache.
@@ -91,18 +95,37 @@ def set_cached_response(
         params: Query parameters
         response: Response data to cache
     """
+    # Check response size limit
+    import json
+    import sys
+
+    # Better size estimation using JSON serialization
+    try:
+        response_json = json.dumps(response)
+        response_size = len(response_json.encode("utf-8"))
+    except (TypeError, ValueError):
+        # If can't serialize, use sys.getsizeof
+        response_size = sys.getsizeof(response)
+
+    if response_size > MAX_RESPONSE_SIZE:
+        logger.warning(
+            f"Response too large to cache: {response_size} bytes > {MAX_RESPONSE_SIZE} bytes"
+        )
+        return
+
     # Check cache size limit
     if len(_cache) >= MAX_CACHE_SIZE:
         # Remove oldest entries (simple FIFO)
-        oldest_keys = sorted(
-            _cache.keys(),
-            key=lambda k: _cache[k][1]
-        )[:len(_cache) - MAX_CACHE_SIZE + 1]
+        oldest_keys = sorted(_cache.keys(), key=lambda k: _cache[k][1])[
+            : len(_cache) - MAX_CACHE_SIZE + 1
+        ]
 
         for key in oldest_keys:
             del _cache[key]
 
-        logger.debug(f"Cache size limit reached, removed {len(oldest_keys)} entries")
+        logger.debug(
+            f"Cache size limit reached, removed {len(oldest_keys)} entries"
+        )
 
     cache_key = _generate_cache_key(endpoint, params)
     _cache[cache_key] = (response, datetime.now())
@@ -143,7 +166,7 @@ def get_cache_stats() -> dict[str, Any]:
         "expired_entries": len(_cache) - valid_count,
         "average_age_seconds": avg_age,
         "ttl_minutes": CACHE_TTL_MINUTES,
-        "max_size": MAX_CACHE_SIZE
+        "max_size": MAX_CACHE_SIZE,
     }
 
 
