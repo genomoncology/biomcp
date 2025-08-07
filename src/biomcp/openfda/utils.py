@@ -8,6 +8,11 @@ import os
 from typing import Any
 
 from ..http_client import request_api
+from .cache import (
+    get_cached_response,
+    is_cacheable_request,
+    set_cached_response,
+)
 from .exceptions import (
     OpenFDAConnectionError,
     OpenFDARateLimitError,
@@ -36,7 +41,7 @@ async def make_openfda_request(  # noqa: C901
     initial_delay: float = 1.0,
 ) -> tuple[dict[str, Any] | None, str | None]:
     """
-    Make a request to the OpenFDA API with retry logic.
+    Make a request to the OpenFDA API with retry logic and caching.
 
     Args:
         endpoint: Full URL to the OpenFDA endpoint
@@ -49,6 +54,12 @@ async def make_openfda_request(  # noqa: C901
     Returns:
         Tuple of (response_data, error_message)
     """
+    # Check cache first
+    if is_cacheable_request(endpoint, params):
+        cached_response = get_cached_response(endpoint, params)
+        if cached_response:
+            return cached_response, None
+
     # Use provided API key or get from environment
     if not api_key:
         api_key = get_api_key()
@@ -103,6 +114,10 @@ async def make_openfda_request(  # noqa: C901
                 except OpenFDAValidationError as e:
                     logger.error(f"Invalid FDA response: {e}")
                     return None, str(e)
+
+                # Cache successful response
+                if is_cacheable_request(endpoint, params):
+                    set_cached_response(endpoint, params, response)
 
             return response, None
 

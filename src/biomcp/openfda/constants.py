@@ -67,6 +67,15 @@ DEVICE_FIELDS = [
 
 # Disclaimer text
 OPENFDA_DISCLAIMER = (
-    "*Data from FDA's openFDA API. Adverse event reports do not establish "
-    "causation. For clinical decisions, consult healthcare professionals.*"
+    "⚠️ **FDA Data Notice**: Information from openFDA API. "
+    "Not for clinical decision-making. Adverse events don't prove causation. "
+    "Data may be incomplete or delayed. Consult healthcare professionals and "
+    "official FDA sources at fda.gov for medical decisions."
+)
+
+OPENFDA_SHORTAGE_DISCLAIMER = (
+    "🚨 **Critical Warning**: Drug shortage information is time-sensitive. "
+    "Always verify current availability with FDA Drug Shortages Database at "
+    "https://www.accessdata.fda.gov/scripts/drugshortages/ before making "
+    "supply chain or treatment decisions."
 )

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from ..http_client import request_api
-from .constants import OPENFDA_DEFAULT_LIMIT
+from .constants import OPENFDA_DEFAULT_LIMIT, OPENFDA_SHORTAGE_DISCLAIMER
 from .drug_shortages_detail_helpers import (
     format_shortage_details_section,
     format_shortage_names,
@@ -198,10 +198,7 @@ async def search_drug_shortages(
     for i, shortage in enumerate(filtered, 1):
         output.extend(_format_shortage_entry(shortage, i))
 
-    output.append(
-        "\n*Note: Drug shortage information is updated periodically. "
-        "Check FDA.gov for the most current information.*"
-    )
+    output.append(f"\n---\n{OPENFDA_SHORTAGE_DISCLAIMER}")
 
     return "\n".join(output)
 
@@ -269,10 +266,7 @@ async def get_drug_shortage(
 
     output.extend(_format_shortage_detail(matched))
 
-    output.append(
-        "\n*Note: Drug shortage information is updated periodically. "
-        "Check FDA.gov for the most current information.*"
-    )
+    output.append(f"\n---\n{OPENFDA_SHORTAGE_DISCLAIMER}")
 
     return "\n".join(output)
 
