@@ -45,7 +45,7 @@ search(
 ) -> dict
 ```
 
-**Domains:** `article`, `trial`, `variant`, `gene`, `drug`, `disease`, `nci_organization`, `nci_intervention`, `nci_biomarker`, `nci_disease`
+**Domains:** `article`, `trial`, `variant`, `gene`, `drug`, `disease`, `nci_organization`, `nci_intervention`, `nci_biomarker`, `nci_disease`, `fda_adverse`, `fda_label`, `fda_device`, `fda_approval`, `fda_recall`, `fda_shortage`
 
 **Query Language Examples:**
 
@@ -64,6 +64,12 @@ search(query="gene:EGFR AND mutation:T790M")
 
 # Clinical trials by location
 search(domain="trial", conditions=["lung cancer"], lat=40.7128, long=-74.0060)
+
+# FDA adverse events
+search(domain="fda_adverse", chemicals=["aspirin"])
+
+# FDA drug approvals
+search(domain="fda_approval", chemicals=["keytruda"])
 ```
 
 ### 2. fetch
@@ -85,6 +91,7 @@ fetch(
 - Trials: NCT ID (e.g., "NCT03006926")
 - Variants: HGVS, rsID, genomic coordinates
 - Genes/Drugs/Diseases: Names or database IDs
+- FDA Records: Report IDs, Application Numbers (e.g., "BLA125514"), Recall Numbers, etc.
 
 **Detail Options for Trials:** `protocol`, `locations`, `outcomes`, `references`, `all`
 
@@ -100,6 +107,10 @@ fetch(id="NCT03006926", domain="trial", detail="locations")
 # Auto-detect domain
 fetch(id="rs121913529")  # Variant
 fetch(id="BRAF")         # Gene
+
+# Fetch FDA records
+fetch(id="BLA125514", domain="fda_approval")  # Drug approval
+fetch(id="D-0001-2023", domain="fda_recall")   # Drug recall
 ```
 
 ### 3. think

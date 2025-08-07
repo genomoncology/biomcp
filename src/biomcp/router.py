@@ -143,10 +143,16 @@ async def search(  # noqa: C901
             "nci_intervention",
             "nci_biomarker",
             "nci_disease",
+            "fda_adverse",
+            "fda_label",
+            "fda_device",
+            "fda_approval",
+            "fda_recall",
+            "fda_shortage",
         ]
         | None,
         Field(
-            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS, 'gene' for gene information from MyGene.info, 'drug' for drug/chemical information from MyChem.info, 'disease' for disease information from MyDisease.info, 'nci_organization' for NCI cancer centers/sponsors, 'nci_intervention' for NCI drugs/devices/procedures, 'nci_biomarker' for NCI trial eligibility biomarkers, 'nci_disease' for NCI cancer vocabulary"
+            description="Domain to search: 'article' for papers/literature ABOUT genes/variants/diseases, 'trial' for clinical studies, 'variant' for genetic variant DATABASE RECORDS, 'gene' for gene information from MyGene.info, 'drug' for drug/chemical information from MyChem.info, 'disease' for disease information from MyDisease.info, 'nci_organization' for NCI cancer centers/sponsors, 'nci_intervention' for NCI drugs/devices/procedures, 'nci_biomarker' for NCI trial eligibility biomarkers, 'nci_disease' for NCI cancer vocabulary, 'fda_adverse' for FDA adverse event reports, 'fda_label' for FDA drug labels, 'fda_device' for FDA device events, 'fda_approval' for FDA drug approvals, 'fda_recall' for FDA drug recalls, 'fda_shortage' for FDA drug shortages"
         ),
     ] = None,
     genes: Annotated[list[str] | str | None, "Gene symbols"] = None,
@@ -755,6 +761,97 @@ async def search(  # noqa: C901
             total=total,
         )
 
+    # OpenFDA domains
+    elif domain == "fda_adverse":
+        from biomcp.openfda import search_adverse_events
+
+        drug_name = (
+            chemicals[0] if chemicals else keywords[0] if keywords else None
+        )
+        skip = (page - 1) * page_size
+        fda_result = await search_adverse_events(
+            drug=drug_name,
+            limit=page_size,
+            skip=skip,
+            api_key=api_key,
+        )
+        # Parse the markdown result to extract items
+        # For simplicity, return the result as a single item
+        return {"results": [{"content": fda_result}]}
+
+    elif domain == "fda_label":
+        from biomcp.openfda import search_drug_labels
+
+        drug_name = (
+            chemicals[0] if chemicals else keywords[0] if keywords else None
+        )
+        skip = (page - 1) * page_size
+        fda_result = await search_drug_labels(
+            name=drug_name,
+            limit=page_size,
+            skip=skip,
+            api_key=api_key,
+        )
+        return {"results": [{"content": fda_result}]}
+
+    elif domain == "fda_device":
+        from biomcp.openfda import search_device_events
+
+        device_name = keywords[0] if keywords else None
+        skip = (page - 1) * page_size
+        fda_result = await search_device_events(
+            device=device_name,
+            limit=page_size,
+            skip=skip,
+            api_key=api_key,
+        )
+        return {"results": [{"content": fda_result}]}
+
+    elif domain == "fda_approval":
+        from biomcp.openfda import search_drug_approvals
+
+        drug_name = (
+            chemicals[0] if chemicals else keywords[0] if keywords else None
+        )
+        skip = (page - 1) * page_size
+        fda_result = await search_drug_approvals(
+            drug=drug_name,
+            limit=page_size,
+            skip=skip,
+            api_key=api_key,
+        )
+        return {"results": [{"content": fda_result}]}
+
+    elif domain == "fda_recall":
+        from biomcp.openfda import search_drug_recalls
+
+        drug_name = (
+            chemicals[0] if chemicals else keywords[0] if keywords else None
+        )
+        skip = (page - 1) * page_size
+        fda_result = await search_drug_recalls(
+            drug=drug_name,
+            limit=page_size,
+            skip=skip,
+            api_key=api_key,
+        )
+        return {"results": [{"content": fda_result}]}
+
+    elif domain == "fda_shortage":
+        from biomcp.openfda import search_drug_shortages
+
+        drug_name = (
+            chemicals[0] if chemicals else keywords[0] if keywords else None
+        )
+        skip = (page - 1) * page_size
+        fda_result = await search_drug_shortages(
+            drug=drug_name,
+            limit=page_size,
+            skip=skip,
+            api_key=api_key,
+        )
+        return {"results": [{"content": fda_result}]}
+
     else:
         raise InvalidDomainError(domain, VALID_DOMAINS)
 
@@ -767,7 +864,7 @@ async def search(  # noqa: C901
 async def fetch(  # noqa: C901
     id: Annotated[  # noqa: A002
         str,
-        "PMID / NCT ID / Variant ID / DOI / Gene ID / Drug ID / Disease ID / NCI Organization ID / NCI Intervention ID / NCI Disease ID",
+        "PMID / NCT ID / Variant ID / DOI / Gene ID / Drug ID / Disease ID / NCI Organization ID / NCI Intervention ID / NCI Disease ID / FDA Report ID / FDA Set ID / FDA MDR Key / FDA Application Number / FDA Recall Number",
     ],
     domain: Annotated[
         Literal[
@@ -781,6 +878,12 @@ async def fetch(  # noqa: C901
             "nci_intervention",
             "nci_biomarker",
             "nci_disease",
+            "fda_adverse",
+            "fda_label",
+            "fda_device",
+            "fda_approval",
+            "fda_recall",
+            "fda_shortage",
         ]
         | None,
         Field(
@@ -1615,6 +1718,73 @@ async def fetch(  # noqa: C901
             raise SearchExecutionError("nci_disease", e) from e
 
     # Note: nci_biomarker doesn't support fetching by ID, only searching
+
+    # OpenFDA domains
+    elif domain == "fda_adverse":
+        from biomcp.openfda import get_adverse_event
+
+        result = await get_adverse_event(id, api_key=api_key)
+        return {
+            "title": f"FDA Adverse Event Report {id}",
+            "text": result,
+            "url": "",
+            "metadata": {"report_id": id, "domain": "fda_adverse"},
+        }
+
+    elif domain == "fda_label":
+        from biomcp.openfda import get_drug_label
+
+        result = await get_drug_label(id, api_key=api_key)
+        return {
+            "title": f"FDA Drug Label {id}",
+            "text": result,
+            "url": "",
+            "metadata": {"set_id": id, "domain": "fda_label"},
+        }
+
+    elif domain == "fda_device":
+        from biomcp.openfda import get_device_event
+
+        result = await get_device_event(id, api_key=api_key)
+        return {
+            "title": f"FDA Device Event {id}",
+            "text": result,
+            "url": "",
+            "metadata": {"mdr_report_key": id, "domain": "fda_device"},
+        }
+
+    elif domain == "fda_approval":
+        from biomcp.openfda import get_drug_approval
+
+        result = await get_drug_approval(id, api_key=api_key)
+        return {
+            "title": f"FDA Drug Approval {id}",
+            "text": result,
+            "url": "",
+            "metadata": {"application_number": id, "domain": "fda_approval"},
+        }
+
+    elif domain == "fda_recall":
+        from biomcp.openfda import get_drug_recall
+
+        result = await get_drug_recall(id, api_key=api_key)
+        return {
+            "title": f"FDA Drug Recall {id}",
+            "text": result,
+            "url": "",
+            "metadata": {"recall_number": id, "domain": "fda_recall"},
+        }
+
+    elif domain == "fda_shortage":
+        from biomcp.openfda import get_drug_shortage
+
+        result = await get_drug_shortage(id, api_key=api_key)
+        return {
+            "title": f"FDA Drug Shortage - {id}",
+            "text": result,
+            "url": "",
+            "metadata": {"drug": id, "domain": "fda_shortage"},
+        }
 
     # Invalid domain
     raise InvalidDomainError(domain, VALID_DOMAINS)

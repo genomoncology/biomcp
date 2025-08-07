@@ -166,6 +166,13 @@ VALID_DOMAINS = [
     "nci_intervention",
     "nci_biomarker",
     "nci_disease",
+    # OpenFDA domains
+    "fda_adverse",
+    "fda_label",
+    "fda_device",
+    "fda_approval",
+    "fda_recall",
+    "fda_shortage",
 ]
 VALID_DOMAINS_PLURAL = [
     "articles",
@@ -178,6 +185,13 @@ VALID_DOMAINS_PLURAL = [
     "nci_interventions",
     "nci_biomarkers",
     "nci_diseases",
+    # OpenFDA domains
+    "fda_adverse_events",
+    "fda_labels",
+    "fda_device_events",
+    "fda_approvals",
+    "fda_recalls",
+    "fda_shortages",
 ]
 
 # Domain mappings for unified search
@@ -192,6 +206,13 @@ DOMAIN_TO_PLURAL = {
     "nci_intervention": "nci_interventions",
     "nci_biomarker": "nci_biomarkers",
     "nci_disease": "nci_diseases",
+    # OpenFDA domains
+    "fda_adverse": "fda_adverse_events",
+    "fda_label": "fda_labels",
+    "fda_device": "fda_device_events",
+    "fda_approval": "fda_approvals",
+    "fda_recall": "fda_recalls",
+    "fda_shortage": "fda_shortages",
 }
 
 PLURAL_TO_DOMAIN = {
@@ -205,6 +226,13 @@ PLURAL_TO_DOMAIN = {
     "nci_interventions": "nci_intervention",
     "nci_biomarkers": "nci_biomarker",
     "nci_diseases": "nci_disease",
+    # OpenFDA domains
+    "fda_adverse_events": "fda_adverse",
+    "fda_labels": "fda_label",
+    "fda_device_events": "fda_device",
+    "fda_approvals": "fda_approval",
+    "fda_recalls": "fda_recall",
+    "fda_shortages": "fda_shortage",
 }
 
 # Trial detail sections
