@@ -316,6 +316,10 @@ Features of Streamable HTTP transport:
 #### Docker
 
 ```bash
+# Build the Docker image locally
+docker build -t biomcp:latest .
+
+# Run the container
 docker run -p 8000:8000 biomcp:latest biomcp run --mode streamable_http
 ```
 

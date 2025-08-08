@@ -5,7 +5,6 @@ Note: FDA does not yet provide an OpenFDA endpoint for drug shortages.
 This module fetches from the FDA Drug Shortages JSON feed and caches it locally.
 """
 
-import fcntl
 import json
 import logging
 import os
@@ -13,6 +12,15 @@ import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+
+# Platform-specific file locking
+try:
+    import fcntl
+
+    HAS_FCNTL = True
+except ImportError:
+    # Windows doesn't have fcntl
+    HAS_FCNTL = False
 
 from ..http_client import request_api
 from .constants import OPENFDA_DEFAULT_LIMIT, OPENFDA_SHORTAGE_DISCLAIMER
@@ -81,6 +89,63 @@ async def _fetch_shortage_data() -> dict[str, Any] | None:
         return None  # Don't return mock data in production
 
 
+def _read_cache_file() -> dict[str, Any] | None:
+    """Read and validate cache file if it exists and is recent."""
+    if not CACHE_FILE.exists():
+        return None
+
+    try:
+        with open(CACHE_FILE) as f:
+            # Acquire shared lock for reading (Unix only)
+            if HAS_FCNTL:
+                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+            try:
+                data = json.load(f)
+            finally:
+                # Release lock (Unix only)
+                if HAS_FCNTL:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+        # Check cache age
+        fetched_at = datetime.fromisoformat(data.get("_fetched_at", ""))
+        cache_age = datetime.now() - fetched_at
+
+        if cache_age < timedelta(hours=CACHE_TTL_HOURS):
+            logger.debug(f"Using cached shortage data (age: {cache_age})")
+            return data
+
+        logger.debug(f"Cache expired (age: {cache_age}), fetching new data")
+        return None
+    except (OSError, json.JSONDecodeError, ValueError) as e:
+        logger.warning(f"Failed to read cache: {e}")
+        return None
+
+
+def _write_cache_file(data: dict[str, Any]) -> None:
+    """Write data to cache file with atomic operation."""
+    temp_file = CACHE_FILE.with_suffix(".tmp")
+    try:
+        with open(temp_file, "w") as f:
+            # Acquire exclusive lock for writing (Unix only)
+            if HAS_FCNTL:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            try:
+                json.dump(data, f, indent=2)
+            finally:
+                # Release lock (Unix only)
+                if HAS_FCNTL:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+        # Atomic rename
+        temp_file.replace(CACHE_FILE)
+        logger.debug(f"Saved shortage data to cache: {CACHE_FILE}")
+    except (OSError, json.JSONDecodeError) as e:
+        logger.warning(f"Failed to save cache: {e}")
+        # Clean up temp file if it exists
+        if temp_file.exists():
+            temp_file.unlink()
+
+
 async def _get_cached_shortage_data() -> dict[str, Any] | None:
     """
     Get shortage data from cache if valid, otherwise fetch new data.
@@ -91,57 +156,17 @@ async def _get_cached_shortage_data() -> dict[str, Any] | None:
     # Ensure cache directory exists
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Check if cache file exists and is recent
-    if CACHE_FILE.exists():
-        try:
-            with open(CACHE_FILE) as f:
-                # Acquire shared lock for reading
-                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
-                try:
-                    data = json.load(f)
-                finally:
-                    # Release lock
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-
-            # Check cache age
-            fetched_at = datetime.fromisoformat(data.get("_fetched_at", ""))
-            cache_age = datetime.now() - fetched_at
-
-            if cache_age < timedelta(hours=CACHE_TTL_HOURS):
-                logger.debug(f"Using cached shortage data (age: {cache_age})")
-                return data
-            else:
-                logger.debug(
-                    f"Cache expired (age: {cache_age}), fetching new data"
-                )
-        except (OSError, json.JSONDecodeError, ValueError) as e:
-            logger.warning(f"Failed to read cache: {e}")
+    # Try to read from cache
+    cached_data = _read_cache_file()
+    if cached_data:
+        return cached_data
 
     # Fetch new data
     data = await _fetch_shortage_data()
 
+    # Save to cache if we got data
     if data:
-        # Save to cache with exclusive lock
-        try:
-            # Use atomic write with temp file
-            temp_file = CACHE_FILE.with_suffix(".tmp")
-            with open(temp_file, "w") as f:
-                # Acquire exclusive lock for writing
-                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                try:
-                    json.dump(data, f, indent=2)
-                finally:
-                    # Release lock
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-
-            # Atomic rename
-            temp_file.replace(CACHE_FILE)
-            logger.debug(f"Saved shortage data to cache: {CACHE_FILE}")
-        except (OSError, json.JSONDecodeError) as e:
-            logger.warning(f"Failed to save cache: {e}")
-            # Clean up temp file if it exists
-            if temp_file.exists():
-                temp_file.unlink()
+        _write_cache_file(data)
 
     return data
 
