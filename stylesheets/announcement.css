@@ -1,0 +1,130 @@
+/* Announcement Banner Styles */
+.announcement-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.announcement-banner::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 70%
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.announcement-content {
+  position: relative;
+  z-index: 1;
+}
+
+.announcement-banner h2 {
+  color: white !important;
+  margin-top: 0 !important;
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.announcement-banner .badge-new {
+  background: #ff6b6b;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.announcement-banner p {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 1.1rem;
+  margin: 1rem 0;
+}
+
+.announcement-banner .announcement-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.announcement-banner .feature-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.8rem;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.announcement-banner .feature-item strong {
+  color: white;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.announcement-banner .feature-item span {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+}
+
+.announcement-banner .cta-button {
+  display: inline-block;
+  background: white;
+  color: #667eea !important;
+  padding: 0.8rem 2rem;
+  border-radius: 50px;
+  text-decoration: none !important;
+  font-weight: bold;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.announcement-banner .cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  background: #f8f9fa;
+}
+
+.announcement-banner .cta-button::after {
+  content: " →";
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+.announcement-banner .cta-button:hover::after {
+  transform: translateX(5px);
+}

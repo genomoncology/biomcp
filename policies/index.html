@@ -1,0 +1,3171 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Biomedical Model Context Protocol Server">
+      
+      
+        <meta name="author" content="Ian Maurer">
+      
+      
+        <link rel="canonical" href="https://biomcp.org/policies/">
+      
+      
+        <link rel="prev" href="../changelog/">
+      
+      
+        <link rel="next" href="../genomoncology/">
+      
+      
+      <link rel="icon" href="../assets/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.16">
+    
+    
+      
+        <title>Policies - BioMCP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.7e37652d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../stylesheets/announcement.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#genomoncology-remote-mcp" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="BioMCP" class="md-header__button md-logo" aria-label="BioMCP" data-md-component="logo">
+      
+  <img src="../assets/icon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            BioMCP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Policies
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/genomoncology/biomcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    genomoncology/biomcp
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../getting-started/01-quickstart-cli/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../concepts/01-what-is-biomcp/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/quick-reference/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/quick-architecture/" class="md-tabs__link">
+          
+  
+  
+  Developer
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../blog/ai-assisted-clinical-trial-search-analysis/" class="md-tabs__link">
+          
+  
+  
+  About
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="BioMCP" class="md-nav__button md-logo" aria-label="BioMCP" data-md-component="logo">
+      
+  <img src="../assets/icon.png" alt="logo">
+
+    </a>
+    BioMCP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/genomoncology/biomcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    genomoncology/biomcp
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/01-quickstart-cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/02-claude-desktop-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Claude Desktop
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/03-authentication-and-api-keys/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Keys
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq-condensed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    User Guide
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            User Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/01-what-is-biomcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-guides/01-find-articles-and-cbioportal-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Finding Articles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-guides/02-find-trials-with-nci-and-biothings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Finding Trials
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-guides/03-get-comprehensive-variant-annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Analyzing Variants
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-guides/04-predict-variant-effects-with-alphagenome/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Predicting Effects
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-guides/06-search-nci-organizations-and-interventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Searching Organizations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workflows/all-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Research Workflows
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_8">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/remote-connection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Remote Connection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/biothings-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    BioThings Examples
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/nci-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    NCI Examples
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/claude-code-biomcp-alphagenome/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AlphaGenome Tutorial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/openfda-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    OpenFDA Examples
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_9">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/02-the-deep-researcher-persona/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Deep Researcher
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/03-sequential-thinking-with-the-think-tool/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sequential Thinking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/quick-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guides/01-command-line-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI Commands
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guides/02-mcp-tools-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../apis/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../apis/python-sdk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Python SDK
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../apis/error-codes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Error Codes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guides/03-integrating-with-ides-and-clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    IDE Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Developer
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Developer
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            Architecture
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/quick-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/visual-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Visual Diagrams
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/architecture-diagrams/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Detailed Diagrams
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Data Sources
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            Data Sources
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-services-reference/01-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-services-reference/06-pubtator3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PubTator3/PubMed
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-services-reference/04-clinicaltrials-gov/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ClinicalTrials.gov
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-services-reference/05-nci-cts-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    NCI CTS API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-services-reference/02-biothings-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    BioThings Suite
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-services-reference/03-cbioportal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    cBioPortal
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend-services-reference/07-alphagenome/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AlphaGenome
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/openfda-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    OpenFDA
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guides/02-contributing-and-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guides/01-server-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Deployment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to-guides/05-logging-and-monitoring-with-bigquery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    BigQuery Monitoring
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Technical Details
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            Technical Details
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guides/04-transport-protocol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Transport Protocol
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guides/05-error-handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Error Handling
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guides/06-http-client-and-caching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    HTTP Client
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guides/07-performance-optimizations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Performance
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guides/03-third-party-endpoints/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Third-Party APIs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            Security
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../FDA_SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FDA Integration Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    About
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            About
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Blog
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            Blog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../blog/ai-assisted-clinical-trial-search-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Clinical Trial Search
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../blog/researcher-persona-resource/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Researcher Persona
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Project
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Project
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Policies
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Policies
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-data-we-collect" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Data We Collect
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-how-we-use-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. How We Use It
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-legal-basis-gdpruk" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Legal Basis (GDPR/UK)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-who-we-share-with" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Who We Share With
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-third-party-data-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Third-Party Data Handling
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-cookies" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Cookies
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-data-retention" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Data Retention
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      8. Security
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-international-transfers" class="md-nav__link">
+    <span class="md-ellipsis">
+      9. International Transfers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-your-rights" class="md-nav__link">
+    <span class="md-ellipsis">
+      10. Your Rights
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-childrens-privacy" class="md-nav__link">
+    <span class="md-ellipsis">
+      11. Children's Privacy
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-policy-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      12. Policy Changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-contact" class="md-nav__link">
+    <span class="md-ellipsis">
+      13. Contact
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../genomoncology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GenomOncology
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-data-we-collect" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Data We Collect
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-how-we-use-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. How We Use It
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-legal-basis-gdpruk" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Legal Basis (GDPR/UK)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-who-we-share-with" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Who We Share With
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-third-party-data-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Third-Party Data Handling
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-cookies" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Cookies
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-data-retention" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Data Retention
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      8. Security
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-international-transfers" class="md-nav__link">
+    <span class="md-ellipsis">
+      9. International Transfers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-your-rights" class="md-nav__link">
+    <span class="md-ellipsis">
+      10. Your Rights
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-childrens-privacy" class="md-nav__link">
+    <span class="md-ellipsis">
+      11. Children's Privacy
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-policy-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      12. Policy Changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-contact" class="md-nav__link">
+    <span class="md-ellipsis">
+      13. Contact
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="genomoncology-remote-mcp">GenomOncology Remote MCP<a class="headerlink" href="#genomoncology-remote-mcp" title="Permanent link">&para;</a></h1>
+<p><strong>Privacy Policy</strong>
+<strong>Version 1.2 – Effective June 18, 2025</strong></p>
+<h2 id="1-data-we-collect">1. Data We Collect<a class="headerlink" href="#1-data-we-collect" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Examples</th>
+<th>Source</th>
+<th>Storage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Account</strong></td>
+<td>Google user ID, email, display name</td>
+<td>From Google OAuth</td>
+<td>BigQuery</td>
+</tr>
+<tr>
+<td><strong>Queries</strong></td>
+<td>Prompts, timestamps</td>
+<td>User input</td>
+<td>BigQuery</td>
+</tr>
+<tr>
+<td><strong>Operational</strong></td>
+<td>IP address, user-agent</td>
+<td>Automatic</td>
+<td>Temporary only</td>
+</tr>
+<tr>
+<td><strong>Usage</strong></td>
+<td>Token counts, latency, model performance</td>
+<td>Derived metrics</td>
+<td>Aggregated</td>
+</tr>
+<tr>
+<td><strong>Third-Party Responses</strong></td>
+<td>API responses from PubMed, bioRxiv, etc.</td>
+<td>Third-party services</td>
+<td>Not stored</td>
+</tr>
+</tbody>
+</table>
+<p>We do <strong>not</strong> collect sensitive health or demographic information.</p>
+<hr />
+<h2 id="2-how-we-use-it">2. How We Use It<a class="headerlink" href="#2-how-we-use-it" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Authenticate and secure the service</li>
+<li>Improve quality, accuracy, and speed of model output</li>
+<li>Analyze aggregate usage for insights</li>
+<li>Monitor third-party API performance (without storing responses)</li>
+<li>Comply with laws</li>
+</ul>
+<hr />
+<h2 id="3-legal-basis-gdpruk">3. Legal Basis (GDPR/UK)<a class="headerlink" href="#3-legal-basis-gdpruk" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Contractual necessity</strong> (Art. 6(1)(b) GDPR)</li>
+<li><strong>Legitimate interests</strong> (Art. 6(1)(f))</li>
+<li><strong>Consent</strong>, where applicable</li>
+</ul>
+<hr />
+<h2 id="4-who-we-share-with">4. Who We Share With<a class="headerlink" href="#4-who-we-share-with" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Google Cloud / Cloudflare</strong> – Hosting &amp; Auth</li>
+<li><strong>API providers</strong> – e.g., PubMed, bioRxiv</li>
+<li>Your queries are transmitted to these services</li>
+<li>We do not control their data retention practices</li>
+<li>We do not store third-party responses</li>
+<li><strong>Analytics tools</strong> – e.g., BigQuery</li>
+<li><strong>Authorities</strong> – if required by law</li>
+</ul>
+<p>We <strong>do not sell</strong> your personal data.</p>
+<hr />
+<h2 id="5-third-party-data-handling">5. Third-Party Data Handling<a class="headerlink" href="#5-third-party-data-handling" title="Permanent link">&para;</a></h2>
+<p>When you use the Service:</p>
+<ul>
+<li>Your queries may be sent to third-party APIs (PubMed, bioRxiv, TCGA, 1000 Genomes)</li>
+<li>These services have their own privacy policies and data practices</li>
+<li>We use third-party responses to generate output but do not store them</li>
+<li>Third parties may independently retain query data per their policies</li>
+<li>Only your username and queries are stored in our systems</li>
+</ul>
+<hr />
+<h2 id="6-cookies">6. Cookies<a class="headerlink" href="#6-cookies" title="Permanent link">&para;</a></h2>
+<p>We use only <strong>Google OAuth</strong> session cookies.
+No additional tracking cookies are set.</p>
+<hr />
+<h2 id="7-data-retention">7. Data Retention<a class="headerlink" href="#7-data-retention" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>BigQuery storage</strong> (usernames &amp; queries): Retained indefinitely</li>
+<li><strong>Operational data</strong> (IP, user-agent): Not retained</li>
+<li><strong>Third-party responses</strong>: Not stored</li>
+<li><strong>Aggregated metrics</strong>: Retained indefinitely</li>
+<li><strong>Account Username</strong>: Retained until deletion requested</li>
+</ul>
+<hr />
+<h2 id="8-security">8. Security<a class="headerlink" href="#8-security" title="Permanent link">&para;</a></h2>
+<ul>
+<li>All data encrypted in transit (TLS 1.3)</li>
+<li>Least-privilege access enforced via IAM</li>
+<li>Username and query data stored in BigQuery with strict access control</li>
+<li>Operational data (IP, user-agent) processed but not retained</li>
+<li><strong>Incident Response</strong>: Security incidents investigated within 24 hours</li>
+<li><strong>Breach Notification</strong>: Users notified within 72 hours of confirmed breach</li>
+<li><strong>Security Audits</strong>: Annual third-party security assessments</li>
+<li><strong>Vulnerability Reporting</strong>: See our <a href="https://github.com/genomoncology/biomcp/blob/main/docs/biomcp-security.md">SECURITY.md</a></li>
+</ul>
+<hr />
+<h2 id="9-international-transfers">9. International Transfers<a class="headerlink" href="#9-international-transfers" title="Permanent link">&para;</a></h2>
+<p>Data is stored in <strong>Google Cloud's <code>us-central1</code></strong>.
+Transfers from the EU/UK rely on <strong>SCCs</strong>.</p>
+<hr />
+<h2 id="10-your-rights">10. Your Rights<a class="headerlink" href="#10-your-rights" title="Permanent link">&para;</a></h2>
+<p>Depending on your location, you may request to:</p>
+<ul>
+<li>Access, correct, or delete your data</li>
+<li>Restrict or object to processing</li>
+<li>Port your data</li>
+<li>File a complaint (EEA/UK)</li>
+<li>Opt out (California residents)</li>
+</ul>
+<p><strong>Data Export</strong>:</p>
+<ul>
+<li>Available in JSON or CSV format</li>
+<li>Requests fulfilled within 30 days</li>
+<li>Includes: account info, queries, timestamps</li>
+<li>Excludes: operational data, third-party responses, aggregated metrics</li>
+</ul>
+<p>Email: <strong>privacy@genomoncology.com</strong></p>
+<hr />
+<h2 id="11-childrens-privacy">11. Children's Privacy<a class="headerlink" href="#11-childrens-privacy" title="Permanent link">&para;</a></h2>
+<p>The Service is not intended for use by anyone under <strong>16 years old</strong>.</p>
+<hr />
+<h2 id="12-policy-changes">12. Policy Changes<a class="headerlink" href="#12-policy-changes" title="Permanent link">&para;</a></h2>
+<p>We will update this document at <code>/privacy</code> with an updated Effective Date.
+Material changes will be announced by email.
+Version history maintained at: <a href="https://github.com/genomoncology/biomcp/blob/main/docs/biomcp-privacy.md">github.com/genomoncology/biomcp/blob/main/docs/biomcp-privacy.md</a></p>
+<hr />
+<h2 id="13-contact">13. Contact<a class="headerlink" href="#13-contact" title="Permanent link">&para;</a></h2>
+<p><strong>Data Protection Officer</strong>
+📧 <strong>dpo@genomoncology.com</strong>
+📮 GenomOncology LLC – Privacy Office
+1138 West 9th Street, Suite 400
+Cleveland, OH 44113</p>
+<h1 id="security-policy">Security Policy<a class="headerlink" href="#security-policy" title="Permanent link">&para;</a></h1>
+<h2 id="reporting-a-vulnerability">Reporting a Vulnerability<a class="headerlink" href="#reporting-a-vulnerability" title="Permanent link">&para;</a></h2>
+<p>We take the security of biomcp seriously. If you believe you have found a security vulnerability, please report it to us as described below.</p>
+<h3 id="please-do-not">Please do NOT:<a class="headerlink" href="#please-do-not" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Open a public GitHub issue</li>
+<li>Discuss the vulnerability publicly before it has been addressed</li>
+</ul>
+<h3 id="please-do">Please DO:<a class="headerlink" href="#please-do" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Email us at <strong>security@genomoncology.com</strong></li>
+<li>Include the word "SECURITY" in the subject line</li>
+<li>Provide detailed steps to reproduce the vulnerability</li>
+<li>Include the impact and potential attack scenarios</li>
+</ul>
+<h3 id="what-to-expect">What to expect:<a class="headerlink" href="#what-to-expect" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Acknowledgment</strong>: Within 24 hours</li>
+<li><strong>Initial Assessment</strong>: Within 72 hours</li>
+<li><strong>Status Updates</strong>: At least every 5 business days</li>
+<li><strong>Resolution Target</strong>: Critical issues within 30 days</li>
+</ul>
+<h3 id="scope">Scope<a class="headerlink" href="#scope" title="Permanent link">&para;</a></h3>
+<p>Vulnerabilities in the following areas are in scope:</p>
+<ul>
+<li>Authentication bypass or privilege escalation</li>
+<li>Data exposure or unauthorized access to user queries</li>
+<li>Injection vulnerabilities (SQL, command, etc.)</li>
+<li>Cross-site scripting (XSS) or request forgery (CSRF)</li>
+<li>Denial of service vulnerabilities</li>
+<li>Insecure cryptographic implementations</li>
+<li>Third-party API key exposure</li>
+</ul>
+<h3 id="out-of-scope">Out of Scope:<a class="headerlink" href="#out-of-scope" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vulnerabilities in third-party services (PubMed, bioRxiv, etc.)</li>
+<li>Issues in dependencies with existing patches</li>
+<li>Social engineering attacks</li>
+<li>Physical attacks</li>
+<li>Attacks requiring authenticated admin access</li>
+</ul>
+<h2 id="disclosure-policy">Disclosure Policy<a class="headerlink" href="#disclosure-policy" title="Permanent link">&para;</a></h2>
+<ul>
+<li>We will work with you to understand and validate the issue</li>
+<li>We will prepare a fix and release it as soon as possible</li>
+<li>We will publicly disclose the vulnerability after the fix is released</li>
+<li>We will credit you for the discovery (unless you prefer to remain anonymous)</li>
+</ul>
+<h2 id="safe-harbor">Safe Harbor<a class="headerlink" href="#safe-harbor" title="Permanent link">&para;</a></h2>
+<p>Any activities conducted in a manner consistent with this policy will be considered authorized conduct, and we will not initiate legal action against you. If legal action is initiated by a third party against you in connection with activities conducted under this policy, we will take steps to make it known that your actions were conducted in compliance with this policy.</p>
+<h2 id="contact">Contact<a class="headerlink" href="#contact" title="Permanent link">&para;</a></h2>
+<p><strong>Security Team Email</strong>: security@genomoncology.com
+<strong>PGP Key</strong>: Available upon request</p>
+<p>Thank you for helping keep biomcp and our users safe!</p>
+<h1 id="genomoncology-remote-mcp_1">GenomOncology Remote MCP<a class="headerlink" href="#genomoncology-remote-mcp_1" title="Permanent link">&para;</a></h1>
+<p><strong>Terms of Service</strong>
+<strong>Version 1.2 – Effective June 18, 2025</strong></p>
+<blockquote>
+<p>This document applies to the <strong>hosted Remote MCP service</strong> (the "Service") provided by <strong>GenomOncology LLC</strong>.</p>
+<p>For use of the <strong>open-source code</strong> available at <a href="https://github.com/genomoncology/biomcp">https://github.com/genomoncology/biomcp</a>, refer to the repository's LICENSE file (e.g., MIT License).</p>
+</blockquote>
+<hr />
+<h2 id="1-definitions">1. Definitions<a class="headerlink" href="#1-definitions" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Service</strong></td>
+<td>The hosted Model Context Protocol (MCP) instance available via Cloudflare and secured by Google OAuth.</td>
+</tr>
+<tr>
+<td><strong>User Content</strong></td>
+<td>Prompts, messages, files, code, or other material submitted by you.</td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>Model-generated text or data produced in response to your User Content.</td>
+</tr>
+<tr>
+<td><strong>Personal Data</strong></td>
+<td>Information that identifies or relates to an identifiable individual, including Google account identifiers and query text.</td>
+</tr>
+<tr>
+<td><strong>Commercial Use</strong></td>
+<td>Any use that directly or indirectly generates revenue, including but not limited to: selling access, integrating into paid products, or using for business operations.</td>
+</tr>
+<tr>
+<td><strong>Academic Research</strong></td>
+<td>Non-commercial research conducted by accredited educational institutions for scholarly purposes.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-eligibility-accounts">2. Eligibility &amp; Accounts<a class="headerlink" href="#2-eligibility-accounts" title="Permanent link">&para;</a></h2>
+<p>You must:</p>
+<ul>
+<li>Be at least 16 years old</li>
+<li>Have a valid Google account</li>
+<li>Not be barred from receiving services under applicable law</li>
+</ul>
+<p>Authentication is handled via <strong>Google OAuth</strong>. Keep your credentials secure.</p>
+<hr />
+<h2 id="3-license-intellectual-property">3. License &amp; Intellectual Property<a class="headerlink" href="#3-license-intellectual-property" title="Permanent link">&para;</a></h2>
+<p>You are granted a <strong>limited, revocable, non-exclusive, non-transferable</strong> license to use the Service for <strong>internal research and non-commercial evaluation</strong>.</p>
+<p><strong>Permitted Uses:</strong></p>
+<ul>
+<li>Personal research and learning</li>
+<li>Academic research (with attribution)</li>
+<li>Evaluation for potential commercial licensing</li>
+<li>Open-source development (non-commercial)</li>
+</ul>
+<p><strong>Prohibited Commercial Uses:</strong></p>
+<ul>
+<li>Reselling or redistributing Service access</li>
+<li>Integration into commercial products/services</li>
+<li>Use in revenue-generating operations</li>
+<li>Commercial data analysis or insights</li>
+</ul>
+<p>For commercial licensing inquiries, contact: <strong>licensing@genomoncology.com</strong></p>
+<p>We retain all rights in the Service and its software.
+You retain ownership of your User Content, but grant us a royalty-free, worldwide license to use it (and the resulting Output) to provide, secure, and improve the Service.</p>
+<hr />
+<h2 id="4-acceptable-use-rate-limits">4. Acceptable Use &amp; Rate Limits<a class="headerlink" href="#4-acceptable-use-rate-limits" title="Permanent link">&para;</a></h2>
+<p>You <strong>must not</strong>:</p>
+<ol>
+<li>Violate any law or regulation</li>
+<li>Reverse-engineer, scrape, or probe the Service or model weights</li>
+<li>Exceed rate limits or disrupt the Service</li>
+</ol>
+<p><strong>Rate Limits:</strong></p>
+<ul>
+<li><strong>Standard tier</strong>: 100 requests per hour, 1000 per day</li>
+<li><strong>Burst limit</strong>: 10 requests per minute</li>
+<li><strong>Payload size</strong>: 50KB per request</li>
+</ul>
+<p><strong>Exceeding Limits:</strong></p>
+<ul>
+<li>First violation: 1-hour suspension</li>
+<li>Repeated violations: Account review and possible termination</li>
+<li>Higher limits available upon request: <strong>api-limits@genomoncology.com</strong></li>
+</ul>
+<hr />
+<h2 id="5-privacy-logging-improvement">5. Privacy, Logging &amp; Improvement<a class="headerlink" href="#5-privacy-logging-improvement" title="Permanent link">&para;</a></h2>
+<p>We store <strong>Google user ID</strong>, <strong>email address</strong>, and <strong>query text</strong> with <strong>timestamps</strong> in <strong>Google BigQuery</strong>. This data is analyzed to:</p>
+<ul>
+<li>Operate and secure the Service</li>
+<li>Improve system performance and user experience</li>
+<li>Tune models and develop features</li>
+<li>Generate usage analytics</li>
+</ul>
+<p><strong>Note</strong>: We process but do not retain operational data like IP addresses or user-agents. Third-party API responses are used in real-time but not stored.</p>
+<p>See our <a href="https://github.com/genomoncology/biomcp/blob/main/docs/biomcp-privacy.md">Privacy Policy</a> for details.</p>
+<hr />
+<h2 id="6-thirdparty-services">6. Third‑Party Services<a class="headerlink" href="#6-thirdparty-services" title="Permanent link">&para;</a></h2>
+<p>The Service queries third-party APIs and knowledge sources (e.g., <strong>PubMed, bioRxiv, TCGA, 1000 Genomes</strong>) to respond to user prompts.</p>
+<p><strong>Important:</strong></p>
+<ul>
+<li>Your queries are transmitted to these services</li>
+<li>Third-party services have independent terms and privacy policies</li>
+<li>We cannot guarantee their availability, accuracy, or uptime</li>
+<li>Third parties may retain your query data per their policies</li>
+<li>API responses are used to generate output but not stored by us</li>
+</ul>
+<p>You acknowledge that third-party content is subject to their respective licenses and terms.</p>
+<hr />
+<h2 id="7-disclaimers">7. Disclaimers<a class="headerlink" href="#7-disclaimers" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>AI Output:</strong> May be inaccurate or biased. <strong>Do not rely on it for medical or legal decisions.</strong></li>
+<li><strong>AS‑IS:</strong> The Service is provided <em>"as is"</em> with no warranties or guarantees.</li>
+<li><strong>Third-Party Content:</strong> We are not responsible for accuracy or availability of third-party data.</li>
+</ul>
+<hr />
+<h2 id="8-limitation-of-liability">8. Limitation of Liability<a class="headerlink" href="#8-limitation-of-liability" title="Permanent link">&para;</a></h2>
+<p>To the extent permitted by law, <strong>GenomOncology</strong> is not liable for indirect, incidental, or consequential damages, including:</p>
+<ul>
+<li>Data loss</li>
+<li>Business interruption</li>
+<li>Inaccurate output</li>
+<li>Third-party service failures</li>
+</ul>
+<hr />
+<h2 id="9-indemnification">9. Indemnification<a class="headerlink" href="#9-indemnification" title="Permanent link">&para;</a></h2>
+<p>You agree to indemnify and hold GenomOncology harmless from any claim resulting from your misuse of the Service.</p>
+<hr />
+<h2 id="10-termination">10. Termination<a class="headerlink" href="#10-termination" title="Permanent link">&para;</a></h2>
+<p>We may suspend or terminate access at any time. Upon termination:</p>
+<ul>
+<li>Your license ends immediately</li>
+<li>We retain stored data (username &amp; queries) per our Privacy Policy</li>
+<li>You may request data export within 30 days</li>
+</ul>
+<hr />
+<h2 id="11-governing-law-dispute-resolution">11. Governing Law &amp; Dispute Resolution<a class="headerlink" href="#11-governing-law-dispute-resolution" title="Permanent link">&para;</a></h2>
+<p>These Terms are governed by the laws of <strong>Ohio, USA</strong>.
+Disputes will be resolved via binding arbitration in <strong>Cuyahoga County, Ohio</strong>, under <strong>JAMS Streamlined Rules</strong>.</p>
+<hr />
+<h2 id="12-changes">12. Changes<a class="headerlink" href="#12-changes" title="Permanent link">&para;</a></h2>
+<p>We may update these Terms by posting to <code>/terms</code>.
+Material changes will be emailed. Continued use constitutes acceptance.
+Version history: <a href="https://github.com/genomoncology/biomcp/blob/main/docs/biomcp-terms.md">github.com/genomoncology/biomcp/blob/main/docs/biomcp-terms.md</a></p>
+<hr />
+<h2 id="13-security-vulnerability-reporting">13. Security &amp; Vulnerability Reporting<a class="headerlink" href="#13-security-vulnerability-reporting" title="Permanent link">&para;</a></h2>
+<p>Found a security issue? Please report it responsibly:</p>
+<ul>
+<li>Email: <strong>security@genomoncology.com</strong></li>
+<li>See: <a href="https://github.com/genomoncology/biomcp/blob/main/SECURITY.md">SECURITY.md</a></li>
+</ul>
+<hr />
+<h2 id="14-contact">14. Contact<a class="headerlink" href="#14-contact" title="Permanent link">&para;</a></h2>
+<p>GenomOncology LLC
+1138 West 9th Street, Suite 400
+Cleveland, OH 44113
+📧 <strong>legal@genomoncology.com</strong></p>
+<hr />
+<h2 id="appendix-a-acceptable-use-policy-aup">Appendix A – Acceptable Use Policy (AUP)<a class="headerlink" href="#appendix-a-acceptable-use-policy-aup" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Do not submit illegal, harassing, or hateful content</li>
+<li>Do not generate malware, spam, or scrape personal data</li>
+<li>Respect copyright and IP laws</li>
+<li>Do not attempt to re-identify individuals from model output</li>
+<li>Do not use the Service to process protected health information (PHI)</li>
+<li>Do not submit personally identifiable genetic data</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Maintained by <a href="https://genomoncology.com">genomoncology</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/genomoncology/biomcp" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/biomcp-python" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.instant", "navigation.tracking", "navigation.top", "toc.follow", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.50899def.min.js"></script>
+      
+    
+  </body>
+</html>
