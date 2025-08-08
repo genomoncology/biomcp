@@ -5,7 +5,51 @@ All notable changes to the BioMCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.2] - 2025-08-05
+## [0.6.6] - 2025-08-08
+
+### Fixed
+
+- **Windows Compatibility** - Fixed fcntl module import error on Windows (Issue #57):
+  - Added conditional import with try/except for fcntl module
+  - File locking now only applies on Unix systems
+  - Windows users get full functionality without file locking
+  - Refactored cache functions to reduce code complexity
+
+### Changed
+
+- **Documentation** - Updated Docker instructions in README (Issue #58):
+  - Added `docker build -t biomcp:latest .` command before `docker run`
+  - Clarified that biomcp:latest is a local build, not pulled from Docker Hub
+
+## [0.6.5] - 2025-08-07
+
+### Added
+
+- **OpenFDA Integration** - Comprehensive FDA regulatory data access:
+  - **12 New MCP Tools** for adverse events, drug labels, device events, drug approvals, recalls, and shortages
+  - Each domain includes searcher and getter tools for flexible data retrieval
+  - Unified search support with `domain="fda_*"` parameters
+  - Enhanced CLI commands for all OpenFDA endpoints
+  - Smart caching and rate limiting for API efficiency
+  - Comprehensive error handling and data validation
+
+### Changed
+
+- Improved API key support across all OpenFDA tools
+- Enhanced documentation for FDA data integration
+
+## [0.6.4] - 2025-08-06
+
+### Changed
+
+- **Documentation Restructure** - Major documentation improvements:
+  - Simplified navigation structure for better user experience
+  - Fixed code block formatting and layout issues
+  - Removed unnecessary sections and redundant content
+  - Improved overall documentation readability and organization
+  - Enhanced mobile responsiveness
+
+## [0.6.3] - 2025-08-05
 
 ### Added
 
@@ -30,66 +74,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Trial search/getter tools now accept `source` parameter ("clinicaltrials" or "nci")
 - Improved domain-specific search logic for query+domain combinations
 
-### Added CLI Commands
+## [0.6.2] - 2025-08-05
 
-```bash
-# Organization search/get
-biomcp organization search "MD Anderson" --api-key YOUR_KEY
-biomcp organization get 12345 --api-key YOUR_KEY
+Note: Initial NCI integration release - see v0.6.3 for the full implementation.
 
-# Intervention search/get
-biomcp intervention search pembrolizumab --type Drug --api-key YOUR_KEY
-biomcp intervention get 67890 --api-key YOUR_KEY
+## [0.6.1] - 2025-08-03
 
-# Biomarker search
-biomcp biomarker search --name "PD-L1" --api-key YOUR_KEY
+### Fixed
 
-# Disease search
-biomcp disease search melanoma --source nci --api-key YOUR_KEY
+- **Dependency Management** - Fixed alphagenome dependency to enable PyPI publishing
+  - Made alphagenome an optional dependency
+  - Resolved packaging conflicts for distribution
 
-# Enhanced trial commands with source selection
-biomcp trial search --condition melanoma --source nci --api-key YOUR_KEY
-biomcp trial get NCT04280705 --source nci --api-key YOUR_KEY
-```
-
-### Documentation
-
-- Added NCI tutorial with example prompts: `docs/tutorials/nci-prompts.md`
-- Created API parameter reference: `docs/api-changes/nci-api-parameters.md`
-- Updated CLAUDE.md with NCI usage instructions and parameter notes
-- Requires NCI API key from: https://clinicaltrialsapi.cancer.gov/
-
-## [0.6.0] - 2025-08-01
+## [0.6.0] - 2025-08-02
 
 ### Added
 
-- **Streamable HTTP Transport Support** (#45) - MCP specification version 2025-03-26:
-  - Enabled FastMCP's native `/mcp` endpoint for Streamable HTTP transport
-  - MCP specification compliant transport (2025-03-26 spec) via FastMCP 1.12.3+
-  - CLI support via `biomcp run --mode streamable_http` (uses native FastMCP implementation)
-  - Full backward compatibility with legacy SSE endpoints
-  - Cloudflare Worker updated with POST /mcp route for full spec compliance
-  - Simplified worker implementation to leverage FastMCP's built-in transport support
-  - Added comprehensive integration tests for streamable HTTP functionality
-  - New transport protocol documentation guide
+- **Streamable HTTP Transport Protocol** - Modern MCP transport implementation:
+  - Single `/mcp` endpoint for all communication
+  - Session management with persistent session IDs
+  - Event resumption support for reliability
+  - On-demand streaming for long operations
+  - Configurable HTTP server modes (STDIO, HTTP, Worker)
+  - Better scalability for cloud deployments
+  - Full MCP specification compliance (2025-03-26)
 
 ### Changed
 
-- Enhanced CLI with transport modes (stdio, worker, streamable_http)
-- Added configurable host and port options for HTTP-based transports
-- Simplified server modes by removing redundant `http` mode
-- Cloudflare Worker now supports both GET and POST methods on /mcp endpoint
-- Pinned FastMCP dependency to version range >=1.12.3,<2.0.0 for stability
-- Standardized documentation file naming to lowercase with hyphens for consistency
+- Improved Cloudflare Worker integration
+- Enhanced transport layer with comprehensive testing
+- Updated deployment configurations for HTTP mode
 
-### Migration Notes
+## [0.5.0] - 2025-07-31
 
-- **From SSE to Streamable HTTP**: Update your server startup from `--mode worker` to `--mode streamable_http`
-- **Docker deployments**: Ensure you're using `--host 0.0.0.0` for proper container networking
-- **Cloudflare Workers**: The worker now automatically handles both transport types on `/mcp`
-- See the new [Transport Protocol Guide](https://biomcp.org/transport-protocol/) for detailed migration instructions
+### Added
 
-## [0.5.0] - 2025-08-01
+- **BioThings API Integration** - Real-time biomedical data access:
+  - **MyGene.info**: Gene annotations, summaries, aliases, and database links
+  - **MyChem.info**: Drug/chemical information, identifiers, mechanisms of action
+  - **MyDisease.info**: Disease definitions, synonyms, MONDO/DOID mappings
+  - **3 New MCP Tools**: `gene_getter`, `drug_getter`, `disease_getter`
+  - Automatic synonym expansion for enhanced trial searches
+  - Batch optimization for multiple gene lookups
+  - Live data fetching ensures current information
+
+### Changed
+
+- Enhanced unified search capabilities with BioThings data
+- Expanded query language support for gene, drug, and disease queries
+- Improved trial searches with automatic disease synonym expansion
+
+## [0.4.7] - 2025-07-30
 
 ### Added
 
@@ -360,10 +395,16 @@ biomcp trial get NCT04280705 --source nci --api-key YOUR_KEY
 - Input validation using Pydantic models
 - Safe string handling in all API calls
 
-[Unreleased]: https://github.com/genomoncology/biomcp/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/genomoncology/biomcp/compare/v0.6.6...HEAD
+[0.6.6]: https://github.com/genomoncology/biomcp/releases/tag/v0.6.6
+[0.6.5]: https://github.com/genomoncology/biomcp/releases/tag/v0.6.5
+[0.6.4]: https://github.com/genomoncology/biomcp/releases/tag/v0.6.4
+[0.6.3]: https://github.com/genomoncology/biomcp/releases/tag/v0.6.3
 [0.6.2]: https://github.com/genomoncology/biomcp/releases/tag/v0.6.2
+[0.6.1]: https://github.com/genomoncology/biomcp/releases/tag/v0.6.1
 [0.6.0]: https://github.com/genomoncology/biomcp/releases/tag/v0.6.0
 [0.5.0]: https://github.com/genomoncology/biomcp/releases/tag/v0.5.0
+[0.4.7]: https://github.com/genomoncology/biomcp/releases/tag/v0.4.7
 [0.4.6]: https://github.com/genomoncology/biomcp/releases/tag/v0.4.6
 [0.4.5]: https://github.com/genomoncology/biomcp/releases/tag/v0.4.5
 [0.4.4]: https://github.com/genomoncology/biomcp/releases/tag/v0.4.4
