@@ -1,0 +1,3901 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Biomedical Model Context Protocol Server">
+      
+      
+        <meta name="author" content="Ian Maurer">
+      
+      
+        <link rel="canonical" href="https://biomcp.org/tutorials/openfda-prompts/">
+      
+      
+        <link rel="prev" href="../claude-code-biomcp-alphagenome/">
+      
+      
+        <link rel="next" href="../../concepts/02-the-deep-researcher-persona/">
+      
+      
+      <link rel="icon" href="../../assets/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.16">
+    
+    
+      
+        <title>OpenFDA Examples - BioMCP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/announcement.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#openfda-example-prompts-for-ai-agents" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="BioMCP" class="md-header__button md-logo" aria-label="BioMCP" data-md-component="logo">
+      
+  <img src="../../assets/icon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            BioMCP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              OpenFDA Examples
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/genomoncology/biomcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    genomoncology/biomcp
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/01-quickstart-cli/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../concepts/01-what-is-biomcp/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/quick-reference/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/quick-architecture/" class="md-tabs__link">
+          
+  
+  
+  Developer
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../blog/ai-assisted-clinical-trial-search-analysis/" class="md-tabs__link">
+          
+  
+  
+  About
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="BioMCP" class="md-nav__button md-logo" aria-label="BioMCP" data-md-component="logo">
+      
+  <img src="../../assets/icon.png" alt="logo">
+
+    </a>
+    BioMCP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/genomoncology/biomcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    genomoncology/biomcp
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/01-quickstart-cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/02-claude-desktop-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Claude Desktop
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/03-authentication-and-api-keys/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Keys
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq-condensed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FAQ
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    User Guide
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            User Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/01-what-is-biomcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-guides/01-find-articles-and-cbioportal-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Finding Articles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-guides/02-find-trials-with-nci-and-biothings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Finding Trials
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-guides/03-get-comprehensive-variant-annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Analyzing Variants
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-guides/04-predict-variant-effects-with-alphagenome/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Predicting Effects
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-guides/06-search-nci-organizations-and-interventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Searching Organizations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workflows/all-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Research Workflows
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_8" id="__nav_3_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_8">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote-connection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Remote Connection
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../biothings-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    BioThings Examples
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nci-prompts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    NCI Examples
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../claude-code-biomcp-alphagenome/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AlphaGenome Tutorial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    OpenFDA Examples
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    OpenFDA Examples
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#drug-safety-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Safety Assessment
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Drug Safety Assessment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-safety-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Safety Profile
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comparative-safety-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Comparative Safety Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drug-interaction-investigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Interaction Investigation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treatment-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Treatment Planning
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Treatment Planning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#indication-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      Indication Verification
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contraindication-screening" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contraindication Screening
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dosing-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dosing Guidelines
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#device-reliability-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Device Reliability Assessment
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Device Reliability Assessment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#genomic-test-reliability" class="md-nav__link">
+    <span class="md-ellipsis">
+      Genomic Test Reliability
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#laboratory-equipment-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Laboratory Equipment Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comprehensive-drug-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Comprehensive Drug Evaluation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Comprehensive Drug Evaluation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-drug-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Drug Assessment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#risk-benefit-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Risk-Benefit Analysis
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#special-populations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Special Populations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Special Populations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pregnancy-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pregnancy Considerations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pediatric-oncology" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pediatric Oncology
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complex-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complex Queries
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complex Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multi-drug-regimen-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multi-Drug Regimen Safety
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#biomarker-driven-treatment-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Biomarker-Driven Treatment Selection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#treatment-failure-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Treatment Failure Analysis
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#safety-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      Safety Monitoring
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Safety Monitoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-market-surveillance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Post-Market Surveillance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rare-adverse-event-investigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rare Adverse Event Investigation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quality-assurance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quality Assurance
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quality Assurance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#diagnostic-test-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Diagnostic Test Validation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips-for-effective-prompts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tips for Effective Prompts
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Integration Examples
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#combining-with-literature-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      Combining with Literature Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-with-clinical-trials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Combining with Clinical Trials
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-with-variant-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Combining with Variant Data
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-your-openfda-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Your OpenFDA API Key
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using Your OpenFDA API Key">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#method-1-include-api-key-in-your-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      Method 1: Include API Key in Your Prompt
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-2-set-environment-variable-recommended-for-regular-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      Method 2: Set Environment Variable (Recommended for Regular Use)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-3-cli-usage-with-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      Method 3: CLI Usage with API Key
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-prompts-with-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Prompts with API Key
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example Prompts with API Key">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#comprehensive-drug-safety-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Comprehensive Drug Safety Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#large-scale-adverse-event-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Large-Scale Adverse Event Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-device-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multi-Device Comparison
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-label-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      Batch Label Retrieval
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-provide-an-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      When to Provide an API Key
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-key-security-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Key Security Notes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#important-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Important Notes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Known Limitations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known Limitations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drug-shortage-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Shortage Data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Other Limitations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_9">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/02-the-deep-researcher-persona/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Deep Researcher
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/03-sequential-thinking-with-the-think-tool/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sequential Thinking
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/quick-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guides/01-command-line-interface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI Commands
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guides/02-mcp-tools-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../apis/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../apis/python-sdk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Python SDK
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../apis/error-codes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Error Codes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guides/03-integrating-with-ides-and-clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    IDE Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Developer
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Developer
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            Architecture
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/quick-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/visual-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Visual Diagrams
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture-diagrams/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Detailed Diagrams
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Data Sources
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            Data Sources
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backend-services-reference/01-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backend-services-reference/06-pubtator3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    PubTator3/PubMed
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backend-services-reference/04-clinicaltrials-gov/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ClinicalTrials.gov
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backend-services-reference/05-nci-cts-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    NCI CTS API
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backend-services-reference/02-biothings-suite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    BioThings Suite
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backend-services-reference/03-cbioportal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    cBioPortal
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../backend-services-reference/07-alphagenome/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AlphaGenome
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../openfda-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    OpenFDA
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer-guides/02-contributing-and-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer-guides/01-server-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Deployment
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to-guides/05-logging-and-monitoring-with-bigquery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    BigQuery Monitoring
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Technical Details
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            Technical Details
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer-guides/04-transport-protocol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Transport Protocol
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer-guides/05-error-handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Error Handling
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer-guides/06-http-client-and-caching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    HTTP Client
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer-guides/07-performance-optimizations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Performance
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer-guides/03-third-party-endpoints/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Third-Party APIs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Security
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            Security
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FDA_SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FDA Integration Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    About
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            About
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Blog
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            Blog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/ai-assisted-clinical-trial-search-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Clinical Trial Search
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/researcher-persona-resource/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Researcher Persona
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Project
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Project
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../policies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Policies
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../genomoncology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GenomOncology
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#drug-safety-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Safety Assessment
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Drug Safety Assessment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-safety-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Safety Profile
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comparative-safety-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Comparative Safety Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drug-interaction-investigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Interaction Investigation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treatment-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Treatment Planning
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Treatment Planning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#indication-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      Indication Verification
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contraindication-screening" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contraindication Screening
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dosing-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dosing Guidelines
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#device-reliability-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Device Reliability Assessment
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Device Reliability Assessment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#genomic-test-reliability" class="md-nav__link">
+    <span class="md-ellipsis">
+      Genomic Test Reliability
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#laboratory-equipment-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Laboratory Equipment Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comprehensive-drug-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Comprehensive Drug Evaluation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Comprehensive Drug Evaluation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-drug-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Drug Assessment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#risk-benefit-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Risk-Benefit Analysis
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#special-populations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Special Populations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Special Populations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pregnancy-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pregnancy Considerations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pediatric-oncology" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pediatric Oncology
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complex-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complex Queries
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complex Queries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multi-drug-regimen-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multi-Drug Regimen Safety
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#biomarker-driven-treatment-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      Biomarker-Driven Treatment Selection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#treatment-failure-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Treatment Failure Analysis
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#safety-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      Safety Monitoring
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Safety Monitoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-market-surveillance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Post-Market Surveillance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rare-adverse-event-investigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rare Adverse Event Investigation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quality-assurance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quality Assurance
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quality Assurance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#diagnostic-test-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Diagnostic Test Validation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips-for-effective-prompts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tips for Effective Prompts
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Integration Examples
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#combining-with-literature-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      Combining with Literature Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-with-clinical-trials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Combining with Clinical Trials
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-with-variant-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Combining with Variant Data
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-your-openfda-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Your OpenFDA API Key
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using Your OpenFDA API Key">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#method-1-include-api-key-in-your-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      Method 1: Include API Key in Your Prompt
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-2-set-environment-variable-recommended-for-regular-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      Method 2: Set Environment Variable (Recommended for Regular Use)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#method-3-cli-usage-with-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      Method 3: CLI Usage with API Key
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-prompts-with-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Prompts with API Key
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example Prompts with API Key">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#comprehensive-drug-safety-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Comprehensive Drug Safety Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#large-scale-adverse-event-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Large-Scale Adverse Event Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-device-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multi-Device Comparison
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-label-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      Batch Label Retrieval
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-provide-an-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      When to Provide an API Key
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-key-security-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Key Security Notes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#important-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Important Notes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Known Limitations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Known Limitations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#drug-shortage-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Shortage Data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Other Limitations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="openfda-example-prompts-for-ai-agents">OpenFDA Example Prompts for AI Agents<a class="headerlink" href="#openfda-example-prompts-for-ai-agents" title="Permanent link">&para;</a></h1>
+<p>This document provides example prompts that demonstrate effective use of BioMCP's OpenFDA integration for various precision oncology use cases.</p>
+<h2 id="drug-safety-assessment">Drug Safety Assessment<a class="headerlink" href="#drug-safety-assessment" title="Permanent link">&para;</a></h2>
+<h3 id="basic-safety-profile">Basic Safety Profile<a class="headerlink" href="#basic-safety-profile" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>What are the most common adverse events reported for pembrolizumab?
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Include both serious and non-serious events.
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Plan safety assessment approach</li>
+<li><code>openfda_adverse_searcher(drug="pembrolizumab", limit=50)</code></li>
+<li>Analyze and summarize top reactions</li>
+</ol>
+<h3 id="comparative-safety-analysis">Comparative Safety Analysis<a class="headerlink" href="#comparative-safety-analysis" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Compare the adverse event profiles of imatinib and dasatinib for CML treatment.
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Focus on serious events and their frequencies.
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Plan comparative analysis</li>
+<li><code>openfda_adverse_searcher(drug="imatinib", serious=True)</code></li>
+<li><code>openfda_adverse_searcher(drug="dasatinib", serious=True)</code></li>
+<li>Compare and contrast findings</li>
+</ol>
+<h3 id="drug-interaction-investigation">Drug Interaction Investigation<a class="headerlink" href="#drug-interaction-investigation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>A patient on warfarin needs to start erlotinib for NSCLC. What drug interactions
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>and adverse events should we monitor based on FDA data?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Consider interaction risks</li>
+<li><code>openfda_label_searcher(name="erlotinib")</code> - Check drug interactions section</li>
+<li><code>openfda_adverse_searcher(drug="erlotinib", reaction="bleeding")</code></li>
+<li><code>openfda_adverse_searcher(drug="erlotinib", reaction="INR")</code></li>
+</ol>
+<h2 id="treatment-planning">Treatment Planning<a class="headerlink" href="#treatment-planning" title="Permanent link">&para;</a></h2>
+<h3 id="indication-verification">Indication Verification<a class="headerlink" href="#indication-verification" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Is trastuzumab deruxtecan FDA-approved for HER2-low breast cancer?
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>What are the specific approved indications?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Plan indication search</li>
+<li><code>openfda_label_searcher(name="trastuzumab deruxtecan")</code></li>
+<li><code>openfda_label_getter(set_id="...")</code> - Get full indications section</li>
+<li>Extract and summarize approved uses</li>
+</ol>
+<h3 id="contraindication-screening">Contraindication Screening<a class="headerlink" href="#contraindication-screening" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Patient has severe hepatic impairment. Which targeted therapy drugs for
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>melanoma have contraindications or warnings for liver dysfunction?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Identify melanoma drugs to check</li>
+<li><code>openfda_label_searcher(indication="melanoma")</code></li>
+<li>For each drug: <code>openfda_label_getter(set_id="...", sections=["contraindications", "warnings_and_precautions"])</code></li>
+<li>Summarize liver-related contraindications</li>
+</ol>
+<h3 id="dosing-guidelines">Dosing Guidelines<a class="headerlink" href="#dosing-guidelines" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>What is the FDA-recommended dosing for osimertinib in EGFR-mutated NSCLC,
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>including dose modifications for adverse events?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Plan dosing information retrieval</li>
+<li><code>openfda_label_searcher(name="osimertinib")</code></li>
+<li><code>openfda_label_getter(set_id="...", sections=["dosage_and_administration", "dose_modifications"])</code></li>
+<li>Extract dosing guidelines</li>
+</ol>
+<h2 id="device-reliability-assessment">Device Reliability Assessment<a class="headerlink" href="#device-reliability-assessment" title="Permanent link">&para;</a></h2>
+<h3 id="genomic-test-reliability">Genomic Test Reliability<a class="headerlink" href="#genomic-test-reliability" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>What adverse events have been reported for NGS-based cancer diagnostic devices?
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>Show me any false positive or accuracy issues.
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Consider test reliability factors</li>
+<li><code>openfda_device_searcher(genomics_only=True, limit=25)</code> - Get all genomic device events</li>
+<li><code>openfda_device_searcher(problem="false positive", genomics_only=True)</code></li>
+<li><code>openfda_device_searcher(problem="accuracy", genomics_only=True)</code></li>
+<li>For significant events: <code>openfda_device_getter(mdr_report_key="...")</code></li>
+</ol>
+<p><strong>Note:</strong> The FDA database uses abbreviated names (e.g., "F1CDX" instead of "FoundationOne CDx").
+For specific devices, try: <code>openfda_device_searcher(device="F1CDX")</code> or search by key terms.</p>
+<h3 id="laboratory-equipment-issues">Laboratory Equipment Issues<a class="headerlink" href="#laboratory-equipment-issues" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Our lab uses Illumina sequencers. What device malfunctions have been
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>reported that could impact our genomic testing workflow?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Assess potential workflow impacts</li>
+<li><code>openfda_device_searcher(manufacturer="Illumina", genomics_only=True)</code></li>
+<li>Analyze problem patterns</li>
+<li><code>openfda_device_getter(mdr_report_key="...")</code> for critical issues</li>
+</ol>
+<h2 id="comprehensive-drug-evaluation">Comprehensive Drug Evaluation<a class="headerlink" href="#comprehensive-drug-evaluation" title="Permanent link">&para;</a></h2>
+<h3 id="new-drug-assessment">New Drug Assessment<a class="headerlink" href="#new-drug-assessment" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Provide a comprehensive safety and efficacy profile for sotorasib (Lumakras)
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>including FDA approval, indications, major warnings, and post-market adverse events.
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Plan comprehensive assessment</li>
+<li><code>drug_getter("sotorasib")</code> - Basic drug info</li>
+<li><code>openfda_label_searcher(name="sotorasib")</code></li>
+<li><code>openfda_label_getter(set_id="...")</code> - Full label</li>
+<li><code>openfda_adverse_searcher(drug="sotorasib", serious=True)</code></li>
+<li><code>trial_searcher(interventions=["sotorasib"])</code> - Ongoing trials</li>
+</ol>
+<h3 id="risk-benefit-analysis">Risk-Benefit Analysis<a class="headerlink" href="#risk-benefit-analysis" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>For a 75-year-old patient with metastatic melanoma, analyze the risk-benefit
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>profile of nivolumab plus ipilimumab combination therapy based on FDA data.
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Structure risk-benefit analysis</li>
+<li><code>openfda_label_searcher(name="nivolumab")</code></li>
+<li><code>openfda_label_searcher(name="ipilimumab")</code></li>
+<li><code>openfda_label_getter(set_id="...", sections=["geriatric_use", "warnings_and_precautions"])</code></li>
+<li><code>openfda_adverse_searcher(drug="nivolumab", serious=True)</code></li>
+<li><code>openfda_adverse_searcher(drug="ipilimumab", serious=True)</code></li>
+</ol>
+<h2 id="special-populations">Special Populations<a class="headerlink" href="#special-populations" title="Permanent link">&para;</a></h2>
+<h3 id="pregnancy-considerations">Pregnancy Considerations<a class="headerlink" href="#pregnancy-considerations" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Which FDA-approved lung cancer treatments have pregnancy category data
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>or specific warnings for pregnant patients?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Plan pregnancy safety search</li>
+<li><code>openfda_label_searcher(indication="lung cancer")</code></li>
+<li>For each drug: <code>openfda_label_getter(set_id="...", sections=["pregnancy", "use_in_specific_populations"])</code></li>
+<li>Compile pregnancy categories and warnings</li>
+</ol>
+<h3 id="pediatric-oncology">Pediatric Oncology<a class="headerlink" href="#pediatric-oncology" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>What FDA-approved indications and safety data exist for using
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>checkpoint inhibitors in pediatric cancer patients?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Identify checkpoint inhibitors</li>
+<li><code>openfda_label_searcher(name="pembrolizumab")</code></li>
+<li><code>openfda_label_getter(set_id="...", sections=["pediatric_use"])</code></li>
+<li><code>openfda_adverse_searcher(drug="pembrolizumab")</code> - Filter for pediatric if possible</li>
+<li>Repeat for other checkpoint inhibitors</li>
+</ol>
+<h2 id="complex-queries">Complex Queries<a class="headerlink" href="#complex-queries" title="Permanent link">&para;</a></h2>
+<h3 id="multi-drug-regimen-safety">Multi-Drug Regimen Safety<a class="headerlink" href="#multi-drug-regimen-safety" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Analyze potential safety concerns for the FOLFOX chemotherapy regimen
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>(5-FU, leucovorin, oxaliplatin) based on FDA adverse event data.
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Plan multi-drug analysis</li>
+<li><code>openfda_adverse_searcher(drug="fluorouracil")</code></li>
+<li><code>openfda_adverse_searcher(drug="leucovorin")</code></li>
+<li><code>openfda_adverse_searcher(drug="oxaliplatin")</code></li>
+<li>Identify overlapping toxicities</li>
+<li><code>openfda_label_searcher(name="oxaliplatin")</code> - Check for combination warnings</li>
+</ol>
+<h3 id="biomarker-driven-treatment-selection">Biomarker-Driven Treatment Selection<a class="headerlink" href="#biomarker-driven-treatment-selection" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>For a patient with BRAF V600E mutant melanoma with brain metastases,
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>what FDA-approved treatments are available and what are their CNS-specific
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>efficacy and safety considerations?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Structure biomarker-driven search</li>
+<li><code>article_searcher(genes=["BRAF"], variants=["V600E"], diseases=["melanoma"])</code></li>
+<li><code>openfda_label_searcher(indication="melanoma")</code></li>
+<li>For BRAF inhibitors: <code>openfda_label_getter(set_id="...", sections=["clinical_studies", "warnings_and_precautions"])</code></li>
+<li><code>openfda_adverse_searcher(drug="dabrafenib", reaction="seizure")</code></li>
+<li><code>openfda_adverse_searcher(drug="vemurafenib", reaction="brain")</code></li>
+</ol>
+<h3 id="treatment-failure-analysis">Treatment Failure Analysis<a class="headerlink" href="#treatment-failure-analysis" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>A patient&#39;s lung adenocarcinoma progressed on osimertinib. Based on FDA data,
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>what are the documented resistance mechanisms and alternative approved treatments?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Analyze resistance and alternatives</li>
+<li><code>openfda_label_getter(set_id="...", sections=["clinical_studies"])</code> for osimertinib</li>
+<li><code>article_searcher(genes=["EGFR"], keywords=["resistance", "osimertinib"])</code></li>
+<li><code>openfda_label_searcher(indication="non-small cell lung cancer")</code></li>
+<li><code>trial_searcher(conditions=["NSCLC"], keywords=["osimertinib resistant"])</code></li>
+</ol>
+<h2 id="safety-monitoring">Safety Monitoring<a class="headerlink" href="#safety-monitoring" title="Permanent link">&para;</a></h2>
+<h3 id="post-market-surveillance">Post-Market Surveillance<a class="headerlink" href="#post-market-surveillance" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Have there been any new safety signals for CDK4/6 inhibitors
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>(palbociclib, ribociclib, abemaciclib) in the past year?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Plan safety signal detection</li>
+<li><code>openfda_adverse_searcher(drug="palbociclib", limit=100)</code></li>
+<li><code>openfda_adverse_searcher(drug="ribociclib", limit=100)</code></li>
+<li><code>openfda_adverse_searcher(drug="abemaciclib", limit=100)</code></li>
+<li>Analyze for unusual patterns or frequencies</li>
+</ol>
+<h3 id="rare-adverse-event-investigation">Rare Adverse Event Investigation<a class="headerlink" href="#rare-adverse-event-investigation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>Investigate reports of pneumonitis associated with immune checkpoint inhibitors.
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>Which drugs have the highest frequency and what are the typical outcomes?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Structure pneumonitis investigation</li>
+<li><code>openfda_adverse_searcher(drug="pembrolizumab", reaction="pneumonitis")</code></li>
+<li><code>openfda_adverse_searcher(drug="nivolumab", reaction="pneumonitis")</code></li>
+<li><code>openfda_adverse_searcher(drug="atezolizumab", reaction="pneumonitis")</code></li>
+<li>Compare frequencies and outcomes</li>
+<li><code>openfda_adverse_getter(report_id="...")</code> for severe cases</li>
+</ol>
+<h2 id="quality-assurance">Quality Assurance<a class="headerlink" href="#quality-assurance" title="Permanent link">&para;</a></h2>
+<h3 id="diagnostic-test-validation">Diagnostic Test Validation<a class="headerlink" href="#diagnostic-test-validation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>What quality issues have been reported for liquid biopsy ctDNA tests
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>that could affect treatment decisions?
+</code></pre></div>
+<p><strong>Expected BioMCP Usage:</strong></p>
+<ol>
+<li><code>think</code> - Identify quality factors</li>
+<li><code>openfda_device_searcher(device="liquid biopsy", genomics_only=True)</code></li>
+<li><code>openfda_device_searcher(device="ctDNA", genomics_only=True)</code></li>
+<li><code>openfda_device_searcher(device="circulating tumor", genomics_only=True)</code></li>
+<li>Analyze failure modes</li>
+</ol>
+<h2 id="tips-for-effective-prompts">Tips for Effective Prompts<a class="headerlink" href="#tips-for-effective-prompts" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Be specific about the data needed</strong>: Specify if you want adverse events, labels, or device data</li>
+<li><strong>Include relevant filters</strong>: Mention if focusing on serious events, specific populations, or genomic devices</li>
+<li><strong>Request appropriate analysis</strong>: Ask for comparisons, trends, or specific data points</li>
+<li><strong>Consider multiple data sources</strong>: Combine OpenFDA with literature and trial data for comprehensive answers</li>
+<li><strong>Include time frames when relevant</strong>: Though OpenFDA doesn't support date filtering in queries, you can ask for analysis of recent reports</li>
+</ol>
+<h2 id="integration-examples">Integration Examples<a class="headerlink" href="#integration-examples" title="Permanent link">&para;</a></h2>
+<h3 id="combining-with-literature-search">Combining with Literature Search<a class="headerlink" href="#combining-with-literature-search" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>Find FDA adverse events for venetoclax in CLL, then search for published
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>case reports that provide more clinical context for the most serious events.
+</code></pre></div>
+<h3 id="combining-with-clinical-trials">Combining with Clinical Trials<a class="headerlink" href="#combining-with-clinical-trials" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>What adverse events are reported for FDA-approved CAR-T therapies, and how
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>do these compare to adverse events being monitored in current clinical trials?
+</code></pre></div>
+<h3 id="combining-with-variant-data">Combining with Variant Data<a class="headerlink" href="#combining-with-variant-data" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>For patients with RET fusion-positive cancers, what FDA-approved targeted
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>therapies are available and what are their mutation-specific response rates?
+</code></pre></div>
+<h2 id="using-your-openfda-api-key">Using Your OpenFDA API Key<a class="headerlink" href="#using-your-openfda-api-key" title="Permanent link">&para;</a></h2>
+<p>The OpenFDA API has rate limits: 40 requests/minute without a key, or 240 requests/minute with a key. You can get a free API key at https://open.fda.gov/apis/authentication/</p>
+<h3 id="method-1-include-api-key-in-your-prompt">Method 1: Include API Key in Your Prompt<a class="headerlink" href="#method-1-include-api-key-in-your-prompt" title="Permanent link">&para;</a></h3>
+<p>You can provide your API key directly in your conversation with the AI:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>My OpenFDA API key is: YOUR_API_KEY_HERE
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>Search for all serious adverse events reported for pembrolizumab in the last year.
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>Include both death and hospitalization events.
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>Using my OpenFDA API key YOUR_API_KEY_HERE, compare the safety profiles of
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>all FDA-approved BRAF inhibitors for melanoma treatment.
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>I have an OpenFDA API key: YOUR_API_KEY_HERE
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>Analyze device malfunction reports for all NGS-based cancer diagnostic tests.
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>Focus on false positive and false negative results that could impact treatment decisions.
+</code></pre></div>
+<h3 id="method-2-set-environment-variable-recommended-for-regular-use">Method 2: Set Environment Variable (Recommended for Regular Use)<a class="headerlink" href="#method-2-set-environment-variable-recommended-for-regular-use" title="Permanent link">&para;</a></h3>
+<p>If you're using BioMCP regularly, set the environment variable once:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;YOUR_API_KEY_HERE&quot;</span>
+</code></pre></div>
+<p>Then your prompts don't need to include the key:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>Retrieve the complete FDA label for trastuzumab deruxtecan, including all
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>warnings and contraindications for HER2-low breast cancer patients.
+</code></pre></div>
+<h3 id="method-3-cli-usage-with-api-key">Method 3: CLI Usage with API Key<a class="headerlink" href="#method-3-cli-usage-with-api-key" title="Permanent link">&para;</a></h3>
+<p>When using the BioMCP CLI directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="c1"># Pass API key as parameter</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>biomcp<span class="w"> </span>openfda<span class="w"> </span>adverse<span class="w"> </span>search<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--serious<span class="w"> </span>--api-key<span class="w"> </span>YOUR_API_KEY_HERE
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="c1"># Or set environment variable first</span>
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;YOUR_API_KEY_HERE&quot;</span>
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>biomcp<span class="w"> </span>openfda<span class="w"> </span>device<span class="w"> </span>search<span class="w"> </span>--manufacturer<span class="w"> </span>Illumina<span class="w"> </span>--genomics-only
+</code></pre></div>
+<h3 id="example-prompts-with-api-key">Example Prompts with API Key<a class="headerlink" href="#example-prompts-with-api-key" title="Permanent link">&para;</a></h3>
+<h4 id="comprehensive-drug-safety-analysis">Comprehensive Drug Safety Analysis<a class="headerlink" href="#comprehensive-drug-safety-analysis" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>My OpenFDA API key is: YOUR_API_KEY_HERE
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>Perform a comprehensive safety analysis of sotorasib (Lumakras) including:
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>1. All serious adverse events from post-market surveillance
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>2. Complete FDA label with all sections
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>3. Any device issues if it&#39;s a companion diagnostic drug
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>4. Compare its safety profile to other KRAS G12C inhibitors if available
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a>This is for a clinical review, so I need detailed data from all available FDA sources.
+</code></pre></div>
+<h4 id="large-scale-adverse-event-analysis">Large-Scale Adverse Event Analysis<a class="headerlink" href="#large-scale-adverse-event-analysis" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>Using my OpenFDA API key YOUR_API_KEY_HERE, analyze adverse events for all
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>FDA-approved checkpoint inhibitors (pembrolizumab, nivolumab, atezolizumab,
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>durvalumab, avelumab, cemiplimab).
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>For each drug:
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>- Get the top 20 most frequent adverse events
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>- Identify immune-related adverse events
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>- Check for any black box warnings in their labels
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>- Note any fatal events
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>This requires many API calls, so please use my API key for higher rate limits.
+</code></pre></div>
+<h4 id="multi-device-comparison">Multi-Device Comparison<a class="headerlink" href="#multi-device-comparison" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>I have an OpenFDA API key: YOUR_API_KEY_HERE
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>Compare all FDA adverse event reports for NGS-based companion diagnostic devices
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>from major manufacturers (Foundation Medicine, Guardant Health, Tempus, etc.).
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>Focus on:
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>- Test failure rates
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>- Sample quality issues
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>- False positive/negative reports
+<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>- Software-related problems
+<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>
+<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>This analysis requires querying multiple device records, so the API key will help
+<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>avoid rate limiting.
+</code></pre></div>
+<h4 id="batch-label-retrieval">Batch Label Retrieval<a class="headerlink" href="#batch-label-retrieval" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>My OpenFDA API key is YOUR_API_KEY_HERE.
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>Retrieve the complete FDA labels for all CDK4/6 inhibitors (palbociclib,
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>ribociclib, abemaciclib) and extract:
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>- Approved indications
+<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a>- Dose modifications for adverse events
+<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>- Drug-drug interactions
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a>- Special population considerations
+<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a>
+<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a>Then create a comparison table of their safety profiles and dosing guidelines.
+</code></pre></div>
+<h3 id="when-to-provide-an-api-key">When to Provide an API Key<a class="headerlink" href="#when-to-provide-an-api-key" title="Permanent link">&para;</a></h3>
+<p>You should provide your API key when:</p>
+<ol>
+<li><strong>Performing large-scale analyses</strong> requiring many API calls</li>
+<li><strong>Conducting comprehensive safety reviews</strong> across multiple drugs/devices</li>
+<li><strong>Running batch operations</strong> like comparing multiple products</li>
+<li><strong>Doing rapid iterative searches</strong> that might hit rate limits</li>
+<li><strong>Performing systematic reviews</strong> requiring extensive data retrieval</li>
+</ol>
+<h3 id="api-key-security-notes">API Key Security Notes<a class="headerlink" href="#api-key-security-notes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Never share your actual API key in public forums or repositories</li>
+<li>The AI will use your key only for the current session</li>
+<li>Keys passed as parameters override environment variables</li>
+<li>The FDA API key is free and can be regenerated if compromised</li>
+</ul>
+<h2 id="important-notes">Important Notes<a class="headerlink" href="#important-notes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Always expect the AI to use the <code>think</code> tool first for complex queries</li>
+<li>The AI should include appropriate disclaimers about adverse events not proving causation</li>
+<li>Results are limited by FDA's data availability and reporting patterns</li>
+<li>The AI should suggest when additional data sources might provide complementary information</li>
+<li>With an API key, you can make 240 requests/minute vs 40 without</li>
+</ul>
+<h2 id="known-limitations">Known Limitations<a class="headerlink" href="#known-limitations" title="Permanent link">&para;</a></h2>
+<h3 id="drug-shortage-data">Drug Shortage Data<a class="headerlink" href="#drug-shortage-data" title="Permanent link">&para;</a></h3>
+<p><strong>Important:</strong> The FDA does not currently provide a machine-readable API for drug shortage data. The shortage search tools will return an informative message directing users to the FDA's web-based shortage database. This is a limitation of FDA's current data infrastructure, not a bug in BioMCP.</p>
+<p>Alternative resources for drug shortage information:</p>
+<ul>
+<li>FDA Drug Shortages Database: https://www.accessdata.fda.gov/scripts/drugshortages/</li>
+<li>ASHP Drug Shortages: https://www.ashp.org/drug-shortages/current-shortages</li>
+</ul>
+<h3 id="other-limitations">Other Limitations<a class="headerlink" href="#other-limitations" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Device adverse event reports use abbreviated device names (e.g., "F1CDX" instead of "FoundationOne CDx")</li>
+<li>Adverse event reports represent voluntary submissions and may not reflect true incidence rates</li>
+<li>Recall information may have a delay of 24-48 hours from initial FDA announcement</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Maintained by <a href="https://genomoncology.com">genomoncology</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/genomoncology/biomcp" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/biomcp-python" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.instant", "navigation.tracking", "navigation.top", "toc.follow", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.50899def.min.js"></script>
+      
+    
+  </body>
+</html>
