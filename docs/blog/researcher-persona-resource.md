@@ -2,7 +2,7 @@
 
 With the release of BioMCP v0.1.2, users can now access a specialized
 Researcher Persona that transforms Claude into a rigorous biomedical research
-assistant via the Sequential Thinking MCP.
+assistant using BioMCP's built-in sequential thinking capabilities.
 
 This persona is designed to leverage BioMCP's suite of tools for accessing
 PubMed articles, ClinicalTrials.gov data, and genomic variant information,
@@ -21,16 +21,12 @@ Getting started with the BioMCP Researcher Persona is straightforward:
     "biomcp": {
       "command": "uv",
       "args": ["run", "--with", "biomcp-python>=0.1.2", "biomcp", "run"]
-    },
-    "sequential-thinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     }
   }
 }
 ```
 
-2. Restart Claude Desktop (the `>=0.1.2` ensures the latest version is used)
+2. Restart Claude Desktop (the `>=0.1.2` ensures the latest version is used, which includes the built-in think tool)
 
 3. Select the "Researcher" persona from the dropdown menu
    ![Select Researcher Persona](./images/researcher-drop-down.png)
@@ -49,8 +45,8 @@ Below is a video demonstrating the Researcher Persona in action:
 
 ## Sequential Thinking: A Rigorous 10-Step Research Process
 
-What makes the Researcher Persona so powerful is its integration with the
-Sequential Thinking MCP tool, which guides the AI through a comprehensive
+What makes the Researcher Persona so powerful is its integration with BioMCP's
+built-in 'think' tool, which guides the AI through a comprehensive
 10-step research methodology:
 
 1. **Topic Scoping & Domain Framework**: Creating a comprehensive structure to
@@ -85,7 +81,7 @@ question to five different systems: "What are the emerging treatment strategies
 for head and neck cancer?"
 
 The results were impressive. The BioMCP-powered Researcher Persona, combined
-with Claude's web search capabilities and the Sequential Thinking tool,
+with Claude's web search capabilities and the built-in think tool,
 produced the highest-rated research brief among all approaches tested.
 
 [![Researcher Announcement](./images/researcher-announce.png)](https://github.com/genomoncology/biomcp-examples#researcher-announcement)
