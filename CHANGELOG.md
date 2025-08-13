@@ -5,6 +5,22 @@ All notable changes to the BioMCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.7] - 2025-08-13
+
+### Fixed
+
+- **MCP Resource Encoding** - Fixed character encoding error when loading resources on Windows (Issue #63):
+  - Added explicit UTF-8 encoding for reading `instructions.md` and `researcher.md` resource files
+  - Resolves "'charmap' codec can't decode byte 0x8f" error on Windows systems
+  - Ensures cross-platform compatibility for resource loading
+
+### Changed
+
+- **Documentation** - Clarified sequential thinking integration:
+  - Updated `researcher-persona-resource.md` to remove references to external `sequential-thinking` MCP server
+  - Clarified that the `think` tool is built into BioMCP (no external dependencies needed)
+  - Updated configuration examples to show only BioMCP server is required
+
 ## [0.6.6] - 2025-08-08
 
 ### Fixed
