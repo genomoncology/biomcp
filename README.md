@@ -392,6 +392,7 @@ platform (POP), providing:
 Learn more: [GenomOncology](https://genomoncology.com/)
 
 ## MCP Registries
+[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/genomoncology/biomcp)](https://archestra.ai/mcp-catalog/genomoncology__biomcp)
 
 [![smithery badge](https://smithery.ai/badge/@genomoncology/biomcp)](https://smithery.ai/server/@genomoncology/biomcp)
 
