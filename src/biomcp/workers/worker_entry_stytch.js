@@ -84,15 +84,15 @@ const validateSessionId = (sessionId) => {
 
 /**
  * Process MCP request with proper error handling
- * @param {Request} request - The incoming request
+ * @param {HonoRequest} request - The incoming Hono request
  * @param {string} remoteUrl - Remote MCP server URL
  * @param {string} sessionId - Validated session ID
  * @returns {Response} - Proxy response or error
  */
 const processMcpRequest = async (request, remoteUrl, sessionId) => {
   try {
-    // Clone request for logging
-    const bodyText = await request.clone().text();
+    // Get body text directly (Hono request doesn't have clone)
+    const bodyText = await request.text();
 
     // Validate it's JSON
     let bodyJson;
@@ -131,8 +131,15 @@ const processMcpRequest = async (request, remoteUrl, sessionId) => {
       );
     }
 
+    // Create a new Request object with the body text since we've already consumed it
+    const newRequest = new Request(request.url, {
+      method: "POST",
+      headers: request.headers,
+      body: bodyText,
+    });
+
     // Forward to remote server
-    return proxyPost(request, remoteUrl, "/mcp", sessionId);
+    return proxyPost(newRequest, remoteUrl, "/mcp", sessionId);
   } catch (error) {
     log(`Error processing MCP request: ${error}`);
     return new Response(
