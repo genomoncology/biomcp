@@ -1,6 +1,6 @@
-# Python SDK Reference
+# Python Package Reference
 
-The BioMCP Python SDK provides async/await interfaces for accessing biomedical data from multiple sources.
+The BioMCP Python package provides direct access to biomedical data search and retrieval functions through modular domain-specific APIs.
 
 ## Installation
 
@@ -12,660 +12,400 @@ pip install biomcp-python
 
 ```python
 import asyncio
-from biomcp import BioMCPClient
+from biomcp.variants.search import search_variants, VariantQuery, ClinicalSignificance
+from biomcp.articles.search import search_articles, PubmedRequest
+from biomcp.trials.search import search_trials, TrialQuery
 
 async def main():
-    async with BioMCPClient() as client:
-        # Search articles
-        articles = await client.articles.search(
-            genes=["BRAF"],
-            diseases=["melanoma"],
-            limit=5
-        )
+    # Search for pathogenic variants
+    variant_query = VariantQuery(
+        gene="BRAF",
+        significance=ClinicalSignificance.PATHOGENIC
+    )
+    variants_result = await search_variants(variant_query)
 
-        # Get trial details
-        trial = await client.trials.get("NCT03006926")
+    # Search articles
+    article_request = PubmedRequest(
+        genes=["BRAF"],
+        diseases=["melanoma"]
+    )
+    articles_result = await search_articles(article_request)
 
-        # Search variants
-        variants = await client.variants.search(
-            gene="TP53",
-            significance="pathogenic"
-        )
+    # Search clinical trials
+    trial_query = TrialQuery(
+        conditions=["melanoma"],
+        status="RECRUITING"
+    )
+    trials_result = await search_trials(trial_query)
 
 asyncio.run(main())
 ```
 
-## Client Initialization
+## API Structure
 
-### BioMCPClient
+The BioMCP package is organized into domain-specific modules that you import directly:
 
-Main client class for accessing all BioMCP functionality.
+### Available Modules
 
-```python
-class BioMCPClient:
-    def __init__(
-        self,
-        base_url: str = "http://localhost:8000",
-        nci_api_key: Optional[str] = None,
-        alphagenome_api_key: Optional[str] = None,
-        cbio_token: Optional[str] = None,
-        timeout: int = 120,
-        max_retries: int = 3,
-        cache_ttl: int = 900,  # 15 minutes
-    ):
-```
+- **Variants**: `biomcp.variants.search` - Search genetic variants
+- **Articles**: `biomcp.articles.search` - Search biomedical literature
+- **Trials**: `biomcp.trials.search` - Search clinical trials
+- **Genes**: `biomcp.genes` - Get gene information
+- **Diseases**: `biomcp.diseases` - Get disease information
+- **Drugs**: `biomcp.drugs` - Get drug information
 
-**Parameters:**
-
-- `base_url`: BioMCP server URL (for remote deployments)
-- `nci_api_key`: National Cancer Institute API key
-- `alphagenome_api_key`: AlphaGenome API key
-- `cbio_token`: cBioPortal access token
-- `timeout`: Request timeout in seconds
-- `max_retries`: Maximum retry attempts for failed requests
-- `cache_ttl`: Cache time-to-live in seconds
-
-**Example:**
+### Import Patterns
 
 ```python
-# Local development
-client = BioMCPClient()
+# Variants
+from biomcp.variants.search import search_variants, VariantQuery, ClinicalSignificance
 
-# Remote server
-client = BioMCPClient(base_url="https://biomcp.example.com")
+# Articles
+from biomcp.articles.search import search_articles, PubmedRequest
 
-# With API keys
-client = BioMCPClient(
-    nci_api_key=os.getenv("NCI_API_KEY"),
-    alphagenome_api_key=os.getenv("ALPHAGENOME_API_KEY")
-)
+# Trials
+from biomcp.trials.search import search_trials, TrialQuery, TrialPhase
+
+# Direct functions
+from biomcp.genes import get_gene
+from biomcp.diseases import get_disease
+from biomcp.drugs import get_drug
 ```
 
-## Article API
+## Articles API
 
-### articles.search()
+### search_articles()
 
 Search PubMed/PubTator3 for biomedical literature.
 
 ```python
-async def search(
-    self,
-    genes: Optional[List[str]] = None,
-    diseases: Optional[List[str]] = None,
-    chemicals: Optional[List[str]] = None,
-    variants: Optional[List[str]] = None,
-    keywords: Optional[List[str]] = None,
-    pmids: Optional[List[str]] = None,
-    include_preprints: bool = True,
-    include_cbioportal: bool = True,
-    limit: int = 10,
-    page: int = 1,
-) -> ArticleSearchResult:
+from biomcp.articles.search import search_articles, PubmedRequest
+
+async def search_articles(
+    request: PubmedRequest,
+    output_json: bool = False
+) -> str:
 ```
 
-**Parameters:**
+**PubmedRequest Parameters:**
 
 - `genes`: List of gene symbols (e.g., ["BRAF", "KRAS"])
 - `diseases`: List of disease/condition terms
 - `chemicals`: List of drug/chemical names
 - `variants`: List of variant notations
 - `keywords`: Additional search keywords (supports OR with |)
-- `pmids`: Specific PubMed IDs to retrieve
-- `include_preprints`: Include bioRxiv/medRxiv preprints
-- `include_cbioportal`: Include cBioPortal cancer genomics data
-- `limit`: Maximum results per page
-- `page`: Page number for pagination
-
-**Returns:** `ArticleSearchResult` with articles and metadata
 
 **Example:**
 
 ```python
+from biomcp.articles.search import search_articles, PubmedRequest
+
 # Basic search
-results = await client.articles.search(
+request = PubmedRequest(
     genes=["EGFR"],
-    diseases=["lung cancer"],
-    limit=20
+    diseases=["lung cancer"]
 )
+results = await search_articles(request)
 
 # Advanced search with keywords
-results = await client.articles.search(
+request = PubmedRequest(
     genes=["BRAF"],
     keywords=["V600E|p.V600E|resistance"],
-    chemicals=["vemurafenib", "dabrafenib"],
-    include_preprints=False
+    chemicals=["vemurafenib", "dabrafenib"]
 )
-
-# Iterate through results
-for article in results.articles:
-    print(f"{article.pmid}: {article.title}")
-    print(f"Genes: {', '.join(article.genes)}")
-    print(f"URL: {article.url}\n")
+results = await search_articles(request)
 ```
 
-### articles.get()
+## Trials API
 
-Retrieve detailed information about a specific article.
+### search_trials()
+
+Search clinical trials from ClinicalTrials.gov.
 
 ```python
-async def get(
-    self,
-    identifier: str,
-    include_annotations: bool = True
-) -> Article:
+from biomcp.trials.search import search_trials, TrialQuery, TrialPhase, RecruitingStatus
+
+async def search_trials(
+    query: TrialQuery,
+    output_json: bool = False
+) -> str:
 ```
 
-**Parameters:**
-
-- `identifier`: PubMed ID or DOI
-- `include_annotations`: Include PubTator3 entity annotations
-
-**Returns:** `Article` object with full details
-
-**Example:**
-
-```python
-# Get by PMID
-article = await client.articles.get("38768446")
-
-# Get by DOI (for preprints)
-article = await client.articles.get("10.1101/2024.01.20.23288905")
-
-# Access article data
-print(f"Title: {article.title}")
-print(f"Abstract: {article.abstract}")
-print(f"Authors: {', '.join(article.authors)}")
-print(f"Journal: {article.journal}")
-print(f"Year: {article.year}")
-```
-
-## Trial API
-
-### trials.search()
-
-Search clinical trials from ClinicalTrials.gov or NCI.
-
-```python
-async def search(
-    self,
-    conditions: Optional[List[str]] = None,
-    interventions: Optional[List[str]] = None,
-    other_terms: Optional[List[str]] = None,
-    nct_ids: Optional[List[str]] = None,
-    status: Optional[str] = None,
-    phase: Optional[str] = None,
-    study_type: Optional[str] = None,
-    lat: Optional[float] = None,
-    long: Optional[float] = None,
-    distance: Optional[int] = None,
-    source: str = "ctgov",  # or "nci"
-    expand_synonyms: bool = True,
-    limit: int = 10,
-    page: int = 1,
-) -> TrialSearchResult:
-```
-
-**Parameters:**
+**TrialQuery Parameters:**
 
 - `conditions`: Disease/condition terms
 - `interventions`: Treatment/intervention terms
 - `other_terms`: Additional search terms
-- `nct_ids`: Specific NCT IDs
-- `status`: Trial status (RECRUITING, ACTIVE_NOT_RECRUITING, etc.)
-- `phase`: Trial phase (PHASE1, PHASE2, PHASE3, etc.)
+- `status`: Trial status (use RecruitingStatus enum)
+- `phase`: Trial phase (use TrialPhase enum)
 - `study_type`: INTERVENTIONAL or OBSERVATIONAL
 - `lat`, `long`, `distance`: Geographic search parameters
-- `source`: Data source ("ctgov" or "nci")
-- `expand_synonyms`: Auto-expand disease synonyms
-- `limit`, `page`: Pagination parameters
 
-**Returns:** `TrialSearchResult` with trials and metadata
+**Available Enums:**
+
+- `TrialPhase`: EARLY_PHASE1, PHASE1, PHASE2, PHASE3, PHASE4, NOT_APPLICABLE
+- `RecruitingStatus`: OPEN, CLOSED, ANY
+- `StudyType`: INTERVENTIONAL, OBSERVATIONAL, EXPANDED_ACCESS
 
 **Example:**
 
 ```python
+from biomcp.trials.search import search_trials, TrialQuery, TrialPhase
+
 # Basic search
-trials = await client.trials.search(
+query = TrialQuery(
     conditions=["melanoma"],
-    status="RECRUITING",
-    phase="PHASE3"
+    phase=TrialPhase.PHASE3,
+    recruiting_status="RECRUITING"
 )
+results = await search_trials(query)
 
 # Location-based search
-trials = await client.trials.search(
+query = TrialQuery(
     conditions=["breast cancer"],
     lat=40.7128,
     long=-74.0060,
-    distance=50  # miles
+    distance=50
 )
-
-# NCI search with mutations
-trials = await client.trials.search(
-    source="nci",
-    conditions=["lung cancer"],
-    required_mutations=["EGFR L858R"],
-    allow_brain_mets=True
-)
+results = await search_trials(query)
 ```
 
-### trials.get()
+## Variants API
 
-Get detailed information about a specific trial.
-
-```python
-async def get(
-    self,
-    nct_id: str,
-    include_all: bool = False,
-    source: str = "ctgov"
-) -> Trial:
-```
-
-**Parameters:**
-
-- `nct_id`: Clinical trial identifier
-- `include_all`: Include all available sections
-- `source`: Data source ("ctgov" or "nci")
-
-**Returns:** `Trial` object with full details
-
-## Variant API
-
-### variants.search()
+### search_variants()
 
 Search genetic variants in MyVariant.info.
 
 ```python
-async def search(
-    self,
-    gene: Optional[str] = None,
-    hgvs: Optional[str] = None,
-    rsid: Optional[str] = None,
-    chromosome: Optional[str] = None,
-    start: Optional[int] = None,
-    end: Optional[int] = None,
-    assembly: str = "hg38",
-    significance: Optional[Union[str, List[str]]] = None,
-    min_frequency: Optional[float] = None,
-    max_frequency: Optional[float] = None,
-    min_cadd: Optional[float] = None,
-    include_cbioportal: bool = True,
-    limit: int = 10,
-) -> VariantSearchResult:
+from biomcp.variants.search import search_variants, VariantQuery, ClinicalSignificance
+
+async def search_variants(
+    query: VariantQuery,
+    output_json: bool = False,
+    include_cbioportal: bool = True
+) -> str:
 ```
 
-**Parameters:**
+**VariantQuery Parameters:**
 
 - `gene`: Gene symbol
 - `hgvs`: HGVS notation
 - `rsid`: dbSNP rsID
 - `chromosome`, `start`, `end`: Genomic coordinates
-- `assembly`: Genome assembly (hg19 or hg38)
-- `significance`: Clinical significance filter
-- `min_frequency`, `max_frequency`: Allele frequency filters
-- `min_cadd`: Minimum CADD score
-- `include_cbioportal`: Include cancer genomics data
+- `significance`: Clinical significance filter (use ClinicalSignificance enum)
+- `frequency_min`, `frequency_max`: Allele frequency filters
+- `cadd_score_min`: Minimum CADD score
 
-**Returns:** `VariantSearchResult` with variants
+**Available Enums:**
+
+- `ClinicalSignificance`: PATHOGENIC, LIKELY_PATHOGENIC, UNCERTAIN_SIGNIFICANCE, LIKELY_BENIGN, BENIGN
+- `PolyPhenPrediction`: PROBABLY_DAMAGING, POSSIBLY_DAMAGING, BENIGN
+- `SiftPrediction`: DELETERIOUS, TOLERATED
 
 **Example:**
 
 ```python
+from biomcp.variants.search import search_variants, VariantQuery, ClinicalSignificance
+
 # Search pathogenic variants
-variants = await client.variants.search(
+query = VariantQuery(
     gene="BRCA1",
-    significance=["pathogenic", "likely_pathogenic"],
-    max_frequency=0.01
+    significance=ClinicalSignificance.PATHOGENIC,
+    frequency_max=0.01
 )
+results = await search_variants(query)
 
 # Search by genomic region
-variants = await client.variants.search(
+query = VariantQuery(
     chromosome="7",
     start=140453136,
-    end=140453137,
-    assembly="hg38"
+    end=140453137
 )
+results = await search_variants(query)
 ```
 
-### variants.get()
+## Direct Data APIs
 
-Get detailed variant information.
-
-```python
-async def get(
-    self,
-    variant_id: str,
-    include_external: bool = True
-) -> Variant:
-```
-
-**Parameters:**
-
-- `variant_id`: Variant identifier (HGVS, rsID, or genomic)
-- `include_external`: Include external database annotations
-
-**Returns:** `Variant` object with annotations
-
-### variants.predict()
-
-Predict variant effects using AlphaGenome.
-
-```python
-async def predict(
-    self,
-    chromosome: str,
-    position: int,
-    reference: str,
-    alternate: str,
-    tissue_types: Optional[List[str]] = None,
-    interval: int = 20000,
-) -> AlphaGenomePrediction:
-```
-
-**Parameters:**
-
-- `chromosome`: Chromosome (e.g., "chr7")
-- `position`: Genomic position
-- `reference`: Reference allele
-- `alternate`: Alternate allele
-- `tissue_types`: UBERON tissue ontology terms
-- `interval`: Analysis window size
-
-**Returns:** `AlphaGenomePrediction` with effect predictions
-
-## BioThings API
-
-### genes.get()
+### get_gene()
 
 Get gene information from MyGene.info.
 
 ```python
-async def get(self, gene_symbol: str) -> Gene:
+from biomcp.genes import get_gene
+
+async def get_gene(
+    gene_id_or_symbol: str,
+    output_json: bool = False
+) -> str:
 ```
 
-### diseases.get()
+**Example:**
+
+```python
+gene_info = await get_gene("BRCA1")
+```
+
+### get_disease()
 
 Get disease information from MyDisease.info.
 
 ```python
-async def get(self, disease_term: str) -> Disease:
+from biomcp.diseases import get_disease
+
+async def get_disease(
+    disease_id_or_name: str,
+    output_json: bool = False
+) -> str:
 ```
 
-### drugs.get()
+**Example:**
+
+```python
+disease_info = await get_disease("melanoma")
+```
+
+### get_drug()
 
 Get drug information from MyChem.info.
 
 ```python
-async def get(self, drug_name: str) -> Drug:
-```
+from biomcp.drugs import get_drug
 
-## Unified Search API
-
-### client.search()
-
-Unified search across all domains.
-
-```python
-async def search(
-    self,
-    query: Optional[str] = None,
-    domain: Optional[str] = None,
-    **kwargs
-) -> SearchResult:
-```
-
-**Parameters:**
-
-- `query`: Unified query language string
-- `domain`: Target domain
-- `**kwargs`: Domain-specific parameters
-
-**Query Language Examples:**
-
-- `"gene:BRAF AND disease:melanoma"`
-- `"drugs.tradename:gleevec"`
-- `"gene:TP53 AND (mutation OR variant)"`
-
-## Streaming API
-
-### client.stream()
-
-Stream large result sets efficiently.
-
-```python
-async def stream(
-    self,
-    domain: str,
-    **search_params
-) -> AsyncIterator[Dict]:
+async def get_drug(
+    drug_id_or_name: str,
+    output_json: bool = False
+) -> str:
 ```
 
 **Example:**
 
 ```python
-# Stream all BRCA1 articles
-async for article in client.stream(
-    domain="article",
-    genes=["BRCA1"]
-):
-    print(f"Processing {article['pmid']}")
+drug_info = await get_drug("imatinib")
 ```
 
-## Batch Operations
-
-### client.batch()
-
-Process multiple queries efficiently.
-
-```python
-async def batch(
-    self,
-    queries: List[Dict]
-) -> List[Result]:
-```
-
-**Example:**
-
-```python
-queries = [
-    {"domain": "gene", "id": "BRAF"},
-    {"domain": "gene", "id": "KRAS"},
-    {"domain": "drug", "id": "vemurafenib"}
-]
-
-results = await client.batch(queries)
-```
-
-## Error Handling
-
-```python
-from biomcp.exceptions import (
-    BioMCPError,
-    NotFoundError,
-    RateLimitError,
-    ValidationError,
-    APIKeyError
-)
-
-try:
-    article = await client.articles.get("invalid-pmid")
-except NotFoundError:
-    print("Article not found")
-except RateLimitError as e:
-    print(f"Rate limited. Retry after {e.retry_after} seconds")
-except BioMCPError as e:
-    print(f"Error: {e}")
-```
-
-## Data Models
-
-### Article
-
-```python
-class Article:
-    pmid: str
-    title: str
-    abstract: str
-    authors: List[str]
-    journal: str
-    year: int
-    doi: Optional[str]
-    url: str
-    genes: List[str]
-    diseases: List[str]
-    chemicals: List[str]
-    variants: List[str]
-    metadata: Dict[str, Any]
-```
-
-### Trial
-
-```python
-class Trial:
-    nct_id: str
-    title: str
-    status: str
-    phase: Optional[str]
-    conditions: List[str]
-    interventions: List[str]
-    sponsors: List[str]
-    start_date: Optional[date]
-    completion_date: Optional[date]
-    locations: List[Location]
-    eligibility: Eligibility
-    description: str
-    primary_outcomes: List[str]
-    secondary_outcomes: List[str]
-```
-
-### Variant
-
-```python
-class Variant:
-    id: str
-    gene: Gene
-    chromosome: str
-    position: int
-    ref: str
-    alt: str
-    hgvs: Optional[str]
-    rsid: Optional[str]
-    clinical_significance: Optional[str]
-    frequencies: PopulationFrequencies
-    predictions: FunctionalPredictions
-    diseases: List[Disease]
-    external_data: Dict[str, Any]
-```
-
-## Best Practices
-
-### 1. Use Context Managers
-
-```python
-async with BioMCPClient() as client:
-    # Client automatically handles cleanup
-    results = await client.articles.search(genes=["TP53"])
-```
-
-### 2. Handle Pagination
-
-```python
-all_articles = []
-page = 1
-
-while True:
-    results = await client.articles.search(
-        genes=["BRCA1"],
-        page=page,
-        limit=100
-    )
-    all_articles.extend(results.articles)
-
-    if len(results.articles) < 100:
-        break
-    page += 1
-```
-
-### 3. Implement Retry Logic
-
-```python
-from tenacity import retry, stop_after_attempt, wait_exponential
-
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10)
-)
-async def robust_search(client, **params):
-    return await client.articles.search(**params)
-```
-
-### 4. Cache Results
-
-```python
-from functools import lru_cache
-import hashlib
-import json
-
-@lru_cache(maxsize=1000)
-async def cached_gene_get(client, gene_symbol):
-    return await client.genes.get(gene_symbol)
-```
-
-## Complete Example
+## Complete Analysis Example
 
 ```python
 import asyncio
-from biomcp import BioMCPClient
+from biomcp.variants.search import search_variants, VariantQuery, ClinicalSignificance
+from biomcp.articles.search import search_articles, PubmedRequest
+from biomcp.trials.search import search_trials, TrialQuery, TrialPhase
+from biomcp.genes import get_gene
 
-async def variant_analysis_workflow(gene: str, disease: str):
-    """Complete variant analysis workflow."""
+async def analyze_gene_variants(gene_symbol: str, disease: str):
+    """Complete gene variant analysis workflow."""
 
-    async with BioMCPClient() as client:
-        # 1. Get gene information
-        gene_info = await client.genes.get(gene)
-        print(f"Analyzing {gene_info.name} ({gene_info.symbol})")
+    # 1. Get gene information
+    gene_info = await get_gene(gene_symbol)
+    print(f"Gene: {gene_symbol}")
 
-        # 2. Search for pathogenic variants
-        variants = await client.variants.search(
-            gene=gene,
-            significance="pathogenic",
-            max_frequency=0.01
-        )
-        print(f"Found {len(variants.variants)} pathogenic variants")
+    # 2. Search for pathogenic variants
+    variant_query = VariantQuery(
+        gene=gene_symbol,
+        significance=ClinicalSignificance.PATHOGENIC,
+        frequency_max=0.01  # Rare variants
+    )
+    variants_result = await search_variants(variant_query)
+    print(f"Found pathogenic variants for {gene_symbol}")
 
-        # 3. Search related articles
-        articles = await client.articles.search(
-            genes=[gene],
-            diseases=[disease],
-            keywords=["therapy", "treatment"],
-            limit=10
-        )
-        print(f"Found {len(articles.articles)} relevant articles")
+    # 3. Search related literature
+    article_request = PubmedRequest(
+        genes=[gene_symbol],
+        diseases=[disease],
+        keywords=["therapy", "treatment", "prognosis"]
+    )
+    articles_result = await search_articles(article_request)
+    print(f"Found literature on {gene_symbol} and {disease}")
 
-        # 4. Find clinical trials
-        trials = await client.trials.search(
-            conditions=[disease],
-            other_terms=[gene, f"{gene} mutation"],
-            status="RECRUITING"
-        )
-        print(f"Found {len(trials.trials)} recruiting trials")
+    # 4. Find clinical trials
+    trial_query = TrialQuery(
+        conditions=[disease],
+        other_terms=[gene_symbol, f"{gene_symbol} mutation"],
+        phase=TrialPhase.PHASE3,
+        recruiting_status="RECRUITING"
+    )
+    trials_result = await search_trials(trial_query)
+    print(f"Found trials for {disease} with {gene_symbol}")
 
-        # 5. Compile results
-        return {
-            "gene": gene_info,
-            "pathogenic_variants": variants.variants[:5],
-            "key_articles": articles.articles[:5],
-            "active_trials": trials.trials[:5]
-        }
+    return {
+        "gene_info": gene_info,
+        "variants": variants_result,
+        "articles": articles_result,
+        "trials": trials_result
+    }
 
-# Run the workflow
-results = asyncio.run(
-    variant_analysis_workflow("BRAF", "melanoma")
-)
+# Run the analysis
+results = asyncio.run(analyze_gene_variants("BRAF", "melanoma"))
 ```
+
+## LangChain Integration
+
+```python
+from langchain.tools import tool
+from biomcp.variants.search import search_variants, VariantQuery, ClinicalSignificance
+from biomcp.articles.search import search_articles, PubmedRequest
+
+@tool
+def search_pathogenic_variants(gene: str) -> str:
+    """Search for pathogenic variants in a specific gene."""
+    import asyncio
+
+    async def _search():
+        query = VariantQuery(
+            gene=gene,
+            significance=ClinicalSignificance.PATHOGENIC
+        )
+        return await search_variants(query)
+
+    return asyncio.run(_search())
+
+@tool
+def search_gene_literature(gene: str, disease: str = None) -> str:
+    """Search for scientific literature about a gene and optionally a disease."""
+    import asyncio
+
+    async def _search():
+        request = PubmedRequest(
+            genes=[gene],
+            diseases=[disease] if disease else []
+        )
+        return await search_articles(request)
+
+    return asyncio.run(_search())
+
+# Use with your LLM/agent framework
+tools = [search_pathogenic_variants, search_gene_literature]
+```
+
+## Key Differences from Other Documentation
+
+❌ **Does NOT work:**
+
+```python
+from biomcp import BioMCPClient  # This class doesn't exist
+```
+
+✅ **Actually works:**
+
+```python
+from biomcp.variants.search import search_variants, VariantQuery
+from biomcp.articles.search import search_articles, PubmedRequest
+from biomcp.trials.search import search_trials, TrialQuery
+```
+
+## Summary
+
+The BioMCP package provides powerful biomedical data access through:
+
+- **Direct async functions** for each domain (variants, articles, trials, genes, diseases, drugs)
+- **Pydantic models** for type-safe queries and responses
+- **Comprehensive enums** for standardized values
+- **No unified client** - use individual domain modules directly
+
+This modular approach works well for building tools and integrating with frameworks like LangChain, as it provides direct access to specific functionality without the overhead of a unified client interface.
 
 ## Additional Resources
 
-- [Error Codes Reference](error-codes.md)
-- [Performance Optimization Guide](../developer-guides/07-performance-optimizations.md)
+- [MCP Tools Reference](../mcp-tools/)
+- [CLI Commands](../cli/)
 - [How-to Guides](../how-to-guides/01-find-articles-and-cbioportal-data.md)
