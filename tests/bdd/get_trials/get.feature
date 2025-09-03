@@ -15,9 +15,9 @@ Feature: Get Clinical Trial Details for NCT04280705
 
   Scenario: REFERENCES module details
     Given I run "biomcp trial get NCT04280705 References --json"
-    Then the field "protocolSection.referencesModule.references[0].pmid" should equal "34473343"
+    Then the field "protocolSection.referencesModule.references[0].pmid" should equal "38657001"
     And the field "protocolSection.referencesModule.references[0].type" should equal "DERIVED"
-    And the field "protocolSection.referencesModule.references[1].pmid" should equal "34350582"
+    And the field "protocolSection.referencesModule.references[1].pmid" should equal "37466213"
 
   Scenario: OUTCOMES module details
     Given I run "biomcp trial get NCT04280705 Outcomes --json"
