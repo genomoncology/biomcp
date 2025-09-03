@@ -59,6 +59,8 @@ The BioMCP package is organized into domain-specific modules that you import dir
 ```python
 # Variants
 from biomcp.variants.search import search_variants, VariantQuery, ClinicalSignificance
+from biomcp.variants.getter import get_variant
+from biomcp.variants.alphagenome import predict_variant_effects
 
 # Articles
 from biomcp.articles.search import search_articles, PubmedRequest
@@ -188,13 +190,19 @@ async def search_variants(
 
 **VariantQuery Parameters:**
 
-- `gene`: Gene symbol
-- `hgvs`: HGVS notation
-- `rsid`: dbSNP rsID
-- `chromosome`, `start`, `end`: Genomic coordinates
-- `significance`: Clinical significance filter (use ClinicalSignificance enum)
-- `frequency_min`, `frequency_max`: Allele frequency filters
-- `cadd_score_min`: Minimum CADD score
+- `gene`: Gene symbol (e.g. BRAF, TP53)
+- `hgvsp`: Protein change notation (e.g., p.V600E, p.Arg557His)
+- `hgvsc`: cDNA notation (e.g., c.1799T>A)
+- `rsid`: dbSNP rsID (e.g., rs113488022)
+- `region`: Genomic region as chr:start-end (e.g. chr1:12345-67890)
+- `significance`: ClinVar clinical significance (use ClinicalSignificance enum)
+- `min_frequency`, `max_frequency`: Allele frequency filters
+- `cadd`: Minimum CADD phred score
+- `polyphen`: PolyPhen-2 prediction (use PolyPhenPrediction enum)
+- `sift`: SIFT prediction (use SiftPrediction enum)
+- `sources`: Include only specific data sources
+- `size`: Number of results to return
+- `offset`: Result offset for pagination
 
 **Available Enums:**
 
@@ -211,17 +219,95 @@ from biomcp.variants.search import search_variants, VariantQuery, ClinicalSignif
 query = VariantQuery(
     gene="BRCA1",
     significance=ClinicalSignificance.PATHOGENIC,
-    frequency_max=0.01
+    max_frequency=0.01
 )
 results = await search_variants(query)
 
 # Search by genomic region
 query = VariantQuery(
-    chromosome="7",
-    start=140453136,
-    end=140453137
+    region="chr7:140453136-140453137"
 )
 results = await search_variants(query)
+
+# Search by protein change
+query = VariantQuery(
+    gene="BRAF",
+    hgvsp="p.V600E"
+)
+results = await search_variants(query)
+```
+
+### get_variant()
+
+Get detailed variant information.
+
+```python
+from biomcp.variants.getter import get_variant
+
+async def get_variant(
+    variant_id: str,
+    output_json: bool = False,
+    include_external: bool = False
+) -> str:
+```
+
+**Parameters:**
+
+- `variant_id`: Variant identifier (HGVS, rsID, or genomic like "chr7:g.140453136A>T")
+- `output_json`: Return JSON format instead of markdown
+- `include_external`: Include external database annotations
+
+**Example:**
+
+```python
+# Get by HGVS
+variant_info = await get_variant("chr7:g.140453136A>T")
+
+# Get by rsID
+variant_info = await get_variant("rs113488022")
+```
+
+### predict_variant_effects()
+
+Predict variant effects using AlphaGenome AI.
+
+```python
+from biomcp.variants.alphagenome import predict_variant_effects
+
+async def predict_variant_effects(
+    chromosome: str,
+    position: int,
+    reference: str,
+    alternate: str,
+    interval_size: int = 131_072,
+    tissue_types: list[str] | None = None,
+    significance_threshold: float = 0.5,
+    api_key: str | None = None
+) -> str:
+```
+
+**Parameters:**
+
+- `chromosome`: Chromosome (e.g., 'chr7')
+- `position`: 1-based genomic position
+- `reference`: Reference allele(s)
+- `alternate`: Alternate allele(s)
+- `interval_size`: Size of genomic context window (max 1,000,000)
+- `tissue_types`: UBERON tissue ontology terms for tissue-specific predictions
+- `significance_threshold`: Threshold for significant log2 fold changes
+- `api_key`: AlphaGenome API key (or set ALPHAGENOME_API_KEY env var)
+
+**Example:**
+
+```python
+# Predict effects of BRAF V600E mutation
+prediction = await predict_variant_effects(
+    chromosome="chr7",
+    position=140753336,
+    reference="A",
+    alternate="T",
+    api_key="your-alphagenome-api-key"
+)
 ```
 
 ## Direct Data APIs
@@ -303,7 +389,7 @@ async def analyze_gene_variants(gene_symbol: str, disease: str):
     variant_query = VariantQuery(
         gene=gene_symbol,
         significance=ClinicalSignificance.PATHOGENIC,
-        frequency_max=0.01  # Rare variants
+        max_frequency=0.01  # Rare variants
     )
     variants_result = await search_variants(variant_query)
     print(f"Found pathogenic variants for {gene_symbol}")
