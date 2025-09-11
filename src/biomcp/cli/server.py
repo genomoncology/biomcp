@@ -27,7 +27,13 @@ def run_stdio_server():
 def run_http_server(host: str, port: int, mode: ServerMode):
     """Run server in HTTP-based mode (worker or streamable_http)."""
     try:
+        from typing import Union
+
         import uvicorn
+        from fastapi import FastAPI
+        from starlette.applications import Starlette
+
+        app: Union[FastAPI, Starlette]
 
         if mode == ServerMode.WORKER:
             logger.info("Starting MCP server with Worker/SSE transport")
@@ -38,7 +44,21 @@ def run_http_server(host: str, port: int, mode: ServerMode):
             )
             logger.info(f"Endpoint: http://{host}:{port}/mcp")
             logger.info("Using FastMCP's native Streamable HTTP support")
-            from ..workers.worker import app
+
+            from starlette.responses import JSONResponse
+            from starlette.routing import Route
+
+            from .. import mcp_app
+
+            # Get FastMCP's streamable_http_app
+            app = mcp_app.streamable_http_app()
+
+            # Add health endpoint to the Starlette app
+            async def health_check(request):
+                return JSONResponse({"status": "healthy"})
+
+            health_route = Route("/health", health_check, methods=["GET"])
+            app.routes.append(health_route)
 
         uvicorn.run(
             app,

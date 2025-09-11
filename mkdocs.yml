@@ -26,6 +26,7 @@ nav:
       - Searching Organizations: how-to-guides/06-search-nci-organizations-and-interventions.md
       - Research Workflows: workflows/all-workflows.md
       - Examples:
+          - Pydantic AI Integration: tutorials/pydantic-ai-integration.md
           - Remote Connection: tutorials/remote-connection.md
           - BioThings Examples: tutorials/biothings-prompts.md
           - NCI Examples: tutorials/nci-prompts.md
