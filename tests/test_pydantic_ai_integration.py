@@ -15,6 +15,24 @@ from pydantic_ai.mcp import MCPServerSSE, MCPServerStdio
 from pydantic_ai.models.test import TestModel
 
 
+def worker_dependencies_available():
+    """Check if worker dependencies (FastAPI, Starlette) are available."""
+    try:
+        import fastapi  # noqa: F401
+        import starlette  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
+
+# Skip marker for tests requiring worker dependencies
+requires_worker = pytest.mark.skipif(
+    not worker_dependencies_available(),
+    reason="Worker dependencies (FastAPI/Starlette) not installed. Install with: pip install biomcp-python[worker]",
+)
+
+
 def get_free_port():
     """Get a free port for testing."""
     import socket
@@ -122,6 +140,7 @@ async def test_stdio_mode_with_openai():
         assert len(result.output) > 0
 
 
+@requires_worker
 @pytest.mark.asyncio
 async def test_sse_mode_connection():
     """Test SSE mode connection (requires server running)."""
@@ -173,6 +192,7 @@ async def test_sse_mode_connection():
         server_process.wait(timeout=5)
 
 
+@requires_worker
 @pytest.mark.asyncio
 async def test_sse_messages_workflow():
     """Test SSE connection and messages endpoint workflow.
@@ -282,6 +302,7 @@ async def test_biomedical_research_workflow():
         assert result.output is not None
 
 
+@requires_worker
 @pytest.mark.asyncio
 async def test_health_endpoint():
     """Test that the health endpoint is accessible."""
@@ -326,6 +347,7 @@ async def test_health_endpoint():
         server_process.wait(timeout=5)
 
 
+@requires_worker
 @pytest.mark.asyncio
 async def test_server_modes_produce_different_endpoints():
     """Verify that worker and streamable_http modes expose different endpoints."""
