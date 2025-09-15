@@ -27,17 +27,22 @@ def run_stdio_server():
 def run_http_server(host: str, port: int, mode: ServerMode):
     """Run server in HTTP-based mode (worker or streamable_http)."""
     try:
-        from typing import Union
+        from typing import Any
 
         import uvicorn
-        from fastapi import FastAPI
-        from starlette.applications import Starlette
 
-        app: Union[FastAPI, Starlette]
+        app: Any  # Type will be either FastAPI or Starlette
 
         if mode == ServerMode.WORKER:
             logger.info("Starting MCP server with Worker/SSE transport")
-            from ..workers.worker import app
+            try:
+                from ..workers.worker import app
+            except ImportError as e:
+                logger.error(
+                    f"Failed to import worker mode dependencies: {e}\n"
+                    "Please install with: pip install biomcp-python[worker]"
+                )
+                raise typer.Exit(1) from e
         else:  # STREAMABLE_HTTP
             logger.info(
                 f"Starting MCP server with Streamable HTTP transport on {host}:{port}"
@@ -45,8 +50,15 @@ def run_http_server(host: str, port: int, mode: ServerMode):
             logger.info(f"Endpoint: http://{host}:{port}/mcp")
             logger.info("Using FastMCP's native Streamable HTTP support")
 
-            from starlette.responses import JSONResponse
-            from starlette.routing import Route
+            try:
+                from starlette.responses import JSONResponse
+                from starlette.routing import Route
+            except ImportError as e:
+                logger.error(
+                    f"Failed to import Starlette dependencies: {e}\n"
+                    "Please install with: pip install biomcp-python[worker]"
+                )
+                raise typer.Exit(1) from e
 
             from .. import mcp_app
 

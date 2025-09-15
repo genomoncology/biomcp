@@ -332,6 +332,7 @@ dependencies = [
 [package.optional-dependencies]
 worker = [
     { name = "fastapi" },
+    { name = "starlette" },
     { name = "uvicorn" },
 ]
 
@@ -372,6 +373,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "rich", specifier = ">=14.0.0" },
+    { name = "starlette", marker = "extra == 'worker'", specifier = ">=0.36.0" },
     { name = "typer", specifier = ">=0.15.2" },
     { name = "uvicorn", specifier = ">=0.34.2" },
     { name = "uvicorn", marker = "extra == 'worker'", specifier = ">=0.28.0" },
@@ -389,7 +391,7 @@ dev = [
     { name = "mypy", specifier = ">=0.991" },
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "pre-commit", specifier = ">=2.20.0" },
-    { name = "pydantic-ai", extras = ["mcp"], specifier = ">=0.0.14" },
+    { name = "pydantic-ai", specifier = ">=0.0.14" },
     { name = "pytest", specifier = ">=7.2.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "pytest-bdd", specifier = ">=8.1.0" },

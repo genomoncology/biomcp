@@ -58,7 +58,7 @@ dev = [
     "twine>=4.0.0",
     "pandas>=2.0.0",  # Used for mocking AlphaGenome responses in tests
     "PyYAML>=6.0.0",  # Used for mkdocs.yml parsing in scripts
-    "pydantic-ai[mcp]>=0.0.14",  # For testing Pydantic AI integration with MCP support
+    "pydantic-ai>=0.0.14",  # For testing Pydantic AI integration
 ]
 
 [project.optional-dependencies]
@@ -67,6 +67,7 @@ api = [
 
 worker = [
     "fastapi>=0.110.0",
+    "starlette>=0.36.0",
     "uvicorn>=0.28.0",
 ]
 
@@ -203,6 +204,7 @@ exclude = [
   "build",
   "dist",
   "scripts",
+  "spike",
 ]
 
 [tool.deptry.per_rule_ignores]
