@@ -156,18 +156,18 @@ class TestCBioPortalSearch:
                 )
 
         # Basic checks that should pass when data is available
-        assert summary.total_mutations > 0, (
-            f"TP53 should have mutations. Got: {summary}"
-        )
+        assert (
+            summary.total_mutations > 0
+        ), f"TP53 should have mutations. Got: {summary}"
 
         # More flexible checks
         if summary.hotspots:
             # Just verify structure if we have hotspots
             hotspot_changes = [hs.amino_acid_change for hs in summary.hotspots]
             print(f"TP53 hotspots found: {hotspot_changes[:5]}")
-            assert len(hotspot_changes) >= 1, (
-                "Should find at least one TP53 hotspot"
-            )
+            assert (
+                len(hotspot_changes) >= 1
+            ), "Should find at least one TP53 hotspot"
 
     @pytest.mark.asyncio
     @pytest.mark.integration
@@ -206,9 +206,9 @@ class TestCBioPortalSearch:
                 )
 
         # Basic checks that should pass when data is available
-        assert summary.total_mutations > 0, (
-            f"KRAS should have mutations. Got: {summary}"
-        )
+        assert (
+            summary.total_mutations > 0
+        ), f"KRAS should have mutations. Got: {summary}"
 
         # More flexible checks
         if summary.hotspots:
@@ -222,9 +222,9 @@ class TestCBioPortalSearch:
 
         # Cancer distribution check - only if we have data
         if summary.total_mutations > 0:
-            assert len(summary.cancer_distribution) > 0, (
-                "Should have cancer type distribution"
-            )
+            assert (
+                len(summary.cancer_distribution) > 0
+            ), "Should have cancer type distribution"
 
     @pytest.mark.asyncio
     @pytest.mark.integration

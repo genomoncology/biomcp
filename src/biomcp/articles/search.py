@@ -254,8 +254,9 @@ async def _article_searcher(
       - Multiple keywords are still combined with AND logic
 
     Returns:
-    Markdown formatted list of matching articles, with peer-reviewed articles listed first.
-    Limited to max 80 results (40 from each source).
+    Markdown formatted list of matching articles, sorted by date (newest first),
+    with peer-reviewed articles listed before preprints.
+    Limited to max 20 results (10 from each source) by default to optimize token usage.
     """
     # Import here to avoid circular dependency
     from .search_optimized import article_searcher_optimized

@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from pydantic import BaseModel, Field, model_validator
 
 from .. import StrEnum, ensure_list, http_client, render
-from ..constants import MYVARIANT_QUERY_URL
+from ..constants import MYVARIANT_QUERY_URL, SYSTEM_PAGE_SIZE
 from .filters import filter_variants
 from .links import inject_links
 
@@ -126,7 +126,7 @@ class VariantQuery(BaseModel):
         default_factory=list,
     )
     size: int = Field(
-        default=40,
+        default=SYSTEM_PAGE_SIZE,
         description="Number of results to return",
     )
     offset: int = Field(
@@ -294,7 +294,7 @@ async def _variant_searcher(
         list[VariantSources] | list[str] | str | None,
         "Include only specific data sources (list or comma-separated string)",
     ] = None,
-    size: Annotated[int, "Number of results to return"] = 40,
+    size: Annotated[int, "Number of results to return"] = SYSTEM_PAGE_SIZE,
     offset: Annotated[int, "Result offset for pagination"] = 0,
 ) -> str:
     """
@@ -314,7 +314,7 @@ async def _variant_searcher(
     - polyphen: PolyPhen-2 prediction
     - sift: SIFT prediction
     - sources: Include only specific data sources (list or comma-separated string)
-    - size: Number of results to return (default: 40)
+    - size: Number of results to return (default: 10)
     - offset: Result offset for pagination (default: 0)
 
     Returns:

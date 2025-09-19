@@ -89,9 +89,9 @@ async def test_specific_pten_papers_not_found():
     print(f"Papers mentioning R173/Arg173: {len(r173_papers)}")
 
     # The issue: R173 might only be in full text, not abstract
-    assert len(r173_papers) < len(expected_papers), (
-        "Not all expected R173 papers are found"
-    )
+    assert len(r173_papers) < len(
+        expected_papers
+    ), "Not all expected R173 papers are found"
 
 
 def test_and_logic_explanation():

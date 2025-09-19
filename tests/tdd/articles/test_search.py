@@ -47,8 +47,8 @@ async def test_convert_search_query(anyio_backend):
         query_text.count(" AND ") >= 4
     )  # At least 4 AND operators for 5 terms
 
-    # default page request
-    assert pubtator_request.size == 40
+    # default page request (changed to 10 for token efficiency)
+    assert pubtator_request.size == 10
 
 
 async def test_convert_search_query_with_or_logic(anyio_backend):
@@ -100,7 +100,7 @@ async def test_search(anyio_backend):
 
         pytest.skip(f"API returned error: {data[0]['error']}")
 
-    assert len(data) == 40
+    assert len(data) == 10  # Changed from 40 to 10 for token efficiency
     result = ResultItem.model_validate(data[0])
     # todo: this might be flaky.
     assert (
@@ -132,11 +132,11 @@ async def test_search_mocked(anyio_backend):
                 date="2023-07-23",
                 doi="10.3760/cma.j.cn112152-20230314-00115",
             )
-            for _ in range(40)  # Create 40 results
+            for _ in range(10)  # Create 40 results
         ],
-        page_size=40,
+        page_size=10,
         current=1,
-        count=40,
+        count=10,
         total_pages=1,
     )
 
@@ -183,7 +183,9 @@ async def test_search_mocked(anyio_backend):
                 data = json.loads(output)
 
                 assert isinstance(data, list)
-                assert len(data) == 40
+                assert (
+                    len(data) == 10
+                )  # Changed from 40 to 10 for token efficiency
                 result = ResultItem.model_validate(data[0])
                 assert (
                     result.title

@@ -74,7 +74,9 @@ UCSC_GENOME_BROWSER_URL = "https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&"
 DEFAULT_CACHE_TIMEOUT = 60 * 60 * 24 * 7  # 1 week in seconds
 
 # Pagination
-SYSTEM_PAGE_SIZE = 40  # Default page size for all searches
+SYSTEM_PAGE_SIZE = (
+    10  # Default page size for all searches (reduced for token efficiency)
+)
 DEFAULT_PAGE_SIZE = 10  # Default page size for unified search
 MIN_PAGE_SIZE = 1
 MAX_PAGE_SIZE = 100

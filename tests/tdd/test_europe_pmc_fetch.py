@@ -21,12 +21,12 @@ class TestDOIDetection:
             "10.1126/science.abc1234",
         ]
         for doi in valid_dois:
-            assert is_doi(doi) is True, (
-                f"Expected {doi} to be identified as DOI"
-            )
-            assert is_pmid(doi) is False, (
-                f"Expected {doi} NOT to be identified as PMID"
-            )
+            assert (
+                is_doi(doi) is True
+            ), f"Expected {doi} to be identified as DOI"
+            assert (
+                is_pmid(doi) is False
+            ), f"Expected {doi} NOT to be identified as PMID"
 
     def test_valid_pmids(self):
         """Test that valid PMIDs are correctly identified."""
@@ -37,12 +37,12 @@ class TestDOIDetection:
             "999999999",
         ]
         for pmid in valid_pmids:
-            assert is_pmid(pmid) is True, (
-                f"Expected {pmid} to be identified as PMID"
-            )
-            assert is_doi(pmid) is False, (
-                f"Expected {pmid} NOT to be identified as DOI"
-            )
+            assert (
+                is_pmid(pmid) is True
+            ), f"Expected {pmid} to be identified as PMID"
+            assert (
+                is_doi(pmid) is False
+            ), f"Expected {pmid} NOT to be identified as DOI"
 
     def test_invalid_identifiers(self):
         """Test that invalid identifiers are rejected by both functions."""
@@ -54,12 +54,12 @@ class TestDOIDetection:
             "",  # Empty string
         ]
         for identifier in invalid_ids:
-            assert is_doi(identifier) is False, (
-                f"Expected {identifier} NOT to be identified as DOI"
-            )
-            assert is_pmid(identifier) is False, (
-                f"Expected {identifier} NOT to be identified as PMID"
-            )
+            assert (
+                is_doi(identifier) is False
+            ), f"Expected {identifier} NOT to be identified as DOI"
+            assert (
+                is_pmid(identifier) is False
+            ), f"Expected {identifier} NOT to be identified as PMID"
 
 
 class TestEuropePMCFetch:

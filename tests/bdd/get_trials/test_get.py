@@ -50,6 +50,6 @@ def field_should_equal(cli_result, field, expected):
     """
     actual = get_field_value(cli_result, field)
     # Compare as strings for simplicity.
-    assert str(actual) == expected, (
-        f"Expected field '{field}' to equal '{expected}', but got '{actual}'"
-    )
+    assert (
+        str(actual) == expected
+    ), f"Expected field '{field}' to equal '{expected}', but got '{actual}'"
