@@ -438,8 +438,13 @@ async function proxyPost(req, remoteServerUrl, path, sid) {
     sid,
   )}`;
 
+  // Streamable HTTP requires both application/json and text/event-stream
+  // The server will decide which format to use based on the response type
+  const acceptHeader = "application/json, text/event-stream";
+
   const headers = {
     "Content-Type": "application/json",
+    "Accept": acceptHeader,
     "User-Agent": "Claude/1.0",
   };
 
@@ -453,6 +458,39 @@ async function proxyPost(req, remoteServerUrl, path, sid) {
     const responseText = await response.text();
     log(`Proxy response from ${targetUrl}: ${responseText.substring(0, 500)}`);
 
+    // Check if response is SSE format
+    if (responseText.startsWith("event:") || responseText.includes("\nevent:")) {
+      // Parse SSE format
+      const events = responseText.split("\n\n").filter(e => e.trim());
+
+      if (events.length === 1) {
+        // Single SSE event - convert to plain JSON
+        const lines = events[0].split("\n");
+        const dataLine = lines.find(l => l.startsWith("data:"));
+
+        if (dataLine) {
+          const jsonData = dataLine.substring(5).trim(); // Remove "data:" prefix
+          log("Converting single SSE message to plain JSON");
+          return new Response(jsonData, {
+            status: response.status,
+            headers: { "Content-Type": "application/json", ...CORS },
+          });
+        }
+      } else if (events.length > 1) {
+        // Multiple SSE events - return as SSE stream
+        log("Returning multiple SSE messages as stream");
+        return new Response(responseText, {
+          status: response.status,
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            ...CORS
+          },
+        });
+      }
+    }
+
+    // Not SSE format - return as-is
     return new Response(responseText, {
       status: response.status,
       headers: { "Content-Type": "application/json", ...CORS },
@@ -466,82 +504,6 @@ async function proxyPost(req, remoteServerUrl, path, sid) {
   }
 }
 
-// Function to serve SSE connections
-function serveSSE(clientReq, remoteServerUrl) {
-  const enc = new TextEncoder();
-  const upstreamCtl = new AbortController();
-  let keepalive;
-
-  const stream = new ReadableStream({
-    async start(ctrl) {
-      ctrl.enqueue(enc.encode("event: ready\ndata: {}\n\n"));
-
-      if (
-        clientReq.signal &&
-        typeof clientReq.signal.addEventListener === "function"
-      ) {
-        clientReq.signal.addEventListener("abort", () => {
-          clearInterval(keepalive);
-          upstreamCtl.abort();
-          ctrl.close();
-        });
-      } else {
-        log("Warning: Request signal not available for abort listener");
-      }
-
-      try {
-        log(`Connecting to upstream SSE: ${remoteServerUrl}/sse`);
-        const upstreamResponse = await fetch(`${remoteServerUrl}/sse`, {
-          headers: { Accept: "text/event-stream" },
-          signal: upstreamCtl.signal,
-        });
-
-        if (!upstreamResponse.ok || !upstreamResponse.body) {
-          log(`Upstream SSE connection failed: ${upstreamResponse.status}`);
-          throw new Error(`Upstream SSE ${upstreamResponse.status}`);
-        }
-
-        log("Upstream SSE connection established");
-        const reader = upstreamResponse.body.getReader();
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) {
-            log("Upstream SSE connection closed");
-            break;
-          }
-          if (value) {
-            ctrl.enqueue(value);
-          }
-        }
-      } catch (e) {
-        log(`SSE connection error: ${e.name} - ${e.message}`);
-        if (e.name !== "AbortError") {
-          ctrl.enqueue(enc.encode(`event: error\ndata: ${e.message}\n\n`));
-        }
-      }
-
-      log("Setting up SSE keepalive");
-      keepalive = setInterval(() => {
-        try {
-          ctrl.enqueue(enc.encode(":keepalive\n\n"));
-        } catch (error) {
-          log(`Error sending keepalive: ${error}`);
-          clearInterval(keepalive);
-        }
-      }, 5000);
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-      ...CORS,
-    },
-  });
-}
 
 // Middleware for bearer token authentication (MCP server)
 const stytchBearerTokenAuthMiddleware = async (c, next) => {
@@ -1200,25 +1162,80 @@ app
 
     // Forward everything to proxyPost like the auth-less version does
     return proxyPost(newRequest, REMOTE_MCP_SERVER_URL, "/messages", sid);
-  })
+  });
 
-  // SSE endpoint (protected with bearer token authentication)
-  .use("/sse", stytchBearerTokenAuthMiddleware)
-  .get("/sse", (c) => {
-    log("SSE endpoint hit");
+// MCP endpoint (Streamable HTTP transport) - separate chain to avoid wildcard route issues
+app
+  .on("HEAD", "/mcp", stytchBearerTokenAuthMiddleware, (c) => {
+    log("MCP HEAD endpoint hit - checking endpoint availability");
+    // For Streamable HTTP, HEAD /mcp should return 204 to indicate the endpoint exists
+    return new Response(null, {
+      status: 204,
+      headers: CORS
+    });
+  })
+  .get("/mcp", stytchBearerTokenAuthMiddleware, async (c) => {
+    log("MCP GET endpoint hit - Streamable HTTP transport");
     const REMOTE_MCP_SERVER_URL =
       c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
-    return serveSSE(c.req, REMOTE_MCP_SERVER_URL);
+
+    // For Streamable HTTP, GET /mcp with session_id initiates event stream
+    const sessionId = new URL(c.req.url).searchParams.get("session_id");
+
+    if (!sessionId) {
+      // Without session_id, just return 204 to indicate endpoint exists
+      return new Response(null, {
+        status: 204,
+        headers: CORS
+      });
+    }
+
+    // Proxy the GET request to the backend's /mcp endpoint for streaming
+    const targetUrl = `${REMOTE_MCP_SERVER_URL}/mcp?session_id=${encodeURIComponent(sessionId)}`;
+    log(`Proxying GET /mcp to: ${targetUrl}`);
+
+    try {
+      const response = await fetch(targetUrl, {
+        method: "GET",
+        headers: {
+          "Accept": "text/event-stream",
+          "User-Agent": "Claude/1.0"
+        }
+      });
+
+      // For SSE, we need to stream the response
+      if (response.headers.get("content-type")?.includes("text/event-stream")) {
+        log("Streaming SSE response from backend");
+        // Return the streamed response directly
+        return new Response(response.body, {
+          status: response.status,
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            ...CORS
+          }
+        });
+      } else {
+        // Non-streaming response
+        const responseText = await response.text();
+        return new Response(responseText, {
+          status: response.status,
+          headers: {
+            "Content-Type": response.headers.get("content-type") || "text/plain",
+            ...CORS
+          }
+        });
+      }
+    } catch (error) {
+      log(`Error proxying GET /mcp: ${error}`);
+      return new Response(`Proxy error: ${error.message}`, {
+        status: 502,
+        headers: CORS
+      });
+    }
   })
-  // MCP endpoint (alias for SSE, protected with bearer token authentication)
-  .use("/mcp", stytchBearerTokenAuthMiddleware)
-  .get("/mcp", (c) => {
-    log("MCP GET endpoint hit");
-    const REMOTE_MCP_SERVER_URL =
-      c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
-    return serveSSE(c.req, REMOTE_MCP_SERVER_URL);
-  })
-  .post("/mcp", async (c) => {
+  .post("/mcp", stytchBearerTokenAuthMiddleware, async (c) => {
     log("MCP POST endpoint hit - Streamable HTTP transport");
     const REMOTE_MCP_SERVER_URL =
       c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
@@ -1227,14 +1244,19 @@ app
     const rawSessionId = new URL(c.req.url).searchParams.get("session_id");
     const sessionId = validateSessionId(rawSessionId);
 
-    // Process the request with proper validation and error handling
-    return processMcpRequest(c.req, REMOTE_MCP_SERVER_URL, sessionId);
-  })
-  .get("/events", (c) => {
-    log("Events endpoint hit");
-    const REMOTE_MCP_SERVER_URL =
-      c.env.REMOTE_MCP_SERVER_URL || "http://localhost:8000";
-    return serveSSE(c.req, REMOTE_MCP_SERVER_URL);
+    // Get the request body
+    const bodyText = await c.req.text();
+    log(`MCP POST request body: ${bodyText.substring(0, 200)}`);
+
+    // Create new request for proxying
+    const newRequest = new Request(c.req.url, {
+      method: "POST",
+      headers: c.req.headers,
+      body: bodyText,
+    });
+
+    // Use the updated proxyPost function that handles SSE properly
+    return proxyPost(newRequest, REMOTE_MCP_SERVER_URL, "/mcp", sessionId);
   })
 
   // Default 404 response
