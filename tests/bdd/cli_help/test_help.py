@@ -34,6 +34,6 @@ def output_should_contain(cli_result, expected):
     This helper handles both plain text and rich-formatted text outputs.
     """
     # Check if the expected text is in the output, ignoring case
-    assert (
-        expected.lower() in cli_result.stdout.lower()
-    ), f"Expected output to contain '{expected}', but it did not.\nActual output: {cli_result.stdout}"
+    assert expected.lower() in cli_result.stdout.lower(), (
+        f"Expected output to contain '{expected}', but it did not.\nActual output: {cli_result.stdout}"
+    )

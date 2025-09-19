@@ -45,8 +45,8 @@ def step_impl(result: list[dict], pmid: int):
 def step_check_abstract(result: list[dict], pmid: int, phrase: str):
     for r in result:
         if r["pmid"] == pmid and r.get("abstract"):
-            assert (
-                phrase in r["abstract"]
-            ), f"Phrase '{phrase}' not found in article {pmid}'s abstract"
+            assert phrase in r["abstract"], (
+                f"Phrase '{phrase}' not found in article {pmid}'s abstract"
+            )
             return
     raise AssertionError(f"Article {pmid} not found or has no abstract")

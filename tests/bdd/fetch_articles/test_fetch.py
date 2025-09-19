@@ -56,6 +56,6 @@ def check_europe_pmc_source(cli_result):
     """Check that the article source is Europe PMC."""
     article = cli_result[0]
     source = article.get("source")
-    assert (
-        source == "Europe PMC"
-    ), f"Expected source 'Europe PMC', got '{source}'"
+    assert source == "Europe PMC", (
+        f"Expected source 'Europe PMC', got '{source}'"
+    )

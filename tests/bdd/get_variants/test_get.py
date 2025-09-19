@@ -53,6 +53,6 @@ def variant_field_should_equal(cli_result, field, expected):
         for v in cli_result
         if str(get_field_value_from_variant(v, field)) == expected
     ]
-    assert (
-        matching
-    ), f"No variant found with field '{field}' equal to '{expected}'"
+    assert matching, (
+        f"No variant found with field '{field}' equal to '{expected}'"
+    )

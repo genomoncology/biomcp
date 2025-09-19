@@ -65,50 +65,50 @@ def validate_tool_schema(
     expected_type = param_info["expected_type"]
 
     # Check if the tool is defined in the smithery.yaml
-    assert tool_name in smithery_config.get(
-        "tools", {}
-    ), f"Tool '{tool_name}' is not defined in smithery.yaml"
+    assert tool_name in smithery_config.get("tools", {}), (
+        f"Tool '{tool_name}' is not defined in smithery.yaml"
+    )
 
     tool_config = smithery_config["tools"][tool_name]
 
     # Check if the tool has an input schema
-    assert (
-        "input" in tool_config
-    ), f"Tool '{tool_name}' does not have an input schema defined"
+    assert "input" in tool_config, (
+        f"Tool '{tool_name}' does not have an input schema defined"
+    )
 
     input_schema = tool_config["input"].get("schema", {})
 
     # Check if the parameter is required
     if issubclass(expected_type, BaseModel):
         # For complex types like TrialQuery, check if 'query' is required
-        assert (
-            "required" in input_schema
-        ), f"Tool '{tool_name}' does not have required parameters specified"
-        assert (
-            "query" in input_schema.get("required", [])
-        ), f"Parameter 'query' for tool '{tool_name}' is not marked as required"
+        assert "required" in input_schema, (
+            f"Tool '{tool_name}' does not have required parameters specified"
+        )
+        assert "query" in input_schema.get("required", []), (
+            f"Parameter 'query' for tool '{tool_name}' is not marked as required"
+        )
     else:
-        assert (
-            "required" in input_schema
-        ), f"Tool '{tool_name}' does not have required parameters specified"
-        assert (
-            param_name in input_schema.get("required", [])
-        ), f"Parameter '{param_name}' for tool '{tool_name}' is not marked as required"
+        assert "required" in input_schema, (
+            f"Tool '{tool_name}' does not have required parameters specified"
+        )
+        assert param_name in input_schema.get("required", []), (
+            f"Parameter '{param_name}' for tool '{tool_name}' is not marked as required"
+        )
 
     # For complex types (Pydantic models), check if the schema references the correct type
     if issubclass(expected_type, BaseModel):
         properties = input_schema.get("properties", {})
-        assert (
-            "query" in properties
-        ), f"Tool '{tool_name}' does not have a 'query' property defined"
+        assert "query" in properties, (
+            f"Tool '{tool_name}' does not have a 'query' property defined"
+        )
 
         query_prop = properties["query"]
-        assert (
-            "$ref" in query_prop
-        ), f"Tool '{tool_name}' query property does not reference a schema"
+        assert "$ref" in query_prop, (
+            f"Tool '{tool_name}' query property does not reference a schema"
+        )
 
         schema_ref = query_prop["$ref"]
         expected_schema_name = expected_type.__name__
-        assert schema_ref.endswith(
-            expected_schema_name
-        ), f"Tool '{tool_name}' references incorrect schema: {schema_ref}, expected: {expected_schema_name}"
+        assert schema_ref.endswith(expected_schema_name), (
+            f"Tool '{tool_name}' references incorrect schema: {schema_ref}, expected: {expected_schema_name}"
+        )

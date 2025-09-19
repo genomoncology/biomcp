@@ -33,9 +33,9 @@ class TestEndpointDocumentation:
         assert result.returncode == 0, f"Script failed: {result.stderr}"
 
         # The script should report that it generated the file
-        assert (
-            "Generated" in result.stdout or result.stdout == ""
-        ), f"Unexpected output: {result.stdout}"
+        assert "Generated" in result.stdout or result.stdout == "", (
+            f"Unexpected output: {result.stdout}"
+        )
 
     def test_all_endpoints_documented(self):
         """Test that all endpoints in the registry are documented."""
@@ -53,9 +53,9 @@ class TestEndpointDocumentation:
         # Check each endpoint is mentioned
         for key, info in endpoints.items():
             assert key in content, f"Endpoint {key} not found in documentation"
-            assert (
-                info.url in content
-            ), f"URL {info.url} not found in documentation"
+            assert info.url in content, (
+                f"URL {info.url} not found in documentation"
+            )
 
     def test_documentation_contains_required_sections(self):
         """Test that documentation contains all required sections."""
@@ -79,9 +79,9 @@ class TestEndpointDocumentation:
         ]
 
         for section in required_sections:
-            assert (
-                section in content
-            ), f"Required section '{section}' not found in documentation"
+            assert section in content, (
+                f"Required section '{section}' not found in documentation"
+            )
 
     def test_endpoint_counts_accurate(self):
         """Test that endpoint counts in the overview are accurate."""
@@ -109,9 +109,9 @@ class TestEndpointDocumentation:
         doc_domains = int(match.group(1))
         doc_endpoints = int(match.group(2))
 
-        assert (
-            doc_domains == len(domains)
-        ), f"Document says {doc_domains} domains but registry has {len(domains)}"
-        assert (
-            doc_endpoints == len(endpoints)
-        ), f"Document says {doc_endpoints} endpoints but registry has {len(endpoints)}"
+        assert doc_domains == len(domains), (
+            f"Document says {doc_domains} domains but registry has {len(domains)}"
+        )
+        assert doc_endpoints == len(endpoints), (
+            f"Document says {doc_endpoints} endpoints but registry has {len(endpoints)}"
+        )

@@ -2,6 +2,8 @@
 
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 
 from .. import mcp_app
 
@@ -17,13 +19,20 @@ app.add_middleware(
 )
 
 streamable_app = mcp_app.streamable_http_app()
+
+
+# Add health endpoint to the streamable app before mounting
+async def health_check(request):
+    return JSONResponse({"status": "healthy"})
+
+
+health_route = Route("/health", health_check, methods=["GET"])
+streamable_app.routes.append(health_route)
+
 app.mount("/", streamable_app)
 
 
-# Add any additional custom endpoints if needed
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+# Health endpoint is now added directly to the streamable_app above
 
 
 # Add OPTIONS endpoint for CORS preflight

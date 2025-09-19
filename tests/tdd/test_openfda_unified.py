@@ -37,18 +37,18 @@ class TestOpenFDAUnifiedIntegration:
         # Check that all OpenFDA domains are registered
         for domain in openfda_domains:
             assert domain in VALID_DOMAINS, f"{domain} not in VALID_DOMAINS"
-            assert (
-                domain in DOMAIN_TO_PLURAL
-            ), f"{domain} not in DOMAIN_TO_PLURAL"
+            assert domain in DOMAIN_TO_PLURAL, (
+                f"{domain} not in DOMAIN_TO_PLURAL"
+            )
 
         # Check plural forms
         for plural in openfda_plurals:
-            assert (
-                plural in VALID_DOMAINS_PLURAL
-            ), f"{plural} not in VALID_DOMAINS_PLURAL"
-            assert (
-                plural in PLURAL_TO_DOMAIN
-            ), f"{plural} not in PLURAL_TO_DOMAIN"
+            assert plural in VALID_DOMAINS_PLURAL, (
+                f"{plural} not in VALID_DOMAINS_PLURAL"
+            )
+            assert plural in PLURAL_TO_DOMAIN, (
+                f"{plural} not in PLURAL_TO_DOMAIN"
+            )
 
         # Check mappings are correct
         assert DOMAIN_TO_PLURAL["fda_adverse"] == "fda_adverse_events"
@@ -76,9 +76,9 @@ class TestOpenFDAUnifiedIntegration:
         domain_param = sig.parameters.get("domain")
 
         # Check if domain parameter exists
-        assert (
-            domain_param is not None
-        ), "domain parameter not found in search function"
+        assert domain_param is not None, (
+            "domain parameter not found in search function"
+        )
 
         # Get the annotation
         annotation = domain_param.annotation
@@ -86,9 +86,9 @@ class TestOpenFDAUnifiedIntegration:
         # The annotation should be a Literal type that includes OpenFDA domains
         # We can't directly check the Literal values due to how Python handles it,
         # but we can verify that it's properly annotated
-        assert (
-            annotation is not None
-        ), "domain parameter has no type annotation"
+        assert annotation is not None, (
+            "domain parameter has no type annotation"
+        )
 
     def test_openfda_fetch_domain_type_hints(self):
         """Test that OpenFDA domains are in fetch tool type hints."""
@@ -101,17 +101,17 @@ class TestOpenFDAUnifiedIntegration:
         domain_param = sig.parameters.get("domain")
 
         # Check if domain parameter exists
-        assert (
-            domain_param is not None
-        ), "domain parameter not found in fetch function"
+        assert domain_param is not None, (
+            "domain parameter not found in fetch function"
+        )
 
         # Get the annotation
         annotation = domain_param.annotation
 
         # The annotation should be a Literal type that includes OpenFDA domains
-        assert (
-            annotation is not None
-        ), "domain parameter has no type annotation"
+        assert annotation is not None, (
+            "domain parameter has no type annotation"
+        )
 
     @pytest.mark.asyncio
     async def test_openfda_search_basic_call(self):
