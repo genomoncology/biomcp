@@ -444,7 +444,7 @@ async function proxyPost(req, remoteServerUrl, path, sid) {
 
   const headers = {
     "Content-Type": "application/json",
-    "Accept": acceptHeader,
+    Accept: acceptHeader,
     "User-Agent": "Claude/1.0",
   };
 
@@ -459,14 +459,17 @@ async function proxyPost(req, remoteServerUrl, path, sid) {
     log(`Proxy response from ${targetUrl}: ${responseText.substring(0, 500)}`);
 
     // Check if response is SSE format
-    if (responseText.startsWith("event:") || responseText.includes("\nevent:")) {
+    if (
+      responseText.startsWith("event:") ||
+      responseText.includes("\nevent:")
+    ) {
       // Parse SSE format
-      const events = responseText.split("\n\n").filter(e => e.trim());
+      const events = responseText.split("\n\n").filter((e) => e.trim());
 
       if (events.length === 1) {
         // Single SSE event - convert to plain JSON
         const lines = events[0].split("\n");
-        const dataLine = lines.find(l => l.startsWith("data:"));
+        const dataLine = lines.find((l) => l.startsWith("data:"));
 
         if (dataLine) {
           const jsonData = dataLine.substring(5).trim(); // Remove "data:" prefix
@@ -484,7 +487,7 @@ async function proxyPost(req, remoteServerUrl, path, sid) {
           headers: {
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
-            ...CORS
+            ...CORS,
           },
         });
       }
@@ -503,7 +506,6 @@ async function proxyPost(req, remoteServerUrl, path, sid) {
     });
   }
 }
-
 
 // Middleware for bearer token authentication (MCP server)
 const stytchBearerTokenAuthMiddleware = async (c, next) => {
@@ -1171,7 +1173,7 @@ app
     // For Streamable HTTP, HEAD /mcp should return 204 to indicate the endpoint exists
     return new Response(null, {
       status: 204,
-      headers: CORS
+      headers: CORS,
     });
   })
   .get("/mcp", stytchBearerTokenAuthMiddleware, async (c) => {
@@ -1186,21 +1188,23 @@ app
       // Without session_id, just return 204 to indicate endpoint exists
       return new Response(null, {
         status: 204,
-        headers: CORS
+        headers: CORS,
       });
     }
 
     // Proxy the GET request to the backend's /mcp endpoint for streaming
-    const targetUrl = `${REMOTE_MCP_SERVER_URL}/mcp?session_id=${encodeURIComponent(sessionId)}`;
+    const targetUrl = `${REMOTE_MCP_SERVER_URL}/mcp?session_id=${encodeURIComponent(
+      sessionId,
+    )}`;
     log(`Proxying GET /mcp to: ${targetUrl}`);
 
     try {
       const response = await fetch(targetUrl, {
         method: "GET",
         headers: {
-          "Accept": "text/event-stream",
-          "User-Agent": "Claude/1.0"
-        }
+          Accept: "text/event-stream",
+          "User-Agent": "Claude/1.0",
+        },
       });
 
       // For SSE, we need to stream the response
@@ -1212,9 +1216,9 @@ app
           headers: {
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            ...CORS
-          }
+            Connection: "keep-alive",
+            ...CORS,
+          },
         });
       } else {
         // Non-streaming response
@@ -1222,16 +1226,17 @@ app
         return new Response(responseText, {
           status: response.status,
           headers: {
-            "Content-Type": response.headers.get("content-type") || "text/plain",
-            ...CORS
-          }
+            "Content-Type":
+              response.headers.get("content-type") || "text/plain",
+            ...CORS,
+          },
         });
       }
     } catch (error) {
       log(`Error proxying GET /mcp: ${error}`);
       return new Response(`Proxy error: ${error.message}`, {
         status: 502,
-        headers: CORS
+        headers: CORS,
       });
     }
   })
