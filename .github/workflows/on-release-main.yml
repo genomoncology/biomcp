@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download updated pyproject.toml
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: pyproject-toml
 
@@ -71,7 +71,7 @@ jobs:
         uses: ./.github/actions/setup-python-env
 
       - name: Download updated pyproject.toml
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: pyproject-toml
 
