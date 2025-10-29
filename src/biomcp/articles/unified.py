@@ -133,6 +133,8 @@ async def search_articles_unified(  # noqa: C901
     include_preprints: bool = False,
     include_cbioportal: bool = True,
     output_json: bool = False,
+    limit: int = 10,
+    page: int = 1,
 ) -> str:
     """Search for articles across PubMed and preprint sources."""
     # Import here to avoid circular imports
@@ -151,12 +153,25 @@ async def search_articles_unified(  # noqa: C901
         tasks: list[Coroutine[Any, Any, Any]] = []
         task_labels = []
 
+        # For unified search, fetch more results to accommodate pagination after deduplication
+        # We need extra to account for duplicates that will be removed
+        fetch_multiplier = (
+            3  # Fetch 3x more to ensure we have enough after deduplication
+        )
+        fetch_limit = page * limit * fetch_multiplier
+
         if include_pubmed:
-            tasks.append(search_articles(request, output_json=True))
+            tasks.append(
+                search_articles(
+                    request, output_json=True, limit=fetch_limit, page=1
+                )
+            )
             task_labels.append("pubmed")
 
         if include_preprints:
-            tasks.append(search_preprints(request, output_json=True))
+            tasks.append(
+                search_preprints(request, output_json=True, limit=fetch_limit)
+            )
             task_labels.append("preprints")
 
         # Add cBioPortal to parallel execution
@@ -201,6 +216,10 @@ async def search_articles_unified(  # noqa: C901
             ),
             reverse=True,
         )
+
+        # Apply pagination after deduplication and sorting
+        offset = (page - 1) * limit
+        unique_articles = unique_articles[offset : offset + limit]
 
         if unique_articles and not output_json:
             result = render.to_markdown(unique_articles)

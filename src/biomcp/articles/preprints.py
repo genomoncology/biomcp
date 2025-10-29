@@ -155,6 +155,7 @@ class PreprintSearcher:
         request: PubmedRequest,
         include_biorxiv: bool = True,
         include_europe_pmc: bool = True,
+        max_results: int = SYSTEM_PAGE_SIZE,
     ) -> SearchResponse:
         """Search across preprint sources and merge results."""
         query = self._build_query(request)
@@ -185,8 +186,8 @@ class PreprintSearcher:
         # Sort by date (newest first)
         unique_results.sort(key=lambda x: x.date or "0000-00-00", reverse=True)
 
-        # Limit results
-        limited_results = unique_results[:SYSTEM_PAGE_SIZE]
+        # Limit results to requested max_results
+        limited_results = unique_results[:max_results]
 
         return SearchResponse(
             results=limited_results,
@@ -452,6 +453,7 @@ async def search_preprints(
     include_biorxiv: bool = True,
     include_europe_pmc: bool = True,
     output_json: bool = False,
+    limit: int = SYSTEM_PAGE_SIZE,
 ) -> str:
     """Search for preprints across multiple sources."""
     searcher = PreprintSearcher()
@@ -459,6 +461,7 @@ async def search_preprints(
         request,
         include_biorxiv=include_biorxiv,
         include_europe_pmc=include_europe_pmc,
+        max_results=limit,
     )
 
     if response and response.results:
