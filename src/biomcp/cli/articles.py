@@ -83,12 +83,23 @@ def search_article(
             help="Keyword to search for (can be specified multiple times)",
         ),
     ] = None,
+    limit: Annotated[
+        int,
+        typer.Option(
+            "--limit",
+            "-l",
+            help="Maximum number of results per page (1-100)",
+            min=1,
+            max=100,
+        ),
+    ] = 10,
     page: Annotated[
         int,
         typer.Option(
             "--page",
             "-p",
             help="Page number for pagination (starts at 1)",
+            min=1,
         ),
     ] = 1,
     output_json: Annotated[
@@ -124,10 +135,14 @@ def search_article(
                 include_pubmed=True,
                 include_preprints=True,
                 output_json=output_json,
+                limit=limit,
+                page=page,
             )
         )
     else:
-        result = asyncio.run(search_articles(request, output_json))
+        result = asyncio.run(
+            search_articles(request, output_json, limit=limit, page=page)
+        )
     typer.echo(result)
 
 
