@@ -368,6 +368,11 @@ biomcp variant get rs113488022 --no-external  # Core annotations only
 # OncoKB integration (uses free demo server automatically)
 biomcp variant search --gene BRAF --include-oncokb  # Works with BRAF, ROS1, TP53
 
+# Gene information with functional enrichment
+biomcp gene get TP53 --enrich pathway
+biomcp gene get BRCA1 --enrich ontology
+biomcp gene get EGFR --enrich celltypes
+
 # NCI-specific examples (requires NCI API key)
 biomcp organization search "MD Anderson" --api-key YOUR_KEY
 biomcp organization get ORG123456 --api-key YOUR_KEY

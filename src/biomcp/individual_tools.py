@@ -18,6 +18,7 @@ from biomcp.cbioportal_helper import (
 from biomcp.core import ensure_list, mcp_app
 from biomcp.diseases.getter import _disease_details
 from biomcp.drugs.getter import _drug_details
+from biomcp.enrichr import EnrichrClient
 from biomcp.genes.getter import _gene_details
 from biomcp.metrics import track_performance
 from biomcp.oncokb_helper import get_oncokb_summary_for_genes
@@ -750,6 +751,125 @@ async def gene_getter(
         call_benefit="Get up-to-date gene annotations and information",
         gene_id_or_symbol=gene_id_or_symbol,
     )
+
+
+@mcp_app.tool()
+@track_performance("biomcp.enrichr_analyzer")
+async def enrichr_analyzer(
+    genes: Annotated[
+        list[str] | str,
+        Field(
+            description="Gene symbols to analyze (e.g., ['TP53', 'BRCA1'] or 'TP53')"
+        ),
+    ],
+    database: Annotated[
+        str,
+        Field(
+            description="Enrichment database category: pathway, kegg, reactome, wikipathways, ontology, go_process, go_molecular, go_cellular, celltypes, tissues, diseases, gwas, transcription_factors, tf"
+        ),
+    ] = "pathway",
+    species: Annotated[
+        str,
+        Field(description="Species (currently only 'human' supported)"),
+    ] = "human",
+) -> str:
+    """Perform functional enrichment analysis on a gene list.
+
+    ⚠️ PREREQUISITE: Use the 'think' tool FIRST to plan your enrichment analysis strategy!
+
+    Inspired by gget enrichr (Luebbert & Pachter, 2023).
+    Uses Enrichr API: https://maayanlab.cloud/Enrichr/
+
+    Analyzes a list of genes to identify enriched:
+    - Biological pathways (KEGG, Reactome, WikiPathways)
+    - Gene Ontology terms (biological process, molecular function, cellular component)
+    - Cell types and tissue expression patterns
+    - Disease associations (GWAS Catalog)
+    - Transcription factor targets (ChEA)
+
+    Returns enrichment results with p-values, z-scores, and combined scores
+    for each significantly enriched term.
+
+    Example usage:
+    - Analyze differentially expressed genes for pathway enrichment
+    - Identify cell types associated with a gene signature
+    - Find diseases associated with a gene list
+    - Discover transcription factors regulating a set of genes
+
+    Database categories:
+    - pathway, kegg, reactome, wikipathways: Biological pathways
+    - ontology, go_process, go_molecular, go_cellular: Gene Ontology terms
+    - celltypes, tissues: Cell type and tissue expression
+    - diseases, gwas: Disease associations
+    - transcription_factors, tf: Transcription factor targets
+
+    Note: This tool submits gene lists to the public Enrichr API. For single gene
+    enrichment, consider using gene_getter with --enrich flag via CLI.
+    """
+    import json
+
+    # Convert single gene to list
+    gene_list = ensure_list(genes) if genes else []
+
+    if not gene_list:
+        return json.dumps({
+            "error": "No genes provided for enrichment analysis",
+            "genes": [],
+        })
+
+    # Only human is supported currently
+    if species.lower() != "human":
+        return json.dumps({
+            "error": f"Species '{species}' not supported. Only 'human' is currently available.",
+            "genes": gene_list,
+        })
+
+    try:
+        client = EnrichrClient()
+        terms = await client.enrich(
+            genes=gene_list,
+            database=database,
+        )
+
+        if terms is None:
+            return json.dumps({
+                "error": "Failed to retrieve enrichment results from Enrichr API",
+                "genes": gene_list,
+                "database": database,
+            })
+
+        # Convert EnrichmentTerm objects to dicts
+        enrichment_terms = [
+            {
+                "rank": term.rank,
+                "path_name": term.path_name,
+                "p_val": term.p_val,
+                "z_score": term.z_score,
+                "combined_score": term.combined_score,
+                "overlapping_genes": term.overlapping_genes,
+                "adj_p_val": term.adj_p_val,
+                "database": term.database,
+            }
+            for term in terms
+        ]
+
+        return json.dumps(
+            {
+                "genes": gene_list,
+                "database": terms[0].database if terms else database,
+                "enrichment_terms": enrichment_terms,
+                "total_terms": len(enrichment_terms),
+            },
+            indent=2,
+        )
+
+    except Exception as e:
+        logger.error(f"Enrichment analysis failed: {e}")
+        return json.dumps({
+            "error": f"Enrichment analysis failed: {e!s}",
+            "genes": gene_list,
+            "database": database,
+        })
 
 
 # Disease Tools

@@ -126,15 +126,25 @@ async def execute_http_request(  # noqa: C901
             should_close = True
 
         try:
+            # Check for multipart/form-data upload (e.g., Enrichr API)
+            files_data = params.pop("_files", None)
+
             # Make the request
             if method.upper() == "GET":
                 resp = await client.get(
                     url, params=params, headers=custom_headers
                 )
             elif method.upper() == "POST":
-                resp = await client.post(
-                    url, json=params, headers=custom_headers
-                )
+                if files_data:
+                    # Use multipart/form-data for file uploads
+                    resp = await client.post(
+                        url, files=files_data, headers=custom_headers
+                    )
+                else:
+                    # Use JSON for standard POST requests
+                    resp = await client.post(
+                        url, json=params, headers=custom_headers
+                    )
             else:
                 from .constants import HTTP_ERROR_CODE_UNSUPPORTED_METHOD
 

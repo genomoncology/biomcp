@@ -1,4 +1,10 @@
-"""Gene information retrieval from MyGene.info."""
+"""
+Gene information retrieval from MyGene.info.
+
+Enrichment functionality inspired by gget enrichr (https://github.com/pachterlab/gget).
+Citation: Luebbert & Pachter (2023). Bioinformatics, 39(1), btac836.
+BioMCP directly integrates with Enrichr API rather than using gget as a dependency.
+"""
 
 import json
 import logging
@@ -6,6 +12,7 @@ from typing import Annotated
 
 from pydantic import Field
 
+from ..enrichr import EnrichrClient
 from ..integrations import BioThingsClient
 from ..render import to_markdown
 
@@ -15,13 +22,17 @@ logger = logging.getLogger(__name__)
 async def get_gene(
     gene_id_or_symbol: str,
     output_json: bool = False,
+    include_enrichment: bool = False,
+    enrichment_database: str = "GO_Biological_Process_2021",
 ) -> str:
     """
-    Get gene information from MyGene.info.
+    Get gene information from MyGene.info with optional enrichment analysis.
 
     Args:
         gene_id_or_symbol: Gene ID (Entrez, Ensembl) or symbol (e.g., "TP53", "7157")
         output_json: Return as JSON instead of markdown
+        include_enrichment: Whether to include Enrichr functional enrichment
+        enrichment_database: Enrichr database to use (default: GO_Biological_Process_2021)
 
     Returns:
         Gene information as markdown or JSON string
@@ -59,6 +70,40 @@ async def get_gene(
             )  # Limit to first 10
             if len(gene_info.alias) > 10:
                 result["alias"] += f" (and {len(gene_info.alias) - 10} more)"
+
+        # Add enrichment if requested
+        if include_enrichment and gene_info.symbol:
+            try:
+                enrichr_client = EnrichrClient()
+                enrichment_results = await enrichr_client.enrich(
+                    genes=[gene_info.symbol],
+                    database=enrichment_database,
+                    description=f"Enrichment for {gene_info.symbol}",
+                )
+
+                if enrichment_results:
+                    # Convert enrichment terms to dicts and limit to top 10
+                    result["enrichment"] = {
+                        "database": enrichment_database,
+                        "terms": [
+                            term.model_dump()
+                            for term in enrichment_results[:10]
+                        ],
+                    }
+                else:
+                    result["enrichment"] = {
+                        "database": enrichment_database,
+                        "terms": [],
+                        "note": "No significant enrichment terms found",
+                    }
+            except Exception as e:
+                logger.warning(
+                    f"Failed to get enrichment for {gene_info.symbol}: {e}"
+                )
+                # Don't fail the entire request if enrichment fails
+                result["enrichment"] = {
+                    "error": f"Enrichment analysis failed: {e!s}"
+                }
 
         if output_json:
             return json.dumps(result, indent=2)
