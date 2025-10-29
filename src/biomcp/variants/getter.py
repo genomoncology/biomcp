@@ -10,6 +10,7 @@ from ..constants import DEFAULT_ASSEMBLY, MYVARIANT_GET_URL
 from ..oncokb_helper import get_oncokb_annotation_for_variant
 from .external import ExternalVariantAggregator, format_enhanced_annotations
 from .filters import filter_variants
+from .formatter import consolidate_multi_allelic_variants
 from .links import inject_links
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,7 @@ async def get_variant(  # noqa: C901
     output_json: bool = False,
     include_external: bool = False,
     assembly: str = DEFAULT_ASSEMBLY,
+    extensive: bool = False,
 ) -> str:
     """
     Get variant details from MyVariant.info using the variant identifier.
@@ -57,6 +59,7 @@ async def get_variant(  # noqa: C901
         output_json: Return JSON format if True, else Markdown
         include_external: Include external annotations (TCGA, 1000 Genomes, cBioPortal)
         assembly: Genome assembly (hg19 or hg38), defaults to hg19
+        extensive: Show full details (default: compact format for all variants)
 
     Returns:
         Formatted variant data as JSON or Markdown string
@@ -134,8 +137,17 @@ async def get_variant(  # noqa: C901
     if output_json:
         return json.dumps(data_to_return, indent=2)
     else:
-        # Render base markdown and append OncoKB annotations
-        base_markdown = render.to_markdown(data_to_return)
+        # Apply compact formatting unless extensive flag set
+        if not extensive:
+            logger.info(
+                f"Applying compact format for {len(data_to_return)} variant(s)"
+            )
+            consolidated = consolidate_multi_allelic_variants(data_to_return)
+            base_markdown = render.to_markdown(consolidated)
+        else:
+            # Render full markdown
+            base_markdown = render.to_markdown(data_to_return)
+
         if oncokb_annotations:
             # Append OncoKB annotations as separate markdown sections
             return base_markdown + "\n" + "\n".join(oncokb_annotations)
@@ -156,6 +168,10 @@ async def _variant_details(
         str,
         "Genome assembly (hg19 or hg38). Default: hg19",
     ] = DEFAULT_ASSEMBLY,
+    extensive: Annotated[
+        bool,
+        "Show full details for multi-allelic variants (default: compact format)",
+    ] = False,
 ) -> str:
     """
     Retrieves detailed information for a *single* genetic variant.
@@ -165,9 +181,12 @@ async def _variant_details(
     - variant_id: A variant identifier ("chr7:g.140453136A>T")
     - include_external: Include annotations from TCGA, 1000 Genomes, cBioPortal, and Mastermind
     - assembly: Genome assembly (hg19 or hg38). Default: hg19
+    - extensive: Show full details (default: compact format optimized for LLM consumption)
 
     Process: Queries the MyVariant.info GET endpoint, optionally fetching
-            additional annotations from external databases
+            additional annotations from external databases. Returns compact format
+            by default to reduce token usage (~90% reduction). Use extensive=True
+            for full raw details.
     Output: A Markdown formatted string containing comprehensive
             variant annotations (genomic context, frequencies,
             predictions, clinical data, external annotations). Returns error if invalid.
@@ -178,4 +197,5 @@ async def _variant_details(
         output_json=False,
         include_external=include_external,
         assembly=assembly,
+        extensive=extensive,
     )
