@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 from typing import Annotated
 
@@ -5,6 +6,7 @@ import typer
 from dotenv import load_dotenv
 
 from .. import logger, mcp_app  # mcp_app is already instantiated in core.py
+from ..constants import PREFETCH_DISABLED_ENV_VAR
 
 # Load environment variables from .env file
 load_dotenv()
@@ -107,8 +109,19 @@ def run_server(
             help="Port to bind to (for HTTP modes)",
         ),
     ] = 8000,
+    disable_prefetch: Annotated[
+        bool,
+        typer.Option(
+            "--disable-prefetch",
+            help="Disable prefetching of common queries during startup",
+        ),
+    ] = False,
 ):
     """Run the BioMCP server with selected transport mode."""
+    # Set environment variable if --disable-prefetch flag is provided
+    if disable_prefetch:
+        os.environ[PREFETCH_DISABLED_ENV_VAR] = "true"
+
     if mode == ServerMode.STDIO:
         run_stdio_server()
     else:

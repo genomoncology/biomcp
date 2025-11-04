@@ -1,5 +1,6 @@
 """Core module for BioMCP containing shared resources."""
 
+import os
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Any
@@ -7,6 +8,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.utilities.logging import get_logger
 
+from .constants import PREFETCH_DISABLED_ENV_VAR
 from .logging_filter import setup_logging_filters
 
 # Set up logger first
@@ -21,13 +23,25 @@ setup_logging_filters()
 async def lifespan(mcp):
     """Lifespan context manager for startup/shutdown tasks."""
     # Startup
-    try:
-        from .prefetch import start_prefetching
+    # Check if prefetching is disabled via environment variable
+    prefetch_disabled = os.environ.get(
+        PREFETCH_DISABLED_ENV_VAR, ""
+    ).lower() in (
+        "true",
+        "1",
+        "yes",
+    )
 
-        await start_prefetching()
-    except Exception as e:
-        # Don't fail startup if prefetching fails
-        logger.warning(f"Prefetching failed: {e}")
+    if prefetch_disabled:
+        logger.info("Prefetching disabled via environment variable")
+    else:
+        try:
+            from .prefetch import start_prefetching
+
+            await start_prefetching()
+        except Exception as e:
+            # Don't fail startup if prefetching fails
+            logger.warning(f"Prefetching failed: {e}")
 
     yield
 
