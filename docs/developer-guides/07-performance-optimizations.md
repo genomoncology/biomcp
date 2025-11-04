@@ -8,7 +8,7 @@ BioMCP has been optimized for high-performance biomedical data retrieval through
 
 - **65% faster test execution** (from ~120s to ~42s)
 - **Reduced API calls** through intelligent caching and batching
-- **Lower latency** via connection pooling and prefetching
+- **Lower latency** via connection pooling
 - **Better resource utilization** with parallel processing
 
 ## Key Optimizations
@@ -62,30 +62,7 @@ Multiple caching layers optimize repeated queries:
 - Cache size: 1000 entries (configurable)
 - TTL: 5-30 minutes depending on data type
 
-### 5. Prefetching
-
-Common entities are prefetched on startup to warm caches:
-
-- Top genes: BRAF, EGFR, TP53, KRAS, etc.
-- Common diseases: lung cancer, breast cancer, etc.
-- Frequent chemicals: osimertinib, pembrolizumab, etc.
-
-**Configuration:**
-
-- `BIOMCP_DISABLE_PREFETCH` - Disable prefetching (default: "false", prefetch enabled)
-- `--disable-prefetch` CLI flag - Disable via command line
-- Useful for serverless, LangGraph, or repeated server initialization scenarios
-
-**Impact:** First queries for common entities are instant (when enabled)
-
-**When to Disable:**
-
-- LangGraph or similar frameworks with repeated server initialization
-- Serverless/Lambda deployments where cold start time is critical
-- Network-restricted environments with startup network policies
-- Development environments where faster iteration is needed
-
-### 6. Pagination Support
+### 5. Pagination Support
 
 Europe PMC searches now use pagination for large result sets:
 
@@ -93,7 +70,7 @@ Europe PMC searches now use pagination for large result sets:
 - Progressive loading
 - Memory-efficient processing
 
-### 7. Conditional Metrics
+### 6. Conditional Metrics
 
 Performance metrics are only collected when explicitly enabled, reducing overhead.
 
@@ -125,7 +102,6 @@ Performance metrics are only collected when explicitly enabled, reducing overhea
 2. **Use the unified search** methods to benefit from parallel execution
 3. **Batch operations** when performing multiple lookups
 4. **Monitor cache hit rates** in production environments
-5. **Disable prefetching in serverless/LangGraph** to avoid repeated startup overhead
 
 ## Troubleshooting
 
@@ -143,16 +119,6 @@ If memory usage is high:
 
 1. Reduce cache size in `request_cache.py`
 2. Lower connection pool limits
-3. Disable prefetching: `export BIOMCP_DISABLE_PREFETCH=true` or `biomcp run --disable-prefetch`
-
-### Prefetching Issues
-
-If experiencing issues with repeated server initialization or startup delays:
-
-1. Disable prefetching: `biomcp run --disable-prefetch`
-2. Or via environment: `export BIOMCP_DISABLE_PREFETCH=true`
-3. Check logs with `--verbose` to confirm prefetch status
-4. Typical use cases: LangGraph workflows, Lambda functions, ephemeral containers
 
 ### Performance Regression
 
