@@ -35,7 +35,9 @@ Find organizations by name:
 biomcp organization search --name "MD Anderson" --api-key YOUR_KEY
 
 # Python
-orgs = await nci_organization_searcher(
+orgs = await nci(
+    resource="organization",
+    action="search",
     name="MD Anderson",
     api_key="your-key"
 )
@@ -50,20 +52,26 @@ orgs = await nci_organization_searcher(
 
 ```python
 # ✅ CORRECT - City and state together
-orgs = await nci_organization_searcher(
+orgs = await nci(
+    resource="organization",
+    action="search",
     city="Houston",
     state="TX",
     api_key="your-key"
 )
 
 # ❌ WRONG - Will cause API error
-orgs = await nci_organization_searcher(
+orgs = await nci(
+    resource="organization",
+    action="search",
     city="Houston",  # Missing state!
     api_key="your-key"
 )
 
 # ❌ WRONG - Will cause API error
-orgs = await nci_organization_searcher(
+orgs = await nci(
+    resource="organization",
+    action="search",
     state="TX",  # Missing city!
     api_key="your-key"
 )
@@ -75,19 +83,25 @@ Search by organization type:
 
 ```python
 # Find academic cancer centers
-academic_centers = await nci_organization_searcher(
+academic_centers = await nci(
+    resource="organization",
+    action="search",
     organization_type="Academic",
     api_key="your-key"
 )
 
 # Find pharmaceutical companies
-pharma_companies = await nci_organization_searcher(
+pharma_companies = await nci(
+    resource="organization",
+    action="search",
     organization_type="Industry",
     api_key="your-key"
 )
 
 # Find government research facilities
-gov_facilities = await nci_organization_searcher(
+gov_facilities = await nci(
+    resource="organization",
+    action="search",
     organization_type="Government",
     api_key="your-key"
 )
@@ -108,8 +122,10 @@ Retrieve complete information about a specific organization:
 
 ```python
 # Get organization by ID
-org_details = await nci_organization_getter(
-    organization_id="NCI-2011-03337",
+org_details = await nci(
+    resource="organization",
+    action="get",
+    id="NCI-2011-03337",
     api_key="your-key"
 )
 
@@ -133,7 +149,9 @@ async def find_cancer_centers_by_region(state: str, cities: list[str]):
 
     for city in cities:
         # ALWAYS use city + state together
-        centers = await nci_organization_searcher(
+        centers = await nci(
+            resource="organization",
+            action="search",
             city=city,
             state=state,
             organization_type="Academic",
@@ -160,7 +178,9 @@ async def find_trial_sponsors_by_type(org_type: str, name_filter: str = None):
     """Find organizations sponsoring trials"""
 
     # Search organizations
-    orgs = await nci_organization_searcher(
+    orgs = await nci(
+        resource="organization",
+        action="search",
         name=name_filter,
         organization_type=org_type,
         api_key=os.getenv("NCI_API_KEY")
@@ -169,8 +189,10 @@ async def find_trial_sponsors_by_type(org_type: str, name_filter: str = None):
     # For each org, get details including trial count
     sponsors = []
     for org in orgs[:10]:  # Limit to avoid rate limits
-        details = await nci_organization_getter(
-            organization_id=org['id'],
+        details = await nci(
+            resource="organization",
+            action="get",
+            id=org['id'],
             api_key=os.getenv("NCI_API_KEY")
         )
         if details.get('trial_count', 0) > 0:
@@ -209,7 +231,9 @@ biomcp intervention search --name "PD-1 inhibitor" --type Drug --api-key YOUR_KE
 
 ```python
 # Python - Search with synonyms
-drugs = await nci_intervention_searcher(
+drugs = await nci(
+    resource="intervention",
+    action="search",
     name="pembrolizumab",
     intervention_type="Drug",
     synonyms=True,  # Include Keytruda, MK-3475, etc.
@@ -217,7 +241,9 @@ drugs = await nci_intervention_searcher(
 )
 
 # Search for drug combinations
-combos = await nci_intervention_searcher(
+combos = await nci(
+    resource="intervention",
+    action="search",
     name="nivolumab AND ipilimumab",
     intervention_type="Drug",
     api_key="your-key"
@@ -228,21 +254,27 @@ combos = await nci_intervention_searcher(
 
 ```python
 # Find medical devices
-devices = await nci_intervention_searcher(
+devices = await nci(
+    resource="intervention",
+    action="search",
     intervention_type="Device",
     name="robot",  # Surgical robots
     api_key="your-key"
 )
 
 # Find procedures
-procedures = await nci_intervention_searcher(
+procedures = await nci(
+    resource="intervention",
+    action="search",
     intervention_type="Procedure",
     name="minimally invasive",
     api_key="your-key"
 )
 
 # Find radiation protocols
-radiation = await nci_intervention_searcher(
+radiation = await nci(
+    resource="intervention",
+    action="search",
     intervention_type="Radiation",
     name="proton beam",
     api_key="your-key"
@@ -253,8 +285,10 @@ radiation = await nci_intervention_searcher(
 
 ```python
 # Get complete intervention information
-intervention = await nci_intervention_getter(
-    intervention_id="INT123456",
+intervention = await nci(
+    resource="intervention",
+    action="get",
+    id="INT123456",
     api_key="your-key"
 )
 
@@ -276,7 +310,9 @@ async def analyze_drug_pipeline(drug_target: str):
     """Analyze drugs in development for a specific target"""
 
     # Search for drugs targeting specific pathway
-    drugs = await nci_intervention_searcher(
+    drugs = await nci(
+        resource="intervention",
+        action="search",
         name=drug_target,
         intervention_type="Drug",
         api_key=os.getenv("NCI_API_KEY")
@@ -292,8 +328,10 @@ async def analyze_drug_pipeline(drug_target: str):
 
     for drug in drugs:
         # Get detailed information
-        details = await nci_intervention_getter(
-            intervention_id=drug['id'],
+        details = await nci(
+            resource="intervention",
+            action="get",
+            id=drug['id'],
             api_key=os.getenv("NCI_API_KEY")
         )
 
@@ -328,7 +366,9 @@ async def compare_interventions(intervention_names: list[str]):
 
     for name in intervention_names:
         # Search for intervention
-        results = await nci_intervention_searcher(
+        results = await nci(
+            resource="intervention",
+            action="search",
             name=name,
             synonyms=True,
             api_key=os.getenv("NCI_API_KEY")
@@ -336,8 +376,10 @@ async def compare_interventions(intervention_names: list[str]):
 
         if results:
             # Get detailed info for first match
-            details = await nci_intervention_getter(
-                intervention_id=results[0]['id'],
+            details = await nci(
+                resource="intervention",
+                action="get",
+                id=results[0]['id'],
                 api_key=os.getenv("NCI_API_KEY")
             )
 
@@ -376,13 +418,17 @@ The NCI API supports two biomarker types:
 
 ```python
 # Search for PD-L1 biomarkers
-pdl1_biomarkers = await nci_biomarker_searcher(
+pdl1_biomarkers = await nci(
+    resource="biomarker",
+    action="search",
     name="PD-L1",
     api_key="your-key"
 )
 
 # Search for specific biomarker type
-gene_biomarkers = await nci_biomarker_searcher(
+gene_biomarkers = await nci(
+    resource="biomarker",
+    action="search",
     biomarker_type="reference_gene",
     api_key="your-key"
 )
@@ -395,7 +441,9 @@ async def analyze_trial_biomarkers(disease: str):
     """Find biomarkers used in trials for a disease"""
 
     # Get all biomarkers
-    all_biomarkers = await nci_biomarker_searcher(
+    all_biomarkers = await nci(
+        resource="biomarker",
+        action="search",
         biomarker_type="reference_gene",
         api_key=os.getenv("NCI_API_KEY")
     )
@@ -438,7 +486,9 @@ async def analyze_regional_drug_development(
     # Step 1: Find organizations in the region
     organizations = []
     for city in cities:
-        orgs = await nci_organization_searcher(
+        orgs = await nci(
+            resource="organization",
+            action="search",
             city=city,
             state=state,
             organization_type="Industry",
@@ -447,7 +497,9 @@ async def analyze_regional_drug_development(
         organizations.extend(orgs)
 
     # Step 2: Find drugs of interest
-    drugs = await nci_intervention_searcher(
+    drugs = await nci(
+        resource="intervention",
+        action="search",
         name=drug_class,
         intervention_type="Drug",
         api_key=os.getenv("NCI_API_KEY")
@@ -456,8 +508,10 @@ async def analyze_regional_drug_development(
     # Step 3: Cross-reference trials
     regional_development = []
     for drug in drugs[:10]:  # Limit for performance
-        drug_details = await nci_intervention_getter(
-            intervention_id=drug['id'],
+        drug_details = await nci(
+            resource="intervention",
+            action="get",
+            id=drug['id'],
             api_key=os.getenv("NCI_API_KEY")
         )
 
@@ -489,7 +543,9 @@ async def org_to_intervention_pipeline(org_name: str):
     """Trace from organization to their interventions"""
 
     # Find organization
-    orgs = await nci_organization_searcher(
+    orgs = await nci(
+        resource="organization",
+        action="search",
         name=org_name,
         api_key=os.getenv("NCI_API_KEY")
     )
@@ -498,8 +554,10 @@ async def org_to_intervention_pipeline(org_name: str):
         return None
 
     # Get organization details
-    org_details = await nci_organization_getter(
-        organization_id=orgs[0]['id'],
+    org_details = await nci(
+        resource="organization",
+        action="get",
+        id=orgs[0]['id'],
         api_key=os.getenv("NCI_API_KEY")
     )
 
@@ -509,8 +567,9 @@ async def org_to_intervention_pipeline(org_name: str):
     # Extract unique interventions
     interventions = set()
     for trial_id in org_trials[:20]:  # Sample trials
-        trial = await trial_getter(
-            nct_id=trial_id,
+        trial = await trial(
+            action="get",
+            id=trial_id,
             source="nci",
             api_key=os.getenv("NCI_API_KEY")
         )
@@ -521,7 +580,9 @@ async def org_to_intervention_pipeline(org_name: str):
     # Get details for each intervention
     intervention_details = []
     for intervention_name in interventions:
-        results = await nci_intervention_searcher(
+        results = await nci(
+            resource="intervention",
+            action="search",
             name=intervention_name,
             api_key=os.getenv("NCI_API_KEY")
         )
@@ -544,10 +605,10 @@ genentech_portfolio = await org_to_intervention_pipeline("Genentech")
 
 ```python
 # ✅ GOOD - Prevents API errors
-await nci_organization_searcher(city="Boston", state="MA")
+await nci(resource="organization", action="search", city="Boston", state="MA")
 
 # ❌ BAD - Will cause Elasticsearch error
-await nci_organization_searcher(city="Boston")
+await nci(resource="organization", action="search", city="Boston")
 ```
 
 ### 2. Handle Rate Limits
@@ -579,7 +640,9 @@ async def get_all_organizations(org_type: str):
     page = 1
 
     while True:
-        orgs = await nci_organization_searcher(
+        orgs = await nci(
+            resource="organization",
+            action="search",
             organization_type=org_type,
             page=page,
             page_size=100,  # Maximum allowed
@@ -609,7 +672,9 @@ import hashlib
 async def cached_org_search(city: str, state: str, org_type: str):
     """Cache organization searches to reduce API calls"""
 
-    return await nci_organization_searcher(
+    return await nci(
+        resource="organization",
+        action="search",
         city=city,
         state=state,
         organization_type=org_type,
@@ -656,7 +721,9 @@ logging.basicConfig(level=logging.DEBUG)
 # Test API key
 async def test_nci_connection():
     try:
-        result = await nci_organization_searcher(
+        result = await nci(
+            resource="organization",
+            action="search",
             name="Mayo",
             api_key=os.getenv("NCI_API_KEY")
         )
@@ -667,8 +734,10 @@ async def test_nci_connection():
 # Check specific organization exists
 async def verify_org_id(org_id: str):
     try:
-        org = await nci_organization_getter(
-            organization_id=org_id,
+        org = await nci(
+            resource="organization",
+            action="get",
+            id=org_id,
             api_key=os.getenv("NCI_API_KEY")
         )
         print(f"✅ Organization found: {org['name']}")

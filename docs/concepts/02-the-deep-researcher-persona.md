@@ -95,10 +95,10 @@ This methodology ensures comprehensive research coverage:
 # Correct pattern - ALWAYS start with think
 think(thought="Breaking down the research question...", thoughtNumber=1)
 # Then proceed with searches
-article_searcher(genes=["BRAF"], diseases=["melanoma"])
+article(action="search", genes=["BRAF"], diseases=["melanoma"])
 
 # INCORRECT - Never skip the think step
-article_searcher(genes=["BRAF"])  # ❌ Will produce suboptimal results
+article(action="search", genes=["BRAF"])  # ❌ Will produce suboptimal results
 ```
 
 ## Implementation in Practice
@@ -167,21 +167,21 @@ Every research session concludes with a structured brief:
 
 ## Tool Inventory and Usage
 
-The Deep Researcher has access to 24 specialized tools:
+The Deep Researcher has access to 12 specialized tools:
 
 ### Core Research Tools
 
 - **think**: Sequential reasoning and planning
-- **article_searcher**: PubMed/PubTator3 literature search
-- **trial_searcher**: Clinical trials discovery
-- **variant_searcher**: Genetic variant annotations
+- **article**: PubMed/PubTator3 literature search (search/get actions)
+- **trial**: Clinical trials discovery (search/get actions with detail options)
+- **variant**: Genetic variant annotations (search/get actions)
 
 ### Specialized Analysis Tools
 
-- **gene_getter**: Gene function and pathway data
-- **drug_getter**: Medication information
-- **disease_getter**: Disease ontology and synonyms
-- **alphagenome_predictor**: Variant effect prediction
+- **gene**: Gene function and pathway data (get action)
+- **drug**: Medication information (get action)
+- **disease**: Disease ontology and synonyms (get action)
+- **alphagenome**: Variant effect prediction (predict action)
 
 ### Integration Features
 

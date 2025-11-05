@@ -4,12 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from biomcp.individual_tools import (
-    nci_intervention_getter,
-    nci_intervention_searcher,
-    nci_organization_getter,
-    nci_organization_searcher,
-)
+from biomcp.tools.nci_tool import nci
 
 
 class TestOrganizationTools:
@@ -51,7 +46,9 @@ class TestOrganizationTools:
                 "## Organization Search Results\n\nFound 2 organizations"
             )
 
-            result = await nci_organization_searcher(
+            result = await nci(
+                resource="organization",
+                action="search",
                 name="Cancer Center",
                 organization_type="Academic",
                 city="Boston",
@@ -97,8 +94,11 @@ class TestOrganizationTools:
                 "## Test Cancer Center\n\nType: Academic\nLocation: Boston, MA"
             )
 
-            result = await nci_organization_getter(
-                organization_id="ORG001", api_key="test-key"
+            result = await nci(
+                resource="organization",
+                action="get",
+                id="ORG001",
+                api_key="test-key",
             )
 
             assert "Test Cancer Center" in result
@@ -138,7 +138,9 @@ class TestInterventionTools:
                 "## Intervention Search Results\n\nFound 1 intervention"
             )
 
-            result = await nci_intervention_searcher(
+            result = await nci(
+                resource="intervention",
+                action="search",
                 name="pembrolizumab",
                 intervention_type="Drug",
                 api_key="test-key",
@@ -149,7 +151,7 @@ class TestInterventionTools:
                 name="pembrolizumab",
                 intervention_type="Drug",
                 synonyms=True,
-                page_size=None,
+                page_size=20,
                 page=1,
                 api_key="test-key",
             )
@@ -178,8 +180,11 @@ class TestInterventionTools:
                 "## Pembrolizumab\n\nType: Drug\nMechanism: PD-1 inhibitor"
             )
 
-            result = await nci_intervention_getter(
-                intervention_id="INT001", api_key="test-key"
+            result = await nci(
+                resource="intervention",
+                action="get",
+                id="INT001",
+                api_key="test-key",
             )
 
             assert "Pembrolizumab" in result
@@ -202,7 +207,7 @@ class TestToolsWithoutAPIKey:
             mock_search.side_effect = CTSAPIError("NCI API key required")
 
             with pytest.raises(CTSAPIError, match="NCI API key required"):
-                await nci_organization_searcher(name="Cancer Center")
+                await nci(resource="organization", action="search", name="Cancer Center")
 
     @pytest.mark.asyncio
     async def test_intervention_searcher_no_api_key(self):
@@ -213,7 +218,7 @@ class TestToolsWithoutAPIKey:
             mock_search.side_effect = CTSAPIError("NCI API key required")
 
             with pytest.raises(CTSAPIError, match="NCI API key required"):
-                await nci_intervention_searcher(name="pembrolizumab")
+                await nci(resource="intervention", action="search", name="pembrolizumab")
 
 
 class TestElasticsearchErrorHandling:
@@ -243,8 +248,11 @@ class TestElasticsearchErrorHandling:
         with patch("biomcp.organizations.search_organizations") as mock_search:
             mock_search.side_effect = CTSAPIError(str(error_response))
 
-            result = await nci_organization_searcher(
-                city="Cleveland", api_key="test-key"
+            result = await nci(
+                resource="organization",
+                action="search",
+                city="Cleveland",
+                api_key="test-key",
             )
 
             assert "Search Too Broad" in result
@@ -264,8 +272,11 @@ class TestElasticsearchErrorHandling:
         with patch("biomcp.interventions.search_interventions") as mock_search:
             mock_search.side_effect = CTSAPIError(str(error_response))
 
-            result = await nci_intervention_searcher(
-                intervention_type="Drug", api_key="test-key"
+            result = await nci(
+                resource="intervention",
+                action="search",
+                intervention_type="Drug",
+                api_key="test-key",
             )
 
             assert "Search Too Broad" in result
@@ -279,8 +290,6 @@ class TestBiomarkerTools:
     @pytest.mark.asyncio
     async def test_biomarker_searcher_tool(self):
         """Test biomarker searcher MCP tool."""
-        from biomcp.individual_tools import nci_biomarker_searcher
-
         mock_results = {
             "total": 2,
             "biomarkers": [
@@ -312,8 +321,11 @@ class TestBiomarkerTools:
                 "## Biomarker Search Results (2 found)\n\nFound 2 biomarkers"
             )
 
-            result = await nci_biomarker_searcher(
-                name="PD-L1", api_key="test-key"
+            result = await nci(
+                resource="biomarker",
+                action="search",
+                name="PD-L1",
+                api_key="test-key",
             )
 
             assert "Found 2 biomarkers" in result
@@ -332,8 +344,6 @@ class TestNCIDiseaseTools:
     @pytest.mark.asyncio
     async def test_nci_disease_searcher_tool(self):
         """Test NCI disease searcher MCP tool."""
-        from biomcp.individual_tools import nci_disease_searcher
-
         mock_results = {
             "total": 2,
             "diseases": [
@@ -363,8 +373,12 @@ class TestNCIDiseaseTools:
                 "## Disease Search Results (2 found)\n\nFound 2 diseases"
             )
 
-            result = await nci_disease_searcher(
-                name="cancer", include_synonyms=True, api_key="test-key"
+            result = await nci(
+                resource="disease",
+                action="search",
+                name="cancer",
+                include_synonyms=True,
+                api_key="test-key",
             )
 
             assert "Found 2 diseases" in result
@@ -394,8 +408,11 @@ class TestToolsIntegration:
             mock_search.return_value = {"total": 0, "organizations": []}
             mock_format.return_value = "No organizations found"
 
-            result = await nci_organization_searcher(
-                name="Nonexistent", api_key="test-key"
+            result = await nci(
+                resource="organization",
+                action="search",
+                name="Nonexistent",
+                api_key="test-key",
             )
 
             assert result == "No organizations found"
@@ -413,8 +430,11 @@ class TestToolsIntegration:
             mock_search.return_value = {"total": 0, "interventions": []}
             mock_format.return_value = "No interventions found"
 
-            result = await nci_intervention_searcher(
-                name="Nonexistent", api_key="test-key"
+            result = await nci(
+                resource="intervention",
+                action="search",
+                name="Nonexistent",
+                api_key="test-key",
             )
 
             assert result == "No interventions found"

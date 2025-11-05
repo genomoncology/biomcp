@@ -241,46 +241,23 @@ biomcp article search --gene BRCA1 --format json > results.json
 
 ## MCP Tool Names
 
-### Core Tools
+### Core Tools (12 total)
 
-- `search` - Unified search
-- `fetch` - Get details
+- `search` - Unified search across domains
+- `fetch` - Get details by ID
 - `think` - Sequential thinking
 
-### Article Tools
+### Action-Based Tools
 
-- `article_searcher`
-- `article_getter`
-
-### Trial Tools
-
-- `trial_searcher`
-- `trial_getter`
-- `trial_protocol_getter`
-- `trial_references_getter`
-- `trial_outcomes_getter`
-- `trial_locations_getter`
-
-### Variant Tools
-
-- `variant_searcher`
-- `variant_getter`
-- `alphagenome_predictor`
-
-### BioThings Tools
-
-- `gene_getter`
-- `disease_getter`
-- `drug_getter`
-
-### NCI Tools
-
-- `nci_organization_searcher`
-- `nci_organization_getter`
-- `nci_intervention_searcher`
-- `nci_intervention_getter`
-- `nci_biomarker_searcher`
-- `nci_disease_searcher`
+- `article(action, ...)` - Search or get articles (action: "search" or "get")
+- `trial(action, ...)` - Search or get trials (action: "search" or "get", optional detail parameter)
+- `variant(action, ...)` - Search or get variants (action: "search" or "get")
+- `alphagenome(action, ...)` - Predict variant effects (action: "predict")
+- `gene(action, ...)` - Get gene information (action: "get")
+- `disease(action, ...)` - Get disease information (action: "get")
+- `drug(action, ...)` - Get drug information (action: "get")
+- `nci(resource, action, ...)` - Access NCI resources (resource: "organization", "intervention", "biomarker", "disease")
+- `fda(domain, action, ...)` - Access FDA data (domain: "adverse", "label", "device", "approval", "recall", "shortage")
 
 ## Query Language Syntax
 

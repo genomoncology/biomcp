@@ -24,7 +24,7 @@ biomcp article search --gene BRAF --limit 5
 articles = await client.articles.search(genes=["BRAF"], limit=5)
 
 # MCP Tool
-article_searcher(genes=["BRAF"], limit=5)
+article(action="search", genes=["BRAF"], limit=5)
 ```
 
 This automatically includes:
@@ -45,7 +45,7 @@ biomcp article search --disease melanoma --limit 10
 articles = await client.articles.search(diseases=["melanoma"])
 
 # MCP Tool
-article_searcher(diseases=["melanoma"])
+article(action="search", diseases=["melanoma"])
 ```
 
 ## Advanced Search Techniques
@@ -171,7 +171,8 @@ think(
 )
 
 # Search with multiple relevant terms
-articles = await article_searcher(
+articles = await article(
+    action="search",
     genes=["EGFR"],
     diseases=["lung cancer|NSCLC"],
     keywords=["T790M|p.T790M|resistance|resistant"],
@@ -284,13 +285,14 @@ PubTator automatically annotates articles with:
 
 ```python
 # 1. Find articles about a gene
-articles = await article_searcher(genes=["ALK"])
+articles = await article(action="search", genes=["ALK"])
 
 # 2. Get gene details for context
-gene_info = await gene_getter("ALK")
+gene_info = await gene(action="get", id="ALK")
 
 # 3. Find relevant trials
-trials = await trial_searcher(
+trials = await trial(
+    action="search",
     other_terms=["ALK positive", "ALK rearrangement"]
 )
 ```

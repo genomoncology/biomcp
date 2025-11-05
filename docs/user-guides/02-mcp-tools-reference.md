@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-BioMCP provides 35 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.
+BioMCP provides 12 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.
 
 ## Related Guides
 
@@ -8,17 +8,14 @@ BioMCP provides 35 specialized tools for biomedical research through the Model C
 - **Practical Examples**: See the [How-to Guides](../how-to-guides/01-find-articles-and-cbioportal-data.md) for real-world usage patterns
 - **Integration Setup**: [Claude Desktop Integration](../getting-started/02-claude-desktop-integration.md)
 
-## Tool Categories
+## Tool Overview
 
-| Category            | Count | Tools                                                          |
-| ------------------- | ----- | -------------------------------------------------------------- |
-| **Core Tools**      | 3     | `search`, `fetch`, `think`                                     |
-| **Article Tools**   | 2     | `article_searcher`, `article_getter`                           |
-| **Trial Tools**     | 6     | `trial_searcher`, `trial_getter`, + 4 detail getters           |
-| **Variant Tools**   | 3     | `variant_searcher`, `variant_getter`, `alphagenome_predictor`  |
-| **BioThings Tools** | 3     | `gene_getter`, `disease_getter`, `drug_getter`                 |
-| **NCI Tools**       | 6     | Organization, intervention, biomarker, and disease tools       |
-| **OpenFDA Tools**   | 12    | Adverse events, labels, devices, approvals, recalls, shortages |
+| Category | Tools | Actions |
+|----------|-------|---------|
+| **Core Tools** | `search`, `fetch`, `think` | Universal access across all domains |
+| **Domain Tools** | `article`, `trial`, `variant`, `alphagenome` | Biomedical research |
+| **BioThings Tools** | `gene`, `drug`, `disease` | Database lookups |
+| **Specialized Tools** | `fda`, `nci` | FDA data & NCI clinical trials |
 
 ## Core Unified Tools
 
@@ -67,9 +64,6 @@ search(domain="trial", conditions=["lung cancer"], lat=40.7128, long=-74.0060)
 
 # FDA adverse events
 search(domain="fda_adverse", chemicals=["aspirin"])
-
-# FDA drug approvals
-search(domain="fda_approval", chemicals=["keytruda"])
 ```
 
 ### 2. fetch
@@ -91,7 +85,7 @@ fetch(
 - Trials: NCT ID (e.g., "NCT03006926")
 - Variants: HGVS, rsID, genomic coordinates
 - Genes/Drugs/Diseases: Names or database IDs
-- FDA Records: Report IDs, Application Numbers (e.g., "BLA125514"), Recall Numbers, etc.
+- FDA Records: Report IDs, Application Numbers, Recall Numbers
 
 **Detail Options for Trials:** `protocol`, `locations`, `outcomes`, `references`, `all`
 
@@ -107,10 +101,6 @@ fetch(id="NCT03006926", domain="trial", detail="locations")
 # Auto-detect domain
 fetch(id="rs121913529")  # Variant
 fetch(id="BRAF")         # Gene
-
-# Fetch FDA records
-fetch(id="BLA125514", domain="fda_approval")  # Drug approval
-fetch(id="D-0001-2023", domain="fda_recall")   # Drug recall
 ```
 
 ### 3. think
@@ -149,23 +139,26 @@ think(
 think(
     thought="Ready to synthesize findings from 5 trials and 12 articles...",
     thoughtNumber=3,
-    nextThoughtNeeded=False  # Analysis complete
+    nextThoughtNeeded=False
 )
 ```
 
-## Article Tools
+## Domain Tools
 
-### 4. article_searcher
+### 4. article - PubMed & Biomedical Literature
 
-**Search PubMed/PubTator3 for biomedical literature.**
+**Search and retrieve biomedical articles from PubMed/PubTator3.**
+
+#### Search Articles
 
 ```python
-article_searcher(
-    chemicals: list[str] = None,
-    diseases: list[str] = None,
+article(
+    action="search",
     genes: list[str] = None,
-    keywords: list[str] = None,    # Supports OR with "|"
+    diseases: list[str] = None,
+    chemicals: list[str] = None,
     variants: list[str] = None,
+    keywords: list[str] = None,        # Supports OR with "|"
     include_preprints: bool = True,
     include_cbioportal: bool = True,
     page: int = 1,
@@ -174,7 +167,6 @@ article_searcher(
 ```
 
 **Features:**
-
 - Automatic cBioPortal integration for gene searches
 - Preprint inclusion from bioRxiv/medRxiv
 - OR logic in keywords: `"V600E|p.V600E|c.1799T>A"`
@@ -182,8 +174,8 @@ article_searcher(
 **Example:**
 
 ```python
-# Search with multiple filters
-article_searcher(
+article(
+    action="search",
     genes=["BRAF"],
     diseases=["melanoma"],
     keywords=["resistance|resistant"],
@@ -191,42 +183,40 @@ article_searcher(
 )
 ```
 
-### 5. article_getter
-
-**Fetch detailed article information.**
+#### Get Article Details
 
 ```python
-article_getter(
-    pmid: str  # PubMed ID, PMC ID, or DOI
+article(
+    action="get",
+    id: str  # PubMed ID, PMC ID, or DOI
 ) -> str
 ```
 
-**Supports:**
+**Supports:** PubMed IDs ("38768446"), PMC IDs ("PMC7498215"), DOIs ("10.1101/2024.01.20.23288905")
 
-- PubMed IDs: "38768446"
-- PMC IDs: "PMC7498215"
-- DOIs: "10.1101/2024.01.20.23288905"
+---
 
-## Trial Tools
-
-### 6. trial_searcher
+### 5. trial - Clinical Trials
 
 **Search ClinicalTrials.gov with comprehensive filters.**
 
+#### Search Trials
+
 ```python
-trial_searcher(
+trial(
+    action="search",
     conditions: list[str] = None,
     interventions: list[str] = None,
     other_terms: list[str] = None,
-    recruiting_status: str = "ANY",  # "OPEN", "CLOSED", "ANY"
-    phase: str = None,               # "PHASE1", "PHASE2", etc.
-    lat: float = None,               # Location-based search
+    recruiting_status: str = "ANY",    # "OPEN", "CLOSED", "ANY"
+    phase: str = None,                 # "PHASE1", "PHASE2", etc.
+    lat: float = None,                 # Location-based search
     long: float = None,
-    distance: int = None,            # Miles from coordinates
-    age_group: str = None,           # "CHILD", "ADULT", "OLDER_ADULT"
-    sex: str = None,                 # "MALE", "FEMALE", "ALL"
-    study_type: str = None,          # "INTERVENTIONAL", "OBSERVATIONAL"
-    funder_type: str = None,         # "NIH", "INDUSTRY", etc.
+    distance: int = None,              # Miles from coordinates
+    age_group: str = None,             # "CHILD", "ADULT", "OLDER_ADULT"
+    sex: str = None,                   # "MALE", "FEMALE", "ALL"
+    study_type: str = None,            # "INTERVENTIONAL", "OBSERVATIONAL"
+    funder_type: str = None,           # "NIH", "INDUSTRY", etc.
     page: int = 1,
     page_size: int = 10
 ) -> str
@@ -235,8 +225,8 @@ trial_searcher(
 **Location Search Example:**
 
 ```python
-# Trials near Boston
-trial_searcher(
+trial(
+    action="search",
     conditions=["breast cancer"],
     lat=42.3601,
     long=-71.0589,
@@ -245,53 +235,55 @@ trial_searcher(
 )
 ```
 
-### 7-11. Trial Detail Getters
+#### Get Trial Details
 
 ```python
-# Get complete trial information
-trial_getter(nct_id: str) -> str
-
-# Get specific sections
-trial_protocol_getter(nct_id: str) -> str     # Core protocol info
-trial_locations_getter(nct_id: str) -> str    # Sites and contacts
-trial_outcomes_getter(nct_id: str) -> str     # Outcome measures
-trial_references_getter(nct_id: str) -> str   # Publications
+trial(
+    action="get",
+    id: str,              # NCT ID
+    detail: str = None    # "protocol", "locations", "outcomes", "references", "all"
+) -> str
 ```
 
-## Variant Tools
+**Detail Options:** Retrieve specific sections or all trial information.
 
-### 12. variant_searcher
+---
 
-**Search MyVariant.info for genetic variants.**
+### 6. variant - Genetic Variants
+
+**Search MyVariant.info and retrieve comprehensive variant annotations.**
+
+#### Search Variants
 
 ```python
-variant_searcher(
+variant(
+    action="search",
     gene: str = None,
-    hgvs: str = None,
-    hgvsp: str = None,              # Protein HGVS
-    hgvsc: str = None,              # Coding DNA HGVS
+    hgvs: str = None,                  # General HGVS notation
+    hgvsp: str = None,                 # Protein HGVS
+    hgvsc: str = None,                 # Coding DNA HGVS
     rsid: str = None,
-    region: str = None,             # "chr7:140753336-140753337"
-    significance: str = None,        # Clinical significance
+    region: str = None,                # "chr7:140753336-140753337"
+    significance: str = None,          # Clinical significance
     frequency_min: float = None,
     frequency_max: float = None,
     cadd_score_min: float = None,
     sift_prediction: str = None,
     polyphen_prediction: str = None,
-    sources: list[str] = None,
     include_cbioportal: bool = True,
+    include_oncokb: bool = True,
     page: int = 1,
     page_size: int = 10
 ) -> str
 ```
 
-**Significance Options:** `pathogenic`, `likely_pathogenic`, `uncertain_significance`, `likely_benign`, `benign`
+**Significance Options:** `pathogenic`, `likely_pathogenic`, `uncertain_significance`, `likely_benign`, `benign`, `conflicting`
 
 **Example:**
 
 ```python
-# Find rare pathogenic BRCA1 variants
-variant_searcher(
+variant(
+    action="search",
     gene="BRCA1",
     significance="pathogenic",
     frequency_max=0.001,
@@ -299,23 +291,25 @@ variant_searcher(
 )
 ```
 
-### 13. variant_getter
-
-**Fetch comprehensive variant details.**
+#### Get Variant Details
 
 ```python
-variant_getter(
+variant(
+    action="get",
     variant_id: str,              # HGVS, rsID, or MyVariant ID
     include_external: bool = True  # Include TCGA, 1000 Genomes
 ) -> str
 ```
 
-### 14. alphagenome_predictor
+---
+
+### 7. alphagenome - Variant Effect Prediction
 
 **Predict variant effects using Google DeepMind's AlphaGenome.**
 
 ```python
-alphagenome_predictor(
+alphagenome(
+    action="predict",
     chromosome: str,              # e.g., "chr7"
     position: int,                # 1-based position
     reference: str,               # Reference allele
@@ -330,7 +324,6 @@ alphagenome_predictor(
 **Requires:** AlphaGenome API key (environment variable or per-request)
 
 **Tissue Examples:**
-
 - `UBERON:0002367` - prostate gland
 - `UBERON:0001155` - colon
 - `UBERON:0002048` - lung
@@ -338,304 +331,230 @@ alphagenome_predictor(
 **Example:**
 
 ```python
-# Predict BRAF V600E effects
-alphagenome_predictor(
+alphagenome(
+    action="predict",
     chromosome="chr7",
     position=140753336,
     reference="A",
     alternate="T",
-    tissue_types=["UBERON:0002367"],  # prostate
-    api_key="your-key"
+    tissue_types=["UBERON:0002367"]
 )
 ```
 
-## BioThings Tools
+---
 
-### 15. gene_getter
+### 8. gene - Gene Information
 
-**Get gene information from MyGene.info.**
+**Get comprehensive gene information from MyGene.info.**
 
 ```python
-gene_getter(
-    gene_id_or_symbol: str  # Gene symbol or Entrez ID
+gene(
+    action="get",
+    id: str  # Gene symbol or Entrez ID
 ) -> str
 ```
 
 **Returns:** Official name, aliases, summary, genomic location, database links
 
-### 16. disease_getter
+**Example:**
+
+```python
+gene(action="get", id="BRAF")
+```
+
+---
+
+### 9. disease - Disease Information
 
 **Get disease information from MyDisease.info.**
 
 ```python
-disease_getter(
-    disease_id_or_name: str  # Disease name or ontology ID
+disease(
+    action="get",
+    id: str  # Disease name or ontology ID
 ) -> str
 ```
 
 **Returns:** Definition, synonyms, MONDO/DOID IDs, associated phenotypes
 
-### 17. drug_getter
+**Example:**
+
+```python
+disease(action="get", id="melanoma")
+```
+
+---
+
+### 10. drug - Drug Information
 
 **Get drug/chemical information from MyChem.info.**
 
 ```python
-drug_getter(
-    drug_id_or_name: str  # Drug name or database ID
+drug(
+    action="get",
+    id: str  # Drug name or database ID
 ) -> str
 ```
 
 **Returns:** Chemical structure, mechanism, indications, trade names, identifiers
 
-## NCI-Specific Tools
-
-All NCI tools require an API key from [api.cancer.gov](https://api.cancer.gov).
-
-### 18-19. Organization Tools
-
-```python
-# Search organizations
-nci_organization_searcher(
-    name: str = None,
-    organization_type: str = None,
-    city: str = None,              # Must use with state
-    state: str = None,             # Must use with city
-    api_key: str = None
-) -> str
-
-# Get organization details
-nci_organization_getter(
-    organization_id: str,
-    api_key: str = None
-) -> str
-```
-
-### 20-21. Intervention Tools
-
-```python
-# Search interventions
-nci_intervention_searcher(
-    name: str = None,
-    intervention_type: str = None,  # "Drug", "Device", etc.
-    synonyms: bool = True,
-    api_key: str = None
-) -> str
-
-# Get intervention details
-nci_intervention_getter(
-    intervention_id: str,
-    api_key: str = None
-) -> str
-```
-
-### 22. Biomarker Search
-
-```python
-nci_biomarker_searcher(
-    name: str = None,
-    biomarker_type: str = None,
-    api_key: str = None
-) -> str
-```
-
-### 23. Disease Search (NCI)
-
-```python
-nci_disease_searcher(
-    name: str = None,
-    include_synonyms: bool = True,
-    category: str = None,
-    api_key: str = None
-) -> str
-```
-
-## OpenFDA Tools
-
-All OpenFDA tools support optional API keys for higher rate limits (240/min vs 40/min). Get a free key at [open.fda.gov/apis/authentication](https://open.fda.gov/apis/authentication/).
-
-### 24. openfda_adverse_searcher
-
-**Search FDA Adverse Event Reporting System (FAERS).**
-
-```python
-openfda_adverse_searcher(
-    drug: str = None,
-    reaction: str = None,
-    serious: bool = None,        # Filter serious events only
-    limit: int = 25,
-    skip: int = 0,
-    api_key: str = None          # Optional OpenFDA API key
-) -> str
-```
-
 **Example:**
 
 ```python
-# Find serious bleeding events for warfarin
-openfda_adverse_searcher(
-    drug="warfarin",
-    reaction="bleeding",
-    serious=True,
-    api_key="your-key"  # Optional
+drug(action="get", id="imatinib")
+```
+
+---
+
+## Specialized Tools
+
+### 11. fda - OpenFDA Data Access
+
+**Access FDA databases for drug safety, labeling, and regulatory information.**
+
+All OpenFDA tools support optional API keys for higher rate limits (240/min vs 40/min). Get a free key at [open.fda.gov/apis/authentication](https://open.fda.gov/apis/authentication/).
+
+#### Domains
+
+- **adverse** - FDA Adverse Event Reporting System (FAERS)
+- **label** - Drug Product Labels (SPL)
+- **device** - Medical Device Adverse Events (MAUDE)
+- **approval** - Drug Approvals (Drugs@FDA)
+- **recall** - Enforcement Reports
+- **shortage** - Drug Shortages
+
+#### Search FDA Data
+
+```python
+fda(
+    domain: str,              # "adverse", "label", "device", etc.
+    action="search",
+    drug: str = None,
+    limit: int = 25,
+    page: int = 1,
+    # Domain-specific parameters...
+    api_key: str = None
+) -> str
+```
+
+**Examples:**
+
+```python
+# Search adverse events
+fda(domain="adverse", action="search", drug="warfarin", serious=True)
+
+# Search drug labels
+fda(domain="label", action="search", drug="keytruda", indication="melanoma")
+
+# Search device events
+fda(domain="device", action="search", device="sequencing", genomics_only=True)
+
+# Search drug approvals
+fda(domain="approval", action="search", approval_year="2024")
+
+# Search recalls
+fda(domain="recall", action="search", recall_class="1")
+
+# Search drug shortages
+fda(domain="shortage", action="search", status="current")
+```
+
+#### Get FDA Record Details
+
+```python
+fda(
+    domain: str,
+    action="get",
+    id: str,                  # Domain-specific ID
+    api_key: str = None
+) -> str
+```
+
+**ID Requirements by Domain:**
+- adverse: `report_id`
+- label: `set_id`
+- device: `mdr_report_key`
+- approval: `application_number` (e.g., "BLA125514")
+- recall: `recall_number`
+- shortage: drug name
+
+---
+
+### 12. nci - NCI Clinical Trials API
+
+**Access NCI organization, intervention, biomarker, and disease databases.**
+
+All NCI tools require an API key from [api.cancer.gov](https://api.cancer.gov).
+
+#### Resources
+
+- **organization** - Cancer centers and research institutions
+- **intervention** - Drugs, devices, and treatment interventions
+- **biomarker** - Biomarkers used in trial eligibility
+- **disease** - NCI Thesaurus disease terms
+
+#### Search NCI Data
+
+```python
+nci(
+    resource: str,           # "organization", "intervention", etc.
+    action="search",
+    name: str = None,
+    # Resource-specific parameters...
+    page_size: int = 20,
+    page: int = 1,
+    api_key: str = None
+) -> str
+```
+
+**Examples:**
+
+```python
+# Search organizations
+nci(
+    resource="organization",
+    action="search",
+    name="Cancer Center",
+    city="Boston",
+    state="MA"
+)
+
+# Search interventions
+nci(
+    resource="intervention",
+    action="search",
+    name="pembrolizumab",
+    intervention_type="Drug"
+)
+
+# Search biomarkers
+nci(
+    resource="biomarker",
+    action="search",
+    name="PD-L1"
+)
+
+# Search diseases
+nci(
+    resource="disease",
+    action="search",
+    name="melanoma",
+    include_synonyms=True
 )
 ```
 
-### 25. openfda_adverse_getter
-
-**Get detailed adverse event report.**
+#### Get NCI Record Details
 
 ```python
-openfda_adverse_getter(
-    report_id: str,              # Safety report ID
+nci(
+    resource: str,
+    action="get",
+    id: str,                 # Resource-specific ID
     api_key: str = None
 ) -> str
 ```
 
-### 26. openfda_label_searcher
-
-**Search FDA drug product labels.**
-
-```python
-openfda_label_searcher(
-    name: str = None,
-    indication: str = None,      # Search by indication
-    boxed_warning: bool = False, # Filter for boxed warnings
-    section: str = None,         # Specific label section
-    limit: int = 25,
-    skip: int = 0,
-    api_key: str = None
-) -> str
-```
-
-### 27. openfda_label_getter
-
-**Get complete drug label information.**
-
-```python
-openfda_label_getter(
-    set_id: str,                 # Label set ID
-    sections: list[str] = None,  # Specific sections to retrieve
-    api_key: str = None
-) -> str
-```
-
-**Label Sections:** `indications_and_usage`, `contraindications`, `warnings_and_precautions`, `dosage_and_administration`, `adverse_reactions`, `drug_interactions`, `pregnancy`, `pediatric_use`, `geriatric_use`
-
-### 28. openfda_device_searcher
-
-**Search FDA device adverse event reports (MAUDE).**
-
-```python
-openfda_device_searcher(
-    device: str = None,
-    manufacturer: str = None,
-    problem: str = None,
-    product_code: str = None,    # FDA product code
-    genomics_only: bool = True,  # Filter genomic/diagnostic devices
-    limit: int = 25,
-    skip: int = 0,
-    api_key: str = None
-) -> str
-```
-
-**Note:** FDA uses abbreviated device names (e.g., "F1CDX" for "FoundationOne CDx").
-
-### 29. openfda_device_getter
-
-**Get detailed device event report.**
-
-```python
-openfda_device_getter(
-    mdr_report_key: str,         # MDR report key
-    api_key: str = None
-) -> str
-```
-
-### 30. openfda_approval_searcher
-
-**Search FDA drug approval records (Drugs@FDA).**
-
-```python
-openfda_approval_searcher(
-    drug: str = None,
-    application_number: str = None,  # NDA/BLA number
-    approval_year: str = None,       # YYYY format
-    limit: int = 25,
-    skip: int = 0,
-    api_key: str = None
-) -> str
-```
-
-### 31. openfda_approval_getter
-
-**Get drug approval details.**
-
-```python
-openfda_approval_getter(
-    application_number: str,     # NDA/BLA number
-    api_key: str = None
-) -> str
-```
-
-### 32. openfda_recall_searcher
-
-**Search FDA drug recall records.**
-
-```python
-openfda_recall_searcher(
-    drug: str = None,
-    recall_class: str = None,    # "1", "2", or "3"
-    status: str = None,          # "ongoing" or "completed"
-    reason: str = None,
-    since_date: str = None,      # YYYYMMDD format
-    limit: int = 25,
-    skip: int = 0,
-    api_key: str = None
-) -> str
-```
-
-**Recall Classes:**
-
-- Class 1: Dangerous or defective products that could cause serious health problems or death
-- Class 2: Products that might cause temporary health problems or pose slight threat
-- Class 3: Products unlikely to cause adverse health consequences
-
-### 33. openfda_recall_getter
-
-**Get drug recall details.**
-
-```python
-openfda_recall_getter(
-    recall_number: str,          # FDA recall number
-    api_key: str = None
-) -> str
-```
-
-### 34. openfda_shortage_searcher
-
-**Search FDA drug shortage database.**
-
-```python
-openfda_shortage_searcher(
-    drug: str = None,
-    status: str = None,          # "current" or "resolved"
-    therapeutic_category: str = None,
-    limit: int = 25,
-    skip: int = 0,
-    api_key: str = None
-) -> str
-```
-
-### 35. openfda_shortage_getter
-
-**Get drug shortage details.**
-
-```python
-openfda_shortage_getter(
-    drug_name: str,
-    api_key: str = None
-) -> str
-```
+---
 
 ## Best Practices
 
@@ -644,10 +563,10 @@ openfda_shortage_getter(
 ```python
 # ✅ CORRECT - Think before searching
 think(thought="Planning BRAF melanoma research...", thoughtNumber=1)
-results = article_searcher(genes=["BRAF"], diseases=["melanoma"])
+results = article(action="search", genes=["BRAF"], diseases=["melanoma"])
 
 # ❌ INCORRECT - Skipping think tool
-results = article_searcher(genes=["BRAF"])  # Poor results!
+results = article(action="search", genes=["BRAF"])  # Poor results!
 ```
 
 ### 2. Use Unified Tools for Flexibility
@@ -664,13 +583,15 @@ details = fetch(id="NCT03006926")  # Knows it's a trial
 
 ```python
 # Article search with cBioPortal
-articles = article_searcher(
+articles = article(
+    action="search",
     genes=["KRAS"],
     include_cbioportal=True  # Adds cancer genomics context
 )
 
 # Variant search with multiple filters
-variants = variant_searcher(
+variants = variant(
+    action="search",
     gene="TP53",
     significance="pathogenic",
     frequency_max=0.01,
@@ -683,11 +604,12 @@ variants = variant_searcher(
 ```python
 # For personal use - environment variable
 # export NCI_API_KEY="your-key"
-nci_results = search(domain="nci_organization", name="Mayo Clinic")
+nci_results = nci(resource="organization", action="search", name="Mayo Clinic")
 
 # For shared environments - per-request
-nci_results = search(
-    domain="nci_organization",
+nci_results = nci(
+    resource="organization",
+    action="search",
     name="Mayo Clinic",
     api_key="user-provided-key"
 )
@@ -697,14 +619,15 @@ nci_results = search(
 
 ```python
 # Large result sets - increase page_size
-results = article_searcher(
+results = article(
+    action="search",
     genes=["TP53"],
     page_size=50  # Get more results at once
 )
 
 # Iterative exploration - use pagination
-page1 = trial_searcher(conditions=["cancer"], page=1, page_size=10)
-page2 = trial_searcher(conditions=["cancer"], page=2, page_size=10)
+page1 = trial(action="search", conditions=["cancer"], page=1, page_size=10)
+page2 = trial(action="search", conditions=["cancer"], page=2, page_size=10)
 ```
 
 ## Error Handling
@@ -718,23 +641,18 @@ All tools include comprehensive error handling:
 
 ## Tool Selection Guide
 
-| If you need to...              | Use this tool                                     |
-| ------------------------------ | ------------------------------------------------- |
-| Search across multiple domains | `search` with query language                      |
-| Get any record by ID           | `fetch` with auto-detection                       |
-| Plan your research approach    | `think` (always first!)                           |
-| Find recent papers             | `article_searcher`                                |
-| Locate clinical trials         | `trial_searcher`                                  |
-| Analyze genetic variants       | `variant_searcher` + `variant_getter`             |
-| Predict variant effects        | `alphagenome_predictor`                           |
-| Get gene/drug/disease info     | `gene_getter`, `drug_getter`, `disease_getter`    |
-| Access NCI databases           | `nci_*` tools with API key                        |
-| Check drug adverse events      | `openfda_adverse_searcher`                        |
-| Review FDA drug labels         | `openfda_label_searcher` + `openfda_label_getter` |
-| Investigate device issues      | `openfda_device_searcher`                         |
-| Find drug approvals            | `openfda_approval_searcher`                       |
-| Check drug recalls             | `openfda_recall_searcher`                         |
-| Monitor drug shortages         | `openfda_shortage_searcher`                       |
+| If you need to... | Use this tool |
+|-------------------|---------------|
+| Search across multiple domains | `search` with query language |
+| Get any record by ID | `fetch` with auto-detection |
+| Plan your research approach | `think` (always first!) |
+| Find recent papers | `article` |
+| Locate clinical trials | `trial` |
+| Analyze genetic variants | `variant` |
+| Predict variant effects | `alphagenome` |
+| Get gene/drug/disease info | `gene`, `drug`, `disease` |
+| Access FDA databases | `fda` |
+| Search NCI databases | `nci` |
 
 ## Next Steps
 

@@ -13,242 +13,416 @@ startCommand:
   exampleConfig: {}
 
 schemas:
-  TrialQuery:
-    type: object
-    properties:
-      conditions:
-        type: array
-        items:
-          type: string
-        description: "List of condition terms."
-      terms:
-        type: array
-        items:
-          type: string
-        description: "General search terms that don't fit specific categories."
-      interventions:
-        type: array
-        items:
-          type: string
-        description: "Intervention names."
-      recruiting_status:
-        type: string
-        description: "Study recruitment status."
-      study_type:
-        type: string
-        description: "Type of study."
-      nct_ids:
-        type: array
-        items:
-          type: string
-        description: "Clinical trial NCT IDs"
-      lat:
-        type: number
-        description: "Latitude for location search"
-      long:
-        type: number
-        description: "Longitude for location search"
-      distance:
-        type: integer
-        description: "Distance from lat/long in miles"
-      min_date:
-        type: string
-        description: "Minimum date for filtering"
-      max_date:
-        type: string
-        description: "Maximum date for filtering"
-      date_field:
-        type: string
-        description: "Date field to filter on"
-      phase:
-        type: string
-        description: "Trial phase filter"
-      age_group:
-        type: string
-        description: "Age group filter"
-      primary_purpose:
-        type: string
-        description: "Primary purpose of the trial"
-      intervention_type:
-        type: string
-        description: "Type of intervention"
-      sponsor_type:
-        type: string
-        description: "Type of sponsor"
-      study_design:
-        type: string
-        description: "Study design"
-      sort:
-        type: string
-        description: "Sort order for results"
-      next_page_hash:
-        type: string
-        description: "Token to retrieve the next page of results"
+  ActionType:
+    type: string
+    enum: ["search", "get", "predict"]
+    description: "Action to perform on the resource"
 
-  VariantQuery:
-    type: object
-    properties:
-      gene:
-        type: string
-        description: "Gene symbol to search for (e.g. BRAF, TP53)"
-      hgvsp:
-        type: string
-        description: "Protein change notation (e.g., p.V600E, p.Arg557His)"
-      hgvsc:
-        type: string
-        description: "cDNA notation (e.g., c.1799T>A)"
-      rsid:
-        type: string
-        description: "dbSNP rsID (e.g., rs113488022)"
-      region:
-        type: string
-        description: "Genomic region as chr:start-end (e.g. chr1:12345-67890)"
-      significance:
-        type: string
-        description: "ClinVar clinical significance"
-      max_frequency:
-        type: number
-        description: "Maximum population allele frequency threshold"
-      min_frequency:
-        type: number
-        description: "Minimum population allele frequency threshold"
-      cadd:
-        type: number
-        description: "Minimum CADD phred score"
-      polyphen:
-        type: string
-        description: "PolyPhen-2 prediction"
-      sift:
-        type: string
-        description: "SIFT prediction"
-      sources:
-        type: array
-        items:
-          type: string
-        description: "Include only specific data sources"
-      size:
-        type: integer
-        description: "Number of results to return"
-        default: 40
-      offset:
-        type: integer
-        description: "Result offset for pagination"
-        default: 0
+  FDADomain:
+    type: string
+    enum: ["adverse", "label", "device", "approval", "recall", "shortage"]
+    description: "FDA database domain"
 
-  PubmedRequest:
-    type: object
-    properties:
-      chemicals:
-        type: array
-        items:
-          type: string
-        description: "List of chemicals for filtering results."
-      diseases:
-        type: array
-        items:
-          type: string
-        description: "Diseases such as Hypertension, Lung Adenocarcinoma, etc."
-      genes:
-        type: array
-        items:
-          type: string
-        description: "List of genes for filtering results."
-      keywords:
-        type: array
-        items:
-          type: string
-        description: "List of other keywords for filtering results."
-      variants:
-        type: array
-        items:
-          type: string
-        description: "List of variants for filtering results."
+  NCIResource:
+    type: string
+    enum: ["organization", "intervention", "biomarker", "disease"]
+    description: "NCI resource type"
 
 tools:
-  trial_searcher:
+  # Core Tools (3)
+  search:
     input:
       schema:
         type: object
         properties:
           query:
-            $ref: "#/schemas/TrialQuery"
-        required: ["query"]
-
-  variant_searcher:
-    input:
-      schema:
-        type: object
-        properties:
-          query:
-            $ref: "#/schemas/VariantQuery"
-        required: ["query"]
-
-  article_searcher:
-    input:
-      schema:
-        type: object
-        properties:
-          query:
-            $ref: "#/schemas/PubmedRequest"
-        required: ["query"]
-
-  # Simple string parameter functions
-  trial_protocol:
-    input:
-      schema:
-        type: object
-        properties:
-          nct_id:
             type: string
-            description: "A single NCT ID (e.g., NCT04280705)"
-        required: ["nct_id"]
-
-  trial_locations:
-    input:
-      schema:
-        type: object
-        properties:
-          nct_id:
+            description: "Unified query language syntax"
+          domain:
             type: string
-            description: "A single NCT ID (e.g., NCT04280705)"
-        required: ["nct_id"]
+            description: "Target domain for search"
+          genes:
+            type: array
+            items:
+              type: string
+            description: "Gene symbols"
+          diseases:
+            type: array
+            items:
+              type: string
+            description: "Disease/condition terms"
+          page:
+            type: integer
+            default: 1
+          page_size:
+            type: integer
+            default: 10
 
-  trial_outcomes:
+  fetch:
     input:
       schema:
         type: object
         properties:
-          nct_id:
+          id:
             type: string
-            description: "A single NCT ID (e.g., NCT04280705)"
-        required: ["nct_id"]
-
-  trial_references:
-    input:
-      schema:
-        type: object
-        properties:
-          nct_id:
+            description: "Record identifier"
+          domain:
             type: string
-            description: "A single NCT ID (e.g., NCT04280705)"
-        required: ["nct_id"]
-
-  article_details:
-    input:
-      schema:
-        type: object
-        properties:
-          pmid:
+            description: "Domain (auto-detected if not provided)"
+          detail:
             type: string
-            description: "A single PubMed ID (e.g., 34397683)"
-        required: ["pmid"]
+            description: "Specific section for trials"
+        required: ["id"]
 
-  variant_details:
+  think:
     input:
       schema:
         type: object
         properties:
+          thought:
+            type: string
+            description: "Current reasoning step"
+          thoughtNumber:
+            type: integer
+            description: "Sequential thought number"
+          totalThoughts:
+            type: integer
+            description: "Estimated total thoughts"
+          nextThoughtNeeded:
+            type: boolean
+            default: true
+        required: ["thought", "thoughtNumber"]
+
+  # Domain Tools (4)
+  article:
+    input:
+      schema:
+        type: object
+        properties:
+          action:
+            $ref: "#/schemas/ActionType"
+          genes:
+            type: array
+            items:
+              type: string
+          diseases:
+            type: array
+            items:
+              type: string
+          chemicals:
+            type: array
+            items:
+              type: string
+          keywords:
+            type: array
+            items:
+              type: string
+          variants:
+            type: array
+            items:
+              type: string
+          include_preprints:
+            type: boolean
+            default: true
+          include_cbioportal:
+            type: boolean
+            default: true
+          id:
+            type: string
+            description: "Article ID for get action (PMID, PMC ID, or DOI)"
+          page:
+            type: integer
+            default: 1
+          page_size:
+            type: integer
+            default: 10
+        required: ["action"]
+
+  trial:
+    input:
+      schema:
+        type: object
+        properties:
+          action:
+            $ref: "#/schemas/ActionType"
+          conditions:
+            type: array
+            items:
+              type: string
+          interventions:
+            type: array
+            items:
+              type: string
+          other_terms:
+            type: array
+            items:
+              type: string
+          recruiting_status:
+            type: string
+            default: "ANY"
+          phase:
+            type: string
+          lat:
+            type: number
+          long:
+            type: number
+          distance:
+            type: integer
+          age_group:
+            type: string
+          sex:
+            type: string
+          study_type:
+            type: string
+          funder_type:
+            type: string
+          id:
+            type: string
+            description: "NCT ID for get action"
+          detail:
+            type: string
+            description: "Specific trial section (protocol, locations, outcomes, references, all)"
+          page:
+            type: integer
+            default: 1
+          page_size:
+            type: integer
+            default: 10
+        required: ["action"]
+
+  variant:
+    input:
+      schema:
+        type: object
+        properties:
+          action:
+            $ref: "#/schemas/ActionType"
+          gene:
+            type: string
+          hgvs:
+            type: string
+            description: "General HGVS notation"
+          hgvsp:
+            type: string
+            description: "Protein HGVS"
+          hgvsc:
+            type: string
+            description: "Coding DNA HGVS"
+          rsid:
+            type: string
+          region:
+            type: string
+          significance:
+            type: string
+          frequency_min:
+            type: number
+          frequency_max:
+            type: number
+          cadd_score_min:
+            type: number
+          sift_prediction:
+            type: string
+          polyphen_prediction:
+            type: string
+          include_cbioportal:
+            type: boolean
+            default: true
+          include_oncokb:
+            type: boolean
+            default: true
           variant_id:
             type: string
-            description: "A variant identifier (e.g., chr7:g.140453136A>T)"
-        required: ["variant_id"]
+            description: "Variant ID for get action"
+          include_external:
+            type: boolean
+            default: true
+          page:
+            type: integer
+            default: 1
+          page_size:
+            type: integer
+            default: 10
+        required: ["action"]
+
+  alphagenome:
+    input:
+      schema:
+        type: object
+        properties:
+          action:
+            type: string
+            enum: ["predict"]
+          chromosome:
+            type: string
+            description: "Chromosome (e.g., chr7)"
+          position:
+            type: integer
+            description: "1-based position"
+          reference:
+            type: string
+            description: "Reference allele"
+          alternate:
+            type: string
+            description: "Alternate allele"
+          interval_size:
+            type: integer
+            default: 131072
+          tissue_types:
+            type: array
+            items:
+              type: string
+            description: "UBERON tissue terms"
+          significance_threshold:
+            type: number
+            default: 0.5
+          api_key:
+            type: string
+        required: ["action", "chromosome", "position", "reference", "alternate"]
+
+  # BioThings Tools (3)
+  gene:
+    input:
+      schema:
+        type: object
+        properties:
+          action:
+            type: string
+            enum: ["get"]
+          id:
+            type: string
+            description: "Gene symbol or Entrez ID"
+        required: ["action", "id"]
+
+  disease:
+    input:
+      schema:
+        type: object
+        properties:
+          action:
+            type: string
+            enum: ["get"]
+          id:
+            type: string
+            description: "Disease name or ontology ID"
+        required: ["action", "id"]
+
+  drug:
+    input:
+      schema:
+        type: object
+        properties:
+          action:
+            type: string
+            enum: ["get"]
+          id:
+            type: string
+            description: "Drug name or database ID"
+        required: ["action", "id"]
+
+  # Specialized Tools (2)
+  fda:
+    input:
+      schema:
+        type: object
+        properties:
+          domain:
+            $ref: "#/schemas/FDADomain"
+          action:
+            $ref: "#/schemas/ActionType"
+          drug:
+            type: string
+          reaction:
+            type: string
+          serious:
+            type: boolean
+          indication:
+            type: string
+          boxed_warning:
+            type: boolean
+            default: false
+          section:
+            type: string
+          device:
+            type: string
+          manufacturer:
+            type: string
+          problem:
+            type: string
+          product_code:
+            type: string
+          genomics_only:
+            type: boolean
+            default: true
+          application_number:
+            type: string
+          approval_year:
+            type: string
+          recall_class:
+            type: string
+          status:
+            type: string
+          reason:
+            type: string
+          since_date:
+            type: string
+          therapeutic_category:
+            type: string
+          id:
+            type: string
+            description: "Record ID for get action"
+          sections:
+            type: array
+            items:
+              type: string
+            description: "Specific label sections"
+          limit:
+            type: integer
+            default: 25
+          page:
+            type: integer
+            default: 1
+          api_key:
+            type: string
+        required: ["domain", "action"]
+
+  nci:
+    input:
+      schema:
+        type: object
+        properties:
+          resource:
+            $ref: "#/schemas/NCIResource"
+          action:
+            $ref: "#/schemas/ActionType"
+          name:
+            type: string
+          organization_type:
+            type: string
+          city:
+            type: string
+          state:
+            type: string
+          intervention_type:
+            type: string
+          synonyms:
+            type: boolean
+            default: true
+          biomarker_type:
+            type: string
+          include_synonyms:
+            type: boolean
+            default: true
+          category:
+            type: string
+          id:
+            type: string
+            description: "Resource ID for get action"
+          page_size:
+            type: integer
+            default: 20
+          page:
+            type: integer
+            default: 1
+          api_key:
+            type: string
+        required: ["resource", "action"]

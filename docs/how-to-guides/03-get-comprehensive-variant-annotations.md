@@ -25,7 +25,7 @@ biomcp variant get rs121913529
 variant = await client.variants.get("rs121913529")
 
 # MCP Tool
-variant_getter(variant_id="rs121913529")
+variant(action="get", variant_id="rs121913529")
 ```
 
 ### Search by HGVS Notation
@@ -34,20 +34,21 @@ Use standard HGVS notation:
 
 ```python
 # Protein change
-variant = await variant_getter("NP_004324.2:p.Val600Glu")
+variant = await variant(action="get", variant_id="NP_004324.2:p.Val600Glu")
 
 # Coding DNA change
-variant = await variant_getter("NM_004333.4:c.1799T>A")
+variant = await variant(action="get", variant_id="NM_004333.4:c.1799T>A")
 
 # Genomic coordinates
-variant = await variant_getter("NC_000007.13:g.140453136A>T")
+variant = await variant(action="get", variant_id="NC_000007.13:g.140453136A>T")
 ```
 
 ### Search by Genomic Position
 
 ```python
 # Search by coordinates
-variants = await variant_searcher(
+variants = await variant(
+    action="search",
     chromosome="7",
     start=140453136,
     end=140453136,
@@ -61,7 +62,7 @@ variants = await variant_searcher(
 
 ```python
 # Get variant details
-variant = await variant_getter("rs121913529")
+variant = await variant(action="get", variant_id="rs121913529")
 
 # Check clinical significance
 print(f"Clinical Significance: {variant.clinical_significance}")
@@ -98,14 +99,16 @@ if variant.predictions:
 
 ```python
 # Find pathogenic BRCA1 variants
-pathogenic_variants = await variant_searcher(
+pathogenic_variants = await variant(
+    action="search",
     gene="BRCA1",
     significance="pathogenic",
     limit=20
 )
 
 # Multiple significance levels
-variants = await variant_searcher(
+variants = await variant(
+    action="search",
     gene="TP53",
     significance=["pathogenic", "likely_pathogenic"]
 )
@@ -117,14 +120,16 @@ Find rare variants:
 
 ```python
 # Rare variants (MAF < 1%)
-rare_variants = await variant_searcher(
+rare_variants = await variant(
+    action="search",
     gene="CFTR",
     frequency_max=0.01,
     significance="pathogenic"
 )
 
 # Ultra-rare variants
-ultra_rare = await variant_searcher(
+ultra_rare = await variant(
+    action="search",
     gene="SCN1A",
     frequency_max=0.0001
 )
@@ -134,7 +139,8 @@ ultra_rare = await variant_searcher(
 
 ```python
 # High-impact variants
-high_impact = await variant_searcher(
+high_impact = await variant(
+    action="search",
     gene="MLH1",
     cadd_score_min=20,  # CADD > 20 suggests deleteriousness
     polyphen_prediction="probably_damaging"
@@ -150,7 +156,7 @@ For technical details on external data sources, see the [BioThings Suite Referen
 Variants automatically include TCGA annotations when available:
 
 ```python
-variant = await variant_getter("rs121913529", include_external=True)
+variant = await variant(action="get", variant_id="rs121913529", include_external=True)
 
 # Check TCGA data
 if variant.external_data.get("tcga"):
@@ -192,11 +198,11 @@ BioMCP's unified architecture allows seamless integration between variant data a
 
 ```python
 # Get variant
-variant = await variant_getter("rs121913529")
+variant = await variant(action="get", variant_id="rs121913529")
 
 # Get associated gene details
 gene_symbol = variant.gene.symbol  # "BRAF"
-gene_info = await gene_getter(gene_symbol)
+gene_info = await gene(action="get", id=gene_symbol)
 
 print(f"Gene: {gene_info.name}")
 print(f"Function: {gene_info.summary}")
@@ -210,7 +216,7 @@ diseases = variant.disease_associations
 
 for disease in diseases:
     # Get detailed disease info
-    disease_info = await disease_getter(disease.name)
+    disease_info = await disease(action="get", id=disease.name)
     print(f"Disease: {disease_info.name}")
     print(f"Definition: {disease_info.definition}")
     print(f"Synonyms: {', '.join(disease_info.synonyms)}")
@@ -223,7 +229,8 @@ for disease in diseases:
 gene = variant.gene.symbol
 mutation = variant.protein_change  # e.g., "V600E"
 
-trials = await trial_searcher(
+trials = await trial(
+    action="search",
     other_terms=[f"{gene} {mutation}", f"{gene} mutation"],
     recruiting_status="OPEN"
 )
@@ -242,10 +249,10 @@ async def analyze_cancer_variant(hgvs: str):
     )
 
     # Get variant details
-    variant = await variant_getter(hgvs, include_external=True)
+    variant = await variant(action="get", variant_id=hgvs, include_external=True)
 
     # Get gene context
-    gene = await gene_getter(variant.gene.symbol)
+    gene = await gene(action="get", id=variant.gene.symbol)
 
     # Search for targeted therapies
     drugs = await search(
@@ -254,7 +261,8 @@ async def analyze_cancer_variant(hgvs: str):
     )
 
     # Find relevant trials
-    trials = await trial_searcher(
+    trials = await trial(
+        action="search",
         other_terms=[
             variant.gene.symbol,
             variant.protein_change,
@@ -264,7 +272,8 @@ async def analyze_cancer_variant(hgvs: str):
     )
 
     # Search literature
-    articles = await article_searcher(
+    articles = await article(
+        action="search",
         genes=[variant.gene.symbol],
         variants=[hgvs],
         keywords=["therapy", "treatment", "resistance"]
@@ -284,7 +293,8 @@ async def analyze_cancer_variant(hgvs: str):
 ```python
 async def rare_disease_variant_analysis(gene: str, phenotype: str):
     # Find all pathogenic variants
-    variants = await variant_searcher(
+    variants = await variant(
+        action="search",
         gene=gene,
         significance=["pathogenic", "likely_pathogenic"],
         frequency_max=0.001  # Rare
@@ -294,7 +304,7 @@ async def rare_disease_variant_analysis(gene: str, phenotype: str):
     results = []
     for v in variants[:10]:  # Top 10
         # Get full annotations
-        full_variant = await variant_getter(v.id)
+        full_variant = await variant(action="get", variant_id=v.id)
 
         # Check phenotype associations
         if phenotype.lower() in str(full_variant.phenotypes).lower():
@@ -314,7 +324,7 @@ async def rare_disease_variant_analysis(gene: str, phenotype: str):
 ```python
 async def pharmacogenomic_analysis(drug_name: str):
     # Get drug information
-    drug = await drug_getter(drug_name)
+    drug = await drug(action="get", id=drug_name)
 
     # Find pharmGKB annotations
     pgx_variants = []
@@ -322,7 +332,8 @@ async def pharmacogenomic_analysis(drug_name: str):
     # Search for drug-related variants
     if drug.targets:
         for target in drug.targets:
-            variants = await variant_searcher(
+            variants = await variant(
+                action="search",
                 gene=target,
                 keywords=[drug_name, "pharmacogenomics", "drug response"]
             )
@@ -331,7 +342,7 @@ async def pharmacogenomic_analysis(drug_name: str):
     # Get detailed annotations
     annotated = []
     for v in pgx_variants:
-        full = await variant_getter(v.id)
+        full = await variant(action="get", variant_id=v.id)
         if full.pharmacogenomics:
             annotated.append(full)
 
@@ -428,7 +439,7 @@ identifiers = [
 
 for id in identifiers:
     try:
-        variant = await variant_getter(id)
+        variant = await variant(action="get", variant_id=id)
         break
     except:
         continue
@@ -450,13 +461,15 @@ else:
 
 ```python
 # Specify genome assembly
-variants_hg38 = await variant_searcher(
+variants_hg38 = await variant(
+    action="search",
     chromosome="7",
     start=140453136,
     assembly="hg38"
 )
 
-variants_hg19 = await variant_searcher(
+variants_hg19 = await variant(
+    action="search",
     chromosome="7",
     start=140153336,  # Different coordinate!
     assembly="hg19"

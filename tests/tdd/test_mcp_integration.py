@@ -17,43 +17,29 @@ class TestMCPIntegration:
         # Get the registered tools
         tools = await mcp_app.list_tools()
 
-        # Should have 35 tools (2 unified + 1 think + 32 individual including OpenFDA)
-        assert len(tools) == 35
+        # Should have 12 tools (3 core + 9 consolidated domain tools)
+        # Core: search, fetch, think
+        # Domain: fda, nci, gene, disease, drug, variant, alphagenome, trial, article
+        assert len(tools) == 12
 
         # Check tool names
         tool_names = [tool.name for tool in tools]
-        # Unified tools
+
+        # Core tools
         assert "search" in tool_names
         assert "fetch" in tool_names
         assert "think" in tool_names
-        # Individual tools
-        assert "article_searcher" in tool_names
-        assert "article_getter" in tool_names
-        assert "trial_searcher" in tool_names
-        assert "trial_getter" in tool_names
-        assert "trial_protocol_getter" in tool_names
-        assert "trial_references_getter" in tool_names
-        assert "trial_outcomes_getter" in tool_names
-        assert "trial_locations_getter" in tool_names
-        assert "variant_searcher" in tool_names
-        assert "variant_getter" in tool_names
-        assert "alphagenome_predictor" in tool_names
-        assert "gene_getter" in tool_names
-        assert "drug_getter" in tool_names
-        assert "disease_getter" in tool_names
-        # OpenFDA tools
-        assert "openfda_adverse_searcher" in tool_names
-        assert "openfda_adverse_getter" in tool_names
-        assert "openfda_label_searcher" in tool_names
-        assert "openfda_label_getter" in tool_names
-        assert "openfda_device_searcher" in tool_names
-        assert "openfda_device_getter" in tool_names
-        assert "openfda_approval_searcher" in tool_names
-        assert "openfda_approval_getter" in tool_names
-        assert "openfda_recall_searcher" in tool_names
-        assert "openfda_recall_getter" in tool_names
-        assert "openfda_shortage_searcher" in tool_names
-        assert "openfda_shortage_getter" in tool_names
+
+        # Consolidated domain tools (action-based)
+        assert "article" in tool_names
+        assert "trial" in tool_names
+        assert "variant" in tool_names
+        assert "alphagenome" in tool_names
+        assert "gene" in tool_names
+        assert "drug" in tool_names
+        assert "disease" in tool_names
+        assert "fda" in tool_names
+        assert "nci" in tool_names
 
     async def test_mcp_search_tool_schema(self):
         """Test the search tool schema."""

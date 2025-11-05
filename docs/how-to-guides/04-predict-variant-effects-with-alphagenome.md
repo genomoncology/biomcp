@@ -73,7 +73,8 @@ result = await client.variants.predict(
 )
 
 # MCP Tool
-result = await alphagenome_predictor(
+result = await alphagenome(
+    action="predict",
     chromosome="chr7",
     position=140753336,
     reference="A",
@@ -112,7 +113,8 @@ Predict effects in specific tissues using UBERON terms:
 
 ```python
 # Breast tissue analysis
-result = await alphagenome_predictor(
+result = await alphagenome(
+    action="predict",
     chromosome="chr17",
     position=41246481,
     reference="G",
@@ -142,7 +144,8 @@ tissues = [
 
 results = {}
 for tissue in tissues:
-    results[tissue] = await alphagenome_predictor(
+    results[tissue] = await alphagenome(
+        action="predict",
         chromosome="chr17",
         position=41246481,
         reference="G",
@@ -165,7 +168,8 @@ Different interval sizes capture different regulatory effects:
 
 ```python
 # Short-range (promoter effects)
-result_2kb = await alphagenome_predictor(
+result_2kb = await alphagenome(
+    action="predict",
     chromosome="chr7",
     position=140753336,
     reference="A",
@@ -174,7 +178,8 @@ result_2kb = await alphagenome_predictor(
 )
 
 # Medium-range (enhancer-promoter)
-result_128kb = await alphagenome_predictor(
+result_128kb = await alphagenome(
+    action="predict",
     chromosome="chr7",
     position=140753336,
     reference="A",
@@ -183,7 +188,8 @@ result_128kb = await alphagenome_predictor(
 )
 
 # Long-range (TAD-level effects)
-result_1mb = await alphagenome_predictor(
+result_1mb = await alphagenome(
+    action="predict",
     chromosome="chr7",
     position=140753336,
     reference="A",
@@ -215,14 +221,15 @@ async def analyze_vus(chromosome: str, position: int, ref: str, alt: str):
     # Step 2: Get variant annotations
     variant_id = f"{chromosome}:g.{position}{ref}>{alt}"
     try:
-        known_variant = await variant_getter(variant_id)
+        known_variant = await variant(action="get", variant_id=variant_id)
         if known_variant.clinical_significance:
             return f"Already classified: {known_variant.clinical_significance}"
     except:
         pass  # Variant not in databases
 
     # Step 3: Predict regulatory effects
-    prediction = await alphagenome_predictor(
+    prediction = await alphagenome(
+        action="predict",
         chromosome=chromosome,
         position=position,
         reference=ref,
@@ -239,7 +246,8 @@ async def analyze_vus(chromosome: str, position: int, ref: str, alt: str):
     # Step 5: Search literature
     if high_impact_genes:
         gene_symbols = [g.name for g in high_impact_genes[:3]]
-        articles = await article_searcher(
+        articles = await article(
+            action="search",
             genes=gene_symbols,
             keywords=["pathogenic", "disease", "mutation"]
         )
@@ -277,7 +285,8 @@ async def prioritize_noncoding_variants(variants: list[dict], disease_genes: lis
 
     for variant in variants:
         # Predict effects
-        prediction = await alphagenome_predictor(
+        prediction = await alphagenome(
+            action="predict",
             chromosome=variant["chr"],
             position=variant["pos"],
             reference=variant["ref"],
@@ -322,11 +331,12 @@ async def analyze_splicing_variant(gene: str, exon: int, variant_pos: int, ref: 
     """Analyze potential splicing effects of a variant"""
 
     # Get gene information
-    gene_info = await gene_getter(gene)
+    gene_info = await gene(action="get", id=gene)
     chromosome = f"chr{gene_info.genomic_location.chr}"
 
     # Predict splicing effects
-    prediction = await alphagenome_predictor(
+    prediction = await alphagenome(
+        action="predict",
         chromosome=chromosome,
         position=variant_pos,
         reference=ref,
@@ -346,7 +356,8 @@ async def analyze_splicing_variant(gene: str, exon: int, variant_pos: int, ref: 
             })
 
     # Search for similar splicing variants
-    articles = await article_searcher(
+    articles = await article(
+        action="search",
         genes=[gene],
         keywords=[f"exon {exon}", "splicing", "splice site"]
     )
@@ -381,7 +392,8 @@ async def analyze_enhancer_variant(chr: str, pos: int, ref: str, alt: str, targe
     """Analyze variant in potential enhancer region"""
 
     # Use larger window to capture enhancer-promoter interactions
-    prediction = await alphagenome_predictor(
+    prediction = await alphagenome(
+        action="predict",
         chromosome=chr,
         position=pos,
         reference=ref,
@@ -418,11 +430,12 @@ async def predict_drug_response_variant(drug_target: str, variant: dict):
     """Predict how variant affects drug target expression"""
 
     # Get drug information
-    drug_info = await drug_getter(drug_target)
+    drug_info = await drug(action="get", id=drug_target)
     target_genes = drug_info.targets
 
     # Predict variant effects
-    prediction = await alphagenome_predictor(
+    prediction = await alphagenome(
+        action="predict",
         chromosome=variant["chr"],
         position=variant["pos"],
         reference=variant["ref"],
@@ -470,7 +483,7 @@ position = 140753336  # ✅ 1-based
 
 ```python
 try:
-    result = await alphagenome_predictor(...)
+    result = await alphagenome(action="predict", ...)
 except Exception as e:
     if "API key" in str(e):
         print("Please provide AlphaGenome API key")
@@ -486,10 +499,11 @@ except Exception as e:
 # Complete variant analysis pipeline
 async def comprehensive_variant_analysis(variant_id: str):
     # 1. Get known annotations
-    known = await variant_getter(variant_id)
+    known = await variant(action="get", variant_id=variant_id)
 
     # 2. Predict regulatory effects
-    prediction = await alphagenome_predictor(
+    prediction = await alphagenome(
+        action="predict",
         chromosome=f"chr{known.chr}",
         position=known.pos,
         reference=known.ref,
@@ -497,13 +511,15 @@ async def comprehensive_variant_analysis(variant_id: str):
     )
 
     # 3. Search literature
-    articles = await article_searcher(
+    articles = await article(
+        action="search",
         variants=[variant_id],
         genes=[known.gene.symbol]
     )
 
     # 4. Find relevant trials
-    trials = await trial_searcher(
+    trials = await trial(
+        action="search",
         other_terms=[known.gene.symbol, "mutation"]
     )
 
