@@ -191,16 +191,18 @@ Actions: `search`, `get`
 trial(action="search", conditions=["lung cancer"], phase="PHASE3")
 
 # Get complete trial details
-trial(action="get", nct_id="NCT06524388")
+trial(action="get", id="NCT06524388")
 
-# Get specific sections
-trial(action="get_protocol", nct_id="NCT06524388")
-trial(action="get_locations", nct_id="NCT06524388")
-trial(action="get_outcomes", nct_id="NCT06524388")
-trial(action="get_references", nct_id="NCT06524388")
+# Get specific sections using detail parameter
+trial(action="get", id="NCT06524388", detail="protocol")
+trial(action="get", id="NCT06524388", detail="locations")
+trial(action="get", id="NCT06524388", detail="outcomes")
+trial(action="get", id="NCT06524388", detail="references")
+trial(action="get", id="NCT06524388", detail="all")
 ```
 
-Actions: `search`, `get`, `get_protocol`, `get_locations`, `get_outcomes`, `get_references`
+Actions: `search`, `get`
+Detail options: `protocol`, `locations`, `outcomes`, `references`, `all`
 
 #### 3. variant - Genetic Variants
 
@@ -209,7 +211,7 @@ Actions: `search`, `get`, `get_protocol`, `get_locations`, `get_outcomes`, `get_
 variant(action="search", gene="TP53", significance="pathogenic")
 
 # Get variant details
-variant(action="get", id="rs113488022")
+variant(action="get", variant_id="rs113488022")
 ```
 
 Actions: `search`, `get`
@@ -219,6 +221,7 @@ Actions: `search`, `get`
 ```python
 # Predict regulatory effects (requires alphagenome package)
 alphagenome(
+    action="predict",
     chromosome="chr7",
     position=140753336,
     reference="A",
@@ -227,13 +230,14 @@ alphagenome(
 )
 ```
 
+Actions: `predict`
 Optional tool requiring separate installation: `uv pip install alphagenome`
 
 #### 5. gene - Gene Information
 
 ```python
 # Get gene details
-gene(action="get", gene_id_or_symbol="TP53")
+gene(action="get", id="TP53")
 ```
 
 Actions: `get`
@@ -242,7 +246,7 @@ Actions: `get`
 
 ```python
 # Get disease details
-disease(action="get", disease_id_or_name="GIST")
+disease(action="get", id="GIST")
 ```
 
 Actions: `get`
@@ -251,7 +255,7 @@ Actions: `get`
 
 ```python
 # Get drug details
-drug(action="get", drug_id_or_name="aspirin")
+drug(action="get", id="aspirin")
 ```
 
 Actions: `get`
@@ -260,13 +264,22 @@ Actions: `get`
 
 ```python
 # Search adverse events
-fda(domain="adverse", action="search", brand_name="keytruda")
+fda(domain="adverse", action="search", drug="keytruda", serious=True)
 
-# Get drug label
-fda(domain="label", action="get", product_ndc="0069-0123")
+# Get drug label details
+fda(domain="label", action="get", id="set_id_here")
 
-# Search device events
-fda(domain="device", action="search", device_name="pacemaker")
+# Search device events (defaults to genomic devices)
+fda(domain="device", action="search", device="sequencing")
+
+# Search drug approvals
+fda(domain="approval", action="search", approval_year="2024")
+
+# Search recalls
+fda(domain="recall", action="search", recall_class="1")
+
+# Search drug shortages
+fda(domain="shortage", action="search", status="current")
 ```
 
 Domains: `adverse`, `label`, `device`, `approval`, `recall`, `shortage`
