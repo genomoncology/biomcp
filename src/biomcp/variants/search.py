@@ -81,6 +81,10 @@ class VariantQuery(BaseModel):
         default=None,
         description="Gene symbol to search for (e.g. BRAF, TP53)",
     )
+    hgvs: str | None = Field(
+        default=None,
+        description="General HGVS notation (genomic, coding, or protein)",
+    )
     hgvsp: str | None = Field(
         default=None,
         description="Protein change notation (e.g., p.V600E, p.Arg557His)",
@@ -136,8 +140,11 @@ class VariantQuery(BaseModel):
 
     @model_validator(mode="after")
     def validate_query_params(self) -> "VariantQuery":
-        if not self.model_dump(exclude_none=True, exclude_defaults=True):
-            raise ValueError("At least one search parameter is required")
+        # Exclude 'size' and 'offset' from validation as they're pagination params
+        data = self.model_dump(exclude_none=True, exclude={'size', 'offset'})
+        # If only size/offset remain, no actual search criteria were provided
+        if not any(v for k, v in data.items() if k not in {'size', 'offset'}):
+            raise ValueError("At least one search parameter is required (gene, hgvsp, rsid, region, etc.)")
         return self
 
 
@@ -156,7 +163,8 @@ def _construct_query_part(
 
 
 def build_query_string(query: VariantQuery) -> str:
-    query_parts: list[str] = list(filter(None, [query.region, query.rsid]))
+    # General HGVS can be used as-is for direct MyVariant.info search
+    query_parts: list[str] = list(filter(None, [query.region, query.rsid, query.hgvs]))
 
     query_params = [
         ("dbnsfp.genename", query.gene, None, True),
@@ -306,6 +314,9 @@ async def _variant_searcher(
     gene: Annotated[
         str | None, "Gene symbol to search for (e.g. BRAF, TP53)"
     ] = None,
+    hgvs: Annotated[
+        str | None, "General HGVS notation (genomic, coding, or protein)"
+    ] = None,
     hgvsp: Annotated[
         str | None, "Protein change notation (e.g., p.V600E, p.Arg557His)"
     ] = None,
@@ -361,6 +372,7 @@ async def _variant_searcher(
     # Convert individual parameters to a VariantQuery object
     query = VariantQuery(
         gene=gene,
+        hgvs=hgvs,
         hgvsp=hgvsp,
         hgvsc=hgvsc,
         rsid=rsid,

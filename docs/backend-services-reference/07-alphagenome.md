@@ -203,7 +203,8 @@ tissues = {
 
 results = {}
 for tissue_name, tissue_code in tissues.items():
-    results[tissue_name] = await alphagenome_predictor(
+    results[tissue_name] = await alphagenome(
+        action="predict",
         chromosome="chr17",
         position=7577120,
         reference="G",
@@ -216,7 +217,8 @@ for tissue_name, tissue_code in tissues.items():
 
 ```python
 # Use small window for promoter variants
-result = await alphagenome_predictor(
+result = await alphagenome(
+    action="predict",
     chromosome="chr7",
     position=5569100,  # Near ACTB promoter
     reference="C",
@@ -235,7 +237,8 @@ promoter_effects = [
 
 ```python
 # Use larger window for enhancer variants
-result = await alphagenome_predictor(
+result = await alphagenome(
+    action="predict",
     chromosome="chr8",
     position=128748315,  # MYC enhancer region
     reference="G",

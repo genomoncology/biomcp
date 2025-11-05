@@ -64,7 +64,7 @@ BioMCP integrates with multiple biomedical data sources:
 
 ## Available MCP Tools
 
-BioMCP provides 24 specialized tools for biomedical research:
+BioMCP provides 12 specialized tools for biomedical research:
 
 ### Core Tools (3)
 
@@ -168,45 +168,146 @@ fetch(domain="variant", id="rs113488022")
 - **Trials**: `detail` can be "protocol", "locations", "outcomes", "references", or "all"
 - **Variants**: Always returns full details
 
-### Individual Tools (21)
+### Domain Tools (9)
 
-For users who prefer direct access to specific functionality, BioMCP also provides 21 individual tools:
+BioMCP provides action-based consolidated tools for direct access to specific domains:
 
-#### Article Tools (2)
+#### 1. article - PubMed & Biomedical Literature
 
-- **article_searcher**: Search PubMed/PubTator3 and preprints
-- **article_getter**: Fetch detailed article information (supports PMID and DOI)
+```python
+# Search for articles
+article(action="search", genes=["BRAF"], diseases=["melanoma"])
 
-#### Trial Tools (5)
+# Get article details
+article(action="get", id="38768446")  # PMID, PMC ID, or DOI
+```
 
-- **trial_searcher**: Search ClinicalTrials.gov or NCI CTS API (via source parameter)
-- **trial_getter**: Fetch all trial details from either source
-- **trial_protocol_getter**: Fetch protocol information only (ClinicalTrials.gov)
-- **trial_references_getter**: Fetch trial publications (ClinicalTrials.gov)
-- **trial_outcomes_getter**: Fetch outcome measures and results (ClinicalTrials.gov)
-- **trial_locations_getter**: Fetch site locations and contacts (ClinicalTrials.gov)
+Actions: `search`, `get`
 
-#### Variant Tools (2)
+#### 2. trial - Clinical Trials
 
-- **variant_searcher**: Search MyVariant.info database
-- **variant_getter**: Fetch comprehensive variant details
+```python
+# Search for trials
+trial(action="search", conditions=["lung cancer"], phase="PHASE3")
 
-#### NCI-Specific Tools (6)
+# Get complete trial details
+trial(action="get", id="NCT06524388")
 
-- **nci_organization_searcher**: Search NCI's organization database
-- **nci_organization_getter**: Get organization details by ID
-- **nci_intervention_searcher**: Search NCI's intervention database (drugs, devices, procedures)
-- **nci_intervention_getter**: Get intervention details by ID
-- **nci_biomarker_searcher**: Search biomarkers used in trial eligibility criteria
-- **nci_disease_searcher**: Search NCI's controlled vocabulary of cancer conditions
+# Get specific sections using detail parameter
+trial(action="get", id="NCT06524388", detail="protocol")
+trial(action="get", id="NCT06524388", detail="locations")
+trial(action="get", id="NCT06524388", detail="outcomes")
+trial(action="get", id="NCT06524388", detail="references")
+trial(action="get", id="NCT06524388", detail="all")
+```
 
-#### Gene, Disease & Drug Tools (3)
+Actions: `search`, `get`
+Detail options: `protocol`, `locations`, `outcomes`, `references`, `all`
 
-- **gene_getter**: Get real-time gene information from MyGene.info
-- **disease_getter**: Get disease definitions and synonyms from MyDisease.info
-- **drug_getter**: Get drug/chemical information from MyChem.info
+#### 3. variant - Genetic Variants
 
-**Note**: All individual tools that search by gene automatically include cBioPortal summaries when the `include_cbioportal` parameter is True (default). Trial searches can expand disease conditions with synonyms when `expand_synonyms` is True (default).
+```python
+# Search for variants
+variant(action="search", gene="TP53", significance="pathogenic")
+
+# Get variant details
+variant(action="get", variant_id="rs113488022")
+```
+
+Actions: `search`, `get`
+
+#### 4. alphagenome - AI Variant Predictions
+
+```python
+# Predict regulatory effects (requires alphagenome package)
+alphagenome(
+    action="predict",
+    chromosome="chr7",
+    position=140753336,
+    reference="A",
+    alternate="T",
+    api_key="YOUR_KEY"
+)
+```
+
+Actions: `predict`
+Optional tool requiring separate installation: `uv pip install alphagenome`
+
+#### 5. gene - Gene Information
+
+```python
+# Get gene details
+gene(action="get", id="TP53")
+```
+
+Actions: `get`
+
+#### 6. disease - Disease Information
+
+```python
+# Get disease details
+disease(action="get", id="GIST")
+```
+
+Actions: `get`
+
+#### 7. drug - Drug/Chemical Information
+
+```python
+# Get drug details
+drug(action="get", id="aspirin")
+```
+
+Actions: `get`
+
+#### 8. fda - FDA Regulatory Data
+
+```python
+# Search adverse events
+fda(domain="adverse", action="search", drug="keytruda", serious=True)
+
+# Get drug label details
+fda(domain="label", action="get", id="set_id_here")
+
+# Search device events (defaults to genomic devices)
+fda(domain="device", action="search", device="sequencing")
+
+# Search drug approvals
+fda(domain="approval", action="search", approval_year="2024")
+
+# Search recalls
+fda(domain="recall", action="search", recall_class="1")
+
+# Search drug shortages
+fda(domain="shortage", action="search", status="current")
+```
+
+Domains: `adverse`, `label`, `device`, `approval`, `recall`, `shortage`
+Actions: `search`, `get`
+
+#### 9. nci - NCI Clinical Trials Databases
+
+```python
+# Search organizations
+nci(resource="organization", action="search", name="MD Anderson", api_key="YOUR_KEY")
+
+# Get organization details
+nci(resource="organization", action="get", id="ORG123", api_key="YOUR_KEY")
+
+# Search interventions
+nci(resource="intervention", action="search", name="pembrolizumab", api_key="YOUR_KEY")
+
+# Search biomarkers
+nci(resource="biomarker", action="search", name="PD-L1", api_key="YOUR_KEY")
+
+# Search diseases
+nci(resource="disease", action="search", name="melanoma", api_key="YOUR_KEY")
+```
+
+Resources: `organization`, `intervention`, `biomarker`, `disease`
+Actions: `search`, `get` (biomarker and disease support search only)
+
+**Note**: Tools that search by gene automatically include cBioPortal summaries when applicable. Use the `search` and `fetch` core tools for unified cross-domain queries.
 
 ## Quick Start
 
@@ -417,7 +518,7 @@ Learn more: [GenomOncology](https://genomoncology.com/)
 
 ```python
 # Get comprehensive gene information
-gene_getter(gene_id_or_symbol="TP53")
+gene(action="get", gene_id_or_symbol="TP53")
 # Returns: Official name, summary, aliases, links to databases
 ```
 
@@ -425,12 +526,13 @@ gene_getter(gene_id_or_symbol="TP53")
 
 ```python
 # Get disease information with synonyms
-disease_getter(disease_id_or_name="GIST")
+disease(action="get", disease_id_or_name="GIST")
 # Returns: "gastrointestinal stromal tumor" and other synonyms
 
-# Search trials with automatic synonym expansion
-trial_searcher(conditions=["GIST"], expand_synonyms=True)
-# Searches for: GIST OR "gastrointestinal stromal tumor" OR "GI stromal tumor"
+# Search trials (unified search tool can expand disease synonyms)
+search(domain="trial", conditions=["GIST"])
+# Or use direct trial tool
+trial(action="search", conditions=["GIST"])
 ```
 
 ### Integrated Biomedical Research
@@ -440,13 +542,13 @@ trial_searcher(conditions=["GIST"], expand_synonyms=True)
 think(thought="Analyzing BRAF V600E in melanoma treatment", thoughtNumber=1)
 
 # 2. Get gene context
-gene_getter("BRAF")
+gene(action="get", gene_id_or_symbol="BRAF")
 
 # 3. Search for pathogenic variants with OncoKB clinical interpretation (uses free demo server)
-variant_searcher(gene="BRAF", hgvsp="V600E", significance="pathogenic", include_oncokb=True)
+variant(action="search", gene="BRAF", hgvsp="V600E", significance="pathogenic", include_oncokb=True)
 
-# 4. Find relevant clinical trials with disease expansion
-trial_searcher(conditions=["melanoma"], interventions=["BRAF inhibitor"])
+# 4. Find relevant clinical trials
+trial(action="search", conditions=["melanoma"], interventions=["BRAF inhibitor"])
 ```
 
 ## Documentation

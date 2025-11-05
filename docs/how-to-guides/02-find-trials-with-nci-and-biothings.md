@@ -27,7 +27,8 @@ trials = await client.trials.search(
 )
 
 # MCP Tool
-trial_searcher(
+trial(
+    action="search",
     conditions=["melanoma"],
     recruiting_status="OPEN"
 )
@@ -56,7 +57,8 @@ trials = await client.trials.search(
 
 ```python
 # Find trials near Cleveland, Ohio
-trials = await trial_searcher(
+trials = await trial(
+    action="search",
     conditions=["lung cancer"],
     lat=41.4993,
     long=-81.6944,
@@ -64,7 +66,8 @@ trials = await trial_searcher(
 )
 
 # Find trials near Boston
-trials = await trial_searcher(
+trials = await trial(
+    action="search",
     conditions=["breast cancer"],
     lat=42.3601,
     long=-71.0589,
@@ -90,7 +93,8 @@ Combine multiple filters for precise results:
 
 ```python
 # Complex search example
-trials = await trial_searcher(
+trials = await trial(
+    action="search",
     conditions=["non-small cell lung cancer", "NSCLC"],
     interventions=["pembrolizumab", "immunotherapy"],
     phase="PHASE3",
@@ -143,7 +147,8 @@ trials = await search(
 
 ```python
 # Advanced NCI search
-trials = await trial_searcher(
+trials = await trial(
+    action="search",
     source="nci",
     conditions=["lung cancer"],
     required_mutations=["EGFR L858R", "EGFR exon 19 deletion"],
@@ -169,7 +174,7 @@ BioMCP automatically expands disease terms using MyDisease.info:
 # - "gastrointestinal stromal tumor"
 # - "gastrointestinal stromal tumour"
 # - "GI stromal tumor"
-trials = await trial_searcher(conditions=["GIST"])
+trials = await trial(action="search", conditions=["GIST"])
 ```
 
 ### Manual Disease Lookup
@@ -178,14 +183,14 @@ Get all synonyms for a disease:
 
 ```python
 # Get disease information
-disease_info = await disease_getter("melanoma")
+disease_info = await disease(action="get", id="melanoma")
 
 # Extract synonyms
 synonyms = disease_info.synonyms
 # Returns: ["malignant melanoma", "melanoma, malignant", ...]
 
 # Use in trial search
-trials = await trial_searcher(conditions=synonyms)
+trials = await trial(action="search", conditions=synonyms)
 ```
 
 ## Practical Workflows
@@ -208,12 +213,13 @@ async def find_trials_for_patient(
     )
 
     # Step 2: Get disease synonyms
-    disease_info = await disease_getter(disease)
+    disease_info = await disease(action="get", id=disease)
     all_conditions = [disease] + disease_info.synonyms
 
     # Step 3: Search both sources
     # ClinicalTrials.gov
-    ctgov_trials = await trial_searcher(
+    ctgov_trials = await trial(
+        action="search",
         conditions=all_conditions,
         other_terms=mutations,
         lat=location[0],
@@ -224,7 +230,8 @@ async def find_trials_for_patient(
 
     # NCI (if API key available)
     if os.getenv("NCI_API_KEY"):
-        nci_trials = await trial_searcher(
+        nci_trials = await trial(
+            action="search",
             source="nci",
             conditions=all_conditions,
             required_mutations=mutations,
@@ -253,10 +260,11 @@ Understand ongoing research in a field:
 ```python
 async def analyze_research_landscape(gene: str, disease: str):
     # Get gene information
-    gene_info = await gene_getter(gene)
+    gene_info = await gene(action="get", id=gene)
 
     # Find all active trials
-    all_trials = await trial_searcher(
+    all_trials = await trial(
+        action="search",
         conditions=[disease],
         other_terms=[gene, f"{gene} mutation", f"{gene} positive"],
         recruiting_status="OPEN",
@@ -295,7 +303,9 @@ async def biomarker_trial_search(biomarkers: list[str], cancer_type: str):
     # Search NCI biomarker database
     biomarker_results = []
     for biomarker in biomarkers:
-        result = await nci_biomarker_searcher(
+        result = await nci(
+            resource="biomarker",
+            action="search",
             name=biomarker,
             api_key=os.getenv("NCI_API_KEY")
         )
@@ -310,7 +320,7 @@ async def biomarker_trial_search(biomarkers: list[str], cancer_type: str):
     # Get trial details
     trials = []
     for nct_id in trial_ids:
-        trial = await trial_getter(nct_id)
+        trial = await trial(action="get", id=nct_id)
         trials.append(trial)
 
     return trials
@@ -350,13 +360,13 @@ for trial in trials:
 
 ```python
 # Get complete trial details
-full_trial = await trial_getter("NCT03006926")
+full_trial = await trial(action="get", id="NCT03006926")
 
 # Get specific sections
-protocol = await trial_protocol_getter("NCT03006926")
-locations = await trial_locations_getter("NCT03006926")
-outcomes = await trial_outcomes_getter("NCT03006926")
-references = await trial_references_getter("NCT03006926")
+protocol = await trial(action="get", id="NCT03006926", detail="protocol")
+locations = await trial(action="get", id="NCT03006926", detail="locations")
+outcomes = await trial(action="get", id="NCT03006926", detail="outcomes")
+references = await trial(action="get", id="NCT03006926", detail="references")
 ```
 
 ## Tips for Effective Trial Searches
@@ -365,7 +375,8 @@ references = await trial_references_getter("NCT03006926")
 
 ```python
 # Cover variations
-trials = await trial_searcher(
+trials = await trial(
+    action="search",
     conditions=["NSCLC", "non-small cell lung cancer", "lung adenocarcinoma"],
     interventions=["anti-PD-1", "pembrolizumab", "Keytruda"]
 )
@@ -375,8 +386,8 @@ trials = await trial_searcher(
 
 ```python
 # Some trials may only be in one database
-ctgov_count = len(await trial_searcher(source="ctgov", conditions=["melanoma"]))
-nci_count = len(await trial_searcher(source="nci", conditions=["melanoma"]))
+ctgov_count = len(await trial(action="search", source="ctgov", conditions=["melanoma"]))
+nci_count = len(await trial(action="search", source="nci", conditions=["melanoma"]))
 ```
 
 ### 3. Use Appropriate Filters
@@ -392,10 +403,11 @@ Always include location for patient-specific searches:
 
 ```python
 # Bad - no location
-trials = await trial_searcher(conditions=["cancer"])
+trials = await trial(action="search", conditions=["cancer"])
 
 # Good - includes location
-trials = await trial_searcher(
+trials = await trial(
+    action="search",
     conditions=["cancer"],
     lat=40.7128,
     long=-74.0060,

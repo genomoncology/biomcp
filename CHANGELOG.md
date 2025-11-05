@@ -5,6 +5,66 @@ All notable changes to the BioMCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed - BREAKING
+
+- **Tool Consolidation** - Major simplification of MCP tool interface (35 tools → 12 tools):
+  - **Action-Based Pattern**: All domain tools now use `action` parameter ("search" or "get")
+  - **Core Tools** (3): `search`, `fetch`, `think` - unchanged
+  - **Domain Tools** (4): `article`, `trial`, `variant`, `alphagenome`
+  - **BioThings Tools** (3): `gene`, `drug`, `disease`
+  - **Specialized Tools** (2): `fda`, `nci`
+
+- **Migration Guide** - Old → New tool patterns:
+  - `article_searcher(...)` → `article(action="search", ...)`
+  - `article_getter(pmid=...)` → `article(action="get", id=...)`
+  - `trial_searcher(...)` → `trial(action="search", ...)`
+  - `trial_getter(nct_id=...)` → `trial(action="get", id=...)`
+  - `trial_protocol_getter(nct_id=...)` → `trial(action="get", id=..., detail="protocol")`
+  - `variant_searcher(...)` → `variant(action="search", ...)`
+  - `variant_getter(variant_id=...)` → `variant(action="get", variant_id=...)`
+  - `alphagenome_predictor(...)` → `alphagenome(action="predict", ...)`
+  - `gene_getter(...)` → `gene(action="get", id=...)`
+  - `disease_getter(...)` → `disease(action="get", id=...)`
+  - `drug_getter(...)` → `drug(action="get", id=...)`
+  - `nci_organization_searcher(...)` → `nci(resource="organization", action="search", ...)`
+  - `nci_organization_getter(...)` → `nci(resource="organization", action="get", id=...)`
+  - `nci_intervention_searcher(...)` → `nci(resource="intervention", action="search", ...)`
+  - `nci_biomarker_searcher(...)` → `nci(resource="biomarker", action="search", ...)`
+  - `nci_disease_searcher(...)` → `nci(resource="disease", action="search", ...)`
+  - `openfda_adverse_searcher(...)` → `fda(domain="adverse", action="search", ...)`
+  - `openfda_adverse_getter(...)` → `fda(domain="adverse", action="get", id=...)`
+  - `openfda_label_searcher(...)` → `fda(domain="label", action="search", ...)`
+  - `openfda_device_searcher(...)` → `fda(domain="device", action="search", ...)`
+  - `openfda_approval_searcher(...)` → `fda(domain="approval", action="search", ...)`
+  - `openfda_recall_searcher(...)` → `fda(domain="recall", action="search", ...)`
+  - `openfda_shortage_searcher(...)` → `fda(domain="shortage", action="search", ...)`
+
+- **Benefits**:
+  - Simpler, more consistent API across all domains
+  - Easier to learn and remember tool patterns
+  - Reduced cognitive overhead for new users
+  - More maintainable codebase
+  - Follows industry-standard action-based design
+
+- **Documentation Updated**:
+  - Complete rewrite of MCP Tools Reference
+  - Updated all tutorials and how-to guides (18 files)
+  - Updated smithery.yaml configuration
+  - Updated README with new tool count and examples
+
+### Added
+
+- New consolidated tool implementations in `src/biomcp/tools/` directory
+- Comprehensive test coverage for consolidated tools (701 tests passing)
+- Parameter validation improvements across all tools
+
+### Fixed
+
+- Variant tool now properly supports `hgvs` parameter for general HGVS notation
+- FDA label tool now handles empty `sections` array parameter safely
+
 ## [0.6.7] - 2025-08-13
 
 ### Fixed
