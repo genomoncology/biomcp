@@ -961,7 +961,7 @@ async def _trial_searcher(
         conditions=ensure_list(conditions, split_strings=True),
         terms=ensure_list(terms, split_strings=True),
         interventions=ensure_list(interventions, split_strings=True),
-        lead_sponsor=ensure_list(lead_sponsor, split_strings=True), 
+        lead_sponsor=ensure_list(lead_sponsor, split_strings=True),
         recruiting_status=recruiting_status,
         study_type=study_type,
         nct_ids=ensure_list(nct_ids, split_strings=True),

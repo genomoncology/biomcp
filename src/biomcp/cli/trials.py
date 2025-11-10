@@ -122,15 +122,15 @@ def search_trials_cli(
         ),
     ] = None,
     lead_sponsor: Annotated[
-    list[str] | None,
-    typer.Option(
-        "--lead-sponsor",
-        "-l",
-        help="Lead sponsor organization name to search for (can specify multiple)",
-        show_choices=True,
-        show_default=True,
-        case_sensitive=False,
-    ),
+        list[str] | None,
+        typer.Option(
+            "--lead-sponsor",
+            "-l",
+            help="Lead sponsor organization name to search for (can specify multiple)",
+            show_choices=True,
+            show_default=True,
+            case_sensitive=False,
+        ),
     ] = None,
     term: Annotated[
         list[str] | None,
