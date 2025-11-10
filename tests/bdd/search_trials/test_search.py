@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Any
 
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -48,6 +49,11 @@ def trial_query_with_nct_id(nct_id: str) -> TrialQuery:
 @given(parsers.parse('I add intervention "{intervention}"'))
 def add_intervention(trial_query: TrialQuery, intervention: str):
     trial_query.interventions = [intervention]
+
+
+@given(parsers.parse('I add lead sponsor "{lead_sponsor}"'))
+def add_lead_sponsor(trial_query: TrialQuery, lead_sponsor: str):
+    trial_query.lead_sponsor = [lead_sponsor]
 
 
 @given(parsers.parse('I add nct_id "{nct_id}"'))
@@ -199,6 +205,44 @@ def check_nct_id(trial_results: dict[str, Any]):
 @then(parsers.parse('the study should include intervention "{intervention}"'))
 def check_intervention(trial_results: dict[str, Any], intervention: str):
     """Verify that studies are returned for the intervention query."""
+
+
+@then(parsers.parse('the study should have lead sponsor "{lead_sponsor}"'))
+def check_lead_sponsor(trial_results: str, lead_sponsor: str):
+    """Verify that studies have the expected lead sponsor."""
+    # Parse JSON string if needed
+    if isinstance(trial_results, str):
+        data = json.loads(trial_results)
+    else:
+        data = trial_results
+
+    # Validate that results were returned
+    assert data is not None, "No results returned"
+
+    # Handle both list format (direct studies) and dict format (with 'studies' key)
+    studies = data if isinstance(data, list) else data.get("studies", [])
+    assert len(studies) > 0, "Empty studies list"
+
+    # Check if at least one study has the expected lead sponsor
+    found = False
+    for study in studies:
+        # Try simplified JSON format first (has "Sponsor" field)
+        sponsor_name = study.get("Sponsor", "")
+
+        # If not found, try protocolSection format (raw API format)
+        if not sponsor_name:
+            protocol = study.get("protocolSection", {})
+            sponsor_module = protocol.get("sponsorCollaboratorsModule", {})
+            lead = sponsor_module.get("leadSponsor", {})
+            sponsor_name = lead.get("name", "")
+
+        if sponsor_name and lead_sponsor.lower() in sponsor_name.lower():
+            found = True
+            break
+
+    assert (
+        found
+    ), f"No study found with lead sponsor containing '{lead_sponsor}'"
 
 
 @then(parsers.parse('the study should be of type "{study_type}"'))

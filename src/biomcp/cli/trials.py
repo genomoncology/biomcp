@@ -121,6 +121,17 @@ def search_trials_cli(
             case_sensitive=False,
         ),
     ] = None,
+    lead_sponsor: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--lead-sponsor",
+            "-l",
+            help="Lead sponsor organization name to search for (can specify multiple)",
+            show_choices=True,
+            show_default=True,
+            case_sensitive=False,
+        ),
+    ] = None,
     term: Annotated[
         list[str] | None,
         typer.Option(
@@ -396,6 +407,7 @@ def search_trials_cli(
     query = TrialQuery(
         conditions=condition,
         interventions=intervention,
+        lead_sponsor=lead_sponsor,
         terms=term,
         nct_ids=nct_id,
         recruiting_status=recruiting_status,

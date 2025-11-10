@@ -75,6 +75,33 @@ async def test_convert_query_interventions_parameter():
 
 
 @pytest.mark.asyncio
+async def test_convert_query_lead_sponsor_parameter():
+    """Test conversion of lead_sponsor parameter to API format."""
+    query = TrialQuery(lead_sponsor=["Pfizer"])
+    params = await convert_query(query)
+
+    assert "query.lead" in params
+    assert params["query.lead"] == ["Pfizer"]
+
+
+@pytest.mark.asyncio
+async def test_convert_query_multiple_lead_sponsors():
+    """Test conversion of multiple lead sponsors to API format."""
+    query = TrialQuery(lead_sponsor=["Pfizer", "National Cancer Institute"])
+    params = await convert_query(query)
+
+    assert "query.lead" in params
+    # Multiple sponsors are combined with OR logic
+    assert len(params["query.lead"]) == 1
+    lead_value = params["query.lead"][0]
+    assert "Pfizer" in lead_value
+    assert "National Cancer Institute" in lead_value
+    assert " OR " in lead_value or lead_value.startswith(
+        "("
+    )  # OR or parenthesized format
+
+
+@pytest.mark.asyncio
 async def test_convert_query_nct_ids():
     """Test conversion of NCT IDs to API format."""
     query = TrialQuery(nct_ids=["NCT04179552"])
