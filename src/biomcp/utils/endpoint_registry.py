@@ -16,6 +16,7 @@ class EndpointCategory(str, Enum):
     CANCER_GENOMICS = "cancer_genomics"
     HEALTH_MONITORING = "health_monitoring"
     REGULATORY_DATA = "regulatory_data"
+    FUNCTIONAL_ENRICHMENT = "functional_enrichment"
 
 
 class DataType(str, Enum):
@@ -30,6 +31,8 @@ class DataType(str, Enum):
     ADVERSE_EVENTS = "adverse_events"
     DRUG_LABELS = "drug_labels"
     DEVICE_EVENTS = "device_events"
+    PATHWAY_ENRICHMENT = "pathway_enrichment"
+    ONTOLOGY_ENRICHMENT = "ontology_enrichment"
 
 
 @dataclass
@@ -549,6 +552,36 @@ class EndpointRegistry:
                 compliance_notes="Public FDA service, drug shortage status information",
                 rate_limit="Cached with 24-hour TTL",
                 authentication="None required",
+            ),
+        )
+
+        # Enrichr - Functional Enrichment Analysis
+        # Inspired by gget enrichr (https://github.com/pachterlab/gget)
+        self.register(
+            "enrichr_addlist",
+            EndpointInfo(
+                url="https://maayanlab.cloud/Enrichr/addList",
+                category=EndpointCategory.FUNCTIONAL_ENRICHMENT,
+                data_types=[DataType.GENE_ANNOTATIONS],
+                description="Enrichr API for submitting gene lists for enrichment analysis",
+                compliance_notes="Public Ma'ayan Lab service, gene list metadata only",
+                rate_limit="Not specified",
+            ),
+        )
+
+        self.register(
+            "enrichr_enrich",
+            EndpointInfo(
+                url="https://maayanlab.cloud/Enrichr/enrich",
+                category=EndpointCategory.FUNCTIONAL_ENRICHMENT,
+                data_types=[
+                    DataType.PATHWAY_ENRICHMENT,
+                    DataType.ONTOLOGY_ENRICHMENT,
+                    DataType.GENE_ANNOTATIONS,
+                ],
+                description="Enrichr API for retrieving functional enrichment results (pathways, ontologies, cell types)",
+                compliance_notes="Public Ma'ayan Lab service, functional annotation data. Inspired by gget enrichr (Luebbert & Pachter, 2023)",
+                rate_limit="Not specified",
             ),
         )
 

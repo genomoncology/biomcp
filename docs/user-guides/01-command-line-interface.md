@@ -342,19 +342,60 @@ For practical examples using BioThings integration, see [How to Find Trials with
 
 ### gene get
 
-Retrieve gene information from MyGene.info.
+Retrieve gene information from MyGene.info with optional functional enrichment analysis.
 
 ```bash
-biomcp gene get GENE_NAME
+biomcp gene get GENE_NAME [OPTIONS]
 ```
+
+**Options:**
+
+- `--enrich, -e TEXT`: Add functional enrichment analysis (pathway, ontology, celltypes, etc.)
+- `--json, -j`: Output in JSON format
+
+**Available Enrichment Types:**
+
+| Category      | Short Name              | Full Database Name         |
+| ------------- | ----------------------- | -------------------------- |
+| Pathways      | `pathway`               | KEGG_2021_Human            |
+|               | `kegg`                  | KEGG_2021_Human            |
+|               | `reactome`              | Reactome_2022              |
+|               | `wikipathways`          | WikiPathways_2024_Human    |
+| Gene Ontology | `ontology`              | GO_Biological_Process_2021 |
+|               | `go_process`            | GO_Biological_Process_2021 |
+|               | `go_molecular`          | GO_Molecular_Function_2021 |
+|               | `go_cellular`           | GO_Cellular_Component_2021 |
+| Cell Types    | `celltypes`             | PanglaoDB_Augmented_2021   |
+|               | `tissues`               | Human_Gene_Atlas           |
+| Diseases      | `diseases`              | DisGeNET                   |
+|               | `gwas`                  | GWAS_Catalog_2023          |
+| TFs           | `transcription_factors` | ChEA_2022                  |
+|               | `tf`                    | ChEA_2022                  |
 
 **Examples:**
 
 ```bash
-# Get gene information
+# Basic gene information
 biomcp gene get TP53
 biomcp gene get BRAF
+
+# With pathway enrichment
+biomcp gene get TP53 --enrich pathway
+
+# With Gene Ontology enrichment
+biomcp gene get BRCA1 --enrich ontology
+
+# With cell type associations
+biomcp gene get EGFR --enrich celltypes
+
+# Using full database name
+biomcp gene get TP53 --enrich KEGG_2021_Human
+
+# JSON output with enrichment
+biomcp gene get TP53 --enrich pathway --json
 ```
+
+**Note:** Enrichment analysis is powered by the Enrichr API and inspired by [gget enrichr](https://github.com/pachterlab/gget) (Luebbert & Pachter, 2023).
 
 ### drug get
 
