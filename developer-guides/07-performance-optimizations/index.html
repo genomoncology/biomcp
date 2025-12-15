@@ -2120,27 +2120,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#5-prefetching" class="md-nav__link">
+  <a href="#5-pagination-support" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Prefetching
+      5. Pagination Support
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#6-pagination-support" class="md-nav__link">
+  <a href="#6-conditional-metrics" class="md-nav__link">
     <span class="md-ellipsis">
-      6. Pagination Support
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-conditional-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. Conditional Metrics
+      6. Conditional Metrics
     </span>
   </a>
   
@@ -2717,27 +2708,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#5-prefetching" class="md-nav__link">
+  <a href="#5-pagination-support" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Prefetching
+      5. Pagination Support
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#6-pagination-support" class="md-nav__link">
+  <a href="#6-conditional-metrics" class="md-nav__link">
     <span class="md-ellipsis">
-      6. Pagination Support
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#7-conditional-metrics" class="md-nav__link">
-    <span class="md-ellipsis">
-      7. Conditional Metrics
+      6. Conditional Metrics
     </span>
   </a>
   
@@ -2867,7 +2849,7 @@
 <ul>
 <li><strong>65% faster test execution</strong> (from ~120s to ~42s)</li>
 <li><strong>Reduced API calls</strong> through intelligent caching and batching</li>
-<li><strong>Lower latency</strong> via connection pooling and prefetching</li>
+<li><strong>Lower latency</strong> via connection pooling</li>
 <li><strong>Better resource utilization</strong> with parallel processing</li>
 </ul>
 <h2 id="key-optimizations">Key Optimizations<a class="headerlink" href="#key-optimizations" title="Permanent link">&para;</a></h2>
@@ -2907,22 +2889,14 @@
 <li>Cache size: 1000 entries (configurable)</li>
 <li>TTL: 5-30 minutes depending on data type</li>
 </ul>
-<h3 id="5-prefetching">5. Prefetching<a class="headerlink" href="#5-prefetching" title="Permanent link">&para;</a></h3>
-<p>Common entities are prefetched on startup to warm caches:</p>
-<ul>
-<li>Top genes: BRAF, EGFR, TP53, KRAS, etc.</li>
-<li>Common diseases: lung cancer, breast cancer, etc.</li>
-<li>Frequent chemicals: osimertinib, pembrolizumab, etc.</li>
-</ul>
-<p><strong>Impact:</strong> First queries for common entities are instant</p>
-<h3 id="6-pagination-support">6. Pagination Support<a class="headerlink" href="#6-pagination-support" title="Permanent link">&para;</a></h3>
+<h3 id="5-pagination-support">5. Pagination Support<a class="headerlink" href="#5-pagination-support" title="Permanent link">&para;</a></h3>
 <p>Europe PMC searches now use pagination for large result sets:</p>
 <ul>
 <li>Optimal page size: 25 results</li>
 <li>Progressive loading</li>
 <li>Memory-efficient processing</li>
 </ul>
-<h3 id="7-conditional-metrics">7. Conditional Metrics<a class="headerlink" href="#7-conditional-metrics" title="Permanent link">&para;</a></h3>
+<h3 id="6-conditional-metrics">6. Conditional Metrics<a class="headerlink" href="#6-conditional-metrics" title="Permanent link">&para;</a></h3>
 <p>Performance metrics are only collected when explicitly enabled, reducing overhead.</p>
 <p><strong>Configuration:</strong></p>
 <ul>
@@ -3011,7 +2985,6 @@
 <ol>
 <li>Reduce cache size in <code>request_cache.py</code></li>
 <li>Lower connection pool limits</li>
-<li>Disable prefetching by removing the lifespan hook</li>
 </ol>
 <h3 id="performance-regression">Performance Regression<a class="headerlink" href="#performance-regression" title="Permanent link">&para;</a></h3>
 <p>To identify performance issues:</p>
