@@ -31,12 +31,13 @@ Options:
 | **article**      | search, get          | Search and retrieve biomedical literature       |
 | **trial**        | search, get          | Find and fetch clinical trial information       |
 | **variant**      | search, get, predict | Analyze genetic variants and predict effects    |
-| **gene**         | get                  | Retrieve gene information and annotations       |
-| **drug**         | get                  | Look up drug/chemical information               |
-| **disease**      | get                  | Get disease definitions and synonyms            |
+| **gene**         | get, search          | Retrieve gene information and annotations       |
+| **disease**      | get, search          | Get disease definitions and synonyms            |
+| **drug**         | get, search          | Retrieve drug information from MyChem.info      |
 | **organization** | search               | Search NCI organization database                |
 | **intervention** | search               | Find interventions (drugs, devices, procedures) |
 | **biomarker**    | search               | Search biomarkers used in trials                |
+| **openfda**      | various              | Search FDA data (adverse events, drug labels)   |
 | **health**       | check                | Monitor API status and system health            |
 
 ## Article Commands
@@ -336,40 +337,72 @@ biomcp variant predict chr7 140753336 A T \
 biomcp variant predict chr7 140753336 A T --api-key YOUR_KEY
 ```
 
-## Gene/Drug/Disease Commands
+## Gene/Disease Commands
 
 For practical examples using BioThings integration, see [How to Find Trials with NCI and BioThings](../how-to-guides/02-find-trials-with-nci-and-biothings.md#biothings-integration-for-enhanced-search).
 
 ### gene get
 
-Retrieve gene information from MyGene.info.
+Retrieve gene information from MyGene.info with optional functional enrichment analysis.
 
 ```bash
-biomcp gene get GENE_NAME
+biomcp gene get GENE_NAME [OPTIONS]
 ```
+
+**Options:**
+
+- `--enrich TEXT`: Enrichment analysis type (feature in development)
+- `--json, -j`: Output in JSON format
+
+**Available enrichment types (feature in development):**
+
+- pathway, kegg, reactome, wikipathways
+- ontology, go_process, go_molecular, go_cellular
+- celltypes, tissues
+- diseases, gwas
+- transcription_factors, tf
 
 **Examples:**
 
 ```bash
-# Get gene information
+# Get basic gene information
 biomcp gene get TP53
 biomcp gene get BRAF
+
+# Gene information with enrichment (feature in development)
+biomcp gene get TP53 --enrich pathway
+biomcp gene get BRCA1 --enrich ontology
+biomcp gene get EGFR --enrich celltypes
+
+# JSON output
+biomcp gene get TP53 --json
 ```
 
-### drug get
+### gene search
 
-Retrieve drug/chemical information from MyChem.info.
+Search for genes in MyGene.info database.
 
 ```bash
-biomcp drug get DRUG_NAME
+biomcp gene search QUERY [OPTIONS]
 ```
+
+**Options:**
+
+- `--page, -p INTEGER`: Page number (default: 1)
+- `--page-size INTEGER`: Results per page (default: 10, max: 100)
+- `--json, -j`: Output in JSON format
 
 **Examples:**
 
 ```bash
-# Get drug information
-biomcp drug get imatinib
-biomcp drug get pembrolizumab
+# Search by gene symbol
+biomcp gene search TP53
+
+# Search by gene name
+biomcp gene search "tumor protein"
+
+# Search with pagination
+biomcp gene search kinase --page 2 --page-size 20
 ```
 
 ### disease get
@@ -386,7 +419,116 @@ biomcp disease get DISEASE_NAME
 # Get disease information
 biomcp disease get melanoma
 biomcp disease get "non-small cell lung cancer"
+biomcp disease get GIST
 ```
+
+### disease search
+
+Search for diseases in MyDisease.info or NCI CTS database.
+
+```bash
+biomcp disease search [NAME] [OPTIONS]
+```
+
+**Options:**
+
+- `--source TEXT`: Data source: 'mydisease' (default) or 'nci'
+- `--category TEXT`: Disease category/type filter (NCI only)
+- `--page INTEGER`: Page number (default: 1)
+- `--page-size INTEGER`: Results per page (default: 20, max: 100)
+- `--api-key TEXT`: NCI API key (required for NCI source)
+
+**Examples:**
+
+```bash
+# Search MyDisease.info (default)
+biomcp disease search melanoma
+
+# Search NCI cancer terms
+biomcp disease search melanoma --source nci
+
+# Filter by category
+biomcp disease search --category neoplasm --source nci
+```
+
+## Drug Commands
+
+Retrieve comprehensive drug information from MyChem.info, which aggregates data from multiple sources including DrugBank, ChEMBL, PubChem, and more.
+
+### drug get
+
+Retrieve detailed drug information by name or identifier.
+
+```bash
+biomcp drug get DRUG_ID_OR_NAME [OPTIONS]
+```
+
+**Arguments:**
+
+- `DRUG_ID_OR_NAME`: Drug name, trade name, or identifier (DrugBank ID, ChEMBL ID, PubChem CID)
+
+**Options:**
+
+- `--json, -j`: Output in JSON format
+
+**Examples:**
+
+```bash
+# Get drug information by name
+biomcp drug get imatinib
+biomcp drug get aspirin
+
+# Get drug by identifier
+biomcp drug get DB00945  # DrugBank ID
+biomcp drug get CHEMBL25  # ChEMBL ID
+
+# JSON output for programmatic use
+biomcp drug get imatinib --json
+```
+
+**Output includes:**
+
+- Drug identifiers (DrugBank, ChEMBL, PubChem, ChEBI, UNII)
+- Description and mechanism of action
+- Trade names and synonyms
+- Chemical properties
+- Links to external databases
+
+### drug search
+
+Search for drugs in the MyChem.info database.
+
+```bash
+biomcp drug search QUERY [OPTIONS]
+```
+
+**Arguments:**
+
+- `QUERY`: Drug name, trade name, or search term
+
+**Options:**
+
+- `--page, -p INTEGER`: Page number (default: 1)
+- `--page-size INTEGER`: Results per page (default: 10, max: 100)
+- `--json, -j`: Output in JSON format
+
+**Examples:**
+
+```bash
+# Search by drug name
+biomcp drug search imatinib
+
+# Search by partial name
+biomcp drug search "kinase inhibitor"
+
+# Search with pagination
+biomcp drug search aspirin --page 2 --page-size 20
+
+# JSON output
+biomcp drug search imatinib --json
+```
+
+**Note:** Full search with pagination is currently in development. The search currently returns basic drug information for the query term.
 
 ## NCI-Specific Commands
 

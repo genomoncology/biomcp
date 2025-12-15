@@ -80,20 +80,34 @@ biomcp variant get "NM_007294.4:c.5266dupC"
 biomcp variant predict chr7 140753336 A T --tissue UBERON:0002367
 ```
 
-### Gene/Drug/Disease Commands
+### Gene/Disease/Drug Commands
 
 ```bash
 # Get gene information
 biomcp gene get TP53
 biomcp gene get BRAF
 
-# Get drug information
-biomcp drug get imatinib
-biomcp drug get pembrolizumab
+# Search genes
+biomcp gene search "tumor protein"
+
+# Gene enrichment (feature in development)
+biomcp gene get TP53 --enrich pathway
 
 # Get disease information
 biomcp disease get melanoma
 biomcp disease get "non-small cell lung cancer"
+
+# Search diseases
+biomcp disease search melanoma
+biomcp disease search melanoma --source nci  # NCI cancer terms
+
+# Get drug information
+biomcp drug get imatinib
+biomcp drug get DB00945  # DrugBank ID
+biomcp drug get --json imatinib  # JSON output
+
+# Search drugs
+biomcp drug search "kinase inhibitor"
 ```
 
 ### NCI Commands (Require API Key)
@@ -269,9 +283,9 @@ biomcp article search --gene BRCA1 --format json > results.json
 
 ### BioThings Tools
 
-- `gene_getter`
-- `disease_getter`
-- `drug_getter`
+- `gene_details` - Get gene information
+- `disease_details` - Get disease information
+- `drug_details` - Get drug information
 
 ### NCI Tools
 
@@ -336,6 +350,19 @@ biomcp variant get rs80357906
 
 # Step 3: Search related articles
 biomcp article search --gene BRCA1 --variant rs80357906
+```
+
+### Drug Research
+
+```bash
+# Step 1: Get drug information
+biomcp drug get imatinib
+
+# Step 2: Search related articles
+biomcp article search --chemical imatinib
+
+# Step 3: Find clinical trials
+biomcp trial search --keyword "imatinib"
 ```
 
 ## Error Code Quick Reference
