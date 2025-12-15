@@ -1,4 +1,5 @@
 import importlib.metadata
+import logging
 from typing import Annotated
 
 import typer
@@ -107,12 +108,30 @@ def main_callback(
             help="Show the application's version and exit.",
         ),
     ] = None,  # Default value
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            "-v",
+            help="Enable verbose logging (show INFO level messages)",
+            is_eager=True,
+        ),
+    ] = False,
 ):
     """
-    BioMCP main application callback. Handles global options like --version.
+    BioMCP main application callback. Handles global options like --version and --verbose.
     """
-    # The actual logic is in version_callback due to is_eager=True
-    pass
+    # Configure logging based on verbose flag
+    # Set level for all biomcp loggers
+    biomcp_logger = logging.getLogger("biomcp")
+
+    if verbose:
+        biomcp_logger.setLevel(logging.INFO)
+        logging.getLogger().setLevel(logging.INFO)
+    else:
+        # Default: Only show WARNING and above
+        biomcp_logger.setLevel(logging.WARNING)
+        logging.getLogger().setLevel(logging.WARNING)
 
 
 # --- Add Explicit 'version' Command ---
