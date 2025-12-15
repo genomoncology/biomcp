@@ -282,7 +282,9 @@ async function validateToken(token, env, expectedIssuer = null) {
       const secret = encoder.encode(env.JWT_SECRET || "default-jwt-secret-key");
 
       // Accept either URL-based issuer or legacy STYTCH_PROJECT_ID issuer
-      const validIssuers = [expectedIssuer, env.STYTCH_PROJECT_ID].filter(Boolean);
+      const validIssuers = [expectedIssuer, env.STYTCH_PROJECT_ID].filter(
+        Boolean,
+      );
       const result = await jwtVerify(token, secret, {
         issuer: validIssuers,
       });
@@ -542,14 +544,20 @@ const stytchBearerTokenAuthMiddleware = async (c, next) => {
   } catch (error) {
     log(`Token validation detailed error: ${error.code} ${error.message}`);
     const url = new URL(c.req.url);
-    return new Response(JSON.stringify({ error: "invalid_token", error_description: error.message }), {
-      status: 401,
-      headers: {
-        "Content-Type": "application/json",
-        "WWW-Authenticate": `Bearer realm="${url.origin}", error="invalid_token"`,
-        ...CORS,
+    return new Response(
+      JSON.stringify({
+        error: "invalid_token",
+        error_description: error.message,
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+          "WWW-Authenticate": `Bearer realm="${url.origin}", error="invalid_token"`,
+          ...CORS,
+        },
       },
-    });
+    );
   }
 
   return next();
