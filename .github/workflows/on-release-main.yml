@@ -24,7 +24,7 @@ jobs:
         if: ${{ github.event_name == 'release' }}
 
       - name: Upload updated pyproject.toml
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: pyproject-toml
           path: pyproject.toml
