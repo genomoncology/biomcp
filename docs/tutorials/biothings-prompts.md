@@ -24,7 +24,7 @@ All four services share common infrastructure through the BioThings client modul
 "What does the BRCA1 gene do?"
 ```
 
-**Expected tool usage**: `gene_getter("TP53")` → Returns official name, summary, aliases
+**Expected tool usage**: `gene(action="get", id="TP53")` → Returns official name, summary, aliases
 
 ### Gene by ID
 
@@ -33,7 +33,7 @@ All four services share common infrastructure through the BioThings client modul
 "What is gene 673?"
 ```
 
-**Expected tool usage**: `gene_getter("7157")` → Returns TP53 information
+**Expected tool usage**: `gene(action="get", id="7157")` → Returns TP53 information
 
 ### Gene Context for Research
 
@@ -54,7 +54,7 @@ All four services share common infrastructure through the BioThings client modul
 "What is Erdheim-Chester disease?"
 ```
 
-**Expected tool usage**: `disease_getter("GIST")` → Returns definition, synonyms, ontology IDs
+**Expected tool usage**: `disease(action="get", id="GIST")` → Returns definition, synonyms, ontology IDs
 
 ### Disease by Ontology ID
 
@@ -63,7 +63,7 @@ All four services share common infrastructure through the BioThings client modul
 "What is DOID:1909?"
 ```
 
-**Expected tool usage**: `disease_getter("MONDO:0018076")` → Returns disease information
+**Expected tool usage**: `disease(action="get", id="MONDO:0018076")` → Returns disease information
 
 ### Disease Synonyms for Research
 
@@ -85,7 +85,7 @@ MyVariant.info is part of the BioThings suite and provides comprehensive variant
 "Look up variant chr7:140453136-140453136"
 ```
 
-**Expected tool usage**: `variant_getter("rs7412")` → Returns variant annotations with external database links
+**Expected tool usage**: `variant(action="get", variant_id="rs7412")` → Returns variant annotations with external database links
 
 ### Variant Search with Filters
 
@@ -95,7 +95,7 @@ MyVariant.info is part of the BioThings suite and provides comprehensive variant
 "Get all loss-of-function variants in KRAS"
 ```
 
-**Expected tool usage**: `variant_searcher(gene="TP53", significance="pathogenic")` → Returns filtered variant list
+**Expected tool usage**: `variant(action="search", gene="TP53", significance="pathogenic")` → Returns filtered variant list
 
 ### Variant with Cancer Context
 
