@@ -107,7 +107,7 @@ While BioMCP works without API keys, some features require them for full functio
 
 Enables access to NCI's clinical trials database with advanced filters:
 
-- Get your key from [NCI API Portal](https://api.cancer.gov)
+- Get your key from [NCI API Portal](https://clinicaltrialsapi.cancer.gov)
 - Add to configuration as `NCI_API_KEY`
 
 ### AlphaGenome API Key (Optional)

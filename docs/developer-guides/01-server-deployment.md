@@ -524,7 +524,7 @@ kill -9 <PID>
 env | grep -E "(NCI|ALPHAGENOME|CBIO)"
 
 # Test API key
-curl -H "X-API-KEY: $NCI_API_KEY" https://api.cancer.gov/v2/trials
+curl -H "X-API-KEY: $NCI_API_KEY" https://clinicaltrialsapi.cancer.gov/api/v2/trials
 ```
 
 3. **Connection Timeouts:**

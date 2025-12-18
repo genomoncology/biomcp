@@ -329,7 +329,7 @@ trials = await client.trials.search(
     "type": "NCI_API_REQUIRED",
     "message": "NCI API key required for this operation",
     "details": {
-      "get_key_url": "https://api.cancer.gov",
+      "get_key_url": "https://clinicaltrialsapi.cancer.gov",
       "feature": "biomarker_search"
     }
   }

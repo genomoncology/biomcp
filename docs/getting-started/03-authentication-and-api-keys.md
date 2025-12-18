@@ -6,7 +6,7 @@ BioMCP integrates with multiple biomedical databases. While many features work w
 
 | Service         | Required?  | Features Enabled                                  | Get Key                                                                |
 | --------------- | ---------- | ------------------------------------------------- | ---------------------------------------------------------------------- |
-| **NCI API**     | Optional   | Advanced clinical trial filters, biomarker search | [api.cancer.gov](https://api.cancer.gov)                               |
+| **NCI API**     | Optional   | Advanced clinical trial filters, biomarker search | [clinicaltrialsapi.cancer.gov](https://clinicaltrialsapi.cancer.gov)   |
 | **AlphaGenome** | Required\* | Variant effect predictions                        | [deepmind.google.com](https://deepmind.google.com/science/alphagenome) |
 | **cBioPortal**  | Optional   | Enhanced cancer genomics queries                  | [cbioportal.org](https://www.cbioportal.org/webAPI)                    |
 | **OncoKB**      | Optional   | Clinical actionability for all genes              | [oncokb.org](https://www.oncokb.org/licensing)                         |
@@ -80,7 +80,7 @@ The National Cancer Institute API provides advanced clinical trial search capabi
 
 #### Getting Your Key
 
-1. Visit [api.cancer.gov](https://api.cancer.gov)
+1. Visit [clinicaltrialsapi.cancer.gov](https://clinicaltrialsapi.cancer.gov)
 2. Click "Get API Key"
 3. Complete registration
 4. Key is emailed immediately
@@ -246,7 +246,7 @@ git secrets --register-aws  # Detects common key patterns
 
 - Basic search works without key
 - Advanced features require authentication
-- Verify key is active at api.cancer.gov
+- Verify key is active at clinicaltrialsapi.cancer.gov
 
 ### "Invalid API Key" Errors
 
