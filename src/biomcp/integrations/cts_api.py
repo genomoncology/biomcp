@@ -26,8 +26,7 @@ def _validate_api_key(api_key: str | None) -> str:
         raise CTSAPIError(
             f"NCI API key required. Please set {NCI_API_KEY_ENV} environment "
             "variable or provide api_key parameter.\n"
-            "Get a free API key at: https://www.cancer.gov/research/participate/"
-            "clinical-trials-search/developers"
+            "Get a free API key at: https://clinicaltrialsapi.cancer.gov"
         )
 
     return api_key
@@ -152,7 +151,7 @@ def get_api_key_instructions() -> str:
         "biomcp trial search --api-key YOUR_KEY --condition melanoma\n"
         "```\n\n"
         "**Get your free API key:**\n"
-        "Visit https://www.cancer.gov/research/participate/clinical-trials-search/developers\n\n"
+        "Visit https://clinicaltrialsapi.cancer.gov\n\n"
         "The API key provides access to NCI's comprehensive cancer clinical trials "
         "database with advanced search capabilities."
     )
