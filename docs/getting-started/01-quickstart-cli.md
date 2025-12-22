@@ -31,7 +31,7 @@ Let's search for recent articles about BRAF mutations in melanoma:
 
 ```bash
 biomcp article search \
-  --gene BRAF --disease melanoma --limit 5
+  --gene BRAF --disease melanoma
 ```
 
 This command:
@@ -63,7 +63,7 @@ Find active trials for lung cancer:
 ```bash
 biomcp trial search \
   --condition "lung cancer" \
-  --status open --limit 5
+  --status open
 ```
 
 ### Get Gene Information
@@ -88,8 +88,7 @@ Find pathogenic variants in the BRCA1 gene:
 
 ```bash
 biomcp variant search \
-  --gene BRCA1 --significance pathogenic \
-  --limit 5
+  --gene BRCA1 --significance pathogenic
 ```
 
 ### Analyze a Clinically Actionable Variant
