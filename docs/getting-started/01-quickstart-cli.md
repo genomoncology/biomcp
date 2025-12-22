@@ -16,13 +16,13 @@ Get started with BioMCP in under 5 minutes! This guide walks you through install
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install BioMCP
-uv tool install biomcp
+uv tool install biomcp-python
 ```
 
 ### Option 2: Using pip
 
 ```bash
-pip install biomcp
+pip install biomcp-python
 ```
 
 ## Your First Search
