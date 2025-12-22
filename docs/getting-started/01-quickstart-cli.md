@@ -71,7 +71,8 @@ biomcp trial search \
 Retrieve details about the TP53 tumor suppressor:
 
 ```bash
-biomcp gene get TP53
+biomcp variant search --gene TP53 # get variants for a gene
+biomcp article search --gene TP53 # find articles about a gene
 ```
 
 ### Look Up Drug Information
@@ -79,7 +80,7 @@ biomcp gene get TP53
 Get details about imatinib (Gleevec):
 
 ```bash
-biomcp drug get imatinib
+biomcp intervention search imatinib
 ```
 
 ### Search for Genetic Variants
