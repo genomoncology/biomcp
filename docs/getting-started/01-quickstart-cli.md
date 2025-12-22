@@ -63,7 +63,7 @@ Find active trials for lung cancer:
 ```bash
 biomcp trial search \
   --condition "lung cancer" \
-  --status RECRUITING --limit 5
+  --status open --limit 5
 ```
 
 ### Get Gene Information
