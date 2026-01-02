@@ -449,7 +449,7 @@ async function proxyPost(req, remoteServerUrl, path, sid) {
   const headers = {
     "Content-Type": "application/json",
     Accept: acceptHeader,
-    "User-Agent": "Claude/1.0",
+    "User-Agent": "BioMCP-Proxy/1.0",
   };
 
   try {
@@ -1342,7 +1342,7 @@ app
         method: "GET",
         headers: {
           Accept: "text/event-stream",
-          "User-Agent": "Claude/1.0",
+          "User-Agent": "BioMCP-Proxy/1.0",
         },
       });
 
