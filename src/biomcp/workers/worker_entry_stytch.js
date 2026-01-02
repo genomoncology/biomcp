@@ -438,9 +438,8 @@ async function processAuthCallback(c, token, state, oauthRequest) {
 // Function to proxy POST requests to remote MCP server
 async function proxyPost(req, remoteServerUrl, path, sid) {
   const body = await req.text();
-  const targetUrl = `${remoteServerUrl}${path}?session_id=${encodeURIComponent(
-    sid,
-  )}`;
+  const targetUrl = new URL(`${remoteServerUrl}${path}`);
+  targetUrl.searchParams.set("session_id", sid);
 
   // Streamable HTTP requires both application/json and text/event-stream
   // The server will decide which format to use based on the response type
@@ -833,14 +832,10 @@ app
       }
 
       // Redirect to Stytch's hosted login UI
-      const stytchLoginUrl = `${
-        c.env.STYTCH_OAUTH_URL ||
-        "https://test.stytch.com/v1/public/oauth/google/start"
-      }?public_token=${
-        c.env.STYTCH_PUBLIC_TOKEN
-      }&login_redirect_url=${encodeURIComponent(
-        redirectUrl,
-      )}&state=${encodeURIComponent(state)}`;
+      const stytchLoginUrl = new URL(c.env.STYTCH_OAUTH_URL || "https://test.stytch.com/v1/public/oauth/google/start");
+      stytchLoginUrl.searchParams.set("public_token", c.env.STYTCH_PUBLIC_TOKEN);
+      stytchLoginUrl.searchParams.set("login_redirect_url", redirectUrl);
+      stytchLoginUrl.searchParams.set("state", state);
 
       log(`Redirecting to Stytch: ${stytchLoginUrl}`);
       return Response.redirect(stytchLoginUrl, 302);
@@ -1331,10 +1326,9 @@ app
       });
     }
 
-    // Proxy the GET request to the backend's /mcp endpoint for streaming
-    const targetUrl = `${REMOTE_MCP_SERVER_URL}/mcp?session_id=${encodeURIComponent(
-      sessionId,
-    )}`;
+    const targetUrl = new URL(`${REMOTE_MCP_SERVER_URL}/mcp`);
+    targetUrl.searchParams.set("session_id", sessionId);
+
     log(`Proxying GET /mcp to: ${targetUrl}`);
 
     try {
