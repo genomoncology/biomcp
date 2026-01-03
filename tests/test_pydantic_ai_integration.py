@@ -411,3 +411,281 @@ async def test_health_endpoint():
     finally:
         server_process.terminate()
         server_process.wait(timeout=5)
+
+
+@requires_worker
+@pytest.mark.asyncio
+async def test_auth_token_required():
+    """Test that requests without auth fail when MCP_AUTH_TOKEN is set."""
+    import subprocess
+
+    port = get_free_port()
+    token = "test_auth_token_" + "a" * 16  # 32 chars total
+
+    # Start server with auth token
+    env = os.environ.copy()
+    env["MCP_AUTH_TOKEN"] = token
+
+    server_process = subprocess.Popen(  # noqa: S603
+        [
+            sys.executable,
+            "-m",
+            "biomcp",
+            "run",
+            "--mode",
+            "streamable_http",
+            "--port",
+            str(port),
+        ],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    try:
+        # Wait for server to be ready (health endpoint bypasses auth)
+        await wait_for_server(
+            f"http://localhost:{port}/health", process=server_process
+        )
+
+        async with httpx.AsyncClient() as client:
+            # Request without auth should fail
+            response = await client.post(
+                f"http://localhost:{port}/mcp",
+                json={"jsonrpc": "2.0", "method": "initialize", "id": 1},
+            )
+            assert response.status_code == 401
+            data = response.json()
+            assert data["error"] == "unauthorized"
+
+    finally:
+        server_process.terminate()
+        server_process.wait(timeout=5)
+
+
+@requires_worker
+@pytest.mark.asyncio
+async def test_auth_token_valid():
+    """Test that requests with valid auth succeed when MCP_AUTH_TOKEN is set."""
+    import subprocess
+
+    port = get_free_port()
+    token = "test_auth_token_" + "b" * 16  # 32 chars total
+
+    env = os.environ.copy()
+    env["MCP_AUTH_TOKEN"] = token
+
+    server_process = subprocess.Popen(  # noqa: S603
+        [
+            sys.executable,
+            "-m",
+            "biomcp",
+            "run",
+            "--mode",
+            "streamable_http",
+            "--port",
+            str(port),
+        ],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    try:
+        await wait_for_server(
+            f"http://localhost:{port}/health", process=server_process
+        )
+
+        async with httpx.AsyncClient() as client:
+            # Request with valid auth should not get 401
+            response = await client.post(
+                f"http://localhost:{port}/mcp",
+                json={"jsonrpc": "2.0", "method": "initialize", "id": 1},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            # Should not be 401 - actual status depends on MCP state
+            assert response.status_code != 401
+
+    finally:
+        server_process.terminate()
+        server_process.wait(timeout=5)
+
+
+@requires_worker
+@pytest.mark.asyncio
+async def test_auth_token_invalid():
+    """Test that requests with wrong auth token fail."""
+    import subprocess
+
+    port = get_free_port()
+    token = "test_auth_token_" + "c" * 16  # 32 chars total
+    wrong_token = "wrong_auth_token" + "d" * 16  # 32 chars total
+
+    env = os.environ.copy()
+    env["MCP_AUTH_TOKEN"] = token
+
+    server_process = subprocess.Popen(  # noqa: S603
+        [
+            sys.executable,
+            "-m",
+            "biomcp",
+            "run",
+            "--mode",
+            "streamable_http",
+            "--port",
+            str(port),
+        ],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    try:
+        await wait_for_server(
+            f"http://localhost:{port}/health", process=server_process
+        )
+
+        async with httpx.AsyncClient() as client:
+            # Request with wrong token should fail
+            response = await client.post(
+                f"http://localhost:{port}/mcp",
+                json={"jsonrpc": "2.0", "method": "initialize", "id": 1},
+                headers={"Authorization": f"Bearer {wrong_token}"},
+            )
+            assert response.status_code == 401
+            data = response.json()
+            assert data["error"] == "unauthorized"
+            assert "Invalid token" in data["error_description"]
+
+    finally:
+        server_process.terminate()
+        server_process.wait(timeout=5)
+
+
+@requires_worker
+@pytest.mark.asyncio
+async def test_auth_health_no_auth_required():
+    """Test that /health endpoint works without auth even when token is set."""
+    import subprocess
+
+    port = get_free_port()
+    token = "test_auth_token_" + "e" * 16  # 32 chars total
+
+    env = os.environ.copy()
+    env["MCP_AUTH_TOKEN"] = token
+
+    server_process = subprocess.Popen(  # noqa: S603
+        [
+            sys.executable,
+            "-m",
+            "biomcp",
+            "run",
+            "--mode",
+            "streamable_http",
+            "--port",
+            str(port),
+        ],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    try:
+        # Give subprocess a moment to start
+        await asyncio.sleep(2)
+
+        async with httpx.AsyncClient() as client:
+            # Health endpoint should work without auth
+            response = await client.get(f"http://localhost:{port}/health")
+            assert response.status_code == 200
+            data = response.json()
+            assert data["status"] == "healthy"
+
+    finally:
+        server_process.terminate()
+        server_process.wait(timeout=5)
+
+
+@requires_worker
+@pytest.mark.asyncio
+async def test_auth_no_token_set():
+    """Test that requests work without auth when MCP_AUTH_TOKEN is not set."""
+    import subprocess
+
+    port = get_free_port()
+
+    # Ensure MCP_AUTH_TOKEN is not set
+    env = os.environ.copy()
+    env.pop("MCP_AUTH_TOKEN", None)
+
+    server_process = subprocess.Popen(  # noqa: S603
+        [
+            sys.executable,
+            "-m",
+            "biomcp",
+            "run",
+            "--mode",
+            "streamable_http",
+            "--port",
+            str(port),
+        ],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    try:
+        await wait_for_server(
+            f"http://localhost:{port}/health", process=server_process
+        )
+
+        async with httpx.AsyncClient() as client:
+            # Request without auth should work when no token is configured
+            response = await client.post(
+                f"http://localhost:{port}/mcp",
+                json={"jsonrpc": "2.0", "method": "initialize", "id": 1},
+            )
+            # Should not be 401 - auth is disabled
+            assert response.status_code != 401
+
+    finally:
+        server_process.terminate()
+        server_process.wait(timeout=5)
+
+
+@requires_worker
+@pytest.mark.asyncio
+async def test_worker_mode_rejects_auth_token():
+    """Test that worker mode fails fast when MCP_AUTH_TOKEN is set."""
+    import subprocess
+
+    port = get_free_port()
+    token = "test_auth_token_" + "f" * 16  # 32 chars total
+
+    # Set auth token with worker mode - should fail
+    env = os.environ.copy()
+    env["MCP_AUTH_TOKEN"] = token
+
+    server_process = subprocess.Popen(  # noqa: S603
+        [
+            sys.executable,
+            "-m",
+            "biomcp",
+            "run",
+            "--mode",
+            "worker",
+            "--port",
+            str(port),
+        ],
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    # Server should exit with code 1
+    return_code = server_process.wait(timeout=10)
+    assert return_code == 1
+
+    # Check stderr for the error message
+    stderr = server_process.stderr.read().decode()
+    assert "does not support authentication" in stderr
