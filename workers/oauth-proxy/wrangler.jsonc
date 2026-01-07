@@ -1,0 +1,105 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "biomcp-oauth-proxy",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-04-28",
+
+  "vars": {
+    // Environment variables for the worker
+    // These can be overridden in several ways:
+    // 1. In the Cloudflare dashboard under Workers & Pages > your-worker > Settings > Variables
+    // 2. Using wrangler CLI: wrangler secret put REMOTE_MCP_SERVER_URL
+    // 3. During local development: wrangler dev --var REMOTE_MCP_SERVER_URL="http://localhost:8000"
+    // 4. In your CI/CD pipeline using environment variables with the format CF_REMOTE_MCP_SERVER_URL
+    "REMOTE_MCP_SERVER_URL": "http://localhost:8000",
+
+    // Identity Provider Configuration
+    // Supported values: "stytch" (default), "oauth"
+    "IDENTITY_PROVIDER": "stytch",
+
+    // Stytch OAuth Configuration (when IDENTITY_PROVIDER="stytch")
+    // Replace these placeholder values with your actual Stytch credentials
+    // For development, use test credentials from https://stytch.com/dashboard
+    // For production, use production credentials and api.stytch.com instead of test.stytch.com
+    "STYTCH_PROJECT_ID": "project-test-xxxxxxxxxxxx",
+    "STYTCH_SECRET": "secret-test-xxxxxxxxxxxx",
+    "STYTCH_PUBLIC_TOKEN": "public-token-test-xxxxxxxxxxxx",
+    "STYTCH_API_URL": "https://test.stytch.com/v1",
+    "STYTCH_OAUTH_URL": "https://test.stytch.com/v1/public/oauth/google/start",
+
+    // Standard OAuth Configuration (when IDENTITY_PROVIDER="oauth")
+    // For Google: OAUTH_ISSUER="https://accounts.google.com" (endpoints auto-discovered)
+    // For other providers: set explicit URLs or use OAUTH_ISSUER for OIDC discovery
+    // Secrets (OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET) should be set via:
+    //   wrangler secret put OAUTH_CLIENT_ID
+    //   wrangler secret put OAUTH_CLIENT_SECRET
+    // "OAUTH_ISSUER": "https://accounts.google.com",
+    // "OAUTH_AUTHORIZATION_URL": "https://provider.example.com/authorize",
+    // "OAUTH_TOKEN_URL": "https://provider.example.com/token",
+    // "OAUTH_USERINFO_URL": "https://provider.example.com/userinfo",
+    "OAUTH_SCOPES": "openid email profile",
+
+    // Debug mode - set to true for development, false for production
+    "DEBUG": false,
+
+    // Comma-separated list of allowed web origins for CORS (optional)
+    // Example: "https://app.example.com,https://staging.example.com"
+    // Leave empty to allow only same-origin requests.
+    "ALLOWED_ORIGINS": "http://localhost:6274", // (http://localhost:6274) MCP Inspector
+
+    // JWT Secret for signing tokens
+    // Set via: wrangler secret put JWT_SECRET
+    // For local dev: wrangler dev --var JWT_SECRET="your-dev-secret"
+
+    "ANALYTICS_PROVIDER": "cloudflare",
+
+    // Conditional config (only needed when specific providers are enabled):
+    // - BQ_PROJECT_ID, BQ_DATASET, BQ_TABLE, BQ_SA_KEY_JSON (when ANALYTICS_PROVIDER="bigquery")
+    //   Set via: wrangler secret put <NAME>
+    //
+    // Other secrets (set via wrangler secret put <NAME>):
+    // - JWT_SECRET (required)
+    // - STYTCH_SECRET (when using Stytch)
+    // - REMOTE_MCP_AUTH_TOKEN (for authenticating to backend MCP server)
+  },
+
+  "build": {
+    "command": "",
+  },
+
+  "triggers": {
+    "crons": [],
+  },
+
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+    },
+  },
+
+  // KV namespace for storing OAuth tokens and state
+  // Create your KV namespace with: wrangler kv:namespace create OAUTH_KV
+  // Then replace the ID below with your namespace ID
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+      "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    },
+  ],
+
+  // Rate limiting for OAuth endpoints
+  // Protects against brute force attacks on auth codes, client registration spam,
+  // and refresh token enumeration (UPDATES.md Critical #1)
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 25, "period": 10 },
+    },
+  ],
+}

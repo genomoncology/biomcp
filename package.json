@@ -1,4 +1,11 @@
 {
+  "scripts": {
+    "worker:dev": "cd workers/oauth-proxy && pnpm run dev",
+    "worker:test": "cd workers/oauth-proxy && pnpm test",
+    "worker:check": "cd workers/oauth-proxy && pnpm run check",
+    "worker:lint": "cd workers/oauth-proxy && pnpm run lint",
+    "worker:deploy": "cd workers/oauth-proxy && pnpm run deploy"
+  },
   "devDependencies": {
     "wrangler": "^4.13.2"
   },
