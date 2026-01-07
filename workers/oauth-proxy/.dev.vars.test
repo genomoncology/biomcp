@@ -1,0 +1,13 @@
+# Test environment - deterministic values for CI and local testing
+# This file is loaded INSTEAD of .dev.vars when running tests
+
+JWT_SECRET=test-jwt-secret-for-ci-minimum-32-chars-long
+REMOTE_MCP_AUTH_TOKEN=test-auth-token-minimum-32-characters
+# HTTPS required because REMOTE_MCP_AUTH_TOKEN is set (see src/env.ts HTTPS enforcement)
+REMOTE_MCP_SERVER_URL=https://api.example.com
+
+# Identity provider disabled by default - tests don't need it
+# Tests that DO need identity features use createTestEnv() with explicit config:
+#   IDENTITY_PROVIDER=stytch (or oauth)
+#   + provider-specific env vars
+IDENTITY_PROVIDER=disabled

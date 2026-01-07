@@ -42,6 +42,44 @@ jobs:
       - name: Run checks
         run: make check
 
+  # TypeScript OAuth proxy worker tests
+  worker-tests:
+    runs-on: ubuntu-latest
+    name: Worker TypeScript Tests
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install worker dependencies
+        run: |
+          cd workers/oauth-proxy
+          pnpm install --frozen-lockfile
+
+      - name: Run TypeScript checks
+        run: |
+          cd workers/oauth-proxy
+          pnpm run check
+
+      - name: Run linting
+        run: |
+          cd workers/oauth-proxy
+          pnpm run lint
+
+      - name: Run tests
+        run: |
+          cd workers/oauth-proxy
+          pnpm test
+
   # Tests and type check specifically on Python 3.11
   tests-and-type-check:
     runs-on: ubuntu-latest

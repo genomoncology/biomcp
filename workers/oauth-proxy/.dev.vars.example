@@ -1,0 +1,25 @@
+# Required
+JWT_SECRET=your-secret-key-at-least-32-characters-long
+REMOTE_MCP_SERVER_URL=http://localhost:8000
+
+# Identity Provider: "stytch" (default) or "oauth"
+IDENTITY_PROVIDER=stytch
+
+# Stytch Configuration (when IDENTITY_PROVIDER=stytch)
+# IMPORTANT: Must use a B2C Project (Consumer Authentication, not B2B)
+# IMPORTANT: Redirect URL in Stytch must include tx={}: http://localhost:8787/callback?tx={}
+STYTCH_PROJECT_ID=project-test-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+STYTCH_SECRET=secret-test-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+STYTCH_PUBLIC_TOKEN=public-token-test-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+STYTCH_API_URL=https://test.stytch.com/v1
+STYTCH_OAUTH_URL=https://test.stytch.com/v1/public/oauth/google/start
+
+# Generic OAuth Configuration (when IDENTITY_PROVIDER=oauth)
+# OAUTH_CLIENT_ID=your-client-id
+# OAUTH_CLIENT_SECRET=your-client-secret
+# OAUTH_ISSUER=https://your-idp.example.com
+
+# Optional
+# DEBUG=true
+# ALLOWED_ORIGINS=http://localhost:3000,https://your-app.example.com
+# REMOTE_MCP_AUTH_TOKEN=your-backend-auth-token-32-chars-min
