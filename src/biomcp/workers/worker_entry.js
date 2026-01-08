@@ -1,4 +1,7 @@
 /**
+ * @deprecated This worker is deprecated. Use workers/oauth-proxy/ instead.
+ * See workers/oauth-proxy/README.md for migration instructions.
+ *
  * BioMCP Worker – Auth‑less version (rev 1.8)
  *
  *  Fix: Added improved error handling and increased timeouts for list requests
