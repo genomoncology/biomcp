@@ -591,7 +591,9 @@ async def test_auth_health_no_auth_required():
     )
 
     try:
-        # Give subprocess a moment to start
+        # Give subprocess a moment to start.
+        # Note: We use sleep instead of wait_for_server() to avoid circular
+        # dependency since wait_for_server() relies on the /health endpoint.
         await asyncio.sleep(2)
 
         async with httpx.AsyncClient() as client:
