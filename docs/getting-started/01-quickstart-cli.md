@@ -16,13 +16,13 @@ Get started with BioMCP in under 5 minutes! This guide walks you through install
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install BioMCP
-uv tool install biomcp
+uv tool install biomcp-python
 ```
 
 ### Option 2: Using pip
 
 ```bash
-pip install biomcp
+pip install biomcp-python
 ```
 
 ## Your First Search
@@ -31,7 +31,7 @@ Let's search for recent articles about BRAF mutations in melanoma:
 
 ```bash
 biomcp article search \
-  --gene BRAF --disease melanoma --limit 5
+  --gene BRAF --disease melanoma
 ```
 
 This command:
@@ -63,7 +63,7 @@ Find active trials for lung cancer:
 ```bash
 biomcp trial search \
   --condition "lung cancer" \
-  --status RECRUITING --limit 5
+  --status open
 ```
 
 ### Get Gene Information
@@ -71,7 +71,8 @@ biomcp trial search \
 Retrieve details about the TP53 tumor suppressor:
 
 ```bash
-biomcp gene get TP53
+biomcp variant search --gene TP53 # get variants for a gene
+biomcp article search --gene TP53 # find articles about a gene
 ```
 
 ### Look Up Drug Information
@@ -79,7 +80,7 @@ biomcp gene get TP53
 Get details about imatinib (Gleevec):
 
 ```bash
-biomcp drug get imatinib
+biomcp intervention search imatinib
 ```
 
 ### Search for Genetic Variants
@@ -88,8 +89,7 @@ Find pathogenic variants in the BRCA1 gene:
 
 ```bash
 biomcp variant search \
-  --gene BRCA1 --significance pathogenic \
-  --limit 5
+  --gene BRCA1 --significance pathogenic
 ```
 
 ### Analyze a Clinically Actionable Variant
