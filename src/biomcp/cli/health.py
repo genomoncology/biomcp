@@ -6,6 +6,7 @@ This module provides a command to check the health of API endpoints and system r
 import asyncio
 import platform
 import socket
+from ssl import TLSVersion
 from typing import Any
 
 import typer
@@ -37,11 +38,17 @@ async def check_api_endpoint(
     name: str,
     params: dict[Any, Any] | None = None,
     method: str = "GET",
+    tls_version: TLSVersion | None = None,
 ) -> dict:
     """Check if an API endpoint is accessible and responding."""
     try:
+        # Prepare SSL context if TLS version is specified
+        verify = (
+            http_client.get_ssl_context(tls_version) if tls_version else True
+        )
+
         status, content = await http_client.call_http(
-            method, url, params or {}
+            method, url, params or {}, verify=verify
         )
         return {
             "name": name,
@@ -90,15 +97,18 @@ async def check_all_api_endpoints() -> list[dict]:
             },
         },
         # ClinicalTrials.gov API endpoints
+        # Note: ClinicalTrials.gov requires TLS 1.2 for API access
         {
             "url": f"{CLINICAL_TRIALS_BASE_URL}",
             "name": "ClinicalTrials.gov Search API",
             "params": {"query.term": "cancer", "pageSize": "1"},
+            "tls_version": TLSVersion.TLSv1_2,
         },
         {
             "url": f"{CLINICAL_TRIALS_BASE_URL}/NCT04280705",
             "name": "ClinicalTrials.gov Study API",
             "params": {"fields": "IdentificationModule,StatusModule"},
+            "tls_version": TLSVersion.TLSv1_2,
         },
         # MyVariant.info API endpoints
         {
@@ -118,7 +128,10 @@ async def check_all_api_endpoints() -> list[dict]:
         url = endpoint["url"]
         name = endpoint["name"]
         params = endpoint.get("params")
-        tasks.append(check_api_endpoint(url, name, params))
+        tls_version = endpoint.get("tls_version")
+        tasks.append(
+            check_api_endpoint(url, name, params, tls_version=tls_version)
+        )
 
     return await asyncio.gather(*tasks)
 
