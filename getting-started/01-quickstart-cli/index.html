@@ -3004,15 +3004,15 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-LsSf<span class="w"> </span>https://astral.sh/uv/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Install BioMCP</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-python
 </code></pre></div>
 <h3 id="option-2-using-pip">Option 2: Using pip<a class="headerlink" href="#option-2-using-pip" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>biomcp
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>biomcp-python
 </code></pre></div>
 <h2 id="your-first-search">Your First Search<a class="headerlink" href="#your-first-search" title="Permanent link">&para;</a></h2>
 <p>Let's search for recent articles about BRAF mutations in melanoma:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma
 </code></pre></div>
 <p>This command:</p>
 <ul>
@@ -3038,21 +3038,21 @@
 <p>Find active trials for lung cancer:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>trial<span class="w"> </span>search<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>--condition<span class="w"> </span><span class="s2">&quot;lung cancer&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>--status<span class="w"> </span>RECRUITING<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>--status<span class="w"> </span>open
 </code></pre></div>
 <h3 id="get-gene-information">Get Gene Information<a class="headerlink" href="#get-gene-information" title="Permanent link">&para;</a></h3>
 <p>Retrieve details about the TP53 tumor suppressor:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>TP53
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span><span class="c1"># get variants for a gene</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span><span class="c1"># find articles about a gene</span>
 </code></pre></div>
 <h3 id="look-up-drug-information">Look Up Drug Information<a class="headerlink" href="#look-up-drug-information" title="Permanent link">&para;</a></h3>
 <p>Get details about imatinib (Gleevec):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>imatinib
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>intervention<span class="w"> </span>search<span class="w"> </span>imatinib
 </code></pre></div>
 <h3 id="search-for-genetic-variants">Search for Genetic Variants<a class="headerlink" href="#search-for-genetic-variants" title="Permanent link">&para;</a></h3>
 <p>Find pathogenic variants in the BRCA1 gene:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>search<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span>--gene<span class="w"> </span>BRCA1<span class="w"> </span>--significance<span class="w"> </span>pathogenic<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span>--gene<span class="w"> </span>BRCA1<span class="w"> </span>--significance<span class="w"> </span>pathogenic
 </code></pre></div>
 <h3 id="analyze-a-clinically-actionable-variant">Analyze a Clinically Actionable Variant<a class="headerlink" href="#analyze-a-clinically-actionable-variant" title="Permanent link">&para;</a></h3>
 <p>Get OncoKB clinical interpretations for known cancer variants. BioMCP uses a demo server for key genes like BRAF out-of-the-box, no setup required!</p>
