@@ -34,6 +34,16 @@ def run_http_server(host: str, port: int, mode: ServerMode):
         app: Any  # Type will be either FastAPI or Starlette
 
         if mode == ServerMode.WORKER:
+            import os
+
+            # Fail fast if auth token is set - worker mode doesn't support auth
+            if os.getenv("MCP_AUTH_TOKEN"):
+                logger.error(
+                    "MCP_AUTH_TOKEN is set but worker mode does not support "
+                    "authentication. Use --mode streamable_http instead."
+                )
+                raise typer.Exit(1)
+
             logger.info("Starting MCP server with Worker/SSE transport")
             try:
                 from ..workers.worker import app
@@ -51,21 +61,45 @@ def run_http_server(host: str, port: int, mode: ServerMode):
             logger.info("Using FastMCP's native Streamable HTTP support")
 
             try:
+                from starlette.middleware.cors import CORSMiddleware
                 from starlette.responses import JSONResponse
                 from starlette.routing import Route
             except ImportError as e:
                 logger.error(
-                    f"Failed to import Starlette dependencies: {e}\n"
+                    f"Failed to import dependencies: {e}\n"
                     "Please install with: pip install biomcp-python[worker]"
                 )
                 raise typer.Exit(1) from e
 
             from .. import mcp_app
+            from ..auth import BearerTokenMiddleware, validate_auth_token
 
-            # Get FastMCP's streamable_http_app
+            # Validate auth token at startup (fail fast)
+            auth_token = validate_auth_token()
+            if auth_token:
+                logger.info("Bearer token authentication enabled")
+            else:
+                logger.warning(
+                    "No MCP_AUTH_TOKEN set - server running without authentication"
+                )
+
+            # Get FastMCP's streamable_http_app (Starlette app)
+            # We add middleware directly to preserve lifespan initialization
             app = mcp_app.streamable_http_app()
 
-            # Add health endpoint to the Starlette app
+            # Add Bearer token auth middleware
+            app.add_middleware(BearerTokenMiddleware, auth_token=auth_token)
+
+            # Add CORS middleware
+            app.add_middleware(
+                CORSMiddleware,
+                allow_origins=["*"],
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
+
+            # Add health endpoint
             async def health_check(request):
                 return JSONResponse({"status": "healthy"})
 
