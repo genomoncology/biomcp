@@ -1,5 +1,6 @@
 """Unit tests for gene and drug CLI commands."""
 
+import re
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -7,6 +8,12 @@ from typer.testing import CliRunner
 from biomcp.cli.main import app
 
 runner = CliRunner()
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from text."""
+    ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+    return ansi_escape.sub("", text)
 
 
 class TestGeneCLI:
@@ -23,8 +30,9 @@ class TestGeneCLI:
         """Test gene get command shows help."""
         result = runner.invoke(app, ["gene", "get", "--help"])
         assert result.exit_code == 0
-        assert "gene" in result.stdout.lower()
-        assert "--json" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "gene" in output.lower()
+        assert "--json" in output
 
     @patch("biomcp.cli.genes.get_gene")
     def test_gene_get_success(self, mock_get_gene):
@@ -86,8 +94,9 @@ class TestDrugCLI:
         """Test drug get command shows help."""
         result = runner.invoke(app, ["drug", "get", "--help"])
         assert result.exit_code == 0
-        assert "drug" in result.stdout.lower()
-        assert "--json" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "drug" in output.lower()
+        assert "--json" in output
 
     @patch("biomcp.cli.drugs.get_drug")
     def test_drug_get_success(self, mock_get_drug):
