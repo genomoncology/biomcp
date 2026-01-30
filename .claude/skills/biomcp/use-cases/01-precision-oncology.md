@@ -15,6 +15,7 @@ biomcp variant search --gene BRAF --hgvsp "p.Val600Glu" --size 5
 ```
 
 This returns:
+
 - Clinical significance from ClinVar
 - Population frequencies from gnomAD
 - Cancer annotations from COSMIC

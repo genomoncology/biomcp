@@ -51,27 +51,28 @@ Retrieve complete prescribing information.
 
 ## Label Sections
 
-| Section | Content |
-|---------|---------|
-| Indications | Approved uses |
-| Contraindications | When not to use |
-| Warnings | Boxed and other warnings |
-| Adverse Reactions | Side effect profile |
-| Drug Interactions | Concomitant drug issues |
-| Dosage | Dosing recommendations |
+| Section           | Content                  |
+| ----------------- | ------------------------ |
+| Indications       | Approved uses            |
+| Contraindications | When not to use          |
+| Warnings          | Boxed and other warnings |
+| Adverse Reactions | Side effect profile      |
+| Drug Interactions | Concomitant drug issues  |
+| Dosage            | Dosing recommendations   |
 
 ## Search Parameters
 
-| Parameter | Purpose |
-|-----------|---------|
-| `--name` | Drug name (brand or generic) |
-| `--indication` | Search by approved indication |
-| `--boxed-warning` | Filter for boxed warnings |
-| `--section` | Search specific label section |
+| Parameter         | Purpose                       |
+| ----------------- | ----------------------------- |
+| `--name`          | Drug name (brand or generic)  |
+| `--indication`    | Search by approved indication |
+| `--boxed-warning` | Filter for boxed warnings     |
+| `--section`       | Search specific label section |
 
 ## Expected Output
 
 Melanoma label search results:
+
 - Mekinist (trametinib) - MEK inhibitor
 - Keytruda (pembrolizumab) - PD-1 inhibitor
 - Dacarbazine - Chemotherapy

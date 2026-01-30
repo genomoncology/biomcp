@@ -50,43 +50,45 @@ Find Lynch syndrome research publications.
 
 ## Lynch Syndrome Genes
 
-| Gene | Associated Cancers |
-|------|-------------------|
-| MLH1 | Colorectal, endometrial, ovarian |
-| MSH2 | Colorectal, endometrial, urinary tract |
-| MSH6 | Colorectal, endometrial |
-| PMS2 | Colorectal (lower penetrance) |
-| EPCAM | Colorectal (MSH2 silencing) |
+| Gene  | Associated Cancers                     |
+| ----- | -------------------------------------- |
+| MLH1  | Colorectal, endometrial, ovarian       |
+| MSH2  | Colorectal, endometrial, urinary tract |
+| MSH6  | Colorectal, endometrial                |
+| PMS2  | Colorectal (lower penetrance)          |
+| EPCAM | Colorectal (MSH2 silencing)            |
 
 ## Hereditary Cancer Syndromes
 
-| Syndrome | Genes | Key Cancers |
-|----------|-------|-------------|
-| Lynch | MLH1, MSH2, MSH6, PMS2 | Colorectal, endometrial |
-| HBOC | BRCA1, BRCA2 | Breast, ovarian |
-| FAP | APC | Colorectal |
-| Li-Fraumeni | TP53 | Multiple |
-| Cowden | PTEN | Breast, thyroid |
+| Syndrome    | Genes                  | Key Cancers             |
+| ----------- | ---------------------- | ----------------------- |
+| Lynch       | MLH1, MSH2, MSH6, PMS2 | Colorectal, endometrial |
+| HBOC        | BRCA1, BRCA2           | Breast, ovarian         |
+| FAP         | APC                    | Colorectal              |
+| Li-Fraumeni | TP53                   | Multiple                |
+| Cowden      | PTEN                   | Breast, thyroid         |
 
 ## Expected Output
 
 Lynch syndrome findings:
+
 - Pathogenic MLH1 variants: Truncating mutations, splice site variants
 - Active trials: Surveillance studies, prevention trials, immunotherapy
 - Cancer risks: 50-80% lifetime colorectal cancer risk
 
 ## Trial Types for Hereditary Syndromes
 
-| Type | Purpose |
-|------|---------|
-| Surveillance | Optimizing screening protocols |
-| Prevention | Chemoprevention, risk reduction |
-| Diagnostic | Biomarker development |
-| Treatment | Cancer-specific therapies |
+| Type         | Purpose                         |
+| ------------ | ------------------------------- |
+| Surveillance | Optimizing screening protocols  |
+| Prevention   | Chemoprevention, risk reduction |
+| Diagnostic   | Biomarker development           |
+| Treatment    | Cancer-specific therapies       |
 
 ## Example Trials
 
 Lynch syndrome trials discovered:
+
 - NCT07360834: Liquid biopsy surveillance study
 - NCT06582914: LINEAGE epidemiology consortium
 - NCT07163403: Dendritic cell vaccine prevention

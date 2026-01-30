@@ -50,12 +50,12 @@ Find recent CAR-T publications.
 
 ## Cell Therapy Trial Types
 
-| Therapy | Search Term |
-|---------|-------------|
-| CAR-T | `--term "CAR-T"` |
-| TIL | `--term "tumor infiltrating lymphocytes"` |
-| TCR-T | `--term "TCR T cell"` |
-| NK cell | `--term "NK cell therapy"` |
+| Therapy | Search Term                               |
+| ------- | ----------------------------------------- |
+| CAR-T   | `--term "CAR-T"`                          |
+| TIL     | `--term "tumor infiltrating lymphocytes"` |
+| TCR-T   | `--term "TCR T cell"`                     |
+| NK cell | `--term "NK cell therapy"`                |
 
 ## Key Indications
 
@@ -67,18 +67,19 @@ Find recent CAR-T publications.
 ## Expected Output
 
 CAR-T trials discovered:
+
 - NCT06904729: CAR-T for lupus nephritis (Phase 3)
 - NCT06237336: Relapsed hematological malignancies
 - NCT03937544: CD19 CAR-T for B-ALL
 
 ## Trial Considerations
 
-| Factor | Notes |
-|--------|-------|
-| Manufacturing | 2-4 week turnaround for autologous |
-| Eligibility | Often requires adequate organ function |
-| Monitoring | CRS/ICANS risk requires specialized centers |
-| Follow-up | Long-term safety monitoring required |
+| Factor        | Notes                                       |
+| ------------- | ------------------------------------------- |
+| Manufacturing | 2-4 week turnaround for autologous          |
+| Eligibility   | Often requires adequate organ function      |
+| Monitoring    | CRS/ICANS risk requires specialized centers |
+| Follow-up     | Long-term safety monitoring required        |
 
 ## Tips
 

@@ -15,6 +15,7 @@ biomcp variant search --gene BRCA1 --significance pathogenic --size 10
 ```
 
 Returns known pathogenic variants with:
+
 - ClinVar classification
 - Population frequencies
 - Functional predictions
@@ -51,14 +52,14 @@ biomcp article search --gene BRCA1 --keyword "pathogenic variant" --page 1
 
 ## Variant Annotation Sources
 
-| Source | Data Provided |
-|--------|---------------|
-| ClinVar | Clinical significance, review status |
-| gnomAD | Population allele frequencies |
-| COSMIC | Somatic mutation frequency |
-| dbSNP | rsID, genomic coordinates |
-| CADD | Deleteriousness score |
-| PolyPhen/SIFT | Functional predictions |
+| Source        | Data Provided                        |
+| ------------- | ------------------------------------ |
+| ClinVar       | Clinical significance, review status |
+| gnomAD        | Population allele frequencies        |
+| COSMIC        | Somatic mutation frequency           |
+| dbSNP         | rsID, genomic coordinates            |
+| CADD          | Deleteriousness score                |
+| PolyPhen/SIFT | Functional predictions               |
 
 ## Expected Output
 
@@ -69,14 +70,14 @@ biomcp article search --gene BRCA1 --keyword "pathogenic variant" --page 1
 
 ## Search Parameters
 
-| Parameter | Example | Description |
-|-----------|---------|-------------|
-| `--gene` | BRCA1 | Gene symbol |
-| `--rsid` | rs80357906 | dbSNP ID |
-| `--hgvsp` | p.Cys61Gly | Protein notation |
-| `--hgvsc` | c.181T>G | cDNA notation |
-| `--significance` | pathogenic | ClinVar classification |
-| `--max-frequency` | 0.01 | gnomAD filter |
+| Parameter         | Example    | Description            |
+| ----------------- | ---------- | ---------------------- |
+| `--gene`          | BRCA1      | Gene symbol            |
+| `--rsid`          | rs80357906 | dbSNP ID               |
+| `--hgvsp`         | p.Cys61Gly | Protein notation       |
+| `--hgvsc`         | c.181T>G   | cDNA notation          |
+| `--significance`  | pathogenic | ClinVar classification |
+| `--max-frequency` | 0.01       | gnomAD filter          |
 
 ## Tips
 

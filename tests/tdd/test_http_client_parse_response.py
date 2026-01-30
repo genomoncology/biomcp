@@ -13,4 +13,3 @@ def test_parse_response_csv_strips_bom_and_newlines():
     assert "\ufeffGeneric Name" not in response[0]
     assert response[0]["Generic Name"] == "Foo"
     assert response[0]["Status"] == "Current"
-

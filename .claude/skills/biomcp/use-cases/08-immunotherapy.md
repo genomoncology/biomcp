@@ -50,25 +50,26 @@ Review safety profile of immunotherapy agents.
 
 ## Key Immunotherapy Biomarkers
 
-| Biomarker | Relevance |
-|-----------|-----------|
-| PD-L1 | Checkpoint inhibitor response |
-| TMB | Tumor mutational burden |
-| MSI-H | Microsatellite instability |
-| TILs | Tumor infiltrating lymphocytes |
+| Biomarker | Relevance                      |
+| --------- | ------------------------------ |
+| PD-L1     | Checkpoint inhibitor response  |
+| TMB       | Tumor mutational burden        |
+| MSI-H     | Microsatellite instability     |
+| TILs      | Tumor infiltrating lymphocytes |
 
 ## Immunotherapy Drug Classes
 
-| Class | Examples | Target |
-|-------|----------|--------|
-| PD-1 inhibitors | Pembrolizumab, Nivolumab | PD-1 |
-| PD-L1 inhibitors | Atezolizumab, Durvalumab | PD-L1 |
-| CTLA-4 inhibitors | Ipilimumab | CTLA-4 |
-| LAG-3 inhibitors | Relatlimab | LAG-3 |
+| Class             | Examples                 | Target |
+| ----------------- | ------------------------ | ------ |
+| PD-1 inhibitors   | Pembrolizumab, Nivolumab | PD-1   |
+| PD-L1 inhibitors  | Atezolizumab, Durvalumab | PD-L1  |
+| CTLA-4 inhibitors | Ipilimumab               | CTLA-4 |
+| LAG-3 inhibitors  | Relatlimab               | LAG-3  |
 
 ## Expected Output
 
 Immunotherapy trials discovered:
+
 - NCT06961006: V940 vaccine + pembrolizumab (Phase 2)
 - NCT05111574: Nivolumab + cabozantinib adjuvant
 - NCT05144698: RAPA-201 cell therapy + pembrolizumab
@@ -76,6 +77,7 @@ Immunotherapy trials discovered:
 ## Immune-Related Adverse Events
 
 Monitor for:
+
 - Pneumonitis
 - Colitis
 - Hepatitis

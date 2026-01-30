@@ -45,13 +45,13 @@ Get full eligibility criteria, contacts, and study design.
 
 ## Key Filters
 
-| Filter | Purpose |
-|--------|---------|
-| `--status open` | Only recruiting trials |
-| `--phase phase3` | Late-stage trials |
+| Filter                           | Purpose                 |
+| -------------------------------- | ----------------------- |
+| `--status open`                  | Only recruiting trials  |
+| `--phase phase3`                 | Late-stage trials       |
 | `--intervention-type biological` | Biologics/immunotherapy |
-| `--age-group adult` | Adult patients only |
-| `--lat/--lon/--distance` | Geographic proximity |
+| `--age-group adult`              | Adult patients only     |
+| `--lat/--lon/--distance`         | Geographic proximity    |
 
 ## Expected Output
 

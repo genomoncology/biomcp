@@ -39,6 +39,7 @@ biomcp openfda shortage get "Carboplatin Injection"
 ```
 
 Get detailed shortage information including:
+
 - Reason for shortage
 - Estimated resolution
 - Alternative products
@@ -46,11 +47,11 @@ Get detailed shortage information including:
 
 ## Shortage Status Types
 
-| Status | Description |
-|--------|-------------|
-| Current | Active shortage |
-| Resolved | Shortage ended, supply restored |
-| To Be Discontinued | Product being withdrawn |
+| Status             | Description                     |
+| ------------------ | ------------------------------- |
+| Current            | Active shortage                 |
+| Resolved           | Shortage ended, supply restored |
+| To Be Discontinued | Product being withdrawn         |
 
 ## Common Shortage Reasons
 
@@ -63,6 +64,7 @@ Get detailed shortage information including:
 ## Expected Output
 
 Current shortage example:
+
 ```
 Drug: Carboplatin Injection
 Status: Currently in Shortage
@@ -74,6 +76,7 @@ Estimated Resolution: TBD
 ## Alternative Resources
 
 If BioMCP shortage data is unavailable:
+
 - [FDA Drug Shortages Database](https://www.accessdata.fda.gov/scripts/drugshortages/)
 - [ASHP Drug Shortages](https://www.ashp.org/drug-shortages/current-shortages)
 

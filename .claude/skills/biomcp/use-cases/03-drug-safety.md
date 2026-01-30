@@ -15,6 +15,7 @@ biomcp openfda adverse search --drug pembrolizumab --serious --limit 25
 ```
 
 Returns:
+
 - Total report count
 - Top reported reactions
 - Sample reports with patient demographics
@@ -53,12 +54,12 @@ Find recent publications on safety data.
 
 ## Key Adverse Event Fields
 
-| Field | Description |
-|-------|-------------|
-| `serious` | Life-threatening, hospitalization, disability |
-| `seriousnessdeath` | Fatal outcome |
-| `seriousnesshospitalization` | Required hospitalization |
-| `receivedate` | Date FDA received report |
+| Field                        | Description                                   |
+| ---------------------------- | --------------------------------------------- |
+| `serious`                    | Life-threatening, hospitalization, disability |
+| `seriousnessdeath`           | Fatal outcome                                 |
+| `seriousnesshospitalization` | Required hospitalization                      |
+| `receivedate`                | Date FDA received report                      |
 
 ## Expected Output
 

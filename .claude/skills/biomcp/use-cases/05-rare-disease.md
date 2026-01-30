@@ -50,12 +50,12 @@ Search variants in the causative gene (MECP2 for Rett syndrome).
 
 ## Rare Disease Trial Strategies
 
-| Strategy | Command Example |
-|----------|-----------------|
-| Gene therapy | `--intervention-type genetic` |
-| Natural history | `--type observational` |
-| Expanded access | `--type expanded_access` |
-| Pediatric | `--age-group child` |
+| Strategy        | Command Example               |
+| --------------- | ----------------------------- |
+| Gene therapy    | `--intervention-type genetic` |
+| Natural history | `--type observational`        |
+| Expanded access | `--type expanded_access`      |
+| Pediatric       | `--age-group child`           |
 
 ## Expected Output
 
@@ -67,6 +67,7 @@ Search variants in the causative gene (MECP2 for Rett syndrome).
 ## Example Findings
 
 Rett syndrome trials discovered:
+
 - NCT06856759: AAV-MECP2 gene therapy (Phase 1)
 - NCT06704816: Trofinetide cognitive assessment
 - NCT04900493: Global patient registry
