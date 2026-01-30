@@ -14,6 +14,7 @@ from .interventions import intervention_app
 from .openfda import openfda_app
 from .organizations import organization_app
 from .server import run_server
+from .skills import install_skill
 from .trials import trial_app
 from .variants import variant_app
 
@@ -159,6 +160,9 @@ def version():
 
 # Directly expose run_server as the 'run' command with all its options
 app.command("run")(run_server)
+
+# Add install-skill command
+app.command("install-skill")(install_skill)
 
 
 if __name__ == "__main__":

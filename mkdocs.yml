@@ -13,6 +13,7 @@ nav:
   - Getting Started:
       - Quick Start: getting-started/01-quickstart-cli.md
       - Claude Desktop: getting-started/02-claude-desktop-integration.md
+      - Agent Skills: getting-started/04-agent-skills.md
       - API Keys: getting-started/03-authentication-and-api-keys.md
       - FAQ: faq-condensed.md
       - Troubleshooting: troubleshooting.md
