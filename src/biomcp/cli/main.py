@@ -65,6 +65,12 @@ app.add_typer(
 )
 
 app.add_typer(
+    drug_app,
+    name="drug",
+    no_args_is_help=True,
+)
+
+app.add_typer(
     health_app,
     name="health",
     no_args_is_help=True,
@@ -91,12 +97,6 @@ app.add_typer(
 app.add_typer(
     disease_app,
     name="disease",
-    no_args_is_help=True,
-)
-
-app.add_typer(
-    drug_app,
-    name="drug",
     no_args_is_help=True,
 )
 

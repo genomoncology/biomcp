@@ -1,15 +1,15 @@
-"""CLI commands for drug information and search."""
+"""CLI commands for drug information retrieval."""
 
 import asyncio
 from typing import Annotated
 
 import typer
 
-from ..drugs.getter import get_drug
+from ..drugs import get_drug
 
 drug_app = typer.Typer(
     no_args_is_help=True,
-    help="Search and retrieve drug information",
+    help="Search and retrieve drug information from MyChem.info",
 )
 
 
@@ -18,7 +18,8 @@ def get_drug_cli(
     drug_id_or_name: Annotated[
         str,
         typer.Argument(
-            help="Drug ID, name, or trade name (e.g., imatinib, idecabtagene vicleucel, DB00945)"
+            help="Drug name (e.g., imatinib, 'idecabtagene vicleucel') "
+            "or ID (e.g., DB00619, CHEMBL25)"
         ),
     ],
     output_json: Annotated[
@@ -26,31 +27,26 @@ def get_drug_cli(
         typer.Option(
             "--json",
             "-j",
-            help="Render in JSON format",
-            case_sensitive=False,
+            help="Output in JSON format",
         ),
     ] = False,
 ) -> None:
     """
     Get drug information from MyChem.info.
 
-    This returns detailed information including drug identifiers,
-    chemical properties, trade names, clinical indications, and
-    mechanism of action.
+    Retrieves comprehensive drug information including:
+    - Drug identifiers (DrugBank, ChEMBL, PubChem, etc.)
+    - Chemical properties (formula, InChIKey)
+    - Trade names and synonyms
+    - Clinical indications
+    - Mechanism of action
+    - Links to external databases
 
     Examples:
-        # Search by drug name
         biomcp drug get imatinib
-        biomcp drug get aspirin
-
-        # Multi-word drug names
+        biomcp drug get pembrolizumab
         biomcp drug get "idecabtagene vicleucel"
-
-        # Search by drug ID
         biomcp drug get DB00945
-        biomcp drug get CHEMBL25
-
-        # Output as JSON
         biomcp drug get imatinib --json
     """
     result = asyncio.run(get_drug(drug_id_or_name, output_json=output_json))
@@ -86,8 +82,7 @@ def search_drugs_cli(
         typer.Option(
             "--json",
             "-j",
-            help="Render in JSON format",
-            case_sensitive=False,
+            help="Output in JSON format",
         ),
     ] = False,
 ) -> None:
@@ -98,16 +93,9 @@ def search_drugs_cli(
     to find matching drugs.
 
     Examples:
-        # Search by drug name
         biomcp drug search imatinib
-
-        # Search by partial name
         biomcp drug search "kinase inhibitor"
-
-        # Search with pagination
         biomcp drug search aspirin --page 2 --page-size 20
-
-        # Output as JSON
         biomcp drug search imatinib --json
     """
     # For now, use get_drug to search by the query

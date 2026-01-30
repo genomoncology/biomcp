@@ -1,5 +1,5 @@
 """
-Gene CLI commands.
+CLI commands for gene information retrieval.
 
 Enrichment functionality inspired by gget enrichr (https://github.com/pachterlab/gget).
 Citation: Luebbert & Pachter (2023). Bioinformatics, 39(1), btac836.
@@ -8,15 +8,16 @@ BioMCP directly integrates with Enrichr API rather than using gget as a dependen
 
 import asyncio
 import sys
+from typing import Annotated
 
 import typer
 
 from ..enrichr import ENRICHR_DATABASES
-from ..genes.getter import get_gene
+from ..genes import get_gene
 
 gene_app = typer.Typer(
-    help="Gene information retrieval and enrichment analysis",
     no_args_is_help=True,
+    help="Search and retrieve gene information from MyGene.info",
 )
 
 
@@ -43,31 +44,48 @@ def validate_enrich_type(enrich: str | None) -> str | None:
 
 
 @gene_app.command("get")
-def get_gene_command(
-    gene_id_or_symbol: str = typer.Argument(
-        ...,
-        help="Gene symbol (e.g., TP53) or ID (e.g., 7157)",
-    ),
-    json_output: bool = typer.Option(
-        False,
-        "--json",
-        "-j",
-        help="Output as JSON instead of markdown",
-    ),
-    enrich: str = typer.Option(
-        None,
-        "--enrich",
-        "-e",
-        help=f"Add functional enrichment analysis. Options: {', '.join(ENRICHR_DATABASES.keys())} or full database name",
-    ),
-):
+def get_gene_cli(
+    gene_id_or_symbol: Annotated[
+        str,
+        typer.Argument(
+            help="Gene symbol (e.g., TP53, BRAF) or ID (e.g., 7157)"
+        ),
+    ],
+    output_json: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            "-j",
+            help="Output in JSON format",
+        ),
+    ] = False,
+    enrich: Annotated[
+        str | None,
+        typer.Option(
+            "--enrich",
+            "-e",
+            help=f"Add functional enrichment analysis. Options: "
+            f"{', '.join(ENRICHR_DATABASES.keys())} or full database name",
+        ),
+    ] = None,
+) -> None:
     """
-    Get detailed gene information from MyGene.info.
+    Get gene information from MyGene.info.
+
+    Retrieves detailed gene annotations including:
+    - Official gene name and symbol
+    - Gene summary/description
+    - Aliases and alternative names
+    - Gene type (protein-coding, etc.)
+    - Links to external databases
 
     Examples:
-      biomcp gene get TP53
-      biomcp gene get TP53 --enrich pathway
-      biomcp gene get BRCA1 --enrich ontology --json
+        biomcp gene get TP53
+        biomcp gene get BRCA1
+        biomcp gene get 7157
+        biomcp gene get TP53 --json
+        biomcp gene get TP53 --enrich pathway
+        biomcp gene get BRCA1 --enrich ontology --json
     """
     # Validate enrichment type before running async code
     try:
@@ -81,7 +99,7 @@ def get_gene_command(
     async def run():
         result = await get_gene(
             gene_id_or_symbol=gene_id_or_symbol,
-            output_json=json_output,
+            output_json=output_json,
             include_enrichment=include_enrichment,
             enrichment_database=enrichment_database
             or "GO_Biological_Process_2021",
@@ -106,32 +124,40 @@ def get_gene_command(
 
 
 @gene_app.command("search")
-def search_genes_command(
-    query: str = typer.Argument(
-        ...,
-        help="Search query (gene name, symbol, or description)",
-    ),
-    page: int = typer.Option(
-        1,
-        "--page",
-        "-p",
-        help="Page number (starts at 1)",
-        min=1,
-    ),
-    page_size: int = typer.Option(
-        10,
-        "--page-size",
-        help="Number of results per page",
-        min=1,
-        max=100,
-    ),
-    json_output: bool = typer.Option(
-        False,
-        "--json",
-        "-j",
-        help="Output as JSON instead of markdown",
-    ),
-):
+def search_genes_cli(
+    query: Annotated[
+        str,
+        typer.Argument(
+            help="Search query (gene name, symbol, or description)"
+        ),
+    ],
+    page: Annotated[
+        int,
+        typer.Option(
+            "--page",
+            "-p",
+            help="Page number (starts at 1)",
+            min=1,
+        ),
+    ] = 1,
+    page_size: Annotated[
+        int,
+        typer.Option(
+            "--page-size",
+            help="Number of results per page",
+            min=1,
+            max=100,
+        ),
+    ] = 10,
+    output_json: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            "-j",
+            help="Output in JSON format",
+        ),
+    ] = False,
+) -> None:
     """
     Search for genes in MyGene.info database.
 
@@ -139,23 +165,16 @@ def search_genes_command(
     to find matching genes.
 
     Examples:
-        # Search by gene symbol
         biomcp gene search TP53
-
-        # Search by partial name
         biomcp gene search "tumor protein"
-
-        # Search with pagination
         biomcp gene search kinase --page 2 --page-size 20
-
-        # Output as JSON
         biomcp gene search BRCA --json
     """
 
     async def run():
         # For now, use get_gene to search by the query
         # A full search implementation would require a separate search function
-        result = await get_gene(query, output_json=json_output)
+        result = await get_gene(query, output_json=output_json)
         typer.echo(result)
 
     try:
