@@ -152,6 +152,7 @@ def _parse_csv_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "shortage_start_date": normalized.get("Initial Posting Date", ""),
             "resolution_date": normalized.get("Date Discontinued", "")
             if "resolved" in status_raw.lower()
+            or "discontinue" in status_raw.lower()
             else "",
             "last_updated": normalized.get("Date of Update", ""),
             "manufacturers": [company_name] if company_name else [],
