@@ -400,25 +400,33 @@ biomcp gene get TP53 --json
 ```
 
 ### gene search
+
 # Basic gene information
+
 biomcp gene get TP53
 biomcp gene get BRAF
 
 # With pathway enrichment
+
 biomcp gene get TP53 --enrich pathway
 
 # With Gene Ontology enrichment
+
 biomcp gene get BRCA1 --enrich ontology
 
 # With cell type associations
+
 biomcp gene get EGFR --enrich celltypes
 
 # Using full database name
+
 biomcp gene get TP53 --enrich KEGG_2021_Human
 
 # JSON output with enrichment
+
 biomcp gene get TP53 --enrich pathway --json
-```
+
+````
 
 **Note:** Enrichment analysis is powered by the Enrichr API and inspired by [gget enrichr](https://github.com/pachterlab/gget) (Luebbert & Pachter, 2023).
 
@@ -428,7 +436,7 @@ Search for genes in MyGene.info database.
 
 ```bash
 biomcp gene search QUERY [OPTIONS]
-```
+````
 
 **Options:**
 

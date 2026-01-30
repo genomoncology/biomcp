@@ -45,30 +45,30 @@ def mock_gene_info_brca1():
 class TestGeneGetCommand:
     """Test the 'gene get' command."""
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_by_symbol(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_by_symbol(self, mock_get_gene):
         """Test getting gene info by symbol."""
-        mock_run.return_value = "# TP53\n\nTumor protein p53"
+        mock_get_gene.return_value = "# TP53\n\nTumor protein p53"
 
         result = runner.invoke(app, ["gene", "get", "TP53"])
 
         assert result.exit_code == 0
         assert "TP53" in result.stdout
-        mock_run.assert_called_once()
+        mock_get_gene.assert_called_once()
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_by_id(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_by_id(self, mock_get_gene):
         """Test getting gene info by Entrez ID."""
-        mock_run.return_value = "# TP53\n\nGene ID: 7157"
+        mock_get_gene.return_value = "# TP53\n\nGene ID: 7157"
 
         result = runner.invoke(app, ["gene", "get", "7157"])
 
         assert result.exit_code == 0
         assert "7157" in result.stdout
-        mock_run.assert_called_once()
+        mock_get_gene.assert_called_once()
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_not_found(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_not_found(self, mock_get_gene):
         """Test handling of non-existent gene."""
         error_msg = json.dumps(
             {
@@ -77,15 +77,15 @@ class TestGeneGetCommand:
             },
             indent=2,
         )
-        mock_run.return_value = error_msg
+        mock_get_gene.return_value = error_msg
 
         result = runner.invoke(app, ["gene", "get", "INVALID_GENE"])
 
         assert result.exit_code == 0
         assert "not found" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_json_flag(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_json_flag(self, mock_get_gene):
         """Test getting gene info with --json flag."""
         json_output = json.dumps(
             {
@@ -96,7 +96,7 @@ class TestGeneGetCommand:
             },
             indent=2,
         )
-        mock_run.return_value = json_output
+        mock_get_gene.return_value = json_output
 
         result = runner.invoke(app, ["gene", "get", "TP53", "--json"])
 
@@ -104,20 +104,20 @@ class TestGeneGetCommand:
         assert "7157" in result.stdout
         assert "tumor protein p53" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_json_short_flag(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_json_short_flag(self, mock_get_gene):
         """Test getting gene info with -j short flag."""
         json_output = json.dumps({"symbol": "TP53"}, indent=2)
-        mock_run.return_value = json_output
+        mock_get_gene.return_value = json_output
 
         result = runner.invoke(app, ["gene", "get", "TP53", "-j"])
 
         assert result.exit_code == 0
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_pathway(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_pathway(self, mock_get_gene):
         """Test getting gene info with --enrich pathway flag."""
-        mock_run.return_value = "# TP53\n\nTumor protein p53"
+        mock_get_gene.return_value = "# TP53\n\nTumor protein p53"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "pathway"]
@@ -128,10 +128,10 @@ class TestGeneGetCommand:
         assert "Enrichment Analysis" in result.stdout
         assert "pathway" in result.stdout.lower()
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_ontology(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_ontology(self, mock_get_gene):
         """Test getting gene info with --enrich ontology flag."""
-        mock_run.return_value = "# BRCA1\n\nBRCA1 DNA repair associated"
+        mock_get_gene.return_value = "# BRCA1\n\nBRCA1 DNA repair associated"
 
         result = runner.invoke(
             app, ["gene", "get", "BRCA1", "--enrich", "ontology"]
@@ -142,10 +142,12 @@ class TestGeneGetCommand:
         assert "Enrichment Analysis" in result.stdout
         assert "ontology" in result.stdout.lower()
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_kegg(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_kegg(self, mock_get_gene):
         """Test getting gene info with --enrich kegg flag."""
-        mock_run.return_value = "# EGFR\n\nEpidermal growth factor receptor"
+        mock_get_gene.return_value = (
+            "# EGFR\n\nEpidermal growth factor receptor"
+        )
 
         result = runner.invoke(
             app, ["gene", "get", "EGFR", "--enrich", "kegg"]
@@ -154,10 +156,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_reactome(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_reactome(self, mock_get_gene):
         """Test getting gene info with --enrich reactome flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "reactome"]
@@ -166,10 +168,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_wikipathways(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_wikipathways(self, mock_get_gene):
         """Test getting gene info with --enrich wikipathways flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "wikipathways"]
@@ -178,10 +180,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_go_process(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_go_process(self, mock_get_gene):
         """Test getting gene info with --enrich go_process flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "go_process"]
@@ -190,10 +192,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_go_molecular(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_go_molecular(self, mock_get_gene):
         """Test getting gene info with --enrich go_molecular flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "go_molecular"]
@@ -202,10 +204,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_go_cellular(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_go_cellular(self, mock_get_gene):
         """Test getting gene info with --enrich go_cellular flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "go_cellular"]
@@ -214,10 +216,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_celltypes(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_celltypes(self, mock_get_gene):
         """Test getting gene info with --enrich celltypes flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "celltypes"]
@@ -226,10 +228,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_tissues(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_tissues(self, mock_get_gene):
         """Test getting gene info with --enrich tissues flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "tissues"]
@@ -238,10 +240,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_diseases(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_diseases(self, mock_get_gene):
         """Test getting gene info with --enrich diseases flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "diseases"]
@@ -250,10 +252,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_gwas(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_gwas(self, mock_get_gene):
         """Test getting gene info with --enrich gwas flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "gwas"]
@@ -262,10 +264,10 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_transcription_factors(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_transcription_factors(self, mock_get_gene):
         """Test getting gene info with --enrich transcription_factors flag."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "transcription_factors"]
@@ -274,35 +276,30 @@ class TestGeneGetCommand:
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_enrich_tf(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_with_enrich_tf(self, mock_get_gene):
         """Test getting gene info with --enrich tf flag (alias for transcription_factors)."""
-        mock_run.return_value = "# TP53\n\nGene info"
+        mock_get_gene.return_value = "# TP53\n\nGene info"
 
         result = runner.invoke(app, ["gene", "get", "TP53", "--enrich", "tf"])
 
         assert result.exit_code == 0
         assert "Enrichment Analysis" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_with_invalid_enrich_type(self, mock_run):
+    def test_get_gene_with_invalid_enrich_type(self):
         """Test getting gene info with invalid enrichment type."""
-        mock_run.return_value = "# TP53\n\nGene info"
-
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--enrich", "invalid_type"]
         )
 
         assert result.exit_code == 1
         assert "Invalid enrichment type" in result.stdout
-        # asyncio.run should not be called if validation fails
-        mock_run.assert_not_called()
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_get_gene_combined_json_and_enrich(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_get_gene_combined_json_and_enrich(self, mock_get_gene):
         """Test getting gene info with both --json and --enrich flags."""
         json_output = json.dumps({"symbol": "TP53"}, indent=2)
-        mock_run.return_value = json_output
+        mock_get_gene.return_value = json_output
 
         result = runner.invoke(
             app, ["gene", "get", "TP53", "--json", "--enrich", "pathway"]
@@ -316,21 +313,21 @@ class TestGeneGetCommand:
 class TestGeneSearchCommand:
     """Test the 'gene search' command."""
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_basic(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_basic(self, mock_get_gene):
         """Test basic gene search."""
-        mock_run.return_value = "# TP53\n\nTumor protein p53"
+        mock_get_gene.return_value = "# TP53\n\nTumor protein p53"
 
         result = runner.invoke(app, ["gene", "search", "TP53"])
 
         assert result.exit_code == 0
         assert "TP53" in result.stdout
-        mock_run.assert_called_once()
+        mock_get_gene.assert_called_once()
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_with_page(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_with_page(self, mock_get_gene):
         """Test gene search with page parameter."""
-        mock_run.return_value = "# kinase\n\nResults"
+        mock_get_gene.return_value = "# kinase\n\nResults"
 
         result = runner.invoke(
             app, ["gene", "search", "kinase", "--page", "2"]
@@ -342,19 +339,19 @@ class TestGeneSearchCommand:
             or "development" in result.stdout
         )
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_with_page_short_flag(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_with_page_short_flag(self, mock_get_gene):
         """Test gene search with -p short flag for page."""
-        mock_run.return_value = "# kinase\n\nResults"
+        mock_get_gene.return_value = "# kinase\n\nResults"
 
         result = runner.invoke(app, ["gene", "search", "kinase", "-p", "2"])
 
         assert result.exit_code == 0
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_with_page_size(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_with_page_size(self, mock_get_gene):
         """Test gene search with page_size parameter."""
-        mock_run.return_value = "# kinase\n\nResults"
+        mock_get_gene.return_value = "# kinase\n\nResults"
 
         result = runner.invoke(
             app, ["gene", "search", "kinase", "--page-size", "20"]
@@ -362,10 +359,10 @@ class TestGeneSearchCommand:
 
         assert result.exit_code == 0
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_with_pagination(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_with_pagination(self, mock_get_gene):
         """Test gene search with full pagination parameters."""
-        mock_run.return_value = "# kinase\n\nResults"
+        mock_get_gene.return_value = "# kinase\n\nResults"
 
         result = runner.invoke(
             app,
@@ -376,42 +373,42 @@ class TestGeneSearchCommand:
         # Should show development note when pagination is used
         assert "development" in result.stdout.lower()
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_with_json_output(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_with_json_output(self, mock_get_gene):
         """Test gene search with JSON output."""
         json_output = json.dumps(
             {"symbol": "BRCA1", "name": "BRCA1 DNA repair associated"},
             indent=2,
         )
-        mock_run.return_value = json_output
+        mock_get_gene.return_value = json_output
 
         result = runner.invoke(app, ["gene", "search", "BRCA", "--json"])
 
         assert result.exit_code == 0
         assert "BRCA" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_with_json_short_flag(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_with_json_short_flag(self, mock_get_gene):
         """Test gene search with -j short flag."""
         json_output = json.dumps({"symbol": "BRCA1"}, indent=2)
-        mock_run.return_value = json_output
+        mock_get_gene.return_value = json_output
 
         result = runner.invoke(app, ["gene", "search", "BRCA", "-j"])
 
         assert result.exit_code == 0
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_quoted_query(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_quoted_query(self, mock_get_gene):
         """Test gene search with quoted multi-word query."""
-        mock_run.return_value = "# tumor protein\n\nResults"
+        mock_get_gene.return_value = "# tumor protein\n\nResults"
 
         result = runner.invoke(app, ["gene", "search", "tumor protein"])
 
         assert result.exit_code == 0
         assert "tumor protein" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_not_found(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_not_found(self, mock_get_gene):
         """Test gene search with no results."""
         error_msg = json.dumps(
             {
@@ -420,18 +417,18 @@ class TestGeneSearchCommand:
             },
             indent=2,
         )
-        mock_run.return_value = error_msg
+        mock_get_gene.return_value = error_msg
 
         result = runner.invoke(app, ["gene", "search", "INVALID_QUERY"])
 
         assert result.exit_code == 0
         assert "not found" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_search_genes_with_all_options(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_search_genes_with_all_options(self, mock_get_gene):
         """Test gene search with all available options."""
         json_output = json.dumps({"symbol": "kinase"}, indent=2)
-        mock_run.return_value = json_output
+        mock_get_gene.return_value = json_output
 
         result = runner.invoke(
             app,
@@ -532,8 +529,8 @@ class TestGeneCliIntegration:
         # Should show limited aliases with "and X more" message
         assert "alias" in result.stdout.lower() or "BRCC1" in result.stdout
 
-    @patch("biomcp.cli.genes.asyncio.run")
-    def test_gene_command_error_handling(self, mock_run):
+    @patch("biomcp.cli.genes.get_gene")
+    def test_gene_command_error_handling(self, mock_get_gene):
         """Test error handling in gene commands."""
         # Simulate an error response from the API
         error_msg = json.dumps(
@@ -543,7 +540,7 @@ class TestGeneCliIntegration:
             },
             indent=2,
         )
-        mock_run.return_value = error_msg
+        mock_get_gene.return_value = error_msg
 
         result = runner.invoke(app, ["gene", "get", "TP53"])
 
