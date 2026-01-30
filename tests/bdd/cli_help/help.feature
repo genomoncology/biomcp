@@ -8,6 +8,8 @@ Feature: CLI Help and Version Information
     And the output should contain "article"
     And the output should contain "trial"
     And the output should contain "variant"
+    And the output should contain "gene"
+    And the output should contain "drug"
 
   Scenario: Display version information
     Given I run "biomcp --version"

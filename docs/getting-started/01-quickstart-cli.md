@@ -75,11 +75,55 @@ biomcp variant search --gene TP53 # get variants for a gene
 biomcp article search --gene TP53 # find articles about a gene
 ```
 
-### Look Up Drug Information
-
-Get details about imatinib (Gleevec):
+**Get gene information with functional enrichment analysis:**
 
 ```bash
+# Pathway enrichment (KEGG, Reactome, WikiPathways)
+biomcp gene get TP53 --enrich pathway
+
+# Gene Ontology enrichment
+biomcp gene get BRCA1 --enrich ontology
+
+# Cell type associations
+biomcp gene get EGFR --enrich celltypes
+
+# Available enrichment types:
+# - pathway, kegg, reactome, wikipathways
+# - ontology, go_process, go_molecular, go_cellular
+# - celltypes, tissues
+# - diseases, gwas
+# - transcription_factors, tf
+```
+
+You can also search for genes:
+
+```bash
+biomcp gene search "tumor protein"
+```
+
+### Get Disease Information
+
+Get details about diseases from MyDisease.info:
+
+```bash
+biomcp disease get melanoma
+biomcp disease get "lung cancer"
+```
+
+### Get Drug Information
+
+Get comprehensive drug information from MyChem.info:
+
+```bash
+biomcp drug get imatinib
+biomcp drug get aspirin
+```
+
+You can also search by drug identifiers:
+
+```bash
+biomcp drug get DB00945  # DrugBank ID
+biomcp drug get CHEMBL25  # ChEMBL ID
 biomcp intervention search imatinib
 ```
 
@@ -178,14 +222,20 @@ biomcp trial search \
   --status RECRUITING
 ```
 
-### 3. Investigate Drug Mechanisms
+### 3. Investigate Genes, Diseases, and Drugs
 
 ```bash
-# Get information about pembrolizumab
-biomcp drug get pembrolizumab
+# Get gene information
+biomcp gene get TP53
 
-# Find articles about its use in melanoma
-biomcp article search --chemical pembrolizumab --disease melanoma
+# Get disease information
+biomcp disease get melanoma
+
+# Get drug information
+biomcp drug get imatinib
+
+# Find articles about the gene in a specific disease
+biomcp article search --gene TP53 --disease melanoma
 ```
 
 ## Troubleshooting

@@ -26,18 +26,19 @@ Options:
 
 ## Commands Overview
 
-| Domain           | Commands             | Purpose                                         |
-| ---------------- | -------------------- | ----------------------------------------------- |
-| **article**      | search, get          | Search and retrieve biomedical literature       |
-| **trial**        | search, get          | Find and fetch clinical trial information       |
-| **variant**      | search, get, predict | Analyze genetic variants and predict effects    |
-| **gene**         | get                  | Retrieve gene information and annotations       |
-| **drug**         | get                  | Look up drug/chemical information               |
-| **disease**      | get                  | Get disease definitions and synonyms            |
-| **organization** | search               | Search NCI organization database                |
-| **intervention** | search               | Find interventions (drugs, devices, procedures) |
-| **biomarker**    | search               | Search biomarkers used in trials                |
-| **health**       | check                | Monitor API status and system health            |
+| Domain           | Commands                                           | Purpose                                          |
+| ---------------- | -------------------------------------------------- | ------------------------------------------------ |
+| **article**      | search, get                                        | Search and retrieve biomedical literature        |
+| **trial**        | search, get                                        | Find and fetch clinical trial information        |
+| **variant**      | search, get, predict                               | Analyze genetic variants and predict effects     |
+| **gene**         | get                                                | Retrieve gene information and annotations        |
+| **drug**         | get                                                | Look up drug/chemical information                |
+| **disease**      | get                                                | Get disease definitions and synonyms             |
+| **openfda**      | adverse, label, device, approval, recall, shortage | Search and retrieve FDA openFDA + shortages data |
+| **organization** | search                                             | Search NCI organization database                 |
+| **intervention** | search                                             | Find interventions (drugs, devices, procedures)  |
+| **biomarker**    | search                                             | Search biomarkers used in trials                 |
+| **health**       | check                                              | Monitor API status and system health             |
 
 ## Article Commands
 
@@ -342,19 +343,60 @@ For practical examples using BioThings integration, see [How to Find Trials with
 
 ### gene get
 
-Retrieve gene information from MyGene.info.
+Retrieve gene information from MyGene.info with optional functional enrichment analysis.
 
 ```bash
-biomcp gene get GENE_NAME
+biomcp gene get GENE_NAME [OPTIONS]
 ```
+
+**Options:**
+
+- `--enrich, -e TEXT`: Add functional enrichment analysis (pathway, ontology, celltypes, etc.)
+- `--json, -j`: Output in JSON format
+
+**Available Enrichment Types:**
+
+| Category      | Short Name              | Full Database Name         |
+| ------------- | ----------------------- | -------------------------- |
+| Pathways      | `pathway`               | KEGG_2021_Human            |
+|               | `kegg`                  | KEGG_2021_Human            |
+|               | `reactome`              | Reactome_2022              |
+|               | `wikipathways`          | WikiPathways_2024_Human    |
+| Gene Ontology | `ontology`              | GO_Biological_Process_2021 |
+|               | `go_process`            | GO_Biological_Process_2021 |
+|               | `go_molecular`          | GO_Molecular_Function_2021 |
+|               | `go_cellular`           | GO_Cellular_Component_2021 |
+| Cell Types    | `celltypes`             | PanglaoDB_Augmented_2021   |
+|               | `tissues`               | Human_Gene_Atlas           |
+| Diseases      | `diseases`              | DisGeNET                   |
+|               | `gwas`                  | GWAS_Catalog_2023          |
+| TFs           | `transcription_factors` | ChEA_2022                  |
+|               | `tf`                    | ChEA_2022                  |
 
 **Examples:**
 
 ```bash
-# Get gene information
+# Basic gene information
 biomcp gene get TP53
 biomcp gene get BRAF
+
+# With pathway enrichment
+biomcp gene get TP53 --enrich pathway
+
+# With Gene Ontology enrichment
+biomcp gene get BRCA1 --enrich ontology
+
+# With cell type associations
+biomcp gene get EGFR --enrich celltypes
+
+# Using full database name
+biomcp gene get TP53 --enrich KEGG_2021_Human
+
+# JSON output with enrichment
+biomcp gene get TP53 --enrich pathway --json
 ```
+
+**Note:** Enrichment analysis is powered by the Enrichr API and inspired by [gget enrichr](https://github.com/pachterlab/gget) (Luebbert & Pachter, 2023).
 
 ### drug get
 
@@ -386,6 +428,69 @@ biomcp disease get DISEASE_NAME
 # Get disease information
 biomcp disease get melanoma
 biomcp disease get "non-small cell lung cancer"
+```
+
+## OpenFDA Commands
+
+These commands provide access to FDA datasets (openFDA) plus the FDA drug shortages feed.
+
+### openfda approval search
+
+Search FDA drug approval records (Drugs@FDA).
+
+```bash
+biomcp openfda approval search [OPTIONS]
+```
+
+**Options:**
+
+- `--drug, -d TEXT`: Drug name to search for
+- `--application, -a TEXT`: NDA or BLA application number
+- `--year, -y TEXT`: Approval year (YYYY format)
+- `--limit, -l INTEGER`: Maximum number of results (default: 25)
+- `--page, -p INTEGER`: Page number (1-based)
+- `--api-key TEXT`: OpenFDA API key (overrides OPENFDA_API_KEY env var)
+
+**Examples:**
+
+```bash
+# Search approvals by year
+biomcp openfda approval search --year 2021 --limit 3
+
+# Search approvals by drug name
+biomcp openfda approval search --drug pembrolizumab --limit 3
+
+# Get approval details
+biomcp openfda approval get BLA125514
+```
+
+### openfda shortage search
+
+Search FDA drug shortage information (from the FDA shortages feed).
+
+```bash
+biomcp openfda shortage search [OPTIONS]
+```
+
+**Options:**
+
+- `--drug, -d TEXT`: Drug name to search for
+- `--status, -s TEXT`: Shortage status (`current` or `resolved`)
+- `--category, -c TEXT`: Therapeutic category
+- `--limit, -l INTEGER`: Maximum number of results (default: 25)
+- `--page, -p INTEGER`: Page number (1-based)
+
+**Examples:**
+
+```bash
+# List current shortages
+biomcp openfda shortage search --status current --limit 10
+
+# Search shortages for a drug
+biomcp openfda shortage search --drug cisplatin --limit 5
+
+# Get shortage details
+biomcp openfda shortage get cisplatin
 ```
 
 ## NCI-Specific Commands

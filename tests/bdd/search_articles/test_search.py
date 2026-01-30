@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 
+import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from biomcp.articles.search import (
@@ -13,6 +14,8 @@ from biomcp.articles.search import (
 )
 
 scenarios("search.feature")
+
+pytestmark = pytest.mark.usefixtures("mock_pubtator3_http")
 
 
 @given(

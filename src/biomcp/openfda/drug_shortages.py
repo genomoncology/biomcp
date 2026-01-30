@@ -2,14 +2,16 @@
 FDA drug shortages integration with caching.
 
 Note: FDA does not yet provide an OpenFDA endpoint for drug shortages.
-This module fetches from the FDA Drug Shortages JSON feed and caches it locally.
+This module fetches from the FDA Drug Shortages CSV feed and caches it locally.
 """
 
+import csv
 import json
 import logging
 import os
 import tempfile
 from datetime import datetime, timedelta
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
@@ -42,8 +44,10 @@ logger = logging.getLogger(__name__)
 FDA_SHORTAGES_URL = (
     "https://www.accessdata.fda.gov/scripts/drugshortages/default.cfm"
 )
-# Alternative: Direct JSON feed if available
-FDA_SHORTAGES_JSON_URL = "https://www.fda.gov/media/169066/download"  # Example URL, update as needed
+# CSV feed (requires a browser-like User-Agent to avoid abuse detection)
+FDA_SHORTAGES_CSV_URL = (
+    "https://www.accessdata.fda.gov/scripts/drugshortages/Drugshortages.cfm"
+)
 
 # Cache configuration
 CACHE_DIR = Path(tempfile.gettempdir()) / "biomcp_cache"
@@ -59,34 +63,111 @@ async def _fetch_shortage_data() -> dict[str, Any] | None:
         Dictionary with shortage data or None if fetch fails
     """
     try:
-        # Try to fetch the JSON feed
-        # Note: The actual URL may need to be updated based on FDA's current API
         response, error = await request_api(
-            url=FDA_SHORTAGES_JSON_URL,
-            request={},
+            url=FDA_SHORTAGES_CSV_URL,
+            request={
+                "_headers": json.dumps({
+                    "Accept": "text/csv,text/plain;q=0.9,*/*;q=0.8",
+                    "User-Agent": (
+                        "Mozilla/5.0 (X11; Linux x86_64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    ),
+                })
+            },
             method="GET",
             domain="fda_drug_shortages",
+            cache_ttl=0,  # File-cache below is authoritative for this feed
         )
 
         if error:
             logger.error(f"API error: {error}")
             return None  # Don't return mock data in production
 
-        if response and hasattr(response, "model_dump"):
-            data = response.model_dump()
-        elif isinstance(response, dict):
-            data = response
+        shortages: list[dict[str, Any]]
+        if isinstance(response, str):
+            shortages = _parse_csv_response(response)
+        elif isinstance(response, list):
+            shortages = _parse_csv_rows(response)
         else:
-            data = {}
+            logger.error("Unexpected response type from FDA endpoint")
+            return None  # Don't return mock data in production
 
-        # Add fetch timestamp
-        data["_fetched_at"] = datetime.now().isoformat()
-
-        return data
+        return {
+            "_fetched_at": datetime.now().isoformat(),
+            "shortages": shortages,
+        }
 
     except Exception as e:
         logger.error(f"Failed to fetch shortage data: {e}")
         return None  # Don't return mock data in production
+
+
+def _normalize_status(status: str) -> str:
+    """Normalize status values from the FDA CSV feed."""
+    status_lower = status.strip().lower()
+    if "current" in status_lower or "ongoing" in status_lower:
+        return "Current"
+    if "resolved" in status_lower:
+        return "Resolved"
+    if "discontinue" in status_lower:
+        return "Discontinued"
+    return status.title() if status else "Unknown"
+
+
+def _normalize_csv_row(row: dict[str, Any]) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    for key, value in row.items():
+        if key is None:
+            continue
+        key_str = str(key).strip()
+        value_str = "" if value is None else str(value).strip()
+        normalized[key_str] = value_str
+    return normalized
+
+
+def _parse_csv_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Convert parsed CSV rows into shortage records."""
+    shortages: list[dict[str, Any]] = []
+
+    for row in rows:
+        normalized = _normalize_csv_row(row)
+
+        generic_name = normalized.get("Generic Name", "")
+        company_name = normalized.get("Company Name", "")
+        status_raw = normalized.get("Status", "")
+        status = _normalize_status(status_raw)
+
+        shortage = {
+            "generic_name": generic_name,
+            # The FDA feed does not provide true brand names; expose company for visibility.
+            "brand_names": [company_name] if company_name else [],
+            "status": status,
+            "therapeutic_category": normalized.get("Therapeutic Category", ""),
+            "reason": normalized.get("Reason for Shortage", ""),
+            "availability": normalized.get("Availability Information", ""),
+            "presentation": normalized.get("Presentation", ""),
+            "notes": normalized.get("Resolved Note", "")
+            or normalized.get("Related Information", ""),
+            "shortage_start_date": normalized.get("Initial Posting Date", ""),
+            "resolution_date": normalized.get("Date Discontinued", "")
+            if "resolved" in status_raw.lower()
+            else "",
+            "last_updated": normalized.get("Date of Update", ""),
+            "manufacturers": [company_name] if company_name else [],
+        }
+
+        if shortage["generic_name"]:
+            shortages.append(shortage)
+
+    return shortages
+
+
+def _parse_csv_response(csv_text: str) -> list[dict[str, Any]]:
+    """Parse raw CSV text into shortage records."""
+    cleaned = csv_text.lstrip("\ufeff\r\n")
+    reader = csv.DictReader(StringIO(cleaned))
+    return _parse_csv_rows(list(reader))
 
 
 def _read_cache_file() -> dict[str, Any] | None:
@@ -111,6 +192,8 @@ def _read_cache_file() -> dict[str, Any] | None:
         cache_age = datetime.now() - fetched_at
 
         if cache_age < timedelta(hours=CACHE_TTL_HOURS):
+            if not isinstance(data.get("shortages"), list):
+                return None
             logger.debug(f"Using cached shortage data (age: {cache_age})")
             return data
 
@@ -200,11 +283,11 @@ async def search_drug_shortages(
         return (
             "⚠️ **Drug Shortage Data Temporarily Unavailable**\n\n"
             "The FDA drug shortage database cannot be accessed at this time. "
-            "This feature requires FDA to provide a machine-readable API endpoint.\n\n"
+            "This feature relies on the FDA drug shortage CSV feed, which may be temporarily unavailable.\n\n"
             "**Alternative Options:**\n"
             "• Visit FDA Drug Shortages Database: https://www.accessdata.fda.gov/scripts/drugshortages/\n"
             "• Check ASHP Drug Shortages: https://www.ashp.org/drug-shortages/current-shortages\n\n"
-            "Note: FDA currently provides shortage data only as PDF/HTML, not as a queryable API."
+            "If the FDA endpoint changes or blocks automated access, try again later."
         )
 
     shortages = data.get("shortages", [])
@@ -270,11 +353,11 @@ async def get_drug_shortage(
         return (
             "⚠️ **Drug Shortage Data Temporarily Unavailable**\n\n"
             "The FDA drug shortage database cannot be accessed at this time. "
-            "This feature requires FDA to provide a machine-readable API endpoint.\n\n"
+            "This feature relies on the FDA drug shortage CSV feed, which may be temporarily unavailable.\n\n"
             "**Alternative Options:**\n"
             "• Visit FDA Drug Shortages Database: https://www.accessdata.fda.gov/scripts/drugshortages/\n"
             "• Check ASHP Drug Shortages: https://www.ashp.org/drug-shortages/current-shortages\n\n"
-            "Note: FDA currently provides shortage data only as PDF/HTML, not as a queryable API."
+            "If the FDA endpoint changes or blocks automated access, try again later."
         )
 
     shortages = data.get("shortages", [])

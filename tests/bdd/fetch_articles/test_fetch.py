@@ -1,12 +1,15 @@
 import json
 import shlex
 
+import pytest
 from pytest_bdd import given, parsers, scenarios, then
 from typer.testing import CliRunner
 
 from biomcp.cli.main import app
 
 scenarios("fetch.feature")
+
+pytestmark = pytest.mark.usefixtures("mock_pubtator3_http")
 
 runner = CliRunner()
 
