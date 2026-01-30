@@ -1,54 +1,16 @@
 # Use Case: Cell Therapy Trial Landscape
 
-Explore the clinical trial landscape for CAR-T and other cell therapies.
-
-## Scenario
-
-Survey active CAR-T cell therapy trials across indications.
+Explore clinical trials for CAR-T and other cell therapies.
 
 ## Workflow
 
-### Step 1: Search CAR-T Trials
+1. **Search cell therapy trials** - Find CAR-T, TIL, TCR-T trials
+2. **Filter by indication** - Specific cancer types
+3. **Filter by intervention type** - Biological/cell-based
+4. **Get trial details** - Eligibility and design
+5. **Search literature** - Recent publications
 
-```bash
-biomcp trial search --term "CAR-T" --status open --phase phase3
-```
-
-Find late-stage CAR-T trials.
-
-### Step 2: Filter by Indication
-
-```bash
-biomcp trial search --term "CAR-T" --condition "lymphoma" --status open
-```
-
-Focus on specific cancer types.
-
-### Step 3: Search by Intervention Type
-
-```bash
-biomcp trial search --condition "leukemia" --intervention-type biological --term "cell therapy"
-```
-
-Broader search including other cell therapies.
-
-### Step 4: Get Trial Details
-
-```bash
-biomcp trial get NCT05727904
-```
-
-Review specific trial eligibility and design.
-
-### Step 5: Search Literature
-
-```bash
-biomcp article search --keyword "CAR-T therapy" --disease "lymphoma" --page 1
-```
-
-Find recent CAR-T publications.
-
-## Cell Therapy Trial Types
+## Cell Therapy Types
 
 | Therapy | Search Term                               |
 | ------- | ----------------------------------------- |
@@ -64,26 +26,9 @@ Find recent CAR-T publications.
 - Acute lymphoblastic leukemia
 - Solid tumors (emerging)
 
-## Expected Output
-
-CAR-T trials discovered:
-
-- NCT06904729: CAR-T for lupus nephritis (Phase 3)
-- NCT06237336: Relapsed hematological malignancies
-- NCT03937544: CD19 CAR-T for B-ALL
-
-## Trial Considerations
-
-| Factor        | Notes                                       |
-| ------------- | ------------------------------------------- |
-| Manufacturing | 2-4 week turnaround for autologous          |
-| Eligibility   | Often requires adequate organ function      |
-| Monitoring    | CRS/ICANS risk requires specialized centers |
-| Follow-up     | Long-term safety monitoring required        |
-
 ## Tips
 
 - CAR-T trials often have complex eligibility criteria
 - Check for prior therapy requirements
-- Note manufacturing timeline in study design
-- Review safety monitoring requirements
+- Note manufacturing timeline (2-4 weeks for autologous)
+- Review CRS/ICANS monitoring requirements

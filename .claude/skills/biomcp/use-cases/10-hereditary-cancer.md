@@ -2,61 +2,13 @@
 
 Research hereditary cancer syndromes including variant interpretation and surveillance trials.
 
-## Scenario
-
-Investigate Lynch syndrome, a hereditary cancer predisposition syndrome, including causative variants and clinical trials.
-
 ## Workflow
 
-### Step 1: Search Clinical Trials
-
-```bash
-biomcp trial search --condition "Lynch syndrome" --status open
-```
-
-Find trials for Lynch syndrome patients.
-
-### Step 2: Search Causative Gene Variants
-
-```bash
-biomcp variant search --gene MLH1 --significance pathogenic --size 10
-```
-
-Find pathogenic variants in mismatch repair genes.
-
-### Step 3: Search Other MMR Genes
-
-```bash
-biomcp variant search --gene MSH2 --significance pathogenic --size 5
-biomcp variant search --gene MSH6 --significance pathogenic --size 5
-biomcp variant search --gene PMS2 --significance pathogenic --size 5
-```
-
-### Step 4: Get Disease Information
-
-```bash
-biomcp disease search "Lynch syndrome"
-```
-
-Get syndrome details and synonyms.
-
-### Step 5: Search Literature
-
-```bash
-biomcp article search --gene MLH1 --disease "colorectal cancer" --keyword "Lynch" --page 1
-```
-
-Find Lynch syndrome research publications.
-
-## Lynch Syndrome Genes
-
-| Gene  | Associated Cancers                     |
-| ----- | -------------------------------------- |
-| MLH1  | Colorectal, endometrial, ovarian       |
-| MSH2  | Colorectal, endometrial, urinary tract |
-| MSH6  | Colorectal, endometrial                |
-| PMS2  | Colorectal (lower penetrance)          |
-| EPCAM | Colorectal (MSH2 silencing)            |
+1. **Search clinical trials** - Trials for syndrome patients
+2. **Search causative gene variants** - Pathogenic variants in syndrome genes
+3. **Check all genes in panel** - Multiple genes per syndrome
+4. **Get disease information** - Syndrome details and synonyms
+5. **Search literature** - Syndrome-specific research
 
 ## Hereditary Cancer Syndromes
 
@@ -68,13 +20,15 @@ Find Lynch syndrome research publications.
 | Li-Fraumeni | TP53                   | Multiple                |
 | Cowden      | PTEN                   | Breast, thyroid         |
 
-## Expected Output
+## Lynch Syndrome Genes
 
-Lynch syndrome findings:
-
-- Pathogenic MLH1 variants: Truncating mutations, splice site variants
-- Active trials: Surveillance studies, prevention trials, immunotherapy
-- Cancer risks: 50-80% lifetime colorectal cancer risk
+| Gene  | Associated Cancers                     |
+| ----- | -------------------------------------- |
+| MLH1  | Colorectal, endometrial, ovarian       |
+| MSH2  | Colorectal, endometrial, urinary tract |
+| MSH6  | Colorectal, endometrial                |
+| PMS2  | Colorectal (lower penetrance)          |
+| EPCAM | Colorectal (MSH2 silencing)            |
 
 ## Trial Types for Hereditary Syndromes
 
@@ -85,18 +39,9 @@ Lynch syndrome findings:
 | Diagnostic   | Biomarker development           |
 | Treatment    | Cancer-specific therapies       |
 
-## Example Trials
-
-Lynch syndrome trials discovered:
-
-- NCT07360834: Liquid biopsy surveillance study
-- NCT06582914: LINEAGE epidemiology consortium
-- NCT07163403: Dendritic cell vaccine prevention
-
 ## Tips
 
 - Search all genes in a syndrome panel
 - Include both syndrome name and gene names in searches
 - Check for prevention/risk reduction trials
-- Review surveillance protocol trials
 - Consider family testing implications

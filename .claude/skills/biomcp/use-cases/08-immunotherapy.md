@@ -2,51 +2,13 @@
 
 Find immunotherapy trials based on biomarker status.
 
-## Scenario
-
-Identify clinical trials for melanoma patients based on PD-L1 expression or other immunotherapy biomarkers.
-
 ## Workflow
 
-### Step 1: Search by Biomarker Term
-
-```bash
-biomcp trial search --condition "melanoma" --term "PD-L1" --status open
-```
-
-Find trials mentioning PD-L1.
-
-### Step 2: Filter for Biologics
-
-```bash
-biomcp trial search --condition "melanoma" --term "PD-L1" --status open --intervention-type biological
-```
-
-Focus on immunotherapy agents.
-
-### Step 3: Search Checkpoint Inhibitor Trials
-
-```bash
-biomcp trial search --condition "melanoma" --term "pembrolizumab" --status open --phase phase3
-```
-
-Find trials with specific checkpoint inhibitors.
-
-### Step 4: Search Combination Trials
-
-```bash
-biomcp trial search --condition "melanoma" --term "nivolumab ipilimumab" --status open
-```
-
-Find combination immunotherapy trials.
-
-### Step 5: Check Drug Safety
-
-```bash
-biomcp openfda adverse search --drug nivolumab --serious --limit 10
-```
-
-Review safety profile of immunotherapy agents.
+1. **Search by biomarker** - PD-L1, TMB, MSI-H
+2. **Filter for biologics** - Immunotherapy agents
+3. **Search checkpoint inhibitor trials** - Specific drugs
+4. **Search combination trials** - Multi-agent regimens
+5. **Check drug safety** - Adverse event profiles
 
 ## Key Immunotherapy Biomarkers
 
@@ -66,31 +28,12 @@ Review safety profile of immunotherapy agents.
 | CTLA-4 inhibitors | Ipilimumab               | CTLA-4 |
 | LAG-3 inhibitors  | Relatlimab               | LAG-3  |
 
-## Expected Output
-
-Immunotherapy trials discovered:
-
-- NCT06961006: V940 vaccine + pembrolizumab (Phase 2)
-- NCT05111574: Nivolumab + cabozantinib adjuvant
-- NCT05144698: RAPA-201 cell therapy + pembrolizumab
-
 ## Immune-Related Adverse Events
 
-Monitor for:
-
-- Pneumonitis
-- Colitis
-- Hepatitis
-- Thyroid dysfunction
-- Skin reactions
-
-```bash
-biomcp openfda adverse search --drug pembrolizumab --reaction "pneumonitis"
-```
+Monitor for: Pneumonitis, Colitis, Hepatitis, Thyroid dysfunction, Skin reactions
 
 ## Tips
 
 - Biomarker cutoffs vary by trial (e.g., PD-L1 ≥1% vs ≥50%)
 - Check eligibility for prior immunotherapy exposure
-- Review immune-related AE requirements
 - Consider combination vs monotherapy trials

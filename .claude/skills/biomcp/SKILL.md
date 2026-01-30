@@ -5,102 +5,74 @@ description: Query biomedical databases for clinical trials, research articles, 
 
 # BioMCP CLI
 
-BioMCP provides AI agents with direct access to biomedical data sources via command-line interface.
+Query biomedical databases: PubMed, ClinicalTrials.gov, ClinVar, OpenFDA.
 
 ## When to Use
 
-- Literature search: "find papers about BRAF melanoma", "evidence for this variant"
-- Clinical trials: "recruiting trials for lung cancer", "trials near Boston"
-- Variant analysis: "is BRCA1 p.E1250K pathogenic", "variant frequency"
-- Drug safety: "adverse events for pembrolizumab", "drug interactions"
-- FDA data: "drug approvals in 2023", "current drug shortages"
+- Literature: "find papers about BRAF", "evidence for this variant"
+- Trials: "recruiting trials for lung cancer", "trials near Boston"
+- Variants: "is BRCA1 p.E1250K pathogenic", "variant frequency"
+- FDA: "adverse events for pembrolizumab", "drug shortages"
 
 ## Installation
 
 ```bash
 uv tool install biomcp-python
 biomcp --version
-biomcp health check
 ```
 
 ## Commands
 
-| Command | Purpose | Example |
-|---------|---------|---------|
-| `biomcp article search` | Find literature | `--gene BRAF --disease melanoma` |
-| `biomcp article get` | Fetch paper | `38768446` |
-| `biomcp trial search` | Find trials | `--condition "lung cancer" --status OPEN` |
-| `biomcp trial get` | Trial details | `NCT04280705` |
-| `biomcp variant search` | Query variants | `--gene BRCA1 --significance pathogenic` |
-| `biomcp variant get` | Variant details | `rs113488022` |
-| `biomcp openfda adverse search` | Drug safety | `--drug pembrolizumab --serious` |
-| `biomcp openfda approval search` | Drug approvals | `--year 2023 --limit 10` |
-| `biomcp openfda shortage search` | Drug shortages | `--status current` |
+| Command | Purpose |
+|---------|---------|
+| `biomcp article search` | Find literature (PubMed) |
+| `biomcp article get` | Get article by PMID |
+| `biomcp trial search` | Find clinical trials |
+| `biomcp trial get` | Get trial by NCT ID |
+| `biomcp variant search` | Query ClinVar variants |
+| `biomcp variant get` | Get variant by rsID |
+| `biomcp openfda adverse search` | Drug adverse events |
+| `biomcp openfda approval search` | Drug approvals |
+| `biomcp openfda shortage search` | Drug shortages |
+| `biomcp openfda label search` | Drug labels |
 
-## Output Formats
+**Discover options:** `biomcp [command] [subcommand] --help`
 
-Use `-j` or `--json` for JSON output:
+**Important:** BioMCP is a command-line tool. Always use `biomcp` commands directly—do not import it as a Python library.
 
-```bash
-biomcp variant search --gene BRAF --significance pathogenic -j
-biomcp trial search --condition melanoma --status OPEN -j
-biomcp article search --gene EGFR --disease "lung cancer" -j
-```
+## Key Patterns
+
+- Use `-j` or `--json` for structured output
+- Status enums are UPPERCASE (OPEN, RECRUITING, PHASE3)
+- Normalize before searching (see below)
 
 ## Normalization
 
-Normalize entity names before searching:
-
-- Genes: Use HGNC symbols (HER2 → ERBB2)
-- Variants: Use HGVS notation (V600E → p.Val600Glu)
-- Diseases: Use standard terms via `biomcp disease get`
+- **Genes:** Use HGNC symbols (HER2 → ERBB2)
+- **Variants:** Use HGVS notation (V600E → p.Val600Glu)
+- **Diseases:** Use standard terms via `biomcp disease get`
 
 ## Use Cases
 
-Detailed workflows in `use-cases/`:
+See `use-cases/` for detailed clinical workflows:
 
-1. [Precision Oncology](use-cases/01-precision-oncology.md) - Tumor profiling reports
-2. [Trial Matching](use-cases/02-trial-matching.md) - Patient-trial matching
-3. [Drug Safety](use-cases/03-drug-safety.md) - Adverse event investigation
-4. [Variant Interpretation](use-cases/04-variant-interpretation.md) - Clinical significance
-5. [Rare Disease](use-cases/05-rare-disease.md) - Orphan disease research
-6. [Drug Shortages](use-cases/06-drug-shortages.md) - Supply chain monitoring
-7. [Cell Therapy](use-cases/07-cell-therapy.md) - CAR-T trial landscape
-8. [Immunotherapy](use-cases/08-immunotherapy.md) - Biomarker-driven trials
-9. [Drug Labels](use-cases/09-drug-labels.md) - FDA label search
-10. [Hereditary Cancer](use-cases/10-hereditary-cancer.md) - Germline variants
-
-## Common Workflows
-
-### Variant pathogenicity + trials (e.g., BRAF V600E melanoma)
-```bash
-biomcp variant search --gene BRAF --hgvsp "p.Val600Glu" --significance pathogenic -j
-biomcp trial search --condition melanoma --required-mutation "BRAF V600E" --status OPEN -j
-```
-
-### Drug safety investigation
-```bash
-biomcp openfda adverse search --drug pembrolizumab --serious -j
-biomcp openfda approval search --drug pembrolizumab -j
-```
-
-### Literature + trial synthesis
-```bash
-biomcp article search --gene EGFR --disease "lung cancer" --keyword resistance -j
-biomcp trial search --condition "lung cancer" --term "EGFR resistance" --phase PHASE3 --status OPEN -j
-```
+| File | Pattern |
+|------|---------|
+| `01-mutation-to-trial` | Mutation → annotations → trials → literature |
+| `02-drug-investigation` | Drug → adverse events → approvals → labels |
+| `03-trial-matching` | Patient criteria → filtered trial search |
+| `04-variant-interpretation` | Variant → pathogenicity → actionability |
+| `05-rare-disease` | Rare condition → gene therapy → registries |
+| `06-drug-shortages` | Drug → shortage status → alternatives |
+| `07-cell-therapy` | CAR-T/TIL/TCR-T trial landscape |
+| `08-immunotherapy` | Biomarker-driven checkpoint inhibitor trials |
+| `09-drug-labels` | FDA labels → indications → warnings |
+| `10-hereditary-cancer` | Syndrome → genes → surveillance trials |
+| `11-resistance-research` | Prior therapy → resistance → next-line options |
 
 ## Troubleshooting
 
 ```bash
-# Check API status
 biomcp health check --verbose
-
-# Enable debug logging
 BIOMCP_LOG_LEVEL=DEBUG biomcp article search --gene TP53
 ```
-
-## Resources
-
-- [Documentation](https://biomcp.org)
-- [GitHub](https://github.com/genomoncology/biomcp)
