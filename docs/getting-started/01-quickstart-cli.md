@@ -95,11 +95,35 @@ biomcp gene get EGFR --enrich celltypes
 # - transcription_factors, tf
 ```
 
-### Look Up Drug Information
-
-Get details about imatinib (Gleevec):
+You can also search for genes:
 
 ```bash
+biomcp gene search "tumor protein"
+```
+
+### Get Disease Information
+
+Get details about diseases from MyDisease.info:
+
+```bash
+biomcp disease get melanoma
+biomcp disease get "lung cancer"
+```
+
+### Get Drug Information
+
+Get comprehensive drug information from MyChem.info:
+
+```bash
+biomcp drug get imatinib
+biomcp drug get aspirin
+```
+
+You can also search by drug identifiers:
+
+```bash
+biomcp drug get DB00945  # DrugBank ID
+biomcp drug get CHEMBL25  # ChEMBL ID
 biomcp intervention search imatinib
 ```
 
@@ -198,14 +222,20 @@ biomcp trial search \
   --status RECRUITING
 ```
 
-### 3. Investigate Drug Mechanisms
+### 3. Investigate Genes, Diseases, and Drugs
 
 ```bash
-# Get information about pembrolizumab
-biomcp drug get pembrolizumab
+# Get gene information
+biomcp gene get TP53
 
-# Find articles about its use in melanoma
-biomcp article search --chemical pembrolizumab --disease melanoma
+# Get disease information
+biomcp disease get melanoma
+
+# Get drug information
+biomcp drug get imatinib
+
+# Find articles about the gene in a specific disease
+biomcp article search --gene TP53 --disease melanoma
 ```
 
 ## Troubleshooting

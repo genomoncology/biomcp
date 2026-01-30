@@ -57,8 +57,9 @@ class TestGeneCLI:
         assert result.exit_code == 0
         mock_get_gene.assert_called_once()
         call_args = mock_get_gene.call_args
-        assert call_args[0][0] == "TP53"
-        assert call_args[1]["output_json"] is True
+        # Check kwargs since the function is called with keyword arguments
+        assert call_args.kwargs.get("gene_id_or_symbol") == "TP53"
+        assert call_args.kwargs.get("output_json") is True
 
     @patch("biomcp.cli.genes.get_gene")
     def test_gene_get_not_found(self, mock_get_gene):
