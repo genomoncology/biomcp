@@ -1,4 +1,5 @@
 import importlib.metadata
+import logging
 from typing import Annotated
 
 import typer
@@ -6,6 +7,8 @@ import typer
 from .articles import article_app
 from .biomarkers import biomarker_app
 from .diseases import disease_app
+from .drugs import drug_app
+from .genes import gene_app
 from .health import health_app
 from .interventions import intervention_app
 from .openfda import openfda_app
@@ -52,6 +55,18 @@ app.add_typer(
 app.add_typer(
     variant_app,
     name="variant",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    gene_app,
+    name="gene",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    drug_app,
+    name="drug",
     no_args_is_help=True,
 )
 
@@ -107,12 +122,30 @@ def main_callback(
             help="Show the application's version and exit.",
         ),
     ] = None,  # Default value
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            "-v",
+            help="Enable verbose logging (show INFO level messages)",
+            is_eager=True,
+        ),
+    ] = False,
 ):
     """
-    BioMCP main application callback. Handles global options like --version.
+    BioMCP main application callback. Handles global options like --version and --verbose.
     """
-    # The actual logic is in version_callback due to is_eager=True
-    pass
+    # Configure logging based on verbose flag
+    # Set level for all biomcp loggers
+    biomcp_logger = logging.getLogger("biomcp")
+
+    if verbose:
+        biomcp_logger.setLevel(logging.INFO)
+        logging.getLogger().setLevel(logging.INFO)
+    else:
+        # Default: Only show WARNING and above
+        biomcp_logger.setLevel(logging.WARNING)
+        logging.getLogger().setLevel(logging.WARNING)
 
 
 # --- Add Explicit 'version' Command ---

@@ -17,8 +17,8 @@ class TestMCPIntegration:
         # Get the registered tools
         tools = await mcp_app.list_tools()
 
-        # Should have 35 tools (2 unified + 1 think + 32 individual including OpenFDA)
-        assert len(tools) == 35
+        # Should have 36 tools (2 unified + 1 think + 33 individual including OpenFDA and Enrichr)
+        assert len(tools) == 36
 
         # Check tool names
         tool_names = [tool.name for tool in tools]
