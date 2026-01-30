@@ -7,6 +7,7 @@ import typer
 from .articles import article_app
 from .biomarkers import biomarker_app
 from .diseases import disease_app
+from .drugs import drug_app
 from .genes import gene_app
 from .health import health_app
 from .interventions import intervention_app
@@ -60,6 +61,12 @@ app.add_typer(
 app.add_typer(
     gene_app,
     name="gene",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    drug_app,
+    name="drug",
     no_args_is_help=True,
 )
 
