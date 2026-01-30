@@ -29,6 +29,16 @@ test-js: ## Test JavaScript code only
 	@echo "🚀 Testing JavaScript: Running worker sanitization tests"
 	@node --test tests/tdd/workers/test_worker_sanitization.js
 
+.PHONY: test-worker
+test-worker: ## Test TypeScript OAuth proxy worker
+	@echo "🚀 Testing TypeScript worker: Running vitest"
+	@cd workers/oauth-proxy && pnpm test
+
+.PHONY: check-worker
+check-worker: ## Check TypeScript OAuth proxy worker (lint + typecheck)
+	@echo "🚀 Checking TypeScript worker"
+	@cd workers/oauth-proxy && pnpm run check && pnpm run lint
+
 .PHONY: cov
 cov: ## Generate HTML coverage report
 	@echo "🚀 Generating HTML coverage report"
