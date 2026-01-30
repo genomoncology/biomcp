@@ -1456,6 +1456,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#functional-enrichment-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Functional Enrichment Tools
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functional Enrichment Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#18-enrichr_analyzer" class="md-nav__link">
+    <span class="md-ellipsis">
+      18. enrichr_analyzer
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#nci-specific-tools" class="md-nav__link">
     <span class="md-ellipsis">
       NCI-Specific Tools
@@ -1466,9 +1490,9 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#18-19-organization-tools" class="md-nav__link">
+  <a href="#19-20-organization-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      18-19. Organization Tools
+      19-20. Organization Tools
     </span>
   </a>
   
@@ -3147,6 +3171,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#functional-enrichment-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Functional Enrichment Tools
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Functional Enrichment Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#18-enrichr_analyzer" class="md-nav__link">
+    <span class="md-ellipsis">
+      18. enrichr_analyzer
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#nci-specific-tools" class="md-nav__link">
     <span class="md-ellipsis">
       NCI-Specific Tools
@@ -3157,9 +3205,9 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#18-19-organization-tools" class="md-nav__link">
+  <a href="#19-20-organization-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      18-19. Organization Tools
+      19-20. Organization Tools
     </span>
   </a>
   
@@ -3427,7 +3475,7 @@
 
 
 <h1 id="mcp-tools-reference">MCP Tools Reference<a class="headerlink" href="#mcp-tools-reference" title="Permanent link">&para;</a></h1>
-<p>BioMCP provides 35 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.</p>
+<p>BioMCP provides 36 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.</p>
 <h2 id="related-guides">Related Guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Conceptual Overview</strong>: <a href="../../concepts/03-sequential-thinking-with-the-think-tool/">Sequential Thinking with the Think Tool</a></li>
@@ -3468,6 +3516,11 @@
 <td><strong>BioThings Tools</strong></td>
 <td>3</td>
 <td><code>gene_getter</code>, <code>disease_getter</code>, <code>drug_getter</code></td>
+</tr>
+<tr>
+<td><strong>Enrichment Tools</strong></td>
+<td>1</td>
+<td><code>enrichr_analyzer</code></td>
 </tr>
 <tr>
 <td><strong>NCI Tools</strong></td>
@@ -3763,155 +3816,252 @@
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p><strong>Returns:</strong> Chemical structure, mechanism, indications, trade names, identifiers</p>
+<h2 id="functional-enrichment-tools">Functional Enrichment Tools<a class="headerlink" href="#functional-enrichment-tools" title="Permanent link">&para;</a></h2>
+<h3 id="18-enrichr_analyzer">18. enrichr_analyzer<a class="headerlink" href="#18-enrichr_analyzer" title="Permanent link">&para;</a></h3>
+<p><strong>Perform functional enrichment analysis on gene lists using the Enrichr API.</strong></p>
+<p>Inspired by <a href="https://github.com/pachterlab/gget">gget enrichr</a> (Luebbert &amp; Pachter, 2023). This tool helps identify pathways, biological processes, cell types, and other functional annotations associated with a set of genes.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">enrichr_analyzer</span><span class="p">(</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>    <span class="n">genes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>           <span class="c1"># Gene symbols (list or comma-separated)</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>    <span class="n">database</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pathway&quot;</span><span class="p">,</span>        <span class="c1"># Enrichment database category</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>    <span class="n">species</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;human&quot;</span>            <span class="c1"># Currently supports human only</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<p><strong>Available Database Categories:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Short Names</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Pathways</strong></td>
+<td><code>pathway</code>, <code>kegg</code>, <code>reactome</code>, <code>wikipathways</code></td>
+<td>KEGG, Reactome, WikiPathways databases</td>
+</tr>
+<tr>
+<td><strong>Gene Ontology</strong></td>
+<td><code>ontology</code>, <code>go_process</code>, <code>go_molecular</code>, <code>go_cellular</code></td>
+<td>GO Biological Process, Molecular Function, Cellular Component</td>
+</tr>
+<tr>
+<td><strong>Cell Types</strong></td>
+<td><code>celltypes</code>, <code>tissues</code></td>
+<td>PanglaoDB cell types, Human Gene Atlas tissues</td>
+</tr>
+<tr>
+<td><strong>Diseases</strong></td>
+<td><code>diseases</code>, <code>gwas</code></td>
+<td>DisGeNET, GWAS Catalog</td>
+</tr>
+<tr>
+<td><strong>Transcription Factors</strong></td>
+<td><code>transcription_factors</code>, <code>tf</code></td>
+<td>ChEA transcription factor targets</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Important Prerequisites:</strong></p>
+<p>Before running enrichment analysis, use the <code>think</code> tool to plan your analysis and understand your gene list context. This ensures meaningful biological interpretation of enrichment results.</p>
+<p><strong>Examples:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># First, plan your analysis</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="n">think</span><span class="p">(</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>    <span class="n">thought</span><span class="o">=</span><span class="s2">&quot;I have identified 15 differentially expressed genes in breast cancer. &quot;</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>            <span class="s2">&quot;I&#39;ll run pathway enrichment to understand the biological processes involved.&quot;</span><span class="p">,</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>    <span class="n">thoughtNumber</span><span class="o">=</span><span class="mi">1</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="p">)</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="c1"># Pathway enrichment</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="n">enrichr_analyzer</span><span class="p">(</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>    <span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;TP53&quot;</span><span class="p">,</span> <span class="s2">&quot;BRCA1&quot;</span><span class="p">,</span> <span class="s2">&quot;EGFR&quot;</span><span class="p">,</span> <span class="s2">&quot;MYC&quot;</span><span class="p">,</span> <span class="s2">&quot;KRAS&quot;</span><span class="p">,</span> <span class="s2">&quot;PTEN&quot;</span><span class="p">,</span> <span class="s2">&quot;RB1&quot;</span><span class="p">],</span>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>    <span class="n">database</span><span class="o">=</span><span class="s2">&quot;pathway&quot;</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="p">)</span>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="c1"># Gene Ontology biological processes</span>
+<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="n">enrichr_analyzer</span><span class="p">(</span>
+<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a>    <span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;TP53&quot;</span><span class="p">,</span> <span class="s2">&quot;BRCA1&quot;</span><span class="p">,</span> <span class="s2">&quot;EGFR&quot;</span><span class="p">],</span>
+<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a>    <span class="n">database</span><span class="o">=</span><span class="s2">&quot;go_process&quot;</span>
+<a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a><span class="p">)</span>
+<a id="__codelineno-21-19" name="__codelineno-21-19" href="#__codelineno-21-19"></a>
+<a id="__codelineno-21-20" name="__codelineno-21-20" href="#__codelineno-21-20"></a><span class="c1"># Cell type associations</span>
+<a id="__codelineno-21-21" name="__codelineno-21-21" href="#__codelineno-21-21"></a><span class="n">enrichr_analyzer</span><span class="p">(</span>
+<a id="__codelineno-21-22" name="__codelineno-21-22" href="#__codelineno-21-22"></a>    <span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CD4&quot;</span><span class="p">,</span> <span class="s2">&quot;CD8A&quot;</span><span class="p">,</span> <span class="s2">&quot;CD19&quot;</span><span class="p">,</span> <span class="s2">&quot;CD3E&quot;</span><span class="p">],</span>
+<a id="__codelineno-21-23" name="__codelineno-21-23" href="#__codelineno-21-23"></a>    <span class="n">database</span><span class="o">=</span><span class="s2">&quot;celltypes&quot;</span>
+<a id="__codelineno-21-24" name="__codelineno-21-24" href="#__codelineno-21-24"></a><span class="p">)</span>
+<a id="__codelineno-21-25" name="__codelineno-21-25" href="#__codelineno-21-25"></a>
+<a id="__codelineno-21-26" name="__codelineno-21-26" href="#__codelineno-21-26"></a><span class="c1"># Using comma-separated string</span>
+<a id="__codelineno-21-27" name="__codelineno-21-27" href="#__codelineno-21-27"></a><span class="n">enrichr_analyzer</span><span class="p">(</span>
+<a id="__codelineno-21-28" name="__codelineno-21-28" href="#__codelineno-21-28"></a>    <span class="n">genes</span><span class="o">=</span><span class="s2">&quot;TP53,BRCA1,EGFR,MYC,KRAS&quot;</span><span class="p">,</span>
+<a id="__codelineno-21-29" name="__codelineno-21-29" href="#__codelineno-21-29"></a>    <span class="n">database</span><span class="o">=</span><span class="s2">&quot;reactome&quot;</span>
+<a id="__codelineno-21-30" name="__codelineno-21-30" href="#__codelineno-21-30"></a><span class="p">)</span>
+</code></pre></div>
+<p><strong>Returns:</strong></p>
+<p>Enrichment results with:</p>
+<ul>
+<li>Pathway/term name</li>
+<li>P-value and adjusted p-value (FDR)</li>
+<li>Z-score and combined score</li>
+<li>Overlapping genes from your input list</li>
+<li>Ranked by statistical significance</li>
+</ul>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>Minimum 3-5 genes recommended for meaningful enrichment</li>
+<li>Results are most reliable with 10-200 genes</li>
+<li>Single genes may return limited enrichment results</li>
+<li>Attribution: Powered by <a href="https://maayanlab.cloud/Enrichr/">Enrichr API</a> (Ma'ayan Lab)</li>
+</ul>
 <h2 id="nci-specific-tools">NCI-Specific Tools<a class="headerlink" href="#nci-specific-tools" title="Permanent link">&para;</a></h2>
 <p>All NCI tools require an API key from <a href="https://clinicaltrialsapi.cancer.gov">clinicaltrialsapi.cancer.gov</a>.</p>
-<h3 id="18-19-organization-tools">18-19. Organization Tools<a class="headerlink" href="#18-19-organization-tools" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Search organizations</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="n">nci_organization_searcher</span><span class="p">(</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>    <span class="n">organization_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>    <span class="n">city</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>              <span class="c1"># Must use with state</span>
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>    <span class="n">state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>             <span class="c1"># Must use with city</span>
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>
-<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="c1"># Get organization details</span>
-<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="n">nci_organization_getter</span><span class="p">(</span>
-<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>    <span class="n">organization_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<h3 id="19-20-organization-tools">19-20. Organization Tools<a class="headerlink" href="#19-20-organization-tools" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># Search organizations</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="n">nci_organization_searcher</span><span class="p">(</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    <span class="n">organization_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>    <span class="n">city</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>              <span class="c1"># Must use with state</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>    <span class="n">state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>             <span class="c1"># Must use with city</span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>
+<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="c1"># Get organization details</span>
+<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="n">nci_organization_getter</span><span class="p">(</span>
+<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>    <span class="n">organization_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <h3 id="20-21-intervention-tools">20-21. Intervention Tools<a class="headerlink" href="#20-21-intervention-tools" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># Search interventions</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="n">nci_intervention_searcher</span><span class="p">(</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>    <span class="n">intervention_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># &quot;Drug&quot;, &quot;Device&quot;, etc.</span>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>    <span class="n">synonyms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>
-<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="c1"># Get intervention details</span>
-<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="n">nci_intervention_getter</span><span class="p">(</span>
-<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>    <span class="n">intervention_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># Search interventions</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="n">nci_intervention_searcher</span><span class="p">(</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>    <span class="n">intervention_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># &quot;Drug&quot;, &quot;Device&quot;, etc.</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>    <span class="n">synonyms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="c1"># Get intervention details</span>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="n">nci_intervention_getter</span><span class="p">(</span>
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>    <span class="n">intervention_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <h3 id="22-biomarker-search">22. Biomarker Search<a class="headerlink" href="#22-biomarker-search" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">nci_biomarker_searcher</span><span class="p">(</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>    <span class="n">biomarker_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">nci_biomarker_searcher</span><span class="p">(</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>    <span class="n">biomarker_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <h3 id="23-disease-search-nci">23. Disease Search (NCI)<a class="headerlink" href="#23-disease-search-nci" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">nci_disease_searcher</span><span class="p">(</span>
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>    <span class="n">include_synonyms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>    <span class="n">category</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="n">nci_disease_searcher</span><span class="p">(</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>    <span class="n">include_synonyms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>    <span class="n">category</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <h2 id="openfda-tools">OpenFDA Tools<a class="headerlink" href="#openfda-tools" title="Permanent link">&para;</a></h2>
 <p>All OpenFDA tools support optional API keys for higher rate limits (240/min vs 40/min). Get a free key at <a href="https://open.fda.gov/apis/authentication/">open.fda.gov/apis/authentication</a>.</p>
 <h3 id="24-openfda_adverse_searcher">24. openfda_adverse_searcher<a class="headerlink" href="#24-openfda_adverse_searcher" title="Permanent link">&para;</a></h3>
 <p><strong>Search FDA Adverse Event Reporting System (FAERS).</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">openfda_adverse_searcher</span><span class="p">(</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>    <span class="n">drug</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>    <span class="n">reaction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>    <span class="n">serious</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>        <span class="c1"># Filter serious events only</span>
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>          <span class="c1"># Optional OpenFDA API key</span>
-<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">openfda_adverse_searcher</span><span class="p">(</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>    <span class="n">drug</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>    <span class="n">reaction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>    <span class="n">serious</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>        <span class="c1"># Filter serious events only</span>
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>          <span class="c1"># Optional OpenFDA API key</span>
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p><strong>Example:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># Find serious bleeding events for warfarin</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="n">openfda_adverse_searcher</span><span class="p">(</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>    <span class="n">drug</span><span class="o">=</span><span class="s2">&quot;warfarin&quot;</span><span class="p">,</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>    <span class="n">reaction</span><span class="o">=</span><span class="s2">&quot;bleeding&quot;</span><span class="p">,</span>
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>    <span class="n">serious</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>    <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your-key&quot;</span>  <span class="c1"># Optional</span>
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1"># Find serious bleeding events for warfarin</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="n">openfda_adverse_searcher</span><span class="p">(</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>    <span class="n">drug</span><span class="o">=</span><span class="s2">&quot;warfarin&quot;</span><span class="p">,</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>    <span class="n">reaction</span><span class="o">=</span><span class="s2">&quot;bleeding&quot;</span><span class="p">,</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>    <span class="n">serious</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>    <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your-key&quot;</span>  <span class="c1"># Optional</span>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="p">)</span>
 </code></pre></div>
 <h3 id="25-openfda_adverse_getter">25. openfda_adverse_getter<a class="headerlink" href="#25-openfda_adverse_getter" title="Permanent link">&para;</a></h3>
 <p><strong>Get detailed adverse event report.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">openfda_adverse_getter</span><span class="p">(</span>
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>    <span class="n">report_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>              <span class="c1"># Safety report ID</span>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">openfda_adverse_getter</span><span class="p">(</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>    <span class="n">report_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>              <span class="c1"># Safety report ID</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <h3 id="26-openfda_label_searcher">26. openfda_label_searcher<a class="headerlink" href="#26-openfda_label_searcher" title="Permanent link">&para;</a></h3>
 <p><strong>Search FDA drug product labels.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="n">openfda_label_searcher</span><span class="p">(</span>
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>    <span class="n">indication</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>      <span class="c1"># Search by indication</span>
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>    <span class="n">boxed_warning</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># Filter for boxed warnings</span>
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>    <span class="n">section</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>         <span class="c1"># Specific label section</span>
-<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="n">openfda_label_searcher</span><span class="p">(</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>    <span class="n">indication</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>      <span class="c1"># Search by indication</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>    <span class="n">boxed_warning</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># Filter for boxed warnings</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>    <span class="n">section</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>         <span class="c1"># Specific label section</span>
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <h3 id="27-openfda_label_getter">27. openfda_label_getter<a class="headerlink" href="#27-openfda_label_getter" title="Permanent link">&para;</a></h3>
 <p><strong>Get complete drug label information.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">openfda_label_getter</span><span class="p">(</span>
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>    <span class="n">set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>                 <span class="c1"># Label set ID</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>    <span class="n">sections</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># Specific sections to retrieve</span>
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">openfda_label_getter</span><span class="p">(</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>    <span class="n">set_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>                 <span class="c1"># Label set ID</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>    <span class="n">sections</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># Specific sections to retrieve</span>
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p><strong>Label Sections:</strong> <code>indications_and_usage</code>, <code>contraindications</code>, <code>warnings_and_precautions</code>, <code>dosage_and_administration</code>, <code>adverse_reactions</code>, <code>drug_interactions</code>, <code>pregnancy</code>, <code>pediatric_use</code>, <code>geriatric_use</code></p>
 <h3 id="28-openfda_device_searcher">28. openfda_device_searcher<a class="headerlink" href="#28-openfda_device_searcher" title="Permanent link">&para;</a></h3>
 <p><strong>Search FDA device adverse event reports (MAUDE).</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="n">openfda_device_searcher</span><span class="p">(</span>
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>    <span class="n">manufacturer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>    <span class="n">problem</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>    <span class="n">product_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>    <span class="c1"># FDA product code</span>
-<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>    <span class="n">genomics_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>  <span class="c1"># Filter genomic/diagnostic devices</span>
-<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="n">openfda_device_searcher</span><span class="p">(</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>    <span class="n">manufacturer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>    <span class="n">problem</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>    <span class="n">product_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>    <span class="c1"># FDA product code</span>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>    <span class="n">genomics_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>  <span class="c1"># Filter genomic/diagnostic devices</span>
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
+<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p><strong>Note:</strong> FDA uses abbreviated device names (e.g., "F1CDX" for "FoundationOne CDx").</p>
 <h3 id="29-openfda_device_getter">29. openfda_device_getter<a class="headerlink" href="#29-openfda_device_getter" title="Permanent link">&para;</a></h3>
 <p><strong>Get detailed device event report.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">openfda_device_getter</span><span class="p">(</span>
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>    <span class="n">mdr_report_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>         <span class="c1"># MDR report key</span>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-</code></pre></div>
-<h3 id="30-openfda_approval_searcher">30. openfda_approval_searcher<a class="headerlink" href="#30-openfda_approval_searcher" title="Permanent link">&para;</a></h3>
-<p><strong>Search FDA drug approval records (Drugs@FDA).</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="n">openfda_approval_searcher</span><span class="p">(</span>
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>    <span class="n">drug</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>    <span class="n">application_number</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># NDA/BLA number</span>
-<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>    <span class="n">approval_year</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>       <span class="c1"># YYYY format</span>
-<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-</code></pre></div>
-<h3 id="31-openfda_approval_getter">31. openfda_approval_getter<a class="headerlink" href="#31-openfda_approval_getter" title="Permanent link">&para;</a></h3>
-<p><strong>Get drug approval details.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">openfda_approval_getter</span><span class="p">(</span>
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>    <span class="n">application_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>     <span class="c1"># NDA/BLA number</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">openfda_device_getter</span><span class="p">(</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>    <span class="n">mdr_report_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>         <span class="c1"># MDR report key</span>
 <a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
 <a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
+<h3 id="30-openfda_approval_searcher">30. openfda_approval_searcher<a class="headerlink" href="#30-openfda_approval_searcher" title="Permanent link">&para;</a></h3>
+<p><strong>Search FDA drug approval records (Drugs@FDA).</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="n">openfda_approval_searcher</span><span class="p">(</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>    <span class="n">drug</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>    <span class="n">application_number</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># NDA/BLA number</span>
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>    <span class="n">approval_year</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>       <span class="c1"># YYYY format</span>
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
+<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<h3 id="31-openfda_approval_getter">31. openfda_approval_getter<a class="headerlink" href="#31-openfda_approval_getter" title="Permanent link">&para;</a></h3>
+<p><strong>Get drug approval details.</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">openfda_approval_getter</span><span class="p">(</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>    <span class="n">application_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>     <span class="c1"># NDA/BLA number</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
 <h3 id="32-openfda_recall_searcher">32. openfda_recall_searcher<a class="headerlink" href="#32-openfda_recall_searcher" title="Permanent link">&para;</a></h3>
 <p><strong>Search FDA drug recall records.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="n">openfda_recall_searcher</span><span class="p">(</span>
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>    <span class="n">drug</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>    <span class="n">recall_class</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>    <span class="c1"># &quot;1&quot;, &quot;2&quot;, or &quot;3&quot;</span>
-<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>    <span class="n">status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>          <span class="c1"># &quot;ongoing&quot; or &quot;completed&quot;</span>
-<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a>    <span class="n">since_date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>      <span class="c1"># YYYYMMDD format</span>
-<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-33-10" name="__codelineno-33-10" href="#__codelineno-33-10"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="n">openfda_recall_searcher</span><span class="p">(</span>
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>    <span class="n">drug</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>    <span class="n">recall_class</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>    <span class="c1"># &quot;1&quot;, &quot;2&quot;, or &quot;3&quot;</span>
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>    <span class="n">status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>          <span class="c1"># &quot;ongoing&quot; or &quot;completed&quot;</span>
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a>    <span class="n">since_date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>      <span class="c1"># YYYYMMDD format</span>
+<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
+<a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
 <p><strong>Recall Classes:</strong></p>
 <ul>
@@ -3921,82 +4071,82 @@
 </ul>
 <h3 id="33-openfda_recall_getter">33. openfda_recall_getter<a class="headerlink" href="#33-openfda_recall_getter" title="Permanent link">&para;</a></h3>
 <p><strong>Get drug recall details.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">openfda_recall_getter</span><span class="p">(</span>
-<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>    <span class="n">recall_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>          <span class="c1"># FDA recall number</span>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-</code></pre></div>
-<h3 id="34-openfda_shortage_searcher">34. openfda_shortage_searcher<a class="headerlink" href="#34-openfda_shortage_searcher" title="Permanent link">&para;</a></h3>
-<p><strong>Search FDA drug shortage database.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="n">openfda_shortage_searcher</span><span class="p">(</span>
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>    <span class="n">drug</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>    <span class="n">status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>          <span class="c1"># &quot;current&quot; or &quot;resolved&quot;</span>
-<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>    <span class="n">therapeutic_category</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
-<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
-</code></pre></div>
-<h3 id="35-openfda_shortage_getter">35. openfda_shortage_getter<a class="headerlink" href="#35-openfda_shortage_getter" title="Permanent link">&para;</a></h3>
-<p><strong>Get drug shortage details.</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">openfda_shortage_getter</span><span class="p">(</span>
-<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>    <span class="n">drug_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">openfda_recall_getter</span><span class="p">(</span>
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>    <span class="n">recall_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>          <span class="c1"># FDA recall number</span>
 <a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
 <a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
 </code></pre></div>
+<h3 id="34-openfda_shortage_searcher">34. openfda_shortage_searcher<a class="headerlink" href="#34-openfda_shortage_searcher" title="Permanent link">&para;</a></h3>
+<p><strong>Search FDA drug shortage database.</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="n">openfda_shortage_searcher</span><span class="p">(</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>    <span class="n">drug</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>    <span class="n">status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>          <span class="c1"># &quot;current&quot; or &quot;resolved&quot;</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a>    <span class="n">therapeutic_category</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a>    <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
+<h3 id="35-openfda_shortage_getter">35. openfda_shortage_getter<a class="headerlink" href="#35-openfda_shortage_getter" title="Permanent link">&para;</a></h3>
+<p><strong>Get drug shortage details.</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="n">openfda_shortage_getter</span><span class="p">(</span>
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>    <span class="n">drug_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</code></pre></div>
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 <h3 id="1-always-think-first">1. Always Think First<a class="headerlink" href="#1-always-think-first" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="c1"># ✅ CORRECT - Think before searching</span>
-<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="n">think</span><span class="p">(</span><span class="n">thought</span><span class="o">=</span><span class="s2">&quot;Planning BRAF melanoma research...&quot;</span><span class="p">,</span> <span class="n">thoughtNumber</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="n">results</span> <span class="o">=</span> <span class="n">article_searcher</span><span class="p">(</span><span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;BRAF&quot;</span><span class="p">],</span> <span class="n">diseases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;melanoma&quot;</span><span class="p">])</span>
-<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a>
-<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="c1"># ❌ INCORRECT - Skipping think tool</span>
-<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="n">results</span> <span class="o">=</span> <span class="n">article_searcher</span><span class="p">(</span><span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;BRAF&quot;</span><span class="p">])</span>  <span class="c1"># Poor results!</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="c1"># ✅ CORRECT - Think before searching</span>
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="n">think</span><span class="p">(</span><span class="n">thought</span><span class="o">=</span><span class="s2">&quot;Planning BRAF melanoma research...&quot;</span><span class="p">,</span> <span class="n">thoughtNumber</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="n">results</span> <span class="o">=</span> <span class="n">article_searcher</span><span class="p">(</span><span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;BRAF&quot;</span><span class="p">],</span> <span class="n">diseases</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;melanoma&quot;</span><span class="p">])</span>
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a>
+<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="c1"># ❌ INCORRECT - Skipping think tool</span>
+<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="n">results</span> <span class="o">=</span> <span class="n">article_searcher</span><span class="p">(</span><span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;BRAF&quot;</span><span class="p">])</span>  <span class="c1"># Poor results!</span>
 </code></pre></div>
 <h3 id="2-use-unified-tools-for-flexibility">2. Use Unified Tools for Flexibility<a class="headerlink" href="#2-use-unified-tools-for-flexibility" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="c1"># Unified search supports complex queries</span>
-<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="n">results</span> <span class="o">=</span> <span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="s2">&quot;gene:EGFR AND (mutation:T790M OR mutation:C797S)&quot;</span><span class="p">)</span>
-<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>
-<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a><span class="c1"># Unified fetch auto-detects domain</span>
-<a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a><span class="n">details</span> <span class="o">=</span> <span class="n">fetch</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;NCT03006926&quot;</span><span class="p">)</span>  <span class="c1"># Knows it&#39;s a trial</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="c1"># Unified search supports complex queries</span>
+<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a><span class="n">results</span> <span class="o">=</span> <span class="n">search</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="s2">&quot;gene:EGFR AND (mutation:T790M OR mutation:C797S)&quot;</span><span class="p">)</span>
+<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>
+<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a><span class="c1"># Unified fetch auto-detects domain</span>
+<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a><span class="n">details</span> <span class="o">=</span> <span class="n">fetch</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;NCT03006926&quot;</span><span class="p">)</span>  <span class="c1"># Knows it&#39;s a trial</span>
 </code></pre></div>
 <h3 id="3-leverage-domain-specific-features">3. Leverage Domain-Specific Features<a class="headerlink" href="#3-leverage-domain-specific-features" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="c1"># Article search with cBioPortal</span>
-<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="n">articles</span> <span class="o">=</span> <span class="n">article_searcher</span><span class="p">(</span>
-<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a>    <span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;KRAS&quot;</span><span class="p">],</span>
-<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a>    <span class="n">include_cbioportal</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Adds cancer genomics context</span>
-<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="p">)</span>
-<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a>
-<a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="c1"># Variant search with multiple filters</span>
-<a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="n">variants</span> <span class="o">=</span> <span class="n">variant_searcher</span><span class="p">(</span>
-<a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a>    <span class="n">gene</span><span class="o">=</span><span class="s2">&quot;TP53&quot;</span><span class="p">,</span>
-<a id="__codelineno-39-10" name="__codelineno-39-10" href="#__codelineno-39-10"></a>    <span class="n">significance</span><span class="o">=</span><span class="s2">&quot;pathogenic&quot;</span><span class="p">,</span>
-<a id="__codelineno-39-11" name="__codelineno-39-11" href="#__codelineno-39-11"></a>    <span class="n">frequency_max</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
-<a id="__codelineno-39-12" name="__codelineno-39-12" href="#__codelineno-39-12"></a>    <span class="n">cadd_score_min</span><span class="o">=</span><span class="mi">25</span>
-<a id="__codelineno-39-13" name="__codelineno-39-13" href="#__codelineno-39-13"></a><span class="p">)</span>
-</code></pre></div>
-<h3 id="4-handle-api-keys-properly">4. Handle API Keys Properly<a class="headerlink" href="#4-handle-api-keys-properly" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="c1"># For personal use - environment variable</span>
-<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a><span class="c1"># export NCI_API_KEY=&quot;your-key&quot;</span>
-<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="n">nci_results</span> <span class="o">=</span> <span class="n">search</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="s2">&quot;nci_organization&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Mayo Clinic&quot;</span><span class="p">)</span>
-<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>
-<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a><span class="c1"># For shared environments - per-request</span>
-<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a><span class="n">nci_results</span> <span class="o">=</span> <span class="n">search</span><span class="p">(</span>
-<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a>    <span class="n">domain</span><span class="o">=</span><span class="s2">&quot;nci_organization&quot;</span><span class="p">,</span>
-<a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Mayo Clinic&quot;</span><span class="p">,</span>
-<a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a>    <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;user-provided-key&quot;</span>
-<a id="__codelineno-40-10" name="__codelineno-40-10" href="#__codelineno-40-10"></a><span class="p">)</span>
-</code></pre></div>
-<h3 id="5-use-appropriate-page-sizes">5. Use Appropriate Page Sizes<a class="headerlink" href="#5-use-appropriate-page-sizes" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="c1"># Large result sets - increase page_size</span>
-<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="n">results</span> <span class="o">=</span> <span class="n">article_searcher</span><span class="p">(</span>
-<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a>    <span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;TP53&quot;</span><span class="p">],</span>
-<a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a>    <span class="n">page_size</span><span class="o">=</span><span class="mi">50</span>  <span class="c1"># Get more results at once</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="c1"># Article search with cBioPortal</span>
+<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="n">articles</span> <span class="o">=</span> <span class="n">article_searcher</span><span class="p">(</span>
+<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a>    <span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;KRAS&quot;</span><span class="p">],</span>
+<a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a>    <span class="n">include_cbioportal</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Adds cancer genomics context</span>
 <a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a><span class="p">)</span>
 <a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a>
-<a id="__codelineno-41-7" name="__codelineno-41-7" href="#__codelineno-41-7"></a><span class="c1"># Iterative exploration - use pagination</span>
-<a id="__codelineno-41-8" name="__codelineno-41-8" href="#__codelineno-41-8"></a><span class="n">page1</span> <span class="o">=</span> <span class="n">trial_searcher</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cancer&quot;</span><span class="p">],</span> <span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<a id="__codelineno-41-9" name="__codelineno-41-9" href="#__codelineno-41-9"></a><span class="n">page2</span> <span class="o">=</span> <span class="n">trial_searcher</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cancer&quot;</span><span class="p">],</span> <span class="n">page</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-41-7" name="__codelineno-41-7" href="#__codelineno-41-7"></a><span class="c1"># Variant search with multiple filters</span>
+<a id="__codelineno-41-8" name="__codelineno-41-8" href="#__codelineno-41-8"></a><span class="n">variants</span> <span class="o">=</span> <span class="n">variant_searcher</span><span class="p">(</span>
+<a id="__codelineno-41-9" name="__codelineno-41-9" href="#__codelineno-41-9"></a>    <span class="n">gene</span><span class="o">=</span><span class="s2">&quot;TP53&quot;</span><span class="p">,</span>
+<a id="__codelineno-41-10" name="__codelineno-41-10" href="#__codelineno-41-10"></a>    <span class="n">significance</span><span class="o">=</span><span class="s2">&quot;pathogenic&quot;</span><span class="p">,</span>
+<a id="__codelineno-41-11" name="__codelineno-41-11" href="#__codelineno-41-11"></a>    <span class="n">frequency_max</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+<a id="__codelineno-41-12" name="__codelineno-41-12" href="#__codelineno-41-12"></a>    <span class="n">cadd_score_min</span><span class="o">=</span><span class="mi">25</span>
+<a id="__codelineno-41-13" name="__codelineno-41-13" href="#__codelineno-41-13"></a><span class="p">)</span>
+</code></pre></div>
+<h3 id="4-handle-api-keys-properly">4. Handle API Keys Properly<a class="headerlink" href="#4-handle-api-keys-properly" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="c1"># For personal use - environment variable</span>
+<a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="c1"># export NCI_API_KEY=&quot;your-key&quot;</span>
+<a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="n">nci_results</span> <span class="o">=</span> <span class="n">search</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="s2">&quot;nci_organization&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Mayo Clinic&quot;</span><span class="p">)</span>
+<a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a>
+<a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a><span class="c1"># For shared environments - per-request</span>
+<a id="__codelineno-42-6" name="__codelineno-42-6" href="#__codelineno-42-6"></a><span class="n">nci_results</span> <span class="o">=</span> <span class="n">search</span><span class="p">(</span>
+<a id="__codelineno-42-7" name="__codelineno-42-7" href="#__codelineno-42-7"></a>    <span class="n">domain</span><span class="o">=</span><span class="s2">&quot;nci_organization&quot;</span><span class="p">,</span>
+<a id="__codelineno-42-8" name="__codelineno-42-8" href="#__codelineno-42-8"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Mayo Clinic&quot;</span><span class="p">,</span>
+<a id="__codelineno-42-9" name="__codelineno-42-9" href="#__codelineno-42-9"></a>    <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;user-provided-key&quot;</span>
+<a id="__codelineno-42-10" name="__codelineno-42-10" href="#__codelineno-42-10"></a><span class="p">)</span>
+</code></pre></div>
+<h3 id="5-use-appropriate-page-sizes">5. Use Appropriate Page Sizes<a class="headerlink" href="#5-use-appropriate-page-sizes" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="c1"># Large result sets - increase page_size</span>
+<a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="n">results</span> <span class="o">=</span> <span class="n">article_searcher</span><span class="p">(</span>
+<a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a>    <span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;TP53&quot;</span><span class="p">],</span>
+<a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a>    <span class="n">page_size</span><span class="o">=</span><span class="mi">50</span>  <span class="c1"># Get more results at once</span>
+<a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a><span class="p">)</span>
+<a id="__codelineno-43-6" name="__codelineno-43-6" href="#__codelineno-43-6"></a>
+<a id="__codelineno-43-7" name="__codelineno-43-7" href="#__codelineno-43-7"></a><span class="c1"># Iterative exploration - use pagination</span>
+<a id="__codelineno-43-8" name="__codelineno-43-8" href="#__codelineno-43-8"></a><span class="n">page1</span> <span class="o">=</span> <span class="n">trial_searcher</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cancer&quot;</span><span class="p">],</span> <span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-43-9" name="__codelineno-43-9" href="#__codelineno-43-9"></a><span class="n">page2</span> <span class="o">=</span> <span class="n">trial_searcher</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cancer&quot;</span><span class="p">],</span> <span class="n">page</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
 <p>All tools include comprehensive error handling:</p>

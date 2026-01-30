@@ -3384,14 +3384,117 @@
 <h2 id="genedrugdisease-commands">Gene/Drug/Disease Commands<a class="headerlink" href="#genedrugdisease-commands" title="Permanent link">&para;</a></h2>
 <p>For practical examples using BioThings integration, see <a href="../../how-to-guides/02-find-trials-with-nci-and-biothings/#biothings-integration-for-enhanced-search">How to Find Trials with NCI and BioThings</a>.</p>
 <h3 id="gene-get">gene get<a class="headerlink" href="#gene-get" title="Permanent link">&para;</a></h3>
-<p>Retrieve gene information from MyGene.info.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>GENE_NAME
+<p>Retrieve gene information from MyGene.info with optional functional enrichment analysis.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>GENE_NAME<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
 </code></pre></div>
+<p><strong>Options:</strong></p>
+<ul>
+<li><code>--enrich, -e TEXT</code>: Add functional enrichment analysis (pathway, ontology, celltypes, etc.)</li>
+<li><code>--json, -j</code>: Output in JSON format</li>
+</ul>
+<p><strong>Available Enrichment Types:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Short Name</th>
+<th>Full Database Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pathways</td>
+<td><code>pathway</code></td>
+<td>KEGG_2021_Human</td>
+</tr>
+<tr>
+<td></td>
+<td><code>kegg</code></td>
+<td>KEGG_2021_Human</td>
+</tr>
+<tr>
+<td></td>
+<td><code>reactome</code></td>
+<td>Reactome_2022</td>
+</tr>
+<tr>
+<td></td>
+<td><code>wikipathways</code></td>
+<td>WikiPathways_2024_Human</td>
+</tr>
+<tr>
+<td>Gene Ontology</td>
+<td><code>ontology</code></td>
+<td>GO_Biological_Process_2021</td>
+</tr>
+<tr>
+<td></td>
+<td><code>go_process</code></td>
+<td>GO_Biological_Process_2021</td>
+</tr>
+<tr>
+<td></td>
+<td><code>go_molecular</code></td>
+<td>GO_Molecular_Function_2021</td>
+</tr>
+<tr>
+<td></td>
+<td><code>go_cellular</code></td>
+<td>GO_Cellular_Component_2021</td>
+</tr>
+<tr>
+<td>Cell Types</td>
+<td><code>celltypes</code></td>
+<td>PanglaoDB_Augmented_2021</td>
+</tr>
+<tr>
+<td></td>
+<td><code>tissues</code></td>
+<td>Human_Gene_Atlas</td>
+</tr>
+<tr>
+<td>Diseases</td>
+<td><code>diseases</code></td>
+<td>DisGeNET</td>
+</tr>
+<tr>
+<td></td>
+<td><code>gwas</code></td>
+<td>GWAS_Catalog_2023</td>
+</tr>
+<tr>
+<td>TFs</td>
+<td><code>transcription_factors</code></td>
+<td>ChEA_2022</td>
+</tr>
+<tr>
+<td></td>
+<td><code>tf</code></td>
+<td>ChEA_2022</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Examples:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Get gene information</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Basic gene information</span>
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>TP53
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>BRAF
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="c1"># With pathway enrichment</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>TP53<span class="w"> </span>--enrich<span class="w"> </span>pathway
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="c1"># With Gene Ontology enrichment</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>BRCA1<span class="w"> </span>--enrich<span class="w"> </span>ontology
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="c1"># With cell type associations</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>EGFR<span class="w"> </span>--enrich<span class="w"> </span>celltypes
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="c1"># Using full database name</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>TP53<span class="w"> </span>--enrich<span class="w"> </span>KEGG_2021_Human
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="c1"># JSON output with enrichment</span>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>TP53<span class="w"> </span>--enrich<span class="w"> </span>pathway<span class="w"> </span>--json
 </code></pre></div>
+<p><strong>Note:</strong> Enrichment analysis is powered by the Enrichr API and inspired by <a href="https://github.com/pachterlab/gget">gget enrichr</a> (Luebbert &amp; Pachter, 2023).</p>
 <h3 id="drug-get">drug get<a class="headerlink" href="#drug-get" title="Permanent link">&para;</a></h3>
 <p>Retrieve drug/chemical information from MyChem.info.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>DRUG_NAME
