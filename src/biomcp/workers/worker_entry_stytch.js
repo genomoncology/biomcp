@@ -268,7 +268,7 @@ async function insertEvent(env, row) {
 /**
  * Validate a JWT token
  */
-async function validateToken(token, env) {
+async function validateToken(token, env, expectedIssuer = null) {
   if (!token) {
     throw new Error("No token provided");
   }
@@ -281,8 +281,12 @@ async function validateToken(token, env) {
       const encoder = new TextEncoder();
       const secret = encoder.encode(env.JWT_SECRET || "default-jwt-secret-key");
 
+      // Accept either URL-based issuer or legacy STYTCH_PROJECT_ID issuer
+      const validIssuers = [expectedIssuer, env.STYTCH_PROJECT_ID].filter(
+        Boolean,
+      );
       const result = await jwtVerify(token, secret, {
-        issuer: env.STYTCH_PROJECT_ID,
+        issuer: validIssuers,
       });
 
       // Also check if token exists in KV (for revocation checking)
@@ -513,9 +517,14 @@ const stytchBearerTokenAuthMiddleware = async (c, next) => {
   log(`Auth header present: ${!!authHeader}`);
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return new Response("Missing or invalid access token", {
+    const url = new URL(c.req.url);
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
-      headers: CORS,
+      headers: {
+        "Content-Type": "application/json",
+        "WWW-Authenticate": `Bearer realm="${url.origin}", error="invalid_token"`,
+        ...CORS,
+      },
     });
   }
 
@@ -525,7 +534,8 @@ const stytchBearerTokenAuthMiddleware = async (c, next) => {
   try {
     // Add more detailed validation logging
     log("Starting token validation...");
-    const verifyResult = await validateToken(accessToken, c.env);
+    const url = new URL(c.req.url);
+    const verifyResult = await validateToken(accessToken, c.env, url.origin);
     log(`Token validation successful! ${verifyResult.payload.sub}`);
 
     // Store user info in a variable that the handler can access
@@ -533,10 +543,21 @@ const stytchBearerTokenAuthMiddleware = async (c, next) => {
     c.env.accessToken = accessToken;
   } catch (error) {
     log(`Token validation detailed error: ${error.code} ${error.message}`);
-    return new Response(`Unauthorized: Invalid token - ${error.message}`, {
-      status: 401,
-      headers: CORS,
-    });
+    const url = new URL(c.req.url);
+    return new Response(
+      JSON.stringify({
+        error: "invalid_token",
+        error_description: error.message,
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+          "WWW-Authenticate": `Bearer realm="${url.origin}", error="invalid_token"`,
+          ...CORS,
+        },
+      },
+    );
   }
 
   return next();
@@ -596,12 +617,129 @@ app
     );
   })
 
+  // UserInfo endpoint (OIDC)
+  .get("/userinfo", async (c) => {
+    const authHeader = c.req.header("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...CORS },
+      });
+    }
+
+    const token = authHeader.substring(7);
+    try {
+      const url = new URL(c.req.url);
+      const result = await validateToken(token, c.env, url.origin);
+      return new Response(
+        JSON.stringify({
+          sub: result.payload.sub,
+          email: result.payload.email,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...CORS },
+        },
+      );
+    } catch (error) {
+      return new Response(JSON.stringify({ error: "invalid_token" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...CORS },
+      });
+    }
+  })
+
+  // OpenID Connect discovery endpoint
+  .get("/.well-known/openid-configuration", (c) => {
+    const url = new URL(c.req.url);
+    return new Response(
+      JSON.stringify({
+        issuer: url.origin,
+        authorization_endpoint: `${url.origin}/authorize`,
+        token_endpoint: `${url.origin}/token`,
+        userinfo_endpoint: `${url.origin}/userinfo`,
+        jwks_uri: getStytchUrl(c.env, ".well-known/jwks.json", true),
+        registration_endpoint: getStytchUrl(c.env, "oauth2/register", true),
+        scopes_supported: ["openid", "profile", "email", "offline_access"],
+        response_types_supported: ["code"],
+        response_modes_supported: ["query"],
+        grant_types_supported: ["authorization_code", "refresh_token"],
+        subject_types_supported: ["public"],
+        id_token_signing_alg_values_supported: ["RS256"],
+        token_endpoint_auth_methods_supported: ["none"],
+        code_challenge_methods_supported: ["S256"],
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...CORS },
+      },
+    );
+  })
+
+  // OAuth protected resource metadata (RFC 9728)
+  // Tells clients which authorization server protects this resource
+  .get("/.well-known/oauth-protected-resource", (c) => {
+    const url = new URL(c.req.url);
+    return new Response(
+      JSON.stringify({
+        resource: `${url.origin}/mcp`,
+        authorization_servers: [`${url.origin}`],
+        bearer_methods_supported: ["header"],
+        scopes_supported: ["openid", "profile", "email"],
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...CORS },
+      },
+    );
+  })
+
+  // Handle path-specific protected resource metadata (e.g., /.well-known/oauth-protected-resource/mcp)
+  .get("/.well-known/oauth-protected-resource/*", (c) => {
+    const url = new URL(c.req.url);
+    return new Response(
+      JSON.stringify({
+        resource: `${url.origin}/mcp`,
+        authorization_servers: [`${url.origin}`],
+        bearer_methods_supported: ["header"],
+        scopes_supported: ["openid", "profile", "email"],
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...CORS },
+      },
+    );
+  })
+
   // OAuth server metadata endpoint
   .get("/.well-known/oauth-authorization-server", (c) => {
     const url = new URL(c.req.url);
     return new Response(
       JSON.stringify({
-        issuer: c.env.STYTCH_PROJECT_ID,
+        issuer: url.origin,
+        authorization_endpoint: `${url.origin}/authorize`,
+        token_endpoint: `${url.origin}/token`,
+        registration_endpoint: getStytchUrl(c.env, "oauth2/register", true),
+        scopes_supported: ["openid", "profile", "email", "offline_access"],
+        response_types_supported: ["code"],
+        response_modes_supported: ["query"],
+        grant_types_supported: ["authorization_code", "refresh_token"],
+        token_endpoint_auth_methods_supported: ["none"],
+        code_challenge_methods_supported: ["S256"],
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...CORS },
+      },
+    );
+  })
+
+  // Path-specific OAuth server metadata (e.g., /.well-known/oauth-authorization-server/mcp)
+  .get("/.well-known/oauth-authorization-server/*", (c) => {
+    const url = new URL(c.req.url);
+    return new Response(
+      JSON.stringify({
+        issuer: url.origin,
         authorization_endpoint: `${url.origin}/authorize`,
         token_endpoint: `${url.origin}/token`,
         registration_endpoint: getStytchUrl(c.env, "oauth2/register", true),
@@ -958,13 +1096,14 @@ app
         c.env.JWT_SECRET || "default-jwt-secret-key",
       );
 
-      // Create JWT payload
+      // Create JWT payload - use origin URL as issuer to match discovery metadata
+      const tokenUrl = new URL(c.req.url);
       const accessTokenPayload = {
         sub: authCodeData.sub,
         email: authCodeData.email,
         client_id: clientId,
         scope: "openid profile email",
-        iss: c.env.STYTCH_PROJECT_ID,
+        iss: tokenUrl.origin,
         aud: clientId,
         exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
         iat: Math.floor(Date.now() / 1000),

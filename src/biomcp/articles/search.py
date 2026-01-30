@@ -96,7 +96,9 @@ class SearchResponse(BaseModel):
     total_pages: int
 
 
-async def convert_request(request: PubmedRequest) -> PubtatorRequest:
+async def convert_request(
+    request: PubmedRequest, limit: int = SYSTEM_PAGE_SIZE
+) -> PubtatorRequest:
     query_parts = []
 
     # Process keywords with OR logic support
@@ -135,7 +137,7 @@ async def convert_request(request: PubmedRequest) -> PubtatorRequest:
 
     query_text = " AND ".join(query_parts)
 
-    return PubtatorRequest(text=query_text, size=SYSTEM_PAGE_SIZE)
+    return PubtatorRequest(text=query_text, size=limit)
 
 
 async def add_abstracts(response: SearchResponse) -> None:
@@ -158,8 +160,13 @@ def clean_authors(record):
 async def search_articles(
     request: PubmedRequest,
     output_json: bool = False,
+    limit: int = SYSTEM_PAGE_SIZE,
+    page: int = 1,
 ) -> str:
-    pubtator_request = await convert_request(request)
+    # Calculate total results needed for pagination
+    # To show page N, we need to fetch: (page * limit) results, then skip first (page-1)*limit
+    total_needed = page * limit
+    pubtator_request = await convert_request(request, limit=total_needed)
 
     # Start the search request
     search_task = http_client.request_api(
@@ -194,6 +201,9 @@ async def search_articles(
                 ],
             )
         )
+        # Apply pagination: skip first (page-1)*limit results, then take 'limit' results
+        offset = (page - 1) * limit
+        data = data[offset : offset + limit]
 
     if data and not output_json:
         return render.to_markdown(data)

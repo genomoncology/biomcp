@@ -8,7 +8,7 @@ BioMCP has been optimized for high-performance biomedical data retrieval through
 
 - **65% faster test execution** (from ~120s to ~42s)
 - **Reduced API calls** through intelligent caching and batching
-- **Lower latency** via connection pooling and prefetching
+- **Lower latency** via connection pooling
 - **Better resource utilization** with parallel processing
 
 ## Key Optimizations
@@ -62,17 +62,7 @@ Multiple caching layers optimize repeated queries:
 - Cache size: 1000 entries (configurable)
 - TTL: 5-30 minutes depending on data type
 
-### 5. Prefetching
-
-Common entities are prefetched on startup to warm caches:
-
-- Top genes: BRAF, EGFR, TP53, KRAS, etc.
-- Common diseases: lung cancer, breast cancer, etc.
-- Frequent chemicals: osimertinib, pembrolizumab, etc.
-
-**Impact:** First queries for common entities are instant
-
-### 6. Pagination Support
+### 5. Pagination Support
 
 Europe PMC searches now use pagination for large result sets:
 
@@ -80,7 +70,7 @@ Europe PMC searches now use pagination for large result sets:
 - Progressive loading
 - Memory-efficient processing
 
-### 7. Conditional Metrics
+### 6. Conditional Metrics
 
 Performance metrics are only collected when explicitly enabled, reducing overhead.
 
@@ -129,7 +119,6 @@ If memory usage is high:
 
 1. Reduce cache size in `request_cache.py`
 2. Lower connection pool limits
-3. Disable prefetching by removing the lifespan hook
 
 ### Performance Regression
 

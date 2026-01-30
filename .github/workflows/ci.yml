@@ -18,9 +18,9 @@ jobs:
     name: Quality
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -48,7 +48,7 @@ jobs:
     name: Tests and Type Check (Python 3.11)
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -79,7 +79,7 @@ jobs:
     name: Check Docs
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build Package
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -124,7 +124,7 @@ jobs:
           uvx twine check dist/*
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: dist
           path: dist/
@@ -134,7 +134,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Test MCP Integration
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -165,7 +165,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6

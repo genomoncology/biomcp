@@ -150,3 +150,10 @@ Feature: Search Clinical Trials
     When I perform a trial search
     Then the response should contain a study with condition "lung cancer"
     And the study eligibility should exclude "brain metastases"
+
+  Scenario: Search trials by lead sponsor
+    Given I build a trial query with condition "cancer"
+    And I add lead sponsor "National Cancer Institute"
+    When I perform a trial search
+    Then the response should contain a study with condition "cancer"
+    And the study should have lead sponsor "National Cancer Institute"

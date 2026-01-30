@@ -196,4 +196,4 @@ AlphaGenome → Predictions
 - **ClinicalTrials.gov**: [Help Desk](https://clinicaltrials.gov/help)
 - **BioThings**: [Documentation](https://docs.biothings.io/)
 - **cBioPortal**: [User Guide](https://docs.cbioportal.org/)
-- **NCI**: [API Support](https://api.cancer.gov/support)
+- **NCI**: [API Support](https://clinicaltrialsapi.cancer.gov/support)

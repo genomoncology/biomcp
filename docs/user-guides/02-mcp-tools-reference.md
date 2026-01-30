@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-BioMCP provides 35 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.
+BioMCP provides 36 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.
 
 ## Related Guides
 
@@ -10,15 +10,16 @@ BioMCP provides 35 specialized tools for biomedical research through the Model C
 
 ## Tool Categories
 
-| Category            | Count | Tools                                                          |
-| ------------------- | ----- | -------------------------------------------------------------- |
-| **Core Tools**      | 3     | `search`, `fetch`, `think`                                     |
-| **Article Tools**   | 2     | `article_searcher`, `article_getter`                           |
-| **Trial Tools**     | 6     | `trial_searcher`, `trial_getter`, + 4 detail getters           |
-| **Variant Tools**   | 3     | `variant_searcher`, `variant_getter`, `alphagenome_predictor`  |
-| **BioThings Tools** | 3     | `gene_getter`, `disease_getter`, `drug_getter`                 |
-| **NCI Tools**       | 6     | Organization, intervention, biomarker, and disease tools       |
-| **OpenFDA Tools**   | 12    | Adverse events, labels, devices, approvals, recalls, shortages |
+| Category             | Count | Tools                                                          |
+| -------------------- | ----- | -------------------------------------------------------------- |
+| **Core Tools**       | 3     | `search`, `fetch`, `think`                                     |
+| **Article Tools**    | 2     | `article_searcher`, `article_getter`                           |
+| **Trial Tools**      | 6     | `trial_searcher`, `trial_getter`, + 4 detail getters           |
+| **Variant Tools**    | 3     | `variant_searcher`, `variant_getter`, `alphagenome_predictor`  |
+| **BioThings Tools**  | 3     | `gene_getter`, `disease_getter`, `drug_getter`                 |
+| **Enrichment Tools** | 1     | `enrichr_analyzer`                                             |
+| **NCI Tools**        | 6     | Organization, intervention, biomarker, and disease tools       |
+| **OpenFDA Tools**    | 12    | Adverse events, labels, devices, approvals, recalls, shortages |
 
 ## Core Unified Tools
 
@@ -387,11 +388,93 @@ drug_getter(
 
 **Returns:** Chemical structure, mechanism, indications, trade names, identifiers
 
+## Functional Enrichment Tools
+
+### 18. enrichr_analyzer
+
+**Perform functional enrichment analysis on gene lists using the Enrichr API.**
+
+Inspired by [gget enrichr](https://github.com/pachterlab/gget) (Luebbert & Pachter, 2023). This tool helps identify pathways, biological processes, cell types, and other functional annotations associated with a set of genes.
+
+```python
+enrichr_analyzer(
+    genes: list[str] | str,           # Gene symbols (list or comma-separated)
+    database: str = "pathway",        # Enrichment database category
+    species: str = "human"            # Currently supports human only
+) -> str
+```
+
+**Available Database Categories:**
+
+| Category                  | Short Names                                             | Description                                                   |
+| ------------------------- | ------------------------------------------------------- | ------------------------------------------------------------- |
+| **Pathways**              | `pathway`, `kegg`, `reactome`, `wikipathways`           | KEGG, Reactome, WikiPathways databases                        |
+| **Gene Ontology**         | `ontology`, `go_process`, `go_molecular`, `go_cellular` | GO Biological Process, Molecular Function, Cellular Component |
+| **Cell Types**            | `celltypes`, `tissues`                                  | PanglaoDB cell types, Human Gene Atlas tissues                |
+| **Diseases**              | `diseases`, `gwas`                                      | DisGeNET, GWAS Catalog                                        |
+| **Transcription Factors** | `transcription_factors`, `tf`                           | ChEA transcription factor targets                             |
+
+**Important Prerequisites:**
+
+Before running enrichment analysis, use the `think` tool to plan your analysis and understand your gene list context. This ensures meaningful biological interpretation of enrichment results.
+
+**Examples:**
+
+```python
+# First, plan your analysis
+think(
+    thought="I have identified 15 differentially expressed genes in breast cancer. "
+            "I'll run pathway enrichment to understand the biological processes involved.",
+    thoughtNumber=1
+)
+
+# Pathway enrichment
+enrichr_analyzer(
+    genes=["TP53", "BRCA1", "EGFR", "MYC", "KRAS", "PTEN", "RB1"],
+    database="pathway"
+)
+
+# Gene Ontology biological processes
+enrichr_analyzer(
+    genes=["TP53", "BRCA1", "EGFR"],
+    database="go_process"
+)
+
+# Cell type associations
+enrichr_analyzer(
+    genes=["CD4", "CD8A", "CD19", "CD3E"],
+    database="celltypes"
+)
+
+# Using comma-separated string
+enrichr_analyzer(
+    genes="TP53,BRCA1,EGFR,MYC,KRAS",
+    database="reactome"
+)
+```
+
+**Returns:**
+
+Enrichment results with:
+
+- Pathway/term name
+- P-value and adjusted p-value (FDR)
+- Z-score and combined score
+- Overlapping genes from your input list
+- Ranked by statistical significance
+
+**Notes:**
+
+- Minimum 3-5 genes recommended for meaningful enrichment
+- Results are most reliable with 10-200 genes
+- Single genes may return limited enrichment results
+- Attribution: Powered by [Enrichr API](https://maayanlab.cloud/Enrichr/) (Ma'ayan Lab)
+
 ## NCI-Specific Tools
 
-All NCI tools require an API key from [api.cancer.gov](https://api.cancer.gov).
+All NCI tools require an API key from [clinicaltrialsapi.cancer.gov](https://clinicaltrialsapi.cancer.gov).
 
-### 18-19. Organization Tools
+### 19-20. Organization Tools
 
 ```python
 # Search organizations

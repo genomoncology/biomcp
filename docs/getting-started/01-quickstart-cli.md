@@ -16,13 +16,13 @@ Get started with BioMCP in under 5 minutes! This guide walks you through install
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install BioMCP
-uv tool install biomcp
+uv tool install biomcp-python
 ```
 
 ### Option 2: Using pip
 
 ```bash
-pip install biomcp
+pip install biomcp-python
 ```
 
 ## Your First Search
@@ -31,7 +31,7 @@ Let's search for recent articles about BRAF mutations in melanoma:
 
 ```bash
 biomcp article search \
-  --gene BRAF --disease melanoma --limit 5
+  --gene BRAF --disease melanoma
 ```
 
 This command:
@@ -63,7 +63,7 @@ Find active trials for lung cancer:
 ```bash
 biomcp trial search \
   --condition "lung cancer" \
-  --status RECRUITING --limit 5
+  --status open
 ```
 
 ### Get Gene Information
@@ -71,7 +71,28 @@ biomcp trial search \
 Retrieve details about the TP53 tumor suppressor:
 
 ```bash
-biomcp gene get TP53
+biomcp variant search --gene TP53 # get variants for a gene
+biomcp article search --gene TP53 # find articles about a gene
+```
+
+**Get gene information with functional enrichment analysis:**
+
+```bash
+# Pathway enrichment (KEGG, Reactome, WikiPathways)
+biomcp gene get TP53 --enrich pathway
+
+# Gene Ontology enrichment
+biomcp gene get BRCA1 --enrich ontology
+
+# Cell type associations
+biomcp gene get EGFR --enrich celltypes
+
+# Available enrichment types:
+# - pathway, kegg, reactome, wikipathways
+# - ontology, go_process, go_molecular, go_cellular
+# - celltypes, tissues
+# - diseases, gwas
+# - transcription_factors, tf
 ```
 
 You can also search for genes:
@@ -103,6 +124,7 @@ You can also search by drug identifiers:
 ```bash
 biomcp drug get DB00945  # DrugBank ID
 biomcp drug get CHEMBL25  # ChEMBL ID
+biomcp intervention search imatinib
 ```
 
 ### Search for Genetic Variants
@@ -111,8 +133,7 @@ Find pathogenic variants in the BRCA1 gene:
 
 ```bash
 biomcp variant search \
-  --gene BRCA1 --significance pathogenic \
-  --limit 5
+  --gene BRCA1 --significance pathogenic
 ```
 
 ### Analyze a Clinically Actionable Variant

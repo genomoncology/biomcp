@@ -21,14 +21,6 @@ setup_logging_filters()
 async def lifespan(mcp):
     """Lifespan context manager for startup/shutdown tasks."""
     # Startup
-    try:
-        from .prefetch import start_prefetching
-
-        await start_prefetching()
-    except Exception as e:
-        # Don't fail startup if prefetching fails
-        logger.warning(f"Prefetching failed: {e}")
-
     yield
 
     # Shutdown (if needed)

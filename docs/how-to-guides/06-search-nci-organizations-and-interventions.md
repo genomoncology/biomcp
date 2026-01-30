@@ -4,7 +4,7 @@ This guide demonstrates how to use BioMCP's NCI-specific tools to search for can
 
 ## Prerequisites
 
-All NCI tools require an API key from [api.cancer.gov](https://api.cancer.gov):
+All NCI tools require an API key from [clinicaltrialsapi.cancer.gov](https://clinicaltrialsapi.cancer.gov):
 
 ```bash
 # Set as environment variable

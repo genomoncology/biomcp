@@ -117,7 +117,7 @@ biomcp trial search \
 
 ### Setup NCI API Key
 
-Get your key from [api.cancer.gov](https://api.cancer.gov). For detailed setup instructions, see [Authentication and API Keys](../getting-started/03-authentication-and-api-keys.md#nci-clinical-trials-api):
+Get your key from [clinicaltrialsapi.cancer.gov](https://clinicaltrialsapi.cancer.gov). For detailed setup instructions, see [Authentication and API Keys](../getting-started/03-authentication-and-api-keys.md#nci-clinical-trials-api):
 
 ```bash
 export NCI_API_KEY="your-key-here"

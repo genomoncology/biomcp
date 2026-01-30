@@ -242,6 +242,7 @@ SEARCH_FIELDS = [
     "Study Results",
     "Conditions",
     "Interventions",
+    "Sponsor",
     "Phases",
     "Enrollment",
     "Study Type",
@@ -267,6 +268,10 @@ class TrialQuery(BaseModel):
     interventions: list[str] | None = Field(
         default=None,
         description="Intervention names.",
+    )
+    lead_sponsor: list[str] | None = Field(
+        default=None,
+        description="Lead sponsor organization names to filter by.",
     )
     recruiting_status: RecruitingStatus | None = Field(
         default=None,
@@ -407,6 +412,7 @@ class TrialQuery(BaseModel):
                 "conditions",
                 "terms",
                 "interventions",
+                "lead_sponsor",
                 "nct_ids",
                 "prior_therapies",
                 "progression_on",
@@ -561,6 +567,7 @@ async def convert_query(query: TrialQuery) -> dict[str, list[str]]:  # noqa: C90
     for key, val in [
         ("query.term", query.terms),
         ("query.intr", query.interventions),
+        ("query.lead", query.lead_sponsor),
     ]:
         if val:
             has_other_filters = True
@@ -756,6 +763,7 @@ async def search_trials(
             query.conditions,
             query.terms,
             query.interventions,
+            query.lead_sponsor,
             query.lat is not None and query.long is not None,
             query.date_field and (query.min_date or query.max_date),
             query.primary_purpose,
@@ -816,6 +824,10 @@ async def _trial_searcher(
     interventions: Annotated[
         list[str] | str | None,
         "Intervention names (e.g., 'pembrolizumab') - list or comma-separated string",
+    ] = None,
+    lead_sponsor: Annotated[
+        list[str] | str | None,
+        "Lead sponsor organization names (e.g., 'Pfizer', 'National Cancer Institute') - list or comma-separated string",
     ] = None,
     recruiting_status: Annotated[
         RecruitingStatus | str | None,
@@ -912,6 +924,7 @@ async def _trial_searcher(
     - conditions: Condition terms (e.g., "breast cancer") - list or comma-separated string
     - terms: General search terms - list or comma-separated string
     - interventions: Intervention names (e.g., "pembrolizumab") - list or comma-separated string
+    - lead_sponsor: Lead sponsor organization names (e.g., "Pfizer", "National Cancer Institute") - list or comma-separated string
     - recruiting_status: Study recruitment status (OPEN, CLOSED, ANY)
     - study_type: Type of study
     - nct_ids: Clinical trial NCT IDs - list or comma-separated string
@@ -948,6 +961,7 @@ async def _trial_searcher(
         conditions=ensure_list(conditions, split_strings=True),
         terms=ensure_list(terms, split_strings=True),
         interventions=ensure_list(interventions, split_strings=True),
+        lead_sponsor=ensure_list(lead_sponsor, split_strings=True),
         recruiting_status=recruiting_status,
         study_type=study_type,
         nct_ids=ensure_list(nct_ids, split_strings=True),
