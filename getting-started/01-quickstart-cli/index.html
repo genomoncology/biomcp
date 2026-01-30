@@ -626,9 +626,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#look-up-drug-information" class="md-nav__link">
+  <a href="#get-disease-information" class="md-nav__link">
     <span class="md-ellipsis">
-      Look Up Drug Information
+      Get Disease Information
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-drug-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      Get Drug Information
     </span>
   </a>
   
@@ -728,9 +737,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-investigate-drug-mechanisms" class="md-nav__link">
+  <a href="#3-investigate-genes-diseases-and-drugs" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Investigate Drug Mechanisms
+      3. Investigate Genes, Diseases, and Drugs
     </span>
   </a>
   
@@ -2806,9 +2815,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#look-up-drug-information" class="md-nav__link">
+  <a href="#get-disease-information" class="md-nav__link">
     <span class="md-ellipsis">
-      Look Up Drug Information
+      Get Disease Information
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-drug-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      Get Drug Information
     </span>
   </a>
   
@@ -2908,9 +2926,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-investigate-drug-mechanisms" class="md-nav__link">
+  <a href="#3-investigate-genes-diseases-and-drugs" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Investigate Drug Mechanisms
+      3. Investigate Genes, Diseases, and Drugs
     </span>
   </a>
   
@@ -3062,79 +3080,99 @@
 <a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="c1"># - diseases, gwas</span>
 <a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="c1"># - transcription_factors, tf</span>
 </code></pre></div>
-<h3 id="look-up-drug-information">Look Up Drug Information<a class="headerlink" href="#look-up-drug-information" title="Permanent link">&para;</a></h3>
-<p>Get details about imatinib (Gleevec):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>intervention<span class="w"> </span>search<span class="w"> </span>imatinib
+<p>You can also search for genes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;tumor protein&quot;</span>
+</code></pre></div>
+<h3 id="get-disease-information">Get Disease Information<a class="headerlink" href="#get-disease-information" title="Permanent link">&para;</a></h3>
+<p>Get details about diseases from MyDisease.info:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>get<span class="w"> </span>melanoma
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>get<span class="w"> </span><span class="s2">&quot;lung cancer&quot;</span>
+</code></pre></div>
+<h3 id="get-drug-information">Get Drug Information<a class="headerlink" href="#get-drug-information" title="Permanent link">&para;</a></h3>
+<p>Get comprehensive drug information from MyChem.info:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>imatinib
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>aspirin
+</code></pre></div>
+<p>You can also search by drug identifiers:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>DB00945<span class="w">  </span><span class="c1"># DrugBank ID</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>CHEMBL25<span class="w">  </span><span class="c1"># ChEMBL ID</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>biomcp<span class="w"> </span>intervention<span class="w"> </span>search<span class="w"> </span>imatinib
 </code></pre></div>
 <h3 id="search-for-genetic-variants">Search for Genetic Variants<a class="headerlink" href="#search-for-genetic-variants" title="Permanent link">&para;</a></h3>
 <p>Find pathogenic variants in the BRCA1 gene:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>search<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>--gene<span class="w"> </span>BRCA1<span class="w"> </span>--significance<span class="w"> </span>pathogenic
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>search<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>--gene<span class="w"> </span>BRCA1<span class="w"> </span>--significance<span class="w"> </span>pathogenic
 </code></pre></div>
 <h3 id="analyze-a-clinically-actionable-variant">Analyze a Clinically Actionable Variant<a class="headerlink" href="#analyze-a-clinically-actionable-variant" title="Permanent link">&para;</a></h3>
 <p>Get OncoKB clinical interpretations for known cancer variants. BioMCP uses a demo server for key genes like BRAF out-of-the-box, no setup required!</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Get clinical actionability for BRAF V600E</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Get clinical actionability for BRAF V600E</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF
 </code></pre></div>
 <p>This will automatically prepend an "OncoKB Gene Summary" table to the search results.</p>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <h3 id="set-up-api-keys-optional-but-recommended">Set Up API Keys (Optional but Recommended)<a class="headerlink" href="#set-up-api-keys-optional-but-recommended" title="Permanent link">&para;</a></h3>
 <p>Some features require API keys for enhanced functionality:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># For NCI clinical trials database</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-key-here&quot;</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># For AlphaGenome variant predictions</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-key-here&quot;</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="c1"># For additional cBioPortal features</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="nb">export</span><span class="w"> </span><span class="nv">CBIO_TOKEN</span><span class="o">=</span><span class="s2">&quot;your-token-here&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># For NCI clinical trials database</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-key-here&quot;</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># For AlphaGenome variant predictions</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-key-here&quot;</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="c1"># For additional cBioPortal features</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="nb">export</span><span class="w"> </span><span class="nv">CBIO_TOKEN</span><span class="o">=</span><span class="s2">&quot;your-token-here&quot;</span>
 </code></pre></div>
 <p>See <a href="../03-authentication-and-api-keys/">Authentication and API Keys</a> for detailed setup.</p>
 <h3 id="explore-advanced-features">Explore Advanced Features<a class="headerlink" href="#explore-advanced-features" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Combine Multiple Filters</strong>:</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>--gene<span class="w"> </span>EGFR<span class="w"> </span>--disease<span class="w"> </span><span class="s2">&quot;lung cancer&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span>--chemical<span class="w"> </span>erlotinib
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>--gene<span class="w"> </span>EGFR<span class="w"> </span>--disease<span class="w"> </span><span class="s2">&quot;lung cancer&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span>--chemical<span class="w"> </span>erlotinib
 </code></pre></div>
 <ul>
 <li><strong>Use OR Logic in Keywords</strong>:</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--keyword<span class="w"> </span><span class="s2">&quot;V600E|p.V600E|c.1799T&gt;A&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--keyword<span class="w"> </span><span class="s2">&quot;V600E|p.V600E|c.1799T&gt;A&quot;</span>
 </code></pre></div>
 <ul>
 <li><strong>Exclude Preprints</strong>:
-  <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--no-preprints
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--no-preprints
 </code></pre></div></li>
 </ul>
 <h3 id="get-help">Get Help<a class="headerlink" href="#get-help" title="Permanent link">&para;</a></h3>
 <p>View all available commands:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>--help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>--help
 </code></pre></div>
 <p>Get help for a specific command:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--help
 </code></pre></div>
 <h2 id="common-use-cases">Common Use Cases<a class="headerlink" href="#common-use-cases" title="Permanent link">&para;</a></h2>
 <h3 id="1-research-a-specific-mutation">1. Research a Specific Mutation<a class="headerlink" href="#1-research-a-specific-mutation" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Find articles about EGFR T790M resistance mutation</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>EGFR<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span>--keyword<span class="w"> </span><span class="s2">&quot;T790M|p.T790M&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span>--disease<span class="w"> </span><span class="s2">&quot;lung cancer&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Find articles about EGFR T790M resistance mutation</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>EGFR<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span>--keyword<span class="w"> </span><span class="s2">&quot;T790M|p.T790M&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">  </span>--disease<span class="w"> </span><span class="s2">&quot;lung cancer&quot;</span>
 </code></pre></div>
 <h3 id="2-find-trials-for-a-patient">2. Find Trials for a Patient<a class="headerlink" href="#2-find-trials-for-a-patient" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Active trials for HER2-positive breast cancer</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>biomcp<span class="w"> </span>trial<span class="w"> </span>search<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span>--condition<span class="w"> </span><span class="s2">&quot;breast cancer&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span>--keyword<span class="w"> </span><span class="s2">&quot;HER2 positive&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">  </span>--status<span class="w"> </span>RECRUITING
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Active trials for HER2-positive breast cancer</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>trial<span class="w"> </span>search<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span>--condition<span class="w"> </span><span class="s2">&quot;breast cancer&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">  </span>--keyword<span class="w"> </span><span class="s2">&quot;HER2 positive&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">  </span>--status<span class="w"> </span>RECRUITING
 </code></pre></div>
-<h3 id="3-investigate-drug-mechanisms">3. Investigate Drug Mechanisms<a class="headerlink" href="#3-investigate-drug-mechanisms" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Get information about pembrolizumab</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>pembrolizumab
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Find articles about its use in melanoma</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--chemical<span class="w"> </span>pembrolizumab<span class="w"> </span>--disease<span class="w"> </span>melanoma
+<h3 id="3-investigate-genes-diseases-and-drugs">3. Investigate Genes, Diseases, and Drugs<a class="headerlink" href="#3-investigate-genes-diseases-and-drugs" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Get gene information</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>TP53
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="c1"># Get disease information</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>get<span class="w"> </span>melanoma
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="c1"># Get drug information</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>imatinib
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="c1"># Find articles about the gene in a specific disease</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--disease<span class="w"> </span>melanoma
 </code></pre></div>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <h3 id="command-not-found">Command Not Found<a class="headerlink" href="#command-not-found" title="Permanent link">&para;</a></h3>

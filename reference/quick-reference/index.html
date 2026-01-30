@@ -1246,9 +1246,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#genedrugdisease-commands" class="md-nav__link">
+  <a href="#genediseasedrug-commands" class="md-nav__link">
     <span class="md-ellipsis">
-      Gene/Drug/Disease Commands
+      Gene/Disease/Drug Commands
     </span>
   </a>
   
@@ -1561,6 +1561,15 @@
   <a href="#variant-analysis" class="md-nav__link">
     <span class="md-ellipsis">
       Variant Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drug-research" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Research
     </span>
   </a>
   
@@ -2977,9 +2986,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#genedrugdisease-commands" class="md-nav__link">
+  <a href="#genediseasedrug-commands" class="md-nav__link">
     <span class="md-ellipsis">
-      Gene/Drug/Disease Commands
+      Gene/Disease/Drug Commands
     </span>
   </a>
   
@@ -3297,6 +3306,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#drug-research" class="md-nav__link">
+    <span class="md-ellipsis">
+      Drug Research
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3482,18 +3500,32 @@
 <a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="c1"># Predict effects (requires AlphaGenome key)</span>
 <a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>predict<span class="w"> </span>chr7<span class="w"> </span><span class="m">140753336</span><span class="w"> </span>A<span class="w"> </span>T<span class="w"> </span>--tissue<span class="w"> </span>UBERON:0002367
 </code></pre></div>
-<h3 id="genedrugdisease-commands">Gene/Drug/Disease Commands<a class="headerlink" href="#genedrugdisease-commands" title="Permanent link">&para;</a></h3>
+<h3 id="genediseasedrug-commands">Gene/Disease/Drug Commands<a class="headerlink" href="#genediseasedrug-commands" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Get gene information</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>TP53
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>BRAF
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># Get drug information</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>imatinib
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>pembrolizumab
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># Get disease information</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>get<span class="w"> </span>melanoma
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>get<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># Search genes</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;tumor protein&quot;</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># Gene enrichment (feature in development)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>get<span class="w"> </span>TP53<span class="w"> </span>--enrich<span class="w"> </span>pathway
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1"># Get disease information</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>get<span class="w"> </span>melanoma
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>get<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1"># Search diseases</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>search<span class="w"> </span>melanoma
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>search<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w">  </span><span class="c1"># NCI cancer terms</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="c1"># Get drug information</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>imatinib
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>DB00945<span class="w">  </span><span class="c1"># DrugBank ID</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>--json<span class="w"> </span>imatinib<span class="w">  </span><span class="c1"># JSON output</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="c1"># Search drugs</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;kinase inhibitor&quot;</span>
 </code></pre></div>
 <h3 id="nci-commands-require-api-key">NCI Commands (Require API Key)<a class="headerlink" href="#nci-commands-require-api-key" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Search organizations</span>
@@ -3807,9 +3839,9 @@
 </ul>
 <h3 id="biothings-tools">BioThings Tools<a class="headerlink" href="#biothings-tools" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>gene_getter</code></li>
-<li><code>disease_getter</code></li>
-<li><code>drug_getter</code></li>
+<li><code>gene_details</code> - Get gene information</li>
+<li><code>disease_details</code> - Get disease information</li>
+<li><code>drug_details</code> - Get drug information</li>
 </ul>
 <h3 id="nci-tools">NCI Tools<a class="headerlink" href="#nci-tools" title="Permanent link">&para;</a></h3>
 <ul>
@@ -3862,6 +3894,16 @@
 <a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="c1"># Step 3: Search related articles</span>
 <a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRCA1<span class="w"> </span>--variant<span class="w"> </span>rs80357906
 </code></pre></div>
+<h3 id="drug-research">Drug Research<a class="headerlink" href="#drug-research" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Step 1: Get drug information</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>get<span class="w"> </span>imatinib
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="c1"># Step 2: Search related articles</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--chemical<span class="w"> </span>imatinib
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="c1"># Step 3: Find clinical trials</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>biomcp<span class="w"> </span>trial<span class="w"> </span>search<span class="w"> </span>--keyword<span class="w"> </span><span class="s2">&quot;imatinib&quot;</span>
+</code></pre></div>
 <h2 id="error-code-quick-reference">Error Code Quick Reference<a class="headerlink" href="#error-code-quick-reference" title="Permanent link">&para;</a></h2>
 <h3 id="common-http-codes">Common HTTP Codes<a class="headerlink" href="#common-http-codes" title="Permanent link">&para;</a></h3>
 <ul>
@@ -3883,44 +3925,44 @@
 </ul>
 <h2 id="tips-and-tricks">Tips and Tricks<a class="headerlink" href="#tips-and-tricks" title="Permanent link">&para;</a></h2>
 <h3 id="1-use-official-gene-symbols">1. Use Official Gene Symbols<a class="headerlink" href="#1-use-official-gene-symbols" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Wrong</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>HER2<span class="w">  </span><span class="c1"># ❌</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="c1"># Right</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>ERBB2<span class="w">  </span><span class="c1"># ✅</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Wrong</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>HER2<span class="w">  </span><span class="c1"># ❌</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># Right</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>ERBB2<span class="w">  </span><span class="c1"># ✅</span>
 </code></pre></div>
 <h3 id="2-combine-multiple-searches">2. Combine Multiple Searches<a class="headerlink" href="#2-combine-multiple-searches" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Search multiple databases in parallel</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="o">(</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span>&gt;<span class="w"> </span>articles.json<span class="w"> </span><span class="p">&amp;</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span>biomcp<span class="w"> </span>trial<span class="w"> </span>search<span class="w"> </span>--condition<span class="w"> </span>melanoma<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span>&gt;<span class="w"> </span>trials.json<span class="w"> </span><span class="p">&amp;</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">  </span>biomcp<span class="w"> </span>variant<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span>&gt;<span class="w"> </span>variants.json<span class="w"> </span><span class="p">&amp;</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">  </span><span class="nb">wait</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Search multiple databases in parallel</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="o">(</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span>&gt;<span class="w"> </span>articles.json<span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span>biomcp<span class="w"> </span>trial<span class="w"> </span>search<span class="w"> </span>--condition<span class="w"> </span>melanoma<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span>&gt;<span class="w"> </span>trials.json<span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">  </span>biomcp<span class="w"> </span>variant<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span>&gt;<span class="w"> </span>variants.json<span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">  </span><span class="nb">wait</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="o">)</span>
 </code></pre></div>
 <h3 id="3-process-large-results">3. Process Large Results<a class="headerlink" href="#3-process-large-results" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Paginate through results</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="k">for</span><span class="w"> </span>page<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="o">{</span><span class="m">1</span>..10<span class="o">}</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--page<span class="w"> </span><span class="nv">$page</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">100</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="k">done</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Paginate through results</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="k">for</span><span class="w"> </span>page<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="o">{</span><span class="m">1</span>..10<span class="o">}</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--page<span class="w"> </span><span class="nv">$page</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">100</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="k">done</span>
 </code></pre></div>
 <h3 id="4-debug-api-issues">4. Debug API Issues<a class="headerlink" href="#4-debug-api-issues" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Enable debug logging</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_LOG_LEVEL</span><span class="o">=</span>DEBUG
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--verbose
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Enable debug logging</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_LOG_LEVEL</span><span class="o">=</span>DEBUG
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--verbose
 </code></pre></div>
 <h2 id="getting-help">Getting Help<a class="headerlink" href="#getting-help" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># General help</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>--help
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Command help</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--help
-<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>
-<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="c1"># Check documentation</span>
-<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>open<span class="w"> </span>https://biomcp.org/
-<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>
-<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="c1"># Report issues</span>
-<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>open<span class="w"> </span>https://github.com/genomoncology/biomcp/issues
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># General help</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>--help
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="c1"># Command help</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>search<span class="w"> </span>--help
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="c1"># Check documentation</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>open<span class="w"> </span>https://biomcp.org/
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="c1"># Report issues</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>open<span class="w"> </span>https://github.com/genomoncology/biomcp/issues
 </code></pre></div>
 
 
