@@ -23,14 +23,20 @@ def install_skill(
     """
     if directory is None:
         typer.echo("Usage: biomcp install-skill <directory>\n")
-        typer.echo("Install the BioMCP skill to your AI agent's skills directory.\n")
+        typer.echo(
+            "Install the BioMCP skill to your AI agent's skills directory.\n"
+        )
         typer.echo("Examples:")
         typer.echo("  biomcp install-skill ~/.claude/skills/    # Claude Code")
-        typer.echo("  biomcp install-skill ~/.codex/skills/     # OpenAI Codex")
+        typer.echo(
+            "  biomcp install-skill ~/.codex/skills/     # OpenAI Codex"
+        )
         typer.echo("  biomcp install-skill ~/.opencode/skills/  # OpenCode")
         typer.echo("  biomcp install-skill ~/.gemini/skills/    # Gemini CLI")
         typer.echo("  biomcp install-skill ~/.pi/skills/        # Pi Agent")
-        typer.echo("  biomcp install-skill ./.claude/skills/    # Project-local")
+        typer.echo(
+            "  biomcp install-skill ./.claude/skills/    # Project-local"
+        )
         raise typer.Exit(1)
 
     # Expand user path and resolve
@@ -39,8 +45,12 @@ def install_skill(
 
     # Check source exists
     if not SKILLS_SOURCE.exists():
-        typer.echo(f"Error: Skills source not found at {SKILLS_SOURCE}", err=True)
-        typer.echo("This may indicate an incomplete BioMCP installation.", err=True)
+        typer.echo(
+            f"Error: Skills source not found at {SKILLS_SOURCE}", err=True
+        )
+        typer.echo(
+            "This may indicate an incomplete BioMCP installation.", err=True
+        )
         raise typer.Exit(1)
 
     # Create target directory
