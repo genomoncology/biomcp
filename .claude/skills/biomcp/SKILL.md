@@ -29,20 +29,22 @@ biomcp health check
 |---------|---------|---------|
 | `biomcp article search` | Find literature | `--gene BRAF --disease melanoma` |
 | `biomcp article get` | Fetch paper | `38768446` |
-| `biomcp trial search` | Find trials | `--condition "lung cancer" --status open` |
+| `biomcp trial search` | Find trials | `--condition "lung cancer" --status OPEN` |
 | `biomcp trial get` | Trial details | `NCT04280705` |
 | `biomcp variant search` | Query variants | `--gene BRCA1 --significance pathogenic` |
 | `biomcp variant get` | Variant details | `rs113488022` |
-| `biomcp openfda adverse` | Drug safety | `--drug pembrolizumab --serious` |
-| `biomcp openfda approval` | Drug approvals | `--year 2023 --limit 10` |
-| `biomcp openfda shortage` | Drug shortages | `--status current` |
+| `biomcp openfda adverse search` | Drug safety | `--drug pembrolizumab --serious` |
+| `biomcp openfda approval search` | Drug approvals | `--year 2023 --limit 10` |
+| `biomcp openfda shortage search` | Drug shortages | `--status current` |
 
 ## Output Formats
 
-Always use `--format json` when processing results programmatically:
+Use `-j` or `--json` for JSON output:
 
 ```bash
-biomcp article search --gene EGFR --format json > results.json
+biomcp variant search --gene BRAF --significance pathogenic -j
+biomcp trial search --condition melanoma --status OPEN -j
+biomcp article search --gene EGFR --disease "lung cancer" -j
 ```
 
 ## Normalization
@@ -67,6 +69,26 @@ Detailed workflows in `use-cases/`:
 8. [Immunotherapy](use-cases/08-immunotherapy.md) - Biomarker-driven trials
 9. [Drug Labels](use-cases/09-drug-labels.md) - FDA label search
 10. [Hereditary Cancer](use-cases/10-hereditary-cancer.md) - Germline variants
+
+## Common Workflows
+
+### Variant pathogenicity + trials (e.g., BRAF V600E melanoma)
+```bash
+biomcp variant search --gene BRAF --hgvsp "p.Val600Glu" --significance pathogenic -j
+biomcp trial search --condition melanoma --required-mutation "BRAF V600E" --status OPEN -j
+```
+
+### Drug safety investigation
+```bash
+biomcp openfda adverse search --drug pembrolizumab --serious -j
+biomcp openfda approval search --drug pembrolizumab -j
+```
+
+### Literature + trial synthesis
+```bash
+biomcp article search --gene EGFR --disease "lung cancer" --keyword resistance -j
+biomcp trial search --condition "lung cancer" --term "EGFR resistance" --phase PHASE3 --status OPEN -j
+```
 
 ## Troubleshooting
 
