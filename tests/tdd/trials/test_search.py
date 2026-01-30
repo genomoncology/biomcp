@@ -29,7 +29,7 @@ from biomcp.trials.search import (
 @pytest.mark.asyncio
 async def test_convert_query_basic_parameters():
     """Test basic parameter conversion from TrialQuery to API format."""
-    query = TrialQuery(conditions=["lung cancer"])
+    query = TrialQuery(conditions=["lung cancer"], expand_synonyms=False)
     params = await convert_query(query)
 
     assert "markupFormat" in params

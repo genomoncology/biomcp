@@ -132,7 +132,7 @@ class BioThingsClient:
     async def _query_gene(self, symbol: str) -> list[dict[str, Any]] | None:
         """Query MyGene.info for a gene symbol."""
         params = {
-            "q": f"symbol:{quote(symbol)}",
+            "q": f"symbol:{symbol}",  # Don't pre-encode; httpx will handle URL encoding
             "species": "human",
             "fields": "_id,symbol,name,taxid",
             "size": 5,
@@ -277,7 +277,7 @@ class BioThingsClient:
     async def _query_disease(self, name: str) -> list[dict[str, Any]] | None:
         """Query MyDisease.info for a disease name."""
         params = {
-            "q": quote(name),
+            "q": name,  # Don't pre-encode; httpx will handle URL encoding
             "fields": "_id,name,mondo",
             "size": 10,
         }
@@ -418,7 +418,7 @@ class BioThingsClient:
     async def _query_drug(self, name: str) -> list[dict[str, Any]] | None:
         """Query MyChem.info for a drug name."""
         params = {
-            "q": quote(name),
+            "q": name,  # Don't pre-encode; httpx will handle URL encoding
             "fields": "_id,name,drugbank.name,chebi.name,chembl.pref_name,unii.display_name",
             "size": 10,
         }
