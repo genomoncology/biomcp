@@ -75,6 +75,26 @@ biomcp variant search --gene TP53 # get variants for a gene
 biomcp article search --gene TP53 # find articles about a gene
 ```
 
+**Get gene information with functional enrichment analysis:**
+
+```bash
+# Pathway enrichment (KEGG, Reactome, WikiPathways)
+biomcp gene get TP53 --enrich pathway
+
+# Gene Ontology enrichment
+biomcp gene get BRCA1 --enrich ontology
+
+# Cell type associations
+biomcp gene get EGFR --enrich celltypes
+
+# Available enrichment types:
+# - pathway, kegg, reactome, wikipathways
+# - ontology, go_process, go_molecular, go_cellular
+# - celltypes, tissues
+# - diseases, gwas
+# - transcription_factors, tf
+```
+
 ### Look Up Drug Information
 
 Get details about imatinib (Gleevec):
