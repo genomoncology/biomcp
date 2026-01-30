@@ -99,7 +99,7 @@ class CBioPortalSearchClient:
             # Query mutations from top studies
             selected_profiles = profiles[:max_studies]
             mutation_summary = await self._get_mutation_summary(
-                gene_id, selected_profiles, cancer_types
+                gene_id, selected_profiles, cancer_types, gene
             )
 
             # Build summary
@@ -227,6 +227,7 @@ class CBioPortalSearchClient:
         gene_id: int,
         profiles: list[dict[str, Any]],
         cancer_types: dict[str, dict[str, Any]],
+        gene_symbol: str,
     ) -> dict[str, Any]:
         """Get mutation summary across selected profiles."""
         # Batch mutations queries for better performance
@@ -276,6 +277,7 @@ class CBioPortalSearchClient:
             list(zip(results, study_ids, strict=False)),
             cancer_types,
             self,
+            gene_symbol,
         )
 
         # Calculate frequency

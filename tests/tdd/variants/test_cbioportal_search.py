@@ -18,6 +18,55 @@ class TestCBioPortalSearch:
     """Test cBioPortal search functionality."""
 
     @pytest.mark.asyncio
+    async def test_mutation_gene_symbol_validation(self):
+        """Test that process_mutation_results filters by gene symbol."""
+        from biomcp.variants.cbioportal_search_helpers import (
+            process_mutation_results,
+        )
+
+        # Mock mutation data with cross-gene contamination
+        mock_mutations = [
+            {
+                "hugoGeneSymbol": "KRAS",
+                "proteinChange": "G12D",
+                "sampleId": "s1",
+            },
+            {
+                "hugoGeneSymbol": "BRAF",
+                "proteinChange": "V600E",
+                "sampleId": "s2",
+            },  # Wrong gene
+            {
+                "hugoGeneSymbol": "KRAS",
+                "proteinChange": "G12V",
+                "sampleId": "s3",
+            },
+        ]
+
+        mock_results = [
+            ({"mutations": mock_mutations, "sample_count": 100}, "study1")
+        ]
+
+        class MockClient:
+            async def _get_study_cancer_type(self, study_id, lookup):
+                return "Test Cancer"
+
+        result = await process_mutation_results(
+            mock_results,
+            {},
+            MockClient(),
+            gene_symbol="KRAS",  # Only want KRAS mutations
+        )
+
+        hotspots = result["hotspot_counts"]
+        assert "G12D" in hotspots
+        assert "G12V" in hotspots
+        assert "V600E" not in hotspots, "V600E (BRAF) should be filtered out"
+
+        assert result["total_mutations"] == 2
+        assert result["cancer_distribution"]["Test Cancer"] == 2
+
+    @pytest.mark.asyncio
     @pytest.mark.integration
     async def test_gene_search_summary(self):
         """Test getting gene search summary from cBioPortal."""

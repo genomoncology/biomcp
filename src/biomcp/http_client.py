@@ -320,11 +320,14 @@ def parse_response(
 
     try:
         if response_model_type is None:
+            content_stripped = content.lstrip("\ufeff\r\n\t ")
             # Try to parse as JSON first
-            if content.startswith("{") or content.startswith("["):
-                response_dict = json.loads(content)
-            elif "," in content:
-                io = StringIO(content)
+            if content_stripped.startswith("{") or content_stripped.startswith(
+                "["
+            ):
+                response_dict = json.loads(content_stripped)
+            elif "," in content_stripped:
+                io = StringIO(content_stripped)
                 response_dict = list(csv.DictReader(io))
             else:
                 response_dict = {"text": content}

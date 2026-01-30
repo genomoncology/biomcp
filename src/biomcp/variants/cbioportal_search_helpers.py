@@ -13,6 +13,7 @@ async def process_mutation_results(
     mutation_results: list[tuple[Any, str]],
     cancer_types_lookup: dict[str, dict[str, Any]],
     client: Any,
+    gene_symbol: str,
 ) -> dict[str, Any]:
     """Process mutation results from multiple studies.
 
@@ -20,6 +21,7 @@ async def process_mutation_results(
         mutation_results: List of (result, study_id) tuples
         cancer_types_lookup: Cancer type lookup dictionary
         client: Client instance for API calls
+        gene_symbol: Requested gene symbol to filter results
 
     Returns:
         Dictionary with aggregated mutation data
@@ -29,6 +31,7 @@ async def process_mutation_results(
     hotspot_counts: dict[str, dict[str, Any]] = {}
     cancer_distribution: dict[str, int] = {}
     studies_with_data = 0
+    gene_symbol_upper = gene_symbol.upper()
 
     for result, study_id in mutation_results:
         if isinstance(result, Exception):
@@ -36,7 +39,11 @@ async def process_mutation_results(
             continue
 
         if result and "mutations" in result:
-            mutations = result["mutations"]
+            mutations = [
+                m
+                for m in result["mutations"]
+                if m.get("hugoGeneSymbol", "").upper() == gene_symbol_upper
+            ]
             sample_count = result["sample_count"]
 
             if mutations:
@@ -53,10 +60,13 @@ async def process_mutation_results(
                     study_id, cancer_types_lookup
                 )
                 _update_hotspot_counts(
-                    mutations, hotspot_counts, study_cancer_type
+                    mutations, hotspot_counts, study_cancer_type, gene_symbol
                 )
                 _update_cancer_distribution(
-                    mutations, cancer_distribution, study_cancer_type
+                    mutations,
+                    cancer_distribution,
+                    study_cancer_type,
+                    gene_symbol,
                 )
 
     return {
@@ -72,9 +82,15 @@ def _update_hotspot_counts(
     mutations: list[dict[str, Any]],
     hotspot_counts: dict[str, dict[str, Any]],
     cancer_type: str,
+    gene_symbol: str,
 ) -> None:
     """Update hotspot counts from mutations."""
+    gene_symbol_upper = gene_symbol.upper()
     for mut in mutations:
+        mut_gene = mut.get("hugoGeneSymbol", "")
+        if mut_gene.upper() != gene_symbol_upper:
+            continue
+
         protein_change = mut.get("proteinChange", "")
         if protein_change:
             if protein_change not in hotspot_counts:
@@ -90,11 +106,20 @@ def _update_cancer_distribution(
     mutations: list[dict[str, Any]],
     cancer_distribution: dict[str, int],
     cancer_type: str,
+    gene_symbol: str,
 ) -> None:
     """Update cancer type distribution."""
+    gene_symbol_upper = gene_symbol.upper()
+    filtered_mutations = [
+        m
+        for m in mutations
+        if m.get("hugoGeneSymbol", "").upper() == gene_symbol_upper
+    ]
     cancer_distribution[cancer_type] = cancer_distribution.get(
         cancer_type, 0
-    ) + len({m.get("sampleId") for m in mutations if m.get("sampleId")})
+    ) + len({
+        m.get("sampleId") for m in filtered_mutations if m.get("sampleId")
+    })
 
 
 def format_hotspots(
