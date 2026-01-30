@@ -4,7 +4,7 @@ _This file is auto-generated from the endpoint registry._
 
 ## Overview
 
-BioMCP connects to 15 external domains across 38 endpoints.
+BioMCP connects to 16 external domains across 40 endpoints.
 
 ## Endpoints by Category
 
@@ -337,6 +337,24 @@ BioMCP connects to 15 external domains across 38 endpoints.
 - **Authentication**: Optional OPENFDA_API_KEY for increased rate limits
 - **Compliance Notes**: Public FDA service, official drug approval records
 
+### Functional Enrichment
+
+#### enrichr_addlist
+
+- **URL**: `https://maayanlab.cloud/Enrichr/addList`
+- **Description**: Enrichr API for submitting gene lists for enrichment analysis
+- **Data Types**: gene_annotations
+- **Rate Limit**: Not specified
+- **Compliance Notes**: Public Ma'ayan Lab service, gene list metadata only
+
+#### enrichr_enrich
+
+- **URL**: `https://maayanlab.cloud/Enrichr/enrich`
+- **Description**: Enrichr API for retrieving functional enrichment results (pathways, ontologies, cell types)
+- **Data Types**: pathway_enrichment, ontology_enrichment, gene_annotations
+- **Rate Limit**: Not specified
+- **Compliance Notes**: Public Ma'ayan Lab service, functional annotation data. Inspired by gget enrichr (Luebbert & Pachter, 2023)
+
 ## Domain Summary
 
 | Domain                       | Category              | Endpoints |
@@ -347,6 +365,7 @@ BioMCP connects to 15 external domains across 38 endpoints.
 | clinicaltrials.gov           | clinical_trials       | 1         |
 | clinicaltrialsapi.cancer.gov | clinical_trials       | 5         |
 | demo.oncokb.org              | cancer_genomics       | 3         |
+| maayanlab.cloud              | functional_enrichment | 2         |
 | mychem.info                  | variant_databases     | 2         |
 | mydisease.info               | variant_databases     | 2         |
 | mygene.info                  | variant_databases     | 2         |

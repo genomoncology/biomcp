@@ -43,11 +43,22 @@ def get_variant(
             case_sensitive=False,
         ),
     ] = DEFAULT_ASSEMBLY,
+    extensive: Annotated[
+        bool,
+        typer.Option(
+            "--extensive",
+            help="Show full details (default: compact format optimized for LLMs)",
+        ),
+    ] = False,
 ):
     """
     Get detailed information about a specific genetic variant.
 
     Supports HGVS identifiers (e.g., 'chr7:g.140453136A>T') or dbSNP rsIDs.
+
+    By default, all variants use compact formatting to reduce token usage by ~90%
+    for efficient LLM consumption. Use --extensive to see all raw prediction scores,
+    conservation data, and database details.
 
     Examples:
         Get by HGVS: biomcp variant get "chr7:g.140453136A>T"
@@ -55,6 +66,7 @@ def get_variant(
         Get as JSON: biomcp variant get rs113488022 --json
         Get without external annotations: biomcp variant get rs113488022 --no-external
         Get with hg38 assembly: biomcp variant get rs113488022 --assembly hg38
+        Get full details: biomcp variant get rs113488022 --extensive
     """
     if not variant_id:
         typer.echo("Error: A variant identifier must be provided.", err=True)
@@ -74,6 +86,7 @@ def get_variant(
             output_json=output_json,
             include_external=include_external,
             assembly=assembly,
+            extensive=extensive,
         )
     )
     typer.echo(result)
