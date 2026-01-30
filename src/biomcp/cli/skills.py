@@ -27,15 +27,23 @@ def install_skill(
             "Install the BioMCP skill to your AI agent's skills directory.\n"
         )
         typer.echo("Examples:")
-        typer.echo("  biomcp install-skill ~/.claude/skills/    # Claude Code")
         typer.echo(
-            "  biomcp install-skill ~/.codex/skills/     # OpenAI Codex"
+            "  biomcp install-skill ~/.claude/skills/         # Claude Code"
         )
-        typer.echo("  biomcp install-skill ~/.opencode/skills/  # OpenCode")
-        typer.echo("  biomcp install-skill ~/.gemini/skills/    # Gemini CLI")
-        typer.echo("  biomcp install-skill ~/.pi/skills/        # Pi Agent")
         typer.echo(
-            "  biomcp install-skill ./.claude/skills/    # Project-local"
+            "  biomcp install-skill ~/.codex/skills/          # OpenAI Codex"
+        )
+        typer.echo(
+            "  biomcp install-skill ~/.config/opencode/skills/ # OpenCode"
+        )
+        typer.echo(
+            "  biomcp install-skill ~/.gemini/skills/         # Gemini CLI"
+        )
+        typer.echo(
+            "  biomcp install-skill ~/.pi/skills/             # Pi Agent"
+        )
+        typer.echo(
+            "  biomcp install-skill ./.claude/skills/         # Project-local"
         )
         raise typer.Exit(1)
 

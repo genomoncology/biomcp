@@ -32,14 +32,14 @@ biomcp install-skill <your-agent-skills-directory>
 
 Examples by agent:
 
-| Agent         | Command                                    |
-| ------------- | ------------------------------------------ |
-| Claude Code   | `biomcp install-skill ~/.claude/skills/`   |
-| OpenAI Codex  | `biomcp install-skill ~/.codex/skills/`    |
-| OpenCode      | `biomcp install-skill ~/.opencode/skills/` |
-| Gemini CLI    | `biomcp install-skill ~/.gemini/skills/`   |
-| Pi Agent      | `biomcp install-skill ~/.pi/skills/`       |
-| Project-local | `biomcp install-skill ./.claude/skills/`   |
+| Agent         | Command                                           |
+| ------------- | ------------------------------------------------- |
+| Claude Code   | `biomcp install-skill ~/.claude/skills/`          |
+| OpenAI Codex  | `biomcp install-skill ~/.codex/skills/`           |
+| OpenCode      | `biomcp install-skill ~/.config/opencode/skills/` |
+| Gemini CLI    | `biomcp install-skill ~/.gemini/skills/`          |
+| Pi Agent      | `biomcp install-skill ~/.pi/skills/`              |
+| Project-local | `biomcp install-skill ./.claude/skills/`          |
 
 ## Available Skills
 
