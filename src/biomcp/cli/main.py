@@ -14,7 +14,7 @@ from .interventions import intervention_app
 from .openfda import openfda_app
 from .organizations import organization_app
 from .server import run_server
-from .skills import install_skill
+from .skill import build_skill_app
 from .trials import trial_app
 from .variants import variant_app
 
@@ -107,6 +107,10 @@ app.add_typer(
     no_args_is_help=True,
 )
 
+# --- Agent Skills ---
+app.add_typer(build_skill_app(), name="skill")
+app.add_typer(build_skill_app(), name="skills")
+
 
 # --- Add --version Option using Annotation ---
 # We add this directly to the app's callback invocation signature via annotation
@@ -160,9 +164,6 @@ def version():
 
 # Directly expose run_server as the 'run' command with all its options
 app.command("run")(run_server)
-
-# Add install-skill command
-app.command("install-skill")(install_skill)
 
 
 if __name__ == "__main__":

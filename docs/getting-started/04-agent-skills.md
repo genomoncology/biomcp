@@ -27,54 +27,57 @@ biomcp --version
 ### Step 2: Install Agent Skills
 
 ```bash
-biomcp install-skill <your-agent-skills-directory>
+biomcp skill install [directory]
 ```
 
 Examples by agent:
 
-| Agent         | Command                                           |
-| ------------- | ------------------------------------------------- |
-| Claude Code   | `biomcp install-skill ~/.claude/skills/`          |
-| OpenAI Codex  | `biomcp install-skill ~/.codex/skills/`           |
-| OpenCode      | `biomcp install-skill ~/.config/opencode/skills/` |
-| Gemini CLI    | `biomcp install-skill ~/.gemini/skills/`          |
-| Pi Agent      | `biomcp install-skill ~/.pi/skills/`              |
-| Project-local | `biomcp install-skill ./.claude/skills/`          |
+| Agent         | Command                                   |
+| ------------- | ----------------------------------------- |
+| Claude Code   | `biomcp skill install ~/.claude`          |
+| OpenAI Codex  | `biomcp skill install ~/.codex`           |
+| OpenCode      | `biomcp skill install ~/.config/opencode` |
+| Gemini CLI    | `biomcp skill install ~/.gemini`          |
+| Pi Agent      | `biomcp skill install ~/.pi`              |
+| Project-local | `biomcp skill install ./.claude`          |
 
 ## Available Skills
 
 The BioMCP skill teaches agents how to query biomedical databases via CLI. It includes these workflow patterns:
 
-| Skill                  | Description                                    |
-| ---------------------- | ---------------------------------------------- |
-| Mutation to Trial      | Mutation → annotations → trials → literature   |
-| Drug Investigation     | Drug → adverse events → approvals → labels     |
-| Trial Matching         | Patient criteria → filtered trial search       |
-| Variant Interpretation | Variant → pathogenicity → actionability        |
-| Rare Disease Research  | Rare condition → gene therapy → registries     |
-| Drug Shortages         | Drug → shortage status → alternatives          |
-| Cell Therapy           | CAR-T/TIL/TCR-T trial landscape                |
-| Immunotherapy          | Biomarker-driven checkpoint inhibitor trials   |
-| Drug Labels            | FDA labels → indications → warnings            |
-| Hereditary Cancer      | Syndrome → genes → surveillance trials         |
-| Resistance Research    | Prior therapy → resistance → next-line options |
+| Skill                | Description                                    |
+| -------------------- | ---------------------------------------------- |
+| Variant to Treatment | Variant → interpretation → trials → treatment  |
+| Drug Investigation   | Drug → adverse events → labels → approvals     |
+| Trial Matching       | Patient criteria → filtered trial search       |
+| Rare Disease         | Rare condition → gene therapy → registries     |
+| Drug Shortages       | Drug → shortage status → alternatives          |
+| Advanced Therapies   | CAR-T, immunotherapy trial landscape           |
+| Hereditary Cancer    | Syndrome → genes → surveillance trials         |
+| Resistance           | Prior therapy → resistance → next-line options |
 
 ## Quick Reference
 
 Once installed, agents can use these commands:
 
-| Command                          | Purpose                  |
-| -------------------------------- | ------------------------ |
-| `biomcp article search`          | Find literature (PubMed) |
-| `biomcp article get`             | Get article by PMID      |
-| `biomcp trial search`            | Find clinical trials     |
-| `biomcp trial get`               | Get trial by NCT ID      |
-| `biomcp variant search`          | Query ClinVar variants   |
-| `biomcp variant get`             | Get variant by rsID      |
-| `biomcp openfda adverse search`  | Drug adverse events      |
-| `biomcp openfda approval search` | Drug approvals           |
-| `biomcp openfda shortage search` | Drug shortages           |
-| `biomcp openfda label search`    | Drug labels              |
+| Command                          | Purpose                         |
+| -------------------------------- | ------------------------------- |
+| `biomcp article search`          | Search articles (PubTator3)     |
+| `biomcp article get`             | Get article by PMID             |
+| `biomcp trial search`            | Find clinical trials            |
+| `biomcp trial get`               | Get trial by NCT ID             |
+| `biomcp gene search/get`         | Gene info (MyGene.info)         |
+| `biomcp variant search/get`      | Variant annotations (MyVariant) |
+| `biomcp variant predict`         | Variant effects (AlphaGenome)   |
+| `biomcp drug search/get`         | Drug info (MyChem.info)         |
+| `biomcp disease search/get`      | Disease info (MyDisease.info)   |
+| `biomcp biomarker search`        | Trial eligibility biomarkers    |
+| `biomcp openfda adverse search`  | Drug adverse events (FAERS)     |
+| `biomcp openfda approval search` | Drug approvals                  |
+| `biomcp openfda shortage search` | Drug shortages                  |
+| `biomcp openfda label search`    | Drug labels (SPL)               |
+| `biomcp openfda device search`   | Device adverse events (MAUDE)   |
+| `biomcp openfda recall search`   | Drug recalls                    |
 
 **Discover all options:** `biomcp <command> --help`
 
@@ -84,6 +87,8 @@ Once installed, agents can use these commands:
 - Normalize genes to HGNC symbols (HER2 → ERBB2)
 - Normalize variants to HGVS notation (V600E → p.Val600Glu)
 - Status enums are UPPERCASE (OPEN, RECRUITING, PHASE3)
+- Article search: `-g/--gene`, `-v/--variant`, `-d/--disease`, `-c/--chemical`
+- Gene enrichment: `biomcp gene get <symbol> --enrich pathway`
 
 ## Example Queries
 
