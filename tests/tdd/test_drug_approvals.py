@@ -191,5 +191,6 @@ class TestDrugApprovals:
             # Check that year was properly formatted in query
             call_args = mock_request.call_args
             params = call_args[0][1]  # params is 2nd positional arg
-            assert "marketing_status_date" in params["search"]
-            assert "[2023-01-01 TO 2023-12-31]" in params["search"]
+            assert "submissions.submission_status_date" in params["search"]
+            assert "[20230101 TO 20231231]" in params["search"]
+            assert "2023-01-01" not in params["search"]

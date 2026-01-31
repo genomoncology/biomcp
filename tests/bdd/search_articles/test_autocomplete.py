@@ -1,5 +1,6 @@
 import asyncio
 
+import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from biomcp.articles.autocomplete import (
@@ -10,6 +11,8 @@ from biomcp.articles.autocomplete import (
 )
 
 scenarios("autocomplete.feature")
+
+pytestmark = pytest.mark.usefixtures("mock_pubtator3_http")
 
 
 @given(

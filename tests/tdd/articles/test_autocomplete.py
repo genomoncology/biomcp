@@ -1,7 +1,7 @@
 from biomcp.articles.autocomplete import Entity, EntityRequest, autocomplete
 
 
-async def test_autocomplete(anyio_backend, http_cache):
+async def test_autocomplete(anyio_backend, http_cache, mock_pubtator3_http):
     # new cache for each call
     assert http_cache.count == 0
 

@@ -14,6 +14,7 @@ from .interventions import intervention_app
 from .openfda import openfda_app
 from .organizations import organization_app
 from .server import run_server
+from .skill import build_skill_app
 from .trials import trial_app
 from .variants import variant_app
 
@@ -105,6 +106,10 @@ app.add_typer(
     name="openfda",
     no_args_is_help=True,
 )
+
+# --- Agent Skills ---
+app.add_typer(build_skill_app(), name="skill")
+app.add_typer(build_skill_app(), name="skills")
 
 
 # --- Add --version Option using Annotation ---

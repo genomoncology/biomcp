@@ -56,7 +56,7 @@ async def search_drug_approvals(
     elif approval_year:
         # Search for approvals in a specific year
         search_params["search"] = (
-            f"products.marketing_status_date:[{approval_year}-01-01 TO {approval_year}-12-31]"
+            f"submissions.submission_status_date:[{approval_year}0101 TO {approval_year}1231]"
         )
 
     # Add pagination

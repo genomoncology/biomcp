@@ -94,6 +94,52 @@ class TestDrugApprovals:
             assert "Total Records Found**: 2 records" in result
 
     @pytest.mark.asyncio
+    async def test_search_by_approval_year_query_format(self):
+        """Test that year-based search uses correct field and date format."""
+        mock_response = {
+            "meta": {"results": {"skip": 0, "limit": 10, "total": 100}},
+            "results": [
+                {
+                    "application_number": "NDA123456",
+                    "openfda": {"brand_name": ["TEST DRUG"]},
+                    "submissions": [
+                        {
+                            "submission_type": "ORIG",
+                            "submission_status": "AP",
+                            "submission_status_date": "20210615",
+                        }
+                    ],
+                }
+            ],
+        }
+
+        with patch(
+            "biomcp.openfda.drug_approvals.make_openfda_request"
+        ) as mock_request:
+            mock_request.return_value = (mock_response, None)
+
+            result = await search_drug_approvals(
+                approval_year="2021", limit=10
+            )
+
+            # Verify the search query format
+            call_args = mock_request.call_args
+            search_params = call_args[0][1]  # Second positional arg
+
+            # Should use submissions.submission_status_date (not products.marketing_status_date)
+            assert (
+                "submissions.submission_status_date" in search_params["search"]
+            )
+            # Should use YYYYMMDD format (not YYYY-MM-DD)
+            assert "20210101" in search_params["search"]
+            assert "20211231" in search_params["search"]
+            # Should NOT have dashes in dates
+            assert "2021-01-01" not in search_params["search"]
+
+            # Result should contain data
+            assert "TEST DRUG" in result
+
+    @pytest.mark.asyncio
     async def test_search_drug_approvals_no_results(self):
         """Test drug approval search with no results."""
         mock_response = {
