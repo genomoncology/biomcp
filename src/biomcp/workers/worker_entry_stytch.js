@@ -1,4 +1,8 @@
 /**
+ * @deprecated This worker is deprecated and replaced by the TypeScript implementation.
+ * See workers/oauth-proxy/README.md for the new implementation.
+ * This file is kept for reference during migration.
+ *
  * BioMCP Worker – With Stytch OAuth (refactored)
  */
 
