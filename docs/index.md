@@ -30,8 +30,8 @@
         <span>Google OAuth authentication</span>
       </div>
       <div class="feature-item">
-        <strong>🛠️ 23+ Tools</strong>
-        <span>Full suite of biomedical research tools</span>
+        <strong>🛠️ 38+ Tools</strong>
+        <span>Full suite of biomedical + Czech healthcare tools</span>
       </div>
     </div>
 
@@ -166,9 +166,17 @@ Use with Claude Desktop for conversational biomedical research with sequential t
 - OR logic support for flexible matching
 - Cross-domain relationship discovery
 
+### Czech Healthcare Integration
+
+- **SUKL**: Drug registry, SmPC, PIL, availability
+- **MKN-10**: Diagnosis codes with hierarchy browsing
+- **NRPZS**: Healthcare provider search
+- **SZV/VZP**: Procedures and insurance codebooks
+- Diacritics-transparent search (léky = leky)
+
 ### Built for AI Integration
 
-- 24 specialized MCP tools
+- 38 specialized MCP tools (24 global + 14 Czech)
 - Sequential thinking for complex analysis
 - Streaming responses for real-time updates
 - Context preservation across queries
@@ -201,7 +209,21 @@ biomcp trial search --condition cancer \
 biomcp gene get TP53
 ```
 
-[More Examples →](tutorials/biothings-prompts.md)
+### Search Czech Drug Registry
+
+```bash
+# Search for Ibuprofen in SUKL
+biomcp czech sukl search --query "Ibuprofen"
+```
+
+### Search Czech Healthcare Providers
+
+```bash
+# Find cardiology providers in Prague
+biomcp czech nrpzs search --city "Praha" --specialty "kardiologie"
+```
+
+[More Examples →](tutorials/biothings-prompts.md) | [Czech Tools Docs →](czech-tools.md)
 
 ## Popular Workflows
 

@@ -295,7 +295,7 @@ result = asyncio.run(run_biomcp_query())
 
 ### Available MCP Tools
 
-BioMCP provides 24 tools through MCP:
+BioMCP provides 38+ tools through MCP (24 global + 14 Czech healthcare):
 
 #### Core Tools (Always Use First)
 

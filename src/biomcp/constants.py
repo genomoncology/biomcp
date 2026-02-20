@@ -50,6 +50,16 @@ ENSEMBL_REST_BASE_URL = "https://rest.ensembl.org"
 ENSEMBL_VARIATION_URL = f"{ENSEMBL_REST_BASE_URL}/variation/human"
 CBIOPORTAL_BASE_URL = "https://www.cbioportal.org/api"
 
+# Czech Healthcare APIs
+SUKL_BASE_URL = "https://prehledy.sukl.cz"
+SUKL_API_URL = f"{SUKL_BASE_URL}/dlp/api"
+NRPZS_BASE_URL = "https://nrpzs.uzis.cz/api/v1"
+NRPZS_PROVIDERS_URL = f"{NRPZS_BASE_URL}/mista-poskytovani"
+SZV_BASE_URL = "https://szv.mzcr.cz"
+NZIP_BASE_URL = "https://nzip.cz"
+VZP_BASE_URL = "https://www.vzp.cz"
+MKN10_BROWSER_URL = "https://mkn10.uzis.cz"
+
 # External Resource URLs
 PUBMED_BASE_URL = "https://pubmed.ncbi.nlm.nih.gov/"
 PMC_BASE_URL = "https://www.ncbi.nlm.nih.gov/pmc/articles/"

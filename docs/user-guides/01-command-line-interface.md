@@ -38,6 +38,11 @@ Options:
 | **intervention** | search               | Find interventions (drugs, devices, procedures) |
 | **biomarker**    | search               | Search biomarkers used in trials                |
 | **openfda**      | various              | Search FDA data (adverse events, drug labels)   |
+| **czech sukl**   | search, get, spc, pil, availability | Czech drug registry (SUKL)       |
+| **czech mkn**    | search, get, browse  | Czech ICD-10 diagnosis codes (MKN-10)           |
+| **czech nrpzs**  | search, get          | Czech healthcare providers (NRPZS)              |
+| **czech szv**    | search, get          | Czech health procedures (SZV)                   |
+| **czech vzp**    | search, get          | Czech insurance codebooks (VZP)                  |
 | **health**       | check                | Monitor API status and system health            |
 
 ## Article Commands

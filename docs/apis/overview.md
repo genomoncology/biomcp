@@ -19,7 +19,7 @@ See [Python SDK Reference](python-sdk.md) for detailed documentation.
 
 BioMCP implements the Model Context Protocol for AI assistant integration:
 
-- **24 specialized tools** for biomedical research
+- **38 specialized tools** for biomedical and Czech healthcare research
 - **Unified search** across all domains
 - **Sequential thinking** for complex queries
 - **Streaming responses** for large datasets

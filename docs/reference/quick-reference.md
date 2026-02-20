@@ -126,6 +126,34 @@ biomcp biomarker search --gene EGFR \
   --biomarker-type mutation --api-key $NCI_API_KEY
 ```
 
+### Czech Healthcare Commands
+
+```bash
+# Search Czech drug registry (SUKL)
+biomcp czech sukl search --query "Ibuprofen"
+biomcp czech sukl get "0001234"
+biomcp czech sukl spc "0001234"
+biomcp czech sukl pil "0001234"
+biomcp czech sukl availability "0001234"
+
+# Search MKN-10 diagnosis codes
+biomcp czech mkn search --query "J06.9"
+biomcp czech mkn search --query "infarkt"
+biomcp czech mkn browse
+
+# Search healthcare providers (NRPZS)
+biomcp czech nrpzs search --city "Praha" --specialty "kardiologie"
+biomcp czech nrpzs get "12345"
+
+# Search health procedures (SZV)
+biomcp czech szv search --query "EKG"
+biomcp czech szv get "09513"
+
+# Search VZP codebooks
+biomcp czech vzp search --query "antibiotika"
+biomcp czech vzp get "seznam_vykonu" "09513"
+```
+
 ### Health Check
 
 ```bash
@@ -295,6 +323,23 @@ biomcp article search --gene BRCA1 --format json > results.json
 - `nci_intervention_getter`
 - `nci_biomarker_searcher`
 - `nci_disease_searcher`
+
+### Czech Healthcare Tools
+
+- `sukl_drug_searcher` - Search Czech drug registry
+- `sukl_drug_getter` - Get drug details by SUKL code
+- `sukl_spc_getter` - Get SmPC document
+- `sukl_pil_getter` - Get PIL document
+- `sukl_availability_checker` - Check drug availability
+- `mkn_diagnosis_searcher` - Search MKN-10 diagnosis codes
+- `mkn_diagnosis_getter` - Get diagnosis details
+- `mkn_category_browser` - Browse MKN-10 hierarchy
+- `nrpzs_provider_searcher` - Search healthcare providers
+- `nrpzs_provider_getter` - Get provider details
+- `szv_procedure_searcher` - Search health procedures
+- `szv_procedure_getter` - Get procedure details
+- `vzp_codebook_searcher` - Search VZP codebooks
+- `vzp_codebook_getter` - Get codebook entry
 
 ## Query Language Syntax
 

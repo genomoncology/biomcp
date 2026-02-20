@@ -62,9 +62,28 @@ BioMCP integrates with multiple biomedical data sources:
   - **Drug Labels (SPL)** - Official prescribing information
   - **Device Events (MAUDE)** - Medical device adverse events, with genomic device filtering
 
+### Czech Healthcare Sources / České zdravotnické zdroje
+
+- **SUKL** - State Institute for Drug Control (Státní ústav pro kontrolu léčiv)
+  - Drug registry search, details, composition
+  - SmPC and PIL document access
+  - Real-time drug market availability
+- **MKN-10** - Czech ICD-10 diagnosis codes (Mezinárodní klasifikace nemocí)
+  - Code and free-text search with diacritics support
+  - Full diagnosis hierarchy browsing (chapters, blocks, categories)
+- **NRPZS** - National Registry of Healthcare Providers (Národní registr poskytovatelů)
+  - Provider search by name, city, specialty
+  - Workplace details with contact information
+- **SZV** - Health Procedure List (Seznam zdravotních výkonů)
+  - Procedure search by code or name
+  - Point values, time requirements, specialty codes
+- **VZP** - General Health Insurance codebooks (Číselníky VZP)
+  - Codebook search across procedure, diagnosis, and ATC types
+  - Entry details with reimbursement rules
+
 ## Available MCP Tools
 
-BioMCP provides 24 specialized tools for biomedical research:
+BioMCP provides 38 specialized tools for biomedical research (24 global + 14 Czech healthcare):
 
 ### Core Tools (3)
 
@@ -168,9 +187,9 @@ fetch(domain="variant", id="rs113488022")
 - **Trials**: `detail` can be "protocol", "locations", "outcomes", "references", or "all"
 - **Variants**: Always returns full details
 
-### Individual Tools (21)
+### Individual Tools (35)
 
-For users who prefer direct access to specific functionality, BioMCP also provides 21 individual tools:
+For users who prefer direct access to specific functionality, BioMCP also provides 35 individual tools (21 global + 14 Czech):
 
 #### Article Tools (2)
 
@@ -207,6 +226,38 @@ For users who prefer direct access to specific functionality, BioMCP also provid
 - **drug_getter**: Get drug/chemical information from MyChem.info
 
 **Note**: All individual tools that search by gene automatically include cBioPortal summaries when the `include_cbioportal` parameter is True (default). Trial searches can expand disease conditions with synonyms when `expand_synonyms` is True (default).
+
+#### Czech Healthcare Tools (14)
+
+##### SUKL - Drug Registry (5)
+
+- **sukl_drug_searcher**: Search Czech drug registry by name, substance, or ATC code
+- **sukl_drug_getter**: Get full drug details by SUKL code
+- **sukl_spc_getter**: Get SmPC (Summary of Product Characteristics) document
+- **sukl_pil_getter**: Get PIL (Patient Information Leaflet) document
+- **sukl_availability_checker**: Check drug market availability status
+
+##### MKN-10 - Diagnosis Codes (3)
+
+- **mkn_diagnosis_searcher**: Search Czech ICD-10 diagnoses by code or text
+- **mkn_diagnosis_getter**: Get diagnosis details with full hierarchy
+- **mkn_category_browser**: Browse MKN-10 category tree
+
+##### NRPZS - Healthcare Providers (2)
+
+- **nrpzs_provider_searcher**: Search providers by name, city, or specialty
+- **nrpzs_provider_getter**: Get provider details with workplaces
+
+##### SZV + VZP - Procedures & Insurance (4)
+
+- **szv_procedure_searcher**: Search health procedures by code or name
+- **szv_procedure_getter**: Get procedure details with point values
+- **vzp_codebook_searcher**: Search VZP insurance codebooks
+- **vzp_codebook_getter**: Get codebook entry details
+
+All Czech tools support **diacritics-transparent search** - searching "leky" finds "léky", "Usti" finds "Ústí".
+
+For detailed Czech tool documentation, see [docs/czech-tools.md](./docs/czech-tools.md).
 
 ## Quick Start
 
@@ -380,6 +431,16 @@ biomcp intervention search pembrolizumab --api-key YOUR_KEY
 biomcp intervention search --type Device --api-key YOUR_KEY
 biomcp biomarker search "PD-L1" --api-key YOUR_KEY
 biomcp disease search melanoma --source nci --api-key YOUR_KEY
+
+# Czech healthcare examples / České zdravotnické příklady
+biomcp czech sukl search --query "Ibuprofen"
+biomcp czech sukl get "0001234"
+biomcp czech sukl availability "0001234"
+biomcp czech mkn search --query "J06.9"
+biomcp czech mkn browse
+biomcp czech nrpzs search --city "Praha" --specialty "kardiologie"
+biomcp czech szv search --query "EKG"
+biomcp czech vzp search --query "antibiotika"
 ```
 
 ## Testing & Verification
@@ -465,6 +526,7 @@ For comprehensive documentation, visit [https://biomcp.org](https://biomcp.org)
 - [Error Handling Guide](./docs/error-handling.md) - Comprehensive error handling patterns
 - [Integration Testing Guide](./docs/integration-testing.md) - Best practices for reliable integration tests
 - [Third-Party Endpoints](./THIRD_PARTY_ENDPOINTS.md) - Complete list of external APIs used
+- [Czech Healthcare Tools](./docs/czech-tools.md) - Bilingual documentation for all 14 Czech tools
 - [Testing Guide](./docs/development/testing.md) - Running tests and understanding test categories
 
 ## Development

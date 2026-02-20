@@ -1,0 +1,1 @@
+"""SUKL drug registry module."""

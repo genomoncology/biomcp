@@ -50,7 +50,7 @@ You'll be redirected to Google OAuth for authentication. Sign in with any valid 
 
 ### Step 6: Connection Success
 
-Once authenticated, you'll see a successful connection message displaying the available tool count. As of January 2025, there are 23 tools available (this number may increase as new features are added).
+Once authenticated, you'll see a successful connection message displaying the available tool count. As of February 2026, there are 38+ tools available including 14 Czech healthcare tools (this number may increase as new features are added).
 
 ![Successful Connection](../assets/remote-connection/05_success_connect.png)
 

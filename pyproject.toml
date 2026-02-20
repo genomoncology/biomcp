@@ -1,7 +1,7 @@
 [project]
 name = "biomcp-python"
 version = "0.4.6"
-description = "Biomedical Model Context Protocol Server"
+description = "Biomedical Model Context Protocol Server with Czech Healthcare Extensions"
 authors = [{ name = "Ian Maurer", email = "imaurer@gmail.com" }]
 readme = "README.md"
 keywords = ['python']
@@ -20,6 +20,7 @@ dependencies = [
     "certifi>=2025.1.31",
     "diskcache>=5.6.3",
     "httpx>=0.28.1",
+    "lxml>=5.0.0",
     "mcp[cli]>=1.12.3,<2.0.0",
     "platformdirs>=4.3.6",
     "psutil>=7.0.0",
@@ -102,6 +103,7 @@ disable_error_code = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
+pythonpath = ["src"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [

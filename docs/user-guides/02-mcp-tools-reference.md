@@ -1,6 +1,6 @@
 # MCP Tools Reference
 
-BioMCP provides 36 specialized tools for biomedical research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.
+BioMCP provides 50 specialized tools for biomedical and Czech healthcare research through the Model Context Protocol (MCP). This reference covers all available tools, their parameters, and usage patterns.
 
 ## Related Guides
 
@@ -20,6 +20,10 @@ BioMCP provides 36 specialized tools for biomedical research through the Model C
 | **Enrichment Tools** | 1     | `enrichr_analyzer`                                             |
 | **NCI Tools**        | 6     | Organization, intervention, biomarker, and disease tools       |
 | **OpenFDA Tools**    | 12    | Adverse events, labels, devices, approvals, recalls, shortages |
+| **Czech SUKL**       | 5     | `sukl_drug_searcher`, `sukl_drug_getter`, + 3 detail tools     |
+| **Czech MKN-10**     | 3     | `mkn_diagnosis_searcher`, `mkn_diagnosis_getter`, `mkn_category_browser` |
+| **Czech NRPZS**      | 2     | `nrpzs_provider_searcher`, `nrpzs_provider_getter`             |
+| **Czech SZV/VZP**    | 4     | `szv_procedure_searcher/getter`, `vzp_codebook_searcher/getter` |
 
 ## Core Unified Tools
 

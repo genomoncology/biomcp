@@ -6,6 +6,7 @@ import typer
 
 from .articles import article_app
 from .biomarkers import biomarker_app
+from .czech import czech_app
 from .diseases import disease_app
 from .drugs import drug_app
 from .genes import gene_app
@@ -33,7 +34,7 @@ def version_callback(value: bool):
 
 # --- Main Typer App ---
 app = typer.Typer(
-    help="BioMCP: Biomedical Model Context Protocol",
+    help="CzechMedMCP: Biomedical MCP with Czech Healthcare Extensions",
     no_args_is_help=True,
     # Add a callback to handle top-level options like --version
     # This callback itself doesn't do much, but allows defining eager options
@@ -103,6 +104,12 @@ app.add_typer(
 app.add_typer(
     openfda_app,
     name="openfda",
+    no_args_is_help=True,
+)
+
+app.add_typer(
+    czech_app,
+    name="czech",
     no_args_is_help=True,
 )
 

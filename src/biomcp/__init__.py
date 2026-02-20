@@ -14,6 +14,7 @@ from . import router
 from . import thinking_tool
 from . import individual_tools
 from . import cbioportal_helper
+from . import czech
 
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
     "articles",
     "cbioportal_helper",
     "constants",
+    "czech",
     "ensure_list",
     "http_client",
     "individual_tools",

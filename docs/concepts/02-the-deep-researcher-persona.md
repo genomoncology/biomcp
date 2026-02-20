@@ -167,7 +167,7 @@ Every research session concludes with a structured brief:
 
 ## Tool Inventory and Usage
 
-The Deep Researcher has access to 24 specialized tools:
+The Deep Researcher has access to 38 specialized tools (24 global + 14 Czech healthcare):
 
 ### Core Research Tools
 
