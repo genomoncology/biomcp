@@ -335,8 +335,8 @@ class TestGeneSearchCommand:
 
         assert result.exit_code == 0
         assert (
-            "pagination" in result.stdout.lower()
-            or "development" in result.stdout
+            "pagination" in result.output.lower()
+            or "development" in result.output
         )
 
     @patch("biomcp.cli.genes.get_gene")
@@ -370,8 +370,8 @@ class TestGeneSearchCommand:
         )
 
         assert result.exit_code == 0
-        # Should show development note when pagination is used
-        assert "development" in result.stdout.lower()
+        # Development note goes to stderr
+        assert "development" in result.output.lower()
 
     @patch("biomcp.cli.genes.get_gene")
     def test_search_genes_with_json_output(self, mock_get_gene):

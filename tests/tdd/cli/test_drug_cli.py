@@ -316,8 +316,8 @@ class TestDrugSearchCommand:
         )
 
         assert result.exit_code == 0
-        # Should show development note when pagination is used
-        assert "development" in result.stdout.lower()
+        # Development note goes to stderr
+        assert "development" in result.output.lower()
         mock_get_drug.assert_called_once()
 
     @patch("biomcp.cli.drugs.get_drug")
@@ -330,7 +330,7 @@ class TestDrugSearchCommand:
         result = runner.invoke(app, ["drug", "search", "aspirin", "-p", "2"])
 
         assert result.exit_code == 0
-        assert "development" in result.stdout.lower()
+        assert "development" in result.output.lower()
         mock_get_drug.assert_called_once()
 
     @patch("biomcp.cli.drugs.get_drug")
@@ -345,7 +345,7 @@ class TestDrugSearchCommand:
         )
 
         assert result.exit_code == 0
-        assert "development" in result.stdout.lower()
+        assert "development" in result.output.lower()
         mock_get_drug.assert_called_once()
 
     @patch("biomcp.cli.drugs.get_drug")
@@ -361,7 +361,7 @@ class TestDrugSearchCommand:
         )
 
         assert result.exit_code == 0
-        assert "development" in result.stdout.lower()
+        assert "development" in result.output.lower()
         mock_get_drug.assert_called_once()
 
     @patch("biomcp.cli.drugs.get_drug")
@@ -445,7 +445,7 @@ class TestDrugSearchCommand:
 
         assert result.exit_code == 0
         assert "Imatinib" in result.stdout
-        assert "development" in result.stdout.lower()
+        assert "development" in result.output.lower()
         mock_get_drug.assert_called_once()
 
 
