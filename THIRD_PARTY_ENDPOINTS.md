@@ -4,7 +4,7 @@ _This file is auto-generated from the endpoint registry._
 
 ## Overview
 
-BioMCP connects to 16 external domains across 40 endpoints.
+BioMCP connects to 22 external domains across 46 endpoints.
 
 ## Endpoints by Category
 
@@ -355,6 +355,56 @@ BioMCP connects to 16 external domains across 40 endpoints.
 - **Rate Limit**: Not specified
 - **Compliance Notes**: Public Ma'ayan Lab service, functional annotation data. Inspired by gget enrichr (Luebbert & Pachter, 2023)
 
+### Czech Healthcare / České zdravotnictví
+
+#### sukl_dlp_api
+
+- **URL**: `https://prehledy.sukl.cz/dlp/v1`
+- **Description**: SUKL Drug Registry API for Czech drug information, SPC, PIL, and availability
+- **Data Types**: drug_registry, drug_labels
+- **Rate Limit**: Not specified
+- **Compliance Notes**: Public Czech government API (SUKL), no PII transmitted
+
+#### nrpzs_api
+
+- **URL**: `https://nrpzs.uzis.cz/api/v1`
+- **Description**: National Registry of Healthcare Providers API for provider search and details
+- **Data Types**: healthcare_providers
+- **Rate Limit**: Not specified
+- **Compliance Notes**: Public Czech government API (UZIS), provider registry data
+
+#### mkn10_claml
+
+- **URL**: `https://mkn10.uzis.cz`
+- **Description**: Czech ICD-10 (MKN-10) classification in ClaML XML format
+- **Data Types**: diagnosis_codes
+- **Rate Limit**: N/A (local XML file)
+- **Compliance Notes**: Public Czech government data (UZIS), diagnostic classification
+
+#### nzip_open_data_api
+
+- **URL**: `https://nzip.cz/api/v3`
+- **Description**: NZIP Open Data API for health procedure list (SZV)
+- **Data Types**: health_procedures
+- **Rate Limit**: Not specified
+- **Compliance Notes**: Public Czech government API (NZIP/MZ CR), procedure metadata
+
+#### szv_mzcr
+
+- **URL**: `https://szv.mzcr.cz`
+- **Description**: Ministry of Health procedure list for medical procedure codes and point values
+- **Data Types**: health_procedures
+- **Rate Limit**: Not specified
+- **Compliance Notes**: Public Czech government service (MZ CR), procedure definitions
+
+#### vzp_codebooks
+
+- **URL**: `https://www.vzp.cz`
+- **Description**: General Health Insurance Company codebooks for reimbursement codes
+- **Data Types**: insurance_codebooks
+- **Rate Limit**: Not specified
+- **Compliance Notes**: Public Czech insurance company data, codebook metadata
+
 ## Domain Summary
 
 | Domain                       | Category              | Endpoints |
@@ -375,6 +425,12 @@ BioMCP connects to 16 external domains across 40 endpoints.
 | www.ebi.ac.uk                | biomedical_literature | 1         |
 | www.fda.gov                  | regulatory_data       | 1         |
 | www.ncbi.nlm.nih.gov         | biomedical_literature | 3         |
+| prehledy.sukl.cz             | czech_healthcare      | 1         |
+| nrpzs.uzis.cz               | czech_healthcare      | 1         |
+| mkn10.uzis.cz                | czech_healthcare      | 1         |
+| nzip.cz                      | czech_healthcare      | 1         |
+| szv.mzcr.cz                  | czech_healthcare      | 1         |
+| www.vzp.cz                   | czech_healthcare      | 1         |
 
 ## Compliance and Privacy
 
