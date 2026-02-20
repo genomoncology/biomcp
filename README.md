@@ -1,5 +1,11 @@
 # BioMCP: Biomedical Model Context Protocol
 
+> _Version 0.7.2 is the final release of the Python-based BioMCP server.
+> The project has been re-architected in Rust to be more agent-friendly —
+> using fewer tokens, consuming less context window, running faster, and
+> adding new data sources. The Python source code is preserved here under
+> the `v0.7.2` tag._
+
 BioMCP is an open source (MIT License) toolkit that empowers AI assistants and
 agents with specialized biomedical knowledge. Built following the Model Context
 Protocol (MCP), it connects AI systems to authoritative biomedical data
