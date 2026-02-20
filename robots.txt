@@ -1,0 +1,16 @@
+# Robots.txt for BioMCP Documentation
+# https://biomcp.org/
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://biomcp.org/sitemap.xml
+
+# Rate limiting for crawlers
+Crawl-delay: 1
+
+# Block access to build artifacts
+Disallow: /site/
+Disallow: /.git/
+Disallow: /node_modules/

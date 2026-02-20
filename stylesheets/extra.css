@@ -1,0 +1,170 @@
+/* Custom styles for BioMCP documentation */
+
+/* Style for main navigation tabs */
+.md-tabs__link {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Bold section headers in sidebar */
+.md-nav__item--section > .md-nav__link {
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  margin-top: 0.8rem;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+  display: block;
+}
+
+/* Nested section headers - slightly smaller */
+.md-nav__item--section .md-nav__item--section > .md-nav__link {
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  margin-top: 0.4rem;
+  margin-bottom: 0.2rem;
+}
+
+/* Regular navigation links */
+.md-nav__link {
+  font-weight: 400;
+}
+
+/* Active/current page link */
+.md-nav__link--active {
+  font-weight: 600 !important;
+  color: var(--md-accent-fg-color) !important;
+}
+
+/* Table of contents header - make it lighter */
+.md-nav--secondary > .md-nav__title {
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: var(--md-default-fg-color--light) !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+  padding-bottom: 0.4rem;
+}
+
+/* Add visual separation between major sections */
+.md-nav--primary > .md-nav__list > .md-nav__item {
+  margin-bottom: 0.5rem;
+}
+
+/* Improve readability of code blocks */
+.highlight pre {
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Fix code blocks in grid cards */
+.md-typeset .grid.cards code,
+.md-typeset .grid.cards pre {
+  word-break: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Specific fix for grid card code blocks */
+.md-typeset .grid.cards .highlight {
+  margin: 0.5em 0;
+}
+
+.md-typeset .grid.cards .highlight pre {
+  padding: 0.5em;
+  font-size: 0.8em;
+}
+
+/* Prevent horizontal scroll for inline code */
+.md-typeset code {
+  word-break: break-word;
+}
+
+/* Better spacing for admonitions */
+.admonition {
+  margin: 1.5rem 0;
+}
+
+/* Improve table readability */
+.md-typeset table {
+  font-size: 0.85rem;
+}
+
+/* Make external links more visible */
+.md-content a[href^="http"]:not(.md-button)::after {
+  content: " ↗";
+  font-size: 0.75em;
+  vertical-align: super;
+  opacity: 0.7;
+}
+
+/* Better spacing for navigation expansion arrows */
+.md-nav__icon {
+  margin-left: 0.2rem;
+}
+
+/* Accessibility improvements */
+/* Ensure focus indicators are visible */
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: 2px;
+}
+
+/* Skip to main content link */
+.md-skip {
+  position: fixed;
+  top: -40px;
+  left: 0;
+  background: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+  padding: 8px;
+  z-index: 100;
+  text-decoration: none;
+}
+
+.md-skip:focus {
+  top: 0;
+}
+
+/* Improve readability with better line height */
+.md-typeset {
+  line-height: 1.6;
+}
+
+/* Ensure code blocks have sufficient contrast */
+.highlight pre code {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* Make interactive elements more obvious */
+.md-typeset .tabbed-set > input:checked + label {
+  border-bottom: 2px solid var(--md-accent-fg-color);
+}
+
+/* Improve form accessibility */
+.md-search__input {
+  font-size: 1rem;
+}
+
+/* Screen reader only text utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
