@@ -20,6 +20,17 @@ class TestDrugShortages:
     """Test FDA drug shortage functions."""
 
     @pytest.fixture
+    def mock_csv_response(self):
+        """Mock FDA CSV response."""
+        return (
+            "Generic Name,Company Name,Status,Therapeutic Category,"
+            "Reason for Shortage,Availability Information,Initial Posting Date,Date of Update\n"
+            "Ampicillin Sodium,Sandoz,Current,Anti-infective,Manufacturing delays,Limited supply,2024-01-15,2024-02-10\n"
+            "Metoprolol Succinate,Par Pharmaceutical,Resolved,Cardiovascular,Increased demand,Available,2023-11-15,2024-02-01\n"
+            "Cisplatin,Teva,Current,Oncology,Manufacturing issues,Not available,2023-12-01,2024-02-14\n"
+        )
+
+    @pytest.fixture
     def mock_shortage_data(self):
         """Mock drug shortage data structure."""
         return {
@@ -67,6 +78,37 @@ class TestDrugShortages:
                 },
             ],
         }
+
+    @pytest.mark.asyncio
+    async def test_csv_parsing(self, mock_csv_response):
+        """Test that CSV response is correctly parsed."""
+        from biomcp.openfda.drug_shortages import _parse_csv_response
+
+        shortages = _parse_csv_response(mock_csv_response)
+
+        assert len(shortages) == 3
+
+        amp = next(s for s in shortages if "Ampicillin" in s["generic_name"])
+        assert amp["status"] == "Current"
+        assert amp["therapeutic_category"] == "Anti-infective"
+        assert amp["reason"] == "Manufacturing delays"
+
+    @pytest.mark.asyncio
+    async def test_fetch_uses_csv_endpoint(self, mock_csv_response):
+        """Test that fetch_shortage_data uses the CSV endpoint."""
+        with patch(
+            "biomcp.openfda.drug_shortages.request_api"
+        ) as mock_request:
+            mock_request.return_value = (mock_csv_response, None)
+
+            result = await _fetch_shortage_data()
+
+            assert result is not None
+            assert result.get("shortages")
+
+            call_kwargs = mock_request.call_args.kwargs
+            assert "Drugshortages.cfm" in call_kwargs["url"]
+            assert "media/169066" not in call_kwargs["url"]  # Old PDF URL
 
     @pytest.mark.asyncio
     async def test_search_drug_shortages_success(self, mock_shortage_data):
