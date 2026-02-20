@@ -312,7 +312,7 @@ wheels = [
 
 [[package]]
 name = "biomcp-python"
-version = "0.4.6"
+version = "0.7.2"
 source = { editable = "." }
 dependencies = [
     { name = "alphagenome" },
