@@ -7,14 +7,17 @@ useful for oncology and translational workflows.
 ## Install
 
 ```bash
-pip install biomcp-cli
+curl -fsSL https://raw.githubusercontent.com/genomoncology/biomcp/main/install.sh | bash
 ```
 
 ## Core command grammar
 
 ```text
-biomcp search <entity> [filters]
-biomcp get <entity> <id> [section...]
+biomcp search <entity> [filters]       # discovery
+biomcp get <entity> <id> [section...]  # focused detail
+biomcp <entity> <helper> <id>          # cross-entity pivots
+biomcp enrich <GENE1,GENE2,...>        # gene-set enrichment
+biomcp batch <entity> <id1,id2,...>    # parallel gets
 ```
 
 ## Common lookups
@@ -170,6 +173,6 @@ Use these with `biomcp search variant --consequence <value>`.
 
 ## Related references
 
-- `docs/user-guide/cli-reference.md`
-- `docs/reference/data-sources.md`
-- `docs/troubleshooting.md`
+- [CLI Reference](../user-guide/cli-reference.md)
+- [Data Sources](data-sources.md)
+- [Troubleshooting](../troubleshooting.md)

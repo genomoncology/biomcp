@@ -1,6 +1,6 @@
 # Source Versioning Matrix
 
-Project 124 requires explicit tracking of source URL versioning strategy. This matrix records which upstream endpoints are already version-pinned and where unversioned endpoints remain intentional.
+This matrix tracks which upstream API endpoints are version-pinned and where unversioned endpoints remain intentional.
 
 | Source | Base URL | Version status | Rationale | Last reviewed |
 |---|---|---|---|---|

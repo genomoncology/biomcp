@@ -1,7 +1,7 @@
 # BioMCP
 
 **Single-binary CLI and MCP server for querying biomedical databases.**
-One command grammar, compact markdown output, 14 entities across 15+ data sources.
+One command grammar, compact markdown output, 15 entities across 15+ data sources.
 
 ## Install
 

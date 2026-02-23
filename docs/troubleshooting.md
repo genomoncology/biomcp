@@ -133,11 +133,11 @@ biomcp search article -g BRAF --since 2024-02-30 --limit 1
 
 ## 10) Install/update ownership conflicts
 
-If `biomcp update` cannot replace the current binary (common for package-managed installs),
-use your package manager update path instead:
+If `biomcp update` cannot replace the current binary (e.g. permission issues),
+re-run the installer:
 
 ```bash
-pip install -U biomcp-cli
+curl -fsSL https://raw.githubusercontent.com/genomoncology/biomcp/main/install.sh | bash
 ```
 
 ## 11) Local build missing protoc

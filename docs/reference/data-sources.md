@@ -126,6 +126,6 @@ When debugging source discrepancies:
 
 ## Related docs
 
-- `docs/reference/quick-reference.md`
-- `docs/reference/error-codes.md`
-- `docs/troubleshooting.md`
+- [Quick Reference](quick-reference.md)
+- [Error Codes](error-codes.md)
+- [Troubleshooting](../troubleshooting.md)

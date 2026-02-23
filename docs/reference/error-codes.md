@@ -47,5 +47,5 @@ biomcp search disease -q melanoma --limit 5
 
 ## Related docs
 
-- `docs/troubleshooting.md`
-- `docs/reference/data-sources.md`
+- [Troubleshooting](../troubleshooting.md)
+- [Data Sources](data-sources.md)

@@ -17,7 +17,7 @@ Use `biomcp serve` as the MCP command:
 }
 ```
 
-If BioMCP is inside a virtual environment, use the absolute path to that binary.
+If `biomcp` is not on your PATH, use the absolute path to the binary (e.g. `~/.local/bin/biomcp`).
 
 ## Validate before connecting Claude
 

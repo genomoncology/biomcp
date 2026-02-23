@@ -35,6 +35,15 @@ export NCI_API_KEY="..."
 biomcp search trial -c melanoma --source nci
 ```
 
+### `NCBI_API_KEY`
+
+Improves rate limits for PubTator, PMC OA, and NCBI ID converter (3 → 10 req/sec).
+
+```bash
+export NCBI_API_KEY="..."
+biomcp search article -g BRAF --limit 5
+```
+
 ### `OPENFDA_API_KEY`
 
 Improves OpenFDA rate limits for drug safety lookups.
