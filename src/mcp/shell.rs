@@ -29,11 +29,14 @@ fn is_allowed_mcp_command(args: &[String]) -> bool {
         "search" | "get" | "variant" | "drug" | "disease" | "article" | "gene" | "pathway"
         | "protein" | "list" | "version" | "health" | "batch" | "enrich" => true,
         "skill" => {
+            // Allow read-only skill commands: list, show, numeric lookup
+            // (e.g. "skill 03"), and slug lookup (e.g. "skill variant-to-treatment").
+            // Block only mutating commands.
             let sub = args
                 .get(2)
                 .map(|s| s.trim().to_ascii_lowercase())
                 .unwrap_or_else(|| "list".to_string());
-            matches!(sub.as_str(), "list" | "show")
+            !matches!(sub.as_str(), "install" | "uninstall")
         }
         _ => false,
     }
@@ -61,7 +64,7 @@ impl BioMcpServer {
 
         if !is_allowed_mcp_command(&args) {
             return Err(
-                "Error: MCP shell allows read-only commands only (search/get/helpers/list/version/health/batch/enrich/skill show|list)."
+                "Error: MCP shell allows read-only commands only (search/get/helpers/list/version/health/batch/enrich/skill)."
                     .to_string(),
             );
         }
@@ -234,11 +237,32 @@ mod tests {
             "skill".into(),
             "list".into()
         ]));
+        assert!(is_allowed_mcp_command(&[
+            "biomcp".into(),
+            "skill".into(),
+            "show".into()
+        ]));
+        // Numeric and slug skill lookups are read-only
+        assert!(is_allowed_mcp_command(&[
+            "biomcp".into(),
+            "skill".into(),
+            "03".into()
+        ]));
+        assert!(is_allowed_mcp_command(&[
+            "biomcp".into(),
+            "skill".into(),
+            "variant-to-treatment".into()
+        ]));
         assert!(!is_allowed_mcp_command(&["biomcp".into(), "update".into()]));
         assert!(!is_allowed_mcp_command(&[
             "biomcp".into(),
             "skill".into(),
             "install".into()
+        ]));
+        assert!(!is_allowed_mcp_command(&[
+            "biomcp".into(),
+            "skill".into(),
+            "uninstall".into()
         ]));
     }
 }

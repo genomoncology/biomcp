@@ -906,7 +906,10 @@ pub async fn search_page(
                     break;
                 }
 
+                let page_study_count = studies.len();
+                let mut page_consumed = 0;
                 for study in studies.drain(..) {
+                    page_consumed += 1;
                     if remaining_skip > 0 {
                         remaining_skip -= 1;
                         continue;
@@ -918,7 +921,15 @@ pub async fn search_page(
                 }
 
                 if rows.len() >= limit {
-                    page_token = next_page_token;
+                    // If we consumed every study on this page, advance to
+                    // the next cursor.  Otherwise we stopped mid-page and
+                    // an opaque cursor can't represent the mid-page offset,
+                    // so return None (caller should use --offset instead).
+                    if page_consumed >= page_study_count {
+                        page_token = next_page_token;
+                    } else {
+                        page_token = None;
+                    }
                     break;
                 }
 

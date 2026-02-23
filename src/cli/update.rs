@@ -188,9 +188,18 @@ fn replace_current_binary(new_bytes: &[u8]) -> Result<(), BioMcpError> {
 
     #[cfg(windows)]
     {
-        // Best-effort replacement. Windows cannot overwrite a running executable.
-        let target = current.with_extension("exe");
-        std::fs::rename(&tmp_path, &target)?;
+        // Windows cannot overwrite a running executable directly.
+        // Rename the current binary out of the way first, then move
+        // the new one into place.  Clean up the old file best-effort.
+        let old_path = current.with_extension("old.exe");
+        let _ = std::fs::remove_file(&old_path);
+        std::fs::rename(&current, &old_path)?;
+        if let Err(err) = std::fs::rename(&tmp_path, &current) {
+            // Restore the original if the swap failed.
+            let _ = std::fs::rename(&old_path, &current);
+            return Err(err.into());
+        }
+        let _ = std::fs::remove_file(&old_path);
     }
 
     Ok(())
