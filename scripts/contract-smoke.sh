@@ -52,7 +52,7 @@ probe_get() {
   if [[ ! "$code" =~ $code_re ]]; then
     ok=0
   fi
-  if [[ -n "$body_re" ]] && ! printf '%s' "$body" | rg -q "$body_re"; then
+  if [[ -n "$body_re" ]] && ! printf '%s' "$body" | grep -qE "$body_re"; then
     ok=0
   fi
 
@@ -85,7 +85,7 @@ probe_post_json() {
   if [[ ! "$code" =~ $code_re ]]; then
     ok=0
   fi
-  if [[ -n "$body_re" ]] && ! printf '%s' "$body" | rg -q "$body_re"; then
+  if [[ -n "$body_re" ]] && ! printf '%s' "$body" | grep -qE "$body_re"; then
     ok=0
   fi
 
@@ -217,7 +217,7 @@ if [[ -n "${ONCOKB_API_TOKEN:-}" ]]; then
   )
   body=$(cat "$local_tmp")
   rm -f "$local_tmp"
-  if [[ "$code" =~ ^200$ ]] && printf '%s' "$body" | rg -q 'geneExist|variantExist|oncogenic'; then
+  if [[ "$code" =~ ^200$ ]] && printf '%s' "$body" | grep -qE 'geneExist|variantExist|oncogenic'; then
     echo "[PASS] OncoKB happy (token)"
     PASS=$((PASS + 1))
   else

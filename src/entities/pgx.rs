@@ -638,17 +638,16 @@ fn pick_lookup_value(
     map: &std::collections::HashMap<String, String>,
     preferred_gene: Option<&str>,
 ) -> Option<String> {
-    if let Some(gene) = preferred_gene {
-        if let Some(value) = map
+    if let Some(gene) = preferred_gene
+        && let Some(value) = map
             .iter()
             .find(|(k, _)| k.eq_ignore_ascii_case(gene))
             .map(|(_, v)| v)
             .map(String::as_str)
             .map(str::trim)
             .filter(|v| !v.is_empty())
-        {
-            return Some(value.to_string());
-        }
+    {
+        return Some(value.to_string());
     }
 
     map.values()

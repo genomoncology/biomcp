@@ -656,10 +656,9 @@ query SearchTarget($query: String!) {
                 .map(str::trim);
             if hit.entity.as_deref() == Some("target")
                 && approved_symbol.is_some_and(|v| v.eq_ignore_ascii_case(symbol))
+                && let Some(id) = hit.id.as_deref().map(str::trim).filter(|v| !v.is_empty())
             {
-                if let Some(id) = hit.id.as_deref().map(str::trim).filter(|v| !v.is_empty()) {
-                    return Ok(Some(id.to_string()));
-                }
+                return Ok(Some(id.to_string()));
             }
         }
 

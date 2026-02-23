@@ -297,12 +297,11 @@ fn build_search_query(filters: &ArticleSearchFilters) -> Result<String, BioMcpEr
     if let (Some(from), Some(to)) = (
         normalized_date_from.as_deref(),
         normalized_date_to.as_deref(),
-    ) {
-        if from > to {
-            return Err(BioMcpError::InvalidArgument(
-                "--date-from must be <= --date-to".into(),
-            ));
-        }
+    ) && from > to
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "--date-from must be <= --date-to".into(),
+        ));
     }
     let mut terms: Vec<String> = Vec::new();
 
@@ -476,10 +475,10 @@ async fn resolve_article_from_pmid(
             let mut article = transform::article::from_pubtator_document(&doc);
             if let Some(hit) = europe_hint {
                 transform::article::merge_europepmc_metadata(&mut article, hit);
-            } else if let Ok(search) = europe.search_by_pmid(&pmid.to_string()).await {
-                if let Some(hit) = first_europepmc_hit(search) {
-                    transform::article::merge_europepmc_metadata(&mut article, &hit);
-                }
+            } else if let Ok(search) = europe.search_by_pmid(&pmid.to_string()).await
+                && let Some(hit) = first_europepmc_hit(search)
+            {
+                transform::article::merge_europepmc_metadata(&mut article, &hit);
             }
             article.annotations = transform::article::extract_annotations(&doc);
             Ok(article)
@@ -708,23 +707,23 @@ pub async fn get(id: &str, sections: &[String]) -> Result<Article, BioMcpError> 
                 Err(err) => full_text_err = Some(err),
             }
         }
-        if xml.is_none() {
-            if let Some(pmcid) = resolved_pmcid.as_deref() {
-                match PmcOaClient::new() {
-                    Ok(pmc_oa) => match pmc_oa.get_full_text_xml(pmcid).await {
-                        Ok(v) => xml = v,
-                        Err(err) => full_text_err = Some(err),
-                    },
-                    Err(err) => full_text_err = Some(err),
-                }
-            }
-        }
-        if xml.is_none() {
-            if let Some(pmid) = article.pmid.as_deref() {
-                match europe.get_full_text_xml("MED", pmid).await {
+        if xml.is_none()
+            && let Some(pmcid) = resolved_pmcid.as_deref()
+        {
+            match PmcOaClient::new() {
+                Ok(pmc_oa) => match pmc_oa.get_full_text_xml(pmcid).await {
                     Ok(v) => xml = v,
                     Err(err) => full_text_err = Some(err),
-                }
+                },
+                Err(err) => full_text_err = Some(err),
+            }
+        }
+        if xml.is_none()
+            && let Some(pmid) = article.pmid.as_deref()
+        {
+            match europe.get_full_text_xml("MED", pmid).await {
+                Ok(v) => xml = v,
+                Err(err) => full_text_err = Some(err),
             }
         }
 

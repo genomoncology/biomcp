@@ -532,10 +532,9 @@ fn ctgov_agg_filters(filters: &TrialSearchFilters) -> Result<Option<String>, Bio
         .as_deref()
         .map(str::trim)
         .filter(|v| !v.is_empty())
+        && let Some(code) = normalize_sex(sex)?
     {
-        if let Some(code) = normalize_sex(sex)? {
-            facets.push(format!("sex:{code}"));
-        }
+        facets.push(format!("sex:{code}"));
     }
 
     if let Some(sponsor_type) = filters

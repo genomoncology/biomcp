@@ -3,7 +3,7 @@ use crate::error::BioMcpError;
 const DAYS_IN_MONTH: [u8; 12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 fn is_leap_year(year: u32) -> bool {
-    (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
+    (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400)
 }
 
 fn normalize_since(value: &str) -> Result<String, BioMcpError> {

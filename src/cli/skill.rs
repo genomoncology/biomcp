@@ -172,10 +172,10 @@ fn normalize_use_case_key(input: &str) -> String {
     }
 
     // Accept "01", "1", "01-variant-to-treatment", or "variant-to-treatment"
-    if trimmed.chars().all(|c| c.is_ascii_digit()) {
-        if let Ok(n) = trimmed.parse::<u32>() {
-            return format!("{n:02}");
-        }
+    if trimmed.chars().all(|c| c.is_ascii_digit())
+        && let Ok(n) = trimmed.parse::<u32>()
+    {
+        return format!("{n:02}");
     }
 
     let lowered = trimmed.to_ascii_lowercase();

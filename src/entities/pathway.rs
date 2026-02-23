@@ -233,12 +233,12 @@ pub async fn search_with_filters(
         .as_deref()
         .map(str::trim)
         .filter(|v| !v.is_empty());
-    if let Some(pathway_type) = pathway_type {
-        if !pathway_type.eq_ignore_ascii_case("pathway") {
-            return Err(BioMcpError::InvalidArgument(
-                "--type currently supports only: pathway".into(),
-            ));
-        }
+    if let Some(pathway_type) = pathway_type
+        && !pathway_type.eq_ignore_ascii_case("pathway")
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "--type currently supports only: pathway".into(),
+        ));
     }
     if !filters.top_level && query.is_none() {
         return Err(BioMcpError::InvalidArgument(

@@ -158,12 +158,12 @@ impl CBioPortalClient {
             }
             let resp_len = resp.len();
             for m in resp {
-                if let Some(sample_id) = m.sample_id {
-                    if !sample_id.trim().is_empty() {
-                        out.insert(sample_id);
-                        if out.len() >= max_unique_samples {
-                            return Ok(out);
-                        }
+                if let Some(sample_id) = m.sample_id
+                    && !sample_id.trim().is_empty()
+                {
+                    out.insert(sample_id);
+                    if out.len() >= max_unique_samples {
+                        return Ok(out);
                     }
                 }
             }

@@ -406,10 +406,10 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let mut approval_date: Option<String> = None;
 
     for hit in hits {
-        if name.is_empty() {
-            if let Some(n) = best_name_from_hit(hit) {
-                name = n;
-            }
+        if name.is_empty()
+            && let Some(n) = best_name_from_hit(hit)
+        {
+            name = n;
         }
 
         if drugbank_id.is_none() {
@@ -487,21 +487,21 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
             }
         }
 
-        if let Some(dc) = hit.drugcentral.as_ref() {
-            if let Some(use_) = dc.drug_use.as_ref() {
-                for ind in &use_.indication {
-                    let Some(name) = ind
-                        .concept_name
-                        .as_deref()
-                        .map(str::trim)
-                        .filter(|v| !v.is_empty())
-                    else {
-                        continue;
-                    };
-                    let key = name.to_ascii_lowercase();
-                    if indications_seen.insert(key) {
-                        indications.push(name.to_string());
-                    }
+        if let Some(dc) = hit.drugcentral.as_ref()
+            && let Some(use_) = dc.drug_use.as_ref()
+        {
+            for ind in &use_.indication {
+                let Some(name) = ind
+                    .concept_name
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|v| !v.is_empty())
+                else {
+                    continue;
+                };
+                let key = name.to_ascii_lowercase();
+                if indications_seen.insert(key) {
+                    indications.push(name.to_string());
                 }
             }
         }

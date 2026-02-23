@@ -1224,26 +1224,25 @@ async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
         .await
     {
         Ok(mut pred) => {
-            if let Some(top_gene) = pred.top_gene.as_deref() {
-                if top_gene.trim().starts_with("ENSG") {
-                    let query = format!("ensembl.gene:\"{}\"", top_gene.trim());
-                    match MyGeneClient::new() {
-                        Ok(client) => {
-                            if let Ok(resp) = client.search(&query, 1, 0, None).await {
-                                if let Some(symbol) = resp
-                                    .hits
-                                    .first()
-                                    .and_then(|h| h.symbol.as_deref())
-                                    .map(str::trim)
-                                    .filter(|s| !s.is_empty())
-                                {
-                                    pred.top_gene = Some(symbol.to_string());
-                                }
-                            }
+            if let Some(top_gene) = pred.top_gene.as_deref()
+                && top_gene.trim().starts_with("ENSG")
+            {
+                let query = format!("ensembl.gene:\"{}\"", top_gene.trim());
+                match MyGeneClient::new() {
+                    Ok(client) => {
+                        if let Ok(resp) = client.search(&query, 1, 0, None).await
+                            && let Some(symbol) = resp
+                                .hits
+                                .first()
+                                .and_then(|h| h.symbol.as_deref())
+                                .map(str::trim)
+                                .filter(|s| !s.is_empty())
+                        {
+                            pred.top_gene = Some(symbol.to_string());
                         }
-                        Err(err) => {
-                            warn!("MyGene unavailable for AlphaGenome gene resolution: {err}")
-                        }
+                    }
+                    Err(err) => {
+                        warn!("MyGene unavailable for AlphaGenome gene resolution: {err}")
                     }
                 }
             }

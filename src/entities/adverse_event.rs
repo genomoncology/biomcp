@@ -398,12 +398,12 @@ fn build_openfda_query(filters: &AdverseEventSearchFilters) -> Result<String, Bi
     if let Some(age_max) = filters.age_max {
         terms.push(format!("patient.patientonsetage:[* TO {age_max}]"));
     }
-    if let (Some(age_min), Some(age_max)) = (filters.age_min, filters.age_max) {
-        if age_min > age_max {
-            return Err(BioMcpError::InvalidArgument(
-                "--age-min must be <= --age-max".into(),
-            ));
-        }
+    if let (Some(age_min), Some(age_max)) = (filters.age_min, filters.age_max)
+        && age_min > age_max
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "--age-min must be <= --age-max".into(),
+        ));
     }
 
     if let Some(reporter) = filters

@@ -126,12 +126,12 @@ impl HpoClient {
         let mut out: Vec<String> = Vec::new();
         let mut seen: HashSet<String> = HashSet::new();
         for row in response.terms {
-            if let Some(id) = normalize_hpo_id(&row.id) {
-                if seen.insert(id.clone()) {
-                    out.push(id);
-                    if out.len() >= limit {
-                        break;
-                    }
+            if let Some(id) = normalize_hpo_id(&row.id)
+                && seen.insert(id.clone())
+            {
+                out.push(id);
+                if out.len() >= limit {
+                    break;
                 }
             }
         }

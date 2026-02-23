@@ -224,12 +224,12 @@ pub async fn search_page(
         ));
     }
 
-    if let Some(level) = existence {
-        if !(1..=5).contains(&level) {
-            return Err(BioMcpError::InvalidArgument(
-                "--existence must be an integer from 1 to 5".into(),
-            ));
-        }
+    if let Some(level) = existence
+        && !(1..=5).contains(&level)
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "--existence must be an integer from 1 to 5".into(),
+        ));
     }
 
     let mut scoped_terms = vec![format!("({query})")];

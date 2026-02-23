@@ -564,15 +564,15 @@ async fn add_phenotypes_section(disease: &mut Disease) -> Result<(), BioMcpError
     let client = HpoClient::new()?;
     let names = client.resolve_terms(&ids, 20).await?;
     for row in &mut disease.phenotypes {
-        if row.name.is_none() {
-            if let Some(id) = normalize_hpo_id(&row.hpo_id) {
-                row.name = names.get(&id).cloned();
-            }
+        if row.name.is_none()
+            && let Some(id) = normalize_hpo_id(&row.hpo_id)
+        {
+            row.name = names.get(&id).cloned();
         }
-        if let Some(freq_id) = row.frequency.as_deref().and_then(normalize_hpo_id) {
-            if let Some(label) = names.get(&freq_id) {
-                row.frequency = Some(label.clone());
-            }
+        if let Some(freq_id) = row.frequency.as_deref().and_then(normalize_hpo_id)
+            && let Some(label) = names.get(&freq_id)
+        {
+            row.frequency = Some(label.clone());
         }
     }
     disease.phenotypes.truncate(20);
@@ -1079,10 +1079,10 @@ async fn apply_requested_sections(disease: &mut Disease, sections: DiseaseSectio
             warn!("CIViC unavailable for disease gene augmentation: {err}");
         }
     }
-    if sections.include_pathways {
-        if let Err(err) = add_pathways_section(disease).await {
-            warn!("Reactome unavailable for disease pathways section: {err}");
-        }
+    if sections.include_pathways
+        && let Err(err) = add_pathways_section(disease).await
+    {
+        warn!("Reactome unavailable for disease pathways section: {err}");
     }
     if sections.include_phenotypes {
         if let Err(err) = add_monarch_phenotypes(disease).await {
@@ -1092,22 +1092,22 @@ async fn apply_requested_sections(disease: &mut Disease, sections: DiseaseSectio
             warn!("HPO unavailable for disease phenotypes section: {err}");
         }
     }
-    if sections.include_variants {
-        if let Err(err) = add_civic_variants(disease).await {
-            warn!("CIViC unavailable for disease variants section: {err}");
-        }
+    if sections.include_variants
+        && let Err(err) = add_civic_variants(disease).await
+    {
+        warn!("CIViC unavailable for disease variants section: {err}");
     }
-    if sections.include_models {
-        if let Err(err) = add_monarch_models(disease).await {
-            warn!("Monarch unavailable for disease models section: {err}");
-        }
+    if sections.include_models
+        && let Err(err) = add_monarch_models(disease).await
+    {
+        warn!("Monarch unavailable for disease models section: {err}");
     }
-    if sections.include_prevalence {
-        if let Err(err) = add_prevalence_section(disease).await {
-            warn!("OpenTargets unavailable for disease prevalence section: {err}");
-            disease.prevalence.clear();
-            disease.prevalence_note = Some("No prevalence data available from OpenTargets.".into());
-        }
+    if sections.include_prevalence
+        && let Err(err) = add_prevalence_section(disease).await
+    {
+        warn!("OpenTargets unavailable for disease prevalence section: {err}");
+        disease.prevalence.clear();
+        disease.prevalence_note = Some("No prevalence data available from OpenTargets.".into());
     }
     if sections.include_civic {
         add_civic_section(disease).await;
@@ -1183,12 +1183,12 @@ async fn resolve_parent_label(client: &MyDiseaseClient, parent_id: &str) -> Stri
         }
     }
 
-    if let Ok(resp) = client.query(parent_id, 1, 0, None, None, None, None).await {
-        if let Some(hit) = resp.hits.first() {
-            let parent_name = transform::disease::name_from_mydisease_hit(hit);
-            if !parent_name.eq_ignore_ascii_case(parent_id) {
-                return format!("{parent_name} ({parent_id})");
-            }
+    if let Ok(resp) = client.query(parent_id, 1, 0, None, None, None, None).await
+        && let Some(hit) = resp.hits.first()
+    {
+        let parent_name = transform::disease::name_from_mydisease_hit(hit);
+        if !parent_name.eq_ignore_ascii_case(parent_id) {
+            return format!("{parent_name} ({parent_id})");
         }
     }
 
@@ -1344,10 +1344,9 @@ pub async fn search_page(
             })
             .map(|hit| {
                 let mut row = transform::disease::from_mydisease_search_hit(hit);
-                if prefer_doid {
-                    if let Some(doid) = transform::disease::doid_from_mydisease_hit(hit) {
-                        row.id = doid;
-                    }
+                if prefer_doid && let Some(doid) = transform::disease::doid_from_mydisease_hit(hit)
+                {
+                    row.id = doid;
                 }
                 row
             })

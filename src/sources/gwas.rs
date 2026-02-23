@@ -180,10 +180,9 @@ impl GwasClient {
         if let Some(search_resp) = self
             .get_json_optional::<GwasAssociationsResponse>(search_req)
             .await?
+            && !search_resp.embedded.associations.is_empty()
         {
-            if !search_resp.embedded.associations.is_empty() {
-                return Ok(search_resp.embedded.associations);
-            }
+            return Ok(search_resp.embedded.associations);
         }
 
         let fallback_url = self.endpoint(&format!("studies/{study_accession}/associations"));

@@ -189,15 +189,13 @@ fn normalize_query_summary(filters: &DrugSearchFilters) -> String {
         && filters.atc.is_none()
         && filters.pharm_class.is_none()
         && filters.interactions.is_none()
-    {
-        if let Some(q) = filters
+        && let Some(q) = filters
             .query
             .as_deref()
             .map(str::trim)
             .filter(|v| !v.is_empty())
-        {
-            return q.to_string();
-        }
+    {
+        return q.to_string();
     }
 
     let mut parts: Vec<String> = Vec::new();
@@ -483,10 +481,9 @@ pub async fn search_page(
             .as_deref()
             .map(str::trim)
             .filter(|v| !v.is_empty())
+            && !hit_mentions_mechanism(hit, requested_mechanism)
         {
-            if !hit_mentions_mechanism(hit, requested_mechanism) {
-                continue;
-            }
+            continue;
         }
 
         // Normalize and de-duplicate by name.

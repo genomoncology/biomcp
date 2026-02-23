@@ -104,16 +104,16 @@ fn collect_synonyms(
         }
     };
 
-    if let Some(mondo) = mondo {
-        if let Some(syn) = mondo.get("synonym") {
-            add_synonym_obj(syn);
-        }
+    if let Some(mondo) = mondo
+        && let Some(syn) = mondo.get("synonym")
+    {
+        add_synonym_obj(syn);
     }
 
-    if let Some(do_term) = disease_ontology {
-        if let Some(syn) = do_term.get("synonyms") {
-            add_synonym_obj(syn);
-        }
+    if let Some(do_term) = disease_ontology
+        && let Some(syn) = do_term.get("synonyms")
+    {
+        add_synonym_obj(syn);
     }
 
     out.retain(|s| s.trim().to_ascii_lowercase() != name_key);
@@ -139,15 +139,15 @@ fn collect_parents(
         }
     };
 
-    if let Some(mondo) = mondo {
-        if let Some(parents) = mondo.get("parents") {
-            add_parents(parents);
-        }
+    if let Some(mondo) = mondo
+        && let Some(parents) = mondo.get("parents")
+    {
+        add_parents(parents);
     }
-    if let Some(do_term) = disease_ontology {
-        if let Some(parents) = do_term.get("parents") {
-            add_parents(parents);
-        }
+    if let Some(do_term) = disease_ontology
+        && let Some(parents) = do_term.get("parents")
+    {
+        add_parents(parents);
     }
 
     out
@@ -171,95 +171,91 @@ fn collect_xrefs(
         }
 
         if let Some(xrefs) = do_term.get("xrefs").and_then(|v| v.as_object()) {
-            if !out.contains_key("MeSH") {
-                if let Some(v) = xrefs.get("mesh").and_then(first_string) {
-                    out.insert("MeSH".into(), v);
-                }
+            if !out.contains_key("MeSH")
+                && let Some(v) = xrefs.get("mesh").and_then(first_string)
+            {
+                out.insert("MeSH".into(), v);
             }
-            if !out.contains_key("NCI") {
-                if let Some(v) = xrefs
+            if !out.contains_key("NCI")
+                && let Some(v) = xrefs
                     .get("ncit")
                     .or_else(|| xrefs.get("nci"))
                     .and_then(first_string)
-                {
-                    out.insert("NCI".into(), v);
-                }
+            {
+                out.insert("NCI".into(), v);
             }
-            if !out.contains_key("SNOMED") {
-                if let Some(v) = xrefs
+            if !out.contains_key("SNOMED")
+                && let Some(v) = xrefs
                     .get("snomedct")
                     .or_else(|| xrefs.get("snomedct_us_2023_03_01"))
                     .and_then(first_string)
-                {
-                    out.insert("SNOMED".into(), v);
-                }
+            {
+                out.insert("SNOMED".into(), v);
             }
-            if !out.contains_key("ICD-10") {
-                if let Some(v) = xrefs.get("icd10").and_then(first_string) {
-                    out.insert("ICD-10".into(), v);
-                }
+            if !out.contains_key("ICD-10")
+                && let Some(v) = xrefs.get("icd10").and_then(first_string)
+            {
+                out.insert("ICD-10".into(), v);
             }
         }
     }
 
-    if let Some(mondo) = mondo {
-        if let Some(xrefs) = mondo.get("xrefs").and_then(|v| v.as_object()) {
-            if !out.contains_key("MeSH") {
-                if let Some(v) = xrefs.get("mesh").and_then(first_string) {
-                    out.insert("MeSH".into(), v);
-                }
-            }
-            if !out.contains_key("NCI") {
-                if let Some(v) = xrefs
-                    .get("ncit")
-                    .or_else(|| xrefs.get("nci"))
-                    .and_then(first_string)
-                {
-                    out.insert("NCI".into(), v);
-                }
-            }
-            if !out.contains_key("SNOMED") {
-                if let Some(v) = xrefs
-                    .get("sctid")
-                    .or_else(|| xrefs.get("snomedct"))
-                    .and_then(first_string)
-                {
-                    out.insert("SNOMED".into(), v);
-                }
-            }
-            if !out.contains_key("ICD-10") {
-                if let Some(v) = xrefs.get("icd10").and_then(first_string) {
-                    out.insert("ICD-10".into(), v);
-                }
-            }
-            if !out.contains_key("umls_cui") {
-                if let Some(v) = xrefs.get("umls").and_then(first_string) {
-                    out.insert("umls_cui".into(), v);
-                }
-            }
+    if let Some(mondo) = mondo
+        && let Some(xrefs) = mondo.get("xrefs").and_then(|v| v.as_object())
+    {
+        if !out.contains_key("MeSH")
+            && let Some(v) = xrefs.get("mesh").and_then(first_string)
+        {
+            out.insert("MeSH".into(), v);
+        }
+        if !out.contains_key("NCI")
+            && let Some(v) = xrefs
+                .get("ncit")
+                .or_else(|| xrefs.get("nci"))
+                .and_then(first_string)
+        {
+            out.insert("NCI".into(), v);
+        }
+        if !out.contains_key("SNOMED")
+            && let Some(v) = xrefs
+                .get("sctid")
+                .or_else(|| xrefs.get("snomedct"))
+                .and_then(first_string)
+        {
+            out.insert("SNOMED".into(), v);
+        }
+        if !out.contains_key("ICD-10")
+            && let Some(v) = xrefs.get("icd10").and_then(first_string)
+        {
+            out.insert("ICD-10".into(), v);
+        }
+        if !out.contains_key("umls_cui")
+            && let Some(v) = xrefs.get("umls").and_then(first_string)
+        {
+            out.insert("umls_cui".into(), v);
         }
     }
 
     if let Some(umls) = umls {
-        if !out.contains_key("MeSH") {
-            if let Some(v) = umls.get("mesh").and_then(first_string) {
-                out.insert("MeSH".into(), v);
-            }
+        if !out.contains_key("MeSH")
+            && let Some(v) = umls.get("mesh").and_then(first_string)
+        {
+            out.insert("MeSH".into(), v);
         }
-        if !out.contains_key("NCI") {
-            if let Some(v) = umls.get("nci").and_then(first_string) {
-                out.insert("NCI".into(), v);
-            }
+        if !out.contains_key("NCI")
+            && let Some(v) = umls.get("nci").and_then(first_string)
+        {
+            out.insert("NCI".into(), v);
         }
-        if !out.contains_key("SNOMED") {
-            if let Some(v) = umls.get("snomed").and_then(first_string) {
-                out.insert("SNOMED".into(), v);
-            }
+        if !out.contains_key("SNOMED")
+            && let Some(v) = umls.get("snomed").and_then(first_string)
+        {
+            out.insert("SNOMED".into(), v);
         }
-        if !out.contains_key("ICD-10") {
-            if let Some(v) = umls.get("icd10am").and_then(first_string) {
-                out.insert("ICD-10".into(), v);
-            }
+        if !out.contains_key("ICD-10")
+            && let Some(v) = umls.get("icd10am").and_then(first_string)
+        {
+            out.insert("ICD-10".into(), v);
         }
     }
 
