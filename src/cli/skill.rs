@@ -287,10 +287,18 @@ fn install_to_dir(dir: &Path, force: bool) -> Result<String, BioMcpError> {
         ));
     }
 
-    if target.exists() && force {
-        fs::remove_dir_all(&target)?;
+    // Write into a sibling temp directory, then swap into place.
+    // This avoids the remove_dir_all + create_dir_all race (EEXIST on
+    // macOS) and ensures stale files from older releases are cleaned up.
+    let parent = target.parent().ok_or_else(|| {
+        BioMcpError::InvalidArgument("Install path has no parent directory".into())
+    })?;
+    fs::create_dir_all(parent)?;
+    let staging = parent.join(".biomcp-install-tmp");
+    if staging.exists() {
+        fs::remove_dir_all(&staging)?;
     }
-    fs::create_dir_all(&target)?;
+    fs::create_dir(&staging)?;
 
     for file in EmbeddedSkills::iter() {
         let rel = file.as_ref();
@@ -298,14 +306,40 @@ fn install_to_dir(dir: &Path, force: bool) -> Result<String, BioMcpError> {
             continue;
         };
 
-        let out_path = target.join(rel);
-        if let Some(parent) = out_path.parent() {
-            fs::create_dir_all(parent)?;
+        let out_path = staging.join(rel);
+        if let Some(p) = out_path.parent() {
+            fs::create_dir_all(p)?;
         }
         fs::write(&out_path, asset.data)?;
     }
 
+    // Swap: remove old target (if any), rename staging into place.
+    if target.exists() {
+        fs::remove_dir_all(&target)?;
+    }
+    fs::rename(&staging, &target)
+        .map_err(BioMcpError::Io)
+        .or_else(|_| {
+            // rename fails across filesystems; fall back to copy + remove.
+            copy_dir_all(&staging, &target)?;
+            fs::remove_dir_all(&staging).map_err(BioMcpError::Io)
+        })?;
+
     Ok(format!("Installed BioMCP skills to {}", target.display()))
+}
+
+fn copy_dir_all(src: &Path, dst: &Path) -> Result<(), BioMcpError> {
+    fs::create_dir_all(dst)?;
+    for entry in fs::read_dir(src).map_err(BioMcpError::Io)? {
+        let entry = entry.map_err(BioMcpError::Io)?;
+        let dest = dst.join(entry.file_name());
+        if entry.file_type().map_err(BioMcpError::Io)?.is_dir() {
+            copy_dir_all(&entry.path(), &dest)?;
+        } else {
+            fs::write(&dest, fs::read(entry.path()).map_err(BioMcpError::Io)?)?;
+        }
+    }
+    Ok(())
 }
 
 /// Installs embedded skills into a supported agent directory.
