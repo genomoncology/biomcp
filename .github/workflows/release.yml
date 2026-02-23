@@ -26,7 +26,7 @@ jobs:
             target: aarch64-unknown-linux-gnu
             asset: biomcp-linux-arm64.tar.gz
             cross: true
-          - os: macos-13
+          - os: macos-latest
             target: x86_64-apple-darwin
             asset: biomcp-darwin-x86_64.tar.gz
           - os: macos-14
@@ -54,6 +54,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Configure cross-linker
+        if: matrix.cross
+        run: |
+          mkdir -p .cargo
+          cat >> .cargo/config.toml <<'TOML'
+          [target.aarch64-unknown-linux-gnu]
+          linker = "aarch64-linux-gnu-gcc"
+          TOML
 
       - name: Build
         run: cargo build --release --locked --target ${{ matrix.target }}
