@@ -58,30 +58,18 @@ batch <entity> <id1,id2,...> → parallel gets
 
 ## Entities and sources
 
-### Clinical entities
-
 | Entity | Sources | Example |
 |--------|---------|---------|
 | gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, CIViC | `biomcp get gene BRAF pathways` |
 | variant | MyVariant.info, ClinVar, gnomAD, CIViC, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome | `biomcp get variant "BRAF V600E" clinvar` |
-| trial | ClinicalTrials.gov, NCI CTS API | `biomcp search trial -c melanoma -s recruiting` |
 | article | PubMed, PubTator3, Europe PMC | `biomcp search article -g BRAF --limit 5` |
+| trial | ClinicalTrials.gov, NCI CTS API | `biomcp search trial -c melanoma -s recruiting` |
 | drug | MyChem.info, ChEMBL, OpenTargets, Drugs\@FDA, CIViC | `biomcp get drug pembrolizumab targets` |
 | disease | Monarch Initiative, MONDO, CIViC, OpenTargets | `biomcp get disease "Lynch syndrome" genes` |
-
-### Extended entities
-
-| Entity | Sources | Example |
-|--------|---------|---------|
 | pathway | Reactome, g:Profiler | `biomcp get pathway R-HSA-5673001 genes` |
 | protein | UniProt, InterPro, STRING, PDB/AlphaFold | `biomcp get protein P15056 domains` |
 | adverse-event | OpenFDA (FAERS, MAUDE, Recalls) | `biomcp search adverse-event -d pembrolizumab` |
 | pgx | CPIC, PharmGKB | `biomcp get pgx CYP2D6 recommendations` |
-
-### Discovery entities
-
-| Entity | Sources | Example |
-|--------|---------|---------|
 | gwas | GWAS Catalog | `biomcp search gwas --trait "type 2 diabetes"` |
 | phenotype | Monarch Initiative (HPO) | `biomcp search phenotype "HP:0001250"` |
 | organization | NCI CTS API | `biomcp search organization "Dana-Farber"` |
