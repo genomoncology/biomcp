@@ -4,12 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
-  schedule:
-    - cron: "0 6 * * *"
 
 jobs:
   check:
-    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +34,6 @@ jobs:
       - run: uv run pytest tests/ -v --mcp-cmd "biomcp serve"
 
   check-docs:
-    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,19 +52,3 @@ jobs:
 
       - run: uv sync --extra dev
       - run: uv run mkdocs build --strict
-
-  contracts-fast:
-    if: github.event_name != 'schedule'
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash scripts/contract-smoke.sh --fast
-
-  contracts-full:
-    if: github.event_name == 'schedule'
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash scripts/contract-smoke.sh
