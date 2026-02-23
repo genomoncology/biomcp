@@ -1,7 +1,7 @@
 # BioMCP
 
 BioMCP is a single-binary CLI and MCP server for querying biomedical databases.
-One command grammar, compact markdown output, 14 entities across 15+ data sources.
+One command grammar, compact markdown output, 12 entities across 15+ data sources.
 
 ## Install
 
@@ -72,9 +72,6 @@ batch <entity> <id1,id2,...> → parallel gets
 | pgx | CPIC, PharmGKB | `biomcp get pgx CYP2D6 recommendations` |
 | gwas | GWAS Catalog | `biomcp search gwas --trait "type 2 diabetes"` |
 | phenotype | Monarch Initiative (HPO) | `biomcp search phenotype "HP:0001250"` |
-| organization | NCI CTS API | `biomcp search organization "Dana-Farber"` |
-| intervention | NCI CTS API | `biomcp search intervention pembrolizumab` |
-| biomarker | NCI CTS API | `biomcp search biomarker BRAF` |
 
 ## Cross-entity helpers
 
@@ -124,7 +121,7 @@ Most commands work without credentials. Optional keys improve rate limits:
 ```bash
 export NCBI_API_KEY="..."      # PubTator, PMC OA, NCBI ID converter
 export OPENFDA_API_KEY="..."   # OpenFDA rate limits
-export NCI_API_KEY="..."       # NCI CTS trial/vocabulary calls (required for organization/intervention/biomarker)
+export NCI_API_KEY="..."       # NCI CTS trial search (--source nci)
 export ONCOKB_TOKEN="..."      # OncoKB variant helper
 export ALPHAGENOME_API_KEY="..." # AlphaGenome variant effect prediction
 ```
