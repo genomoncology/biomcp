@@ -1,0 +1,144 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# {{ name }}
+
+DrugBank: {% if drugbank_id %}{{ drugbank_id }}{% else %}-{% endif %}
+{% if drug_type %}Type: {{ drug_type }}{% endif %}
+{% if approval_date %}FDA Approved: {{ approval_date }}{% endif %}
+{% if brand_names %}Brand Names: {{ brand_names | join(", ") }}{% endif %}
+{% if route %}Route: {{ route }}{% endif %}
+{% if top_adverse_events -%}
+Safety: {{ top_adverse_events | join(", ") }}
+{% else -%}
+Safety: unavailable
+{% endif -%}
+{% endif -%}
+{% if show_label_section and label -%}
+## FDA Label
+
+{% if label.indications -%}
+### Indications and Usage
+{{ label.indications }}
+{% endif -%}
+{% if label.warnings -%}
+### Warnings and Precautions
+{{ label.warnings }}
+{% endif -%}
+{% if label.dosage -%}
+### Dosage and Administration
+{{ label.dosage }}
+{% endif -%}
+{% endif -%}
+{% if show_shortage_section and shortage is not none -%}
+## Shortage
+
+{% if shortage | length == 0 -%}
+No shortage entries found
+{% else -%}
+| Status | Availability | Company | Updated | Info |
+|---|---|---|---|---|
+{% for s in shortage -%}
+| {{ s.status or "-" }} | {{ s.availability or "-" }} | {{ (s.company_name or "-") | truncate(25) }} | {{ s.update_date or "-" }} | {{ (s.related_info or "-") | truncate(40) }} |
+{% endfor -%}
+{% endif -%}
+{% endif -%}
+{% if show_approvals_section and approvals is not none -%}
+## Drugs@FDA Approvals
+
+{% if approvals | length == 0 -%}
+No approvals found in Drugs@FDA for this query.
+{% else -%}
+{% for app in approvals -%}
+### {{ app.application_number }}
+{% if app.sponsor_name %}- Sponsor: {{ app.sponsor_name }}{% endif %}
+{% if app.openfda_brand_names %}- Brands: {{ app.openfda_brand_names | join(", ") }}{% endif %}
+{% if app.openfda_generic_names %}- Generic Names: {{ app.openfda_generic_names | join(", ") }}{% endif %}
+{% if app.products -%}
+| Product | Dosage Form | Route | Marketing Status |
+|---|---|---|---|
+{% for product in app.products -%}
+| {{ product.brand_name or "-" }} | {{ product.dosage_form or "-" }} | {{ product.route or "-" }} | {{ product.marketing_status or "-" }} |
+{% endfor -%}
+{% endif -%}
+{% if app.submissions -%}
+| Submission Type | Number | Status | Date |
+|---|---|---|---|
+{% for submission in app.submissions -%}
+| {{ submission.submission_type or "-" }} | {{ submission.submission_number or "-" }} | {{ submission.status or "-" }} | {{ submission.status_date or "-" }} |
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+{% endif -%}
+{% endif -%}
+{% if show_civic_section -%}
+## CIViC
+
+{% if civic -%}
+- Evidence Items: {{ civic.evidence_total_count }}
+- Assertions: {{ civic.assertion_total_count }}
+{% if civic.assertions -%}
+| Assertion | AMP Level | Molecular Profile | Disease |
+|---|---|---|---|
+{% for row in civic.assertions -%}
+| {{ row.name }} | {{ row.amp_level or "-" }} | {{ row.molecular_profile }} | {{ row.disease or "-" }} |
+{% endfor -%}
+{% elif civic.evidence_items -%}
+| Evidence | Level | Molecular Profile | Disease |
+|---|---|---|---|
+{% for row in civic.evidence_items -%}
+| {{ row.name }} | {{ row.evidence_level }} | {{ row.molecular_profile }} | {{ row.disease or "-" }} |
+{% endfor -%}
+{% else -%}
+No CIViC records returned for this drug query.
+{% endif -%}
+{% else -%}
+No CIViC records returned for this drug query.
+{% endif -%}
+{% endif -%}
+{% if not section_only %}
+{% if mechanisms -%}
+## Mechanisms
+
+{% if mechanisms | length == 1 -%}
+{{ mechanisms[0] }}
+{% else -%}
+{% for m in mechanisms -%}
+- {{ m }}
+{% endfor -%}
+{% endif -%}
+{% elif mechanism -%}
+## Mechanism
+
+{{ mechanism }}
+{% endif -%}
+{% endif -%}
+{% if show_targets_section and targets -%}
+## Targets
+
+{{ targets | join(", ") }}
+{% endif -%}
+{% if show_indications_section and indications -%}
+## Indications
+
+{{ indications | join(", ") }}
+{% endif -%}
+{% if show_interactions_section -%}
+## Interactions
+
+{% if interactions -%}
+| Interacting Drug | Description |
+|---|---|
+{% for row in interactions -%}
+| {{ row.drug }} | {{ row.description or "-" }} |
+{% endfor -%}
+{% else -%}
+No known drug-drug interactions found.
+{% endif -%}
+{% endif -%}
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

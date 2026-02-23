@@ -1,0 +1,269 @@
+// Copyright 2024 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.gdm.gdmscience.alphagenome.v1main;
+
+import "dna_model.proto";
+import "tensor.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/gdm/gdmscience/alphagenome/v1main;alphagenome";
+option java_multiple_files = true;
+option java_outer_classname = "DnaModelServiceProto";
+option java_package = "com.google.gdm.gdmscience.alphagenome.v1main";
+
+// Service for making predictions with DNA models.
+service DnaModelService {
+  // Makes a prediction for DNA sequence.
+  rpc PredictSequence(stream PredictSequenceRequest)
+      returns (stream PredictSequenceResponse) {}
+
+  // Make prediction for a single genomic interval.
+  rpc PredictInterval(stream PredictIntervalRequest)
+      returns (stream PredictIntervalResponse) {}
+
+  // Make variant effect predictions for a genomic interval.
+  rpc PredictVariant(stream PredictVariantRequest)
+      returns (stream PredictVariantResponse) {}
+
+  // Score a genomic interval.
+  rpc ScoreInterval(stream ScoreIntervalRequest)
+      returns (stream ScoreIntervalResponse) {}
+
+  // Score a variant for a genomic interval.
+  rpc ScoreVariant(stream ScoreVariantRequest)
+      returns (stream ScoreVariantResponse) {}
+
+  // Score ISM variant effect predictions for a genomic interval.
+  rpc ScoreIsmVariant(stream ScoreIsmVariantRequest)
+      returns (stream ScoreIsmVariantResponse) {}
+
+  // Get metadata for the model.
+  rpc GetMetadata(MetadataRequest) returns (stream MetadataResponse) {}
+}
+
+// Request message for predicting a sequence.
+message PredictSequenceRequest {
+  // DNA sequence to make prediction for. Must only contain characters "ACGTN".
+  string sequence = 1;
+
+  // Organism to use for the prediction.
+  Organism organism = 2;
+
+  // Ontology terms to generate predictions for. If empty returns all
+  // ontologies.
+  repeated OntologyTerm ontology_terms = 3;
+
+  // Output types to generate predictions for.
+  repeated OutputType requested_outputs = 4;
+
+  // Model version to use.
+  string model_version = 5;
+}
+
+// Response message for predicting a sequence.
+message PredictSequenceResponse {
+  // The payload for the response.
+  oneof payload {
+    // Output for a single output type.
+    Output output = 1;
+
+    // Tensor chunk related to the last output message received. It is an error
+    // to receive a tensor chunk without a previous output message.
+    TensorChunk tensor_chunk = 2;
+  }
+}
+
+// Request message for predicting an interval.
+message PredictIntervalRequest {
+  // DNA interval to make prediction for.
+  Interval interval = 1;
+
+  // Organism to use for the prediction.
+  Organism organism = 2;
+
+  // Output types to generate predictions for.
+  repeated OutputType requested_outputs = 3;
+
+  // Ontology terms to generate predictions for. If empty returns all
+  // ontologies.
+  repeated OntologyTerm ontology_terms = 4;
+
+  // Model version to use.
+  string model_version = 5;
+}
+
+// Response message for predicting an interval.
+message PredictIntervalResponse {
+  // The payload for the response.
+  oneof payload {
+    // Output for a single output type.
+    Output output = 1;
+
+    // Tensor chunk related to the last output message received. It is an error
+    // to receive a tensor chunk without a previous output message.
+    TensorChunk tensor_chunk = 2;
+  }
+}
+
+// Request message for predicting a variant.
+message PredictVariantRequest {
+  // DNA interval to make prediction for.
+  Interval interval = 1;
+
+  // DNA variant to make prediction for.
+  Variant variant = 2;
+
+  // Organism to use for the prediction.
+  Organism organism = 3;
+
+  // Output types to generate predictions for.
+  repeated OutputType requested_outputs = 4;
+
+  // Ontology terms to generate predictions for. If empty returns all
+  // ontologies.
+  repeated OntologyTerm ontology_terms = 5;
+
+  // Model version to use.
+  string model_version = 6;
+}
+
+// Response message for predicting a variant.
+message PredictVariantResponse {
+  // The payload for the response.
+  oneof payload {
+    // Reference output for a single output type.
+    Output reference_output = 1;
+
+    // Alternate output for a single output type.
+    Output alternate_output = 2;
+
+    // Tensor chunk related to the last reference or alternate output message
+    // received. It is an error to receive a tensor chunk without a previous
+    // reference or alternate output message.
+    TensorChunk tensor_chunk = 3;
+  }
+}
+
+// Request message for scoring an interval.
+message ScoreIntervalRequest {
+  // DNA interval to make prediction for.
+  Interval interval = 1;
+
+  // Organism to use for the prediction.
+  Organism organism = 2;
+
+  // Interval scorers to use for the prediction.
+  repeated IntervalScorer interval_scorers = 3;
+
+  // Model version to use.
+  string model_version = 4;
+}
+
+// Response message for scoring an interval.
+message ScoreIntervalResponse {
+  // The payload for the response.
+  oneof payload {
+    // Score interval output.
+    ScoreIntervalOutput output = 1;
+
+    // Tensor chunk related to the last score interval output message received.
+    // It is an error to receice a tensor chunk without a previous output
+    // message.
+    TensorChunk tensor_chunk = 2;
+  }
+}
+
+// Request message for scoring a variant.
+message ScoreVariantRequest {
+  // DNA interval to make prediction for.
+  Interval interval = 1;
+
+  // DNA variant to make prediction for.
+  Variant variant = 2;
+
+  // Organism to use for the prediction.
+  Organism organism = 3;
+
+  // Variant scorers to use for the prediction.
+  repeated VariantScorer variant_scorers = 4;
+
+  // Model version to use.
+  string model_version = 5;
+}
+
+// Response message for scoring a variant.
+message ScoreVariantResponse {
+  // The payload for the response.
+  oneof payload {
+    // Score variant output.
+    ScoreVariantOutput output = 1;
+
+    // Tensor chunk related to the last score variant output message received.
+    // It is an error to receive a tensor chunk without a previous output
+    // message.
+    TensorChunk tensor_chunk = 2;
+  }
+}
+
+// Request message for scoring an in-silico mutagenesis (ISM) interval.
+message ScoreIsmVariantRequest {
+  // DNA interval to make the prediction for.
+  Interval interval = 1;
+
+  // ISM interval to make the prediction for.
+  Interval ism_interval = 2;
+
+  // Organism to use for the prediction.
+  Organism organism = 3;
+
+  // Variant scorers to use for the prediction.
+  repeated VariantScorer variant_scorers = 4;
+
+  // Optional variant applied to the reference interval. If provided, the
+  // alternate allele is used for in-silico mutagenesis, otherwise the
+  // unaltered reference sequence is used.
+  optional Variant interval_variant = 6;
+
+  // Model version to use.
+  string model_version = 5;
+}
+
+// Response message for scoring an in-silico mutagenesis (ISM) interval.
+message ScoreIsmVariantResponse {
+  // The payload for the response.
+  oneof payload {
+    // Score variant output.
+    ScoreVariantOutput output = 1;
+
+    // Tensor chunk related to the last score variant output message received.
+    // It is an error to receive a tensor chunk without a previous output
+    // message.
+    TensorChunk tensor_chunk = 2;
+  }
+}
+
+// Request message for getting metadata for an organism.
+message MetadataRequest {
+  // The organism we should return metadata for.
+  Organism organism = 1;
+}
+
+// Response message for getting metadata for an organism.
+message MetadataResponse {
+  // The metadata for each output type.
+  repeated OutputMetadata output_metadata = 1;
+}
+

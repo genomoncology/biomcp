@@ -1,0 +1,25 @@
+# Trial Search Results
+
+{% if total -%}
+Results: {{ count }} of {{ total }}
+{% else -%}
+Found: {{ count }} trial(s)
+{% endif %}
+{% if query %}Query: {{ query }}{% endif %}
+
+{% if count == 0 -%}
+No trials found matching the filters.
+{% else -%}
+|NCT ID|Title|Status|Phase|Conditions|
+|---|---|---|---|---|
+{% for t in results -%}
+|{{ t.nct_id }}|{{ t.title | truncate(25) }}|{{ t.status }}|{{ t.phase | default("-") | phase_short }}|{{ t.conditions | conditions_short }}|
+{% endfor %}
+
+Use `get trial <nct_id>` for details.
+Filters: -c <condition>, -i <intervention>, --facility <name>, --age <years>, --sex <female|male|all>, -s <status>, -p <phase>, --mutation <text>, --sponsor-type <nih|industry|fed|other>, --lat <N> --lon <N> --distance <mi>, --results-available, --count-only
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif %}

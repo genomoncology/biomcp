@@ -1,10 +1,8 @@
 name: Deploy Documentation
 
 on:
-  # Allows you to manually trigger this workflow from the Actions tab
   workflow_dispatch:
 
-  # Automatically trigger on pushes to main IF docs changed
   push:
     branches:
       - main
@@ -13,28 +11,31 @@ on:
       - "mkdocs.yml"
       - ".github/workflows/deploy-docs.yml"
 
+  release:
+    types: [published]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Check out code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Python environment
-        uses: ./.github/actions/setup-python-env
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          uv-version: "0.5.20"
+          python-version: "3.12"
 
-      - name: Configure Git User
+      - uses: astral-sh/setup-uv@v4
+
+      - run: uv sync --extra dev
+
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Deploy documentation using MkDocs
-        run: |
-          uv run mkdocs gh-deploy --force
+      - name: Deploy to GitHub Pages
+        run: uv run mkdocs gh-deploy --force

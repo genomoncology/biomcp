@@ -1,0 +1,537 @@
+// Copyright 2024 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.gdm.gdmscience.alphagenome.v1main;
+
+import "tensor.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/gdm/gdmscience/alphagenome/v1main;alphagenome";
+option java_multiple_files = true;
+option java_outer_classname = "DnaModelProto";
+option java_package = "com.google.gdm.gdmscience.alphagenome.v1main";
+
+// Message that represents a genomic interval.
+message Interval {
+  // The chromosome name, e.g., "chr1".
+  string chromosome = 1;
+
+  // 0-based start position.
+  int64 start = 2;
+
+  // 0-based end position. Must be greater than or equal to start.
+  int64 end = 3;
+
+  // The strand of the interval.
+  Strand strand = 4;
+}
+
+// Message that represents a genomic variant/mutation.
+message Variant {
+  // The chromosome name, e.g., "chr1".
+  string chromosome = 1;
+
+  // The 1-based position of the variant on the chromosome.
+  int64 position = 2;
+
+  // The reference base(s) at the variant position. Normally this corresponds to
+  // the sequence in the reference genome. Must only contain characters "ACGTN".
+  string reference_bases = 3;
+
+  // The alternate base(s) that replace the reference. For example:
+  // If sequence="ACT", position=2, reference_bases="C", alternate_bases="TG",
+  // then the alternate sequence would be "ATGT'.
+  string alternate_bases = 4;
+}
+
+// A single biological ontology term.
+message OntologyTerm {
+  // The type of ontology this term belongs to.
+  OntologyType ontology_type = 1;
+
+  // The ID of the term within the ontology.
+  int64 id = 2;
+}
+
+// Message that represents a biological sample that is used in an experiment.
+message Biosample {
+  // Biosample type matching ENCODE conventions.
+  BiosampleType type = 1;
+
+  // The name of the biosample, e.g. "T-cell".
+  string name = 2;
+
+  // Optional stage of the biosample, e.g. "adult".
+  optional string stage = 3;
+}
+
+// Message containing metadata for a gene score.
+message GeneScorerMetadata {
+  // ENSEMBL gene identifier without version number, e.g. "ENSG00000100342".
+  string gene_id = 1;
+
+  // Optional HGNC gene symbol, e.g. "APOL1".
+  optional string name = 3;
+
+  // Optional strand of the gene.
+  optional Strand strand = 2;
+
+  // Optional gene biotype, e.g. "protein_coding" or "lncRNA".
+  optional string type = 4;
+
+  // Optional start position for junction scores.
+  optional int64 junction_start = 5;
+
+  // Optional end position for junction scores.
+  optional int64 junction_end = 6;
+}
+
+// Message containing metadata for a track.
+message TrackMetadata {
+  // Name of the track.
+  string name = 1;
+
+  // Strand for the track.
+  Strand strand = 2;
+
+  // Ontology term for the track.
+  OntologyTerm ontology_term = 3;
+
+  // Biosample for the track.
+  Biosample biosample = 4;
+
+  // Optional assay for the track. e.g. "polyA plus RNA-seq".
+  optional string assay = 5;
+
+  // Optional histone mark for the track.
+  optional string histone_mark_code = 9;
+
+  // Optional transcription factor for the track.
+  optional string transcription_factor_code = 10;
+
+  // Optional GTEx tissue for the track.
+  optional string gtex_tissue = 8;
+
+  // Optional data source for the track. e.g. "encode".
+  optional string data_source = 11;
+
+  // Optional sequence reading endedness.
+  optional Endedness endedness = 12;
+
+  // Optional boolean indicating whether the track is genetically modified.
+  optional bool genetically_modified = 13;
+
+  // Optional mean of the non-zero values in the track.
+  optional float nonzero_mean = 14;
+}
+
+// Container for TrackMetadata.
+message TracksMetadata {
+  // Ordered list of metadata for each track.
+  repeated TrackMetadata metadata = 1;
+}
+
+// Message containing metadata for a splice junctions.
+message JunctionMetadata {
+  // Name of the junction track, e.g. "Brain_Cerebellum".
+  string name = 1;
+
+  // Ontology term for the junction track.
+  OntologyTerm ontology_term = 2;
+
+  // Biosample for the junction track.
+  Biosample biosample = 3;
+
+  // Optional GTEx tissue for the junction track.
+  optional string gtex_tissue = 4;
+
+  // Optional data source for the track. e.g. "encode".
+  optional string data_source = 5;
+
+  // Optional assay for the track. e.g. "polyA plus RNA-seq".
+  optional string assay = 6;
+}
+
+// Container for list of JunctionMetadata.
+message JunctionsMetadata {
+  // Ordered list of metadata for each junction.
+  repeated JunctionMetadata metadata = 1;
+}
+
+// Message for storing track values and metadata.
+message TrackData {
+  // Values for the track.
+  Tensor values = 1;
+
+  // Metadata for the track. The number of metadata elements must match the last
+  // dimension of the values tensor.
+  repeated TrackMetadata metadata = 2;
+
+  // Resolution of the track data in base pairs.
+  optional int64 resolution = 3;
+
+  // Optional Interval representing the genomic region.
+  Interval interval = 4;
+}
+
+// Message for storing splice junction values and metadata.
+message JunctionData {
+  // Values for the splice junction for each track.
+  Tensor values = 1;
+
+  // Metadata for the splice junction. The number of elements must match the
+  // last dimension of the values tensor.
+  repeated JunctionMetadata metadata = 2;
+
+  // Predicted splice junctions. The number of elements must match the first
+  // dimensions of the values tensor.
+  repeated Interval junctions = 3;
+}
+
+// Message containing metadata for interval results.
+message IntervalMetadata {
+  // Genomic interval.
+  Interval interval = 1;
+
+  // Track metadata for the interval prediction.
+  repeated TrackMetadata track_metadata = 2;
+
+  // Gene metadata for the interval prediction.
+  repeated GeneScorerMetadata gene_metadata = 3;
+}
+
+// Message for storing interval values and metadata.
+message IntervalData {
+  // Values for the interval.
+  Tensor values = 1;
+
+  // Metadata for the interval.
+  IntervalMetadata metadata = 2;
+}
+
+// Message containing metadata for a variant prediction.
+message VariantMetadata {
+  // Genomic variant.
+  Variant variant = 1;
+
+  // Track metadata for the variant prediction.
+  repeated TrackMetadata track_metadata = 2;
+
+  // Gene metadata for the variant prediction.
+  repeated GeneScorerMetadata gene_metadata = 3;
+}
+
+// Message for storing variant values and metadata.
+message VariantData {
+  // Values for the variant.
+  Tensor values = 1;
+
+  // Metadata for the variant.
+  VariantMetadata metadata = 2;
+}
+
+// Message for storing model outputs for a single output type.
+message Output {
+  // The type of output.
+  OutputType output_type = 1;
+
+  // The payload for the output.
+  oneof payload {
+    // Track data for the output. Used in all output types except
+    // OUTPUT_TYPE_SPLICE_JUNCTIONS.
+    TrackData track_data = 2;
+
+    // Raw predictions with no metadata.
+    Tensor data = 3;
+
+    // Junction data for the output. This is only set for
+    // OUTPUT_TYPE_SPLICE_JUNCTIONS.
+    JunctionData junction_data = 4;
+  }
+}
+
+// Message for storing score interval results.
+message ScoreIntervalOutput {
+  // Score interval data.
+  IntervalData interval_data = 1;
+}
+
+// Message for storing score variant results.
+message ScoreVariantOutput {
+  // Score variant data.
+  VariantData variant_data = 1;
+}
+
+// Interval scorer message for gene-mask scoring.
+message GeneMaskIntervalScorer {
+  // Requested output type.
+  OutputType requested_output = 1;
+
+  // Requested width.
+  optional int64 width = 2;
+
+  // Requested aggregation type.
+  IntervalAggregationType aggregation_type = 3;
+}
+
+// Container message for all interval scorers.
+message IntervalScorer {
+  // The interval scorer payload.
+  oneof scorer {
+    // Gene mask scorer.
+    GeneMaskIntervalScorer gene_mask = 1;
+  }
+}
+
+// Variant scorer message for center mask scoring.
+message CenterMaskScorer {
+  // The width of the mask around the variant.
+  optional int64 width = 1;
+
+  // The aggregation type.
+  AggregationType aggregation_type = 2;
+
+  // Requested output type.
+  OutputType requested_output = 3;
+}
+
+// Variant scorer message for gene-mask scoring based on log fold change.
+message GeneMaskLFCScorer {
+  // Requested output type.
+  OutputType requested_output = 1;
+}
+
+// Variant scorer message for gene-mask scoring based on active allele counts.
+message GeneMaskActiveScorer {
+  // Requested output type.
+  OutputType requested_output = 1;
+}
+
+// Variant scorer message for gene-mask scoring for splicing.
+message GeneMaskSplicingScorer {
+  // The width of the mask around the variant.
+  optional int64 width = 1;
+
+  // Requested output type.
+  OutputType requested_output = 2;
+}
+
+// Variant scorer message for polyadenylation QTLs (paQTLs).
+message PolyadenylationScorer {}
+
+// Variant scorer message for splice junction scoring.
+message SpliceJunctionScorer {}
+
+// Variant scorer message for contact map scoring.
+message ContactMapScorer {}
+
+// Container message for all variant scorers.
+message VariantScorer {
+  // The variant scorer payload.
+  oneof scorer {
+    // Center mask scorer.
+    CenterMaskScorer center_mask = 1;
+
+    // Gene mask scorer based on log fold change.
+    GeneMaskLFCScorer gene_mask = 2;
+
+    // Gene mask scorer for splicing.
+    GeneMaskSplicingScorer gene_mask_splicing = 3;
+
+    // Polyadenylation scorer.
+    PolyadenylationScorer pa_qtl = 4;
+
+    // Splice junction scorer.
+    SpliceJunctionScorer splice_junction = 5;
+
+    // Contact map scorer.
+    ContactMapScorer contact_map = 6;
+
+    // Gene mask scorer based on active allele counts.
+    GeneMaskActiveScorer gene_mask_active = 7;
+  }
+}
+
+// Message containing metadata for an output type.
+message OutputMetadata {
+  // The output type.
+  OutputType output_type = 1;
+
+  // The payload for the output metadata.
+  oneof payload {
+    // Track metadata for the output. Used in all output types except
+    // OUTPUT_TYPE_SPLICE_JUNCTIONS.
+    TracksMetadata tracks = 2;
+
+    // Junction metadata for the output. This is only set for
+    // OUTPUT_TYPE_SPLICE_JUNCTIONS.
+    JunctionsMetadata junctions = 3;
+  }
+}
+
+// Defines the possible strands for a DNA sequence.
+enum Strand {
+  // Unspecified strand.
+  STRAND_UNSPECIFIED = 0;
+
+  // The forward strand (5' to 3')
+  STRAND_POSITIVE = 1;
+
+  // The reverse strand (3' to 5')
+  STRAND_NEGATIVE = 2;
+
+  // The strand is not specified.
+  STRAND_UNSTRANDED = 3;
+}
+
+// Supported ontology types.
+enum OntologyType {
+  // Unspecified ontology type.
+  ONTOLOGY_TYPE_UNSPECIFIED = 0;
+
+  // Cell Line Ontology.
+  ONTOLOGY_TYPE_CLO = 1;
+
+  // Uber-anatomy ontology.
+  ONTOLOGY_TYPE_UBERON = 2;
+
+  // Cell Ontology.
+  ONTOLOGY_TYPE_CL = 3;
+
+  // Experimental Factor Ontology.
+  ONTOLOGY_TYPE_EFO = 4;
+
+  // New Term Requested.
+  ONTOLOGY_TYPE_NTR = 5;
+}
+
+// Biosample type matching ENCODE conventions. See
+// https://www.encodeproject.org/profiles/biosample_type.
+enum BiosampleType {
+  // Unspecified biosample type.
+  BIOSAMPLE_TYPE_UNSPECIFIED = 0;
+
+  // Primary cell sample.
+  BIOSAMPLE_TYPE_PRIMARY_CELL = 1;
+
+  // In-vitro differentiated cell sample.
+  BIOSAMPLE_TYPE_IN_VITRO_DIFFERENTIATED_CELLS = 2;
+
+  // Cell line sample.
+  BIOSAMPLE_TYPE_CELL_LINE = 3;
+
+  // Tissue sample.
+  BIOSAMPLE_TYPE_TISSUE = 4;
+
+  // Technical sample.
+  BIOSAMPLE_TYPE_TECHNICAL_SAMPLE = 5;
+
+  // Organoid sample.
+  BIOSAMPLE_TYPE_ORGANOID = 6;
+}
+
+// Enumeration of all the available types of outputs.
+enum OutputType {
+  // Unspecified output type.
+  OUTPUT_TYPE_UNSPECIFIED = 0;
+
+  // ATAC-seq tracks capturing chromatin accessibility.
+  OUTPUT_TYPE_ATAC = 1;
+
+  // CAGE (Cap Analysis of Gene Expression) tracks capturing gene expression.
+  OUTPUT_TYPE_CAGE = 2;
+
+  // DNase I hypersensitive site tracks capturing chromatin accessibility.
+  OUTPUT_TYPE_DNASE = 3;
+
+  // RNA sequencing tracks capturing gene expression.
+  OUTPUT_TYPE_RNA_SEQ = 4;
+
+  // ChIP-seq tracks capturing histone modifications.
+  OUTPUT_TYPE_CHIP_HISTONE = 5;
+
+  // ChIP-seq tracks capturing transcription factor binding.
+  OUTPUT_TYPE_CHIP_TF = 6;
+
+  // Splice site tracks capturing donor and acceptor splice sites.
+  OUTPUT_TYPE_SPLICE_SITES = 7;
+
+  // Splice site usage tracks capturing the fraction of the time that each
+  // splice site is used.
+  OUTPUT_TYPE_SPLICE_SITE_USAGE = 8;
+
+  // Splice junction tracks capturing split read RNA-seq counts for each
+  // junction.
+  OUTPUT_TYPE_SPLICE_JUNCTIONS = 9;
+
+  // Contact map tracks capturing 3D chromatin contact probabilities.
+  OUTPUT_TYPE_CONTACT_MAPS = 11;
+
+  // Precision Run-On sequencing and capping, used to measure gene expression.
+  OUTPUT_TYPE_PROCAP = 12;
+}
+
+// Enumeration of all the available organisms. Values relate to the NCBI
+// taxonomy ID.
+enum Organism {
+  // Unspecified organism.
+  ORGANISM_UNSPECIFIED = 0;
+
+  // Human (Homo sapiens).
+  ORGANISM_HOMO_SAPIENS = 9606;
+
+  // Mouse (Mus musculus).
+  ORGANISM_MUS_MUSCULUS = 10090;
+}
+
+// Enum indicating the type of interval scorer aggregation.
+enum IntervalAggregationType {
+  // Unspecified aggregation type.
+  INTERVAL_AGGREGATION_TYPE_UNSPECIFIED = 0;
+
+  // Mean across positions.
+  INTERVAL_AGGREGATION_TYPE_MEAN = 1;
+
+  // Sum across positions.
+  INTERVAL_AGGREGATION_TYPE_SUM = 2;
+}
+
+// Enum indicating the type of variant scorer aggregation.
+enum AggregationType {
+  // Unspecified aggregation type.
+  AGGREGATION_TYPE_UNSPECIFIED = 0;
+
+  // Difference of means, i.e., mean(ALT) - mean(REF).
+  AGGREGATION_TYPE_DIFF_MEAN = 1;
+
+  // Difference of sums, i.e., sum(ALT) - sum(REF).
+  AGGREGATION_TYPE_DIFF_SUM = 2;
+
+  // Log ratio of sums, i.e., log(sum(ALT) / sum(REF)).
+  AGGREGATION_TYPE_LOG_RATIO_SUM = 3;
+}
+
+// Enum indicating read endedness.
+enum Endedness {
+  // Unspecified.
+  ENDEDNESS_UNSPECIFIED = 0;
+
+  // Single end reads.
+  ENDEDNESS_SINGLE = 1;
+
+  // Paired end reads.
+  ENDEDNESS_PAIRED = 2;
+}
+

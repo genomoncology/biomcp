@@ -1,0 +1,203 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# {{ gene }}{% if hgvs_p %} {{ hgvs_p }}{% endif %}{% if rsid %} ({{ rsid }}){% endif %}
+
+rsID: {% if rsid %}{{ rsid }}{% else %}Not reported{% endif %}
+ID: {{ id }}
+{% if hgvs_p %}Protein: {{ hgvs_p }}{% endif %}
+{% if hgvs_c %}cDNA: {{ hgvs_c }}{% endif %}
+{% if consequence %}Consequence: {{ consequence }}{% endif %}
+{% if cosmic_id %}COSMIC: {{ cosmic_id }}{% endif %}
+{% if significance %}Significance: {{ significance }}{% endif %}
+{% endif -%}
+{% if show_prediction_section and prediction -%}
+## AlphaGenome Prediction
+
+| Score | Value | Interpretation |
+|---|---|---|
+| Expression LFC | {% if prediction.expression_lfc is not none %}{{ prediction.expression_lfc | score }}{% else %}-{% endif %} | {% if expression_interpretation %}{{ expression_interpretation }}{% else %}-{% endif %} |
+| Splice Score | {% if prediction.splice_score is not none %}{{ prediction.splice_score | score }}{% else %}-{% endif %} | {% if splice_interpretation %}{{ splice_interpretation }}{% else %}-{% endif %} |
+| Chromatin | {% if prediction.chromatin_score is not none %}{{ prediction.chromatin_score | score }}{% else %}-{% endif %} | {% if chromatin_interpretation %}{{ chromatin_interpretation }}{% else %}-{% endif %} |
+
+Top Affected Gene (Ensembl ID when available): {% if prediction.top_gene %}{{ prediction.top_gene }}{% else %}-{% endif %}
+Note: AlphaGenome reports this field as a gene-level identifier from its model output.
+{% endif -%}
+{% if show_clinvar_section and (conditions or clinvar_id or clinvar_conditions) -%}
+## ClinVar
+{% if clinvar_conditions -%}
+Conditions ({% if clinvar_condition_reports %}{{ clinvar_condition_reports }}{% else %}{{ clinvar_conditions | length }}{% endif %} reports):
+{% for row in clinvar_conditions -%}
+- {{ row.condition }} ({{ row.reports }} report{% if row.reports != 1 %}s{% endif %})
+{% endfor -%}
+{% elif conditions -%}
+- Conditions: {{ conditions | join(", ") }}
+{% endif -%}
+{% if clinvar_review_stars is not none -%}
+- Review: {{ clinvar_review_stars }} star(s){% if clinvar_review_status %} ({{ clinvar_review_status }}){% endif %}
+{% endif -%}
+{% if clinvar_id -%}
+- Variant ID: {{ clinvar_id }}
+{% endif -%}
+{% endif -%}
+{% if show_conservation_section -%}
+## Conservation
+{% if conservation -%}
+| Metric | Score |
+|---|---|
+| phyloP (100-way vertebrate) | {% if conservation.phylop_100way_vertebrate is defined and conservation.phylop_100way_vertebrate is not none %}{{ conservation.phylop_100way_vertebrate | score }}{% else %}-{% endif %} |
+| phyloP (470-way mammalian) | {% if conservation.phylop_470way_mammalian is defined and conservation.phylop_470way_mammalian is not none %}{{ conservation.phylop_470way_mammalian | score }}{% else %}-{% endif %} |
+| phastCons (100-way vertebrate) | {% if conservation.phastcons_100way_vertebrate is defined and conservation.phastcons_100way_vertebrate is not none %}{{ conservation.phastcons_100way_vertebrate | score }}{% else %}-{% endif %} |
+| phastCons (470-way mammalian) | {% if conservation.phastcons_470way_mammalian is defined and conservation.phastcons_470way_mammalian is not none %}{{ conservation.phastcons_470way_mammalian | score }}{% else %}-{% endif %} |
+| GERP++ RS | {% if conservation.gerp_rs is defined and conservation.gerp_rs is not none %}{{ conservation.gerp_rs | score }}{% else %}-{% endif %} |
+{% else -%}
+No conservation scores reported.
+{% endif -%}
+{% endif -%}
+{% if show_predictions_section -%}
+## Expanded Predictions
+{% if expanded_predictions -%}
+| Tool | Score | Prediction |
+|---|---|---|
+{% for p in expanded_predictions -%}
+| {{ p.tool }} | {% if p.score is defined and p.score is not none %}{{ p.score | score }}{% else %}-{% endif %} | {% if p.prediction %}{{ p.prediction }}{% else %}-{% endif %} |
+{% endfor -%}
+{% else -%}
+No expanded prediction scores reported.
+{% endif -%}
+{% endif -%}
+{% if show_population_section -%}
+## Population
+{% if population -%}
+- Dataset: {{ population.dataset }}
+- Variant ID: {{ population.variant_id }}
+{% if population.af is defined and population.af is not none %}- AF: {{ population.af | af }}{% endif %}
+{% if population.populations -%}
+| Population (gnomAD API) | AF |
+|---|---|
+{% for p in population.populations -%}
+| {{ p.population }} | {{ p.af | af }} |
+{% endfor -%}
+{% endif -%}
+{% else -%}
+{% if gnomad_af %}- gnomAD AF: {{ gnomad_af | af }}{% else %}- gnomAD AF: Not reported{% endif %}
+{% if gnomad_subpopulations -%}
+- Sub-populations: {% for p in gnomad_subpopulations -%}{{ p.population }} {{ p.af | af }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif -%}
+{% endif -%}
+{% if population_breakdown -%}
+{% if population_breakdown.populations -%}
+| Population (MyVariant cached) | AF |
+|---|---|
+{% for p in population_breakdown.populations -%}
+| {{ p.population }} | {{ p.af | af }} |
+{% endfor -%}
+{% endif -%}
+{% if population_breakdown.exac_af is defined and population_breakdown.exac_af is not none %}- ExAC AF: {{ population_breakdown.exac_af | af }}{% endif %}
+{% if population_breakdown.exac_nontcga_af is defined and population_breakdown.exac_nontcga_af is not none %}- ExAC non-TCGA AF: {{ population_breakdown.exac_nontcga_af | af }}{% endif %}
+{% endif -%}
+{% if (not population) and (not population_breakdown) and (not gnomad_af) and (not gnomad_subpopulations) -%}
+No population data reported.
+{% endif -%}
+{% endif -%}
+{% if show_cosmic_section -%}
+## COSMIC
+{% if cosmic_id or cosmic_context -%}
+{% if cosmic_id %}- COSMIC ID: {{ cosmic_id }}{% endif %}
+{% if cosmic_context and cosmic_context.mut_freq is defined and cosmic_context.mut_freq is not none %}- Mutation frequency: {{ cosmic_context.mut_freq | score }}{% endif %}
+{% if cosmic_context and cosmic_context.tumor_site %}- Tumor site: {{ cosmic_context.tumor_site }}{% endif %}
+{% if cosmic_context and cosmic_context.mut_nt %}- Mutation nucleotide: {{ cosmic_context.mut_nt }}{% endif %}
+{% else -%}
+No COSMIC context reported.
+{% endif -%}
+{% endif -%}
+{% if show_cgi_section -%}
+## CGI Drug Associations
+{% if cgi_associations -%}
+| Drug | Association | Tumor Type | Evidence |
+|---|---|---|---|
+{% for row in cgi_associations -%}
+| {{ row.drug }} | {{ row.association or "-" }} | {{ row.tumor_type or "-" }} | {{ row.evidence_level or "-" }} |
+{% endfor -%}
+{% else -%}
+No CGI drug associations reported.
+{% endif -%}
+{% endif -%}
+{% if show_civic_section -%}
+## CIViC
+{% if civic -%}
+{% if civic.cached_evidence -%}
+### Cached Evidence (MyVariant)
+| Evidence | Type | Level | Disease | Therapies |
+|---|---|---|---|---|
+{% for row in civic.cached_evidence -%}
+| {{ row.name }} | {{ row.evidence_type }} | {{ row.evidence_level }} | {{ row.disease or "-" }} | {% if row.therapies %}{{ row.therapies | join(", ") }}{% else %}-{% endif %} |
+{% endfor -%}
+{% endif -%}
+{% if civic.graphql -%}
+### GraphQL Context
+- Evidence Items: {{ civic.graphql.evidence_total_count }}
+- Assertions: {{ civic.graphql.assertion_total_count }}
+{% if civic.graphql.assertions -%}
+| Assertion | AMP Level | Disease | Therapies |
+|---|---|---|---|
+{% for row in civic.graphql.assertions -%}
+| {{ row.name }} | {{ row.amp_level or "-" }} | {{ row.disease or "-" }} | {% if row.therapies %}{{ row.therapies | join(", ") }}{% else %}-{% endif %} |
+{% endfor -%}
+{% elif civic.graphql.evidence_items -%}
+| Evidence | Level | Disease | Therapies |
+|---|---|---|---|
+{% for row in civic.graphql.evidence_items -%}
+| {{ row.name }} | {{ row.evidence_level }} | {{ row.disease or "-" }} | {% if row.therapies %}{{ row.therapies | join(", ") }}{% else %}-{% endif %} |
+{% endfor -%}
+{% endif -%}
+{% endif -%}
+{% if (not civic.cached_evidence) and (not civic.graphql) -%}
+No CIViC records returned for this variant.
+{% endif -%}
+{% else -%}
+No CIViC records returned for this variant.
+{% endif -%}
+{% endif -%}
+{% if not section_only and (cadd_score or sift_pred or polyphen_pred) -%}
+## Predictions
+{% if cadd_score -%}
+- CADD: {{ cadd_score }}
+{% endif -%}
+{% if sift_pred -%}
+- SIFT: {{ sift_pred }}
+{% endif -%}
+{% if polyphen_pred -%}
+- PolyPhen: {{ polyphen_pred }}
+{% endif -%}
+{% endif -%}
+{% if show_cbioportal_section -%}
+## cBioPortal
+{% if cancer_frequencies -%}
+| Cancer Type | Samples | Frequency |
+|---|---|---|
+{% for cf in cancer_frequencies -%}
+| {{ cf.cancer_type }} | {{ cf.sample_count }} | {{ cf.frequency | af }} |
+{% endfor %}
+{% else -%}
+No cBioPortal frequency data available.
+{% endif -%}
+{% endif -%}
+{% if show_gwas_section -%}
+## GWAS
+{% if gwas -%}
+| rsID | Trait | p-value | Effect | Confidence | Risk AF | Risk Allele | Study | PMID | Author |
+|---|---|---|---|---|---|---|---|---|---|
+{% for row in gwas -%}
+| {{ row.rsid }} | {{ row.trait_name or "-" }} | {% if row.p_value is defined and row.p_value is not none %}{{ row.p_value | pval }}{% else %}-{% endif %} | {% if row.effect_size is defined and row.effect_size is not none %}{{ row.effect_type or "effect" }} {{ row.effect_size | score }}{% else %}-{% endif %} | {{ row.confidence_interval or "-" }} | {% if row.risk_allele_frequency is defined and row.risk_allele_frequency is not none %}{{ row.risk_allele_frequency | af }}{% else %}-{% endif %} | {{ row.risk_allele or "-" }} | {{ row.study_accession or "-" }} | {{ row.pmid or "-" }} | {{ row.author or "-" }} |
+{% endfor -%}
+{% else -%}
+No GWAS associations found for this variant.
+{% endif -%}
+{% endif -%}
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

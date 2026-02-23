@@ -1,0 +1,22 @@
+# Genes: {{ query }}
+
+{% if count == 0 -%}
+No genes found matching '{{ query }}'.
+
+Try a broader search or check spelling.
+{% else -%}
+Found {{ count }} gene{% if count != 1 %}s{% endif %}
+
+| Symbol | Name | Entrez ID | Coordinates | UniProt | OMIM |
+|---|---|---|---|---|---|
+{% for gene in results -%}
+| {{ gene.symbol }} | {{ gene.name }} | {{ gene.entrez_id }} | {{ gene.genomic_coordinates | default("-") }} | {{ gene.uniprot_id | default("-") }} | {{ gene.omim_id | default("-") }} |
+{% endfor %}
+
+Use `get gene <symbol>` for details.
+Filters: -q <query>, --type <protein-coding|ncRNA|pseudo>, --chromosome <N>, --region <chr:start-end>, --pathway <id>, --go <term>
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif %}

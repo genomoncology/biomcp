@@ -1,0 +1,19 @@
+# Recalls
+
+{% if count == 0 -%}
+No recalls found
+{% else -%}
+Found {{ count }} recall{% if count != 1 %}s{% endif %}
+
+|Recall #|Classification|Product|Status|
+|---|---|---|---|
+{% for r in results -%}
+|{{ r.recall_number }}|{{ r.classification }}|{{ r.product_description | truncate(45) }}|{{ r.status }}|
+{% endfor %}
+
+Use `search adverse-event --type recall --classification <Class I|Class II|Class III>` to refine.
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif -%}

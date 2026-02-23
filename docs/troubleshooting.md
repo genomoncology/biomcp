@@ -1,487 +1,157 @@
-# Troubleshooting Guide
+# Troubleshooting
 
-This guide helps you resolve common issues with BioMCP installation, configuration, and usage.
+BioMCP depends on multiple public biomedical APIs, so transient source failures are expected.
+This guide focuses on practical triage for API failures, slow responses, and environment issues.
+Start with health checks, then narrow to the affected entity and source.
 
-## Installation Issues
+## 1) Validate connectivity first
 
-### Prerequisites Not Met
-
-**macOS:**
-
-```bash
-# Install uv (recommended)
-brew install uv
-
-# Or using the official installer
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install Node.js for npx (if needed)
-brew install node
-```
-
-**Linux:**
+Run API-level checks before debugging entity-specific commands:
 
 ```bash
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install Node.js
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs
+biomcp health --apis-only
 ```
 
-**Windows:**
+If one source fails while others pass, the issue is usually upstream availability and not your local install.
 
-```powershell
-# Install uv
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+## 2) MyGene / MyVariant intermittent failures
 
-# Install Node.js from https://nodejs.org
-```
+Gene and variant lookups rely on BioThings services (`mygene.info`, `myvariant.info`).
+These services can intermittently return 5xx or timeout responses during peak traffic.
 
-### "Command not found" Error
+What BioMCP already does:
 
-After installing BioMCP, if you get "command not found":
+- Uses shared HTTP client timeouts (`connect_timeout=10s`, `timeout=30s`)
+- Retries transient failures with exponential backoff (up to 3 retries)
+- Uses HTTP cache to reduce repeat upstream calls
 
-1. **Restart your terminal** - PATH updates require a new session
-
-2. **Check installation location:**
-
-   ```bash
-   # For uv tool install
-   ls ~/.local/bin/biomcp
-
-   # For pip install
-   which biomcp
-   ```
-
-3. **Add to PATH manually:**
-
-   ```bash
-   # Add to ~/.bashrc or ~/.zshrc
-   export PATH="$HOME/.local/bin:$PATH"
-   ```
-
-4. **Reinstall with force:**
-
-   ```bash
-   uv tool install biomcp --force
-   ```
-
-5. **Use full path:**
-   ```bash
-   ~/.local/bin/biomcp --version
-   ```
-
-### Python Version Issues
-
-BioMCP requires Python 3.10 or higher:
+What to do when failures persist:
 
 ```bash
-# Check Python version
-python --version
-
-# If too old, install newer version
-# macOS
-brew install python@3.11
-
-# Linux
-sudo apt update
-sudo apt install python3.11
-
-# Use pyenv for version management
-pyenv install 3.11.8
-pyenv local 3.11.8
+biomcp --no-cache search gene -q BRAF --limit 3
+biomcp --no-cache get variant rs113488022
 ```
 
-## Configuration Issues
-
-### API Key Not Working
-
-**Environment Variable Not Set:**
+If `--no-cache` works while cached mode fails repeatedly, clear cache and retry:
 
 ```bash
-# Check if set
-echo $NCI_API_KEY
-
-# Set temporarily
-export NCI_API_KEY="your-key-here"
-
-# Set permanently in ~/.bashrc or ~/.zshrc
-echo 'export NCI_API_KEY="your-key-here"' >> ~/.bashrc
-source ~/.bashrc
+rm -rf ~/.cache/biomcp/http-cacache
 ```
 
-**Wrong API Key Format:**
+## 3) ClinicalTrials.gov API v2 quirks
 
-- NCI keys: Should be 36 characters (UUID format)
-- AlphaGenome: Alphanumeric string
-- cBioPortal: JWT token format
+ClinicalTrials.gov search behavior can vary with complex query combinations and pagination tokens.
+The most common symptoms are empty pages after filters or unstable totals between repeated calls.
 
-**API Key Permissions:**
+Recommended steps:
+
+- Start with minimal filters (`-c`, `--limit`) and add one filter at a time.
+- Use explicit `--source ctgov` or `--source nci` to isolate source behavior.
+- Avoid changing both geographic and ESSIE filters in the same troubleshooting step.
+
+Examples:
 
 ```bash
-# Test NCI API key
-biomcp health check --verbose
-
-# Test specific API
-curl -H "X-API-KEY: $NCI_API_KEY" \
-  "https://cts.nlm.nih.gov/api/v2/trials?size=1"
+biomcp search trial -c melanoma --source ctgov --limit 5
+biomcp search trial -c melanoma --source nci --limit 5
 ```
 
-### SSL Certificate Errors
+## 4) OpenFDA FAERS / recall pagination limits
 
-**Update certificates:**
+OpenFDA-backed searches are currently capped by BioMCP at `--limit <= 50` per request.
+If you need more data, page your own workflow with narrower queries and repeated commands.
 
 ```bash
-# Python certificates
-pip install --upgrade certifi
-
-# System certificates (macOS)
-brew install ca-certificates
-
-# System certificates (Linux)
-sudo apt-get update
-sudo apt-get install ca-certificates
+biomcp search adverse-event --drug pembrolizumab --limit 50
+biomcp search adverse-event --type recall --classification "Class I" --limit 50
 ```
 
-**Corporate proxy issues:**
+If you have an OpenFDA API key, export it to increase quota stability:
 
 ```bash
-# Set proxy environment variables
-export HTTP_PROXY="http://proxy.company.com:8080"
-export HTTPS_PROXY="http://proxy.company.com:8080"
-export NO_PROXY="localhost,127.0.0.1"
-
-# Configure pip for proxy
-pip config set global.proxy http://proxy.company.com:8080
+export OPENFDA_API_KEY="..."
 ```
 
-## Search Issues
+## 5) PubTator annotation timeouts
 
-### No Results Found
-
-**1. Check gene symbol:**
+Article annotation sections (`annotations`) require PubTator3 and can be slower than base PubMed retrieval.
+When this section is slow or fails, verify basic article lookup first.
 
 ```bash
-# Wrong: common names
-biomcp article search --gene HER2  # ❌
-
-# Correct: official HGNC symbol
-biomcp article search --gene ERBB2  # ✅
-
-# Find correct symbol
-biomcp gene get HER2  # Will suggest ERBB2
+biomcp get article 22663011
+biomcp get article 22663011 annotations
 ```
 
-**2. Too restrictive filters:**
+If base lookup succeeds but annotations fail repeatedly, retry later and keep the workflow moving with base metadata.
+
+## 6) AlphaGenome prediction connection issues
+
+`get variant <id> predict` uses AlphaGenome over gRPC and requires an API key.
+Missing key or TLS/connectivity issues are the two most common failure paths.
+
+Checklist:
+
+- Confirm `ALPHAGENOME_API_KEY` is set
+- Validate outbound access to `gdmscience.googleapis.com`
+- Retry with a known-good variant
 
 ```bash
-# Too specific - may return nothing
-biomcp article search --gene BRAF --disease "stage IV melanoma" \
-  --chemical "dabrafenib and trametinib combination"
-
-# Better - broader search
-biomcp article search --gene BRAF --disease melanoma \
-  --keyword "dabrafenib trametinib"
+export ALPHAGENOME_API_KEY="..."
+biomcp get variant "chr7:g.140453136A>T" predict
 ```
 
-**3. Check data availability:**
+## 7) NCI CTS API authentication failures
+
+Trial searches with `--source nci` require `NCI_API_KEY`.
+If this key is missing, BioMCP returns an explicit `ApiKeyRequired` error.
 
 ```bash
-# Test if gene exists in database
-biomcp gene get YOUR_GENE
-
-# Test if disease term is recognized
-biomcp disease get "your disease term"
+export NCI_API_KEY="..."
+biomcp search trial -c melanoma --source nci --limit 5
 ```
 
-### Location Search Not Working
+## 8) OncoKB enrichment appears limited
 
-Location searches require coordinates:
+Without `ONCOKB_TOKEN`, BioMCP uses the OncoKB demo endpoint with reduced capability.
+Set a production token for full enrichment behavior.
 
 ```bash
-# Wrong - city name only
-biomcp trial search --condition cancer --city "New York"  # ❌
-
-# Correct - with coordinates
-biomcp trial search --condition cancer \
-  --latitude 40.7128 --longitude -74.0060 --distance 50  # ✅
+export ONCOKB_TOKEN="..."
+biomcp get variant "BRAF V600E"
 ```
 
-Common coordinates:
+## 9) Date validation errors
 
-- New York: 40.7128, -74.0060
-- Los Angeles: 34.0522, -118.2437
-- Chicago: 41.8781, -87.6298
-- Houston: 29.7604, -95.3698
-- Boston: 42.3601, -71.0589
+Invalid dates are rejected before API calls. Use ISO format `YYYY-MM-DD` and valid calendar dates.
 
-### Preprint Search Issues
-
-**Preprints not appearing:**
+Examples that should fail immediately:
 
 ```bash
-# Check if preprints are being excluded
-biomcp article search --gene BRAF --no-preprints  # Excludes preprints
-
-# Include preprints (default)
-biomcp article search --gene BRAF  # Includes preprints
+biomcp search article -g BRAF --since 2024-13-01 --limit 1
+biomcp search article -g BRAF --since 2024-02-30 --limit 1
 ```
 
-**DOI not found:**
+## 10) Install/update ownership conflicts
+
+If `biomcp update` cannot replace the current binary (common for package-managed installs),
+use your package manager update path instead:
 
 ```bash
-# Ensure correct DOI format
-biomcp article get "10.1101/2024.01.20.23288905"  # bioRxiv format
-
-# Not all preprints are indexed immediately
-# Try searching by title/keywords instead
+pip install -U biomcp-cli
 ```
 
-## Performance Issues
+## 11) Local build missing protoc
 
-### Slow Searches
+The project includes gRPC clients and requires `protoc` to build from source.
 
-**1. Reduce result count:**
+- macOS: `brew install protobuf`
+- Ubuntu/Debian: `apt-get install protobuf-compiler`
 
-```bash
-# Default may be too high
-biomcp article search --gene TP53 --limit 100  # Slow
+## 12) Still blocked
 
-# Reduce for faster results
-biomcp article search --gene TP53 --limit 10   # Fast
-```
+Capture one failing command with full stderr and include:
 
-**2. Use specific filters:**
-
-```bash
-# Broad search - slow
-biomcp trial search --condition cancer
-
-# Specific search - faster
-biomcp trial search --condition "melanoma" --phase PHASE3 \
-  --status RECRUITING --country "United States"
-```
-
-**3. Check API health:**
-
-```bash
-# See which APIs are slow
-biomcp health check --verbose
-
-# Check specific API
-biomcp health check --apis-only
-```
-
-### Timeout Errors
-
-**Increase timeout for slow networks:**
-
-```bash
-# Set environment variable
-export BIOMCP_TIMEOUT=300  # 5 minutes
-
-# Or use configuration file
-echo "timeout: 300" > ~/.biomcp/config.yml
-```
-
-**For specific operations:**
-
-```python
-# In Python scripts
-import asyncio
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-```
-
-### Memory Issues
-
-**Large result sets:**
-
-```bash
-# Process in batches
-for i in {1..10}; do
-  biomcp article search --gene BRCA1 --page $i --limit 100
-done
-
-# Use streaming where available
-biomcp article search --gene TP53 --format jsonl | \
-  while read line; do
-    echo "$line" | jq '.pmid'
-  done
-```
-
-## MCP Server Issues
-
-### Testing Server Connectivity
-
-**1. Test with MCP Inspector:**
-
-```bash
-npx @modelcontextprotocol/inspector uv run --with biomcp-python biomcp run
-```
-
-Open http://127.0.0.1:6274 and verify:
-
-- Tools list loads
-- Can invoke a simple tool like `gene_getter`
-
-**2. Test with curl (HTTP mode):**
-
-```bash
-# Start server in HTTP mode
-biomcp run --mode http --port 8000
-
-# Test health endpoint
-curl http://localhost:8000/health
-
-# Test MCP endpoint
-curl -X POST http://localhost:8000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"method": "tools/list"}'
-```
-
-### Claude Desktop Integration Issues
-
-**Server not appearing:**
-
-1. Check configuration file location:
-
-   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-2. Validate JSON syntax:
-
-   ```bash
-   # macOS
-   cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | jq .
-   ```
-
-3. Check server starts correctly:
-   ```bash
-   # Test the exact command from config
-   uv run --with biomcp-python biomcp run
-   ```
-
-**Server crashes:**
-Check logs:
-
-```bash
-# Enable debug logging
-export BIOMCP_LOG_LEVEL=DEBUG
-uv run --with biomcp-python biomcp run
-```
-
-Common fixes:
-
-- Update to latest version: `uv tool install biomcp --force`
-- Clear cache: `rm -rf ~/.biomcp/cache`
-- Check port conflicts: `lsof -i :8000`
-
-## Data Quality Issues
-
-### Outdated Results
-
-**Check data freshness:**
-
-```bash
-# See when databases were last updated
-biomcp health check --verbose | grep "Last updated"
-```
-
-**Clear cache if needed:**
-
-```bash
-# Remove cached results
-rm -rf ~/.biomcp/cache
-
-# Or set cache TTL
-export BIOMCP_CACHE_TTL=900  # 15 minutes
-```
-
-### Missing Annotations
-
-**PubTator3 annotations missing:**
-
-- Some newer articles may not be fully annotated yet
-- Try searching by PMID directly
-- Check if article is indexed: search by title
-
-**Variant annotations incomplete:**
-
-- Not all variants have all annotation types
-- Rare variants may lack population frequencies
-- Novel variants won't have ClinVar data
-
-## Error Messages
-
-### Common Error Codes
-
-**HTTP 429 - Rate Limit Exceeded:**
-
-```bash
-# Add delay between requests
-biomcp article search --gene BRAF --delay 1000  # 1 second
-
-# Or reduce parallel requests
-export BIOMCP_MAX_CONCURRENT=2
-```
-
-**HTTP 404 - Not Found:**
-
-- Check identifier format (PMID, NCT ID, etc.)
-- Verify record exists in source database
-- Try alternative identifiers
-
-**HTTP 500 - Server Error:**
-
-- External API may be down
-- Check status: `biomcp health check`
-- Try again later
-
-### Debugging
-
-**Enable verbose logging:**
-
-```bash
-# Set log level
-export BIOMCP_LOG_LEVEL=DEBUG
-
-# Run with verbose output
-biomcp article search --gene BRAF --verbose
-
-# Check log files
-tail -f ~/.biomcp/logs/biomcp.log
-```
-
-**Report bugs:**
-Include when reporting issues:
-
-1. BioMCP version: `biomcp --version`
-2. Full error message and stack trace
-3. Command that caused the error
-4. Operating system and Python version
-5. Relevant environment variables
-
-Report at: https://github.com/genomoncology/biomcp/issues
-
-## Getting Help
-
-### Quick Checks
-
-1. **Check FAQ first**: [Frequently Asked Questions](faq-condensed.md)
-2. **Search existing issues**: [GitHub Issues](https://github.com/genomoncology/biomcp/issues)
-3. **Check examples**: [How-to Guides](how-to-guides/01-find-articles-and-cbioportal-data.md)
-
-### Community Support
-
-- Issue Tracker: Report bugs, request features
-- Documentation: PRs welcome for improvements
-
-### Professional Support
-
-For commercial support, contact: support@genomoncology.com
-
----
-
-_Still having issues? [Open a GitHub issue](https://github.com/genomoncology/biomcp/issues/new) with details._
+- BioMCP version (`biomcp version`)
+- Command and flags
+- Whether `--no-cache` changes behavior
+- Source-specific API key state (set or unset)

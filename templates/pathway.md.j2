@@ -1,0 +1,40 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# {{ name }}
+
+ID: {{ id }}
+{% if species %}Species: {{ species }}{% endif %}
+
+{% if summary -%}
+## Summary
+
+{{ summary }}
+{% endif -%}
+{% endif -%}
+{% if show_genes_section and genes -%}
+## Genes
+
+{{ genes | join(", ") }}
+{% endif -%}
+{% if show_events_section and events -%}
+## Events
+{% for event in events -%}
+- {{ event }}
+{% endfor -%}
+{% endif -%}
+{% if show_enrichment_section and enrichment -%}
+## Enrichment
+
+| Source | ID | Name | P-value |
+|---|---|---|---|
+{% for row in enrichment -%}
+| {{ row.source }} | {{ row.id }} | {{ row.name | truncate(55) }} | {% if row.p_value is not none %}{{ row.p_value | pval }}{% else %}-{% endif %} |
+{% endfor -%}
+{% endif -%}
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

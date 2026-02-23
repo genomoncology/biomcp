@@ -1,0 +1,105 @@
+// Copyright 2024 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.gdm.gdmscience.alphagenome.v1main;
+
+option go_package = "google.golang.org/genproto/googleapis/gdm/gdmscience/alphagenome/v1main;alphagenome";
+option java_multiple_files = true;
+option java_outer_classname = "TensorProto";
+option java_package = "com.google.gdm.gdmscience.alphagenome.v1main";
+
+// Protocol buffer representing an arbitrarily large multi-dimensional array of
+// data, laid out in row-major format. To support tensors larger than the
+// maximum protocol buffer message size, the tensor payload may be split into
+// multiple chunks.
+message Tensor {
+  // The shape of the tensor. If empty, the data will be treated as a scalar.
+  repeated int32 shape = 1;
+
+  // Data type for the elements in this tensor.
+  DataType data_type = 2;
+
+  // The payload for the tensor.
+  oneof payload {
+    // The raw data for the tensor. If present, the tensor is not split into
+    // chunks.
+    TensorChunk array = 3;
+
+    // The number of chunks the tensor is split into.
+    int64 chunk_count = 4;
+  }
+}
+
+// A single chunk of a tensor.
+message TensorChunk {
+  // Flattened tensor data. Data is laid out in row-major order.
+  bytes data = 1;
+
+  // How the data is compressed. Compression is applied to each chunk
+  // independently.
+  CompressionType compression_type = 2;
+}
+
+// The data type of the tensor.
+enum DataType {
+  // Unspecified data type.
+  DATA_TYPE_UNSPECIFIED = 0;
+
+  // 16-bit "Brain Floating Point". See
+  // https://en.wikipedia.org/wiki/Bfloat16_floating-point_format for more
+  // details.
+  DATA_TYPE_BFLOAT16 = 1;
+
+  // 16-bit floating point.
+  DATA_TYPE_FLOAT16 = 11;
+
+  // 32-bit floating point.
+  DATA_TYPE_FLOAT32 = 2;
+
+  // 64-bit floating point.
+  DATA_TYPE_FLOAT64 = 3;
+
+  // 8-bit signed integer.
+  DATA_TYPE_INT8 = 4;
+
+  // 32-bit signed integer.
+  DATA_TYPE_INT32 = 5;
+
+  // 64-bit signed integer.
+  DATA_TYPE_INT64 = 6;
+
+  // 8-bit unsigned integer.
+  DATA_TYPE_UINT8 = 7;
+
+  // 32-bit unsigned integer.
+  DATA_TYPE_UINT32 = 8;
+
+  // 64-bit unsigned integer.
+  DATA_TYPE_UINT64 = 9;
+
+  // 8-bit boolean.
+  DATA_TYPE_BOOL = 10;
+}
+
+// Compression type for the tensor data.
+enum CompressionType {
+  // No compression.
+  COMPRESSION_TYPE_NONE = 0;
+
+  // ZSTD compression.
+  COMPRESSION_TYPE_ZSTD = 1;
+}
+

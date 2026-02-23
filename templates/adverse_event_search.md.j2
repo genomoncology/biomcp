@@ -1,0 +1,30 @@
+# Adverse Events: {{ query }}
+{% if count == 0 -%}
+No adverse events found
+{% else -%}
+Found {{ count }} report{% if count != 1 %}s{% endif %}
+
+## Summary
+- Total reports (OpenFDA): {{ summary.total_reports }}
+- Returned reports: {{ summary.returned_report_count }}
+{% if summary.top_reactions -%}
+| Reaction | Count | Percent |
+|---|---|---|
+{% for row in summary.top_reactions -%}
+| {{ row.reaction }} | {{ row.count }} | {{ row.percentage }}% |
+{% endfor -%}
+{% endif -%}
+
+|Report ID|Drug|Reactions|Serious|
+|---|---|---|---|
+{% for r in results -%}
+|{{ r.report_id }}|{{ r.drug | truncate(20) }}|{{ r.reactions | join(", ") | truncate(30) }}|{% if r.serious %}Serious{% else %}-{% endif %}|
+{% endfor %}
+
+Use `get adverse-event <report_id>` for details.
+Filters: --drug <name>, --reaction <term>, --outcome <death|hospitalization|disability>, --serious <type>, --date-from <YYYY|YYYY-MM-DD>, --date-to <YYYY|YYYY-MM-DD>, --suspect-only, --sex <m|f>, --age-min <N>, --age-max <N>, --reporter <type>, --count <field>, --type faers|recall|device
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif -%}

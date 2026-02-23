@@ -1,0 +1,143 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# {{ name }}
+
+**ID:** {{ id }}
+
+{% if definition -%}
+## Definition
+
+{{ definition | truncate(200) }}
+{% endif -%}
+{% if top_genes -%}
+Genes: {{ top_genes | join(", ") }}
+{% endif -%}
+{% if treatment_landscape -%}
+Treatments: {{ treatment_landscape | join(", ") }}
+{% endif -%}
+{% if recruiting_trial_count is not none -%}
+Recruiting Trials: {{ recruiting_trial_count }}
+{% endif -%}
+{% if synonyms -%}
+## Synonyms
+
+{{ synonyms | join(", ") }}
+{% endif -%}
+{% if parents -%}
+## Parents
+
+{{ parents | join(", ") }}
+{% endif -%}
+{% endif -%}
+{% if show_genes_section -%}
+## Associated Genes
+
+{% if gene_associations -%}
+| Gene | Relationship | Source |
+|---|---|---|
+{% for row in gene_associations -%}
+| {{ row.gene }} | {{ row.relationship or "-" }} | {{ row.source or "-" }} |
+{% endfor -%}
+{% elif associated_genes -%}
+{{ associated_genes | join(", ") }}
+{% else -%}
+No associated genes found from active sources.
+{% endif -%}
+{% endif -%}
+{% if show_pathways_section -%}
+## Pathways
+
+{% if pathways -%}
+{% for p in pathways -%}
+- {{ p.id }} - {{ p.name }}
+{% endfor -%}
+{% else -%}
+No pathways found from active sources.
+{% endif -%}
+{% endif -%}
+{% if show_phenotypes_section -%}
+## Phenotypes
+
+{% if phenotypes -%}
+| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |
+|---|---|---|---|---|---|---|---|
+{% for row in phenotypes -%}
+| {{ row.hpo_id }} | {{ row.name or "-" }} | {{ row.evidence or "-" }}{% if row.qualifiers %} ({{ row.qualifiers | join(", ") }}){% endif %} | {% if row.frequency_qualifier %}{{ row.frequency_qualifier }}{% elif row.frequency %}{{ row.frequency }}{% else %}-{% endif %} | {{ row.onset_qualifier or "-" }} | {{ row.sex_qualifier or "-" }} | {{ row.stage_qualifier or "-" }} | {{ row.source or "-" }} |
+{% endfor -%}
+{% else -%}
+No phenotype annotations found for this disease.
+{% endif -%}
+{% endif -%}
+{% if show_variants_section -%}
+## Variants
+
+{% if variants -%}
+| Variant | Relationship | Source | Evidence |
+|---|---|---|---|
+{% for row in variants -%}
+| {{ row.variant }} | {{ row.relationship or "-" }} | {{ row.source or "-" }} | {% if row.evidence_count is not none %}{{ row.evidence_count }}{% else %}-{% endif %} |
+{% endfor -%}
+{% else -%}
+No variant associations found for this disease.
+{% endif -%}
+{% endif -%}
+{% if show_models_section -%}
+## Models
+
+{% if models -%}
+| Model | Organism | Relationship | Source | Evidence |
+|---|---|---|---|---|
+{% for row in models -%}
+| {{ row.model }} | {{ row.organism or "-" }} | {{ row.relationship or "-" }} | {{ row.source or "-" }} | {% if row.evidence_count is not none %}{{ row.evidence_count }}{% else %}-{% endif %} |
+{% endfor -%}
+{% else -%}
+No model associations found for this disease.
+{% endif -%}
+{% endif -%}
+{% if show_prevalence_section -%}
+## Prevalence
+
+{% if prevalence -%}
+| Estimate | Context | Source |
+|---|---|---|
+{% for row in prevalence -%}
+| {{ row.estimate }} | {{ row.context or "-" }} | {{ row.source or "-" }} |
+{% endfor -%}
+{% elif prevalence_note -%}
+{{ prevalence_note }}
+{% else -%}
+No prevalence data available.
+{% endif -%}
+{% endif -%}
+{% if show_civic_section -%}
+## CIViC
+
+{% if civic -%}
+- Evidence Items: {{ civic.evidence_total_count }}
+- Assertions: {{ civic.assertion_total_count }}
+{% if civic.assertions -%}
+| Assertion | AMP Level | Molecular Profile | Therapies |
+|---|---|---|---|
+{% for row in civic.assertions -%}
+| {{ row.name }} | {{ row.amp_level or "-" }} | {{ row.molecular_profile }} | {% if row.therapies %}{{ row.therapies | join(", ") }}{% else %}-{% endif %} |
+{% endfor -%}
+{% elif civic.evidence_items -%}
+| Evidence | Level | Molecular Profile | Therapies |
+|---|---|---|---|
+{% for row in civic.evidence_items -%}
+| {{ row.name }} | {{ row.evidence_level }} | {{ row.molecular_profile }} | {% if row.therapies %}{{ row.therapies | join(", ") }}{% else %}-{% endif %} |
+{% endfor -%}
+{% else -%}
+No CIViC records returned for this disease query.
+{% endif -%}
+{% else -%}
+No CIViC records returned for this disease query.
+{% endif -%}
+{% endif -%}
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

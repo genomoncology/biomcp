@@ -1,0 +1,88 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# {{ nct_id }}
+
+**Status:** {{ status }}{% if phase %} | **Phase:** {{ phase }}{% endif %}{% if study_type %} | **Study Type:** {{ study_type }}{% endif %}{% if sponsor %} | **Sponsor:** {{ sponsor }}{% endif %}
+
+**Title:** {{ title }}
+{% if enrollment %}**Target Enrollment:** {{ enrollment }}{% endif %}
+{% if age_range %}**Eligible Ages:** {{ age_range }}{% endif %}
+{% if start_date %}**Start Date:** {{ start_date }}{% endif %}{% if completion_date %} | **Completion Date:** {{ completion_date }}{% endif %}
+
+{% if conditions -%}
+## Conditions
+{% for c in conditions -%}
+- {{ c }}
+{% endfor %}
+{% endif -%}
+{% if interventions -%}
+## Interventions
+{% for i in interventions[:5] -%}
+- {{ i }}
+{% endfor %}
+{% if interventions | length > 5 -%}
+_and {{ interventions | length - 5 }} more (see `arms` section)_
+{% endif -%}
+{% endif -%}
+{% if summary -%}
+## Summary
+
+{{ summary }}
+{% endif -%}
+{% endif -%}
+{% if show_eligibility_section and eligibility_text -%}
+## Eligibility
+
+{{ eligibility_text }}
+{% endif -%}
+{% if show_locations_section and locations -%}
+## Locations
+
+| Facility | City | Country | Status | Contact |
+|---|---|---|---|---|
+{% for loc in locations[:20] -%}
+| {{ loc.facility | truncate(40) }} | {{ loc.city }}{% if loc.state %}, {{ loc.state }}{% endif %} | {{ loc.country }} | {{ loc.status or "-" }} | {% if loc.contact_name %}{{ loc.contact_name }}{% if loc.contact_phone %} ({{ loc.contact_phone }}){% endif %}{% else %}-{% endif %} |
+{% endfor -%}
+{% endif -%}
+{% if show_outcomes_section and outcomes -%}
+## Outcomes
+
+{% if outcomes.primary -%}
+### Primary
+{% for o in outcomes.primary -%}
+{{ loop.index }}. **{{ o.measure }}**{% if o.description %} - {{ o.description }}{% endif %}{% if o.time_frame %} *Time frame: {{ o.time_frame }}*{% endif %}
+{% endfor -%}
+{% endif -%}
+{% if outcomes.secondary -%}
+### Secondary
+{% for o in outcomes.secondary -%}
+{{ loop.index }}. **{{ o.measure }}**{% if o.description %} - {{ o.description }}{% endif %}{% if o.time_frame %} *Time frame: {{ o.time_frame }}*{% endif %}
+{% endfor -%}
+{% endif -%}
+{% endif -%}
+{% if show_arms_section and arms -%}
+## Arms
+
+| Arm | Type | Interventions | Description |
+|---|---|---|---|
+{% for arm in arms -%}
+| {{ arm.label }} | {{ arm.arm_type or "-" }} | {% if arm.interventions %}{{ arm.interventions | join(", ") }}{% else %}-{% endif %} | {{ (arm.description or "-") | truncate(60) }} |
+{% endfor -%}
+{% endif -%}
+{% if show_references_section and references is not none -%}
+## References
+{% if references | length == 0 -%}
+No references found.
+{% else -%}
+{% for ref in references -%}
+{{ loop.index }}. {% if ref.pmid %}[PMID: {{ ref.pmid }}] {% endif %}{{ ref.citation }}{% if ref.reference_type %} *({{ ref.reference_type }})*{% endif %}
+{% endfor -%}
+{% endif -%}
+{% endif -%}
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

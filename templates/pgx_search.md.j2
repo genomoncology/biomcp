@@ -1,0 +1,17 @@
+# PGx Search: {{ query }}
+
+{% if count == 0 -%}
+No PGx interactions found.
+{% else -%}
+Found {{ count }} interaction{% if count != 1 %}s{% endif %}
+
+| Gene | Drug | CPIC Level | PGx Testing | Guideline |
+|---|---|---|---|---|
+{% for row in results -%}
+| {{ row.genesymbol }} | {{ row.drugname }} | {{ row.cpiclevel or "-" }} | {{ row.pgxtesting or "-" }} | {{ row.guidelinename or "-" }} |
+{% endfor -%}
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif -%}

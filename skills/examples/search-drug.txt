@@ -1,0 +1,5 @@
+# Drugs
+
+Filters: target=BRAF
+Found 3 drugs.
+Use `biomcp get drug <name>` for mechanism and safety sections.

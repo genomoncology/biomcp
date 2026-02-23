@@ -1,0 +1,15 @@
+# Device Event
+
+**Report Key:** {{ report_id }}{% if report_number %} | **Report #:** {{ report_number }}{% endif %}
+
+**Device:** {{ device }}{% if manufacturer %} | **Manufacturer:** {{ manufacturer }}{% endif %}{% if event_type %} | **Event Type:** {{ event_type }}{% endif %}{% if date %} | **Date:** {{ date }}{% endif %}
+
+{% if description -%}
+## Description
+
+{{ description }}
+{% endif -%}
+
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

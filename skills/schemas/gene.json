@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BioMCP Gene",
+  "type": "object",
+  "required": ["symbol", "name"],
+  "properties": {
+    "symbol": { "type": "string" },
+    "name": { "type": "string" },
+    "entrez_id": { "type": ["string", "null"] },
+    "chromosome": { "type": ["string", "null"] },
+    "aliases": {
+      "type": ["array", "null"],
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

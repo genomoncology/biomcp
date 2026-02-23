@@ -1,0 +1,7 @@
+# Gene: BRAF
+
+Symbol: BRAF
+Name: B-Raf proto-oncogene, serine/threonine kinase
+Entrez ID: 673
+Chromosome: 7
+Sections: pathways, ontology, diseases, protein, go, interactions

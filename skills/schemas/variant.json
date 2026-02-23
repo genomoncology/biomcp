@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BioMCP Variant",
+  "type": "object",
+  "required": ["id", "gene"],
+  "properties": {
+    "id": { "type": "string" },
+    "gene": { "type": "string" },
+    "hgvsp": { "type": ["string", "null"] },
+    "significance": { "type": ["string", "null"] },
+    "clinvar": { "type": ["object", "null"] }
+  },
+  "additionalProperties": true
+}

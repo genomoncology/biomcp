@@ -1,0 +1,60 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# {{ title }}
+
+{% if pmid %}PMID: {{ pmid }}{% endif %}
+{% if pmcid %}PMCID: {{ pmcid }}{% endif %}
+{% if doi %}DOI: {{ doi }}{% endif %}
+{% if journal %}Journal: {{ journal }}{% endif %}
+{% if date %}Date: {{ date }}{% endif %}
+{% if citation_count is not none %}Citations: {{ citation_count }}{% endif %}
+{% if publication_type %}Type: {{ publication_type }}{% endif %}
+{% if open_access is not none %}Open Access: {% if open_access %}Yes{% else %}No{% endif %}{% endif %}
+{% if pmid %}[PubMed](https://pubmed.ncbi.nlm.nih.gov/{{ pmid }}/){% endif %}
+
+{% if authors -%}
+## Authors
+
+{{ authors | join(", ") }}
+{% endif -%}
+{% if abstract_text -%}
+## Abstract
+
+{{ abstract_text }}
+{% endif -%}
+{% endif -%}
+{% if pubtator_fallback -%}
+_Note: Entity annotations unavailable for this article (PubTator3 lag). Metadata from Europe PMC._
+{% endif -%}
+{% if show_annotations_section and annotations -%}
+## PubTator Annotations
+
+{% if annotations.genes -%}
+- Genes: {% for m in annotations.genes -%}{{ m.text }} ({{ m.count }}){% if not loop.last %}, {% endif %}{% endfor %}
+{% endif -%}
+{% if annotations.diseases -%}
+- Diseases: {% for m in annotations.diseases -%}{{ m.text }} ({{ m.count }}){% if not loop.last %}, {% endif %}{% endfor %}
+{% endif -%}
+{% if annotations.chemicals -%}
+- Chemicals: {% for m in annotations.chemicals -%}{{ m.text }} ({{ m.count }}){% if not loop.last %}, {% endif %}{% endfor %}
+{% endif -%}
+{% if annotations.mutations -%}
+- Mutations: {% for m in annotations.mutations -%}{{ m.text }} ({{ m.count }}){% if not loop.last %}, {% endif %}{% endfor %}
+{% endif -%}
+{% endif -%}
+{% if show_fulltext_section and (full_text_path or full_text_note) -%}
+## Full Text
+
+{% if full_text_path -%}
+Saved to: {{ full_text_path }}
+{% else -%}
+{{ full_text_note }}
+{% endif -%}
+{% endif -%}
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

@@ -1,0 +1,17 @@
+# GWAS Search: {{ query }}
+
+{% if count == 0 -%}
+No GWAS associations found.
+{% else -%}
+Found {{ count }} GWAS association{% if count != 1 %}s{% endif %}
+
+| rsID | Trait | p-value | Effect | Risk AF | Genes | Study | PMID |
+|---|---|---|---|---|---|---|---|
+{% for row in results -%}
+| {{ row.rsid }} | {{ row.trait_name or "-" }} | {% if row.p_value is defined and row.p_value is not none %}{{ row.p_value | pval }}{% else %}-{% endif %} | {% if row.effect_size is defined and row.effect_size is not none %}{{ row.effect_type or "effect" }} {{ row.effect_size | score }}{% else %}-{% endif %} | {% if row.risk_allele_frequency is defined and row.risk_allele_frequency is not none %}{{ row.risk_allele_frequency | af }}{% else %}-{% endif %} | {% if row.mapped_genes %}{{ row.mapped_genes | join(", ") }}{% else %}-{% endif %} | {{ row.study_accession or "-" }} | {{ row.pmid or "-" }} |
+{% endfor -%}
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif -%}

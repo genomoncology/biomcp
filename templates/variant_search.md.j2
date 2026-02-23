@@ -1,0 +1,21 @@
+# Variant Search Results
+
+Found: {{ count }} variant(s)
+{% if query %}Query: {{ query }}{% endif %}
+
+{% if count == 0 -%}
+No variants found matching the filters.
+{% else -%}
+| ID | Gene | Protein | Significance | ClinVar Stars | gnomAD AF | REVEL | GERP |
+|---|---|---|---|---|---|---|---|
+{% for v in results -%}
+| {{ v.id }} | {{ v.gene }} | {{ v.hgvs_p | default("-") }} | {{ v.significance | default("-") }} | {{ v.clinvar_stars | default("-") }} | {{ v.gnomad_af | default("-") }} | {{ v.revel | default("-") }} | {{ v.gerp | default("-") }} |
+{% endfor %}
+
+Use `get variant <id>` for details.
+Filters: -g <gene>, --hgvsp <protein>, --significance <value>, --max-frequency <0-1>, --min-cadd <score>, --consequence <term>, --review-status <stars>, --population <pop>, --revel-min <score>, --gerp-min <score>, --tumor-site <site>, --condition <name>, --impact <level>, --lof, --has <field>, --missing <field>, --therapy <name>
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif %}

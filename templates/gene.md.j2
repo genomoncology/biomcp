@@ -1,0 +1,119 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# {{ symbol }} ({{ name }})
+
+Entrez ID: {{ entrez_id }}
+{% if genomic_coordinates %}Chromosome: {{ genomic_coordinates }}{% elif location %}Location: {{ location }}{% endif %}
+{% if uniprot_id %}UniProt: {{ uniprot_id }}{% endif %}
+{% if gene_type %}Type: {{ gene_type }}{% endif %}
+
+{% if summary -%}
+## Summary
+
+{{ summary }}
+{% endif -%}
+{% if clinical_diseases -%}
+Diseases: {{ clinical_diseases | join(", ") }}
+{% endif -%}
+{% if clinical_drugs -%}
+Drugs: {{ clinical_drugs | join(", ") }}
+{% endif -%}
+{% if aliases -%}
+## Aliases
+
+{{ aliases | join(", ") }}
+{% endif -%}
+{% endif -%}
+{% if pathways -%}
+## Pathways
+
+Showing pathway rows from Reactome search results.
+
+| ID | Name |
+|---|---|
+{% for pathway in pathways -%}
+| {{ pathway.id }} | {{ pathway.name | truncate(75) }} |
+{% endfor -%}
+{% endif -%}
+{% if ontology -%}
+## Ontology
+
+Note: single-gene Enrichr p-values are exploratory and should be interpreted cautiously.
+
+| Term | P-value | Library |
+|---|---|---|
+{% for lib in ontology -%}
+{% for term in lib.terms -%}
+| {{ term.name | truncate(45) }} | {{ term.p_value | pval }} | {{ lib.library }} |
+{% endfor -%}
+{% endfor -%}
+{% endif -%}
+{% if diseases -%}
+## Diseases
+
+| Term | P-value | Library |
+|---|---|---|
+{% for lib in diseases -%}
+{% for term in lib.terms -%}
+| {{ term.name | truncate(45) }} | {{ term.p_value | pval }} | {{ lib.library }} |
+{% endfor -%}
+{% endfor -%}
+{% endif -%}
+{% if protein -%}
+## Protein
+
+- Accession: {{ protein.accession }}
+- Name: {{ protein.name }}
+{% if protein.length %}- Length: {{ protein.length }} aa{% endif %}
+{% if protein.function %}- Function: {{ protein.function | truncate(260) }}{% endif %}
+{% endif -%}
+{% if go_terms -%}
+## GO Terms
+
+| ID | Name | Aspect | Evidence |
+|---|---|---|---|
+{% for term in go_terms -%}
+| {{ term.id }} | {{ term.name | truncate(42) }} | {{ term.aspect or "-" }} | {{ term.evidence or "-" }} |
+{% endfor -%}
+{% endif -%}
+{% if interactions -%}
+## Interactions
+
+| Partner | Score |
+|---|---|
+{% for row in interactions -%}
+| {{ row.partner }} | {% if row.score is not none %}{{ row.score | score }}{% else %}-{% endif %} |
+{% endfor -%}
+{% endif -%}
+{% if show_civic_section -%}
+## CIViC
+
+{% if civic -%}
+- Evidence Items: {{ civic.evidence_total_count }}
+- Assertions: {{ civic.assertion_total_count }}
+{% if civic.assertions -%}
+| Assertion | AMP Level | Disease | Therapies |
+|---|---|---|---|
+{% for row in civic.assertions -%}
+| {{ row.name }} | {{ row.amp_level or "-" }} | {{ row.disease or "-" }} | {% if row.therapies %}{{ row.therapies | join(", ") }}{% else %}-{% endif %} |
+{% endfor -%}
+{% elif civic.evidence_items -%}
+| Evidence | Level | Disease | Therapies |
+|---|---|---|---|
+{% for row in civic.evidence_items -%}
+| {{ row.name }} | {{ row.evidence_level }} | {{ row.disease or "-" }} | {% if row.therapies %}{{ row.therapies | join(", ") }}{% else %}-{% endif %} |
+{% endfor -%}
+{% else -%}
+No CIViC records returned for this gene query.
+{% endif -%}
+{% else -%}
+No CIViC records returned for this gene query.
+{% endif -%}
+{% endif -%}
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

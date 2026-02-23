@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BioMCP Trial",
+  "type": "object",
+  "required": ["nct_id", "title"],
+  "properties": {
+    "nct_id": { "type": "string" },
+    "title": { "type": "string" },
+    "status": { "type": ["string", "null"] },
+    "phase": { "type": ["string", "null"] },
+    "conditions": {
+      "type": ["array", "null"],
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

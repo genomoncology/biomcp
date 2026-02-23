@@ -1,0 +1,19 @@
+# Proteins: {{ query }}
+
+{% if count == 0 -%}
+No proteins found
+{% else -%}
+Found {{ count }} protein{% if count != 1 %}s{% endif %}
+
+| Accession | Name | Gene | Species |
+|---|---|---|---|
+{% for row in results -%}
+| {{ row.accession }} | {{ row.name | truncate(60) }} | {{ row.gene_symbol or "-" }} | {{ row.species or "-" }} |
+{% endfor %}
+
+Use `get protein <accession>` for details.
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif -%}

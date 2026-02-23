@@ -1,0 +1,51 @@
+{% if section_only -%}
+# {{ section_header }}
+Accession: {{ accession }}
+{% else -%}
+# {{ name }}
+
+Accession: {{ accession }}
+{% if entry_id %}Entry: {{ entry_id }}{% endif %}
+{% if gene_symbol %}Gene: {{ gene_symbol }}{% endif %}
+{% if organism %}Organism: {{ organism }}{% endif %}
+{% if length %}Length: {{ length }} aa{% endif %}
+
+{% if function -%}
+## Function
+
+{{ function }}
+{% endif -%}
+{% endif -%}
+{% if show_structures_section and structures -%}
+## Structures
+{% if structure_count and structure_count > (structures | length) -%}
+Showing top {{ structures | length }} of {{ structure_count }} structures by resolution.
+{% endif -%}
+{% for s in structures -%}
+- {{ s }}
+{% endfor -%}
+{% endif -%}
+{% if show_domains_section and domains -%}
+## Domains
+
+| Accession | Name | Type |
+|---|---|---|
+{% for d in domains -%}
+| {{ d.accession }} | {{ d.name or "-" }} | {{ d.domain_type or "-" }} |
+{% endfor -%}
+{% endif -%}
+{% if show_interactions_section and interactions -%}
+## Interactions
+
+| Partner | Score |
+|---|---|
+{% for i in interactions -%}
+| {{ i.partner }} | {% if i.score is not none %}{{ i.score | score }}{% else %}-{% endif %} |
+{% endfor -%}
+{% endif -%}
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

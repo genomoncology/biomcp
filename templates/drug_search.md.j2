@@ -1,0 +1,20 @@
+# Drugs: {{ query }}
+
+{% if count == 0 -%}
+No drugs found
+{% else -%}
+Found {{ count }} drug{% if count != 1 %}s{% endif %}
+
+|Name|Mechanism|Target|
+|---|---|---|
+{% for d in results -%}
+|{{ d.name }}|{% if d.mechanism %}{{ d.mechanism | truncate(40) }}{% elif d.drug_type %}{{ d.drug_type }}{% else %}-{% endif %}|{{ d.target | default("-") }}|
+{% endfor %}
+
+Use `get drug <name>` for full details.
+Filters: --target <gene>, --indication <disease>, --type <class>, --mechanism <text>
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif -%}

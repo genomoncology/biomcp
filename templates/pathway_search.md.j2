@@ -1,0 +1,19 @@
+# Pathways: {{ query }}
+
+{% if count == 0 -%}
+No pathways found
+{% else -%}
+Found {{ count }} pathway{% if count != 1 %}s{% endif %}{% if total %} (of {{ total }} total){% endif %}
+
+| ID | Name |
+|---|---|
+{% for row in results -%}
+| {{ row.id }} | {{ row.name }} |
+{% endfor %}
+
+Use `get pathway <id>` for details.
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif -%}

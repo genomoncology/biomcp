@@ -1,0 +1,21 @@
+# Organization Search Results
+
+Found: {{ count }} organization{% if count != 1 %}s{% endif %}
+{% if query %}Query: {{ query }}{% endif %}
+
+{% if count == 0 -%}
+No organizations found matching the filters.
+{% else -%}
+|ID|Name|Type|Location|
+|---|---|---|---|
+{% for r in results -%}
+|{{ r.id or "-" }}|{{ r.name }}|{{ r.organization_type or "-" }}|{%- if r.city %}{{ r.city }}{%- endif -%}{%- if r.state %}{%- if r.city %}, {% endif -%}{{ r.state }}{%- endif -%}{%- if r.country %}{%- if r.city or r.state %}, {% endif -%}{{ r.country }}{%- endif -%}{%- if not r.city and not r.state and not r.country -%}-{% endif %}|
+{% endfor %}
+
+Requires `NCI_API_KEY`.
+Filters: -q <name>, --type <type>, --city <city>, --state <state>
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif -%}

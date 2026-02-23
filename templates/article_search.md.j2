@@ -1,0 +1,22 @@
+# Articles: {{ query }}
+
+{% if count == 0 -%}
+No articles found matching the filters.
+
+Try broader search terms or check spelling.
+{% else -%}
+Found {{ count }} article{% if count != 1 %}s{% endif %}
+
+| PMID | Title | Journal | Date | Cit. |
+|---|---|---|---|---|
+{% for article in results -%}
+|{{ article.pmid }}|{% if article.is_retracted %}[RETRACTED] {% endif %}{{ article.title | truncate(60) }}|{{ article.journal | default("-") | truncate(20) }}|{{ article.date | default("-") }}|{{ article.citation_count | default("-") }}|
+{% endfor %}
+
+Use `get article <pmid>` for details.
+Filters: [query], -k/-q <keyword>, -g <gene>, -d <disease>, --drug <name>, -a <author>, --since <YYYY-MM-DD>, --type <review|research|meta-analysis>, --open-access, --exclude-retracted, --sort <date|citations|relevance>
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif %}

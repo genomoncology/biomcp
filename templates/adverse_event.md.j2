@@ -1,0 +1,53 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# Adverse Event
+
+Report ID: {{ report_id }}
+Drug: {{ drug }}{% if indication %} | Indication: {{ indication }}{% endif %}{% if date %} | Date: {{ date }}{% endif %}{% if serious %} | Serious: yes{% else %} | Serious: no{% endif %}
+{% if patient %}Patient: {{ patient }}{% endif %}
+{% if reporter_type or reporter_country %}Reporter: {% if reporter_type %}{{ reporter_type }}{% else %}Unknown{% endif %}{% if reporter_country %} ({{ reporter_country }}){% endif %}{% endif %}
+{% endif -%}
+{% if show_reactions_section and reactions -%}
+## Reactions
+
+| Reaction |
+|---|
+{% for value in reactions -%}
+| {{ value }} |
+{% endfor %}
+{% endif -%}
+{% if show_outcomes_section and outcomes -%}
+## Outcomes
+
+| Outcome |
+|---|
+{% for value in outcomes -%}
+| {{ value }} |
+{% endfor %}
+{% endif -%}
+{% if show_concomitant_section and concomitant_medications -%}
+## Concomitant Drugs
+
+{% for drug_name in concomitant_medications -%}
+- {{ drug_name }}
+{% endfor -%}
+{% endif -%}
+{% if show_guidance_section -%}
+## What to Do Next
+
+{% if guidance_drug -%}
+- Drug safety profile: `biomcp drug adverse-events {{ guidance_drug }}`
+- Drug details: `biomcp get drug {{ guidance_drug }}`
+- Related trials: `biomcp drug trials {{ guidance_drug }}`
+{% endif -%}
+{% if guidance_indication -%}
+- Disease context: `biomcp search disease --query {{ guidance_indication }}`
+{% endif -%}
+{% endif -%}
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

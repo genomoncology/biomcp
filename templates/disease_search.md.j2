@@ -1,0 +1,22 @@
+# Diseases: {{ query }}
+
+{% if count == 0 -%}
+No diseases found matching '{{ query }}'.
+
+Try a broader search or check spelling.
+{% else -%}
+Found {{ count }} disease{% if count != 1 %}s{% endif %}
+
+| ID | Name | Synonyms |
+|---|---|---|
+{% for d in results -%}
+| {{ d.id }} | {{ d.name }} | {{ d.synonyms_preview or "-" }} |
+{% endfor %}
+
+Use `get disease <id_or_name>` for details.
+Filters: -q <query>, --source <mondo|doid|mesh>
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif %}

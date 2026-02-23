@@ -1,0 +1,96 @@
+{% if section_only -%}
+# {{ section_header }}
+{% else -%}
+# PGx: {% if gene %}{{ gene }}{% elif drug %}{{ drug }}{% else %}{{ query }}{% endif %}
+
+{% if gene -%}
+Gene: {{ gene }}
+{% endif -%}
+{% if drug -%}
+Drug: {{ drug }}
+{% endif -%}
+
+{% if interactions -%}
+{% if gene -%}
+Affected Drugs: {% for row in interactions -%}{{ row.drugname }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% elif drug -%}
+Affected Genes: {% for row in interactions -%}{{ row.genesymbol }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif -%}
+{% endif -%}
+{% endif -%}
+
+{% if interactions -%}
+| Drug | Gene | CPIC Level | PGx Testing |
+|---|---|---|---|
+{% for row in interactions -%}
+| {{ row.drugname }} | {{ row.genesymbol }} | {{ row.cpiclevel or "-" }} | {{ row.pgxtesting or "-" }} |
+{% endfor -%}
+{% else -%}
+No PGx interactions found.
+{% endif -%}
+
+{% if show_recommendations_section -%}
+## Recommendations
+
+{% if recommendations -%}
+| Drug | Phenotype | Activity Score | Recommendation | Classification |
+|---|---|---|---|---|
+{% for row in recommendations -%}
+| {{ row.drugname }} | {{ row.phenotype or "-" }} | {{ row.activity_score or "-" }} | {{ row.recommendation or "-" }} | {{ row.classification or "-" }} |
+{% endfor -%}
+{% else -%}
+No CPIC recommendations found for this query.
+{% endif -%}
+{% endif -%}
+
+{% if show_frequencies_section -%}
+## Population Frequencies
+
+{% if frequencies -%}
+| Gene | Allele | Population | Frequency | Subjects |
+|---|---|---|---|---|
+{% for row in frequencies -%}
+| {{ row.genesymbol }} | {{ row.allele }} | {{ row.population_group or "-" }} | {% if row.frequency is not none %}{{ row.frequency | af }}{% else %}-{% endif %} | {% if row.subject_count is not none %}{{ row.subject_count }}{% else %}-{% endif %} |
+{% endfor -%}
+{% else -%}
+No CPIC population frequencies found for this query.
+{% endif -%}
+{% endif -%}
+
+{% if show_guidelines_section -%}
+## Guidelines
+
+{% if guidelines -%}
+| Guideline | Genes | Drugs |
+|---|---|---|
+{% for row in guidelines -%}
+| {% if row.url %}[{{ row.name }}]({{ row.url }}){% else %}{{ row.name }}{% endif %} | {% if row.genes %}{{ row.genes | join(", ") }}{% else %}-{% endif %} | {% if row.drugs %}{{ row.drugs | join(", ") }}{% else %}-{% endif %} |
+{% endfor -%}
+{% else -%}
+No CPIC guideline metadata found for this query.
+{% endif -%}
+{% endif -%}
+
+{% if show_annotations_section -%}
+## PharmGKB Annotations
+
+{% if annotations -%}
+| Source | Type | ID | Title | Level |
+|---|---|---|---|---|
+{% for row in annotations -%}
+| {{ row.source }} | {{ row.kind }} | {{ row.id }} | {% if row.url %}[{{ row.title }}]({{ row.url }}){% else %}{{ row.title }}{% endif %} | {{ row.level or "-" }} |
+{% endfor -%}
+{% else -%}
+No PharmGKB annotations found for this query.
+{% endif -%}
+{% if annotations_note -%}
+{{ annotations_note }}
+{% endif -%}
+{% endif -%}
+
+{% if sections -%}
+Sections: {{ sections }}
+{% endif -%}
+{% if related -%}
+Related: {{ related }}
+{% endif -%}

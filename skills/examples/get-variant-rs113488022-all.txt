@@ -1,0 +1,6 @@
+# Variant: rs113488022
+
+Gene: BRAF
+Protein: p.Val600Glu
+Clinical significance: Pathogenic
+Sections: predict, predictions, clinvar, population, conservation, cosmic, cgi, cbioportal

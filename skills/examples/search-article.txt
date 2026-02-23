@@ -1,0 +1,5 @@
+# Articles
+
+Filters: gene=BRAF, disease=melanoma
+Found 5 articles.
+Use `biomcp get article <pmid>` for full details.

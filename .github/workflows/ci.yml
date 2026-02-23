@@ -2,186 +2,66 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
     branches: [main]
-  workflow_dispatch:
-
-env:
-  PYTHON_VERSION: "3.12"
-  UV_VERSION: "0.4.29"
+  pull_request:
+  schedule:
+    - cron: "0 6 * * *"
 
 jobs:
-  # Quality check from main.yml - uses make check
-  quality:
+  check:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    name: Quality
     steps:
-      - name: Check out
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/cache@v5
+      - uses: arduino/setup-protoc@v3
         with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          components: rustfmt, clippy
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - run: cargo fmt --check
+      - run: cargo clippy -- -D warnings
+      - run: cargo test
+
+      - uses: actions/setup-python@v5
         with:
-          version: ${{ env.UV_VERSION }}
+          python-version: "3.12"
 
-      - name: Install dependencies
-        run: |
-          uv sync --group dev
+      - uses: astral-sh/setup-uv@v4
 
-      - name: Run checks
-        run: make check
+      - run: uv sync --extra dev
+      - run: uv run pytest docs/ -v
+      - run: uv run pytest tests/ -v --mcp-cmd "biomcp serve"
 
-  # Tests and type check specifically on Python 3.11
-  tests-and-type-check:
-    runs-on: ubuntu-latest
-    name: Tests and Type Check (Python 3.11)
-    steps:
-      - name: Check out
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install dependencies
-        run: |
-          uv sync --group dev
-
-      - name: Run tests
-        run: uv run python -m pytest tests -m "not integration" --cov --cov-config=pyproject.toml --cov-report=xml
-
-      - name: Check typing
-        run: uv run mypy
-
-      - name: Upload coverage reports to Codecov with GitHub Action on Python 3.11
-        uses: codecov/codecov-action@v5
-
-  # Documentation check from main.yml
   check-docs:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    name: Check Docs
     steps:
-      - name: Check out
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: "3.12"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
+      - uses: astral-sh/setup-uv@v4
 
-      - name: Install dependencies
-        run: |
-          uv sync --group dev
+      - run: uv sync --extra dev
+      - run: uv run mkdocs build --strict
 
-      - name: Check if documentation can be built
-        run: uv run mkdocs build -s
-
-  # Build package check
-  build-package:
+  contracts-fast:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    name: Build Package
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+      - run: bash scripts/contract-smoke.sh --fast
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Build package
-        run: |
-          uvx --from build pyproject-build --installer uv
-
-      - name: Check package
-        run: |
-          uvx twine check dist/*
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v6
-        with:
-          name: dist
-          path: dist/
-
-  # MCP integration test - quick check
-  test-mcp:
-    runs-on: ubuntu-latest
-    name: Test MCP Integration
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install dependencies
-        run: |
-          uv sync --group dev
-
-      - name: Test MCP server startup
-        run: |
-          timeout 10s uv run biomcp run || code=$?; if [[ $code -ne 124 && $code -ne 0 ]]; then exit $code; fi
-
-      - name: Run MCP integration tests
-        run: |
-          uv run python -m pytest tests/tdd/test_mcp_integration.py -v
-
-  # Run integration tests separately - allowed to fail
-  integration-tests:
-    runs-on: ubuntu-latest
-    name: Integration Tests (Optional)
+  contracts-full:
+    if: github.event_name == 'schedule'
     continue-on-error: true
+    runs-on: ubuntu-latest
     steps:
-      - name: Check out
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install dependencies
-        run: |
-          uv sync --group dev
-
-      - name: Run integration tests
-        run: |
-          uv run python -m pytest tests -m "integration" -v --tb=short
-        continue-on-error: true
+      - uses: actions/checkout@v4
+      - run: bash scripts/contract-smoke.sh

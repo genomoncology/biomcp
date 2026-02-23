@@ -1,0 +1,20 @@
+# Device Events: {{ query }}
+
+{% if count == 0 -%}
+No device events found
+{% else -%}
+Found {{ count }} report{% if count != 1 %}s{% endif %}
+
+|Report Key|Device|Event Type|Date|Description|
+|---|---|---|---|---|
+{% for r in results -%}
+|{{ r.report_id }}|{{ r.device | truncate(35) }}|{{ r.event_type or "-" }}|{{ r.date or "-" }}|{{ (r.description or "-") | truncate(45) }}|
+{% endfor %}
+
+Use `get adverse-event <report_id>` for details.
+Filters: --type device --device <name>, --manufacturer <name>, --product-code <code>, --serious, --since <YYYY-MM-DD>
+{% if pagination_footer %}
+
+{{ pagination_footer }}
+{% endif %}
+{% endif -%}

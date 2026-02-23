@@ -1,103 +1,63 @@
 site_name: BioMCP
 repo_url: https://github.com/genomoncology/biomcp
 site_url: https://biomcp.org/
-site_description: Biomedical Model Context Protocol Server
+site_description: Single-binary CLI and MCP server for querying biomedical databases
 site_author: Ian Maurer
 edit_uri: edit/main/docs/
 repo_name: genomoncology/biomcp
-copyright: Maintained by <a href="https://genomoncology.com">genomoncology</a>.
+copyright: Maintained by <a href="https://genomoncology.com">GenomOncology</a>.
 
 nav:
   - Home: index.md
-
   - Getting Started:
-      - Quick Start: getting-started/01-quickstart-cli.md
-      - Claude Desktop: getting-started/02-claude-desktop-integration.md
-      - API Keys: getting-started/03-authentication-and-api-keys.md
-      - FAQ: faq-condensed.md
-      - Troubleshooting: troubleshooting.md
-
+      - Installation: getting-started/installation.md
+      - First Query: getting-started/first-query.md
+      - Claude Desktop: getting-started/claude-desktop.md
+      - API Keys: getting-started/api-keys.md
+      - Skills: getting-started/skills.md
+  - Concepts:
+      - What is BioMCP?: concepts/what-is-biomcp.md
+      - Progressive Disclosure: concepts/progressive-disclosure.md
   - User Guide:
-      - Overview: concepts/01-what-is-biomcp.md
-      - Finding Articles: how-to-guides/01-find-articles-and-cbioportal-data.md
-      - Finding Trials: how-to-guides/02-find-trials-with-nci-and-biothings.md
-      - Analyzing Variants: how-to-guides/03-get-comprehensive-variant-annotations.md
-      - Predicting Effects: how-to-guides/04-predict-variant-effects-with-alphagenome.md
-      - Searching Organizations: how-to-guides/06-search-nci-organizations-and-interventions.md
-      - Research Workflows: workflows/all-workflows.md
-      - Examples:
-          - Pydantic AI Integration: tutorials/pydantic-ai-integration.md
-          - Remote Connection: tutorials/remote-connection.md
-          - BioThings Examples: tutorials/biothings-prompts.md
-          - NCI Examples: tutorials/nci-prompts.md
-          - AlphaGenome Tutorial: tutorials/claude-code-biomcp-alphagenome.md
-          - OpenFDA Examples: tutorials/openfda-prompts.md
-      - Concepts:
-          - Deep Researcher: concepts/02-the-deep-researcher-persona.md
-          - Sequential Thinking: concepts/03-sequential-thinking-with-the-think-tool.md
-
+      - CLI Reference: user-guide/cli-reference.md
+      - Gene: user-guide/gene.md
+      - Variant: user-guide/variant.md
+      - Article: user-guide/article.md
+      - Trial: user-guide/trial.md
+      - Drug: user-guide/drug.md
+      - Disease: user-guide/disease.md
+      - Pathway: user-guide/pathway.md
+      - Protein: user-guide/protein.md
+      - Adverse Event: user-guide/adverse-event.md
+  - How-To:
+      - Annotate Variants: how-to/annotate-variants.md
+      - Find Articles: how-to/find-articles.md
+      - Find Trials: how-to/find-trials.md
+      - Predict Effects: how-to/predict-effects.md
+      - Reproduce Papers: how-to/reproduce-papers.md
+      - Skill Validation: how-to/skill-validation.md
   - Reference:
       - Quick Reference: reference/quick-reference.md
-      - CLI Commands: user-guides/01-command-line-interface.md
-      - MCP Tools: user-guides/02-mcp-tools-reference.md
-      - API Documentation:
-          - API Overview: apis/overview.md
-          - Python SDK: apis/python-sdk.md
-          - Error Codes: apis/error-codes.md
-      - IDE Integration: user-guides/03-integrating-with-ides-and-clients.md
-
-  - Developer:
-      - Architecture:
-          - Overview: reference/quick-architecture.md
-          - Visual Diagrams: reference/visual-architecture.md
-          - Detailed Diagrams: reference/architecture-diagrams.md
-      - Data Sources:
-          - Overview: backend-services-reference/01-overview.md
-          - PubTator3/PubMed: backend-services-reference/06-pubtator3.md
-          - ClinicalTrials.gov: backend-services-reference/04-clinicaltrials-gov.md
-          - NCI CTS API: backend-services-reference/05-nci-cts-api.md
-          - BioThings Suite: backend-services-reference/02-biothings-suite.md
-          - cBioPortal: backend-services-reference/03-cbioportal.md
-          - AlphaGenome: backend-services-reference/07-alphagenome.md
-          - OpenFDA: tutorials/openfda-integration.md
-      - Development:
-          - Contributing: developer-guides/02-contributing-and-testing.md
-          - Deployment: developer-guides/01-server-deployment.md
-          - BigQuery Monitoring: how-to-guides/05-logging-and-monitoring-with-bigquery.md
-      - Technical Details:
-          - Transport Protocol: developer-guides/04-transport-protocol.md
-          - Error Handling: developer-guides/05-error-handling.md
-          - HTTP Client: developer-guides/06-http-client-and-caching.md
-          - Performance: developer-guides/07-performance-optimizations.md
-          - Third-Party APIs: developer-guides/03-third-party-endpoints.md
-      - Security:
-          - FDA Integration Security: FDA_SECURITY.md
-
-  - About:
-      - Blog:
-          - Clinical Trial Search: blog/ai-assisted-clinical-trial-search-analysis.md
-          - Researcher Persona: blog/researcher-persona-resource.md
-      - Project:
-          - Changelog: changelog.md
-          - Policies: policies.md
-          - GenomOncology: genomoncology.md
+      - Data Sources: reference/data-sources.md
+      - MCP Server: reference/mcp-server.md
+      - Error Codes: reference/error-codes.md
+      - Benchmarks: reference/benchmarks.md
+      - FAQ: reference/faq.md
+      - Source Versioning: reference/source-versioning.md
+      - Article Keyword Search: reference/article-keyword-search.md
+      - CIViC Sections: reference/civic-sections.md
+      - Drug Approvals & AE Summary: reference/drug-approvals-and-ae-summary.md
+  - Policies: policies.md
+  - Troubleshooting: troubleshooting.md
+  - Changelog: changelog.md
 
 plugins:
   - search:
       lang: en
       separator: '[\s\-\.]+'
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: ["src/biomcp"]
-  # Note: sitemap plugin requires additional installation
-  # Uncomment after installing: pip install mkdocs-sitemap
-  # - sitemap:
-  #     changefreq: weekly
-  #     priority: 0.5
+
 theme:
   name: material
-  # custom_dir: overrides
   favicon: assets/favicon.ico
   logo: assets/icon.png
   features:
@@ -110,6 +70,7 @@ theme:
     - toc.follow
     - search.suggest
     - search.highlight
+    - content.code.copy
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -132,15 +93,13 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/genomoncology/biomcp
-    - icon: fontawesome/brands/python
-      link: https://pypi.org/project/biomcp-python
   meta:
     - property: og:type
       content: website
     - property: og:title
-      content: BioMCP - Biomedical Model Context Protocol Server
+      content: BioMCP - Biomedical CLI and MCP Server
     - property: og:description
-      content: AI-powered biomedical research tool integrating PubMed, ClinicalTrials.gov, and genomic databases
+      content: Single-binary CLI and MCP server for querying 15 biomedical databases
     - property: og:image
       content: https://biomcp.org/assets/icon.png
     - property: og:url
@@ -148,28 +107,25 @@ extra:
     - name: twitter:card
       content: summary
     - name: twitter:title
-      content: BioMCP - Biomedical Model Context Protocol
+      content: BioMCP - Biomedical CLI and MCP Server
     - name: twitter:description
-      content: AI-powered biomedical research tool for PubMed, clinical trials, and genomic data
+      content: Single-binary CLI and MCP server for querying 15 biomedical databases
     - name: keywords
-      content: biomedical, MCP, AI, PubMed, clinical trials, genomics, bioinformatics, Claude Desktop
+      content: biomedical, MCP, CLI, genomics, clinical trials, bioinformatics, Rust
 
 extra_css:
   - stylesheets/extra.css
-  - stylesheets/announcement.css
 
-# extra_javascript: (removed - no third-party dependencies)
 markdown_extensions:
   - toc:
       permalink: true
-  - pymdownx.arithmatex:
-      generic: true
-  - admonition # Nice looking note/warning boxes
-  - pymdownx.details # Collapsible sections
-  - pymdownx.highlight: # Code highlighting
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets # Include content from other files
-  - pymdownx.superfences # Nested code blocks
-  - pymdownx.tabbed: # Tabbed content
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
       alternate_style: true
+  - tables

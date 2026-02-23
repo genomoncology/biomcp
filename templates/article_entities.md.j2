@@ -1,0 +1,45 @@
+# Entities in PMID {{ pmid }}
+
+{% if genes %}
+## Genes ({{ genes | length }})
+
+| Entity | Mentions | Next Command |
+|---|---|---|
+{% for row in genes -%}
+| {{ row.text }} | {{ row.count }} | `{{ row.command }}` |
+{% endfor %}
+{% endif %}
+
+{% if diseases %}
+## Diseases ({{ diseases | length }})
+
+| Entity | Mentions | Next Command |
+|---|---|---|
+{% for row in diseases -%}
+| {{ row.text }} | {{ row.count }} | `{{ row.command }}` |
+{% endfor %}
+{% endif %}
+
+{% if chemicals %}
+## Chemicals ({{ chemicals | length }})
+
+| Entity | Mentions | Next Command |
+|---|---|---|
+{% for row in chemicals -%}
+| {{ row.text }} | {{ row.count }} | `{{ row.command }}` |
+{% endfor %}
+{% endif %}
+
+{% if mutations %}
+## Mutations ({{ mutations | length }})
+
+| Entity | Mentions | Next Command |
+|---|---|---|
+{% for row in mutations -%}
+| {{ row.text }} | {{ row.count }} | `{{ row.command }}` |
+{% endfor %}
+{% endif %}
+
+{% if not genes and not diseases and not chemicals and not mutations %}
+No PubTator annotations were found for this article.
+{% endif %}

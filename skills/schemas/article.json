@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BioMCP Article",
+  "type": "object",
+  "required": ["title"],
+  "properties": {
+    "pmid": { "type": ["string", "null"] },
+    "title": { "type": "string" },
+    "journal": { "type": ["string", "null"] },
+    "year": { "type": ["integer", "null"] },
+    "abstract": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}
