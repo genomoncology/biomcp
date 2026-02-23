@@ -1,7 +1,7 @@
 # BioMCP
 
 **Single-binary CLI and MCP server for querying biomedical databases.**
-15 data sources, one command grammar, compact markdown output.
+One command grammar, compact markdown output, 14 entities across 15+ data sources.
 
 ## Install
 
@@ -41,11 +41,9 @@ cargo build --release --locked
 ## Quick start
 
 ```bash
-biomcp health --apis-only
-biomcp search gene -q BRAF
-biomcp get gene BRAF pathways
-biomcp get variant "BRAF V600E" clinvar
-biomcp variant trials "BRAF V600E" --limit 5
+biomcp health --apis-only            # verify API connectivity
+biomcp list                          # show all entities and commands
+biomcp list gene                     # show gene-specific filters and examples
 ```
 
 ## Command grammar
@@ -54,56 +52,105 @@ biomcp variant trials "BRAF V600E" --limit 5
 search <entity> [filters]    → discovery
 get <entity> <id> [sections] → focused detail
 <entity> <helper> <id>       → cross-entity pivots
+enrich <GENE1,GENE2,...>     → gene-set enrichment
+batch <entity> <id1,id2,...> → parallel gets
 ```
 
 ## Entities and sources
 
-| Entity | Source | Example |
-|--------|--------|---------|
-| gene | MyGene.info | `biomcp get gene BRAF` |
-| variant | MyVariant.info (ClinVar, gnomAD) | `biomcp get variant "BRAF V600E"` |
-| trial | ClinicalTrials.gov / NCI CTS | `biomcp search trial -c melanoma` |
-| article | PubMed / PubTator3 | `biomcp search article -g BRAF` |
-| drug | MyChem.info | `biomcp get drug pembrolizumab` |
-| disease | Monarch / MONDO | `biomcp get disease "Lynch syndrome"` |
-| pathway | Reactome | `biomcp get pathway R-HSA-5673001` |
-| protein | UniProt | `biomcp get protein P15056 domains` |
-| adverse-event | OpenFDA FAERS | `biomcp search adverse-event -d pembrolizumab` |
-| pgx | PharmGKB / CPIC | `biomcp get pgx CYP2D6 recommendations` |
-| gwas | GWAS Catalog | `biomcp search gwas -g BRAF` |
-| phenotype | Monarch Initiative | `biomcp search phenotype "HP:0001250"` |
-| organization | NCI CTS | `biomcp search organization "Dana-Farber"` |
-| intervention | NCI CTS | `biomcp search intervention pembrolizumab` |
-| biomarker | NCI CTS | `biomcp search biomarker BRAF` |
+### Clinical entities
+
+| Entity | Sources | Example |
+|--------|---------|---------|
+| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, CIViC | `biomcp get gene BRAF pathways` |
+| variant | MyVariant.info, ClinVar, gnomAD, CIViC, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome | `biomcp get variant "BRAF V600E" clinvar` |
+| trial | ClinicalTrials.gov, NCI CTS API | `biomcp search trial -c melanoma -s recruiting` |
+| article | PubMed, PubTator3, Europe PMC | `biomcp search article -g BRAF --limit 5` |
+| drug | MyChem.info, ChEMBL, OpenTargets, Drugs\@FDA, CIViC | `biomcp get drug pembrolizumab targets` |
+| disease | Monarch Initiative, MONDO, CIViC, OpenTargets | `biomcp get disease "Lynch syndrome" genes` |
+
+### Extended entities
+
+| Entity | Sources | Example |
+|--------|---------|---------|
+| pathway | Reactome, g:Profiler | `biomcp get pathway R-HSA-5673001 genes` |
+| protein | UniProt, InterPro, STRING, PDB/AlphaFold | `biomcp get protein P15056 domains` |
+| adverse-event | OpenFDA (FAERS, MAUDE, Recalls) | `biomcp search adverse-event -d pembrolizumab` |
+| pgx | CPIC, PharmGKB | `biomcp get pgx CYP2D6 recommendations` |
+
+### Discovery entities
+
+| Entity | Sources | Example |
+|--------|---------|---------|
+| gwas | GWAS Catalog | `biomcp search gwas --trait "type 2 diabetes"` |
+| phenotype | Monarch Initiative (HPO) | `biomcp search phenotype "HP:0001250"` |
+| organization | NCI CTS API | `biomcp search organization "Dana-Farber"` |
+| intervention | NCI CTS API | `biomcp search intervention pembrolizumab` |
+| biomarker | NCI CTS API | `biomcp search biomarker BRAF` |
+
+## Cross-entity helpers
+
+Pivot between related entities without rebuilding filters:
+
+```bash
+biomcp variant trials "BRAF V600E" --limit 5
+biomcp variant articles "BRAF V600E"
+biomcp drug adverse-events pembrolizumab
+biomcp drug trials pembrolizumab
+biomcp disease trials melanoma
+biomcp disease drugs melanoma
+biomcp gene articles BRCA1
+biomcp gene pathways BRAF
+biomcp pathway drugs R-HSA-5673001
+biomcp protein structures P15056
+biomcp article entities 22663011
+```
+
+## Gene-set enrichment
+
+```bash
+biomcp enrich BRAF,KRAS,NRAS --limit 10
+```
+
+## Sections and progressive disclosure
+
+Every `get` command supports selectable sections:
+
+```bash
+biomcp get gene BRAF                    # summary card
+biomcp get gene BRAF pathways           # add pathway section
+biomcp get gene BRAF civic interactions # multiple sections
+biomcp get gene BRAF all                # everything
+
+biomcp get variant "BRAF V600E" clinvar population conservation
+biomcp get drug pembrolizumab label shortage targets approvals
+biomcp get disease "Lynch syndrome" genes phenotypes variants
+biomcp get trial NCT02576665 eligibility locations outcomes
+```
 
 ## API keys
 
-Most commands run without credentials. Optional keys improve quota headroom:
+Most commands work without credentials. Optional keys improve rate limits:
 
 ```bash
-export NCBI_API_KEY="..."      # PubTator, PMC OA, NCBI ID converter
-export OPENFDA_API_KEY="..."   # OpenFDA rate limits
-export NCI_API_KEY="..."       # NCI CTS trial/vocabulary calls
-export ONCOKB_TOKEN="..."      # OncoKB helper
-```
-
-## Multi-worker deployment
-
-BioMCP rate limiting is process-local. For many concurrent workers, run one shared
-`biomcp serve-http` endpoint so all workers share a single limiter budget:
-
-```bash
-biomcp serve-http --host 0.0.0.0 --port 8080
+export NCBI_API_KEY="..."        # PubTator, PMC OA, NCBI ID converter
+export OPENFDA_API_KEY="..."     # OpenFDA rate limits
+export NCI_API_KEY="..."         # NCI CTS (required for organization/intervention/biomarker)
+export ONCOKB_TOKEN="..."        # OncoKB variant helper
+export ALPHAGENOME_API_KEY="..." # AlphaGenome variant effect prediction
 ```
 
 ## Skills
 
-14 guided investigation workflows are built in:
+14 guided investigation workflows are built in. See [Skills](getting-started/skills.md) for details.
 
-```bash
-biomcp skill list
-biomcp skill show 03
-```
+## Documentation
+
+- [Installation](getting-started/installation.md)
+- [First Query](getting-started/first-query.md)
+- [Data Sources](reference/data-sources.md)
+- [Quick Reference](reference/quick-reference.md)
+- [Troubleshooting](troubleshooting.md)
 
 ## License
 
