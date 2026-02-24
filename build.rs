@@ -41,9 +41,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let git_sha = command_output("git", &["rev-parse", "--short", "HEAD"])
         .unwrap_or_else(|| "unknown".into());
+    let git_tag = command_output("git", &["describe", "--tags", "--always"]);
     let build_date =
         command_output("date", &["-u", "+%Y-%m-%dT%H:%M:%SZ"]).unwrap_or_else(|| "unknown".into());
     println!("cargo:rustc-env=BIOMCP_BUILD_GIT_SHA={git_sha}");
+    if let Some(tag) = &git_tag {
+        println!("cargo:rustc-env=BIOMCP_BUILD_GIT_TAG={tag}");
+    }
     println!("cargo:rustc-env=BIOMCP_BUILD_DATE={build_date}");
 
     tonic_build::configure()

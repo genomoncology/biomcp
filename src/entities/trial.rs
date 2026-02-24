@@ -1,9 +1,12 @@
+use futures::{StreamExt, stream};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
 use crate::entities::SearchPage;
 use crate::error::BioMcpError;
-use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovSearchParams};
+use crate::sources::clinicaltrials::{
+    ClinicalTrialsClient, CtGovLocation, CtGovSearchParams, CtGovStudy,
+};
 use crate::sources::nci_cts::{NciCtsClient, NciSearchParams};
 use crate::transform;
 use crate::utils::date::validate_since;
@@ -174,6 +177,7 @@ pub const TRIAL_SECTION_NAMES: &[&str] = &[
 ];
 
 const ELIGIBILITY_MAX_CHARS: usize = 12_000;
+const FACILITY_GEO_VERIFY_CONCURRENCY: usize = 8;
 
 #[derive(Debug, Clone, Copy, Default)]
 struct TrialSections {
@@ -522,6 +526,134 @@ fn normalized_facility_filter(filters: &TrialSearchFilters) -> Option<String> {
         .map(str::trim)
         .filter(|v| !v.is_empty())
         .map(str::to_string)
+}
+
+fn normalize_facility_text(value: &str) -> Option<String> {
+    let normalized = value
+        .split_whitespace()
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_ascii_lowercase();
+    (!normalized.is_empty()).then_some(normalized)
+}
+
+fn haversine_miles(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+    const EARTH_RADIUS_MILES: f64 = 3958.7613;
+    let to_rad = |deg: f64| deg.to_radians();
+    let d_lat = to_rad(lat2 - lat1);
+    let d_lon = to_rad(lon2 - lon1);
+    let lat1_rad = to_rad(lat1);
+    let lat2_rad = to_rad(lat2);
+
+    let a =
+        (d_lat / 2.0).sin().powi(2) + lat1_rad.cos() * lat2_rad.cos() * (d_lon / 2.0).sin().powi(2);
+    let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
+    EARTH_RADIUS_MILES * c
+}
+
+fn location_matches_facility_geo(
+    location: &CtGovLocation,
+    facility_needle: &str,
+    origin_lat: f64,
+    origin_lon: f64,
+    max_distance_miles: u32,
+) -> bool {
+    let Some(location_facility) = location
+        .facility
+        .as_deref()
+        .and_then(normalize_facility_text)
+    else {
+        return false;
+    };
+    if !location_facility.contains(facility_needle) {
+        return false;
+    }
+    let Some(geo) = location.geo_point.as_ref() else {
+        return false;
+    };
+    let (Some(lat), Some(lon)) = (geo.lat, geo.lon) else {
+        return false;
+    };
+
+    haversine_miles(origin_lat, origin_lon, lat, lon) <= max_distance_miles as f64
+}
+
+fn ctgov_nct_id(study: &CtGovStudy) -> Option<String> {
+    study
+        .protocol_section
+        .as_ref()
+        .and_then(|section| section.identification_module.as_ref())
+        .and_then(|id| id.nct_id.as_deref())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+}
+
+fn trial_matches_facility_geo(
+    study: &CtGovStudy,
+    facility_needle: &str,
+    origin_lat: f64,
+    origin_lon: f64,
+    max_distance_miles: u32,
+) -> bool {
+    study
+        .protocol_section
+        .as_ref()
+        .and_then(|section| section.contacts_locations_module.as_ref())
+        .map(|module| {
+            module.locations.iter().any(|location| {
+                location_matches_facility_geo(
+                    location,
+                    facility_needle,
+                    origin_lat,
+                    origin_lon,
+                    max_distance_miles,
+                )
+            })
+        })
+        .unwrap_or(false)
+}
+
+async fn verify_facility_geo(
+    client: &ClinicalTrialsClient,
+    studies: Vec<CtGovStudy>,
+    facility_filter: &str,
+    origin_lat: f64,
+    origin_lon: f64,
+    max_distance_miles: u32,
+) -> Vec<CtGovStudy> {
+    let Some(facility_needle) = normalize_facility_text(facility_filter) else {
+        return studies;
+    };
+
+    let location_section = vec![TRIAL_SECTION_LOCATIONS.to_string()];
+    let mut verification_stream = stream::iter(studies.into_iter().map(|study| {
+        let nct_id = ctgov_nct_id(&study);
+        let sections = location_section.clone();
+        let facility_needle = facility_needle.clone();
+        async move {
+            let nct_id = nct_id?;
+            let details = client.get(&nct_id, &sections).await.ok()?;
+            trial_matches_facility_geo(
+                &details,
+                &facility_needle,
+                origin_lat,
+                origin_lon,
+                max_distance_miles,
+            )
+            .then_some(study)
+        }
+    }))
+    .buffer_unordered(FACILITY_GEO_VERIFY_CONCURRENCY);
+
+    let mut verified = Vec::new();
+    while let Some(maybe_study) = verification_stream.next().await {
+        if let Some(study) = maybe_study {
+            verified.push(study);
+        }
+    }
+    verified
 }
 
 fn ctgov_agg_filters(filters: &TrialSearchFilters) -> Result<Option<String>, BioMcpError> {
@@ -879,6 +1011,14 @@ pub async fn search_page(
                 .filter(|value| !value.is_empty())
                 .map(str::to_string);
             let mut remaining_skip = offset;
+            let facility_geo_verification = facility
+                .as_deref()
+                .zip(filters.lat)
+                .zip(filters.lon)
+                .zip(filters.distance)
+                .map(|(((facility_name, lat), lon), distance)| {
+                    (facility_name.to_string(), lat, lon, distance)
+                });
             for _ in 0..20 {
                 let resp = client
                     .search(&CtGovSearchParams {
@@ -904,6 +1044,14 @@ pub async fn search_page(
 
                 if studies.is_empty() {
                     break;
+                }
+
+                if let Some((facility_name, lat, lon, distance)) =
+                    facility_geo_verification.as_ref()
+                {
+                    studies =
+                        verify_facility_geo(&client, studies, facility_name, *lat, *lon, *distance)
+                            .await;
                 }
 
                 let page_study_count = studies.len();
@@ -944,7 +1092,12 @@ pub async fn search_page(
             }
 
             rows.truncate(limit);
-            Ok(SearchPage::cursor(rows, total, page_token))
+            let returned_total = if facility_geo_verification.is_some() {
+                None
+            } else {
+                total
+            };
+            Ok(SearchPage::cursor(rows, returned_total, page_token))
         }
         TrialSource::NciCts => {
             if filters.date_from.is_some() || filters.date_to.is_some() {
@@ -1071,6 +1224,23 @@ pub async fn get(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
+
+    fn ctgov_study_fixture(locations: serde_json::Value) -> CtGovStudy {
+        serde_json::from_value(json!({
+            "protocolSection": {
+                "identificationModule": {
+                    "nctId": "NCT00000001",
+                    "briefTitle": "Fixture Trial",
+                    "overallStatus": "RECRUITING"
+                },
+                "contactsLocationsModule": {
+                    "locations": locations
+                }
+            }
+        }))
+        .expect("valid CtGovStudy fixture")
+    }
 
     #[test]
     fn status_priority_prefers_recruiting_over_completed() {
@@ -1226,5 +1396,51 @@ mod tests {
             format!("{err}").contains("--sponsor-type is only supported for --source ctgov"),
             "unexpected error: {err}"
         );
+    }
+
+    #[test]
+    fn facility_geo_discards_mixed_site_false_positive() {
+        let study = ctgov_study_fixture(json!([
+            {
+                "facility": "University Hospitals Cleveland Medical Center",
+                "city": "Cleveland",
+                "country": "United States",
+                "geoPoint": { "lat": 40.7128, "lon": -74.0060 }
+            },
+            {
+                "facility": "Cleveland Clinic Taussig Cancer Center",
+                "city": "Cleveland",
+                "country": "United States",
+                "geoPoint": { "lat": 41.4993, "lon": -81.6944 }
+            }
+        ]));
+
+        assert!(!trial_matches_facility_geo(
+            &study,
+            "university hospitals",
+            41.4993,
+            -81.6944,
+            50
+        ));
+    }
+
+    #[test]
+    fn facility_geo_keeps_same_site_match() {
+        let study = ctgov_study_fixture(json!([
+            {
+                "facility": "University Hospitals Cleveland Medical Center",
+                "city": "Cleveland",
+                "country": "United States",
+                "geoPoint": { "lat": 41.5031, "lon": -81.6208 }
+            }
+        ]));
+
+        assert!(trial_matches_facility_geo(
+            &study,
+            "university hospitals",
+            41.4993,
+            -81.6944,
+            50
+        ));
     }
 }

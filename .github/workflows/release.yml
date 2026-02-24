@@ -64,8 +64,19 @@ jobs:
           linker = "aarch64-linux-gnu-gcc"
           TOML
 
+      - name: Sync Cargo.toml version from release tag
+        shell: bash
+        run: |
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          VER="${TAG#v}"
+          if [ -n "$VER" ]; then
+            sed "s/^version = \".*\"/version = \"$VER\"/" Cargo.toml > Cargo.toml.tmp
+            mv Cargo.toml.tmp Cargo.toml
+            echo "Set Cargo.toml version to $VER"
+          fi
+
       - name: Build
-        run: cargo build --release --locked --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Package (tar.gz)
         if: runner.os != 'Windows'

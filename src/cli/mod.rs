@@ -1557,9 +1557,14 @@ fn paginate_results<T>(rows: Vec<T>, offset: usize, limit: usize) -> (Vec<T>, us
 }
 
 fn version_output() -> String {
-    let version = env!("CARGO_PKG_VERSION");
+    let cargo_version = env!("CARGO_PKG_VERSION");
+    let git_tag = option_env!("BIOMCP_BUILD_GIT_TAG");
     let git = option_env!("BIOMCP_BUILD_GIT_SHA").unwrap_or("unknown");
     let build = option_env!("BIOMCP_BUILD_DATE").unwrap_or("unknown");
+    let version = git_tag
+        .filter(|t| t.starts_with('v') && !t.contains('-'))
+        .map(|t| &t[1..])
+        .unwrap_or(cargo_version);
     format!("biomcp {version} (git {git}, build {build})")
 }
 
