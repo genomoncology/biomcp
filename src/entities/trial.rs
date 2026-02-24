@@ -633,19 +633,26 @@ async fn verify_facility_geo(
         let sections = location_section.clone();
         let facility_needle = facility_needle.clone();
         async move {
-            let nct_id = nct_id?;
-            let details = client.get(&nct_id, &sections).await.ok()?;
-            trial_matches_facility_geo(
-                &details,
-                &facility_needle,
-                origin_lat,
-                origin_lon,
-                max_distance_miles,
-            )
-            .then_some(study)
+            let Some(nct_id) = nct_id else {
+                return Some(study);
+            };
+            match client.get(&nct_id, &sections).await {
+                Ok(details) => trial_matches_facility_geo(
+                    &details,
+                    &facility_needle,
+                    origin_lat,
+                    origin_lon,
+                    max_distance_miles,
+                )
+                .then_some(study),
+                Err(e) => {
+                    warn!(nct_id, error = %e, "facility-geo detail fetch failed, keeping study");
+                    Some(study)
+                }
+            }
         }
     }))
-    .buffer_unordered(FACILITY_GEO_VERIFY_CONCURRENCY);
+    .buffered(FACILITY_GEO_VERIFY_CONCURRENCY);
 
     let mut verified = Vec::new();
     while let Some(maybe_study) = verification_stream.next().await {
