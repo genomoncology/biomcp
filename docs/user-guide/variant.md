@@ -53,10 +53,47 @@ GWAS section (trait associations from GWAS Catalog):
 biomcp get variant rs7903146 gwas
 ```
 
+Predictions (aggregated prediction scores):
+
+```bash
+biomcp get variant "BRAF V600E" predictions
+```
+
+Conservation (GERP, phyloP):
+
+```bash
+biomcp get variant rs113488022 conservation
+```
+
+COSMIC (somatic mutation data):
+
+```bash
+biomcp get variant "BRAF V600E" cosmic
+```
+
+CGI (Cancer Genome Interpreter annotations):
+
+```bash
+biomcp get variant "BRAF V600E" cgi
+```
+
+cBioPortal (frequency data):
+
+```bash
+biomcp get variant "BRAF V600E" cbioportal
+```
+
 All supported sections:
 
 ```bash
 biomcp get variant rs113488022 all
+```
+
+## Helper commands
+
+```bash
+biomcp variant articles "BRAF V600E"
+biomcp variant oncokb "BRAF V600E"   # requires ONCOKB_TOKEN
 ```
 
 ## Search variants

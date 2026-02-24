@@ -57,6 +57,12 @@ Annotation section:
 biomcp get article 22663011 annotations
 ```
 
+## Helper commands
+
+```bash
+biomcp article entities 22663011   # extract annotated entities via PubTator
+```
+
 ## Caching behavior
 
 Downloaded content is stored in the BioMCP cache directory.

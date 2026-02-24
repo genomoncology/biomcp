@@ -34,10 +34,12 @@ Gene-set enrichment:
 biomcp get pathway R-HSA-5673001 enrichment
 ```
 
-## Helper command
+## Helper commands
 
 ```bash
 biomcp pathway drugs R-HSA-5673001 --limit 5
+biomcp pathway articles R-HSA-5673001
+biomcp pathway trials R-HSA-5673001
 ```
 
 ## JSON mode

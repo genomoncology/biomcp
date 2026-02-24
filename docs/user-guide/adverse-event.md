@@ -66,6 +66,21 @@ biomcp get adverse-event 10222779
 
 Report resolution is source-aware and returns the corresponding markdown format.
 
+## Request report sections
+
+| Section | Description |
+|---------|-------------|
+| `reactions` | Adverse reactions reported |
+| `outcomes` | Reaction outcomes (death, hospitalization, etc.) |
+| `concomitant` | Concomitant medications |
+| `guidance` | Safety guidance and labeling |
+| `all` | Include all sections |
+
+```bash
+biomcp get adverse-event 10222779 reactions outcomes
+biomcp get adverse-event 10222779 all
+```
+
 ## JSON mode
 
 ```bash

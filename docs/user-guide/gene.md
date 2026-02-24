@@ -79,6 +79,8 @@ biomcp get gene BRAF pathways diseases
 biomcp gene trials BRAF --limit 5
 biomcp gene drugs BRAF --limit 5
 biomcp gene pathways BRAF
+biomcp gene articles BRAF
+biomcp gene definition BRAF
 ```
 
 ## Common workflows

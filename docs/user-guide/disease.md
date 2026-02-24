@@ -51,6 +51,24 @@ Models (Monarch model-organism evidence):
 biomcp get disease MONDO:0005105 models
 ```
 
+Pathways (associated pathways):
+
+```bash
+biomcp get disease MONDO:0005105 pathways
+```
+
+Prevalence (prevalence data):
+
+```bash
+biomcp get disease MONDO:0005105 prevalence
+```
+
+CIViC (clinical evidence):
+
+```bash
+biomcp get disease MONDO:0005105 civic
+```
+
 Combined sections:
 
 ```bash

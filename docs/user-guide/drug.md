@@ -51,6 +51,12 @@ biomcp get drug pembrolizumab targets
 biomcp get drug pembrolizumab indications
 ```
 
+Interactions (drug-drug interactions):
+
+```bash
+biomcp get drug vemurafenib interactions
+```
+
 CIViC evidence and Drugs@FDA approvals:
 
 ```bash
