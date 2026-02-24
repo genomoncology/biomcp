@@ -1,5 +1,7 @@
 use futures::{StreamExt, stream};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::sync::OnceLock;
 use tracing::warn;
 
 use crate::entities::SearchPage;
@@ -178,6 +180,7 @@ pub const TRIAL_SECTION_NAMES: &[&str] = &[
 
 const ELIGIBILITY_MAX_CHARS: usize = 12_000;
 const FACILITY_GEO_VERIFY_CONCURRENCY: usize = 8;
+const ELIGIBILITY_VERIFY_CONCURRENCY: usize = 8;
 
 #[derive(Debug, Clone, Copy, Default)]
 struct TrialSections {
@@ -615,6 +618,119 @@ fn trial_matches_facility_geo(
         .unwrap_or(false)
 }
 
+fn exclusion_criteria_header_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"(?mi)^\s*(?:Key\s+)?Exclusion\s+Criteria\s*:?\s*$")
+            .expect("exclusion criteria header regex is valid")
+    })
+}
+
+fn split_eligibility_sections(text: &str) -> (String, String) {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return (String::new(), String::new());
+    }
+
+    let Some(header) = exclusion_criteria_header_re().find(trimmed) else {
+        return (trimmed.to_ascii_lowercase(), String::new());
+    };
+
+    let inclusion = trimmed[..header.start()].trim().to_ascii_lowercase();
+    let exclusion = trimmed[header.end()..].trim().to_ascii_lowercase();
+    (inclusion, exclusion)
+}
+
+fn contains_keyword_tokens(section_text: &str, keyword: &str) -> bool {
+    if section_text.is_empty() {
+        return false;
+    }
+
+    let token_pattern = keyword
+        .split_whitespace()
+        .map(str::trim)
+        .filter(|token| !token.is_empty())
+        .map(regex::escape)
+        .collect::<Vec<String>>();
+
+    if token_pattern.is_empty() {
+        return false;
+    }
+
+    token_pattern.iter().all(|token| {
+        let pattern = format!(r"\b{token}\b");
+        Regex::new(&pattern)
+            .map(|regex| regex.is_match(section_text))
+            .unwrap_or(false)
+    })
+}
+
+fn contains_exclusion_language(text: &str) -> bool {
+    [
+        "exclude",
+        "excluded",
+        "exclusion",
+        "ineligible",
+        "ineligibility",
+        "not eligible",
+        "not allowed",
+        "not permitted",
+        "must not",
+    ]
+    .iter()
+    .any(|cue| text.contains(cue))
+}
+
+fn keyword_has_positive_inclusion_context(inclusion_text: &str, keyword: &str) -> bool {
+    inclusion_text
+        .split(['\n', '.', ';'])
+        .map(str::trim)
+        .filter(|segment| !segment.is_empty())
+        .filter(|segment| contains_keyword_tokens(segment, keyword))
+        .any(|segment| !contains_exclusion_language(segment))
+}
+
+fn eligibility_keyword_in_inclusion(
+    inclusion_text: &str,
+    exclusion_text: &str,
+    keyword: &str,
+) -> bool {
+    let keyword = keyword.trim().to_ascii_lowercase();
+    if keyword.is_empty() || exclusion_text.is_empty() {
+        return true;
+    }
+
+    let inclusion_has_keyword = contains_keyword_tokens(inclusion_text, &keyword);
+    if inclusion_has_keyword && keyword_has_positive_inclusion_context(inclusion_text, &keyword) {
+        return true;
+    }
+
+    if contains_keyword_tokens(exclusion_text, &keyword) {
+        return false;
+    }
+
+    if inclusion_has_keyword {
+        return false;
+    }
+
+    true
+}
+
+fn collect_eligibility_keywords(filters: &TrialSearchFilters) -> Vec<String> {
+    [
+        filters.mutation.as_deref(),
+        filters.biomarker.as_deref(),
+        filters.prior_therapies.as_deref(),
+        filters.progression_on.as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+    .map(str::trim)
+    .filter(|value| !value.is_empty())
+    .map(str::to_string)
+    .collect()
+}
+
 async fn verify_facility_geo(
     client: &ClinicalTrialsClient,
     studies: Vec<CtGovStudy>,
@@ -653,6 +769,68 @@ async fn verify_facility_geo(
         }
     }))
     .buffered(FACILITY_GEO_VERIFY_CONCURRENCY);
+
+    let mut verified = Vec::new();
+    while let Some(maybe_study) = verification_stream.next().await {
+        if let Some(study) = maybe_study {
+            verified.push(study);
+        }
+    }
+    verified
+}
+
+async fn verify_eligibility_criteria(
+    client: &ClinicalTrialsClient,
+    studies: Vec<CtGovStudy>,
+    keywords: &[String],
+) -> Vec<CtGovStudy> {
+    if keywords.is_empty() {
+        return studies;
+    }
+
+    let eligibility_section = vec![TRIAL_SECTION_ELIGIBILITY.to_string()];
+    let keywords = keywords.to_vec();
+    let mut verification_stream = stream::iter(studies.into_iter().map(|study| {
+        let nct_id = ctgov_nct_id(&study);
+        let sections = eligibility_section.clone();
+        let keywords = keywords.clone();
+        async move {
+            let Some(nct_id) = nct_id else {
+                return Some(study);
+            };
+            match client.get(&nct_id, &sections).await {
+                Ok(details) => {
+                    let Some(criteria) = details
+                        .protocol_section
+                        .as_ref()
+                        .and_then(|section| section.eligibility_module.as_ref())
+                        .and_then(|module| module.eligibility_criteria.as_deref())
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
+                    else {
+                        warn!(
+                            nct_id,
+                            "missing eligibility criteria in detail fetch, keeping study"
+                        );
+                        return Some(study);
+                    };
+
+                    let (inclusion, exclusion) = split_eligibility_sections(criteria);
+                    keywords
+                        .iter()
+                        .all(|keyword| {
+                            eligibility_keyword_in_inclusion(&inclusion, &exclusion, keyword)
+                        })
+                        .then_some(study)
+                }
+                Err(e) => {
+                    warn!(nct_id, error = %e, "eligibility detail fetch failed, keeping study");
+                    Some(study)
+                }
+            }
+        }
+    }))
+    .buffered(ELIGIBILITY_VERIFY_CONCURRENCY);
 
     let mut verified = Vec::new();
     while let Some(maybe_study) = verification_stream.next().await {
@@ -1002,6 +1180,7 @@ pub async fn search_page(
             let client = ClinicalTrialsClient::new()?;
             let query_term = ctgov_query_term(filters, normalized_phase.as_deref())?;
             let facility = normalized_facility_filter(filters);
+            let eligibility_keywords = collect_eligibility_keywords(filters);
             let agg_filters = ctgov_agg_filters(filters)?;
             let has_explicit_status = filters
                 .status
@@ -1060,6 +1239,10 @@ pub async fn search_page(
                         verify_facility_geo(&client, studies, facility_name, *lat, *lon, *distance)
                             .await;
                 }
+                if !eligibility_keywords.is_empty() {
+                    studies =
+                        verify_eligibility_criteria(&client, studies, &eligibility_keywords).await;
+                }
 
                 let page_study_count = studies.len();
                 let mut page_consumed = 0;
@@ -1099,11 +1282,12 @@ pub async fn search_page(
             }
 
             rows.truncate(limit);
-            let returned_total = if facility_geo_verification.is_some() {
-                None
-            } else {
-                total
-            };
+            let returned_total =
+                if facility_geo_verification.is_some() || !eligibility_keywords.is_empty() {
+                    None
+                } else {
+                    total
+                };
             Ok(SearchPage::cursor(rows, returned_total, page_token))
         }
         TrialSource::NciCts => {
@@ -1247,6 +1431,114 @@ mod tests {
             }
         }))
         .expect("valid CtGovStudy fixture")
+    }
+
+    #[test]
+    fn split_eligibility_sections_detects_exclusion_header() {
+        let text = "Inclusion Criteria:\nMust have MSI-H disease\n\nExclusion Criteria:\nNo active CNS mets";
+        let (inclusion, exclusion) = split_eligibility_sections(text);
+        assert!(inclusion.contains("must have msi-h disease"));
+        assert!(exclusion.contains("no active cns mets"));
+    }
+
+    #[test]
+    fn split_eligibility_sections_supports_key_exclusion_header() {
+        let text =
+            "Inclusion:\nBRAF V600E mutation\n\nKey Exclusion Criteria:\nPrior anti-braf therapy";
+        let (inclusion, exclusion) = split_eligibility_sections(text);
+        assert!(inclusion.contains("braf v600e mutation"));
+        assert!(exclusion.contains("prior anti-braf therapy"));
+    }
+
+    #[test]
+    fn split_eligibility_sections_without_exclusion_keeps_all_in_inclusion() {
+        let text = "Inclusion Criteria:\nPathogenic EGFR mutation";
+        let (inclusion, exclusion) = split_eligibility_sections(text);
+        assert!(inclusion.contains("pathogenic egfr mutation"));
+        assert!(exclusion.is_empty());
+    }
+
+    #[test]
+    fn eligibility_keyword_in_inclusion_keeps_when_inclusion_matches() {
+        assert!(eligibility_keyword_in_inclusion(
+            "must have msi-h disease",
+            "no untreated brain metastases",
+            "MSI-H"
+        ));
+    }
+
+    #[test]
+    fn eligibility_keyword_in_inclusion_discards_exclusion_only_match() {
+        assert!(!eligibility_keyword_in_inclusion(
+            "must have metastatic colorectal cancer",
+            "exclusion includes msi-h tumors",
+            "MSI-H"
+        ));
+    }
+
+    #[test]
+    fn eligibility_keyword_in_inclusion_keeps_when_in_both_sections() {
+        assert!(eligibility_keyword_in_inclusion(
+            "inclusion requires braf v600e mutation",
+            "exclude prior braf v600e inhibitor exposure",
+            "BRAF V600E"
+        ));
+    }
+
+    #[test]
+    fn eligibility_keyword_in_inclusion_discards_negated_inclusion_sentence() {
+        assert!(!eligibility_keyword_in_inclusion(
+            "patients whose tumors are msi-h are excluded",
+            "exclude active infection",
+            "MSI-H"
+        ));
+    }
+
+    #[test]
+    fn eligibility_keyword_in_inclusion_fails_open_when_keyword_missing() {
+        assert!(eligibility_keyword_in_inclusion(
+            "include untreated metastatic disease",
+            "exclude uncontrolled infection",
+            "MSI-H"
+        ));
+    }
+
+    #[test]
+    fn eligibility_keyword_in_inclusion_fails_open_without_exclusion_section() {
+        assert!(eligibility_keyword_in_inclusion(
+            "patients with msi-h disease",
+            "",
+            "MSI-H"
+        ));
+    }
+
+    #[test]
+    fn collect_eligibility_keywords_includes_supported_filters() {
+        let filters = TrialSearchFilters {
+            mutation: Some("MSI-H".into()),
+            biomarker: Some("TMB-high".into()),
+            prior_therapies: Some("osimertinib".into()),
+            progression_on: Some("pembrolizumab".into()),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            collect_eligibility_keywords(&filters),
+            vec!["MSI-H", "TMB-high", "osimertinib", "pembrolizumab"]
+        );
+    }
+
+    #[test]
+    fn collect_eligibility_keywords_omits_blank_values() {
+        let filters = TrialSearchFilters {
+            mutation: Some("   ".into()),
+            biomarker: Some(" MSI-H ".into()),
+            prior_therapies: None,
+            progression_on: Some("".into()),
+            ..Default::default()
+        };
+
+        assert_eq!(collect_eligibility_keywords(&filters), vec!["MSI-H"]);
     }
 
     #[test]
