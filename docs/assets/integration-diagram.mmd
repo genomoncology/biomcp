@@ -1,0 +1,153 @@
+%% BioMCP Integration Architecture
+%% 13 Entity Types • 29 Data Sources • Unified Biomedical Query Layer
+%%
+%% This is the Mermaid source for the integration diagram.
+%% The rendered SVG (integration-diagram.svg) was generated with Phosphor icons
+%% using a custom script for better visual control.
+
+graph TB
+    subgraph BioMCP["BioMCP - Unified Biomedical Query Layer"]
+        direction TB
+        CORE((BioMCP))
+    end
+
+    subgraph Entities["Entity Types"]
+        direction LR
+        GENE[Gene]
+        VARIANT[Variant]
+        PROTEIN[Protein]
+        PATHWAY[Pathway]
+        DISEASE[Disease]
+        DRUG[Drug]
+        AE[Adverse Event]
+        PGX[PGx]
+        ARTICLE[Article]
+        TRIAL[Trial]
+        BIOMARKER[Biomarker]
+        INTERVENTION[Intervention]
+        ORG[Organization]
+    end
+
+    CORE --> GENE & VARIANT & PROTEIN & PATHWAY & DISEASE
+    CORE --> DRUG & AE & PGX & ARTICLE & TRIAL
+    CORE --> BIOMARKER & INTERVENTION & ORG
+
+    subgraph Genomics["Genomics Sources"]
+        MG[MyGene.info]
+        MV[MyVariant.info]
+        AG[AlphaGenome]
+        GW[GWAS Catalog]
+    end
+
+    subgraph ClinOnc["Clinical Oncology Sources"]
+        CIVIC[CIViC]
+        ONCOKB[OncoKB]
+        CBIO[cBioPortal]
+    end
+
+    subgraph ProtPath["Protein & Pathway Sources"]
+        UP[UniProt]
+        IP[InterPro]
+        STR[STRING]
+        REACT[Reactome]
+        QGO[QuickGO]
+        GPROF[g:Profiler]
+        ENR[Enrichr]
+    end
+
+    subgraph DisPhen["Disease & Phenotype Sources"]
+        MD[MyDisease.info]
+        HPO[HPO]
+        MON[Monarch]
+        OT[OpenTargets]
+    end
+
+    subgraph DrugSafety["Drug & Safety Sources"]
+        MC[MyChem.info]
+        CHEMBL[ChEMBL]
+        FDA[OpenFDA]
+        CPIC[CPIC]
+        PGKB[PharmGKB]
+    end
+
+    subgraph Lit["Literature Sources"]
+        EPMC[Europe PMC]
+        PT[PubTator]
+        NCBI[NCBI ID Conv.]
+        PMC[PMC OA]
+    end
+
+    subgraph ClinTrials["Clinical Trial Sources"]
+        CTG[ClinicalTrials.gov]
+        NCI[NCI CTS]
+    end
+
+    %% Gene connections
+    MG --> GENE
+    OT --> GENE
+    CIVIC --> GENE
+    UP --> GENE
+    STR --> GENE
+    ENR --> GENE
+    QGO --> GENE
+    REACT --> GENE
+
+    %% Variant connections
+    MV --> VARIANT
+    MG --> VARIANT
+    CIVIC --> VARIANT
+    CBIO --> VARIANT
+    GW --> VARIANT
+    ONCOKB --> VARIANT
+    AG --> VARIANT
+
+    %% Disease connections
+    MD --> DISEASE
+    OT --> DISEASE
+    CIVIC --> DISEASE
+    HPO --> DISEASE
+    MON --> DISEASE
+    REACT --> DISEASE
+
+    %% Drug connections
+    MC --> DRUG
+    CHEMBL --> DRUG
+    OT --> DRUG
+    CIVIC --> DRUG
+    FDA --> DRUG
+
+    %% Trial connections
+    CTG --> TRIAL
+    NCI --> TRIAL
+
+    %% Protein connections
+    UP --> PROTEIN
+    IP --> PROTEIN
+    MG --> PROTEIN
+    STR --> PROTEIN
+
+    %% Article connections
+    EPMC --> ARTICLE
+    PT --> ARTICLE
+    NCBI --> ARTICLE
+    PMC --> ARTICLE
+
+    %% Pathway connections
+    REACT --> PATHWAY
+    GPROF --> PATHWAY
+
+    %% Adverse Event connections
+    FDA --> AE
+
+    %% Biomarker connections
+    NCI --> BIOMARKER
+
+    %% PGx connections
+    CPIC --> PGX
+    PGKB --> PGX
+
+    %% Intervention connections
+    NCI --> INTERVENTION
+
+    %% Organization connections
+    NCI --> ORG

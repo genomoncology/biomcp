@@ -17,6 +17,7 @@ nav:
       - Skills: getting-started/skills.md
   - Concepts:
       - What is BioMCP?: concepts/what-is-biomcp.md
+      - Integration Diagram: concepts/integration-diagram.md
       - Progressive Disclosure: concepts/progressive-disclosure.md
   - User Guide:
       - CLI Reference: user-guide/cli-reference.md

@@ -1,0 +1,314 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1050" width="1400" height="1050">
+<defs>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  </style>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="8" result="blur"/>
+    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+  </filter>
+  <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.12"/>
+    <stop offset="70%" stop-color="#3b82f6" stop-opacity="0.04"/>
+    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="outerGlow" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#1e293b" stop-opacity="0"/>
+    <stop offset="80%" stop-color="#0f172a" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#0f172a" stop-opacity="0.6"/>
+  </radialGradient>
+</defs>
+
+<!-- Background -->
+<rect width="1400" height="1050" fill="#0f172a" rx="12"/>
+
+<!-- Subtle radial glow behind center -->
+<ellipse cx="700.0" cy="535.0" rx="380" ry="320" fill="url(#centerGlow)"/>
+
+<!-- Guide rings (subtle) -->
+<ellipse cx="700.0" cy="535.0" rx="300" ry="260" fill="none" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,6" opacity="0.5"/>
+<ellipse cx="700.0" cy="535.0" rx="520" ry="390" fill="none" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="2,8" opacity="0.3"/>
+
+<!-- Title -->
+<text x="700.0" y="38" text-anchor="middle" fill="#f1f5f9" font-size="26" font-family="'Inter', sans-serif" font-weight="700" letter-spacing="0.5">BioMCP Integration Architecture</text>
+<text x="700.0" y="60" text-anchor="middle" fill="#94a3b8" font-size="13" font-family="'Inter', sans-serif" font-weight="400">13 Entity Types  &#x2022;  29 Data Sources  &#x2022;  Unified Biomedical Query Layer</text>
+
+<!-- Source-to-Entity connections -->
+<path d="M745.5062755221501,106.32554649475497 Q719.3401670969138,242.31335726027086 700.0,275.0" fill="none" stroke="#10b981" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M853.0463689799162,949.7596899368532 Q765.0447068164644,600.7728682231626 700.0,275.0" fill="none" stroke="#10b981" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1225.7654196010058,716.5557911644851 Q923.4503033304275,501.66121124490616 700.0,275.0" fill="none" stroke="#10b981" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1151.2220628492623,264.82989468758706 Q891.7693767109365,309.6777052422245 700.0,275.0" fill="none" stroke="#10b981" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1215.0493383786284,337.2806858674203 Q918.8959688109171,340.4692914936536 700.0,275.0" fill="none" stroke="#10b981" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1278.3862974594276,502.9462452890375 Q945.8141764202568,410.87715424784096 700.0,275.0" fill="none" stroke="#10b981" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1258.0174764146966,417.7389707983475 Q937.1574274762461,374.6640625892977 700.0,275.0" fill="none" stroke="#10b981" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1239.2703618151859,376.70644234558847 Q929.189903771454,357.2252379968751 700.0,275.0" fill="none" stroke="#10b981" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M811.6627405850263,113.04415448333458 Q806.7088691842166,257.8258748207375 839.4169516131305,304.78143333016544" fill="none" stroke="#06b6d4" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M745.5062755221501,106.32554649475497 Q778.5923715324943,254.97046642559116 839.4169516131305,304.78143333016544" fill="none" stroke="#06b6d4" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1225.7654196010058,716.5557911644851 Q982.7025077660079,514.3183204102264 839.4169516131305,304.78143333016544" fill="none" stroke="#06b6d4" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1145.4424069544511,810.3912921509309 Q948.5652273912223,554.1984083294659 839.4169516131305,304.78143333016544" fill="none" stroke="#06b6d4" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M938.6783279909631,143.0965910467586 Q860.6904938317399,270.5981603601927 839.4169516131305,304.78143333016544" fill="none" stroke="#06b6d4" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1189.7101967911685,765.4055218409686 Q967.3790380718272,535.079455947732 839.4169516131305,304.78143333016544" fill="none" stroke="#06b6d4" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M876.3391753367844,125.35556306095788 Q834.1963539537138,263.0582234662274 839.4169516131305,304.78143333016544" fill="none" stroke="#06b6d4" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1151.2220628492623,264.82989468758706 Q996.6998196123777,357.4065507284318 946.895159768097,387.30316584989953" fill="none" stroke="#14b8a6" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1185.6002636258886,299.8618957970519 Q1011.3105549424439,372.2951511999544 946.895159768097,387.30316584989953" fill="none" stroke="#14b8a6" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M745.5062755221501,106.32554649475497 Q824.270609998355,290.04220274647815 946.895159768097,387.30316584989953" fill="none" stroke="#14b8a6" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1215.0493383786284,337.2806858674203 Q1023.8264117123583,388.1981369798609 946.895159768097,387.30316584989953" fill="none" stroke="#14b8a6" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1239.2703618151859,376.70644234558847 Q1055.760285218956,454.4059348286619 997.8126622294162,503.660463133616" fill="none" stroke="#c084fc" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1271.1003880250214,459.96176711939347 Q1069.288046358136,489.78944785752907 997.8126622294162,503.660463133616" fill="none" stroke="#c084fc" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1033.5030461851015,886.8043784927601 Q960.9533655710586,723.7007008776233 980.5048728056245,627.1972706310593" fill="none" stroke="#ef4444" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M853.0463689799162,949.7596899368532 Q884.2592777588548,750.4567082413629 980.5048728056245,627.1972706310593" fill="none" stroke="#ef4444" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1225.7654196010058,716.5557911644851 Q1042.6648742728178,651.3450512631064 980.5048728056245,627.1972706310593" fill="none" stroke="#ef4444" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M976.7520809505729,912.891358444645 Q936.8342053463839,734.7876673571743 980.5048728056245,627.1972706310593" fill="none" stroke="#ef4444" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M916.3329138939694,933.9695891765355 Q911.1560593473274,743.7459154182278 980.5048728056245,627.1972706310593" fill="none" stroke="#ef4444" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1239.2703618151859,376.70644234558847 Q1048.4044747138444,506.9090780150753 980.5048728056245,627.1972706310593" fill="none" stroke="#ef4444" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M643.1500586088548,962.9294324690447 Q760.3869138344647,799.5804464722507 898.9367974722386,729.6127945244863" fill="none" stroke="#f59e0b" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M581.2684304285597,955.8937830801011 Q734.0872218578393,796.5902954819496 898.9367974722386,729.6127945244863" fill="none" stroke="#f59e0b" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M853.0463689799162,949.7596899368532 Q849.5928457421658,793.9833058960692 898.9367974722386,729.6127945244863" fill="none" stroke="#f59e0b" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M1225.7654196010058,716.5557911644851 Q1007.9984422561289,694.8716489178128 898.9367974722386,729.6127945244863" fill="none" stroke="#f59e0b" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M520.7701432625303,943.9543020069159 Q708.3754498122768,791.5160160258458 898.9367974722386,729.6127945244863" fill="none" stroke="#f59e0b" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M520.7701432625303,943.9543020069159 Q654.340058083239,816.094649178518 771.7946992862672,787.4448725307735" fill="none" stroke="#ec4899" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M462.3600623983365,927.250096092911 Q568.4902793226295,808.9953616650658 628.2053007137328,787.4448725307735" fill="none" stroke="#d97706" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M406.7187234407686,905.9757859704504 Q544.8427102656631,799.9537798630201 628.2053007137328,787.4448725307735" fill="none" stroke="#d97706" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M187.41593454855774,736.2098201320466 Q397.60363325743566,703.2246112290266 501.0632025277614,729.6127945244863" fill="none" stroke="#a78bfa" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M159.61908800038168,691.1980291033807 Q385.7899734744608,684.0946000418435 501.0632025277614,729.6127945244863" fill="none" stroke="#a78bfa" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M138.98470338999152,644.1159161714664 Q377.020360015045,664.0847020457799 501.0632025277614,729.6127945244863" fill="none" stroke="#a78bfa" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M125.78627852439661,595.5875297331606 Q371.41102944716715,643.4601378095 501.0632025277614,729.6127945244863" fill="none" stroke="#a78bfa" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M185.30020070561557,336.78101894975146 Q362.03801435749625,489.9407730718446 419.4951271943756,627.1972706310594" fill="none" stroke="#818cf8" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M238.93227503524423,274.12658906914004 Q384.8316459475884,463.3126403725847 419.4951271943756,627.1972706310594" fill="none" stroke="#818cf8" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M238.93227503524423,274.12658906914004 Q377.47583544247686,410.8094971861713 402.1873377705838,503.66046313361596" fill="none" stroke="#0ea5e9" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M238.93227503524423,274.12658906914004 Q399.1157739885376,361.35764584059183 453.10484023190304,387.30316584989953" fill="none" stroke="#60a5fa" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<path d="M238.93227503524423,274.12658906914004 Q444.7940124543983,326.2859095197048 560.5830483868695,304.7814333301654" fill="none" stroke="#84cc16" stroke-width="1.0" opacity="0.2" stroke-linecap="round"/>
+<!-- Center-to-Entity connections -->
+<line x1="700.0" y1="535.0" x2="700.0" y2="275.0" stroke="#10b981" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="839.4169516131305" y2="304.78143333016544" stroke="#06b6d4" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="946.895159768097" y2="387.30316584989953" stroke="#14b8a6" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="997.8126622294162" y2="503.660463133616" stroke="#c084fc" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="980.5048728056245" y2="627.1972706310593" stroke="#ef4444" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="898.9367974722386" y2="729.6127945244863" stroke="#f59e0b" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="771.7946992862672" y2="787.4448725307735" stroke="#ec4899" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="628.2053007137328" y2="787.4448725307735" stroke="#d97706" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="501.0632025277614" y2="729.6127945244863" stroke="#a78bfa" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="419.4951271943756" y2="627.1972706310594" stroke="#818cf8" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="402.1873377705838" y2="503.66046313361596" stroke="#0ea5e9" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="453.10484023190304" y2="387.30316584989953" stroke="#60a5fa" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<line x1="700.0" y1="535.0" x2="560.5830483868695" y2="304.7814333301654" stroke="#84cc16" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+<!-- Data Source pills -->
+<g>
+  <rect x="695.2562755221501" y="93.82554649475497" width="100.5" height="25" rx="12.5" fill="#1e293b" stroke="#10b981" stroke-width="1.5" opacity="0.92"/>
+  <text x="745.5062755221501" y="110.82554649475497" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">MyGene.info</text>
+</g>
+<g>
+  <rect x="750.1627405850263" y="100.54415448333458" width="123.0" height="25" rx="12.5" fill="#1e293b" stroke="#10b981" stroke-width="1.5" opacity="0.92"/>
+  <text x="811.6627405850263" y="117.54415448333458" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">MyVariant.info</text>
+</g>
+<g>
+  <rect x="826.0891753367844" y="112.85556306095788" width="100.5" height="25" rx="12.5" fill="#1e293b" stroke="#10b981" stroke-width="1.5" opacity="0.92"/>
+  <text x="876.3391753367844" y="129.85556306095788" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">AlphaGenome</text>
+</g>
+<g>
+  <rect x="884.6783279909631" y="130.5965910467586" width="108.0" height="25" rx="12.5" fill="#1e293b" stroke="#10b981" stroke-width="1.5" opacity="0.92"/>
+  <text x="938.6783279909631" y="147.5965910467586" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">GWAS Catalog</text>
+</g>
+<g>
+  <rect x="1115.2220628492623" y="252.32989468758706" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#14b8a6" stroke-width="1.5" opacity="0.92"/>
+  <text x="1151.2220628492623" y="269.32989468758706" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">UniProt</text>
+</g>
+<g>
+  <rect x="1146.6002636258886" y="287.3618957970519" width="78.0" height="25" rx="12.5" fill="#1e293b" stroke="#14b8a6" stroke-width="1.5" opacity="0.92"/>
+  <text x="1185.6002636258886" y="304.3618957970519" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">InterPro</text>
+</g>
+<g>
+  <rect x="1179.0493383786284" y="324.7806858674203" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#14b8a6" stroke-width="1.5" opacity="0.92"/>
+  <text x="1215.0493383786284" y="341.7806858674203" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">STRING</text>
+</g>
+<g>
+  <rect x="1200.2703618151859" y="364.20644234558847" width="78.0" height="25" rx="12.5" fill="#1e293b" stroke="#14b8a6" stroke-width="1.5" opacity="0.92"/>
+  <text x="1239.2703618151859" y="381.20644234558847" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">Reactome</text>
+</g>
+<g>
+  <rect x="1222.0174764146966" y="405.2389707983475" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#14b8a6" stroke-width="1.5" opacity="0.92"/>
+  <text x="1258.0174764146966" y="422.2389707983475" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">QuickGO</text>
+</g>
+<g>
+  <rect x="1224.6003880250214" y="447.46176711939347" width="93.0" height="25" rx="12.5" fill="#1e293b" stroke="#14b8a6" stroke-width="1.5" opacity="0.92"/>
+  <text x="1271.1003880250214" y="464.46176711939347" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">g:Profiler</text>
+</g>
+<g>
+  <rect x="1242.3862974594276" y="490.4462452890375" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#14b8a6" stroke-width="1.5" opacity="0.92"/>
+  <text x="1278.3862974594276" y="507.4462452890375" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">Enrichr</text>
+</g>
+<g>
+  <rect x="1189.7654196010058" y="704.0557911644851" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" opacity="0.92"/>
+  <text x="1225.7654196010058" y="721.0557911644851" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">CIViC</text>
+</g>
+<g>
+  <rect x="1153.7101967911685" y="752.9055218409686" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" opacity="0.92"/>
+  <text x="1189.7101967911685" y="769.9055218409686" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">OncoKB</text>
+</g>
+<g>
+  <rect x="1098.9424069544511" y="797.8912921509309" width="93.0" height="25" rx="12.5" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" opacity="0.92"/>
+  <text x="1145.4424069544511" y="814.8912921509309" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">cBioPortal</text>
+</g>
+<g>
+  <rect x="972.0030461851015" y="874.3043784927601" width="123.0" height="25" rx="12.5" fill="#1e293b" stroke="#ec4899" stroke-width="1.5" opacity="0.92"/>
+  <text x="1033.5030461851015" y="891.3043784927601" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">MyDisease.info</text>
+</g>
+<g>
+  <rect x="940.7520809505729" y="900.391358444645" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#ec4899" stroke-width="1.5" opacity="0.92"/>
+  <text x="976.7520809505729" y="917.391358444645" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">HPO</text>
+</g>
+<g>
+  <rect x="880.3329138939694" y="921.4695891765355" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#ec4899" stroke-width="1.5" opacity="0.92"/>
+  <text x="916.3329138939694" y="938.4695891765355" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">Monarch</text>
+</g>
+<g>
+  <rect x="802.7963689799162" y="937.2596899368532" width="100.5" height="25" rx="12.5" fill="#1e293b" stroke="#ec4899" stroke-width="1.5" opacity="0.92"/>
+  <text x="853.0463689799162" y="954.2596899368532" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">OpenTargets</text>
+</g>
+<g>
+  <rect x="592.9000586088548" y="950.4294324690447" width="100.5" height="25" rx="12.5" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" opacity="0.92"/>
+  <text x="643.1500586088548" y="967.4294324690447" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">MyChem.info</text>
+</g>
+<g>
+  <rect x="545.2684304285597" y="943.3937830801011" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" opacity="0.92"/>
+  <text x="581.2684304285597" y="960.3937830801011" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">ChEMBL</text>
+</g>
+<g>
+  <rect x="484.77014326253027" y="931.4543020069159" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" opacity="0.92"/>
+  <text x="520.7701432625303" y="948.4543020069159" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">OpenFDA</text>
+</g>
+<g>
+  <rect x="426.3600623983365" y="914.750096092911" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" opacity="0.92"/>
+  <text x="462.3600623983365" y="931.750096092911" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">CPIC</text>
+</g>
+<g>
+  <rect x="367.7187234407686" y="893.4757859704504" width="78.0" height="25" rx="12.5" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" opacity="0.92"/>
+  <text x="406.7187234407686" y="910.4757859704504" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">PharmGKB</text>
+</g>
+<g>
+  <rect x="140.91593454855774" y="723.7098201320466" width="93.0" height="25" rx="12.5" fill="#1e293b" stroke="#a78bfa" stroke-width="1.5" opacity="0.92"/>
+  <text x="187.41593454855774" y="740.7098201320466" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">Europe PMC</text>
+</g>
+<g>
+  <rect x="120.61908800038168" y="678.6980291033807" width="78.0" height="25" rx="12.5" fill="#1e293b" stroke="#a78bfa" stroke-width="1.5" opacity="0.92"/>
+  <text x="159.61908800038168" y="695.6980291033807" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">PubTator</text>
+</g>
+<g>
+  <rect x="81.23470338999152" y="631.6159161714664" width="115.5" height="25" rx="12.5" fill="#1e293b" stroke="#a78bfa" stroke-width="1.5" opacity="0.92"/>
+  <text x="138.98470338999152" y="648.6159161714664" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">NCBI ID Conv.</text>
+</g>
+<g>
+  <rect x="89.78627852439661" y="583.0875297331606" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#a78bfa" stroke-width="1.5" opacity="0.92"/>
+  <text x="125.78627852439661" y="600.0875297331606" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">PMC OA</text>
+</g>
+<g>
+  <rect x="108.80020070561557" y="324.28101894975146" width="153.0" height="25" rx="12.5" fill="#1e293b" stroke="#818cf8" stroke-width="1.5" opacity="0.92"/>
+  <text x="185.30020070561557" y="341.28101894975146" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">ClinicalTrials.gov</text>
+</g>
+<g>
+  <rect x="202.93227503524423" y="261.62658906914004" width="72" height="25" rx="12.5" fill="#1e293b" stroke="#818cf8" stroke-width="1.5" opacity="0.92"/>
+  <text x="238.93227503524423" y="278.62658906914004" text-anchor="middle" fill="#e2e8f0" font-size="11" font-family="'Inter', 'SF Pro Display', -apple-system, sans-serif" font-weight="500">NCI CTS</text>
+</g>
+<!-- Source Group Labels -->
+<text x="857.773010466386" y="65.43330820287196" text-anchor="middle" fill="#10b981" font-size="11" font-family="'Inter', sans-serif" font-weight="600" opacity="0.85">Genomics</text>
+<text x="1271.5563037734394" y="353.2294583007149" text-anchor="middle" fill="#14b8a6" font-size="11" font-family="'Inter', sans-serif" font-weight="600" opacity="0.85">Protein & Pathway</text>
+<text x="1227.6910002492543" y="803.275247442029" text-anchor="middle" fill="#ef4444" font-size="11" font-family="'Inter', sans-serif" font-weight="600" opacity="0.85">Clinical Oncology</text>
+<text x="969.0233897997658" y="978.8493722527471" text-anchor="middle" fill="#ec4899" font-size="11" font-family="'Inter', sans-serif" font-weight="600" opacity="0.85">Disease & Phenotype</text>
+<text x="504.79021772070683" y="1000.4161918674391" text-anchor="middle" fill="#f59e0b" font-size="11" font-family="'Inter', sans-serif" font-weight="600" opacity="0.85">Drug & Safety</text>
+<text x="109.20291122358654" y="697.3163664945218" text-anchor="middle" fill="#a78bfa" font-size="11" font-family="'Inter', sans-serif" font-weight="600" opacity="0.85">Literature</text>
+<text x="171.39791207005055" y="272.2960916195449" text-anchor="middle" fill="#818cf8" font-size="11" font-family="'Inter', sans-serif" font-weight="600" opacity="0.85">Clinical Trials</text>
+<!-- Entity Cards -->
+<g>
+  <rect x="639.0" y="244.0" width="122" height="62" rx="10" fill="#065f46" stroke="#10b981" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(687.0,254.0) scale(0.1015625)"><path d="M200,204.5V232a8,8,0,0,1-16,0V204.5a63.67,63.67,0,0,0-35.38-57.25l-48.4-24.19A79.58,79.58,0,0,1,56,51.5V24a8,8,0,0,1,16,0V51.5a63.67,63.67,0,0,0,35.38,57.25l48.4,24.19A79.58,79.58,0,0,1,200,204.5ZM160,200H72.17a63.59,63.59,0,0,1,3.23-16h72.71a8,8,0,0,0,0-16H83.46a63.71,63.71,0,0,1,14.65-15.08A8,8,0,1,0,88.64,140,80.27,80.27,0,0,0,56,204.5V232a8,8,0,0,0,16,0V216h88a8,8,0,0,0,0-16ZM192,16a8,8,0,0,0-8,8V40H96a8,8,0,0,0,0,16h87.83a63.59,63.59,0,0,1-3.23,16H107.89a8,8,0,1,0,0,16h64.65a63.71,63.71,0,0,1-14.65,15.08,8,8,0,0,0,9.47,12.9A80.27,80.27,0,0,0,200,51.5V24A8,8,0,0,0,192,16Z" fill="#34d399"/></g>
+  <text x="700.0" y="297.0" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Gene</text>
+</g>
+<g>
+  <rect x="778.4169516131305" y="273.78143333016544" width="122" height="62" rx="10" fill="#164e63" stroke="#06b6d4" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(826.4169516131305,283.78143333016544) scale(0.1015625)"><path d="M196.12,128c24.65-34.61,37.22-70.38,19.74-87.86S162.61,35.23,128,59.88C93.39,35.23,57.62,22.66,40.14,40.14S35.23,93.39,59.88,128c-24.65,34.61-37.22,70.38-19.74,87.86h0c5.63,5.63,13.15,8.14,21.91,8.14,18.48,0,42.48-11.17,66-27.88C151.47,212.83,175.47,224,194,224c8.76,0,16.29-2.52,21.91-8.14h0C233.34,198.38,220.77,162.61,196.12,128Zm8.43-76.55c7.64,7.64,2.48,32.4-18.52,63.28a300.33,300.33,0,0,0-21.19-23.57A300.33,300.33,0,0,0,141.27,70C172.15,49,196.91,43.8,204.55,51.45ZM176.29,128a289.14,289.14,0,0,1-22.76,25.53A289.14,289.14,0,0,1,128,176.29a289.14,289.14,0,0,1-25.53-22.76A289.14,289.14,0,0,1,79.71,128,298.62,298.62,0,0,1,128,79.71a289.14,289.14,0,0,1,25.53,22.76A289.14,289.14,0,0,1,176.29,128ZM51.45,51.45c2.2-2.21,5.83-3.35,10.62-3.35C73.89,48.1,92.76,55,114.72,70A304,304,0,0,0,91.16,91.16,300.33,300.33,0,0,0,70,114.73C49,83.85,43.81,59.09,51.45,51.45Zm0,153.1C43.81,196.91,49,172.15,70,141.27a300.33,300.33,0,0,0,21.19,23.57A304.18,304.18,0,0,0,114.73,186C83.85,207,59.09,212.2,51.45,204.55Zm153.1,0c-7.64,7.65-32.4,2.48-63.28-18.52a304.18,304.18,0,0,0,23.57-21.19A300.33,300.33,0,0,0,186,141.27C207,172.15,212.19,196.91,204.55,204.55ZM140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128Z" fill="#22d3ee"/></g>
+  <text x="839.4169516131305" y="326.78143333016544" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Variant</text>
+</g>
+<g>
+  <rect x="885.895159768097" y="356.30316584989953" width="122" height="62" rx="10" fill="#134e4a" stroke="#14b8a6" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(933.895159768097,366.30316584989953) scale(0.1015625)"><path d="M221.69,199.77,160,96.92V40h8a8,8,0,0,0,0-16H88a8,8,0,0,0,0,16h8V96.92L34.31,199.77A16,16,0,0,0,48,224H208a16,16,0,0,0,13.72-24.23ZM110.86,103.25A7.93,7.93,0,0,0,112,99.14V40h32V99.14a7.93,7.93,0,0,0,1.14,4.11L183.36,167c-12,2.37-29.07,1.37-51.75-10.11-15.91-8.05-31.05-12.32-45.22-12.81ZM48,208l28.54-47.58c14.25-1.74,30.31,1.85,47.82,10.72,19,9.61,35,12.88,48,12.88a69.89,69.89,0,0,0,19.55-2.7L208,208Z" fill="#2dd4bf"/></g>
+  <text x="946.895159768097" y="409.30316584989953" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Protein</text>
+</g>
+<g>
+  <rect x="936.8126622294162" y="472.660463133616" width="122" height="62" rx="10" fill="#3b0764" stroke="#c084fc" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(984.8126622294162,482.660463133616) scale(0.1015625)"><path d="M200,152a31.84,31.84,0,0,0-19.53,6.68l-23.11-18A31.65,31.65,0,0,0,160,128c0-.74,0-1.48-.08-2.21l13.23-4.41A32,32,0,1,0,168,104c0,.74,0,1.48.08,2.21l-13.23,4.41A32,32,0,0,0,128,96a32.59,32.59,0,0,0-5.27.44L115.89,81A32,32,0,1,0,96,88a32.59,32.59,0,0,0,5.27-.44l6.84,15.4a31.92,31.92,0,0,0-8.57,39.64L73.83,165.44a32.06,32.06,0,1,0,10.63,12l25.71-22.84a31.91,31.91,0,0,0,37.36-1.24l23.11,18A31.65,31.65,0,0,0,168,184a32,32,0,1,0,32-32Zm0-64a16,16,0,1,1-16,16A16,16,0,0,1,200,88ZM80,56A16,16,0,1,1,96,72,16,16,0,0,1,80,56ZM56,208a16,16,0,1,1,16-16A16,16,0,0,1,56,208Zm56-80a16,16,0,1,1,16,16A16,16,0,0,1,112,128Zm88,72a16,16,0,1,1,16-16A16,16,0,0,1,200,200Z" fill="#d8b4fe"/></g>
+  <text x="997.8126622294162" y="525.6604631336161" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Pathway</text>
+</g>
+<g>
+  <rect x="919.5048728056245" y="596.1972706310593" width="122" height="62" rx="10" fill="#7f1d1d" stroke="#ef4444" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(967.5048728056245,606.1972706310593) scale(0.1015625)"><path d="M136,108a28,28,0,1,0-28,28A28,28,0,0,0,136,108Zm-28,12a12,12,0,1,1,12-12A12,12,0,0,1,108,120Zm68-8a16,16,0,1,1-16,16A16,16,0,0,1,176,112Zm-32,64a16,16,0,1,1-16-16A16,16,0,0,1,144,176Zm96-56H223.66a95.52,95.52,0,0,0-22.39-53.95l12.39-12.39a8,8,0,0,0-11.32-11.32L190,54.73A95.52,95.52,0,0,0,136,32.34V16a8,8,0,0,0-16,0V32.34A95.52,95.52,0,0,0,66.05,54.73L53.66,42.34A8,8,0,0,0,42.34,53.66L54.73,66.05a95.52,95.52,0,0,0-22.39,54H16a8,8,0,0,0,0,16H32.34A95.52,95.52,0,0,0,54.73,190L42.34,202.34a8,8,0,0,0,11.32,11.32l12.39-12.39a95.52,95.52,0,0,0,54,22.39V240a8,8,0,0,0,16,0V223.66A95.52,95.52,0,0,0,190,201.27l12.39,12.39a8,8,0,0,0,11.32-11.32L201.27,190A95.52,95.52,0,0,0,223.66,136H240a8,8,0,0,0,0-16ZM128,208a80,80,0,1,1,80-80A80.09,80.09,0,0,1,128,208Z" fill="#f87171"/></g>
+  <text x="980.5048728056245" y="649.1972706310593" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Disease</text>
+</g>
+<g>
+  <rect x="837.9367974722386" y="698.6127945244863" width="122" height="62" rx="10" fill="#713f12" stroke="#f59e0b" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(885.9367974722386,708.6127945244863) scale(0.1015625)"><path d="M216.42,39.6a53.26,53.26,0,0,0-75.32,0L39.6,141.09a53.26,53.26,0,0,0,75.32,75.31h0L216.43,114.91A53.31,53.31,0,0,0,216.42,39.6ZM103.61,205.09h0a37.26,37.26,0,0,1-52.7-52.69L96,107.31,148.7,160ZM205.11,103.6,160,148.69,107.32,96l45.1-45.09a37.26,37.26,0,0,1,52.69,52.69ZM189.68,82.34a8,8,0,0,1,0,11.32l-24,24a8,8,0,1,1-11.31-11.32l24-24A8,8,0,0,1,189.68,82.34Z" fill="#fbbf24"/></g>
+  <text x="898.9367974722386" y="751.6127945244863" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Drug</text>
+</g>
+<g>
+  <rect x="710.7946992862672" y="756.4448725307735" width="122" height="62" rx="10" fill="#831843" stroke="#ec4899" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(758.7946992862672,766.4448725307735) scale(0.1015625)"><path d="M216,88H168V40a16,16,0,0,0-16-16H104A16,16,0,0,0,88,40V88H40a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16H88v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V168h48a16,16,0,0,0,16-16V104A16,16,0,0,0,216,88Zm0,64H160a8,8,0,0,0-8,8v56H104V160a8,8,0,0,0-8-8H40V104H96a8,8,0,0,0,8-8V40h48V96a8,8,0,0,0,8,8h56Z" fill="#f472b6"/></g>
+  <text x="771.7946992862672" y="809.4448725307735" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Adverse Event</text>
+</g>
+<g>
+  <rect x="567.2053007137328" y="756.4448725307735" width="122" height="62" rx="10" fill="#78350f" stroke="#d97706" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(615.2053007137328,766.4448725307735) scale(0.1015625)"><path d="M183.31,188l22.35-22.34a8,8,0,0,0-11.32-11.32L172,176.69l-41.15-41.16A52,52,0,0,0,124,32H72a8,8,0,0,0-8,8V192a8,8,0,0,0,16,0V136h28.69l52,52-22.35,22.34a8,8,0,0,0,11.32,11.32L172,199.31l22.34,22.35a8,8,0,0,0,11.32-11.32ZM80,48h44a36,36,0,0,1,0,72H80Z" fill="#fbbf24"/></g>
+  <text x="628.2053007137328" y="809.4448725307735" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">PGx</text>
+</g>
+<g>
+  <rect x="440.0632025277614" y="698.6127945244863" width="122" height="62" rx="10" fill="#4c1d95" stroke="#a78bfa" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(488.0632025277614,708.6127945244863) scale(0.1015625)"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM184,96a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,96Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,128Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,160Z" fill="#c4b5fd"/></g>
+  <text x="501.0632025277614" y="751.6127945244863" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Article</text>
+</g>
+<g>
+  <rect x="358.4951271943756" y="596.1972706310594" width="122" height="62" rx="10" fill="#312e81" stroke="#818cf8" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(406.4951271943756,606.1972706310594) scale(0.1015625)"><path d="M200,32H163.74a47.92,47.92,0,0,0-71.48,0H56A16,16,0,0,0,40,48V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm-72,0a32,32,0,0,1,32,32H96A32,32,0,0,1,128,32Zm72,184H56V48H82.75A47.93,47.93,0,0,0,80,64v8a8,8,0,0,0,8,8h80a8,8,0,0,0,8-8V64a47.93,47.93,0,0,0-2.75-16H200Z" fill="#a5b4fc"/></g>
+  <text x="419.4951271943756" y="649.1972706310594" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Trial</text>
+</g>
+<g>
+  <rect x="341.1873377705838" y="472.66046313361596" width="122" height="62" rx="10" fill="#0c4a6e" stroke="#0ea5e9" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(389.1873377705838,482.66046313361596) scale(0.1015625)"><path d="M232,120h-8.34A96.14,96.14,0,0,0,136,32.34V24a8,8,0,0,0-16,0v8.34A96.14,96.14,0,0,0,32.34,120H24a8,8,0,0,0,0,16h8.34A96.14,96.14,0,0,0,120,223.66V232a8,8,0,0,0,16,0v-8.34A96.14,96.14,0,0,0,223.66,136H232a8,8,0,0,0,0-16Zm-96,87.6V200a8,8,0,0,0-16,0v7.6A80.15,80.15,0,0,1,48.4,136H56a8,8,0,0,0,0-16H48.4A80.15,80.15,0,0,1,120,48.4V56a8,8,0,0,0,16,0V48.4A80.15,80.15,0,0,1,207.6,120H200a8,8,0,0,0,0,16h7.6A80.15,80.15,0,0,1,136,207.6ZM128,88a40,40,0,1,0,40,40A40,40,0,0,0,128,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,152Z" fill="#38bdf8"/></g>
+  <text x="402.1873377705838" y="525.660463133616" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Biomarker</text>
+</g>
+<g>
+  <rect x="392.10484023190304" y="356.30316584989953" width="122" height="62" rx="10" fill="#1e3a5f" stroke="#60a5fa" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(440.10484023190304,366.30316584989953) scale(0.1015625)"><path d="M237.66,66.34l-48-48a8,8,0,0,0-11.32,0L168,28.69,133.66,42.34a8,8,0,0,0-11.32,11.32L128.69,60l-84,84A15.86,15.86,0,0,0,40,155.31v49.38L18.34,226.34a8,8,0,0,0,11.32,11.32L51.31,216h49.38A15.86,15.86,0,0,0,112,211.31l84-84,6.34,6.35a8,8,0,0,0,11.32-11.32L179.31,88,208,59.31l18.34,18.35a8,8,0,0,0,11.32-11.32ZM100.69,200H56V155.31l18-18,20.34,20.35a8,8,0,0,0,11.32-11.32L85.31,126,98,113.31l20.34,20.35a8,8,0,0,0,11.32-11.32L109.31,102,140,71.31,184.69,116Z" fill="#93c5fd"/></g>
+  <text x="453.10484023190304" y="409.30316584989953" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Intervention</text>
+</g>
+<g>
+  <rect x="499.58304838686945" y="273.7814333301654" width="122" height="62" rx="10" fill="#365314" stroke="#84cc16" stroke-width="2" opacity="0.95"/>
+  <g transform="translate(547.5830483868695,283.7814333301654) scale(0.1015625)"><path d="M248,208h-8V128a16,16,0,0,0-16-16H168V48a16,16,0,0,0-16-16H56A16,16,0,0,0,40,48V208H32a8,8,0,0,0,0,16H248a8,8,0,0,0,0-16Zm-24-80v80H168V128ZM56,48h96V208H136V160a8,8,0,0,0-8-8H80a8,8,0,0,0-8,8v48H56Zm64,160H88V168h32ZM72,96a8,8,0,0,1,8-8H96V72a8,8,0,0,1,16,0V88h16a8,8,0,0,1,0,16H112v16a8,8,0,0,1-16,0V104H80A8,8,0,0,1,72,96Z" fill="#a3e635"/></g>
+  <text x="560.5830483868695" y="326.7814333301654" text-anchor="middle" fill="#f1f5f9" font-size="12" font-family="'Inter', sans-serif" font-weight="600">Organization</text>
+</g>
+<!-- BioMCP Hub -->
+<g filter="url(#glow)">
+  <circle cx="700.0" cy="535.0" r="66" fill="none" stroke="#3b82f6" stroke-width="1.5" opacity="0.2" stroke-dasharray="6,4"/>
+  <circle cx="700.0" cy="535.0" r="60" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2.5"/>
+  <g transform="translate(681.0,506.0) scale(0.1484375)"><path d="M224,208H203.94A88.05,88.05,0,0,0,144,64.37V32a16,16,0,0,0-16-16H80A16,16,0,0,0,64,32V136a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V80.46A72,72,0,0,1,181.25,208H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16Zm-96-72H80V32h48V136ZM72,184a8,8,0,0,1,0-16h64a8,8,0,0,1,0,16Z" fill="#60a5fa"/></g>
+  <text x="700.0" y="559.0" text-anchor="middle" fill="#f1f5f9" font-size="18" font-family="'Inter', sans-serif" font-weight="700">BioMCP</text>
+</g>
+<!-- Legend -->
+<g>
+  <text x="30" y="974" fill="#64748b" font-size="10" font-family="'Inter', sans-serif" font-weight="600" letter-spacing="1">SOURCE CATEGORIES</text>
+  <circle cx="36" cy="988" r="4.5" fill="#10b981" opacity="0.8"/>
+  <text x="46" y="992" fill="#94a3b8" font-size="10.5" font-family="'Inter', sans-serif" font-weight="400">Genomics (4)</text>
+  <circle cx="251" cy="988" r="4.5" fill="#14b8a6" opacity="0.8"/>
+  <text x="261" y="992" fill="#94a3b8" font-size="10.5" font-family="'Inter', sans-serif" font-weight="400">Protein & Pathway (7)</text>
+  <circle cx="466" cy="988" r="4.5" fill="#ef4444" opacity="0.8"/>
+  <text x="476" y="992" fill="#94a3b8" font-size="10.5" font-family="'Inter', sans-serif" font-weight="400">Clinical Oncology (3)</text>
+  <circle cx="681" cy="988" r="4.5" fill="#ec4899" opacity="0.8"/>
+  <text x="691" y="992" fill="#94a3b8" font-size="10.5" font-family="'Inter', sans-serif" font-weight="400">Disease & Phenotype (4)</text>
+  <circle cx="36" cy="1008" r="4.5" fill="#f59e0b" opacity="0.8"/>
+  <text x="46" y="1012" fill="#94a3b8" font-size="10.5" font-family="'Inter', sans-serif" font-weight="400">Drug & Safety (5)</text>
+  <circle cx="251" cy="1008" r="4.5" fill="#a78bfa" opacity="0.8"/>
+  <text x="261" y="1012" fill="#94a3b8" font-size="10.5" font-family="'Inter', sans-serif" font-weight="400">Literature (4)</text>
+  <circle cx="466" cy="1008" r="4.5" fill="#818cf8" opacity="0.8"/>
+  <text x="476" y="1012" fill="#94a3b8" font-size="10.5" font-family="'Inter', sans-serif" font-weight="400">Clinical Trials (2)</text>
+</g>
+<!-- Attribution -->
+<text x="1380" y="1036" text-anchor="end" fill="#334155" font-size="9" font-family="'Inter', sans-serif">Icons: Phosphor Icons (phosphoricons.com)  &#x2022;  github.com/genomoncology/biomcp</text>
+
+</svg>
