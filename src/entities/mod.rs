@@ -2,12 +2,9 @@
 
 pub(crate) mod adverse_event;
 pub(crate) mod article;
-pub(crate) mod biomarker;
 pub(crate) mod disease;
 pub(crate) mod drug;
 pub(crate) mod gene;
-pub(crate) mod intervention;
-pub(crate) mod organization;
 pub(crate) mod pathway;
 pub(crate) mod pgx;
 pub(crate) mod protein;

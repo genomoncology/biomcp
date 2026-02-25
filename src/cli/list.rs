@@ -10,18 +10,16 @@ pub fn render(entity: Option<&str>) -> Result<String, BioMcpError> {
             "variant" => Ok(list_variant()),
             "article" => Ok(list_article()),
             "trial" => Ok(list_trial()),
-            "organization" => Ok(list_organization()),
-            "intervention" => Ok(list_intervention()),
-            "biomarker" => Ok(list_biomarker()),
             "drug" => Ok(list_drug()),
             "disease" => Ok(list_disease()),
+            "phenotype" => Ok(list_disease()),
             "pgx" => Ok(list_pgx()),
             "gwas" => Ok(list_gwas()),
             "pathway" => Ok(list_pathway()),
             "protein" => Ok(list_protein()),
             "adverse-event" | "adverse_event" | "adverseevent" => Ok(list_adverse_event()),
             other => Err(BioMcpError::InvalidArgument(format!(
-                "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- trial\n- organization\n- intervention\n- biomarker\n- drug\n- disease\n- pgx\n- gwas\n- pathway\n- protein\n- adverse-event"
+                "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- trial\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- protein\n- adverse-event"
             ))),
         },
     }
@@ -259,63 +257,6 @@ fn list_drug() -> String {
 
 - `drug trials <name>`
 - `drug adverse-events <name>`
-"#
-    .to_string()
-}
-
-fn list_organization() -> String {
-    r#"# organization
-
-## Commands
-
-- `search organization <query>` - positional NCI organization vocabulary search
-- `search organization -q <query>` - flag form (equivalent)
-- `search organization --type <academic|industry|...>` - constrain organization type
-- `search organization --city <city> --state <state>` - location filters
-- `search organization ... --limit <N> --offset <N>`
-
-## Notes
-
-- Requires `NCI_API_KEY`
-"#
-    .to_string()
-}
-
-fn list_intervention() -> String {
-    r#"# intervention
-
-## Commands
-
-- `search intervention <query>` - positional NCI intervention vocabulary search
-- `search intervention -q <query>` - flag form (equivalent)
-- `search intervention --type <drug|device|procedure|...>`
-- `search intervention --category <category>`
-- `search intervention --code <code>`
-- `search intervention ... --limit <N> --offset <N>`
-
-## Notes
-
-- Requires `NCI_API_KEY`
-"#
-    .to_string()
-}
-
-fn list_biomarker() -> String {
-    r#"# biomarker
-
-## Commands
-
-- `search biomarker <query>` - positional NCI biomarker vocabulary search
-- `search biomarker -q <query>` - flag form (equivalent)
-- `search biomarker --type <type>`
-- `search biomarker --eligibility <text>`
-- `search biomarker --assay-purpose <text>`
-- `search biomarker --code <code>`
-- `search biomarker ... --limit <N> --offset <N>`
-
-## Notes
-
-- Requires `NCI_API_KEY`
 "#
     .to_string()
 }

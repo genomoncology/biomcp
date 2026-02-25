@@ -658,11 +658,33 @@ fn contains_keyword_tokens(section_text: &str, keyword: &str) -> bool {
     }
 
     token_pattern.iter().all(|token| {
-        let pattern = format!(r"\b{token}\b");
+        let pattern = build_token_pattern(token);
         Regex::new(&pattern)
             .map(|regex| regex.is_match(section_text))
             .unwrap_or(false)
     })
+}
+
+fn build_token_pattern(escaped_token: &str) -> String {
+    let start = if escaped_token
+        .chars()
+        .next()
+        .is_some_and(|c| c.is_alphanumeric() || c == '_')
+    {
+        r"\b"
+    } else {
+        r"(^|[^\w])"
+    };
+    let end = if escaped_token
+        .chars()
+        .last()
+        .is_some_and(|c| c.is_alphanumeric() || c == '_')
+    {
+        r"\b"
+    } else {
+        r"($|[^\w])"
+    };
+    format!("{start}{escaped_token}{end}")
 }
 
 fn contains_exclusion_language(text: &str) -> bool {
@@ -1539,6 +1561,39 @@ mod tests {
         };
 
         assert_eq!(collect_eligibility_keywords(&filters), vec!["MSI-H"]);
+    }
+
+    #[test]
+    fn contains_keyword_tokens_matches_plus_suffix_token() {
+        assert!(contains_keyword_tokens(
+            "HER2+ positive breast cancer",
+            "HER2+"
+        ));
+    }
+
+    #[test]
+    fn contains_keyword_tokens_does_not_match_without_plus_suffix() {
+        assert!(!contains_keyword_tokens("her2 amplification", "HER2+"));
+    }
+
+    #[test]
+    fn contains_keyword_tokens_matches_slash_separated_plus_tokens() {
+        assert!(contains_keyword_tokens("ER+/PR+ breast cancer", "ER+"));
+    }
+
+    #[test]
+    fn contains_keyword_tokens_matches_hyphenated_token() {
+        assert!(contains_keyword_tokens("PD-L1 expression >=1%", "PD-L1"));
+    }
+
+    #[test]
+    fn contains_keyword_tokens_matches_word_token() {
+        assert!(contains_keyword_tokens("BRAF V600E mutation", "BRAF"));
+    }
+
+    #[test]
+    fn contains_keyword_tokens_rejects_substring_word_match() {
+        assert!(!contains_keyword_tokens("abraf", "BRAF"));
     }
 
     #[test]

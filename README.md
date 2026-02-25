@@ -88,6 +88,8 @@ biomcp disease articles "Lynch syndrome"
 biomcp gene articles BRCA1
 biomcp gene pathways BRAF
 biomcp pathway drugs R-HSA-5673001
+biomcp pathway articles R-HSA-5673001
+biomcp pathway trials R-HSA-5673001
 biomcp protein structures P15056
 biomcp article entities 22663011
 ```

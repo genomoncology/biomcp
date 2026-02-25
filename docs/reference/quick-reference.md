@@ -65,11 +65,21 @@ biomcp version
 
 ```bash
 biomcp variant trials "BRAF V600E" --limit 3
+biomcp variant articles "BRAF V600E"
 biomcp drug adverse-events pembrolizumab --limit 3
+biomcp drug trials pembrolizumab --limit 3
+biomcp disease trials melanoma --limit 3
 biomcp disease drugs melanoma --limit 3
+biomcp disease articles "Lynch syndrome" --limit 3
+biomcp gene trials BRAF --limit 3
+biomcp gene drugs BRAF --limit 3
+biomcp gene articles BRCA1 --limit 3
 biomcp gene pathways BRAF
 biomcp pathway drugs R-HSA-5673001 --limit 3
+biomcp pathway articles R-HSA-5673001 --limit 3
+biomcp pathway trials R-HSA-5673001 --limit 3
 biomcp protein structures P15056
+biomcp article entities 22663011
 ```
 
 ## Common gene aliases

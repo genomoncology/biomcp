@@ -10,11 +10,9 @@ One command grammar covers all entities.
 - variant
 - article
 - trial
-- organization
-- intervention
-- biomarker
 - drug
 - disease
+- phenotype
 - pgx
 - gwas
 - pathway

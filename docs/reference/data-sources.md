@@ -17,7 +17,7 @@ and operational caveats so users can reason about result quality and troubleshoo
 | Variant prediction | AlphaGenome | `https://gdmscience.googleapis.com:443` | Yes (`ALPHAGENOME_API_KEY`) | gRPC scoring for `predict` section |
 | Trial (default) | ClinicalTrials.gov API v2 | `https://clinicaltrials.gov/api/v2` | No | Default trial search/get source |
 | Trial (optional) | NCI CTS API | `https://clinicaltrialsapi.cancer.gov/api/v2` | Yes (`NCI_API_KEY`) | Enabled via `--source nci` |
-| NCI vocabulary search | NCI CTS API | `https://clinicaltrialsapi.cancer.gov/api/v2` | Yes (`NCI_API_KEY`) | `search organization`, `search intervention`, `search biomarker` |
+| NCI CTS trial search | NCI CTS API | `https://clinicaltrialsapi.cancer.gov/api/v2` | Yes (`NCI_API_KEY`) | `search trial --source nci` |
 | Article metadata | Europe PMC + PubMed | `https://www.ebi.ac.uk/europepmc/webservices/rest` | No | Search and bibliographic metadata |
 | Article annotations | PubTator3 | `https://www.ncbi.nlm.nih.gov/research/pubtator3-api` | No | Entity annotations |
 | Article fulltext resolution | PMC OA + NCBI ID Converter | `https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi`, `https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles` | No | Full-text and PMID/PMCID/DOI bridging |
@@ -55,7 +55,7 @@ BioMCP only requires API keys for a subset of sources.
 | Source | Environment variable | Required when |
 |--------|----------------------|---------------|
 | AlphaGenome | `ALPHAGENOME_API_KEY` | Running `get variant <id> predict` |
-| NCI CTS API | `NCI_API_KEY` | Trial operations with `--source nci`, or `search organization/intervention/biomarker` |
+| NCI CTS API | `NCI_API_KEY` | Trial operations with `--source nci` |
 | OncoKB | `ONCOKB_TOKEN` | Running `variant oncokb <id>` |
 | OpenFDA | `OPENFDA_API_KEY` | Optional; improves quota headroom |
 

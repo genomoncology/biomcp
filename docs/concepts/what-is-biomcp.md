@@ -31,7 +31,7 @@ BioMCP covers entities across clinical, research, and regulatory domains:
 
 **Extended entities:** pathway, protein, adverse-event, PGx (pharmacogenomics)
 
-**Discovery entities:** GWAS, phenotype search, biomarker, organization, intervention
+**Discovery entities:** GWAS and phenotype search
 
 ## Why this matters for agents
 

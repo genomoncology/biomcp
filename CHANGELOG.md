@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.8.3
+
+- Added inclusion-first eligibility post-filtering to reduce exclusion-only false positives in trial matching.
+- Applied cryptography dependency security updates and refreshed release artifacts.
+- Tightened CLI/docs consistency around trial filter behavior and output contracts.
+
+## 0.8.2
+
+- Added location-level facility and geo post-filtering for more accurate trial site matching.
+- Embedded git tag version metadata in the binary for reliable `biomcp version` output.
+- Improved pagination and result-window handling across search command families.
+
+## 0.8.1
+
+- Expanded clinical-grade trial filtering with ~45 new search flags and validation rules.
+- Added MCP tool auto-generation to reduce drift between CLI capabilities and server tool surface.
+- Upgraded help/discoverability content and list-based guidance for agent-driven workflows.
+
 ## 0.8.0
 
 Complete rewrite from Python to Rust. Single static binary, no runtime dependencies.

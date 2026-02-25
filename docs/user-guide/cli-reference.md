@@ -80,26 +80,6 @@ biomcp search article -g BRAF -d melanoma --since 2024-01-01 --limit 5 --offset 
 biomcp search trial -c melanoma --status recruiting --source ctgov --limit 5 --offset 0
 ```
 
-### Organization (NCI CTS)
-
-```bash
-biomcp search organization -q "MD Anderson" --city Houston --state TX --limit 5 --offset 0
-```
-
-### Intervention (NCI CTS)
-
-```bash
-biomcp search intervention -q pembrolizumab --type drug --limit 5 --offset 0
-```
-
-### Biomarker (NCI CTS)
-
-```bash
-biomcp search biomarker -q "PD-L1" --type reference_gene --limit 5 --offset 0
-```
-
-NCI vocabulary search commands require `NCI_API_KEY`.
-
 ### Variant
 
 ```bash
@@ -149,6 +129,7 @@ biomcp get gene BRAF diseases
 biomcp get disease melanoma
 biomcp get disease MONDO:0005105 genes phenotypes
 biomcp get disease MONDO:0005105 variants models
+biomcp get disease MONDO:0005105 pathways prevalence civic
 biomcp get disease MONDO:0005105 all
 ```
 
@@ -207,6 +188,8 @@ biomcp get protein P15056 domains interactions
 
 ```bash
 biomcp get adverse-event 10222779
+biomcp get adverse-event 10222779 reactions outcomes
+biomcp get adverse-event 10222779 concomitant guidance all
 ```
 
 ## Enrichment
@@ -227,12 +210,22 @@ See also: `docs/reference/mcp-server.md`.
 
 ```bash
 biomcp variant trials "BRAF V600E"
+biomcp variant articles "BRAF V600E"
 biomcp variant oncokb "BRAF V600E"
 biomcp drug adverse-events pembrolizumab
+biomcp drug trials pembrolizumab
+biomcp disease trials melanoma
 biomcp disease drugs melanoma
+biomcp disease articles "Lynch syndrome"
+biomcp gene trials BRAF
+biomcp gene drugs BRAF
+biomcp gene articles BRCA1
 biomcp gene pathways BRAF
 biomcp pathway drugs R-HSA-5673001
+biomcp pathway articles R-HSA-5673001
+biomcp pathway trials R-HSA-5673001
 biomcp protein structures P15056
+biomcp article entities 22663011
 ```
 
 ## Batch mode

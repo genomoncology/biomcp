@@ -8,12 +8,9 @@ use crate::entities::adverse_event::{
     DeviceEvent, DeviceEventSearchResult, RecallSearchResult,
 };
 use crate::entities::article::{Article, ArticleAnnotations, ArticleSearchResult};
-use crate::entities::biomarker::BiomarkerSearchResult;
 use crate::entities::disease::{Disease, DiseaseSearchResult, PhenotypeSearchResult};
 use crate::entities::drug::{Drug, DrugSearchResult};
 use crate::entities::gene::{Gene, GeneSearchResult};
-use crate::entities::intervention::InterventionSearchResult;
-use crate::entities::organization::OrganizationSearchResult;
 use crate::entities::pathway::{Pathway, PathwaySearchResult};
 use crate::entities::pgx::{Pgx, PgxSearchResult};
 use crate::entities::protein::{Protein, ProteinSearchResult};
@@ -209,18 +206,6 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
     env.add_template(
         "trial_search.md.j2",
         include_str!("../../templates/trial_search.md.j2"),
-    )?;
-    env.add_template(
-        "organization_search.md.j2",
-        include_str!("../../templates/organization_search.md.j2"),
-    )?;
-    env.add_template(
-        "intervention_search.md.j2",
-        include_str!("../../templates/intervention_search.md.j2"),
-    )?;
-    env.add_template(
-        "biomarker_search.md.j2",
-        include_str!("../../templates/biomarker_search.md.j2"),
     )?;
     env.add_template(
         "variant.md.j2",
@@ -1244,75 +1229,6 @@ pub fn trial_search_markdown_with_footer(
         query => query,
         count => results.len(),
         total => total,
-        results => results,
-        pagination_footer => pagination_footer,
-    })?;
-    Ok(with_pagination_footer(body, pagination_footer))
-}
-
-#[allow(dead_code)]
-pub fn organization_search_markdown(
-    query: &str,
-    results: &[OrganizationSearchResult],
-) -> Result<String, BioMcpError> {
-    organization_search_markdown_with_footer(query, results, "")
-}
-
-pub fn organization_search_markdown_with_footer(
-    query: &str,
-    results: &[OrganizationSearchResult],
-    pagination_footer: &str,
-) -> Result<String, BioMcpError> {
-    let tmpl = env()?.get_template("organization_search.md.j2")?;
-    let body = tmpl.render(context! {
-        query => query,
-        count => results.len(),
-        results => results,
-        pagination_footer => pagination_footer,
-    })?;
-    Ok(with_pagination_footer(body, pagination_footer))
-}
-
-#[allow(dead_code)]
-pub fn intervention_search_markdown(
-    query: &str,
-    results: &[InterventionSearchResult],
-) -> Result<String, BioMcpError> {
-    intervention_search_markdown_with_footer(query, results, "")
-}
-
-pub fn intervention_search_markdown_with_footer(
-    query: &str,
-    results: &[InterventionSearchResult],
-    pagination_footer: &str,
-) -> Result<String, BioMcpError> {
-    let tmpl = env()?.get_template("intervention_search.md.j2")?;
-    let body = tmpl.render(context! {
-        query => query,
-        count => results.len(),
-        results => results,
-        pagination_footer => pagination_footer,
-    })?;
-    Ok(with_pagination_footer(body, pagination_footer))
-}
-
-#[allow(dead_code)]
-pub fn biomarker_search_markdown(
-    query: &str,
-    results: &[BiomarkerSearchResult],
-) -> Result<String, BioMcpError> {
-    biomarker_search_markdown_with_footer(query, results, "")
-}
-
-pub fn biomarker_search_markdown_with_footer(
-    query: &str,
-    results: &[BiomarkerSearchResult],
-    pagination_footer: &str,
-) -> Result<String, BioMcpError> {
-    let tmpl = env()?.get_template("biomarker_search.md.j2")?;
-    let body = tmpl.render(context! {
-        query => query,
-        count => results.len(),
         results => results,
         pagination_footer => pagination_footer,
     })?;

@@ -32,9 +32,6 @@ nav:
       - PGx: user-guide/pgx.md
       - GWAS: user-guide/gwas.md
       - Phenotype: user-guide/phenotype.md
-      - Organization: user-guide/organization.md
-      - Intervention: user-guide/intervention.md
-      - Biomarker: user-guide/biomarker.md
   - How-To:
       - Annotate Variants: how-to/annotate-variants.md
       - Find Articles: how-to/find-articles.md

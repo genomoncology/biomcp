@@ -1,7 +1,7 @@
 # BioMCP
 
 **Single-binary CLI and MCP server for querying biomedical databases.**
-One command grammar, compact markdown output, 15 entities across 15+ data sources.
+One command grammar, compact markdown output, 12 entities across 15+ data sources.
 
 ## Install
 
@@ -72,9 +72,6 @@ batch <entity> <id1,id2,...> → parallel gets
 | pgx | CPIC, PharmGKB | `biomcp get pgx CYP2D6 recommendations` |
 | gwas | GWAS Catalog | `biomcp search gwas --trait "type 2 diabetes"` |
 | phenotype | Monarch Initiative (HPO) | `biomcp search phenotype "HP:0001250"` |
-| organization | NCI CTS API | `biomcp search organization "Dana-Farber"` |
-| intervention | NCI CTS API | `biomcp search intervention pembrolizumab` |
-| biomarker | NCI CTS API | `biomcp search biomarker BRAF` |
 
 ## Cross-entity helpers
 
@@ -87,9 +84,12 @@ biomcp drug adverse-events pembrolizumab
 biomcp drug trials pembrolizumab
 biomcp disease trials melanoma
 biomcp disease drugs melanoma
+biomcp disease articles "Lynch syndrome"
 biomcp gene articles BRCA1
 biomcp gene pathways BRAF
 biomcp pathway drugs R-HSA-5673001
+biomcp pathway articles R-HSA-5673001
+biomcp pathway trials R-HSA-5673001
 biomcp protein structures P15056
 biomcp article entities 22663011
 ```
@@ -123,7 +123,7 @@ Most commands work without credentials. Optional keys improve rate limits:
 ```bash
 export NCBI_API_KEY="..."        # PubTator, PMC OA, NCBI ID converter
 export OPENFDA_API_KEY="..."     # OpenFDA rate limits
-export NCI_API_KEY="..."         # NCI CTS (required for organization/intervention/biomarker)
+export NCI_API_KEY="..."         # NCI CTS trial search (--source nci)
 export ONCOKB_TOKEN="..."        # OncoKB variant helper
 export ALPHAGENOME_API_KEY="..." # AlphaGenome variant effect prediction
 ```
