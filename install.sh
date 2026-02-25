@@ -165,10 +165,10 @@ if [[ "$VERSION" == "latest" ]]; then
   # so we skip releases without the required asset file.
   RESOLVED_TAG=""
   api_url="https://api.github.com/repos/${REPO}/releases"
-  if releases_json="$(curl -fsSL "$api_url" 2>/dev/null)"; then
+  if command -v jq >/dev/null 2>&1 && releases_json="$(curl -fsSL "$api_url" 2>/dev/null)"; then
     RESOLVED_TAG="$(printf '%s' "$releases_json" | \
       jq -r --arg asset "$ASSET" \
-        '[.[] | select(.draft==false and .prerelease==false) | select(.assets[]?.name == $asset)][0].tag_name // empty')"
+        '[.[] | select(.draft==false and .prerelease==false) | select(.assets[]?.name == $asset)][0].tag_name // empty' 2>/dev/null)" || true
   fi
   if [[ -z "$RESOLVED_TAG" ]]; then
     # API unavailable or no release with assets — fall back to GitHub redirect
