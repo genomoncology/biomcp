@@ -131,6 +131,15 @@ pub struct PgxSearchFilters {
     pub evidence: Option<String>,
 }
 
+fn normalize_cpic_level(value: &str) -> Result<String, BioMcpError> {
+    match value.trim().to_ascii_uppercase().as_str() {
+        "A" | "B" | "C" | "D" => Ok(value.trim().to_ascii_uppercase()),
+        _ => Err(BioMcpError::InvalidArgument(
+            "--cpic-level must be one of: A, B, C, D".into(),
+        )),
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 struct PgxSections {
     include_recommendations: bool,
@@ -423,12 +432,14 @@ pub async fn search_page(
         .as_deref()
         .map(str::trim)
         .filter(|v| !v.is_empty())
+        .map(normalize_cpic_level)
+        .transpose()?
     {
         out.retain(|row| {
             row.cpiclevel
                 .as_deref()
                 .map(str::trim)
-                .is_some_and(|v| v.eq_ignore_ascii_case(expected))
+                .is_some_and(|v| v.eq_ignore_ascii_case(&expected))
         });
     }
     if let Some(expected) = filters
@@ -837,5 +848,17 @@ mod tests {
     fn likely_gene_recognizes_hgnc_style_symbol() {
         assert!(is_likely_gene("CYP2D6"));
         assert!(!is_likely_gene("type 2 diabetes"));
+    }
+
+    #[test]
+    fn normalize_cpic_level_accepts_supported_values() {
+        assert_eq!(normalize_cpic_level("A").expect("A"), "A");
+        assert_eq!(normalize_cpic_level("b").expect("b"), "B");
+    }
+
+    #[test]
+    fn normalize_cpic_level_rejects_invalid_value() {
+        let err = normalize_cpic_level("Z").expect_err("Z should fail");
+        assert!(err.to_string().contains("A, B, C, D"));
     }
 }

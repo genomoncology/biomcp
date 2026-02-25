@@ -814,6 +814,7 @@ See also: biomcp list pgx")]
 EXAMPLES:
   biomcp get trial NCT02576665
   biomcp get trial NCT02576665 eligibility --source ctgov
+  biomcp get trial NCT02576665 locations --offset 20 --limit 20
 
 See also: biomcp list trial")]
     Trial {
@@ -1287,6 +1288,69 @@ fn extract_json_from_sections(sections: &[String]) -> (Vec<String>, bool) {
     (cleaned, json_override)
 }
 
+fn parse_usize_arg(flag: &str, value: &str) -> Result<usize, crate::error::BioMcpError> {
+    value.parse::<usize>().map_err(|_| {
+        crate::error::BioMcpError::InvalidArgument(format!("{flag} must be a non-negative integer"))
+    })
+}
+
+fn parse_trial_location_paging(
+    sections: &[String],
+) -> Result<(Vec<String>, Option<usize>, Option<usize>), crate::error::BioMcpError> {
+    let mut cleaned: Vec<String> = Vec::new();
+    let mut location_offset: Option<usize> = None;
+    let mut location_limit: Option<usize> = None;
+    let mut i = 0usize;
+    while i < sections.len() {
+        let token = sections[i].trim();
+        if token.is_empty() {
+            i += 1;
+            continue;
+        }
+
+        if let Some(value) = token.strip_prefix("--offset=") {
+            location_offset = Some(parse_usize_arg("--offset", value)?);
+            i += 1;
+            continue;
+        }
+        if token == "--offset" {
+            let value = sections.get(i + 1).ok_or_else(|| {
+                crate::error::BioMcpError::InvalidArgument(
+                    "--offset requires a value for trial location pagination".into(),
+                )
+            })?;
+            location_offset = Some(parse_usize_arg("--offset", value.trim())?);
+            i += 2;
+            continue;
+        }
+        if let Some(value) = token.strip_prefix("--limit=") {
+            location_limit = Some(parse_usize_arg("--limit", value)?);
+            i += 1;
+            continue;
+        }
+        if token == "--limit" {
+            let value = sections.get(i + 1).ok_or_else(|| {
+                crate::error::BioMcpError::InvalidArgument(
+                    "--limit requires a value for trial location pagination".into(),
+                )
+            })?;
+            location_limit = Some(parse_usize_arg("--limit", value.trim())?);
+            i += 2;
+            continue;
+        }
+        cleaned.push(sections[i].clone());
+        i += 1;
+    }
+
+    if location_limit.is_some_and(|value| value == 0) {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--limit must be >= 1 for trial location pagination".into(),
+        ));
+    }
+
+    Ok((cleaned, location_offset, location_limit))
+}
+
 fn normalize_cli_query(value: Option<String>) -> Option<String> {
     value.and_then(|raw| {
         let trimmed = raw.trim();
@@ -1363,10 +1427,9 @@ impl PaginationMeta {
             .as_deref()
             .map(str::trim)
             .is_some_and(|value| !value.is_empty());
-        let has_more = has_token
-            || total
-                .map(|value| offset.saturating_add(returned) < value)
-                .unwrap_or(false);
+        let has_more = total
+            .map(|value| offset.saturating_add(returned) < value)
+            .unwrap_or(has_token);
         Self {
             offset,
             limit,
@@ -1800,10 +1863,25 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         source,
                     },
             } => {
+                let (sections, location_offset, location_limit) =
+                    parse_trial_location_paging(&sections)?;
                 let (sections, json_override) = extract_json_from_sections(&sections);
                 let json_output = cli.json || json_override;
                 let trial_source = crate::entities::trial::TrialSource::from_flag(&source)?;
-                let trial = crate::entities::trial::get(&nct_id, &sections, trial_source).await?;
+                let mut trial =
+                    crate::entities::trial::get(&nct_id, &sections, trial_source).await?;
+                let includes_locations = sections
+                    .iter()
+                    .any(|section| section.trim().eq_ignore_ascii_case("locations"));
+                if includes_locations {
+                    let offset = location_offset.unwrap_or(0);
+                    let limit = location_limit.unwrap_or(20);
+                    if let Some(locations) = trial.locations.take() {
+                        trial.locations = Some(
+                            locations.into_iter().skip(offset).take(limit).collect(),
+                        );
+                    }
+                }
                 if json_output {
                     Ok(crate::render::json::to_pretty(&trial)?)
                 } else {
@@ -1890,6 +1968,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     offset,
                     source,
                 } => {
+                    let _ = crate::entities::variant::parse_variant_id(&id)?;
                     let mutation_query = variant_trial_mutation_query(&id).await;
                     let trial_source = crate::entities::trial::TrialSource::from_flag(&source)?;
                     let filters = crate::entities::trial::TrialSearchFilters {
@@ -3198,19 +3277,17 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     )
                     .await?;
                     if count_only {
+                        let total = page.total.unwrap_or(0);
                         if cli.json {
                             #[derive(serde::Serialize)]
                             struct TrialCountOnlyJson {
-                                total: Option<usize>,
+                                total: usize,
                             }
                             return Ok(crate::render::json::to_pretty(&TrialCountOnlyJson {
-                                total: page.total,
+                                total,
                             })?);
                         }
-                        return Ok(match page.total {
-                            Some(total) => format!("Total: {total}"),
-                            None => "Total: unknown".to_string(),
-                        });
+                        return Ok(format!("Total: {total}"));
                     }
                     let results = page.results;
                     let pagination = PaginationMeta::cursor(
@@ -3844,8 +3921,9 @@ pub async fn execute(mut args: Vec<String>) -> anyhow::Result<String> {
 mod tests {
     use super::{
         ArticleCommand, Cli, Commands, GeneCommand, ProteinCommand, VariantCommand, execute,
-        extract_json_from_sections, resolve_query_input, should_try_pathway_trial_fallback,
-        trial_search_query_summary, truncate_article_annotations,
+        extract_json_from_sections, parse_trial_location_paging, resolve_query_input,
+        should_try_pathway_trial_fallback, trial_search_query_summary,
+        truncate_article_annotations,
     };
     use clap::Parser;
 
@@ -3871,6 +3949,21 @@ mod tests {
         let (cleaned, json_override) = extract_json_from_sections(&sections);
         assert_eq!(cleaned, sections);
         assert!(!json_override);
+    }
+
+    #[test]
+    fn parse_trial_location_paging_extracts_offset_limit_flags() {
+        let sections = vec![
+            "locations".to_string(),
+            "--offset".to_string(),
+            "20".to_string(),
+            "--limit=10".to_string(),
+        ];
+        let (cleaned, offset, limit) =
+            parse_trial_location_paging(&sections).expect("valid pagination flags");
+        assert_eq!(cleaned, vec!["locations".to_string()]);
+        assert_eq!(offset, Some(20));
+        assert_eq!(limit, Some(10));
     }
 
     #[test]

@@ -119,10 +119,7 @@ impl UniProtClient {
         let size = limit.clamp(1, 25).to_string();
         let offset = offset.to_string();
         crate::sources::rate_limit::wait_for_url_str(&url).await;
-        let token = next_page
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(str::to_string);
+        let token = normalize_next_page_token(next_page)?;
         let token_for_request = token.clone();
         let resp = crate::sources::retry_send(UNIPROT_API, 3, || async {
             if let Some(token) = token_for_request.as_deref() {
@@ -223,6 +220,43 @@ fn parse_uniprot_next_link(value: Option<&reqwest::header::HeaderValue>) -> Opti
         }
     }
     None
+}
+
+fn normalize_next_page_token(next_page: Option<&str>) -> Result<Option<String>, BioMcpError> {
+    let Some(token) = next_page
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+    else {
+        return Ok(None);
+    };
+
+    if token.len() > 2048 {
+        return Err(BioMcpError::InvalidArgument(
+            "--next-page token is too long".into(),
+        ));
+    }
+    if token.chars().all(|ch| ch.is_ascii_digit()) {
+        return Err(BioMcpError::InvalidArgument(
+            "--next-page token is invalid. Use pagination.next_page_token from the previous result."
+                .into(),
+        ));
+    }
+    if token.chars().any(|ch| ch.is_whitespace()) {
+        return Err(BioMcpError::InvalidArgument(
+            "--next-page token must not contain whitespace".into(),
+        ));
+    }
+    if token.starts_with("http://") || token.starts_with("https://") {
+        reqwest::Url::parse(&token).map_err(|_| {
+            BioMcpError::InvalidArgument(
+                "--next-page token URL is invalid. Use pagination.next_page_token from the previous result."
+                    .into(),
+            )
+        })?;
+    }
+
+    Ok(Some(token))
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -577,5 +611,19 @@ mod tests {
                 "AF-P15056-F1 (AlphaFold model)".to_string()
             ]
         );
+    }
+
+    #[test]
+    fn normalize_next_page_token_rejects_numeric_only_tokens() {
+        let err = normalize_next_page_token(Some("12345")).expect_err("numeric token should fail");
+        assert!(err.to_string().contains("--next-page token is invalid"));
+    }
+
+    #[test]
+    fn normalize_next_page_token_accepts_cursor_url() {
+        let token =
+            normalize_next_page_token(Some("https://rest.uniprot.org/uniprotkb/search?cursor=abc"))
+                .expect("valid URL token");
+        assert!(token.is_some());
     }
 }

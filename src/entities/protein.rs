@@ -55,6 +55,7 @@ pub struct ProteinInteraction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProteinSearchResult {
     pub accession: String,
+    pub uniprot_id: String,
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gene_symbol: Option<String>,
@@ -249,23 +250,84 @@ pub async fn search_page(
     let scoped_query = scoped_terms.join(" AND ");
 
     let client = UniProtClient::new()?;
-    let page = client
-        .search(
-            &scoped_query,
-            limit.clamp(1, 25),
-            offset,
-            next_page.as_deref(),
-        )
-        .await?;
+    if next_page
+        .as_deref()
+        .map(str::trim)
+        .is_some_and(|value| !value.is_empty())
+    {
+        let page = client
+            .search(&scoped_query, limit.clamp(1, 25), 0, next_page.as_deref())
+            .await?;
+        return Ok(SearchPage::cursor(
+            page.results
+                .into_iter()
+                .map(transform::protein::from_uniprot_search_record)
+                .collect(),
+            page.total,
+            page.next_page_token,
+        ));
+    }
 
-    Ok(SearchPage::cursor(
-        page.results
-            .into_iter()
-            .map(transform::protein::from_uniprot_search_record)
-            .collect(),
-        page.total,
-        page.next_page_token,
-    ))
+    const API_PAGE_SIZE: usize = 25;
+    const MAX_PAGE_FETCHES: usize = 200;
+    let mut rows: Vec<ProteinSearchResult> = Vec::with_capacity(limit);
+    let mut total: Option<usize> = None;
+    let mut remaining_skip = offset;
+    let mut page_token: Option<String> = None;
+    let mut exhausted = false;
+
+    for _ in 0..MAX_PAGE_FETCHES {
+        let page = client
+            .search(&scoped_query, API_PAGE_SIZE, 0, page_token.as_deref())
+            .await?;
+        if total.is_none() {
+            total = page.total;
+            if total.is_some_and(|value| offset >= value) {
+                exhausted = true;
+                break;
+            }
+        }
+        let page_count = page.results.len();
+        if page_count == 0 {
+            exhausted = true;
+            break;
+        }
+
+        let mut consumed = 0usize;
+        for row in page.results {
+            consumed = consumed.saturating_add(1);
+            if remaining_skip > 0 {
+                remaining_skip -= 1;
+                continue;
+            }
+            if rows.len() < limit {
+                rows.push(transform::protein::from_uniprot_search_record(row));
+            }
+            if rows.len() >= limit {
+                break;
+            }
+        }
+
+        if rows.len() >= limit {
+            if consumed >= page_count {
+                page_token = page.next_page_token;
+            } else {
+                // Mid-page stops cannot be represented as a cursor.
+                page_token = None;
+            }
+            break;
+        }
+
+        page_token = page.next_page_token;
+        if page_token.is_none() {
+            exhausted = true;
+            break;
+        }
+    }
+
+    let resolved_total = total.or_else(|| Some(offset.saturating_add(rows.len())));
+    let next = if exhausted { None } else { page_token };
+    Ok(SearchPage::cursor(rows, resolved_total, next))
 }
 
 pub async fn get(accession: &str, sections: &[String]) -> Result<Protein, BioMcpError> {

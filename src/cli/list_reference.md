@@ -24,6 +24,7 @@ One command grammar covers all entities.
 - `search <entity> [query|filters]` - find entities
 - `search trial [filters]` - trial search is filter-only
 - `get <entity> <id> [section...]` - fetch by identifier with optional sections
+- `get trial <nct_id> locations --offset <N> --limit <N>` - page trial locations
 - `enrich <GENE1,GENE2,...>` - gene-set enrichment via g:Profiler
 - `batch <entity> <id1,id2,...>` - parallel get operations
 
@@ -31,7 +32,7 @@ One command grammar covers all entities.
 
 - `search variant ... --review-status --population --revel-min --gerp-min --tumor-site --condition --impact --lof --has --missing --therapy`
 - `search adverse-event ... --date-from --date-to --suspect-only --sex --age-min --age-max --reporter --count`
-- `search gene ... --region --pathway --go` (search output includes Coordinates/UniProt/OMIM)
+- `search gene ... --region --pathway --go` (use GO IDs like `GO:0004672`; search output includes Coordinates/UniProt/OMIM)
 - `search protein ... --reviewed --disease --existence` (default reviewed mode)
 - `search trial ... --study-type --has-results --date-from --date-to`
 - `search article ... --date-from --date-to --journal`

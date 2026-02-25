@@ -167,7 +167,10 @@ fn parse_pmid(id: &str) -> Option<u32> {
 }
 
 fn parse_pmcid(id: &str) -> Option<String> {
-    let id = id.trim();
+    let mut id = id.trim();
+    if id.len() > 6 && id[..6].eq_ignore_ascii_case("PMCID:") {
+        id = id[6..].trim();
+    }
     if id.len() < 4 {
         return None;
     }
@@ -526,18 +529,24 @@ pub async fn search_page(
     let query = build_search_query(filters)?;
     let europepmc_sort = filters.sort.as_europepmc_sort();
 
+    const API_PAGE_SIZE: usize = 25;
+    const MAX_PAGE_FETCHES: usize = 200;
     let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
     let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
     let mut total: Option<usize> = None;
-    let mut page: usize = if limit == 0 { 1 } else { (offset / limit) + 1 };
-    let mut local_skip = if limit == 0 { 0 } else { offset % limit };
-    while out.len() < limit {
-        let page_size = (limit.saturating_sub(out.len())).clamp(1, 25);
+    let mut page: usize = (offset / API_PAGE_SIZE) + 1;
+    let mut local_skip = offset % API_PAGE_SIZE;
+    let mut fetched_pages = 0usize;
+    while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
+        fetched_pages = fetched_pages.saturating_add(1);
         let resp = europe
-            .search_query_with_sort(&query, page, page_size, europepmc_sort)
+            .search_query_with_sort(&query, page, API_PAGE_SIZE, europepmc_sort)
             .await?;
         if total.is_none() {
             total = resp.hit_count.map(|v| v as usize);
+            if total.is_some_and(|value| offset >= value) {
+                return Ok(SearchPage::offset(Vec::new(), total));
+            }
         }
         let Some(results) = resp.result_list.map(|v| v.result) else {
             break;
@@ -576,9 +585,6 @@ pub async fn search_page(
         }
 
         page += 1;
-        if page > 20 {
-            break;
-        }
     }
 
     // Safety-first default: when date-sorted results contain no visible retraction marker,
@@ -796,6 +802,7 @@ mod tests {
     fn parse_pmcid_basic() {
         assert_eq!(parse_pmcid("PMC9984800"), Some("PMC9984800".into()));
         assert_eq!(parse_pmcid("pmc9984800"), Some("PMC9984800".into()));
+        assert_eq!(parse_pmcid("PMCID:PMC9984800"), Some("PMC9984800".into()));
         assert_eq!(parse_pmcid(" PMC9984800 "), Some("PMC9984800".into()));
         assert_eq!(parse_pmcid("PMC"), None);
         assert_eq!(parse_pmcid("PMCX"), None);

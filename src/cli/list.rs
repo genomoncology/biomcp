@@ -12,7 +12,7 @@ pub fn render(entity: Option<&str>) -> Result<String, BioMcpError> {
             "trial" => Ok(list_trial()),
             "drug" => Ok(list_drug()),
             "disease" => Ok(list_disease()),
-            "phenotype" => Ok(list_disease()),
+            "phenotype" => Ok(list_phenotype()),
             "pgx" => Ok(list_pgx()),
             "gwas" => Ok(list_gwas()),
             "pathway" => Ok(list_pathway()),
@@ -67,7 +67,7 @@ fn list_gene() -> String {
 - `search gene -q <query> --chromosome <N>`
 - `search gene -q <query> --region <chr:start-end>`
 - `search gene -q <query> --pathway <id>`
-- `search gene -q <query> --go <term>`
+- `search gene -q <query> --go <GO:0000000>`
 - `search gene -q <query> --limit <N> --offset <N>`
 
 ## Search output
@@ -195,6 +195,7 @@ fn list_trial() -> String {
 - `get trial <nct_id>` - protocol card by NCT ID
 - `get trial <nct_id> eligibility` - show eligibility criteria inline
 - `get trial <nct_id> locations` - site locations section
+- `get trial <nct_id> locations --offset <N> --limit <N>` - paged location slice
 - `get trial <nct_id> outcomes` - primary/secondary outcomes
 - `get trial <nct_id> arms` - arm/intervention details
 - `get trial <nct_id> references` - trial publication references
@@ -289,6 +290,25 @@ fn list_disease() -> String {
 - `disease trials <name>`
 - `disease articles <name>`
 - `disease drugs <name>`
+"#
+    .to_string()
+}
+
+fn list_phenotype() -> String {
+    r#"# phenotype
+
+## Commands
+
+- `search phenotype "<HP:... HP:...>"` - rank diseases by phenotype similarity
+
+## Examples
+
+- `search phenotype "HP:0001250 HP:0001263"`
+- `search phenotype "HP:0001250" --limit <N> --offset <N>`
+
+## Related
+
+- `search disease -q <query> --phenotype <HP:...>`
 "#
     .to_string()
 }

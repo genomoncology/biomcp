@@ -235,6 +235,22 @@ fn normalize_gene_chromosome(value: &str) -> Result<String, BioMcpError> {
     }
 }
 
+fn normalize_go_id(value: &str) -> Result<String, BioMcpError> {
+    let raw = value.trim();
+    if raw.len() != 10 {
+        return Err(BioMcpError::InvalidArgument(
+            "--go must be a GO ID in the form GO:0000000".into(),
+        ));
+    }
+    let (prefix, digits) = raw.split_at(3);
+    if !prefix.eq_ignore_ascii_case("GO:") || !digits.chars().all(|c| c.is_ascii_digit()) {
+        return Err(BioMcpError::InvalidArgument(
+            "--go must be a GO ID in the form GO:0000000".into(),
+        ));
+    }
+    Ok(format!("GO:{digits}"))
+}
+
 fn parse_region_filter(value: &str) -> Result<(String, i64, i64), BioMcpError> {
     let raw = value.trim();
     let (raw_chr, raw_range) = raw.split_once(':').ok_or_else(|| {
@@ -836,9 +852,10 @@ pub async fn search_page(
     }
 
     if let Some(go_term) = go_term {
-        let escaped = MyGeneClient::escape_query_value(go_term);
+        let normalized_go = normalize_go_id(go_term)?;
+        let escaped = MyGeneClient::escape_query_value(&normalized_go);
         terms.push(format!(
-            "(go.BP.id:\"{escaped}\" OR go.CC.id:\"{escaped}\" OR go.MF.id:\"{escaped}\" OR go.BP.term:*{escaped}* OR go.CC.term:*{escaped}* OR go.MF.term:*{escaped}*)"
+            "(go.BP.id:\"{escaped}\" OR go.CC.id:\"{escaped}\" OR go.MF.id:\"{escaped}\")"
         ));
     }
 
@@ -1054,5 +1071,23 @@ mod tests {
     fn normalize_gene_chromosome_rejects_invalid_values() {
         let err = normalize_gene_chromosome("99").expect_err("99 should fail");
         assert!(err.to_string().contains("1-22"));
+    }
+
+    #[test]
+    fn normalize_go_id_accepts_canonical_and_lowercase_prefix() {
+        assert_eq!(
+            normalize_go_id("GO:0004672").expect("valid GO ID"),
+            "GO:0004672"
+        );
+        assert_eq!(
+            normalize_go_id("go:0008150").expect("lowercase GO ID"),
+            "GO:0008150"
+        );
+    }
+
+    #[test]
+    fn normalize_go_id_rejects_free_text() {
+        let err = normalize_go_id("DNA repair").expect_err("free text should fail");
+        assert!(err.to_string().contains("GO:0000000"));
     }
 }

@@ -181,6 +181,7 @@ pub const TRIAL_SECTION_NAMES: &[&str] = &[
 const ELIGIBILITY_MAX_CHARS: usize = 12_000;
 const FACILITY_GEO_VERIFY_CONCURRENCY: usize = 8;
 const ELIGIBILITY_VERIFY_CONCURRENCY: usize = 8;
+const CTGOV_MAX_PAGE_FETCHES: usize = 20;
 
 #[derive(Debug, Clone, Copy, Default)]
 struct TrialSections {
@@ -938,6 +939,15 @@ fn looks_like_nct_id(value: &str) -> bool {
     v[3..].iter().all(|b| b.is_ascii_digit())
 }
 
+fn normalize_nct_id(value: &str) -> String {
+    let trimmed = value.trim();
+    if trimmed.len() >= 3 && trimmed[..3].eq_ignore_ascii_case("NCT") {
+        format!("NCT{}", &trimmed[3..])
+    } else {
+        trimmed.to_string()
+    }
+}
+
 fn ctgov_query_term(
     filters: &TrialSearchFilters,
     normalized_phase: Option<&str>,
@@ -1209,16 +1219,6 @@ pub async fn search_page(
                 .as_deref()
                 .map(str::trim)
                 .is_some_and(|v| !v.is_empty());
-
-            let page_size = limit.clamp(1, 100);
-            let mut rows: Vec<TrialSearchResult> = Vec::new();
-            let mut total: Option<usize> = None;
-            let mut page_token = next_page
-                .as_deref()
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(str::to_string);
-            let mut remaining_skip = offset;
             let facility_geo_verification = facility
                 .as_deref()
                 .zip(filters.lat)
@@ -1227,7 +1227,21 @@ pub async fn search_page(
                 .map(|(((facility_name, lat), lon), distance)| {
                     (facility_name.to_string(), lat, lon, distance)
                 });
-            for _ in 0..20 {
+            let uses_post_filters =
+                facility_geo_verification.is_some() || !eligibility_keywords.is_empty();
+
+            let page_size = limit.clamp(1, 100);
+            let mut rows: Vec<TrialSearchResult> = Vec::new();
+            let mut total: Option<usize> = None;
+            let mut verified_total: usize = 0;
+            let mut exhausted = false;
+            let mut page_token = next_page
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string);
+            let mut remaining_skip = offset;
+            for _ in 0..CTGOV_MAX_PAGE_FETCHES {
                 let resp = client
                     .search(&CtGovSearchParams {
                         condition: filters.condition.clone(),
@@ -1251,6 +1265,7 @@ pub async fn search_page(
                 let next_page_token = resp.next_page_token;
 
                 if studies.is_empty() {
+                    exhausted = true;
                     break;
                 }
 
@@ -1266,6 +1281,10 @@ pub async fn search_page(
                         verify_eligibility_criteria(&client, studies, &eligibility_keywords).await;
                 }
 
+                if uses_post_filters {
+                    verified_total = verified_total.saturating_add(studies.len());
+                }
+
                 let page_study_count = studies.len();
                 let mut page_consumed = 0;
                 for study in studies.drain(..) {
@@ -1274,7 +1293,9 @@ pub async fn search_page(
                         remaining_skip -= 1;
                         continue;
                     }
-                    rows.push(transform::trial::from_ctgov_hit(&study));
+                    if rows.len() < limit {
+                        rows.push(transform::trial::from_ctgov_hit(&study));
+                    }
                     if rows.len() >= limit {
                         break;
                     }
@@ -1295,6 +1316,7 @@ pub async fn search_page(
 
                 page_token = next_page_token;
                 if page_token.is_none() {
+                    exhausted = true;
                     break;
                 }
             }
@@ -1304,12 +1326,20 @@ pub async fn search_page(
             }
 
             rows.truncate(limit);
-            let returned_total =
-                if facility_geo_verification.is_some() || !eligibility_keywords.is_empty() {
-                    None
+            let returned_total = if uses_post_filters {
+                if exhausted {
+                    Some(verified_total)
                 } else {
-                    total
-                };
+                    // Conservative lower bound when traversal is capped.
+                    Some(
+                        verified_total
+                            .saturating_add(1)
+                            .max(offset.saturating_add(rows.len()).saturating_add(1)),
+                    )
+                }
+            } else {
+                total.or_else(|| Some(offset.saturating_add(rows.len())))
+            };
             Ok(SearchPage::cursor(rows, returned_total, page_token))
         }
         TrialSource::NciCts => {
@@ -1359,6 +1389,7 @@ pub async fn get(
     sections: &[String],
     source: TrialSource,
 ) -> Result<Trial, BioMcpError> {
+    let nct_id = normalize_nct_id(nct_id);
     let nct_id = nct_id.trim();
     if nct_id.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -1687,6 +1718,12 @@ mod tests {
             err.to_string()
                 .contains("Unrecognized --sponsor-type value")
         );
+    }
+
+    #[test]
+    fn normalize_nct_id_uppercases_prefix() {
+        assert_eq!(normalize_nct_id("nct06162221"), "NCT06162221");
+        assert_eq!(normalize_nct_id("NCT06162221"), "NCT06162221");
     }
 
     #[tokio::test]
