@@ -1419,90 +1419,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="user-guide/organization/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Organization
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="user-guide/intervention/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Intervention
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="user-guide/biomarker/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Biomarker
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -2376,7 +2292,7 @@
 
 <h1 id="biomcp">BioMCP<a class="headerlink" href="#biomcp" title="Permanent link">&para;</a></h1>
 <p><strong>Single-binary CLI and MCP server for querying biomedical databases.</strong>
-One command grammar, compact markdown output, 15 entities across 15+ data sources.</p>
+One command grammar, compact markdown output, 12 entities across 15+ data sources.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
 <h3 id="binary-install-recommended">Binary install (recommended)<a class="headerlink" href="#binary-install-recommended" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/genomoncology/biomcp/main/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
@@ -2480,21 +2396,6 @@ One command grammar, compact markdown output, 15 entities across 15+ data source
 <td>Monarch Initiative (HPO)</td>
 <td><code>biomcp search phenotype "HP:0001250"</code></td>
 </tr>
-<tr>
-<td>organization</td>
-<td>NCI CTS API</td>
-<td><code>biomcp search organization "Dana-Farber"</code></td>
-</tr>
-<tr>
-<td>intervention</td>
-<td>NCI CTS API</td>
-<td><code>biomcp search intervention pembrolizumab</code></td>
-</tr>
-<tr>
-<td>biomarker</td>
-<td>NCI CTS API</td>
-<td><code>biomcp search biomarker BRAF</code></td>
-</tr>
 </tbody>
 </table>
 <h2 id="cross-entity-helpers">Cross-entity helpers<a class="headerlink" href="#cross-entity-helpers" title="Permanent link">&para;</a></h2>
@@ -2505,11 +2406,14 @@ One command grammar, compact markdown output, 15 entities across 15+ data source
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <h2 id="gene-set-enrichment">Gene-set enrichment<a class="headerlink" href="#gene-set-enrichment" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
@@ -2530,7 +2434,7 @@ One command grammar, compact markdown output, 15 entities across 15+ data source
 <p>Most commands work without credentials. Optional keys improve rate limits:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCBI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># PubTator, PMC OA, NCBI ID converter</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">     </span><span class="c1"># OpenFDA rate limits</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">         </span><span class="c1"># NCI CTS (required for organization/intervention/biomarker)</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">         </span><span class="c1"># NCI CTS trial search (--source nci)</span>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ONCOKB_TOKEN</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># OncoKB variant helper</span>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w"> </span><span class="c1"># AlphaGenome variant effect prediction</span>
 </code></pre></div>

@@ -1203,90 +1203,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../user-guide/organization/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Organization
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../user-guide/intervention/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Intervention
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../user-guide/biomarker/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Biomarker
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -2373,11 +2289,21 @@ useful for oncology and translational workflows.</p>
 </code></pre></div>
 <h2 id="helper-pivots">Helper pivots<a class="headerlink" href="#helper-pivots" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <h2 id="common-gene-aliases">Common gene aliases<a class="headerlink" href="#common-gene-aliases" title="Permanent link">&para;</a></h2>
 <p>Use these aliases in <code>search</code> when a clinical report or paper does not use the HGNC symbol.
