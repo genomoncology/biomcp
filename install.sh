@@ -160,7 +160,23 @@ case "$OS_ID/$ARCH_ID" in
 esac
 
 if [[ "$VERSION" == "latest" ]]; then
-  DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"
+  # Resolve to the most recent release that has our platform binary.
+  # A newly-created release may not have assets yet (builds take minutes),
+  # so we skip releases without the required asset file.
+  RESOLVED_TAG=""
+  api_url="https://api.github.com/repos/${REPO}/releases"
+  if releases_json="$(curl -fsSL "$api_url" 2>/dev/null)"; then
+    RESOLVED_TAG="$(printf '%s' "$releases_json" | \
+      jq -r --arg asset "$ASSET" \
+        '[.[] | select(.draft==false and .prerelease==false) | select(.assets[]?.name == $asset)][0].tag_name // empty')"
+  fi
+  if [[ -z "$RESOLVED_TAG" ]]; then
+    # API unavailable or no release with assets — fall back to GitHub redirect
+    DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"
+  else
+    echo "Resolved latest release with assets: ${RESOLVED_TAG}"
+    DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${RESOLVED_TAG}/${ASSET}"
+  fi
 else
   TAG="${VERSION#v}"
   DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${TAG}/${ASSET}"
