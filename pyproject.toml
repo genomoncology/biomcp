@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "biomcp-cli"
-version = "0.8.3"
+version = "0.8.4"
 description = "Biomedical MCP CLI - query genes, variants, trials, articles, drugs, diseases"
 readme = "README.md"
 license = { text = "MIT" }

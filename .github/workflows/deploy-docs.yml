@@ -3,14 +3,6 @@ name: Deploy Documentation
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - main
-    paths:
-      - "docs/**"
-      - "mkdocs.yml"
-      - ".github/workflows/deploy-docs.yml"
-
   release:
     types: [published]
 
@@ -24,8 +16,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache protoc
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.tool_cache }}/protoc
+          key: protoc-${{ runner.os }}-${{ runner.arch }}-v28.3
+
       - uses: arduino/setup-protoc@v3
         with:
+          version: "28.3"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: dtolnay/rust-toolchain@stable

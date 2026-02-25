@@ -1,8 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
 
 jobs:
@@ -11,8 +9,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache protoc
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.tool_cache }}/protoc
+          key: protoc-${{ runner.os }}-${{ runner.arch }}-v28.3
+
       - uses: arduino/setup-protoc@v3
         with:
+          version: "28.3"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: dtolnay/rust-toolchain@stable
@@ -38,8 +43,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache protoc
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.tool_cache }}/protoc
+          key: protoc-${{ runner.os }}-${{ runner.arch }}-v28.3
+
       - uses: arduino/setup-protoc@v3
         with:
+          version: "28.3"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: dtolnay/rust-toolchain@stable

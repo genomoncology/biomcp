@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.4
+
+- Simplified CI/CD workflow triggers to avoid redundant post-merge runs.
+- Added runner-aware `actions/cache@v4` protoc caching in CI, docs deploy, and release workflows.
+- Pinned workflow protoc installation to `28.3` with cache-aware conditional setup.
+
 ## 0.8.3
 
 - Added inclusion-first eligibility post-filtering to reduce exclusion-only false positives in trial matching.
