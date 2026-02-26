@@ -1294,9 +1294,11 @@ fn parse_usize_arg(flag: &str, value: &str) -> Result<usize, crate::error::BioMc
     })
 }
 
+type LocationPaging = (Vec<String>, Option<usize>, Option<usize>);
+
 fn parse_trial_location_paging(
     sections: &[String],
-) -> Result<(Vec<String>, Option<usize>, Option<usize>), crate::error::BioMcpError> {
+) -> Result<LocationPaging, crate::error::BioMcpError> {
     let mut cleaned: Vec<String> = Vec::new();
     let mut location_offset: Option<usize> = None;
     let mut location_limit: Option<usize> = None;
