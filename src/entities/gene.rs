@@ -237,12 +237,12 @@ fn normalize_gene_chromosome(value: &str) -> Result<String, BioMcpError> {
 
 fn normalize_go_id(value: &str) -> Result<String, BioMcpError> {
     let raw = value.trim();
-    if raw.len() != 10 {
+    if !raw.is_ascii() || raw.len() != 10 {
         return Err(BioMcpError::InvalidArgument(
             "--go must be a GO ID in the form GO:0000000".into(),
         ));
     }
-    let (prefix, digits) = raw.split_at(3);
+    let (prefix, digits) = raw.split_at(3); // safe: all ASCII
     if !prefix.eq_ignore_ascii_case("GO:") || !digits.chars().all(|c| c.is_ascii_digit()) {
         return Err(BioMcpError::InvalidArgument(
             "--go must be a GO ID in the form GO:0000000".into(),

@@ -1394,6 +1394,14 @@ async fn render_gene_card(
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
+struct LocationPaginationMeta {
+    total: usize,
+    offset: usize,
+    limit: usize,
+    has_more: bool,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct PaginationMeta {
     pub offset: usize,
     pub limit: usize,
@@ -1429,9 +1437,10 @@ impl PaginationMeta {
             .as_deref()
             .map(str::trim)
             .is_some_and(|value| !value.is_empty());
-        let has_more = total
-            .map(|value| offset.saturating_add(returned) < value)
-            .unwrap_or(has_token);
+        let has_more = match total {
+            Some(value) => offset.saturating_add(returned) < value || has_token,
+            None => has_token,
+        };
         Self {
             offset,
             limit,
@@ -1870,24 +1879,72 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 let (sections, json_override) = extract_json_from_sections(&sections);
                 let json_output = cli.json || json_override;
                 let trial_source = crate::entities::trial::TrialSource::from_flag(&source)?;
-                let mut trial =
-                    crate::entities::trial::get(&nct_id, &sections, trial_source).await?;
                 let includes_locations = sections
                     .iter()
                     .any(|section| section.trim().eq_ignore_ascii_case("locations"));
+                if !includes_locations
+                    && (location_offset.is_some() || location_limit.is_some())
+                {
+                    return Err(crate::error::BioMcpError::InvalidArgument(
+                        "--offset and --limit are only valid with the 'locations' section".into(),
+                    )
+                    .into());
+                }
+                let mut trial =
+                    crate::entities::trial::get(&nct_id, &sections, trial_source).await?;
+                let mut location_pagination: Option<LocationPaginationMeta> = None;
                 if includes_locations {
                     let offset = location_offset.unwrap_or(0);
                     let limit = location_limit.unwrap_or(20);
                     if let Some(locations) = trial.locations.take() {
-                        trial.locations = Some(
-                            locations.into_iter().skip(offset).take(limit).collect(),
-                        );
+                        let total = locations.len();
+                        let paged: Vec<_> =
+                            locations.into_iter().skip(offset).take(limit).collect();
+                        let has_more = offset + paged.len() < total;
+                        trial.locations = Some(paged);
+                        location_pagination = Some(LocationPaginationMeta {
+                            total,
+                            offset,
+                            limit,
+                            has_more,
+                        });
                     }
                 }
                 if json_output {
-                    Ok(crate::render::json::to_pretty(&trial)?)
+                    if let Some(loc_page) = location_pagination {
+                        #[derive(serde::Serialize)]
+                        struct TrialWithLocationPagination {
+                            #[serde(flatten)]
+                            trial: crate::entities::trial::Trial,
+                            location_pagination: LocationPaginationMeta,
+                        }
+                        Ok(crate::render::json::to_pretty(
+                            &TrialWithLocationPagination {
+                                trial,
+                                location_pagination: loc_page,
+                            },
+                        )?)
+                    } else {
+                        Ok(crate::render::json::to_pretty(&trial)?)
+                    }
                 } else {
-                    Ok(crate::render::markdown::trial_markdown(&trial, &sections)?)
+                    let mut md =
+                        crate::render::markdown::trial_markdown(&trial, &sections)?;
+                    if let Some(loc_page) = location_pagination {
+                        md.push_str(&format!(
+                            "\n\n---\n*Locations: showing {} of {} (offset {}, limit {}{})*",
+                            trial.locations.as_ref().map_or(0, |v| v.len()),
+                            loc_page.total,
+                            loc_page.offset,
+                            loc_page.limit,
+                            if loc_page.has_more {
+                                ", more available"
+                            } else {
+                                ""
+                            },
+                        ));
+                    }
+                    Ok(md)
                 }
             }
             Commands::Get {
@@ -3279,17 +3336,19 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     )
                     .await?;
                     if count_only {
-                        let total = page.total.unwrap_or(0);
                         if cli.json {
                             #[derive(serde::Serialize)]
                             struct TrialCountOnlyJson {
-                                total: usize,
+                                total: Option<usize>,
                             }
                             return Ok(crate::render::json::to_pretty(&TrialCountOnlyJson {
-                                total,
+                                total: page.total,
                             })?);
                         }
-                        return Ok(format!("Total: {total}"));
+                        return Ok(match page.total {
+                            Some(total) => format!("Total: {total}"),
+                            None => "Total: unknown".to_string(),
+                        });
                     }
                     let results = page.results;
                     let pagination = PaginationMeta::cursor(

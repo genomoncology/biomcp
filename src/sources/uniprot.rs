@@ -248,12 +248,17 @@ fn normalize_next_page_token(next_page: Option<&str>) -> Result<Option<String>, 
         ));
     }
     if token.starts_with("http://") || token.starts_with("https://") {
-        reqwest::Url::parse(&token).map_err(|_| {
+        let parsed = reqwest::Url::parse(&token).map_err(|_| {
             BioMcpError::InvalidArgument(
                 "--next-page token URL is invalid. Use pagination.next_page_token from the previous result."
                     .into(),
             )
         })?;
+        if parsed.host_str() != Some("rest.uniprot.org") {
+            return Err(BioMcpError::InvalidArgument(
+                "--next-page token must be a rest.uniprot.org URL. Use pagination.next_page_token from the previous result.".into(),
+            ));
+        }
     }
 
     Ok(Some(token))

@@ -941,11 +941,12 @@ fn looks_like_nct_id(value: &str) -> bool {
 
 fn normalize_nct_id(value: &str) -> String {
     let trimmed = value.trim();
-    if trimmed.len() >= 3 && trimmed[..3].eq_ignore_ascii_case("NCT") {
-        format!("NCT{}", &trimmed[3..])
-    } else {
-        trimmed.to_string()
+    if let Some(prefix) = trimmed.get(..3)
+        && prefix.eq_ignore_ascii_case("NCT")
+    {
+        return format!("NCT{}", &trimmed[3..]);
     }
+    trimmed.to_string()
 }
 
 fn ctgov_query_term(

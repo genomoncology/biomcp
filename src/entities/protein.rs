@@ -268,15 +268,21 @@ pub async fn search_page(
         ));
     }
 
+    let limit = limit.clamp(1, 100);
     const API_PAGE_SIZE: usize = 25;
-    const MAX_PAGE_FETCHES: usize = 200;
-    let mut rows: Vec<ProteinSearchResult> = Vec::with_capacity(limit);
+    const MAX_PAGE_FETCHES: usize = 50;
+    let mut rows: Vec<ProteinSearchResult> = Vec::with_capacity(limit.min(25));
     let mut total: Option<usize> = None;
     let mut remaining_skip = offset;
     let mut page_token: Option<String> = None;
     let mut exhausted = false;
 
-    for _ in 0..MAX_PAGE_FETCHES {
+    for fetched_pages in 0..MAX_PAGE_FETCHES {
+        if fetched_pages == 20 {
+            tracing::warn!(
+                "protein search exceeded 20 API page fetches, continuing up to {MAX_PAGE_FETCHES}"
+            );
+        }
         let page = client
             .search(&scoped_query, API_PAGE_SIZE, 0, page_token.as_deref())
             .await?;
@@ -323,6 +329,14 @@ pub async fn search_page(
             exhausted = true;
             break;
         }
+    }
+
+    if !exhausted && rows.len() < limit && remaining_skip > 0 {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--offset {} exceeds the maximum walkable range ({} records). Use --next-page for deep pagination.",
+            offset,
+            MAX_PAGE_FETCHES * API_PAGE_SIZE,
+        )));
     }
 
     let resolved_total = total.or_else(|| Some(offset.saturating_add(rows.len())));

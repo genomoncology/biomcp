@@ -3,9 +3,16 @@ use crate::sources::uniprot::UniProtRecord;
 
 pub fn from_uniprot_search_record(record: UniProtRecord) -> ProteinSearchResult {
     let accession = record.primary_accession.clone();
+    let entry_name = record
+        .uni_prot_kb_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| accession.clone());
     ProteinSearchResult {
-        accession: accession.clone(),
-        uniprot_id: accession,
+        accession,
+        uniprot_id: entry_name,
         name: record.display_name(),
         gene_symbol: record.primary_gene_symbol(),
         species: record
@@ -95,7 +102,7 @@ mod tests {
     fn from_uniprot_search_record_maps_fields() {
         let out = from_uniprot_search_record(sample_record());
         assert_eq!(out.accession, "P15056");
-        assert_eq!(out.uniprot_id, "P15056");
+        assert_eq!(out.uniprot_id, "BRAF_HUMAN");
         assert_eq!(out.name, "Serine/threonine-protein kinase B-raf");
         assert_eq!(out.gene_symbol.as_deref(), Some("BRAF"));
         assert_eq!(out.species.as_deref(), Some("Homo sapiens"));

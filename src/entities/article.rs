@@ -168,17 +168,21 @@ fn parse_pmid(id: &str) -> Option<u32> {
 
 fn parse_pmcid(id: &str) -> Option<String> {
     let mut id = id.trim();
-    if id.len() > 6 && id[..6].eq_ignore_ascii_case("PMCID:") {
-        id = id[6..].trim();
+    if id.len() > 6
+        && let Some(prefix) = id.get(..6)
+        && prefix.eq_ignore_ascii_case("PMCID:")
+        && let Some(rest) = id.get(6..)
+    {
+        id = rest.trim();
     }
     if id.len() < 4 {
         return None;
     }
-    let (prefix, rest) = id.split_at(3);
+    let prefix = id.get(..3)?;
     if !prefix.eq_ignore_ascii_case("PMC") {
         return None;
     }
-    let rest = rest.trim();
+    let rest = id.get(3..)?.trim();
     if rest.is_empty() || !rest.chars().all(|c| c.is_ascii_digit()) {
         return None;
     }
@@ -530,7 +534,7 @@ pub async fn search_page(
     let europepmc_sort = filters.sort.as_europepmc_sort();
 
     const API_PAGE_SIZE: usize = 25;
-    const MAX_PAGE_FETCHES: usize = 200;
+    const MAX_PAGE_FETCHES: usize = 50;
     let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
     let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
     let mut total: Option<usize> = None;
@@ -539,6 +543,11 @@ pub async fn search_page(
     let mut fetched_pages = 0usize;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
+        if fetched_pages == 21 {
+            tracing::warn!(
+                "article search exceeded 20 API page fetches, continuing up to {MAX_PAGE_FETCHES}"
+            );
+        }
         let resp = europe
             .search_query_with_sort(&query, page, API_PAGE_SIZE, europepmc_sort)
             .await?;
