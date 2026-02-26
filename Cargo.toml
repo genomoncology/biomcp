@@ -1,6 +1,6 @@
 [package]
 name = "biomcp-cli"
-version = "0.8.4"
+version = "0.8.5"
 edition = "2024"
 description = "Biomedical CLI and MCP server — genes, variants, trials, articles, drugs, diseases, pathways, proteins, adverse events, PGx"
 homepage = "https://biomcp.org"
