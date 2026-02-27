@@ -329,6 +329,7 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
                             })
                         })
                         .filter(|r| !r.source.is_empty() && !r.id.is_empty() && !r.name.is_empty())
+                        .filter(|r| r.source.eq_ignore_ascii_case("REAC"))
                         .collect();
                 }
                 Err(err) => warn!("g:Profiler enrichment unavailable: {err}"),

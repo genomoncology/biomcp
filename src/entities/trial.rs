@@ -699,6 +699,16 @@ fn contains_exclusion_language(text: &str) -> bool {
         "not allowed",
         "not permitted",
         "must not",
+        "must have no",
+        "no prior",
+        "no previous",
+        "not have received",
+        "not have previously",
+        "not received",
+        "not previously received",
+        "have not received",
+        "should not have",
+        "cannot have",
     ]
     .iter()
     .any(|cue| text.contains(cue))
@@ -713,30 +723,51 @@ fn keyword_has_positive_inclusion_context(inclusion_text: &str, keyword: &str) -
         .any(|segment| !contains_exclusion_language(segment))
 }
 
+fn keyword_has_negative_inclusion_context(inclusion_text: &str, keyword: &str) -> bool {
+    inclusion_text
+        .split(['\n', '.', ';'])
+        .map(str::trim)
+        .filter(|segment| !segment.is_empty())
+        .filter(|segment| contains_keyword_tokens(segment, keyword))
+        .any(contains_exclusion_language)
+}
+
 fn eligibility_keyword_in_inclusion(
     inclusion_text: &str,
     exclusion_text: &str,
     keyword: &str,
 ) -> bool {
     let keyword = keyword.trim().to_ascii_lowercase();
-    if keyword.is_empty() || exclusion_text.is_empty() {
+    if keyword.is_empty() {
         return true;
     }
 
     let inclusion_has_keyword = contains_keyword_tokens(inclusion_text, &keyword);
-    if inclusion_has_keyword && keyword_has_positive_inclusion_context(inclusion_text, &keyword) {
+
+    // When exclusion section exists, use full logic
+    if !exclusion_text.is_empty() {
+        if inclusion_has_keyword && keyword_has_positive_inclusion_context(inclusion_text, &keyword)
+        {
+            return true;
+        }
+        if contains_keyword_tokens(exclusion_text, &keyword) {
+            return false;
+        }
+        if inclusion_has_keyword {
+            return false;
+        }
         return true;
     }
 
-    if contains_keyword_tokens(exclusion_text, &keyword) {
-        return false;
+    // No exclusion section — check inclusion text for negative context
+    if !inclusion_has_keyword {
+        return true; // keyword not mentioned at all, fail open
     }
-
-    if inclusion_has_keyword {
-        return false;
-    }
-
-    true
+    // Keyword is in inclusion text — reject if ANY sentence has exclusion language.
+    // This is stricter than the with-exclusion-section path because without a
+    // dedicated exclusion section, negative context like "must not have received X"
+    // is embedded among protocol details that mention X in neutral/positive ways.
+    !keyword_has_negative_inclusion_context(inclusion_text, &keyword)
 }
 
 fn collect_eligibility_keywords(filters: &TrialSearchFilters) -> Vec<String> {
@@ -862,6 +893,37 @@ async fn verify_eligibility_criteria(
         }
     }
     verified
+}
+
+fn parse_age_years(value: &str) -> Option<u32> {
+    let trimmed = value.trim().to_ascii_lowercase();
+    let digits = trimmed.trim_end_matches(|c: char| !c.is_ascii_digit());
+    let digits = digits.trim();
+    if digits.is_empty() {
+        return None;
+    }
+    digits.parse().ok()
+}
+
+fn verify_age_eligibility(studies: Vec<CtGovStudy>, age: u32) -> Vec<CtGovStudy> {
+    studies
+        .into_iter()
+        .filter(|study| {
+            let module = study
+                .protocol_section
+                .as_ref()
+                .and_then(|s| s.eligibility_module.as_ref());
+            let min_ok = module
+                .and_then(|m| m.minimum_age.as_deref())
+                .and_then(parse_age_years)
+                .is_none_or(|min| age >= min);
+            let max_ok = module
+                .and_then(|m| m.maximum_age.as_deref())
+                .and_then(parse_age_years)
+                .is_none_or(|max| age <= max);
+            min_ok && max_ok
+        })
+        .collect()
 }
 
 fn ctgov_agg_filters(filters: &TrialSearchFilters) -> Result<Option<String>, BioMcpError> {
@@ -1033,11 +1095,6 @@ fn ctgov_query_term(
     if filters.results_available {
         terms.push("AREA[ResultsFirstPostDate]RANGE[MIN,MAX]".to_string());
     }
-    if let Some(age) = filters.age {
-        terms.push(format!("AREA[MinimumAge]RANGE[MIN,{age} years]"));
-        terms.push(format!("AREA[MaximumAge]RANGE[{age} years,MAX]"));
-    }
-
     if terms.is_empty() {
         Ok(None)
     } else {
@@ -1228,8 +1285,9 @@ pub async fn search_page(
                 .map(|(((facility_name, lat), lon), distance)| {
                     (facility_name.to_string(), lat, lon, distance)
                 });
-            let uses_post_filters =
-                facility_geo_verification.is_some() || !eligibility_keywords.is_empty();
+            let uses_post_filters = facility_geo_verification.is_some()
+                || !eligibility_keywords.is_empty()
+                || filters.age.is_some();
 
             let page_size = limit.clamp(1, 100);
             let mut rows: Vec<TrialSearchResult> = Vec::new();
@@ -1280,6 +1338,9 @@ pub async fn search_page(
                 if !eligibility_keywords.is_empty() {
                     studies =
                         verify_eligibility_criteria(&client, studies, &eligibility_keywords).await;
+                }
+                if let Some(age) = filters.age {
+                    studies = verify_age_eligibility(studies, age);
                 }
 
                 if uses_post_filters {
@@ -1564,6 +1625,45 @@ mod tests {
             "",
             "MSI-H"
         ));
+    }
+
+    #[test]
+    fn eligibility_keyword_in_inclusion_rejects_negated_without_exclusion_section() {
+        assert!(!eligibility_keyword_in_inclusion(
+            "participants must not have previously received osimertinib",
+            "",
+            "osimertinib"
+        ));
+    }
+
+    #[test]
+    fn eligibility_keyword_in_inclusion_rejects_no_prior_without_exclusion_section() {
+        assert!(!eligibility_keyword_in_inclusion(
+            "no prior osimertinib therapy allowed",
+            "",
+            "osimertinib"
+        ));
+    }
+
+    #[test]
+    fn eligibility_keyword_in_inclusion_rejects_mixed_context_without_exclusion_section() {
+        // Simulates trials like NCT03191149 where osimertinib is the study drug
+        // (appears in many neutral sentences) but one sentence excludes prior use.
+        assert!(!eligibility_keyword_in_inclusion(
+            "participants must not have previously received osimertinib. \
+             inability to swallow osimertinib tablets. \
+             duration before restarting osimertinib is advised",
+            "",
+            "osimertinib"
+        ));
+    }
+
+    #[test]
+    fn parse_age_years_handles_standard_formats() {
+        assert_eq!(parse_age_years("18 Years"), Some(18));
+        assert_eq!(parse_age_years("75 Years"), Some(75));
+        assert_eq!(parse_age_years("N/A"), None);
+        assert_eq!(parse_age_years(""), None);
     }
 
     #[test]

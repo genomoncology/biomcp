@@ -9,7 +9,7 @@ const CTGOV_BASE: &str = "https://clinicaltrials.gov/api/v2";
 const CTGOV_API: &str = "clinicaltrials.gov";
 const CTGOV_BASE_ENV: &str = "BIOMCP_CTGOV_BASE";
 
-const CTGOV_SEARCH_FIELDS: &str = "NCTId,BriefTitle,OverallStatus,Phase,StudyType,Condition,InterventionName,LeadSponsorName,EnrollmentCount,BriefSummary,StartDate,CompletionDate";
+const CTGOV_SEARCH_FIELDS: &str = "NCTId,BriefTitle,OverallStatus,Phase,StudyType,Condition,InterventionName,LeadSponsorName,EnrollmentCount,BriefSummary,StartDate,CompletionDate,MinimumAge,MaximumAge";
 
 const CTGOV_GET_FIELDS_BASE: &[&str] = &[
     "NCTId",
