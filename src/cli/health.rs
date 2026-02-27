@@ -8,6 +8,8 @@ pub struct HealthRow {
     pub api: String,
     pub status: String,
     pub latency: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub affects: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -24,20 +26,49 @@ impl HealthReport {
 
     pub fn to_markdown(&self) -> String {
         let mut out = String::new();
+        let show_affects = self.rows.iter().any(|row| row.affects.is_some());
         out.push_str("# BioMCP Health Check\n\n");
-        out.push_str("| API | Status | Latency |\n");
-        out.push_str("|-----|--------|---------|\n");
-        for row in &self.rows {
-            out.push_str(&format!(
-                "| {} | {} | {} |\n",
-                row.api, row.status, row.latency
-            ));
+        if show_affects {
+            out.push_str("| API | Status | Latency | Affects |\n");
+            out.push_str("|-----|--------|---------|---------|\n");
+            for row in &self.rows {
+                let affects = row.affects.as_deref().unwrap_or("-");
+                out.push_str(&format!(
+                    "| {} | {} | {} | {} |\n",
+                    row.api, row.status, row.latency, affects
+                ));
+            }
+        } else {
+            out.push_str("| API | Status | Latency |\n");
+            out.push_str("|-----|--------|---------|\n");
+            for row in &self.rows {
+                out.push_str(&format!(
+                    "| {} | {} | {} |\n",
+                    row.api, row.status, row.latency
+                ));
+            }
         }
         out.push_str(&format!(
             "\nStatus: {}/{} APIs healthy\n",
             self.healthy, self.total
         ));
         out
+    }
+}
+
+fn affects_for_api(api: &str) -> Option<&'static str> {
+    match api {
+        "MyGene" => Some("get/search gene and gene helper commands"),
+        "MyVariant" => Some("get/search variant and variant helper commands"),
+        "ClinicalTrials" => Some("search/get trial and trial helper commands"),
+        "Enrichr" => Some("gene/pathway enrichment sections"),
+        "Europe PMC" => Some("article search coverage"),
+        "PubTator3" => Some("article annotations and entity extraction"),
+        "OpenFDA" => Some("adverse-event search"),
+        "CPIC" | "PharmGKB" => Some("pgx recommendations and annotations"),
+        "Monarch" => Some("disease genes, phenotypes, and models"),
+        "GWAS Catalog" => Some("gwas search and variant gwas context"),
+        _ => None,
     }
 }
 
@@ -58,12 +89,14 @@ async fn check_one(client: reqwest::Client, api: &str, url: &str) -> HealthRow {
                     api: api.to_string(),
                     status: "ok".into(),
                     latency: format!("{elapsed}ms"),
+                    affects: None,
                 }
             } else {
                 HealthRow {
                     api: api.to_string(),
                     status: "error".into(),
                     latency: format!("{elapsed}ms (HTTP {})", status.as_u16()),
+                    affects: affects_for_api(api).map(str::to_string),
                 }
             }
         }
@@ -79,6 +112,7 @@ async fn check_one(client: reqwest::Client, api: &str, url: &str) -> HealthRow {
                 api: api.to_string(),
                 status: "error".into(),
                 latency: reason.into(),
+                affects: affects_for_api(api).map(str::to_string),
             }
         }
     }
@@ -136,11 +170,13 @@ async fn check_cache_dir() -> HealthRow {
             api: format!("Cache dir ({})", dir.display()),
             status: "ok".into(),
             latency: format!("{}ms", start.elapsed().as_millis()),
+            affects: None,
         },
         Err(err) => HealthRow {
             api: format!("Cache dir ({})", dir.display()),
             status: "error".into(),
             latency: format!("{:?}", err.kind()),
+            affects: Some("local cache-backed lookups and downloads".into()),
         },
     }
 }
@@ -242,4 +278,59 @@ pub async fn check(apis_only: bool) -> Result<HealthReport, BioMcpError> {
         total: rows.len(),
         rows,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{HealthReport, HealthRow};
+
+    #[test]
+    fn markdown_shows_affects_column_when_present() {
+        let report = HealthReport {
+            healthy: 1,
+            total: 2,
+            rows: vec![
+                HealthRow {
+                    api: "MyGene".into(),
+                    status: "ok".into(),
+                    latency: "10ms".into(),
+                    affects: None,
+                },
+                HealthRow {
+                    api: "OpenFDA".into(),
+                    status: "error".into(),
+                    latency: "timeout".into(),
+                    affects: Some("adverse-event search".into()),
+                },
+            ],
+        };
+        let md = report.to_markdown();
+        assert!(md.contains("| API | Status | Latency | Affects |"));
+        assert!(md.contains("adverse-event search"));
+    }
+
+    #[test]
+    fn markdown_omits_affects_column_when_all_healthy() {
+        let report = HealthReport {
+            healthy: 2,
+            total: 2,
+            rows: vec![
+                HealthRow {
+                    api: "MyGene".into(),
+                    status: "ok".into(),
+                    latency: "10ms".into(),
+                    affects: None,
+                },
+                HealthRow {
+                    api: "MyVariant".into(),
+                    status: "ok".into(),
+                    latency: "11ms".into(),
+                    affects: None,
+                },
+            ],
+        };
+        let md = report.to_markdown();
+        assert!(md.contains("| API | Status | Latency |"));
+        assert!(!md.contains("| API | Status | Latency | Affects |"));
+    }
 }

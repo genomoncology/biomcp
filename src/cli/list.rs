@@ -1,25 +1,42 @@
 use crate::error::BioMcpError;
 
 const LIST_REFERENCE: &str = include_str!("list_reference.md");
+const SKILLS_TIP: &str =
+    "Use skills to find out more about how to use BioMCP and for a variety of different use cases.";
+
+fn with_skills_tip(mut content: String) -> String {
+    content.push_str("\n## Skills\n\n");
+    content.push_str(SKILLS_TIP);
+    content.push('\n');
+    content.push_str(
+        "Run `biomcp skill list` to browse, or `biomcp skill <name-or-number>` to open one.\n",
+    );
+    content
+}
 
 pub fn render(entity: Option<&str>) -> Result<String, BioMcpError> {
     match entity.map(str::trim).filter(|v| !v.is_empty()) {
         None => Ok(list_all()),
         Some(raw) => match raw.to_ascii_lowercase().as_str() {
-            "gene" => Ok(list_gene()),
-            "variant" => Ok(list_variant()),
-            "article" => Ok(list_article()),
-            "trial" => Ok(list_trial()),
-            "drug" => Ok(list_drug()),
-            "disease" => Ok(list_disease()),
-            "phenotype" => Ok(list_phenotype()),
-            "pgx" => Ok(list_pgx()),
-            "gwas" => Ok(list_gwas()),
-            "pathway" => Ok(list_pathway()),
-            "protein" => Ok(list_protein()),
-            "adverse-event" | "adverse_event" | "adverseevent" => Ok(list_adverse_event()),
+            "gene" => Ok(with_skills_tip(list_gene())),
+            "variant" => Ok(with_skills_tip(list_variant())),
+            "article" => Ok(with_skills_tip(list_article())),
+            "trial" => Ok(with_skills_tip(list_trial())),
+            "drug" => Ok(with_skills_tip(list_drug())),
+            "disease" => Ok(with_skills_tip(list_disease())),
+            "phenotype" => Ok(with_skills_tip(list_phenotype())),
+            "pgx" => Ok(with_skills_tip(list_pgx())),
+            "gwas" => Ok(with_skills_tip(list_gwas())),
+            "pathway" => Ok(with_skills_tip(list_pathway())),
+            "protein" => Ok(with_skills_tip(list_protein())),
+            "adverse-event" | "adverse_event" | "adverseevent" => {
+                Ok(with_skills_tip(list_adverse_event()))
+            }
+            "batch" => Ok(with_skills_tip(list_batch())),
+            "enrich" => Ok(with_skills_tip(list_enrich())),
+            "skill" | "skills" => Ok(crate::cli::skill::list_use_cases()?),
             other => Err(BioMcpError::InvalidArgument(format!(
-                "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- trial\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- protein\n- adverse-event"
+                "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- trial\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- protein\n- adverse-event\n- batch\n- enrich\n- skill"
             ))),
         },
     }
@@ -173,6 +190,7 @@ fn list_article() -> String {
 - `search article -k <keyword>` (or `-q <keyword>`) - free text keyword
 - `search article --type <review|research|case-reports|meta-analysis>`
 - `search article --date-from <YYYY-MM-DD> --date-to <YYYY-MM-DD>`
+- `search article --since <YYYY-MM-DD>` - alias for `--date-from`
 - `search article --journal <name>`
 - `search article --open-access`
 - `search article --exclude-retracted`
@@ -212,6 +230,7 @@ fn list_trial() -> String {
 - `--age <years>`
 - `--sex <female|male|all>`
 - `--mutation <text>`
+- `--biomarker <text>`
 - `--sponsor-type <nih|industry|fed|other>`
 - `--prior-therapies <text>`
 - `--progression-on <drug>`
@@ -300,15 +319,25 @@ fn list_phenotype() -> String {
 ## Commands
 
 - `search phenotype "<HP:... HP:...>"` - rank diseases by phenotype similarity
+- `search phenotype "<HP:...>" --limit <N> --offset <N>` - page ranked disease matches
 
 ## Examples
 
 - `search phenotype "HP:0001250 HP:0001263"`
 - `search phenotype "HP:0001250" --limit <N> --offset <N>`
+- `search phenotype "HP:0001250,HP:0001263" --limit 10`
+
+## Workflow tips
+
+- Start with 2-5 high-confidence HPO terms for better ranking signal.
+- Use specific neurologic/cancer phenotype terms before broad umbrella terms.
+- Follow with `get disease <id> all` to inspect phenotypes, genes, and pathways.
 
 ## Related
 
 - `search disease -q <query> --phenotype <HP:...>`
+- `disease trials <name>`
+- `disease articles <name>`
 "#
     .to_string()
 }
@@ -357,10 +386,62 @@ fn list_gwas() -> String {
 
 - `search gwas -g TCF7L2 --limit 5`
 - `search gwas --trait "type 2 diabetes" --limit 5`
+- `search gwas --region 7:55000000-55200000 --p-value 5e-8 --limit 10`
+
+## Workflow tips
+
+- Use `--trait` for phenotype-first discovery and `-g` for gene-first review.
+- Tighten noisy results with `--p-value` and locus-focused `--region`.
+- Pivot high-interest hits into `get variant <id>` and `variant trials <id>`.
 
 ## Related
 
 - `list pgx` - pharmacogenomics command family
+- `search trial --mutation <text>`
+- `search article -g <gene>`
+"#
+    .to_string()
+}
+
+fn list_batch() -> String {
+    r#"# batch
+
+## Command
+
+- `batch <entity> <id1,id2,...>` - parallel `get` operations for up to 10 IDs
+
+## Options
+
+- `--sections <s1,s2,...>` - request specific sections on each entity
+- `--source <ctgov|nci>` - trial source when `entity=trial` (default: `ctgov`)
+
+## Supported entities
+
+- `gene`, `variant`, `article`, `trial`, `drug`, `disease`, `pgx`, `pathway`, `protein`, `adverse-event`
+
+## Examples
+
+- `batch gene BRAF,TP53 --sections pathways,ontology`
+- `batch trial NCT04280705,NCT04639219 --source nci --sections locations`
+"#
+    .to_string()
+}
+
+fn list_enrich() -> String {
+    r#"# enrich
+
+## Command
+
+- `enrich <GENE1,GENE2,...>` - gene-set enrichment using g:Profiler
+
+## Options
+
+- `--limit <N>` - max number of returned terms (must be 1-50; default 10)
+
+## Examples
+
+- `enrich BRAF,KRAS,NRAS`
+- `enrich EGFR,ALK,ROS1 --limit 20`
 "#
     .to_string()
 }
@@ -469,4 +550,64 @@ fn list_adverse_event() -> String {
 - `search adverse-event --type device --product-code <code>` - MAUDE by product code
 "#
     .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::render;
+
+    #[test]
+    fn list_root_includes_quickstart_and_skills_tip() {
+        let out = render(None).expect("list root should render");
+        assert!(out.contains("## Quickstart"));
+        assert!(out.contains(
+            "Use skills to find out more about how to use BioMCP and for a variety of different use cases."
+        ));
+    }
+
+    #[test]
+    fn list_skill_alias_routes_to_skill_listing() {
+        let out = render(Some("skill")).expect("list skill should render");
+        assert!(out.contains("Skills are step-by-step investigation workflows"));
+    }
+
+    #[test]
+    fn list_batch_and_enrich_pages_exist() {
+        let batch = render(Some("batch")).expect("list batch should render");
+        assert!(batch.contains("# batch"));
+        assert!(batch.contains("batch <entity> <id1,id2,...>"));
+
+        let enrich = render(Some("enrich")).expect("list enrich should render");
+        assert!(enrich.contains("# enrich"));
+        assert!(enrich.contains("enrich <GENE1,GENE2,...>"));
+    }
+
+    #[test]
+    fn list_trial_and_article_include_missing_flags() {
+        let trial = render(Some("trial")).expect("list trial should render");
+        assert!(trial.contains("--biomarker <text>"));
+
+        let article = render(Some("article")).expect("list article should render");
+        assert!(article.contains("--since <YYYY-MM-DD>"));
+    }
+
+    #[test]
+    fn phenotype_and_gwas_include_workflow_tips() {
+        let phenotype = render(Some("phenotype")).expect("list phenotype should render");
+        assert!(phenotype.contains("## Workflow tips"));
+        assert!(phenotype.contains("2-5 high-confidence HPO terms"));
+
+        let gwas = render(Some("gwas")).expect("list gwas should render");
+        assert!(gwas.contains("## Workflow tips"));
+        assert!(gwas.contains("--p-value"));
+    }
+
+    #[test]
+    fn unknown_entity_lists_new_valid_entities() {
+        let err = render(Some("unknown")).expect_err("unknown entity should fail");
+        let msg = err.to_string();
+        assert!(msg.contains("- skill"));
+        assert!(msg.contains("- enrich"));
+        assert!(msg.contains("- batch"));
+    }
 }

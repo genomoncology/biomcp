@@ -4,6 +4,15 @@ BioMCP connects to PubMed, ClinicalTrials.gov, ClinVar, gnomAD, OncoKB, Reactome
 UniProt, PharmGKB, CPIC, OpenFDA, Monarch Initiative, GWAS Catalog, and more.
 One command grammar covers all entities.
 
+## Quickstart
+
+New to BioMCP? Try:
+
+- `skill list` - browse guided investigation workflows
+- `get gene BRAF` - look up a gene
+- `get variant "BRAF V600E"` - annotate a variant
+- `search trial -c melanoma` - find clinical trials
+
 ## Entities
 
 - gene
@@ -73,3 +82,5 @@ Results depend on source document wording and may vary across sources.
 - `version`
 
 Run `biomcp list <entity>` for entity-specific examples.
+Use skills to find out more about how to use BioMCP and for a variety of different use cases.
+Run `biomcp skill list` to browse all skills.
