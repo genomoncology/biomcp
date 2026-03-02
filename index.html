@@ -2407,13 +2407,15 @@ One command grammar, compact markdown output, 12 entities across 15+ data source
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <h2 id="gene-set-enrichment">Gene-set enrichment<a class="headerlink" href="#gene-set-enrichment" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
@@ -2426,7 +2428,7 @@ One command grammar, compact markdown output, 12 entities across 15+ data source
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>all<span class="w">                </span><span class="c1"># everything</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>clinvar<span class="w"> </span>population<span class="w"> </span>conservation
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>label<span class="w"> </span>shortage<span class="w"> </span>targets<span class="w"> </span>approvals
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>label<span class="w"> </span>targets<span class="w"> </span>civic<span class="w"> </span>approvals
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span><span class="w"> </span>genes<span class="w"> </span>phenotypes<span class="w"> </span>variants
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility<span class="w"> </span>locations<span class="w"> </span>outcomes
 </code></pre></div>
