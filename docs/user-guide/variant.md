@@ -92,8 +92,9 @@ biomcp get variant rs113488022 all
 ## Helper commands
 
 ```bash
-biomcp variant articles "BRAF V600E"
-biomcp variant oncokb "BRAF V600E"   # requires ONCOKB_TOKEN
+biomcp variant trials "BRAF V600E"   # search trials mentioning this mutation
+biomcp variant articles "BRAF V600E" # search PubMed for this variant
+biomcp variant oncokb "BRAF V600E"   # OncoKB lookup (requires ONCOKB_TOKEN)
 ```
 
 ## Search variants

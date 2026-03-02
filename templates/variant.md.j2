@@ -13,13 +13,12 @@ ID: {{ id }}
 {% endif -%}
 {% if show_prediction_section and prediction -%}
 ## AlphaGenome Prediction
-
-| Score | Value | Interpretation |
-|---|---|---|
-| Expression LFC | {% if prediction.expression_lfc is not none %}{{ prediction.expression_lfc | score }}{% else %}-{% endif %} | {% if expression_interpretation %}{{ expression_interpretation }}{% else %}-{% endif %} |
-| Splice Score | {% if prediction.splice_score is not none %}{{ prediction.splice_score | score }}{% else %}-{% endif %} | {% if splice_interpretation %}{{ splice_interpretation }}{% else %}-{% endif %} |
-| Chromatin | {% if prediction.chromatin_score is not none %}{{ prediction.chromatin_score | score }}{% else %}-{% endif %} | {% if chromatin_interpretation %}{{ chromatin_interpretation }}{% else %}-{% endif %} |
-
+{% if prediction.expression_lfc is not none %}Expression LFC: {{ prediction.expression_lfc | score }}{% if expression_interpretation %} ({{ expression_interpretation }}){% endif %}
+{% endif -%}
+{% if prediction.splice_score is not none %}Splice Score: {{ prediction.splice_score | score }}{% if splice_interpretation %} ({{ splice_interpretation }}){% endif %}
+{% endif -%}
+{% if prediction.chromatin_score is not none %}Chromatin: {{ prediction.chromatin_score | score }}{% if chromatin_interpretation %} ({{ chromatin_interpretation }}){% endif %}
+{% endif -%}
 Top Affected Gene (Ensembl ID when available): {% if prediction.top_gene %}{{ prediction.top_gene }}{% else %}-{% endif %}
 Note: AlphaGenome reports this field as a gene-level identifier from its model output.
 {% endif -%}
@@ -43,13 +42,16 @@ Conditions ({% if clinvar_condition_reports %}{{ clinvar_condition_reports }}{% 
 {% if show_conservation_section -%}
 ## Conservation
 {% if conservation -%}
-| Metric | Score |
-|---|---|
-| phyloP (100-way vertebrate) | {% if conservation.phylop_100way_vertebrate is defined and conservation.phylop_100way_vertebrate is not none %}{{ conservation.phylop_100way_vertebrate | score }}{% else %}-{% endif %} |
-| phyloP (470-way mammalian) | {% if conservation.phylop_470way_mammalian is defined and conservation.phylop_470way_mammalian is not none %}{{ conservation.phylop_470way_mammalian | score }}{% else %}-{% endif %} |
-| phastCons (100-way vertebrate) | {% if conservation.phastcons_100way_vertebrate is defined and conservation.phastcons_100way_vertebrate is not none %}{{ conservation.phastcons_100way_vertebrate | score }}{% else %}-{% endif %} |
-| phastCons (470-way mammalian) | {% if conservation.phastcons_470way_mammalian is defined and conservation.phastcons_470way_mammalian is not none %}{{ conservation.phastcons_470way_mammalian | score }}{% else %}-{% endif %} |
-| GERP++ RS | {% if conservation.gerp_rs is defined and conservation.gerp_rs is not none %}{{ conservation.gerp_rs | score }}{% else %}-{% endif %} |
+{% if conservation.phylop_100way_vertebrate is defined and conservation.phylop_100way_vertebrate is not none %}phyloP (100-way vertebrate): {{ conservation.phylop_100way_vertebrate | score }}
+{% endif -%}
+{% if conservation.phylop_470way_mammalian is defined and conservation.phylop_470way_mammalian is not none %}phyloP (470-way mammalian): {{ conservation.phylop_470way_mammalian | score }}
+{% endif -%}
+{% if conservation.phastcons_100way_vertebrate is defined and conservation.phastcons_100way_vertebrate is not none %}phastCons (100-way vertebrate): {{ conservation.phastcons_100way_vertebrate | score }}
+{% endif -%}
+{% if conservation.phastcons_470way_mammalian is defined and conservation.phastcons_470way_mammalian is not none %}phastCons (470-way mammalian): {{ conservation.phastcons_470way_mammalian | score }}
+{% endif -%}
+{% if conservation.gerp_rs is defined and conservation.gerp_rs is not none %}GERP++ RS: {{ conservation.gerp_rs | score }}
+{% endif -%}
 {% else -%}
 No conservation scores reported.
 {% endif -%}
@@ -68,35 +70,17 @@ No expanded prediction scores reported.
 {% endif -%}
 {% if show_population_section -%}
 ## Population
-{% if population -%}
-- Dataset: {{ population.dataset }}
-- Variant ID: {{ population.variant_id }}
-{% if population.af is defined and population.af is not none %}- AF: {{ population.af | af }}{% endif %}
-{% if population.populations -%}
-| Population (gnomAD API) | AF |
-|---|---|
-{% for p in population.populations -%}
-| {{ p.population }} | {{ p.af | af }} |
-{% endfor -%}
-{% endif -%}
-{% else -%}
-{% if gnomad_af %}- gnomAD AF: {{ gnomad_af | af }}{% else %}- gnomAD AF: Not reported{% endif %}
-{% if gnomad_subpopulations -%}
-- Sub-populations: {% for p in gnomad_subpopulations -%}{{ p.population }} {{ p.af | af }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif -%}
-{% endif -%}
-{% if population_breakdown -%}
-{% if population_breakdown.populations -%}
-| Population (MyVariant cached) | AF |
-|---|---|
+{% if gnomad_af is defined and gnomad_af is not none %}gnomAD AF: {{ gnomad_af | af }}{% else %}gnomAD AF: Not reported{% endif %}
+{% if population_breakdown and population_breakdown.populations -%}
 {% for p in population_breakdown.populations -%}
-| {{ p.population }} | {{ p.af | af }} |
+{% if p.is_subgroup %}  {% endif %}{{ p.population }}: {{ p.af | af }}
 {% endfor -%}
 {% endif -%}
-{% if population_breakdown.exac_af is defined and population_breakdown.exac_af is not none %}- ExAC AF: {{ population_breakdown.exac_af | af }}{% endif %}
-{% if population_breakdown.exac_nontcga_af is defined and population_breakdown.exac_nontcga_af is not none %}- ExAC non-TCGA AF: {{ population_breakdown.exac_nontcga_af | af }}{% endif %}
+{% if population_breakdown and population_breakdown.exac_af is defined and population_breakdown.exac_af is not none %}ExAC AF: {{ population_breakdown.exac_af | af }}
 {% endif -%}
-{% if (not population) and (not population_breakdown) and (not gnomad_af) and (not gnomad_subpopulations) -%}
+{% if population_breakdown and population_breakdown.exac_nontcga_af is defined and population_breakdown.exac_nontcga_af is not none %}ExAC non-TCGA AF: {{ population_breakdown.exac_nontcga_af | af }}
+{% endif -%}
+{% if (not population_breakdown) and (gnomad_af is not defined or gnomad_af is none) -%}
 No population data reported.
 {% endif -%}
 {% endif -%}
@@ -195,9 +179,7 @@ No cBioPortal frequency data available.
 No GWAS associations found for this variant.
 {% endif -%}
 {% endif -%}
-{% if sections -%}
-Sections: {{ sections }}
+{% if sections_block %}{{ sections_block }}
 {% endif -%}
-{% if related -%}
-Related: {{ related }}
+{% if related_block %}{{ related_block }}
 {% endif -%}

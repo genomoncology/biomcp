@@ -127,31 +127,6 @@ fn best_gnomad_af(hit: &MyVariantHit) -> Option<&MyVariantGnomadAf> {
         })
 }
 
-fn gnomad_subpopulations(hit: &MyVariantHit) -> Vec<PopulationFrequency> {
-    let Some(af) = best_gnomad_af(hit) else {
-        return Vec::new();
-    };
-
-    let mut out: Vec<PopulationFrequency> = Vec::new();
-    for (label, value) in [
-        ("African/African American", af.af_afr),
-        ("East Asian", af.af_eas),
-        ("Non-Finnish European", af.af_nfe),
-        ("South Asian", af.af_sas),
-        ("Latino/Admixed American", af.af_amr),
-        ("Ashkenazi Jewish", af.af_asj),
-        ("Finnish", af.af_fin),
-    ] {
-        let Some(freq) = value else { continue };
-        out.push(PopulationFrequency {
-            population: label.to_string(),
-            af: freq,
-        });
-    }
-
-    out
-}
-
 fn first_score(value: Option<&FloatOrVec>) -> Option<f64> {
     value.and_then(FloatOrVec::first)
 }
@@ -339,13 +314,19 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
     out
 }
 
-fn push_population(out: &mut Vec<PopulationFrequency>, label: &str, af: Option<f64>) {
+fn push_population(
+    out: &mut Vec<PopulationFrequency>,
+    label: &str,
+    af: Option<f64>,
+    is_subgroup: bool,
+) {
     let Some(af) = af else {
         return;
     };
     out.push(PopulationFrequency {
         population: label.to_string(),
         af,
+        is_subgroup,
     });
 }
 
@@ -353,66 +334,91 @@ fn extract_population_breakdown(hit: &MyVariantHit) -> Option<VariantPopulationB
     let af = best_gnomad_af(hit);
     let mut populations: Vec<PopulationFrequency> = Vec::new();
     if let Some(af) = af {
-        push_population(&mut populations, "African/African American", af.af_afr);
+        push_population(
+            &mut populations,
+            "African/African American",
+            af.af_afr,
+            false,
+        );
         push_population(
             &mut populations,
             "African/African American (female)",
             af.af_afr_female,
+            true,
         );
         push_population(
             &mut populations,
             "African/African American (male)",
             af.af_afr_male,
+            true,
         );
-        push_population(&mut populations, "Latino/Admixed American", af.af_amr);
+        push_population(
+            &mut populations,
+            "Latino/Admixed American",
+            af.af_amr,
+            false,
+        );
         push_population(
             &mut populations,
             "Latino/Admixed American (female)",
             af.af_amr_female,
+            true,
         );
         push_population(
             &mut populations,
             "Latino/Admixed American (male)",
             af.af_amr_male,
+            true,
         );
-        push_population(&mut populations, "East Asian", af.af_eas);
-        push_population(&mut populations, "East Asian (Japanese)", af.af_eas_jpn);
-        push_population(&mut populations, "East Asian (Korean)", af.af_eas_kor);
-        push_population(&mut populations, "Non-Finnish European", af.af_nfe);
+        push_population(&mut populations, "East Asian", af.af_eas, false);
+        push_population(
+            &mut populations,
+            "East Asian (Japanese)",
+            af.af_eas_jpn,
+            true,
+        );
+        push_population(&mut populations, "East Asian (Korean)", af.af_eas_kor, true);
+        push_population(&mut populations, "Non-Finnish European", af.af_nfe, false);
         push_population(
             &mut populations,
             "Non-Finnish European (Bulgarian)",
             af.af_nfe_bgr,
+            true,
         );
         push_population(
             &mut populations,
             "Non-Finnish European (Estonian)",
             af.af_nfe_est,
+            true,
         );
         push_population(
             &mut populations,
             "Non-Finnish European (Northwestern)",
             af.af_nfe_nwe,
+            true,
         );
         push_population(
             &mut populations,
             "Non-Finnish European (Other)",
             af.af_nfe_onf,
+            true,
         );
         push_population(
             &mut populations,
             "Non-Finnish European (Southeastern)",
             af.af_nfe_seu,
+            true,
         );
         push_population(
             &mut populations,
             "Non-Finnish European (Swedish)",
             af.af_nfe_swe,
+            true,
         );
-        push_population(&mut populations, "South Asian", af.af_sas);
-        push_population(&mut populations, "Ashkenazi Jewish", af.af_asj);
-        push_population(&mut populations, "Finnish", af.af_fin);
-        push_population(&mut populations, "Other", af.af_oth);
+        push_population(&mut populations, "South Asian", af.af_sas, false);
+        push_population(&mut populations, "Ashkenazi Jewish", af.af_asj, false);
+        push_population(&mut populations, "Finnish", af.af_fin, false);
+        push_population(&mut populations, "Other", af.af_oth, false);
     }
 
     let exac_af = hit.exac.as_ref().and_then(|e| e.af);
@@ -897,7 +903,6 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         .unwrap_or((None, None, None, Vec::new(), Vec::new(), None));
 
     let gnomad_af = best_gnomad_af(hit).and_then(|a| a.af);
-    let gnomad_subpopulations = gnomad_subpopulations(hit);
 
     let cadd_score = hit.cadd.as_ref().and_then(|c| c.phred);
     let consequence = pick_consequence(hit);
@@ -918,8 +923,6 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         clinvar_conditions,
         clinvar_condition_reports,
         gnomad_af,
-        gnomad_subpopulations,
-        population: None,
         consequence,
         cadd_score,
         sift_pred,

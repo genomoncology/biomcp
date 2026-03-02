@@ -491,17 +491,37 @@ fn section_header(entity_label: &str, requested: &[String]) -> String {
     }
 }
 
-fn format_sections(sections: Vec<String>) -> String {
-    sections.join(", ")
+fn format_sections_block(entity: &str, id: &str, sections: Vec<String>) -> String {
+    if sections.is_empty() {
+        return String::new();
+    }
+    let id_q = quote_arg(id);
+    if id_q.is_empty() {
+        return String::new();
+    }
+    let top3 = sections
+        .iter()
+        .take(3)
+        .cloned()
+        .collect::<Vec<_>>()
+        .join(" ");
+    format!("More:  biomcp get {entity} {id_q} {top3}\nAll:   biomcp get {entity} {id_q} all")
 }
 
-fn format_related(related: Vec<String>) -> String {
-    related
+fn format_related_block(commands: Vec<String>) -> String {
+    let commands: Vec<String> = commands
         .into_iter()
         .map(|v| v.trim().to_string())
         .filter(|v| !v.is_empty())
-        .collect::<Vec<_>>()
-        .join(" | ")
+        .collect();
+    if commands.is_empty() {
+        return String::new();
+    }
+    let mut out = String::from("See also:");
+    for cmd in &commands {
+        out.push_str(&format!("\n  {cmd}"));
+    }
+    out
 }
 
 fn sections_for(requested: &[String], available: &[&str]) -> Vec<String> {
@@ -619,10 +639,10 @@ fn related_gene(gene: &Gene) -> Vec<String> {
         return Vec::new();
     }
     vec![
-        format!("variants -g {symbol}"),
-        format!("articles -g {symbol}"),
-        format!("drugs --target {symbol}"),
-        format!("trials {symbol}"),
+        format!("biomcp search variant -g {symbol}"),
+        format!("biomcp search article -g {symbol}"),
+        format!("biomcp search drug --target {symbol}"),
+        format!("biomcp gene trials {symbol}"),
     ]
 }
 
@@ -630,18 +650,19 @@ fn related_variant(variant: &Variant) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     if !variant.gene.trim().is_empty() {
         let gene = variant.gene.trim();
-        out.push(format!("gene {gene}"));
-        out.push(format!("drugs --target {gene}"));
+        out.push(format!("biomcp get gene {gene}"));
+        out.push(format!("biomcp search drug --target {gene}"));
     }
     if !variant.id.trim().is_empty() {
-        out.push("trials".to_string());
-        out.push("articles".to_string());
+        let id = quote_arg(&variant.id);
+        out.push(format!("biomcp variant trials {id}"));
+        out.push(format!("biomcp variant articles {id}"));
         let has_oncokb_token = std::env::var("ONCOKB_TOKEN")
             .ok()
             .map(|v| !v.trim().is_empty())
             .unwrap_or(false);
         if has_oncokb_token {
-            out.push(format!("oncokb {}", quote_arg(&variant.id)));
+            out.push(format!("biomcp variant oncokb {id}"));
         }
     }
     out
@@ -655,21 +676,21 @@ fn related_article(article: &Article) -> Vec<String> {
             if sym.is_empty() {
                 continue;
             }
-            out.push(format!("gene {sym}"));
+            out.push(format!("biomcp get gene {sym}"));
         }
         for d in &ann.diseases {
             let name = quote_arg(&d.text);
             if name.is_empty() {
                 continue;
             }
-            out.push(format!("disease {name}"));
+            out.push(format!("biomcp search disease --query {name}"));
         }
         for c in &ann.chemicals {
             let name = quote_arg(&c.text);
             if name.is_empty() {
                 continue;
             }
-            out.push(format!("drug {name}"));
+            out.push(format!("biomcp get drug {name}"));
         }
     }
     if let Some(pmid) = article
@@ -678,7 +699,7 @@ fn related_article(article: &Article) -> Vec<String> {
         .map(str::trim)
         .filter(|v| !v.is_empty())
     {
-        out.push(format!("article entities {pmid}"));
+        out.push(format!("biomcp article entities {pmid}"));
     }
     out
 }
@@ -689,17 +710,17 @@ fn related_trial(trial: &Trial) -> Vec<String> {
     if let Some(condition) = trial.conditions.first().map(String::as_str) {
         let cond = quote_arg(condition);
         if !cond.is_empty() {
-            out.push(format!("disease {cond}"));
-            out.push(format!("articles -d {cond}"));
-            out.push(format!("trials -c {cond}"));
+            out.push(format!("biomcp search disease --query {cond}"));
+            out.push(format!("biomcp search article -d {cond}"));
+            out.push(format!("biomcp search trial -c {cond}"));
         }
     }
 
     if let Some(intervention) = trial.interventions.first().map(String::as_str) {
         let name = quote_arg(intervention);
         if !name.is_empty() {
-            out.push(format!("drug {name}"));
-            out.push(format!("drug trials {name}"));
+            out.push(format!("biomcp get drug {name}"));
+            out.push(format!("biomcp drug trials {name}"));
         }
     }
 
@@ -712,19 +733,19 @@ fn related_disease(disease: &Disease) -> Vec<String> {
         return Vec::new();
     }
     vec![
-        format!("trials {name}"),
-        format!("articles {name}"),
-        format!("drugs {name}"),
+        format!("biomcp search trial -c {name}"),
+        format!("biomcp search article -d {name}"),
+        format!("biomcp search drug {name}"),
     ]
 }
 
 fn related_pgx(pgx: &Pgx) -> Vec<String> {
     let mut out = Vec::new();
     if let Some(gene) = pgx.gene.as_deref().map(str::trim).filter(|v| !v.is_empty()) {
-        out.push(format!("pgx -g {gene}"));
+        out.push(format!("biomcp search pgx -g {gene}"));
     }
     if let Some(drug) = pgx.drug.as_deref().map(quote_arg).filter(|v| !v.is_empty()) {
-        out.push(format!("pgx -d {drug}"));
+        out.push(format!("biomcp search pgx -d {drug}"));
     }
     out
 }
@@ -735,14 +756,14 @@ fn related_pathway(pathway: &Pathway) -> Vec<String> {
         return Vec::new();
     }
 
-    vec![format!("drugs {id}")]
+    vec![format!("biomcp search drug {id}")]
 }
 
 fn related_protein(protein: &Protein) -> Vec<String> {
     let accession = quote_arg(&protein.accession);
     let mut out = Vec::new();
     if !accession.is_empty() {
-        out.push(format!("structures {accession}"));
+        out.push(format!("biomcp get protein {accession} structures"));
     }
     if let Some(symbol) = protein
         .gene_symbol
@@ -750,7 +771,7 @@ fn related_protein(protein: &Protein) -> Vec<String> {
         .map(str::trim)
         .filter(|v| !v.is_empty())
     {
-        out.push(format!("gene {symbol}"));
+        out.push(format!("biomcp get gene {symbol}"));
     }
     out
 }
@@ -761,12 +782,15 @@ fn related_drug(drug: &Drug) -> Vec<String> {
         return Vec::new();
     }
 
-    let mut out = vec![format!("trials {name}"), format!("adverse-events {name}")];
+    let mut out = vec![
+        format!("biomcp drug trials {name}"),
+        format!("biomcp drug adverse-events {name}"),
+    ];
 
     if let Some(target) = drug.targets.first().map(String::as_str) {
         let sym = target.trim();
         if !sym.is_empty() {
-            out.push(format!("gene {sym}"));
+            out.push(format!("biomcp get gene {sym}"));
         }
     }
 
@@ -779,9 +803,9 @@ fn related_adverse_event(event: &AdverseEvent) -> Vec<String> {
         return Vec::new();
     }
     vec![
-        format!("drug {drug}"),
-        format!("drug adverse-events {drug}"),
-        format!("drug trials {drug}"),
+        format!("biomcp get drug {drug}"),
+        format!("biomcp drug adverse-events {drug}"),
+        format!("biomcp drug trials {drug}"),
     ]
 }
 
@@ -790,7 +814,10 @@ fn related_device_event(event: &DeviceEvent) -> Vec<String> {
     if device.is_empty() {
         return Vec::new();
     }
-    vec![format!("reports {device}"), "recalls class-i".to_string()]
+    vec![
+        format!("biomcp search adverse-event --type device --device {device}"),
+        "biomcp search adverse-event --type recall --classification class-i".to_string(),
+    ]
 }
 
 pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<String, BioMcpError> {
@@ -824,8 +851,8 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
         interactions => &gene.interactions,
         civic => &gene.civic,
         show_civic_section => show_civic_section,
-        sections => format_sections(sections_gene(gene, requested_sections)),
-        related => format_related(related_gene(gene)),
+        sections_block => format_sections_block("gene", &gene.symbol, sections_gene(gene, requested_sections)),
+        related_block => format_related_block(related_gene(gene)),
     })?;
     Ok(append_evidence_urls(body, gene_evidence_urls(gene)))
 }
@@ -889,8 +916,8 @@ pub fn article_markdown(
         pubtator_fallback => article.pubtator_fallback,
         show_annotations_section => show_annotations_section,
         show_fulltext_section => show_fulltext_section,
-        sections => format_sections(sections_article(article, requested_sections)),
-        related => format_related(related_article(article)),
+        sections_block => format_sections_block("article", article.pmid.as_deref().or(article.pmcid.as_deref()).or(article.doi.as_deref()).unwrap_or(""), sections_article(article, requested_sections)),
+        related_block => format_related_block(related_article(article)),
     })?;
     Ok(append_evidence_urls(body, article_evidence_urls(article)))
 }
@@ -1068,8 +1095,8 @@ pub fn disease_markdown(
         show_prevalence_section => show_prevalence_section,
         show_civic_section => show_civic_section,
         xrefs => xrefs,
-        sections => format_sections(sections_disease(disease, requested_sections)),
-        related => format_related(related_disease(disease)),
+        sections_block => format_sections_block("disease", &disease.id, sections_disease(disease, requested_sections)),
+        related_block => format_related_block(related_disease(disease)),
     })?;
     Ok(append_evidence_urls(body, disease_evidence_urls(disease)))
 }
@@ -1129,8 +1156,8 @@ pub fn pgx_markdown(pgx: &Pgx, requested_sections: &[String]) -> Result<String, 
         show_frequencies_section => show_frequencies_section,
         show_guidelines_section => show_guidelines_section,
         show_annotations_section => show_annotations_section,
-        sections => format_sections(sections_pgx(pgx, requested_sections)),
-        related => format_related(related_pgx(pgx)),
+        sections_block => format_sections_block("pgx", &pgx.query, sections_pgx(pgx, requested_sections)),
+        related_block => format_related_block(related_pgx(pgx)),
     })?;
     Ok(body)
 }
@@ -1204,8 +1231,8 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
         show_outcomes_section => show_outcomes_section,
         show_arms_section => show_arms_section,
         show_references_section => show_references_section,
-        sections => format_sections(sections_trial(trial, requested_sections)),
-        related => format_related(related_trial(trial)),
+        sections_block => format_sections_block("trial", &trial.nct_id, sections_trial(trial, requested_sections)),
+        related_block => format_related_block(related_trial(trial)),
     })?;
     Ok(append_evidence_urls(body, trial_evidence_urls(trial)))
 }
@@ -1287,8 +1314,6 @@ pub fn variant_markdown(
         clinvar_conditions => &variant.clinvar_conditions,
         clinvar_condition_reports => &variant.clinvar_condition_reports,
         gnomad_af => &variant.gnomad_af,
-        gnomad_subpopulations => &variant.gnomad_subpopulations,
-        population => &variant.population,
         population_breakdown => &variant.population_breakdown,
         cadd_score => &variant.cadd_score,
         sift_pred => &variant.sift_pred,
@@ -1315,8 +1340,8 @@ pub fn variant_markdown(
         show_civic_section => show_civic_section,
         show_cbioportal_section => show_cbioportal_section,
         show_gwas_section => show_gwas_section,
-        sections => format_sections(sections_variant(variant, requested_sections)),
-        related => format_related(related_variant(variant)),
+        sections_block => format_sections_block("variant", &variant.id, sections_variant(variant, requested_sections)),
+        related_block => format_related_block(related_variant(variant)),
     })?;
     Ok(append_evidence_urls(body, variant_evidence_urls(variant)))
 }
@@ -1531,8 +1556,8 @@ pub fn drug_markdown(drug: &Drug, requested_sections: &[String]) -> Result<Strin
         show_interactions_section => show_interactions_section,
         show_civic_section => show_civic_section,
         show_approvals_section => show_approvals_section,
-        sections => format_sections(sections_drug(drug, requested_sections)),
-        related => format_related(related_drug(drug)),
+        sections_block => format_sections_block("drug", &drug.name, sections_drug(drug, requested_sections)),
+        related_block => format_related_block(related_drug(drug)),
     })?;
     Ok(append_evidence_urls(body, drug_evidence_urls(drug)))
 }
@@ -1591,8 +1616,8 @@ pub fn pathway_markdown(
         show_genes_section => show_genes_section,
         show_events_section => show_events_section,
         show_enrichment_section => show_enrichment_section,
-        sections => format_sections(sections_pathway(pathway, requested_sections)),
-        related => format_related(related_pathway(pathway)),
+        sections_block => format_sections_block("pathway", &pathway.id, sections_pathway(pathway, requested_sections)),
+        related_block => format_related_block(related_pathway(pathway)),
     })?;
     Ok(append_evidence_urls(body, pathway_evidence_urls(pathway)))
 }
@@ -1657,8 +1682,8 @@ pub fn protein_markdown(
         show_domains_section => show_domains_section,
         show_interactions_section => show_interactions_section,
         show_structures_section => show_structures_section,
-        sections => format_sections(sections_protein(protein, requested_sections)),
-        related => format_related(related_protein(protein)),
+        sections_block => format_sections_block("protein", &protein.accession, sections_protein(protein, requested_sections)),
+        related_block => format_related_block(related_protein(protein)),
     })?;
     Ok(append_evidence_urls(body, protein_evidence_urls(protein)))
 }
@@ -1723,8 +1748,8 @@ pub fn adverse_event_markdown(
         show_guidance_section => show_guidance_section,
         serious => &event.serious,
         date => &event.date,
-        sections => format_sections(sections_adverse_event(event, requested_sections)),
-        related => format_related(related_adverse_event(event)),
+        sections_block => format_sections_block("adverse-event", &event.report_id, sections_adverse_event(event, requested_sections)),
+        related_block => format_related_block(related_adverse_event(event)),
     })?;
     Ok(append_evidence_urls(
         body,
@@ -1788,7 +1813,7 @@ pub fn device_event_markdown(event: &DeviceEvent) -> Result<String, BioMcpError>
         event_type => &event.event_type,
         date => &event.date,
         description => &event.description,
-        related => format_related(related_device_event(event)),
+        related_block => format_related_block(related_device_event(event)),
     })?;
     Ok(append_evidence_urls(
         body,
@@ -1845,7 +1870,10 @@ pub fn recall_search_markdown_with_footer(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::entities::adverse_event::DeviceEvent;
+    use crate::entities::article::{AnnotationCount, Article, ArticleAnnotations};
     use crate::entities::gene::Gene;
+    use crate::entities::pgx::Pgx;
     use crate::entities::variant::{TreatmentImplication, Variant, VariantOncoKbResult};
 
     #[test]
@@ -1964,5 +1992,78 @@ mod tests {
         assert!(footer.contains("Use --offset 1 for more."));
         assert!(footer.contains("--next-page is also supported"));
         assert!(!footer.contains("<TOKEN>"));
+    }
+
+    #[test]
+    fn related_article_uses_article_entities_helper_command() {
+        let article = Article {
+            pmid: Some("22663011".to_string()),
+            pmcid: None,
+            doi: None,
+            title: "Example".to_string(),
+            authors: Vec::new(),
+            journal: None,
+            date: None,
+            citation_count: None,
+            publication_type: None,
+            open_access: None,
+            abstract_text: None,
+            full_text_path: None,
+            full_text_note: None,
+            annotations: Some(ArticleAnnotations {
+                genes: vec![AnnotationCount {
+                    text: "BRAF".to_string(),
+                    count: 1,
+                }],
+                diseases: Vec::new(),
+                chemicals: Vec::new(),
+                mutations: Vec::new(),
+            }),
+            pubtator_fallback: false,
+        };
+
+        let related = related_article(&article);
+        assert!(related.contains(&"biomcp article entities 22663011".to_string()));
+        assert!(!related.iter().any(|cmd| cmd.contains("biomcp get article")));
+    }
+
+    #[test]
+    fn related_pgx_uses_search_flags() {
+        let pgx = Pgx {
+            query: "CYP2D6".to_string(),
+            gene: Some("CYP2D6".to_string()),
+            drug: Some("warfarin sodium".to_string()),
+            interactions: Vec::new(),
+            recommendations: Vec::new(),
+            frequencies: Vec::new(),
+            guidelines: Vec::new(),
+            annotations: Vec::new(),
+            annotations_note: None,
+        };
+
+        let related = related_pgx(&pgx);
+        assert!(related.contains(&"biomcp search pgx -g CYP2D6".to_string()));
+        assert!(related.contains(&"biomcp search pgx -d \"warfarin sodium\"".to_string()));
+    }
+
+    #[test]
+    fn related_device_event_uses_supported_search_subcommands() {
+        let event = DeviceEvent {
+            report_id: "MDR-123".to_string(),
+            report_number: None,
+            device: "Infusion Pump".to_string(),
+            manufacturer: None,
+            event_type: None,
+            date: None,
+            description: None,
+        };
+
+        let related = related_device_event(&event);
+        assert!(related.contains(
+            &"biomcp search adverse-event --type device --device \"Infusion Pump\"".to_string()
+        ));
+        assert!(related.contains(
+            &"biomcp search adverse-event --type recall --classification class-i".to_string()
+        ));
     }
 }

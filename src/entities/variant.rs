@@ -42,10 +42,6 @@ pub struct Variant {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gnomad_af: Option<f64>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub gnomad_subpopulations: Vec<PopulationFrequency>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub population: Option<VariantPopulationSummary>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub consequence: Option<String>,
 
@@ -117,18 +113,8 @@ pub struct VariantGwasAssociation {
 pub struct PopulationFrequency {
     pub population: String,
     pub af: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VariantPopulationSummary {
-    pub dataset: String,
-    pub variant_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub af: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dataset_note: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub populations: Vec<PopulationFrequency>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub is_subgroup: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1711,8 +1697,6 @@ mod tests {
             clinvar_review_stars: None,
             conditions: Vec::new(),
             gnomad_af: None,
-            gnomad_subpopulations: Vec::new(),
-            population: None,
             consequence: None,
             cadd_score: None,
             sift_pred: None,

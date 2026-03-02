@@ -3,7 +3,7 @@
 {% else -%}
 # {{ name }}
 
-**ID:** {{ id }}
+ID: {{ id }}
 
 {% if definition -%}
 ## Definition
@@ -135,9 +135,7 @@ No CIViC records returned for this disease query.
 No CIViC records returned for this disease query.
 {% endif -%}
 {% endif -%}
-{% if sections -%}
-Sections: {{ sections }}
+{% if sections_block %}{{ sections_block }}
 {% endif -%}
-{% if related -%}
-Related: {{ related }}
+{% if related_block %}{{ related_block }}
 {% endif -%}

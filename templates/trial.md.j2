@@ -3,12 +3,12 @@
 {% else -%}
 # {{ nct_id }}
 
-**Status:** {{ status }}{% if phase %} | **Phase:** {{ phase }}{% endif %}{% if study_type %} | **Study Type:** {{ study_type }}{% endif %}{% if sponsor %} | **Sponsor:** {{ sponsor }}{% endif %}
+Status: {{ status }}{% if phase %} | Phase: {{ phase }}{% endif %}{% if study_type %} | Study Type: {{ study_type }}{% endif %}{% if sponsor %} | Sponsor: {{ sponsor }}{% endif %}
 
-**Title:** {{ title }}
-{% if enrollment %}**Target Enrollment:** {{ enrollment }}{% endif %}
-{% if age_range %}**Eligible Ages:** {{ age_range }}{% endif %}
-{% if start_date %}**Start Date:** {{ start_date }}{% endif %}{% if completion_date %} | **Completion Date:** {{ completion_date }}{% endif %}
+Title: {{ title }}
+{% if enrollment %}Target Enrollment: {{ enrollment }}{% endif %}
+{% if age_range %}Eligible Ages: {{ age_range }}{% endif %}
+{% if start_date %}Start Date: {{ start_date }}{% endif %}{% if completion_date %} | Completion Date: {{ completion_date }}{% endif %}
 
 {% if conditions -%}
 ## Conditions
@@ -80,9 +80,7 @@ No references found.
 {% endfor -%}
 {% endif -%}
 {% endif -%}
-{% if sections -%}
-Sections: {{ sections }}
+{% if sections_block %}{{ sections_block }}
 {% endif -%}
-{% if related -%}
-Related: {{ related }}
+{% if related_block %}{{ related_block }}
 {% endif -%}

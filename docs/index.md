@@ -85,6 +85,8 @@ biomcp drug trials pembrolizumab
 biomcp disease trials melanoma
 biomcp disease drugs melanoma
 biomcp disease articles "Lynch syndrome"
+biomcp gene trials BRAF
+biomcp gene drugs BRAF
 biomcp gene articles BRCA1
 biomcp gene pathways BRAF
 biomcp pathway drugs R-HSA-5673001
@@ -111,7 +113,7 @@ biomcp get gene BRAF civic interactions # multiple sections
 biomcp get gene BRAF all                # everything
 
 biomcp get variant "BRAF V600E" clinvar population conservation
-biomcp get drug pembrolizumab label shortage targets approvals
+biomcp get drug pembrolizumab label targets civic approvals
 biomcp get disease "Lynch syndrome" genes phenotypes variants
 biomcp get trial NCT02576665 eligibility locations outcomes
 ```

@@ -10,20 +10,14 @@ Drug: {{ drug }}{% if indication %} | Indication: {{ indication }}{% endif %}{% 
 {% endif -%}
 {% if show_reactions_section and reactions -%}
 ## Reactions
-
-| Reaction |
-|---|
 {% for value in reactions -%}
-| {{ value }} |
+- {{ value }}
 {% endfor %}
 {% endif -%}
 {% if show_outcomes_section and outcomes -%}
 ## Outcomes
-
-| Outcome |
-|---|
 {% for value in outcomes -%}
-| {{ value }} |
+- {{ value }}
 {% endfor %}
 {% endif -%}
 {% if show_concomitant_section and concomitant_medications -%}
@@ -45,9 +39,7 @@ Drug: {{ drug }}{% if indication %} | Indication: {{ indication }}{% endif %}{% 
 - Disease context: `biomcp search disease --query {{ guidance_indication }}`
 {% endif -%}
 {% endif -%}
-{% if sections -%}
-Sections: {{ sections }}
+{% if sections_block %}{{ sections_block }}
 {% endif -%}
-{% if related -%}
-Related: {{ related }}
+{% if related_block %}{{ related_block }}
 {% endif -%}
