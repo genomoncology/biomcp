@@ -756,7 +756,7 @@ fn related_pathway(pathway: &Pathway) -> Vec<String> {
         return Vec::new();
     }
 
-    vec![format!("biomcp search drug {id}")]
+    vec![format!("biomcp pathway drugs {id}")]
 }
 
 fn related_protein(protein: &Protein) -> Vec<String> {
@@ -816,7 +816,7 @@ fn related_device_event(event: &DeviceEvent) -> Vec<String> {
     }
     vec![
         format!("biomcp search adverse-event --type device --device {device}"),
-        "biomcp search adverse-event --type recall --classification class-i".to_string(),
+        "biomcp search adverse-event --type recall --classification \"Class I\"".to_string(),
     ]
 }
 
@@ -2063,7 +2063,7 @@ mod tests {
             &"biomcp search adverse-event --type device --device \"Infusion Pump\"".to_string()
         ));
         assert!(related.contains(
-            &"biomcp search adverse-event --type recall --classification class-i".to_string()
+            &"biomcp search adverse-event --type recall --classification \"Class I\"".to_string()
         ));
     }
 }
