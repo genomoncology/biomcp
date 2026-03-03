@@ -32,11 +32,12 @@ pub fn render(entity: Option<&str>) -> Result<String, BioMcpError> {
             "adverse-event" | "adverse_event" | "adverseevent" => {
                 Ok(with_skills_tip(list_adverse_event()))
             }
+            "search-all" | "search_all" | "searchall" => Ok(with_skills_tip(list_search_all())),
             "batch" => Ok(with_skills_tip(list_batch())),
             "enrich" => Ok(with_skills_tip(list_enrich())),
             "skill" | "skills" => Ok(crate::cli::skill::list_use_cases()?),
             other => Err(BioMcpError::InvalidArgument(format!(
-                "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- trial\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- protein\n- adverse-event\n- batch\n- enrich\n- skill"
+                "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- trial\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- protein\n- adverse-event\n- search-all\n- batch\n- enrich\n- skill"
             ))),
         },
     }
@@ -442,6 +443,37 @@ fn list_enrich() -> String {
 
 - `enrich BRAF,KRAS,NRAS`
 - `enrich EGFR,ALK,ROS1 --limit 20`
+"#
+    .to_string()
+}
+
+fn list_search_all() -> String {
+    r#"# search-all
+
+## Command
+
+- `search all` - cross-entity summary card with curated section fan-out
+
+## Slots
+
+- `--gene` (or `-g`)
+- `--variant` (or `-v`)
+- `--disease` (or `-d`)
+- `--drug`
+- `--keyword` (or `-k`)
+
+## Output controls
+
+- `--since <YYYY|YYYY-MM|YYYY-MM-DD>` - applies to date-capable sections
+- `--limit <N>` - rows per section (default: 3)
+- `--counts-only` - section counts without row tables
+- `--json` - machine-readable sections + links contract
+
+## Notes
+
+- At least one typed slot is required.
+- Unanchored keyword-only dispatch is article-only.
+- Keyword is pushed into drug search only when `--gene` and/or `--disease` is present.
 "#
     .to_string()
 }

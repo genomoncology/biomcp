@@ -6,6 +6,7 @@ use tracing::{debug, warn};
 
 pub mod health;
 pub mod list;
+pub mod search_all;
 pub mod skill;
 pub mod update;
 
@@ -117,7 +118,7 @@ EXAMPLES:
     Uninstall,
     /// Command reference for entities and flags
     List {
-        /// Optional entity name (gene, variant, article, trial, drug, disease, pgx, gwas, pathway, protein, adverse-event)
+        /// Optional entity name (gene, variant, article, trial, drug, disease, pgx, gwas, pathway, protein, adverse-event, search-all)
         entity: Option<String>,
     },
     /// Parallel get operations (comma-separated IDs, max 10)
@@ -148,6 +149,40 @@ EXAMPLES:
 #[allow(clippy::large_enum_variant)]
 #[derive(Subcommand, Debug)]
 pub enum SearchEntity {
+    /// Cross-entity counts-first search card
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp search all --gene BRAF --disease melanoma
+  biomcp search all --keyword resistance
+  biomcp search all --gene BRAF --counts-only
+
+See also: biomcp list search-all")]
+    All {
+        /// Gene slot (e.g., BRAF)
+        #[arg(short = 'g', long)]
+        gene: Option<String>,
+        /// Variant slot (e.g., \"BRAF V600E\")
+        #[arg(short = 'v', long)]
+        variant: Option<String>,
+        /// Disease slot (e.g., melanoma)
+        #[arg(short = 'd', long)]
+        disease: Option<String>,
+        /// Drug slot (e.g., dabrafenib)
+        #[arg(long)]
+        drug: Option<String>,
+        /// Keyword slot
+        #[arg(short = 'k', long)]
+        keyword: Option<String>,
+        /// Date lower bound for date-capable sections (YYYY, YYYY-MM, or YYYY-MM-DD)
+        #[arg(long)]
+        since: Option<String>,
+        /// Maximum rows per section (default: 3)
+        #[arg(short, long, default_value = "3")]
+        limit: usize,
+        /// Render counts per section only (skip section rows)
+        #[arg(long = "counts-only")]
+        counts_only: bool,
+    },
     /// Search genes by symbol, name, type, or chromosome (MyGene.info)
     #[command(after_help = "\
 EXAMPLES:
@@ -2399,7 +2434,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 } => {
                     let trial_source = crate::entities::trial::TrialSource::from_flag(&source)?;
                     let filters = crate::entities::trial::TrialSearchFilters {
-                        mutation: Some(symbol.clone()),
+                        biomarker: Some(symbol.clone()),
                         source: trial_source,
                         ..Default::default()
                     };
@@ -2423,9 +2458,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         })?)
                     } else {
                         let query = if offset > 0 {
-                            format!("mutation={symbol}, offset={offset}")
+                            format!("biomarker={symbol}, offset={offset}")
                         } else {
-                            format!("mutation={symbol}")
+                            format!("biomarker={symbol}")
                         };
                         Ok(crate::render::markdown::trial_search_markdown(
                             &query, &results, total,
@@ -3006,6 +3041,36 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             }
             Commands::Search { entity } => {
                 match entity {
+                SearchEntity::All {
+                    gene,
+                    variant,
+                    disease,
+                    drug,
+                    keyword,
+                    since,
+                    limit,
+                    counts_only,
+                } => {
+                    let input = crate::cli::search_all::SearchAllInput {
+                        gene,
+                        variant,
+                        disease,
+                        drug,
+                        keyword,
+                        since,
+                        limit,
+                        counts_only,
+                    };
+                    let results = crate::cli::search_all::dispatch(&input).await?;
+                    if cli.json {
+                        Ok(crate::render::json::to_pretty(&results)?)
+                    } else {
+                        Ok(crate::render::markdown::search_all_markdown(
+                            &results,
+                            input.counts_only,
+                        )?)
+                    }
+                }
                 SearchEntity::Gene {
                     query,
                     positional_query,
@@ -4269,6 +4334,50 @@ mod tests {
     }
 
     #[test]
+    fn search_all_parses_slot_flags() {
+        let cli = Cli::try_parse_from([
+            "biomcp",
+            "search",
+            "all",
+            "--gene",
+            "BRAF",
+            "--disease",
+            "melanoma",
+            "--keyword",
+            "resistance",
+            "--since",
+            "2024-01-01",
+            "--counts-only",
+            "--limit",
+            "4",
+        ])
+        .expect("search all flags should parse");
+
+        match cli.command {
+            Commands::Search {
+                entity:
+                    super::SearchEntity::All {
+                        gene,
+                        disease,
+                        keyword,
+                        since,
+                        counts_only,
+                        limit,
+                        ..
+                    },
+            } => {
+                assert_eq!(gene.as_deref(), Some("BRAF"));
+                assert_eq!(disease.as_deref(), Some("melanoma"));
+                assert_eq!(keyword.as_deref(), Some("resistance"));
+                assert_eq!(since.as_deref(), Some("2024-01-01"));
+                assert!(counts_only);
+                assert_eq!(limit, 4);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
     fn truncate_article_annotations_applies_limit_per_bucket() {
         let annotations = crate::entities::article::ArticleAnnotations {
             genes: vec![
@@ -4345,5 +4454,18 @@ mod tests {
         .await
         .expect_err("enrich should reject --limit > 50");
         assert!(err.to_string().contains("--limit must be between 1 and 50"));
+    }
+
+    #[tokio::test]
+    async fn search_all_requires_at_least_one_typed_slot() {
+        let err = execute(vec![
+            "biomcp".to_string(),
+            "search".to_string(),
+            "all".to_string(),
+        ])
+        .await
+        .expect_err("search all should require typed slots");
+        assert!(err.to_string().contains("at least one typed slot"));
+        assert!(err.to_string().contains("--gene"));
     }
 }

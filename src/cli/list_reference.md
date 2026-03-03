@@ -12,6 +12,7 @@ New to BioMCP? Try:
 - `get gene BRAF` - look up a gene
 - `get variant "BRAF V600E"` - annotate a variant
 - `search trial -c melanoma` - find clinical trials
+- `search all --gene BRAF --disease melanoma` - cross-entity summary card
 
 ## Entities
 
@@ -31,6 +32,7 @@ New to BioMCP? Try:
 ## Patterns
 
 - `search <entity> [query|filters]` - find entities
+- `search all [slot filters]` - curated multi-entity orientation (`--gene/--variant/--disease/--drug/--keyword`)
 - `search trial [filters]` - trial search is filter-only
 - `get <entity> <id> [section...]` - fetch by identifier with optional sections
 - `get trial <nct_id> locations --offset <N> --limit <N>` - page trial locations

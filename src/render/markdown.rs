@@ -3,6 +3,7 @@ use std::sync::OnceLock;
 
 use minijinja::{Environment, context};
 
+use crate::cli::search_all::SearchAllResults;
 use crate::entities::adverse_event::{
     AdverseEvent, AdverseEventCountBucket, AdverseEventSearchResult, AdverseEventSearchSummary,
     DeviceEvent, DeviceEventSearchResult, RecallSearchResult,
@@ -263,6 +264,10 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
     env.add_template(
         "recall_search.md.j2",
         include_str!("../../templates/recall_search.md.j2"),
+    )?;
+    env.add_template(
+        "search_all.md.j2",
+        include_str!("../../templates/search_all.md.j2"),
     )?;
 
     let _ = ENV.set(env);
@@ -1865,6 +1870,52 @@ pub fn recall_search_markdown_with_footer(
         pagination_footer => pagination_footer,
     })?;
     Ok(with_pagination_footer(body, pagination_footer))
+}
+
+pub fn search_all_markdown(
+    results: &SearchAllResults,
+    counts_only: bool,
+) -> Result<String, BioMcpError> {
+    #[derive(serde::Serialize)]
+    struct SearchAllSectionView {
+        entity: String,
+        label: String,
+        count: usize,
+        total: Option<usize>,
+        error: Option<String>,
+        links: Vec<crate::cli::search_all::SearchAllLink>,
+        columns: Vec<String>,
+        rows: Vec<Vec<String>>,
+    }
+
+    let tmpl = env()?.get_template("search_all.md.j2")?;
+    let sections = results
+        .sections
+        .iter()
+        .map(|section| SearchAllSectionView {
+            entity: section.entity.clone(),
+            label: section.label.clone(),
+            count: section.count,
+            total: section.total,
+            error: section.error.clone(),
+            links: section.links.clone(),
+            columns: section
+                .markdown_columns()
+                .iter()
+                .map(|column| (*column).to_string())
+                .collect(),
+            rows: section.markdown_rows(),
+        })
+        .collect::<Vec<_>>();
+
+    Ok(tmpl.render(context! {
+        query => &results.query,
+        sections => sections,
+        counts_only => counts_only,
+        searches_dispatched => results.searches_dispatched,
+        searches_with_results => results.searches_with_results,
+        wall_time_ms => results.wall_time_ms,
+    })?)
 }
 
 #[cfg(test)]

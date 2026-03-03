@@ -1,0 +1,22 @@
+# Search All: {{ query }}
+{% for section in sections %}
+## {{ section.label }} ({% if section.total is not none %}{{ section.total }}{% else %}{{ section.count }}{% endif %})
+{% if section.error -%}
+Error: {{ section.error }}
+{% elif counts_only -%}
+Rows omitted (`--counts-only`).
+{% elif section.rows | length == 0 -%}
+No results.
+{% else -%}
+|{% for column in section.columns %}{{ column }}|{% endfor %}
+|{% for _ in section.columns %}---|{% endfor %}
+{% for row in section.rows -%}
+|{% for cell in row %}{{ cell | truncate(80) }}|{% endfor %}
+{% endfor %}
+{% endif -%}
+{% if section.links | length > 0 -%}
+{% for link in section.links -%}
+- `{{ link.command }}`
+{% endfor -%}
+{% endif -%}
+{% endfor -%}

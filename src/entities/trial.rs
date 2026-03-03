@@ -771,9 +771,11 @@ fn eligibility_keyword_in_inclusion(
 }
 
 fn collect_eligibility_keywords(filters: &TrialSearchFilters) -> Vec<String> {
+    // Note: biomarker is intentionally excluded — it now searches curated
+    // structured fields (Keyword/InterventionName/Condition) rather than
+    // EligibilityCriteria, so post-filtering eligibility text is not needed.
     [
         filters.mutation.as_deref(),
-        filters.biomarker.as_deref(),
         filters.prior_therapies.as_deref(),
         filters.progression_on.as_deref(),
     ]
@@ -1044,8 +1046,15 @@ fn ctgov_query_term(
         .map(str::trim)
         .filter(|v| !v.is_empty())
     {
+        // Search curated structured fields (Keyword, InterventionName, Condition)
+        // rather than free-text EligibilityCriteria. Gene symbols like "EGFR" in
+        // eligibility text produce excessive false positives (e.g. diabetes trials
+        // that mention EGFR in exclusion criteria). The curated fields are
+        // author-maintained and far more precise for biomarker/gene queries.
         let biomarker = essie_escape(biomarker);
-        terms.push(format!("AREA[EligibilityCriteria]\"{biomarker}\""));
+        terms.push(format!(
+            "(AREA[Keyword]\"{biomarker}\" OR AREA[InterventionName]\"{biomarker}\" OR AREA[Condition]\"{biomarker}\")"
+        ));
     }
     if let Some(study_type) = filters
         .study_type
@@ -1668,6 +1677,8 @@ mod tests {
 
     #[test]
     fn collect_eligibility_keywords_includes_supported_filters() {
+        // biomarker is intentionally excluded — it now searches curated
+        // structured fields rather than EligibilityCriteria free text.
         let filters = TrialSearchFilters {
             mutation: Some("MSI-H".into()),
             biomarker: Some("TMB-high".into()),
@@ -1678,7 +1689,7 @@ mod tests {
 
         assert_eq!(
             collect_eligibility_keywords(&filters),
-            vec!["MSI-H", "TMB-high", "osimertinib", "pembrolizumab"]
+            vec!["MSI-H", "osimertinib", "pembrolizumab"]
         );
     }
 
@@ -1692,7 +1703,8 @@ mod tests {
             ..Default::default()
         };
 
-        assert_eq!(collect_eligibility_keywords(&filters), vec!["MSI-H"]);
+        // biomarker excluded from eligibility keywords; mutation is blank
+        assert_eq!(collect_eligibility_keywords(&filters), Vec::<String>::new());
     }
 
     #[test]
