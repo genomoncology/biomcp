@@ -50,10 +50,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     println!("cargo:rustc-env=BIOMCP_BUILD_DATE={build_date}");
 
-    tonic_build::configure()
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR")?);
+    let proto_out = out_dir.join("google.gdm.gdmscience.alphagenome.v1main.rs");
+    let vendored = PathBuf::from("src/generated/google.gdm.gdmscience.alphagenome.v1main.rs");
+
+    let compiled = tonic_build::configure()
         .build_client(true)
         .build_server(false)
-        .compile_protos(&["protos/dna_model_service.proto"], &["protos"])?;
+        .compile_protos(&["protos/dna_model_service.proto"], &["protos"]);
+
+    match compiled {
+        Ok(()) => {
+            // Update vendored copy so it stays current.
+            if proto_out.exists() {
+                let _ = fs::copy(&proto_out, &vendored);
+            }
+        }
+        Err(e) => {
+            if vendored.exists() {
+                eprintln!("cargo:warning=protoc unavailable ({e}), using vendored protobuf output");
+                fs::copy(&vendored, &proto_out)?;
+            } else {
+                return Err(e.into());
+            }
+        }
+    }
 
     Ok(())
 }

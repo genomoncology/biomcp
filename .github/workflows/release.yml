@@ -48,6 +48,7 @@ jobs:
           key: protoc-${{ runner.os }}-${{ runner.arch }}-v28.3
 
       - uses: arduino/setup-protoc@v3
+        continue-on-error: true
         with:
           version: "28.3"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
