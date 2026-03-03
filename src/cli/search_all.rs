@@ -1001,8 +1001,13 @@ fn canonical_search_command(kind: SectionKind, input: &PreparedInput, limit: usi
         }
     }
 
+    // Clamp to entity-specific maximums so generated commands are always runnable.
+    let clamped = match kind {
+        SectionKind::Pathway => limit.min(25),
+        _ => limit,
+    };
     args.push("--limit".into());
-    args.push(limit.to_string());
+    args.push(clamped.to_string());
     args.join(" ")
 }
 
