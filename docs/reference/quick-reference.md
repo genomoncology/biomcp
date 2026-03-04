@@ -7,7 +7,7 @@ useful for oncology and translational workflows.
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/genomoncology/biomcp/main/install.sh | bash
+curl -fsSL https://biomcp.org/install.sh | bash
 ```
 
 ## Core command grammar

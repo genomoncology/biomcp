@@ -7,7 +7,7 @@ After installation, the `biomcp` command should be available in your shell.
 ## Option 1: Installer script (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/genomoncology/biomcp/main/install.sh | bash
+curl -fsSL https://biomcp.org/install.sh | bash
 ```
 
 The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA256 checksum, and places `biomcp` in `~/.local/bin`.
@@ -15,7 +15,7 @@ The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64,
 Pin a specific version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/genomoncology/biomcp/main/install.sh | bash -s -- --version 0.8.0
+curl -fsSL https://biomcp.org/install.sh | bash -s -- --version 0.8.0
 ```
 
 Verify:

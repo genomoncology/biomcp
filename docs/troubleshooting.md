@@ -137,7 +137,7 @@ If `biomcp update` cannot replace the current binary (e.g. permission issues),
 re-run the installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/genomoncology/biomcp/main/install.sh | bash
+curl -fsSL https://biomcp.org/install.sh | bash
 ```
 
 ## 11) Local build missing protoc

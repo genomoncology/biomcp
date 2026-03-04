@@ -17,7 +17,7 @@ This installs the `biomcp` binary on your PATH.
 ### Binary install (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/genomoncology/biomcp/main/install.sh | bash
+curl -fsSL https://biomcp.org/install.sh | bash
 ```
 
 ### Install skills

@@ -8,7 +8,7 @@ One command grammar, compact markdown output, 12 entities across 15+ data source
 ### Binary install (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/genomoncology/biomcp/main/install.sh | bash
+curl -fsSL https://biomcp.org/install.sh | bash
 ```
 
 ### Install skills
