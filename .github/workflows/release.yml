@@ -197,6 +197,8 @@ jobs:
         with:
           command: build
           args: --release --target ${{ matrix.target }}
+        env:
+          CFLAGS_aarch64_unknown_linux_gnu: "-march=armv8-a"
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
