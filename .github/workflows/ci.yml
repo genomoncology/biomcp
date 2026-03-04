@@ -36,7 +36,6 @@ jobs:
       - uses: astral-sh/setup-uv@v4
 
       - run: uv sync --extra dev
-      - run: uv run pytest docs/ -v
       - run: uv run pytest tests/ -v --mcp-cmd "biomcp serve"
 
   check-docs:
