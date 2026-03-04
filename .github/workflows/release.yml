@@ -172,6 +172,8 @@ jobs:
           python-version: "3.12"
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Install Linux cross toolchain
         if: runner.os == 'Linux' && matrix.target == 'aarch64-unknown-linux-gnu'

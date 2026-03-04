@@ -278,30 +278,35 @@ fn split_boolean_expression(value: &str) -> Option<(Vec<String>, Vec<String>)> {
     }
 
     let mut terms = Vec::new();
-    let mut operators = Vec::new();
+    let mut operators: Vec<String> = Vec::new();
     let mut last = 0;
     for caps in boolean_operator_regex().captures_iter(trimmed) {
         let Some(matched) = caps.get(0) else {
             continue;
         };
+        let op = caps
+            .get(1)
+            .map(|m| m.as_str().to_ascii_uppercase())
+            .unwrap_or_else(|| "OR".to_string());
         let term = trimmed[last..matched.start()].trim();
         if term.is_empty() {
-            return None;
+            // Consecutive operators (e.g., "AND NOT") — merge into previous operator.
+            if let Some(prev) = operators.last_mut() {
+                prev.push(' ');
+                prev.push_str(&op);
+            } else {
+                // Leading operator (e.g., "NOT dMMR") — treat as prefix.
+                operators.push(op);
+            }
+        } else {
+            terms.push(term.to_string());
+            operators.push(op);
         }
-        terms.push(term.to_string());
-        operators.push(
-            caps.get(1)
-                .map(|m| m.as_str().to_ascii_uppercase())
-                .unwrap_or_else(|| "OR".to_string()),
-        );
         last = matched.end();
     }
 
     let tail = trimmed[last..].trim();
     if tail.is_empty() {
-        if operators.is_empty() {
-            return None;
-        }
         return None;
     }
     terms.push(tail.to_string());
@@ -1851,6 +1856,14 @@ mod tests {
         assert_eq!(
             essie_escape_boolean_expression("dMMR OR MSI-H"),
             "\"dMMR\" OR \"MSI\\-H\""
+        );
+    }
+
+    #[test]
+    fn essie_escape_boolean_expression_handles_and_not() {
+        assert_eq!(
+            essie_escape_boolean_expression("dMMR AND NOT MSI-H"),
+            "\"dMMR\" AND NOT \"MSI\\-H\""
         );
     }
 
