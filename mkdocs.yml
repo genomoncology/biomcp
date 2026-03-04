@@ -50,6 +50,8 @@ nav:
       - Article Keyword Search: reference/article-keyword-search.md
       - CIViC Sections: reference/civic-sections.md
       - Drug Approvals & AE Summary: reference/drug-approvals-and-ae-summary.md
+  - Blog:
+      - "We Deleted 35 Tools and Our Agent Got Better": blog/we-deleted-35-tools.md
   - Policies: policies.md
   - Troubleshooting: troubleshooting.md
 
