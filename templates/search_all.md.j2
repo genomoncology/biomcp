@@ -1,13 +1,12 @@
 # Search All: {{ query }}
 {% for section in sections %}
-## {{ section.label }} ({% if section.total is not none %}{{ section.total }}{% else %}{{ section.count }}{% endif %})
+{% if counts_only or section.error or section.rows | length > 0 or section.links | length > 0 -%}
+## {{ section.label }} ({{ section.heading_count }})
 {% if section.error -%}
 Error: {{ section.error }}
 {% elif counts_only -%}
 Rows omitted (`--counts-only`).
-{% elif section.rows | length == 0 -%}
-No results.
-{% else -%}
+{% elif section.rows | length > 0 -%}
 |{% for column in section.columns %}{{ column }}|{% endfor %}
 |{% for _ in section.columns %}---|{% endfor %}
 {% for row in section.rows -%}
@@ -18,5 +17,6 @@ No results.
 {% for link in section.links -%}
 - `{{ link.command }}`
 {% endfor -%}
+{% endif -%}
 {% endif -%}
 {% endfor -%}

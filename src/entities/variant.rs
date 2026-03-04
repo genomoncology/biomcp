@@ -1515,7 +1515,7 @@ async fn add_gwas_section(variant: &mut Variant, query_id: &str) -> Result<(), B
     };
 
     let client = GwasClient::new()?;
-    let associations = client.associations_by_rsid(&rsid, 30).await?;
+    let associations = client.associations_by_rsid(&rsid, 20).await?;
     let mut rows: Vec<VariantGwasAssociation> = associations
         .iter()
         .filter_map(|assoc| map_gwas_association(assoc, Some(&rsid)))
@@ -1523,6 +1523,52 @@ async fn add_gwas_section(variant: &mut Variant, query_id: &str) -> Result<(), B
     rows = dedupe_gwas_rows(rows, 10)?;
     variant.gwas = rows;
     Ok(())
+}
+
+fn is_gwas_only_request(flags: &VariantSections) -> bool {
+    flags.include_gwas
+        && !flags.include_prediction
+        && !flags.include_expanded_predictions
+        && !flags.include_clinvar
+        && !flags.include_population
+        && !flags.include_conservation
+        && !flags.include_cosmic
+        && !flags.include_cgi
+        && !flags.include_civic
+        && !flags.include_cbioportal
+}
+
+fn gwas_only_variant_stub(rsid: &str) -> Variant {
+    Variant {
+        gene: String::new(),
+        id: rsid.to_string(),
+        hgvs_p: None,
+        hgvs_c: None,
+        rsid: Some(rsid.to_string()),
+        cosmic_id: None,
+        significance: None,
+        clinvar_id: None,
+        clinvar_review_status: None,
+        clinvar_review_stars: None,
+        conditions: Vec::new(),
+        gnomad_af: None,
+        consequence: None,
+        cadd_score: None,
+        sift_pred: None,
+        polyphen_pred: None,
+        conservation: None,
+        expanded_predictions: Vec::new(),
+        population_breakdown: None,
+        cosmic_context: None,
+        cgi_associations: Vec::new(),
+        civic: None,
+        clinvar_conditions: Vec::new(),
+        clinvar_condition_reports: None,
+        cancer_frequencies: Vec::new(),
+        cancer_frequency_source: None,
+        gwas: Vec::new(),
+        prediction: None,
+    }
 }
 
 fn strip_clinvar_details(variant: &mut Variant) {
@@ -1536,6 +1582,14 @@ fn strip_clinvar_details(variant: &mut Variant) {
 
 pub async fn get(id: &str, sections: &[String]) -> Result<Variant, BioMcpError> {
     let section_flags = parse_sections(sections)?;
+    if is_gwas_only_request(&section_flags)
+        && let VariantIdFormat::RsId(rsid) = parse_variant_id(id)?
+    {
+        let mut variant = gwas_only_variant_stub(&rsid);
+        add_gwas_section(&mut variant, id).await?;
+        return Ok(variant);
+    }
+
     let mut variant = get_base(id).await?;
 
     if !section_flags.include_clinvar {
@@ -1680,6 +1734,24 @@ mod tests {
         assert!(flags.include_civic);
         assert!(flags.include_cbioportal);
         assert!(flags.include_gwas);
+    }
+
+    #[test]
+    fn gwas_only_request_detection_matches_section_flags() {
+        let gwas_only = parse_sections(&["gwas".to_string()]).expect("sections should parse");
+        assert!(is_gwas_only_request(&gwas_only));
+
+        let gwas_plus_clinvar = parse_sections(&["gwas".to_string(), "clinvar".to_string()])
+            .expect("sections should parse");
+        assert!(!is_gwas_only_request(&gwas_plus_clinvar));
+    }
+
+    #[test]
+    fn gwas_only_variant_stub_keeps_requested_rsid() {
+        let variant = gwas_only_variant_stub("rs7903146");
+        assert_eq!(variant.id, "rs7903146");
+        assert_eq!(variant.rsid.as_deref(), Some("rs7903146"));
+        assert!(variant.gwas.is_empty());
     }
 
     #[test]

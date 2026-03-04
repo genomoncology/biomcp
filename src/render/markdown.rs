@@ -1880,8 +1880,7 @@ pub fn search_all_markdown(
     struct SearchAllSectionView {
         entity: String,
         label: String,
-        count: usize,
-        total: Option<usize>,
+        heading_count: usize,
         error: Option<String>,
         links: Vec<crate::cli::search_all::SearchAllLink>,
         columns: Vec<String>,
@@ -1892,19 +1891,26 @@ pub fn search_all_markdown(
     let sections = results
         .sections
         .iter()
-        .map(|section| SearchAllSectionView {
-            entity: section.entity.clone(),
-            label: section.label.clone(),
-            count: section.count,
-            total: section.total,
-            error: section.error.clone(),
-            links: section.links.clone(),
-            columns: section
-                .markdown_columns()
-                .iter()
-                .map(|column| (*column).to_string())
-                .collect(),
-            rows: section.markdown_rows(),
+        .map(|section| {
+            let rows = section.markdown_rows();
+            let heading_count = if counts_only {
+                section.total.unwrap_or(section.count)
+            } else {
+                rows.len()
+            };
+            SearchAllSectionView {
+                entity: section.entity.clone(),
+                label: section.label.clone(),
+                heading_count,
+                error: section.error.clone(),
+                links: section.links.clone(),
+                columns: section
+                    .markdown_columns()
+                    .iter()
+                    .map(|column| (*column).to_string())
+                    .collect(),
+                rows,
+            }
         })
         .collect::<Vec<_>>();
 

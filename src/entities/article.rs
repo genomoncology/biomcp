@@ -123,6 +123,7 @@ impl ArticleSort {
 #[derive(Debug, Clone)]
 pub struct ArticleSearchFilters {
     pub gene: Option<String>,
+    pub gene_anchored: bool,
     pub disease: Option<String>,
     pub drug: Option<String>,
     pub author: Option<String>,
@@ -318,7 +319,11 @@ fn build_search_query(filters: &ArticleSearchFilters) -> Result<String, BioMcpEr
         .map(str::trim)
         .filter(|v| !v.is_empty())
     {
-        terms.push(europepmc_phrase(gene));
+        if filters.gene_anchored {
+            terms.push(format!("GENE_PROTEIN:{}", europepmc_phrase(gene)));
+        } else {
+            terms.push(europepmc_phrase(gene));
+        }
     }
     if let Some(disease) = filters
         .disease
@@ -775,6 +780,7 @@ mod tests {
     fn empty_filters() -> ArticleSearchFilters {
         ArticleSearchFilters {
             gene: None,
+            gene_anchored: false,
             disease: None,
             drug: None,
             author: None,
@@ -854,6 +860,15 @@ mod tests {
         let query = build_search_query(&filters).expect("query should build");
         assert!(query.contains("\"BRAF V600E\""));
         assert!(query.contains("AUTH:\"Jane Doe\""));
+    }
+
+    #[test]
+    fn build_search_query_uses_gene_anchor_field_when_requested() {
+        let mut filters = empty_filters();
+        filters.gene = Some("BRAF".into());
+        filters.gene_anchored = true;
+        let query = build_search_query(&filters).expect("query should build");
+        assert!(query.contains("GENE_PROTEIN:BRAF"));
     }
 
     #[test]

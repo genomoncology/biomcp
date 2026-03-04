@@ -1,4 +1,5 @@
 use std::future::Future;
+use std::time::Duration;
 
 use rmcp::model::{
     AnnotateAble, Implementation, ListResourcesResult, PaginatedRequestParam, RawResource,
@@ -181,6 +182,15 @@ fn to_resource_result(uri: &str, content: String) -> ReadResourceResult {
     }
 }
 
+fn mcp_stdio_guidance() -> &'static str {
+    "This command expects an MCP client on stdin (initialize handshake). Use `biomcp serve-http` for manual testing."
+}
+
+fn is_handshake_startup_error(err: &anyhow::Error) -> bool {
+    let msg = err.to_string().to_ascii_lowercase();
+    msg.contains("expect initialize") || msg.contains("unexpected eof")
+}
+
 pub async fn run_stdio() -> anyhow::Result<()> {
     let shutdown = CancellationToken::new();
 
@@ -191,9 +201,25 @@ pub async fn run_stdio() -> anyhow::Result<()> {
         }
     });
 
-    let running = BioMcpServer
-        .serve_with_ct(rmcp::transport::stdio(), shutdown)
-        .await?;
+    let startup = tokio::time::timeout(
+        Duration::from_secs(5),
+        BioMcpServer.serve_with_ct(rmcp::transport::stdio(), shutdown),
+    )
+    .await;
+
+    let running = match startup {
+        Ok(Ok(running)) => running,
+        Ok(Err(err)) => {
+            let err = anyhow::Error::new(err);
+            if is_handshake_startup_error(&err) {
+                anyhow::bail!("{}", mcp_stdio_guidance());
+            }
+            return Err(err);
+        }
+        Err(_) => {
+            anyhow::bail!("{}", mcp_stdio_guidance());
+        }
+    };
     let _reason = running.waiting().await?;
     Ok(())
 }

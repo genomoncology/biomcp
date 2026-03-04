@@ -1,9 +1,9 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
 use futures::future::join_all;
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::error::BioMcpError;
 use crate::utils::date::validate_since;
@@ -54,7 +54,7 @@ impl SearchAllSection {
             "pathway" => &["ID", "Name"],
             "pgx" => &["Gene", "Drug", "CPIC"],
             "gwas" => &["rsID", "Trait", "P-Value"],
-            "adverse-event" => &["Report", "Drug", "Serious"],
+            "adverse-event" => &["Reaction", "Count"],
             _ => &[],
         }
     }
@@ -62,55 +62,57 @@ impl SearchAllSection {
     pub fn markdown_rows(&self) -> Vec<Vec<String>> {
         self.results
             .iter()
-            .map(|row| match self.entity.as_str() {
-                "gene" => vec![
+            .filter_map(|row| match self.entity.as_str() {
+                "gene" => Some(vec![
                     value_str(row, "symbol"),
                     value_str(row, "name"),
                     value_str(row, "entrez_id"),
-                ],
-                "variant" => vec![
-                    value_str(row, "id"),
-                    value_str(row, "gene"),
-                    value_str(row, "hgvs_p"),
-                    value_str(row, "significance"),
-                ],
-                "disease" => vec![
+                ]),
+                "variant" => {
+                    let rendered = vec![
+                        value_str(row, "id"),
+                        value_str(row, "gene"),
+                        value_str(row, "hgvs_p"),
+                        value_str(row, "significance"),
+                    ];
+                    let uninformative = rendered.get(1).is_some_and(|cell| is_empty_cell(cell))
+                        && rendered.get(2).is_some_and(|cell| is_empty_cell(cell))
+                        && rendered.get(3).is_some_and(|cell| is_empty_cell(cell));
+                    (!uninformative).then_some(rendered)
+                }
+                "disease" => Some(vec![
                     value_str(row, "id"),
                     value_str(row, "name"),
                     value_str(row, "synonyms_preview"),
-                ],
-                "drug" => vec![
+                ]),
+                "drug" => Some(vec![
                     value_str(row, "name"),
                     value_str(row, "target"),
                     value_str_or(row, "mechanism", value_str(row, "drug_type")),
-                ],
-                "trial" => vec![
+                ]),
+                "trial" => Some(vec![
                     value_str(row, "nct_id"),
                     value_str(row, "title"),
                     value_str(row, "status"),
-                ],
-                "article" => vec![
+                ]),
+                "article" => Some(vec![
                     value_str(row, "pmid"),
                     value_str(row, "title"),
                     value_str(row, "date"),
-                ],
-                "pathway" => vec![value_str(row, "id"), value_str(row, "name")],
-                "pgx" => vec![
+                ]),
+                "pathway" => Some(vec![value_str(row, "id"), value_str(row, "name")]),
+                "pgx" => Some(vec![
                     value_str(row, "genesymbol"),
                     value_str(row, "drugname"),
                     value_str(row, "cpiclevel"),
-                ],
-                "gwas" => vec![
+                ]),
+                "gwas" => Some(vec![
                     value_str(row, "rsid"),
                     value_str(row, "trait_name"),
-                    value_str(row, "p_value"),
-                ],
-                "adverse-event" => vec![
-                    value_str(row, "report_id"),
-                    value_str(row, "drug"),
-                    value_str(row, "serious"),
-                ],
-                _ => vec![format_value(row)],
+                    value_p_value(row, "p_value"),
+                ]),
+                "adverse-event" => Some(vec![value_str(row, "reaction"), value_str(row, "count")]),
+                _ => Some(vec![format_value(row)]),
             })
             .collect()
     }
@@ -595,7 +597,14 @@ async fn run_section(
                 ));
             }
             let page = crate::entities::variant::search_page(&filters, input.limit, 0).await?;
-            Ok((to_json_array(page.results)?, page.total))
+            let mut rows = page.results;
+            if input.gene_anchor().is_some() && input.disease.is_some() {
+                rows.sort_by(|a, b| {
+                    variant_significance_rank(a.significance.as_deref())
+                        .cmp(&variant_significance_rank(b.significance.as_deref()))
+                });
+            }
+            Ok((to_json_array(rows)?, page.total))
         }
         SectionKind::Disease => {
             let query = input.disease.as_deref().ok_or_else(|| {
@@ -643,7 +652,13 @@ async fn run_section(
                 ));
             }
             let page = crate::entities::drug::search_page(&filters, input.limit, 0).await?;
-            Ok((to_json_array(page.results)?, page.total))
+            let rows = refine_drug_results(page.results, input.drug.as_deref(), input.limit);
+            let total = if input.drug.is_some() {
+                Some(rows.len())
+            } else {
+                page.total
+            };
+            Ok((to_json_array(rows)?, total))
         }
         SectionKind::Trial => {
             let filters = crate::entities::trial::TrialSearchFilters {
@@ -661,6 +676,7 @@ async fn run_section(
         SectionKind::Article => {
             let filters = crate::entities::article::ArticleSearchFilters {
                 gene: input.gene_anchor().map(str::to_string),
+                gene_anchored: matches!(input.anchor, Anchor::Gene) && input.gene.is_some(),
                 disease: input.disease.clone(),
                 drug: input.drug.clone(),
                 author: None,
@@ -710,7 +726,14 @@ async fn run_section(
                 p_value: None,
             };
             let page = crate::entities::variant::search_gwas_page(&filters, input.limit, 0).await?;
-            Ok((to_json_array(page.results)?, page.total))
+            let mut rows = page.results;
+            if let Some(disease) = input.disease.as_deref() {
+                rows.retain(|row| trait_matches_disease_query(row, disease));
+            }
+            let mut rows = dedupe_gwas_rows(rows);
+            rows.truncate(input.limit);
+            let total = rows.len();
+            Ok((to_json_array(rows)?, Some(total)))
         }
         SectionKind::AdverseEvent => {
             let drug = input.drug.as_deref().ok_or_else(|| {
@@ -723,9 +746,24 @@ async fn run_section(
                 since: input.since.clone(),
                 ..Default::default()
             };
-            let page =
-                crate::entities::adverse_event::search_page(&filters, input.limit, 0).await?;
-            Ok((to_json_array(page.results)?, page.total))
+            let grouped = crate::entities::adverse_event::search_count(
+                &filters,
+                "patient.reaction.reactionmeddrapt",
+                input.limit,
+            )
+            .await?;
+            let total = grouped.buckets.len();
+            let rows = grouped
+                .buckets
+                .into_iter()
+                .map(|bucket| {
+                    json!({
+                        "reaction": bucket.value,
+                        "count": bucket.count
+                    })
+                })
+                .collect::<Vec<_>>();
+            Ok((rows, Some(total)))
         }
     }
 }
@@ -771,7 +809,11 @@ fn build_links(
             }
         }
         SectionKind::Drug => {
-            if let Some(drug) = first_string(results, &["name"]).or(input.drug.as_deref()) {
+            if let Some(drug) = input
+                .drug
+                .as_deref()
+                .or_else(|| first_string(results, &["name"]))
+            {
                 links.push(SearchAllLink {
                     rel: "cross.adverse-events".to_string(),
                     title: "Top adverse events".to_string(),
@@ -796,24 +838,29 @@ fn filter_hints(kind: SectionKind, input: &PreparedInput) -> Vec<SearchAllLink> 
 
     match kind {
         SectionKind::Variant => {
+            let variant_base = variant_base_args(input);
+            let significance_command = if variant_base.is_empty() {
+                "biomcp search variant --significance pathogenic".to_string()
+            } else {
+                format!("biomcp search variant {variant_base} --significance pathogenic")
+            };
             if input.disease.is_none() {
                 hints.push(SearchAllLink {
                     rel: "filter.hint".to_string(),
                     title: "Filter by significance".to_string(),
-                    command: format!(
-                        "biomcp search variant {} --significance pathogenic",
-                        variant_base_args(input)
-                    ),
+                    command: significance_command,
                 });
             }
             // Population frequency is always useful context
+            let rarity_command = if variant_base.is_empty() {
+                "biomcp search variant --max-frequency 0.01".to_string()
+            } else {
+                format!("biomcp search variant {variant_base} --max-frequency 0.01")
+            };
             hints.push(SearchAllLink {
                 rel: "filter.hint".to_string(),
                 title: "Rare variants only".to_string(),
-                command: format!(
-                    "biomcp search variant {} --max-frequency 0.01",
-                    variant_base_args(input)
-                ),
+                command: rarity_command,
             });
         }
         SectionKind::Trial => {
@@ -855,8 +902,15 @@ fn filter_hints(kind: SectionKind, input: &PreparedInput) -> Vec<SearchAllLink> 
             });
         }
         SectionKind::Drug => {
-            // No placeholder hints — every link must be directly runnable.
-            // Drug filter hints only appear when we have concrete values.
+            // Keep anchored keyword exploration visible even when the initial
+            // drug result page is empty after upstream filtering.
+            if input.drug.is_none() && input.keyword_pushdown().is_some() {
+                hints.push(SearchAllLink {
+                    rel: "filter.hint".to_string(),
+                    title: "Expand drug discovery query".to_string(),
+                    command: canonical_search_command(kind, input, input.limit),
+                });
+            }
         }
         SectionKind::AdverseEvent => {
             if let Some(drug) = input.drug.as_deref() {
@@ -897,6 +951,12 @@ fn variant_base_args(input: &PreparedInput) -> String {
     if let Some(therapy) = input.drug.as_deref() {
         args.push(format!("--therapy {}", quote_arg(therapy)));
     }
+    if args.is_empty()
+        && let Some(raw_variant) = input.variant.as_deref().map(str::trim)
+        && !raw_variant.is_empty()
+    {
+        args.push(quote_arg(raw_variant));
+    }
     args.join(" ")
 }
 
@@ -905,15 +965,27 @@ fn top_get_command(kind: SectionKind, input: &PreparedInput, results: &[Value]) 
         SectionKind::Gene => first_string(results, &["symbol"])
             .or(input.gene_anchor())
             .map(|id| format!("biomcp get gene {}", quote_arg(id))),
-        SectionKind::Variant => first_string(results, &["id"])
-            .or(input.variant.as_deref())
-            .map(|id| format!("biomcp get variant {}", quote_arg(id))),
+        SectionKind::Variant => first_gettable_variant_id(results)
+            .or_else(|| {
+                input
+                    .variant
+                    .as_deref()
+                    .filter(|id| !is_civic_variant_id(id))
+                    .map(str::to_string)
+            })
+            .map(|id| format!("biomcp get variant {}", quote_arg(&id))),
         SectionKind::Disease => first_string(results, &["id", "name"])
             .or(input.disease.as_deref())
             .map(|id| format!("biomcp get disease {}", quote_arg(id))),
-        SectionKind::Drug => first_string(results, &["name"])
-            .or(input.drug.as_deref())
-            .map(|id| format!("biomcp get drug {}", quote_arg(id))),
+        SectionKind::Drug => input
+            .drug
+            .as_deref()
+            .map(str::trim)
+            .filter(|id| !id.is_empty())
+            .map(str::to_string)
+            .or_else(|| preferred_drug_name(results, input.drug.as_deref()))
+            .or_else(|| first_string(results, &["name"]).map(str::to_string))
+            .map(|id| format!("biomcp get drug {}", quote_arg(&id))),
         SectionKind::Pathway => {
             first_string(results, &["id"]).map(|id| format!("biomcp get pathway {}", quote_arg(id)))
         }
@@ -1101,6 +1173,16 @@ fn value_str_or(row: &Value, primary: &str, fallback: String) -> String {
     if value == "-" { fallback } else { value }
 }
 
+fn value_p_value(row: &Value, key: &str) -> String {
+    let Some(obj) = row.as_object() else {
+        return "-".to_string();
+    };
+    let Some(value) = obj.get(key) else {
+        return "-".to_string();
+    };
+    format_search_all_p_value(value)
+}
+
 fn format_value(value: &Value) -> String {
     match value {
         Value::Null => "-".to_string(),
@@ -1132,9 +1214,250 @@ fn format_value(value: &Value) -> String {
     }
 }
 
+fn is_empty_cell(value: &str) -> bool {
+    let trimmed = value.trim();
+    trimmed.is_empty() || trimmed == "-"
+}
+
+fn format_search_all_p_value(value: &Value) -> String {
+    let parsed = match value {
+        Value::Number(v) => v.as_f64(),
+        Value::String(v) => v.trim().parse::<f64>().ok(),
+        _ => None,
+    };
+    let Some(mut parsed) = parsed else {
+        return format_value(value);
+    };
+    if !parsed.is_finite() {
+        return format_value(value);
+    }
+    if parsed == -0.0 {
+        parsed = 0.0;
+    }
+    if parsed == 0.0 {
+        return "0".to_string();
+    }
+    if parsed.abs() < 0.001 {
+        return trim_scientific_notation(parsed);
+    }
+    if parsed.abs() < 0.01 {
+        return trim_trailing_decimal_zeros(format!("{parsed:.4}"));
+    }
+    trim_trailing_decimal_zeros(format!("{parsed:.3}"))
+}
+
+fn trim_scientific_notation(value: f64) -> String {
+    let rendered = format!("{value:.2e}");
+    let Some((mantissa, exponent)) = rendered.split_once('e') else {
+        return rendered;
+    };
+    let mantissa = trim_trailing_decimal_zeros(mantissa.to_string());
+    format!("{mantissa}e{exponent}")
+}
+
+fn trim_trailing_decimal_zeros(mut rendered: String) -> String {
+    if rendered.contains('.') {
+        while rendered.ends_with('0') {
+            rendered.pop();
+        }
+        if rendered.ends_with('.') {
+            rendered.pop();
+        }
+    }
+    if rendered.is_empty() {
+        "0".to_string()
+    } else {
+        rendered
+    }
+}
+
+fn is_civic_variant_id(id: &str) -> bool {
+    id.trim().to_ascii_uppercase().starts_with("CIVIC_VARIANT:")
+}
+
+fn first_gettable_variant_id(results: &[Value]) -> Option<String> {
+    results
+        .iter()
+        .filter_map(|row| row.as_object())
+        .filter_map(|obj| obj.get("id"))
+        .filter_map(Value::as_str)
+        .map(str::trim)
+        .find(|id| !id.is_empty() && !is_civic_variant_id(id))
+        .map(str::to_string)
+}
+
+fn preferred_drug_name(results: &[Value], preferred: Option<&str>) -> Option<String> {
+    let preferred = preferred.map(str::trim).filter(|v| !v.is_empty())?;
+    let preferred = preferred.to_ascii_lowercase();
+    results
+        .iter()
+        .filter_map(|row| row.as_object())
+        .filter_map(|obj| obj.get("name"))
+        .filter_map(Value::as_str)
+        .map(str::trim)
+        .filter_map(|name| {
+            drug_parent_match_rank(name, &preferred).map(|rank| (rank, name.to_string()))
+        })
+        .min_by_key(|(rank, _)| *rank)
+        .map(|(_, name)| name)
+}
+
+fn drug_parent_match_rank(name: &str, preferred_lower: &str) -> Option<u8> {
+    let normalized = name.trim().to_ascii_lowercase();
+    if normalized.is_empty() {
+        return None;
+    }
+    if normalized == preferred_lower {
+        return Some(0);
+    }
+    if normalized.starts_with(&format!("{preferred_lower} ")) {
+        return Some(1);
+    }
+    if normalized.contains(preferred_lower) {
+        if looks_like_metabolite_name(&normalized) {
+            return Some(3);
+        }
+        return Some(2);
+    }
+    None
+}
+
+fn looks_like_metabolite_name(value: &str) -> bool {
+    value.contains("metabolite")
+        || value.starts_with("desmethyl ")
+        || value.starts_with("n-desmethyl ")
+        || value.starts_with("hydroxy ")
+        || value.starts_with("dealkyl ")
+        || value.starts_with("oxo ")
+        || value.starts_with("nor ")
+        || value.starts_with("nor-")
+}
+
+fn refine_drug_results(
+    mut rows: Vec<crate::entities::drug::DrugSearchResult>,
+    preferred: Option<&str>,
+    limit: usize,
+) -> Vec<crate::entities::drug::DrugSearchResult> {
+    let Some(preferred_lower) = preferred
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_ascii_lowercase)
+    else {
+        rows.truncate(limit);
+        return rows;
+    };
+
+    rows.sort_by_key(|row| drug_parent_match_rank(&row.name, &preferred_lower).unwrap_or(u8::MAX));
+
+    let has_parent_like = rows.iter().any(|row| {
+        let normalized = row.name.trim().to_ascii_lowercase();
+        normalized.contains(&preferred_lower) && !looks_like_metabolite_name(&normalized)
+    });
+
+    if has_parent_like {
+        rows.retain(|row| {
+            let normalized = row.name.trim().to_ascii_lowercase();
+            if !normalized.contains(&preferred_lower) {
+                return true;
+            }
+            !looks_like_metabolite_name(&normalized)
+        });
+    }
+
+    rows.truncate(limit);
+    rows
+}
+
+fn variant_significance_rank(significance: Option<&str>) -> u8 {
+    let Some(significance) = significance.map(str::trim).filter(|v| !v.is_empty()) else {
+        return 50;
+    };
+    let normalized = significance.to_ascii_lowercase();
+    if normalized == "pathogenic"
+        || (normalized.contains("pathogenic") && !normalized.contains("likely"))
+    {
+        return 0;
+    }
+    if normalized.contains("likely pathogenic") {
+        return 1;
+    }
+    if normalized == "vus"
+        || normalized.contains("uncertain")
+        || normalized.contains("unknown significance")
+    {
+        return 2;
+    }
+    if normalized.contains("likely benign") {
+        return 3;
+    }
+    if normalized == "benign" || normalized.contains("benign") {
+        return 4;
+    }
+    5
+}
+
+fn trait_matches_disease_query(
+    row: &crate::entities::variant::VariantGwasAssociation,
+    disease: &str,
+) -> bool {
+    let disease = disease.trim();
+    if disease.is_empty() {
+        return true;
+    }
+    row.trait_name
+        .as_deref()
+        .map(str::trim)
+        .filter(|trait_name| !trait_name.is_empty())
+        .is_some_and(|trait_name| {
+            trait_name
+                .to_ascii_lowercase()
+                .contains(&disease.to_ascii_lowercase())
+        })
+}
+
+fn dedupe_gwas_rows(
+    rows: Vec<crate::entities::variant::VariantGwasAssociation>,
+) -> Vec<crate::entities::variant::VariantGwasAssociation> {
+    let mut out: Vec<crate::entities::variant::VariantGwasAssociation> = Vec::new();
+    let mut index_by_key: HashMap<(String, String), usize> = HashMap::new();
+
+    for row in rows {
+        let rsid_key = row.rsid.trim().to_ascii_lowercase();
+        let trait_key = row
+            .trait_name
+            .as_deref()
+            .map(str::trim)
+            .unwrap_or("")
+            .to_ascii_lowercase();
+
+        if rsid_key.is_empty() || trait_key.is_empty() {
+            out.push(row);
+            continue;
+        }
+
+        let key = (rsid_key, trait_key);
+        if let Some(existing_idx) = index_by_key.get(&key).copied() {
+            let existing_p = out[existing_idx].p_value.unwrap_or(f64::INFINITY);
+            let candidate_p = row.p_value.unwrap_or(f64::INFINITY);
+            if candidate_p < existing_p {
+                out[existing_idx] = row;
+            }
+            continue;
+        }
+
+        index_by_key.insert(key, out.len());
+        out.push(row);
+    }
+
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::entities::drug::DrugSearchResult;
+    use crate::entities::variant::VariantGwasAssociation;
+    use serde_json::json;
 
     fn input_with_gene() -> SearchAllInput {
         SearchAllInput {
@@ -1274,5 +1597,168 @@ mod tests {
         assert_eq!(quote_arg("BRAF"), "BRAF");
         assert_eq!(quote_arg("BRAF V600E"), "\"BRAF V600E\"");
         assert_eq!(quote_arg("BRAF \"V600E\""), "\"BRAF \\\"V600E\\\"\"");
+    }
+
+    fn gwas_row(
+        rsid: &str,
+        trait_name: Option<&str>,
+        p_value: Option<f64>,
+    ) -> VariantGwasAssociation {
+        VariantGwasAssociation {
+            rsid: rsid.to_string(),
+            trait_name: trait_name.map(str::to_string),
+            p_value,
+            effect_size: None,
+            effect_type: None,
+            confidence_interval: None,
+            risk_allele_frequency: None,
+            risk_allele: None,
+            mapped_genes: Vec::new(),
+            study_accession: None,
+            pmid: None,
+            author: None,
+            sample_description: None,
+        }
+    }
+
+    fn drug_row(name: &str) -> DrugSearchResult {
+        DrugSearchResult {
+            name: name.to_string(),
+            drugbank_id: None,
+            drug_type: None,
+            mechanism: None,
+            target: None,
+        }
+    }
+
+    #[test]
+    fn top_get_command_skips_civic_variant_ids() {
+        let input = PreparedInput::new(&SearchAllInput {
+            gene: None,
+            variant: None,
+            disease: None,
+            drug: Some("dabrafenib".to_string()),
+            keyword: None,
+            since: None,
+            limit: 3,
+            counts_only: false,
+        })
+        .expect("valid input");
+        let results = vec![
+            json!({"id":"CIVIC_VARIANT:147"}),
+            json!({"id":"rs113488022"}),
+        ];
+        let cmd = top_get_command(SectionKind::Variant, &input, &results).expect("command");
+        assert_eq!(cmd, "biomcp get variant rs113488022");
+    }
+
+    #[test]
+    fn top_get_command_prefers_parent_drug_name() {
+        let input = PreparedInput::new(&SearchAllInput {
+            gene: None,
+            variant: None,
+            disease: None,
+            drug: Some("dabrafenib".to_string()),
+            keyword: None,
+            since: None,
+            limit: 3,
+            counts_only: false,
+        })
+        .expect("valid input");
+        let results = vec![
+            json!({"name":"desmethyl dabrafenib"}),
+            json!({"name":"dabrafenib"}),
+        ];
+        let cmd = top_get_command(SectionKind::Drug, &input, &results).expect("command");
+        assert_eq!(cmd, "biomcp get drug dabrafenib");
+    }
+
+    #[test]
+    fn top_get_command_prefers_parent_like_salt_name_over_metabolites() {
+        let input = PreparedInput::new(&SearchAllInput {
+            gene: None,
+            variant: None,
+            disease: None,
+            drug: Some("dabrafenib".to_string()),
+            keyword: None,
+            since: None,
+            limit: 3,
+            counts_only: false,
+        })
+        .expect("valid input");
+        let results = vec![
+            json!({"name":"desmethyl dabrafenib"}),
+            json!({"name":"dabrafenib mesylate"}),
+            json!({"name":"hydroxy dabrafenib"}),
+        ];
+        let cmd = top_get_command(SectionKind::Drug, &input, &results).expect("command");
+        assert_eq!(cmd, "biomcp get drug dabrafenib");
+    }
+
+    #[test]
+    fn refine_drug_results_filters_metabolites_when_parent_like_match_exists() {
+        let rows = vec![
+            drug_row("desmethyl dabrafenib"),
+            drug_row("dabrafenib mesylate"),
+            drug_row("hydroxy dabrafenib"),
+        ];
+        let refined = refine_drug_results(rows, Some("dabrafenib"), 3);
+        let names = refined.into_iter().map(|row| row.name).collect::<Vec<_>>();
+        assert_eq!(names, vec!["dabrafenib mesylate"]);
+    }
+
+    #[test]
+    fn refine_drug_results_keeps_metabolites_when_no_parent_like_match() {
+        let rows = vec![
+            drug_row("desmethyl dabrafenib"),
+            drug_row("hydroxy dabrafenib"),
+        ];
+        let refined = refine_drug_results(rows, Some("dabrafenib"), 3);
+        assert_eq!(refined.len(), 2);
+    }
+
+    #[test]
+    fn variant_significance_rank_matches_clinical_priority() {
+        assert!(
+            variant_significance_rank(Some("Pathogenic"))
+                < variant_significance_rank(Some("Likely pathogenic"))
+        );
+        assert!(
+            variant_significance_rank(Some("Likely pathogenic"))
+                < variant_significance_rank(Some("VUS"))
+        );
+        assert!(
+            variant_significance_rank(Some("VUS"))
+                < variant_significance_rank(Some("Likely benign"))
+        );
+        assert!(
+            variant_significance_rank(Some("Likely benign"))
+                < variant_significance_rank(Some("Benign"))
+        );
+    }
+
+    #[test]
+    fn dedupe_gwas_rows_keeps_lowest_p_value() {
+        let rows = vec![
+            gwas_row("rs1", Some("melanoma"), Some(1e-5)),
+            gwas_row("rs1", Some("melanoma"), Some(1e-7)),
+            gwas_row("rs2", Some("melanoma"), Some(2e-6)),
+        ];
+        let deduped = dedupe_gwas_rows(rows);
+        assert_eq!(deduped.len(), 2);
+        let rs1 = deduped
+            .iter()
+            .find(|row| row.rsid == "rs1")
+            .expect("rs1 row should remain");
+        assert_eq!(rs1.p_value, Some(1e-7));
+    }
+
+    #[test]
+    fn format_search_all_p_value_removes_float_artifacts() {
+        assert_eq!(
+            format_search_all_p_value(&json!(6.000000000000001e-22)),
+            "6e-22"
+        );
+        assert_eq!(format_search_all_p_value(&json!(0.005)), "0.005");
     }
 }

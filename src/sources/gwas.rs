@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use http_cache_reqwest::CacheMode;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::de::DeserializeOwned;
@@ -37,6 +38,12 @@ impl GwasClient {
             self.base.as_ref().trim_end_matches('/'),
             path.trim_start_matches('/')
         )
+    }
+
+    fn request_no_store(&self, url: &str) -> reqwest_middleware::RequestBuilder {
+        // GWAS responses occasionally produce cache decode failures when a stale
+        // body entry is reused. Always bypass persistence for this source.
+        self.client.get(url).with_extension(CacheMode::NoStore)
     }
 
     async fn get_json_optional<T: DeserializeOwned>(
@@ -81,7 +88,7 @@ impl GwasClient {
             "singleNucleotidePolymorphisms/{rsid}/associations"
         ));
 
-        let req = self.client.get(&url).query(&[
+        let req = self.request_no_store(&url).query(&[
             ("projection", "associationByStudy"),
             ("page", "0"),
             ("size", &limit.to_string()),
@@ -104,7 +111,7 @@ impl GwasClient {
         let limit = limit.clamp(1, 200);
         let url = self.endpoint("singleNucleotidePolymorphisms/search/findByGene");
 
-        let req = self.client.get(&url).query(&[
+        let req = self.request_no_store(&url).query(&[
             ("geneName", gene_symbol.as_str()),
             ("page", "0"),
             ("size", &limit.to_string()),
@@ -126,7 +133,7 @@ impl GwasClient {
         let limit = limit.clamp(1, 200);
         let url = self.endpoint("singleNucleotidePolymorphisms/search/findByDiseaseTrait");
 
-        let req = self.client.get(&url).query(&[
+        let req = self.request_no_store(&url).query(&[
             ("diseaseTrait", trait_query.as_str()),
             ("page", "0"),
             ("size", &limit.to_string()),
@@ -148,7 +155,7 @@ impl GwasClient {
         let limit = limit.clamp(1, 200);
         let url = self.endpoint("studies/search/findByDiseaseTrait");
 
-        let req = self.client.get(&url).query(&[
+        let req = self.request_no_store(&url).query(&[
             ("diseaseTrait", trait_query.as_str()),
             ("page", "0"),
             ("size", &limit.to_string()),
@@ -170,7 +177,7 @@ impl GwasClient {
         let limit = limit.clamp(1, 200);
 
         let search_url = self.endpoint("associations/search/findByStudyAccessionId");
-        let search_req = self.client.get(&search_url).query(&[
+        let search_req = self.request_no_store(&search_url).query(&[
             ("studyAccessionId", study_accession.as_str()),
             ("page", "0"),
             ("size", &limit.to_string()),
@@ -186,7 +193,7 @@ impl GwasClient {
         }
 
         let fallback_url = self.endpoint(&format!("studies/{study_accession}/associations"));
-        let fallback_req = self.client.get(&fallback_url).query(&[
+        let fallback_req = self.request_no_store(&fallback_url).query(&[
             ("projection", "associationByStudy"),
             ("page", "0"),
             ("size", &limit.to_string()),

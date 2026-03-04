@@ -98,6 +98,11 @@ fn list_gene() -> String {
 - `gene drugs <symbol>`
 - `gene articles <symbol>`
 - `gene pathways <symbol> --limit <N> --offset <N>`
+
+## Recommended skills
+
+- `biomcp skill 09` - gene-function-lookup workflow
+- `biomcp skill 01` - variant triage from a gene anchor
 "#
     .to_string()
 }
@@ -160,6 +165,11 @@ Supported formats:
 
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
 - `variant articles <id>`
+
+## Recommended skills
+
+- `biomcp skill 01` - variant evidence triage
+- `biomcp skill 03` - variant-to-treatment pathway
 "#
     .to_string();
 
@@ -278,6 +288,11 @@ fn list_drug() -> String {
 
 - `drug trials <name>`
 - `drug adverse-events <name>`
+
+## Recommended skills
+
+- `biomcp skill 02` - drug-investigation workflow
+- `biomcp skill 06` - safety and label deep-dive
 "#
     .to_string()
 }
@@ -474,6 +489,15 @@ fn list_search_all() -> String {
 - At least one typed slot is required.
 - Unanchored keyword-only dispatch is article-only.
 - Keyword is pushed into drug search only when `--gene` and/or `--disease` is present.
+
+## Understanding the Output
+
+- Section order follows anchor priority: gene, disease, drug, variant, then keyword-only.
+- `get.top` links open the top row as a detailed card.
+- `cross.*` links pivot to a related entity search.
+- `filter.hint` links show useful next filters for narrowing.
+- `search.retry` links appear when a section errors or times out.
+- Typical workflow: `search all` -> `search <entity>` -> `get <entity> <id>` -> helper commands.
 "#
     .to_string()
 }

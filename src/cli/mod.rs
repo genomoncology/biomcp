@@ -1,5 +1,8 @@
 //! Top-level CLI parsing and command execution.
 
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
+
 use clap::{Parser, Subcommand};
 use futures::{StreamExt, future::try_join_all};
 use tracing::{debug, warn};
@@ -143,7 +146,11 @@ EXAMPLES:
         limit: usize,
     },
     /// Show version
-    Version,
+    Version {
+        /// Include executable provenance and PATH diagnostics
+        #[arg(long)]
+        verbose: bool,
+    },
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -1559,7 +1566,7 @@ fn paginate_results<T>(rows: Vec<T>, offset: usize, limit: usize) -> (Vec<T>, us
     (paged, total)
 }
 
-fn version_output() -> String {
+fn version_output(verbose: bool) -> String {
     let cargo_version = env!("CARGO_PKG_VERSION");
     let git_tag = option_env!("BIOMCP_BUILD_GIT_TAG");
     let git = option_env!("BIOMCP_BUILD_GIT_SHA").unwrap_or("unknown");
@@ -1568,7 +1575,80 @@ fn version_output() -> String {
         .filter(|t| t.starts_with('v') && !t.contains('-'))
         .map(|t| &t[1..])
         .unwrap_or(cargo_version);
-    format!("biomcp {version} (git {git}, build {build})")
+    let base = format!("biomcp {version} (git {git}, build {build})");
+    if !verbose {
+        return base;
+    }
+
+    let executable = std::env::current_exe()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|_| "unknown".to_string());
+    let path_hits = find_biomcp_on_path();
+    let active = std::env::current_exe()
+        .ok()
+        .as_deref()
+        .and_then(canonical_for_compare);
+    let mut out = Vec::new();
+    out.push(base);
+    out.push(format!("Executable: {executable}"));
+    out.push(format!("Build: version={version}, git={git}, date={build}"));
+    out.push("PATH:".to_string());
+    if path_hits.is_empty() {
+        out.push("- (no biomcp binaries found on PATH)".to_string());
+    } else {
+        for hit in &path_hits {
+            let canonical = canonical_for_compare(hit);
+            let marker = if active.is_some() && active == canonical {
+                " (active)"
+            } else {
+                ""
+            };
+            out.push(format!("- {}{}", hit.display(), marker));
+        }
+    }
+    if executable.contains("/.venv/") || executable.contains("\\.venv\\") {
+        out.push("Warning: active executable appears to come from a virtualenv path.".to_string());
+    }
+    if path_hits.len() > 1 {
+        out.push(format!(
+            "Warning: multiple biomcp binaries found on PATH ({}).",
+            path_hits.len()
+        ));
+    }
+    out.join("\n")
+}
+
+fn find_biomcp_on_path() -> Vec<PathBuf> {
+    #[cfg(windows)]
+    let binary_name = "biomcp.exe";
+    #[cfg(not(windows))]
+    let binary_name = "biomcp";
+
+    let mut out = Vec::new();
+    let mut seen = HashSet::new();
+    let Some(path_var) = std::env::var_os("PATH") else {
+        return out;
+    };
+    for dir in std::env::split_paths(&path_var) {
+        let candidate = dir.join(binary_name);
+        if !candidate.is_file() {
+            continue;
+        }
+        let canonical = canonical_for_compare(&candidate);
+        let key = canonical
+            .as_deref()
+            .unwrap_or(candidate.as_path())
+            .display()
+            .to_string();
+        if seen.insert(key) {
+            out.push(candidate);
+        }
+    }
+    out
+}
+
+fn canonical_for_compare(path: &Path) -> Option<PathBuf> {
+    std::fs::canonicalize(path).ok()
 }
 
 fn log_pagination_truncation(observed_total: usize, offset: usize, returned: usize) {
@@ -2116,6 +2196,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
 
                     let filters = crate::entities::article::ArticleSearchFilters {
                         gene,
+                        gene_anchored: true,
                         disease: None,
                         drug: None,
                         author: None,
@@ -2126,7 +2207,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         journal: None,
                         open_access: false,
                         no_preprints: true,
-                        exclude_retracted: false,
+                        exclude_retracted: true,
                         sort: crate::entities::article::ArticleSort::Date,
                     };
 
@@ -2314,6 +2395,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 } => {
                     let filters = crate::entities::article::ArticleSearchFilters {
                         gene: None,
+                        gene_anchored: false,
                         disease: Some(name.clone()),
                         drug: None,
                         author: None,
@@ -2324,7 +2406,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         journal: None,
                         open_access: false,
                         no_preprints: true,
-                        exclude_retracted: false,
+                        exclude_retracted: true,
                         sort: crate::entities::article::ArticleSort::Date,
                     };
 
@@ -2511,6 +2593,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 } => {
                     let filters = crate::entities::article::ArticleSearchFilters {
                         gene: Some(symbol.clone()),
+                        gene_anchored: true,
                         disease: None,
                         drug: None,
                         author: None,
@@ -2521,7 +2604,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         journal: None,
                         open_access: false,
                         no_preprints: true,
-                        exclude_retracted: false,
+                        exclude_retracted: true,
                         sort: crate::entities::article::ArticleSort::Date,
                     };
                     let query = if offset > 0 {
@@ -2611,6 +2694,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     };
                     let filters = crate::entities::article::ArticleSearchFilters {
                         gene: None,
+                        gene_anchored: false,
                         disease: None,
                         drug: None,
                         author: None,
@@ -2621,7 +2705,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         journal: None,
                         open_access: false,
                         no_preprints: true,
-                        exclude_retracted: false,
+                        exclude_retracted: true,
                         sort: crate::entities::article::ArticleSort::Date,
                     };
                     let query = if offset > 0 {
@@ -3266,8 +3350,29 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         resolve_query_input(keyword, positional_query, "--keyword/--query")?;
                     let sort = crate::entities::article::ArticleSort::from_flag(&sort)?;
                     let exclude_retracted = exclude_retracted || !include_retracted;
+                    let gene_anchored = gene
+                        .as_deref()
+                        .map(str::trim)
+                        .is_some_and(|value| !value.is_empty())
+                        && disease
+                            .as_deref()
+                            .map(str::trim)
+                            .is_none_or(str::is_empty)
+                        && drug
+                            .as_deref()
+                            .map(str::trim)
+                            .is_none_or(str::is_empty)
+                        && author
+                            .as_deref()
+                            .map(str::trim)
+                            .is_none_or(str::is_empty)
+                        && keyword
+                            .as_deref()
+                            .map(str::trim)
+                            .is_none_or(str::is_empty);
                     let filters = crate::entities::article::ArticleSearchFilters {
                         gene,
+                        gene_anchored,
                         disease,
                         drug,
                         author,
@@ -4024,7 +4129,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             Commands::Mcp | Commands::Serve | Commands::ServeHttp { .. } => {
                 anyhow::bail!("MCP/serve commands should not go through CLI run()")
             }
-            Commands::Version => Ok(version_output()),
+            Commands::Version { verbose } => Ok(version_output(verbose)),
         }
     })
     .await
