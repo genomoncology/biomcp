@@ -404,6 +404,14 @@ impl PreparedInput {
         }
         Some(context.raw.clone())
     }
+
+    fn trial_condition_query(&self) -> Option<String> {
+        match (self.disease.as_deref(), self.keyword_pushdown()) {
+            (Some(disease), Some(keyword)) => Some(format!("{disease} {keyword}")),
+            (Some(disease), None) => Some(disease.to_string()),
+            (None, _) => None,
+        }
+    }
 }
 
 fn parse_variant_context(raw: &str) -> VariantContext {
@@ -662,7 +670,7 @@ async fn run_section(
         }
         SectionKind::Trial => {
             let filters = crate::entities::trial::TrialSearchFilters {
-                condition: input.disease.clone(),
+                condition: input.trial_condition_query(),
                 intervention: input.drug.clone(),
                 biomarker: input.gene_anchor().map(str::to_string),
                 mutation: input.variant_trial_query(),
@@ -1041,7 +1049,7 @@ fn canonical_search_command(kind: SectionKind, input: &PreparedInput, limit: usi
             push_opt(&mut args, "--indication", input.disease.as_deref());
         }
         SectionKind::Trial => {
-            push_opt(&mut args, "--condition", input.disease.as_deref());
+            push_opt_owned(&mut args, "--condition", input.trial_condition_query());
             push_opt(&mut args, "--intervention", input.drug.as_deref());
             push_opt(&mut args, "--biomarker", input.gene_anchor());
             push_opt_owned(&mut args, "--mutation", input.variant_trial_query());

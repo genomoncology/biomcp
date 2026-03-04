@@ -45,7 +45,7 @@ New to BioMCP? Try:
 - `search adverse-event ... --date-from --date-to --suspect-only --sex --age-min --age-max --reporter --count`
 - `search gene ... --region --pathway --go` (use GO IDs like `GO:0004672`; search output includes Coordinates/UniProt/OMIM)
 - `search protein ... --reviewed --disease --existence` (default reviewed mode)
-- `search trial ... --study-type --has-results --date-from --date-to`
+- `search trial ... --mutation --criteria --study-type --has-results --date-from --date-to`
 - `search article ... --date-from --date-to --journal`
 
 ## Helpers

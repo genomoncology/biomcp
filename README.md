@@ -5,6 +5,15 @@ One command grammar, compact markdown output, 12 entities across 15+ data source
 
 ## Install
 
+### PyPI tool install
+
+```bash
+uv tool install biomcp-cli
+# or: pip install biomcp-cli
+```
+
+This installs the `biomcp` binary on your PATH.
+
 ### Binary install (recommended)
 
 ```bash

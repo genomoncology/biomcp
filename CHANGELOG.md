@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0
+
+- Added boolean-aware eligibility query handling for `search trial --mutation` (supports `OR`/`AND`/`NOT` operator expressions).
+- Added `search trial --criteria` for explicit eligibility-text matching in ClinicalTrials.gov workflows.
+- Improved `search all` trial relevance by pushing disease+keyword intent into trial condition queries.
+- Added PyPI install path documentation and release pipeline updates for publishing `biomcp-cli`.
+
 ## 0.8.4
 
 - Simplified CI/CD workflow triggers to avoid redundant post-merge runs.

@@ -241,6 +241,7 @@ fn list_trial() -> String {
 - `--age <years>`
 - `--sex <female|male|all>`
 - `--mutation <text>`
+- `--criteria <text>`
 - `--biomarker <text>`
 - `--sponsor-type <nih|industry|fed|other>`
 - `--prior-therapies <text>`
@@ -414,6 +415,7 @@ fn list_gwas() -> String {
 
 - `list pgx` - pharmacogenomics command family
 - `search trial --mutation <text>`
+- `search trial --criteria <text>`
 - `search article -g <gene>`
 "#
     .to_string()

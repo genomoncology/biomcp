@@ -132,6 +132,7 @@ pub struct TrialSearchFilters {
     pub date_from: Option<String>,
     pub date_to: Option<String>,
     pub mutation: Option<String>,
+    pub criteria: Option<String>,
     pub biomarker: Option<String>,
     pub prior_therapies: Option<String>,
     pub progression_on: Option<String>,
@@ -259,6 +260,77 @@ fn essie_escape(value: &str) -> String {
         out.push(ch);
     }
     out
+}
+
+fn quote_essie_literal(value: &str) -> String {
+    format!("\"{}\"", essie_escape(value))
+}
+
+fn boolean_operator_regex() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"(?i)\b(OR|AND|NOT)\b").expect("valid boolean operator regex"))
+}
+
+fn split_boolean_expression(value: &str) -> Option<(Vec<String>, Vec<String>)> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let mut terms = Vec::new();
+    let mut operators = Vec::new();
+    let mut last = 0;
+    for caps in boolean_operator_regex().captures_iter(trimmed) {
+        let Some(matched) = caps.get(0) else {
+            continue;
+        };
+        let term = trimmed[last..matched.start()].trim();
+        if term.is_empty() {
+            return None;
+        }
+        terms.push(term.to_string());
+        operators.push(
+            caps.get(1)
+                .map(|m| m.as_str().to_ascii_uppercase())
+                .unwrap_or_else(|| "OR".to_string()),
+        );
+        last = matched.end();
+    }
+
+    let tail = trimmed[last..].trim();
+    if tail.is_empty() {
+        if operators.is_empty() {
+            return None;
+        }
+        return None;
+    }
+    terms.push(tail.to_string());
+    Some((terms, operators))
+}
+
+fn has_boolean_operators(value: &str) -> bool {
+    split_boolean_expression(value).is_some_and(|(_, operators)| !operators.is_empty())
+}
+
+fn essie_escape_boolean_expression(value: &str) -> String {
+    let trimmed = value.trim();
+    let Some((terms, operators)) = split_boolean_expression(trimmed) else {
+        return quote_essie_literal(trimmed);
+    };
+    if operators.is_empty() {
+        return quote_essie_literal(&terms[0]);
+    }
+
+    let mut rendered = String::new();
+    for (idx, term) in terms.iter().enumerate() {
+        if idx > 0 {
+            rendered.push(' ');
+            rendered.push_str(&operators[idx - 1]);
+            rendered.push(' ');
+        }
+        rendered.push_str(&quote_essie_literal(term));
+    }
+    rendered
 }
 
 fn has_essie_filters(filters: &TrialSearchFilters) -> bool {
@@ -774,17 +846,47 @@ fn collect_eligibility_keywords(filters: &TrialSearchFilters) -> Vec<String> {
     // Note: biomarker is intentionally excluded — it now searches curated
     // structured fields (Keyword/InterventionName/Condition) rather than
     // EligibilityCriteria, so post-filtering eligibility text is not needed.
-    [
-        filters.mutation.as_deref(),
-        filters.prior_therapies.as_deref(),
-        filters.progression_on.as_deref(),
-    ]
-    .into_iter()
-    .flatten()
-    .map(str::trim)
-    .filter(|value| !value.is_empty())
-    .map(str::to_string)
-    .collect()
+    let mut keywords = Vec::new();
+
+    if let Some(mutation) = filters
+        .mutation
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        && !has_boolean_operators(mutation)
+    {
+        keywords.push(mutation.to_string());
+    }
+
+    if let Some(criteria) = filters
+        .criteria
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        && !has_boolean_operators(criteria)
+    {
+        keywords.push(criteria.to_string());
+    }
+
+    if let Some(prior_therapies) = filters
+        .prior_therapies
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        keywords.push(prior_therapies.to_string());
+    }
+
+    if let Some(progression_on) = filters
+        .progression_on
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        keywords.push(progression_on.to_string());
+    }
+
+    keywords
 }
 
 async fn verify_facility_geo(
@@ -1037,8 +1139,17 @@ fn ctgov_query_term(
         .map(str::trim)
         .filter(|v| !v.is_empty())
     {
-        let mutation = essie_escape(mutation);
-        terms.push(format!("AREA[EligibilityCriteria]\"{mutation}\""));
+        let mutation = essie_escape_boolean_expression(mutation);
+        terms.push(format!("AREA[EligibilityCriteria]({mutation})"));
+    }
+    if let Some(criteria) = filters
+        .criteria
+        .as_deref()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+    {
+        let criteria = essie_escape_boolean_expression(criteria);
+        terms.push(format!("AREA[EligibilityCriteria]({criteria})"));
     }
     if let Some(biomarker) = filters
         .biomarker
@@ -1129,6 +1240,11 @@ fn has_any_query(filters: &TrialSearchFilters) -> bool {
             .is_some_and(|v| !v.is_empty())
         || filters
             .mutation
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|v| !v.is_empty())
+        || filters
+            .criteria
             .as_deref()
             .map(str::trim)
             .is_some_and(|v| !v.is_empty())
@@ -1438,7 +1554,8 @@ pub async fn search_page(
                 biomarkers: filters
                     .biomarker
                     .clone()
-                    .or_else(|| filters.mutation.clone()),
+                    .or_else(|| filters.mutation.clone())
+                    .or_else(|| filters.criteria.clone()),
                 size: limit,
                 from: offset,
             };
@@ -1681,6 +1798,7 @@ mod tests {
         // structured fields rather than EligibilityCriteria free text.
         let filters = TrialSearchFilters {
             mutation: Some("MSI-H".into()),
+            criteria: Some("mismatch repair deficient".into()),
             biomarker: Some("TMB-high".into()),
             prior_therapies: Some("osimertinib".into()),
             progression_on: Some("pembrolizumab".into()),
@@ -1689,7 +1807,12 @@ mod tests {
 
         assert_eq!(
             collect_eligibility_keywords(&filters),
-            vec!["MSI-H", "osimertinib", "pembrolizumab"]
+            vec![
+                "MSI-H",
+                "mismatch repair deficient",
+                "osimertinib",
+                "pembrolizumab"
+            ]
         );
     }
 
@@ -1697,6 +1820,7 @@ mod tests {
     fn collect_eligibility_keywords_omits_blank_values() {
         let filters = TrialSearchFilters {
             mutation: Some("   ".into()),
+            criteria: Some("".into()),
             biomarker: Some(" MSI-H ".into()),
             prior_therapies: None,
             progression_on: Some("".into()),
@@ -1705,6 +1829,44 @@ mod tests {
 
         // biomarker excluded from eligibility keywords; mutation is blank
         assert_eq!(collect_eligibility_keywords(&filters), Vec::<String>::new());
+    }
+
+    #[test]
+    fn collect_eligibility_keywords_skips_boolean_expressions() {
+        let filters = TrialSearchFilters {
+            mutation: Some("dMMR OR MSI-H".into()),
+            criteria: Some("prior platinum AND ECOG 0-1".into()),
+            prior_therapies: Some("pembrolizumab".into()),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            collect_eligibility_keywords(&filters),
+            vec!["pembrolizumab"]
+        );
+    }
+
+    #[test]
+    fn essie_escape_boolean_expression_preserves_or_operators() {
+        assert_eq!(
+            essie_escape_boolean_expression("dMMR OR MSI-H"),
+            "\"dMMR\" OR \"MSI\\-H\""
+        );
+    }
+
+    #[test]
+    fn ctgov_query_term_supports_mutation_and_criteria_clauses() {
+        let filters = TrialSearchFilters {
+            mutation: Some("dMMR OR MSI-H".into()),
+            criteria: Some("mismatch repair deficient".into()),
+            ..Default::default()
+        };
+
+        let query = ctgov_query_term(&filters, None)
+            .expect("query term should build")
+            .expect("query term should not be empty");
+        assert!(query.contains("AREA[EligibilityCriteria](\"dMMR\" OR \"MSI\\-H\")"));
+        assert!(query.contains("AREA[EligibilityCriteria](\"mismatch repair deficient\")"));
     }
 
     #[test]

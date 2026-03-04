@@ -48,7 +48,7 @@ Free-text searches:
 
 Structured/filter-first searches:
 - `variant` uses structured filters (for example: gene, significance, consequence, protein change).
-- `trial` uses structured filters (for example: condition, intervention, mutation, phase, status).
+- `trial` uses structured filters (for example: condition, intervention, mutation, criteria, phase, status).
 
 Query examples:
 
@@ -58,6 +58,7 @@ biomcp search gene -q BRAF --limit 5
 biomcp search article -q "immunotherapy resistance" --limit 5
 biomcp search variant -g BRAF --significance pathogenic --limit 5
 biomcp search trial -c melanoma --mutation "BRAF V600E" --status recruiting --limit 5
+biomcp search trial -c "endometrial cancer" --criteria "mismatch repair deficient" --status recruiting --limit 5
 ```
 
 ## Cross-Entity Helpers

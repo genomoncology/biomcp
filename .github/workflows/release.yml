@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   build:
@@ -131,3 +132,97 @@ jobs:
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pypi-build:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-14
+            target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache protoc
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.tool_cache }}/protoc
+          key: protoc-${{ runner.os }}-${{ runner.arch }}-v28.3
+
+      - uses: arduino/setup-protoc@v3
+        continue-on-error: true
+        with:
+          version: "28.3"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux cross toolchain
+        if: runner.os == 'Linux' && matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Sync Cargo.toml and pyproject.toml version from release tag
+        shell: bash
+        run: |
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          VER="${TAG#v}"
+          if [ -n "$VER" ]; then
+            python - "$VER" <<'PY'
+import pathlib
+import re
+import sys
+
+version = sys.argv[1]
+for path in (pathlib.Path("Cargo.toml"), pathlib.Path("pyproject.toml")):
+    text = path.read_text()
+    updated = re.sub(r'^version = ".*"$', f'version = "{version}"', text, count=1, flags=re.M)
+    path.write_text(updated)
+PY
+            echo "Set Cargo.toml and pyproject.toml version to $VER"
+          fi
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }}
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.target }}
+          path: target/wheels/*.whl
+
+  pypi-publish:
+    needs: pypi-build
+    runs-on: ubuntu-latest
+    environment: pypi
+
+    steps:
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

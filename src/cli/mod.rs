@@ -420,6 +420,7 @@ EXAMPLES:
   biomcp search trial -p 3 -i pembrolizumab
   biomcp search trial -c melanoma --facility \"MD Anderson\" --age 67 --limit 5
   biomcp search trial --mutation \"BRAF V600E\" --status recruiting --study-type interventional --has-results --limit 5
+  biomcp search trial -c \"endometrial cancer\" --criteria \"mismatch repair deficient\" -s recruiting
 
 Trial search is filter-based (no free-text query).
 See also: biomcp list trial")]
@@ -458,6 +459,10 @@ See also: biomcp list trial")]
         /// Search eligibility criteria for mutation (best-effort)
         #[arg(long)]
         mutation: Option<String>,
+
+        /// Search eligibility criteria with free-text terms (best-effort)
+        #[arg(long)]
+        criteria: Option<String>,
 
         /// Biomarker filter (NCI CTS; best-effort for ctgov)
         #[arg(long)]
@@ -1705,6 +1710,7 @@ fn trial_search_query_summary(
             .map(|v| format!("date_from={v}")),
         filters.date_to.as_deref().map(|v| format!("date_to={v}")),
         filters.mutation.as_deref().map(|v| format!("mutation={v}")),
+        filters.criteria.as_deref().map(|v| format!("criteria={v}")),
         filters
             .biomarker
             .as_deref()
@@ -3440,6 +3446,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     sex,
                     status,
                     mutation,
+                    criteria,
                     biomarker,
                     prior_therapies,
                     progression_on,
@@ -3473,6 +3480,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         date_from,
                         date_to,
                         mutation,
+                        criteria,
                         biomarker,
                         prior_therapies,
                         progression_on,
@@ -4218,6 +4226,7 @@ mod tests {
                 facility: Some("MD Anderson".into()),
                 age: Some(67),
                 sex: Some("female".into()),
+                criteria: Some("mismatch repair deficient".into()),
                 sponsor_type: Some("nih".into()),
                 lat: Some(40.7128),
                 lon: Some(-74.006),
@@ -4231,6 +4240,7 @@ mod tests {
         assert!(summary.contains("facility=MD Anderson"));
         assert!(summary.contains("age=67"));
         assert!(summary.contains("sex=female"));
+        assert!(summary.contains("criteria=mismatch repair deficient"));
         assert!(summary.contains("sponsor_type=nih"));
         assert!(summary.contains("lat=40.7128"));
         assert!(summary.contains("lon=-74.006"));
@@ -4315,6 +4325,8 @@ mod tests {
             "67",
             "--sex",
             "female",
+            "--criteria",
+            "mismatch repair deficient",
             "--sponsor-type",
             "nih",
             "--count-only",
@@ -4330,6 +4342,7 @@ mod tests {
                         facility,
                         age,
                         sex,
+                        criteria,
                         sponsor_type,
                         count_only,
                         limit,
@@ -4339,6 +4352,7 @@ mod tests {
                 assert_eq!(facility.as_deref(), Some("MD Anderson"));
                 assert_eq!(age, Some(67));
                 assert_eq!(sex.as_deref(), Some("female"));
+                assert_eq!(criteria.as_deref(), Some("mismatch repair deficient"));
                 assert_eq!(sponsor_type.as_deref(), Some("nih"));
                 assert!(count_only);
                 assert_eq!(limit, 3);
