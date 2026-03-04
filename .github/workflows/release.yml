@@ -187,17 +187,8 @@ jobs:
           TAG="${{ github.event.release.tag_name || inputs.tag }}"
           VER="${TAG#v}"
           if [ -n "$VER" ]; then
-            python - "$VER" <<'PY'
-import pathlib
-import re
-import sys
-
-version = sys.argv[1]
-for path in (pathlib.Path("Cargo.toml"), pathlib.Path("pyproject.toml")):
-    text = path.read_text()
-    updated = re.sub(r'^version = ".*"$', f'version = "{version}"', text, count=1, flags=re.M)
-    path.write_text(updated)
-PY
+            sed "s/^version = \".*\"/version = \"$VER\"/" Cargo.toml > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
+            sed "s/^version = \".*\"/version = \"$VER\"/" pyproject.toml > pyproject.toml.tmp && mv pyproject.toml.tmp pyproject.toml
             echo "Set Cargo.toml and pyproject.toml version to $VER"
           fi
 
