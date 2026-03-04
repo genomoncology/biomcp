@@ -52,7 +52,6 @@ nav:
       - Drug Approvals & AE Summary: reference/drug-approvals-and-ae-summary.md
   - Policies: policies.md
   - Troubleshooting: troubleshooting.md
-  - Changelog: changelog.md
 
 plugins:
   - search:
