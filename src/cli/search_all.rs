@@ -809,6 +809,10 @@ fn build_links(
             }
         }
         SectionKind::Drug => {
+            // Prefer user's input drug name for AE cross-links: FAERS indexes by
+            // generic/brand name, not salt forms. DrugBank canonical names (e.g.
+            // "dabrafenib mesylate") return far fewer FAERS reports than the generic
+            // name ("dabrafenib": 4K+ vs 15 reports).
             if let Some(drug) = input
                 .drug
                 .as_deref()
@@ -950,12 +954,6 @@ fn variant_base_args(input: &PreparedInput) -> String {
     }
     if let Some(therapy) = input.drug.as_deref() {
         args.push(format!("--therapy {}", quote_arg(therapy)));
-    }
-    if args.is_empty()
-        && let Some(raw_variant) = input.variant.as_deref().map(str::trim)
-        && !raw_variant.is_empty()
-    {
-        args.push(quote_arg(raw_variant));
     }
     args.join(" ")
 }
