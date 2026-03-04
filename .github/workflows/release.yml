@@ -141,8 +141,9 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
+          # aarch64-unknown-linux-gnu omitted: ring cross-compilation
+          # fails in manylinux Docker (missing __ARM_ARCH). Use GitHub
+          # release binary for arm64 Linux. TODO: re-add with --zig.
           - os: macos-latest
             target: x86_64-apple-darwin
           - os: macos-14
@@ -175,12 +176,6 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install Linux cross toolchain
-        if: runner.os == 'Linux' && matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-
       - name: Sync Cargo.toml and pyproject.toml version from release tag
         shell: bash
         run: |
@@ -197,8 +192,6 @@ jobs:
         with:
           command: build
           args: --release --target ${{ matrix.target }}
-        env:
-          CFLAGS_aarch64_unknown_linux_gnu: "-march=armv8-a"
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
