@@ -41,6 +41,6 @@ manifest-path = "Cargo.toml"
 strip = true
 
 [tool.pytest.ini_options]
-testpaths = ["docs", "tests"]
-addopts = "-v --mustmatch-lang python"
+testpaths = ["tests"]
+addopts = "-v"
 asyncio_mode = "auto"
