@@ -1,0 +1,341 @@
+{# ===== METRIC CARD ===== #}
+{% macro metric_card(value, label, detail="", color="var(--go-precision-blue)") %}
+<div class="card" style="text-align: center; padding: 16px;">
+  <div class="metric" style="color: {{ color }}; font-size: 32px;">{{ value }}</div>
+  <div class="metric-label" style="font-size: 13px;">{{ label }}</div>
+  {% if detail %}<div class="metric-detail">{{ detail }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{# ===== CODE BLOCK (dark terminal) ===== #}
+{% macro code_block(lines) %}
+<div class="code-term">
+{% for line in lines %}
+  <div class="code-line">
+    {%- if line.prompt is defined %}<span class="prompt">{{ line.prompt }}</span> {% endif -%}
+    {%- if line.cmd is defined %}<span class="cmd">{{ line.cmd }}</span>{% endif -%}
+    {%- if line.arg is defined %} <span class="arg">{{ line.arg }}</span>{% endif -%}
+    {%- if line.comment is defined %} &nbsp;&nbsp;<span class="comment">{{ line.comment|safe }}</span>{% endif -%}
+    {%- if line.text is defined %}{{ line.text }}{% endif -%}
+    {%- if line.output is defined %}<span class="output">{{ line.output|safe }}</span>{% endif -%}
+  </div>
+{% endfor %}
+</div>
+{% endmacro %}
+
+{# ===== CALLOUT ===== #}
+{% macro callout(title, body, variant="blue") %}
+<div class="callout-{{ variant }}">
+  {% if title %}<div class="callout-title">{{ title|safe }}</div>{% endif %}
+  <p>{{ body|safe }}</p>
+</div>
+{% endmacro %}
+
+{# ===== COMPARISON (before/after) ===== #}
+{% macro comparison(before_label, before_items, after_label, after_items) %}
+<div class="comparison-row">
+  <div class="compare-box compare-before">
+    <div class="compare-label">{{ before_label }}</div>
+    <table>
+    {% for item in before_items %}
+      <tr><td style="border:none;padding:4px 0;"><strong>{{ item.key }}</strong></td>
+          <td style="border:none;padding:4px 12px;text-align:right;font-weight:700;">{{ item.val }}</td></tr>
+    {% endfor %}
+    </table>
+  </div>
+  <div class="compare-box compare-after">
+    <div class="compare-label">{{ after_label }}</div>
+    <table>
+    {% for item in after_items %}
+      <tr><td style="border:none;padding:4px 0;"><strong>{{ item.key }}</strong></td>
+          <td style="border:none;padding:4px 12px;text-align:right;font-weight:700;">{{ item.val }}</td></tr>
+    {% endfor %}
+    </table>
+  </div>
+</div>
+{% endmacro %}
+
+{# ===== BADGE ROW ===== #}
+{% macro badge_row(badges) %}
+<div style="text-align: center; margin-top: 12px;">
+{% for b in badges %}
+  <span class="badge badge-{{ b.color|default('green') }}"
+        style="font-size: 14px; padding: 6px 16px;{% if not loop.first %} margin-left: 8px;{% endif %}">{{ b.text }}</span>
+{% endfor %}
+</div>
+{% endmacro %}
+
+{# ===== DATA TABLE ===== #}
+{% macro data_table(headers, rows, highlight_cols=[]) %}
+<table style="font-size: 13px;">
+  <thead><tr>
+  {% for h in headers %}
+    <th{% if loop.index0 > 0 %} style="text-align: right;"{% endif %}>{{ h }}</th>
+  {% endfor %}
+  </tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+    {% for cell in row %}
+      <td{% if loop.index0 > 0 %} style="text-align: right;{% if loop.index0 in highlight_cols %} color: #16a34a; font-weight: 700;{% endif %}"{% endif %}>{{ cell|safe }}</td>
+    {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+{# ===== ENTITY CARD ===== #}
+{% macro entity_card(letter, name, sources, example, color, example2="") %}
+<div class="entity-card">
+  <div class="entity-icon" style="background: {{ color }};">{{ letter }}</div>
+  <div class="entity-name">{{ name }}</div>
+  <div class="entity-sources">{{ sources }}</div>
+  <div class="entity-example">{{ example }}</div>
+  {% if example2 %}<div class="entity-example">{{ example2 }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{# ===== HERO STAT ===== #}
+{% macro hero_stat(value, label, detail="") %}
+<div class="hero-stat-banner">
+  <div class="hero-stat-num">{{ value }}</div>
+  <div class="hero-stat-label">{{ label }}</div>
+  {% if detail %}<div class="hero-stat-detail">{{ detail }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{# ===== SECTION LABEL ===== #}
+{% macro section_label(text) %}
+<div class="section-label">{{ text|safe }}</div>
+{% endmacro %}
+
+{# ===== SKILL CARD ===== #}
+{% macro skill_card(num, name, desc, color) %}
+<div class="skill-card">
+  <div class="skill-num" style="background: {{ color }};">{{ "%02d"|format(num) }}</div>
+  <div class="skill-info">
+    <div class="skill-name">{{ name }}</div>
+    <div class="skill-desc">{{ desc|safe }}</div>
+  </div>
+</div>
+{% endmacro %}
+
+{# ===== PHASE CARD (roadmap) ===== #}
+{% macro phase_card(num, title, items, color) %}
+<div class="phase-card" style="border-top: 4px solid {{ color }};">
+  <div class="phase-num" style="color: {{ color }};">Phase {{ num }}</div>
+  <div class="phase-title">{{ title }}</div>
+  <ul class="phase-items">
+  {% for item in items %}
+    <li>{{ item|safe }}</li>
+  {% endfor %}
+  </ul>
+</div>
+{% endmacro %}
+
+{# ===== INTEGRATION CARD ===== #}
+{% macro int_card(icon_text, name, desc, color) %}
+<div class="int-card">
+  <div class="int-icon" style="background: {{ color }};">{{ icon_text }}</div>
+  <div>
+    <div class="int-name">{{ name }}</div>
+    <div class="int-desc">{{ desc }}</div>
+  </div>
+</div>
+{% endmacro %}
+
+{# ===== PAPER CARD ===== #}
+{% macro paper_card(name, desc, tasks, complexity, complexity_color) %}
+<div class="paper-card-item">
+  <div class="paper-header">
+    <div class="paper-name">{{ name|safe }}</div>
+    <span class="complexity-badge" style="background: {{ complexity_color }};">{{ complexity }}</span>
+  </div>
+  <div class="paper-desc">{{ desc|safe }}</div>
+  <div class="paper-tasks">{{ tasks }}</div>
+</div>
+{% endmacro %}
+
+{# ===== CHART.JS BAR ===== #}
+{% macro chart_bar(chart_id, labels=None, datasets=None, title="", height=390, horizontal=False, stacked=False, y_log=False, y_min=None, y_max=None, show_legend=True, labels_expr="", datasets_expr="") %}
+<div class="chart-shell" style="height: {{ height }}px;">
+  <canvas id="{{ chart_id }}"></canvas>
+</div>
+<script>
+(() => {
+  const ctx = document.getElementById({{ chart_id|tojson }});
+  if (!ctx || typeof Chart === "undefined") return;
+  const labels = {% if labels_expr %}{{ labels_expr|safe }}{% else %}{{ (labels or [])|tojson }}{% endif %};
+  const datasets = {% if datasets_expr %}{{ datasets_expr|safe }}{% else %}{{ (datasets or [])|tojson }}{% endif %};
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: datasets,
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: {{ ("y" if horizontal else "x")|tojson }},
+      scales: {
+        x: {
+          stacked: {{ "true" if stacked else "false" }},
+          ticks: { color: "#4B4B4B", font: { family: "Noto Sans", size: 12 } },
+          grid: { color: "#E8E8E8" },
+        },
+        y: {
+          stacked: {{ "true" if stacked else "false" }},
+          type: {{ ("logarithmic" if y_log else "linear")|tojson }},
+          ticks: { color: "#4B4B4B", font: { family: "Noto Sans", size: 12 } },
+          grid: { color: "#E8E8E8" },
+          {% if y_min is not none %}min: {{ y_min }},{% endif %}
+          {% if y_max is not none %}max: {{ y_max }},{% endif %}
+        },
+      },
+      plugins: {
+        legend: {
+          display: {{ "true" if show_legend else "false" }},
+          labels: { color: "#3A006A", font: { family: "Outfit", size: 12, weight: "600" } },
+        },
+        title: {
+          display: {{ "true" if title else "false" }},
+          text: {{ title|tojson }},
+          color: "#3A006A",
+          font: { family: "Outfit", size: 16, weight: "700" },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endmacro %}
+
+{# ===== CHART.JS DONUT ===== #}
+{% macro chart_donut(chart_id, labels=None, values=None, colors=None, title="", center_value="", center_label="", height=360, cutout="68%", labels_expr="", values_expr="", colors_expr="") %}
+<div class="chart-shell chart-donut-shell" style="height: {{ height }}px;">
+  <canvas id="{{ chart_id }}"></canvas>
+  {% if center_value or center_label %}
+  <div class="chart-donut-center">
+    {% if center_value %}<div class="chart-donut-value">{{ center_value }}</div>{% endif %}
+    {% if center_label %}<div class="chart-donut-label">{{ center_label }}</div>{% endif %}
+  </div>
+  {% endif %}
+</div>
+<script>
+(() => {
+  const ctx = document.getElementById({{ chart_id|tojson }});
+  if (!ctx || typeof Chart === "undefined") return;
+  const labels = {% if labels_expr %}{{ labels_expr|safe }}{% else %}{{ (labels or [])|tojson }}{% endif %};
+  const values = {% if values_expr %}{{ values_expr|safe }}{% else %}{{ (values or [])|tojson }}{% endif %};
+  const colors = {% if colors_expr %}{{ colors_expr|safe }}{% else %}{{ (colors or [])|tojson }}{% endif %};
+  new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: {{ cutout|tojson }},
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { color: "#3A006A", font: { family: "Outfit", size: 12, weight: "600" } },
+        },
+        title: {
+          display: {{ "true" if title else "false" }},
+          text: {{ title|tojson }},
+          color: "#3A006A",
+          font: { family: "Outfit", size: 16, weight: "700" },
+        },
+      },
+    },
+  });
+})();
+</script>
+{% endmacro %}
+
+{# ===== ECHARTS HEATMAP ===== #}
+{% macro chart_heatmap(chart_id, x_labels=None, y_labels=None, matrix=None, title="", height=390, min_value=0, max_value=5, x_labels_expr="", y_labels_expr="", matrix_expr="") %}
+<div class="chart-shell">
+  <div id="{{ chart_id }}" style="width: 100%; height: {{ height }}px;"></div>
+</div>
+<script>
+(() => {
+  const node = document.getElementById({{ chart_id|tojson }});
+  if (!node || typeof echarts === "undefined") return;
+  const chart = echarts.init(node, null, { renderer: "svg" });
+  const xLabels = {% if x_labels_expr %}{{ x_labels_expr|safe }}{% else %}{{ (x_labels or [])|tojson }}{% endif %};
+  const yLabels = {% if y_labels_expr %}{{ y_labels_expr|safe }}{% else %}{{ (y_labels or [])|tojson }}{% endif %};
+  const matrix = {% if matrix_expr %}{{ matrix_expr|safe }}{% else %}{{ (matrix or [])|tojson }}{% endif %};
+  chart.setOption({
+    animation: false,
+    title: {
+      text: {{ title|tojson }},
+      left: "center",
+      textStyle: { color: "#3A006A", fontFamily: "Outfit", fontSize: 16, fontWeight: 700 },
+    },
+    grid: { left: "14%", right: "12%", top: {{ 56 if title else 24 }}, bottom: 44 },
+    xAxis: {
+      type: "category",
+      data: xLabels,
+      splitArea: { show: true },
+      axisLabel: { color: "#4B4B4B", fontFamily: "Noto Sans", fontSize: 11, rotate: 28, interval: 0 },
+      axisLine: { lineStyle: { color: "#CFCFCF" } },
+    },
+    yAxis: {
+      type: "category",
+      data: yLabels,
+      splitArea: { show: true },
+      axisLabel: { color: "#4B4B4B", fontFamily: "Noto Sans", fontSize: 11 },
+      axisLine: { lineStyle: { color: "#CFCFCF" } },
+      inverse: true,
+    },
+    visualMap: {
+      min: {{ min_value }},
+      max: {{ max_value }},
+      orient: "vertical",
+      right: 0,
+      top: "middle",
+      calculable: false,
+      textStyle: { color: "#4B4B4B", fontFamily: "Noto Sans", fontSize: 11 },
+      inRange: { color: ["#EEF7FF", "#7FDBFF", "#0098FC", "#3A006A"] },
+    },
+    series: [{
+      type: "heatmap",
+      data: matrix,
+      label: { show: true, color: "#1F1F1F", fontFamily: "Noto Sans", fontSize: 10 },
+      itemStyle: { borderColor: "#FFFFFF", borderWidth: 1 },
+      emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,0.20)" } },
+    }],
+  });
+  window.addEventListener("resize", () => chart.resize());
+})();
+</script>
+{% endmacro %}
+
+{# ===== ECHARTS GENERIC ===== #}
+{% macro chart_echarts(chart_id, option=None, height=390, option_expr="") %}
+<div class="chart-shell">
+  <div id="{{ chart_id }}" style="width: 100%; height: {{ height }}px;"></div>
+</div>
+<script>
+(() => {
+  const node = document.getElementById({{ chart_id|tojson }});
+  if (!node || typeof echarts === "undefined") return;
+  const chart = echarts.init(node, null, { renderer: "svg" });
+  const option = {% if option_expr %}{{ option_expr|safe }}{% else %}{{ (option or {})|tojson }}{% endif %};
+  option.animation = false;
+  chart.setOption(option, { notMerge: true });
+  window.addEventListener("resize", () => chart.resize());
+})();
+</script>
+{% endmacro %}

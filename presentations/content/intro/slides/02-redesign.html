@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+{% endblock %}
+{% block extra_css %}
+<style>
+  .slide-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 2px;
+  }
+  .slide-title {
+    font-family: var(--font-heading);
+    font-size: 40px; font-weight: 700;
+    color: var(--go-deep-purple);
+    line-height: 1.1;
+  }
+  .logo-group {
+    display: flex; align-items: center; gap: 16px;
+    flex-shrink: 0;
+  }
+  .biomcp-mark {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Fraunces', serif;
+    font-size: 28px; font-weight: 700;
+    color: var(--go-deep-purple);
+    letter-spacing: -0.5px; line-height: 1;
+  }
+  .biomcp-mark img { width: 26px; height: 26px; }
+  .logo-divider {
+    width: 1px; height: 32px;
+    background: var(--border-card);
+  }
+  .go-logo { height: 36px; }
+
+  .principle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    flex: 1;
+  }
+  .principle-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    padding: 18px 20px;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .principle-icon {
+    width: 36px; height: 36px; font-size: 18px;
+    border-radius: 8px;
+    position: absolute; top: 18px; right: 20px;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+  }
+  .principle-title {
+    font-family: var(--font-heading);
+    font-size: 30px; font-weight: 700;
+    color: var(--go-deep-purple);
+    padding-right: 48px;
+    margin-bottom: 0;
+    line-height: 1.15;
+  }
+  .principle-desc {
+    font-size: 15.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: auto;
+  }
+  .principle-stat {
+    font-family: var(--font-heading);
+    font-size: 15px; font-weight: 700; font-style: italic;
+    color: var(--go-deep-purple);
+    margin-top: auto;
+    padding-top: 10px;
+    text-align: center;
+  }
+</style>
+{% endblock %}
+{% block content %}
+  <div class="slide-header">
+    <div class="slide-title">Redesigned for AI Agents</div>
+    <div class="logo-group">
+      <div class="biomcp-mark"><img src="/static/biomcp-microscope.svg" alt="">BioMCP</div>
+      <div class="logo-divider"></div>
+      <img src="/static/logo.png" class="go-logo" alt="GenomOncology">
+    </div>
+  </div>
+  <div class="accent-line" style="margin: 4px 0 10px;"></div>
+
+  <div class="principle-grid">
+    <div class="principle-card">
+      <div class="principle-icon" style="background: var(--go-deep-purple);"><i class="ph ph-terminal-window"></i></div>
+      <div class="principle-title">One Tool Does It All</div>
+      <div class="principle-desc">A single MCP tool invokes the full command hierarchy &mdash; search, get, enrich, batch &mdash; no per-function tool bloat.</div>
+      <div class="principle-stat">36 fine-grained tools &rarr; 1 shell command</div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-icon" style="background: var(--go-precision-blue);"><i class="ph ph-feather"></i></div>
+      <div class="principle-title">Light on Context</div>
+      <div class="principle-desc">Compact output, minimal tool descriptions, and plain text by default keep the agent&rsquo;s context window free for reasoning.</div>
+      <div class="principle-stat">95% less token overhead</div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-icon" style="background: var(--go-light-purple);"><i class="ph ph-book-open"></i></div>
+      <div class="principle-title">Skills Enabled</div>
+      <div class="principle-desc">Install or invoke a SKILL.md with 10+ multi-step resource guides. Progressive disclosure means the agent loads only what it needs.</div>
+      <div class="principle-stat">1 BioMCP skill + 10 use cases</div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-icon" style="background: var(--go-pathway-orange);"><i class="ph ph-lightning"></i></div>
+      <div class="principle-title">Built for Speed</div>
+      <div class="principle-desc">Single Rust binary with parallel API fan-out. Faster than any ad-hoc script an agent writes against these APIs.</div>
+      <div class="principle-stat">Sub-second latency, parallel calls</div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-icon" style="background: var(--go-precision-blue);"><i class="ph ph-plugs-connected"></i></div>
+      <div class="principle-title">Knows Every API</div>
+      <div class="principle-desc">Built-in caching, throttling, retries, and rate limiting for 20+ sources. No API quirks to relearn each session.</div>
+      <div class="principle-stat">Automatic caching and retries</div>
+    </div>
+
+    <div class="principle-card">
+      <div class="principle-icon" style="background: #059669;"><i class="ph ph-signpost"></i></div>
+      <div class="principle-title">Guides Every Step</div>
+      <div class="principle-desc">Contextual suggestions after every response help the agent navigate filters, options, and the full command surface.</div>
+      <div class="principle-stat">Just-in-time help in every response</div>
+    </div>
+  </div>
+{% endblock %}

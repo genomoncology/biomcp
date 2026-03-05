@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "macros.html" import entity_card %}
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
+{% endblock %}
+{% block extra_css %}
+<style>
+  .slide-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0;
+  }
+  .biomcp-wordmark {
+    font-family: 'Fraunces', serif;
+    font-size: 48px; color: var(--go-deep-purple); letter-spacing: -0.5px;
+    line-height: 1; display: flex; align-items: center; gap: 12px;
+  }
+  .biomcp-wordmark img { width: 42px; height: 42px; }
+  .go-logo { height: 54px; }
+
+  .slide-subtitle {
+    font-size: 18px; color: var(--text-muted); font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .entity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-content: start; }
+  .entity-card {
+    padding: 10px 14px;
+    display: flex; flex-wrap: wrap; align-content: flex-start;
+    position: relative;
+  }
+  .entity-icon {
+    width: 30px; height: 30px; font-size: 12px; border-radius: 6px;
+    position: absolute; top: 10px; right: 14px;
+    margin-bottom: 0;
+  }
+  .entity-name { font-size: 19px; width: 100%; padding-right: 40px; margin-bottom: 2px; }
+  .entity-sources { font-size: 11.5px; margin-bottom: 12px; width: 100%; }
+  .entity-example { font-size: 10.5px; padding: 3px 7px; margin-bottom: 3px; width: 100%; }
+</style>
+{% endblock %}
+{% block content %}
+  <div class="slide-header">
+    <div class="biomcp-wordmark"><img src="/static/biomcp-microscope.svg" alt="">BioMCP</div>
+    <img src="/static/logo.png" class="go-logo" alt="GenomOncology">
+  </div>
+  <div class="slide-subtitle">12 Entities &middot; 20+ Trusted Sources</div>
+  <div class="accent-line" style="margin: 4px 0 8px;"></div>
+
+  <div class="entity-grid">
+    {{ entity_card("G", "Gene", "MyGene, Enrichr, OpenTargets", "biomcp search gene BRAF", "var(--go-deep-purple)", "biomcp get gene BRAF") }}
+    {{ entity_card("V", "Variant", "MyVariant, ClinVar, CIViC, OncoKB", "biomcp search variant BRAF", "var(--go-pathway-orange)", 'biomcp get variant "BRAF V600E"') }}
+    {{ entity_card("T", "Trial", "ClinicalTrials.gov, NCI CTS", "biomcp search trial -c melanoma", "var(--go-light-purple)", "biomcp get trial NCT02693535") }}
+    {{ entity_card("D", "Drug", "MyChem, DrugBank, ChEMBL", "biomcp search drug vemurafenib", "var(--go-signal-red)", "biomcp get drug vemurafenib") }}
+    {{ entity_card("A", "Article", "PubTator3, Europe PMC, PMC OA", "biomcp search article -g BRAF", "var(--go-precision-blue)", "biomcp get article 25399551") }}
+    {{ entity_card("AE", "Adverse Event", "OpenFDA FAERS", "biomcp search adverse-event -d ibuprofen", "var(--go-sky-blue)", "biomcp get adverse-event ibuprofen") }}
+    {{ entity_card("Di", "Disease", "MyDisease, OpenTargets, Monarch", "biomcp search disease melanoma", "#6366f1", "biomcp get disease melanoma") }}
+    {{ entity_card("Pa", "Pathway", "Reactome, g:Profiler", "biomcp search pathway MAPK", "#0d9488", "biomcp get pathway R-HSA-6802957") }}
+    {{ entity_card("Pr", "Protein", "UniProt, STRING, InterPro", "biomcp search protein BRAF", "#b45309", "biomcp get protein P15056") }}
+    {{ entity_card("Pg", "PGx", "CPIC, PharmGKB", "biomcp search pgx CYP2D6", "#7c3aed", "biomcp get pgx CYP2D6") }}
+    {{ entity_card("Gw", "GWAS", "GWAS Catalog", "biomcp search gwas -g BRAF", "#0891b2", "biomcp get gwas BRAF") }}
+    {{ entity_card("Ph", "Phenotype", "Monarch HPO", 'biomcp search phenotype "seizure"', "#059669", "biomcp get phenotype HP:0001250") }}
+  </div>
+{% endblock %}

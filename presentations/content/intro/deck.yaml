@@ -1,0 +1,18 @@
+id: intro
+title: "Introducing BioMCP"
+subtitle: "AI-ready biomedical data from sources you already trust."
+author: Ian Maurer
+date: 2026-03-05
+theme: go-brand
+footer: biomcp.org
+status: draft
+
+sections:
+  - name: Overview
+    slides:
+      - slug: 01-entities
+        title: "12 Entities · 20+ Trusted Sources"
+        subtitle: ""
+      - slug: 02-redesign
+        title: "Redesigned for AI Agents"
+        subtitle: "Six principles that make BioMCP different"

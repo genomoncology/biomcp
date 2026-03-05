@@ -1,0 +1,208 @@
+/* Code terminal block */
+.code-term {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  background: var(--go-deep-purple);
+  color: #E0D4F0;
+  padding: 20px 24px;
+  border-radius: var(--radius-md);
+  line-height: 1.8;
+}
+.code-term .prompt { color: #16A34A; }
+.code-term .cmd { color: var(--go-sky-blue); }
+.code-term .arg { color: #A5D6A7; }
+.code-term .comment { color: #888; font-size: 13px; }
+.code-term .output { color: #B0B0B0; }
+.code-term .code-line { margin: 1px 0; white-space: pre; }
+
+/* Callout variants */
+.callout-red {
+  background: #FEF3F2; border: 1px solid #FECDD3;
+  border-left: 4px solid var(--go-signal-red);
+  border-radius: var(--radius-md); padding: 20px 24px; margin: 16px 0;
+}
+.callout-red .callout-title { color: #991B1B; }
+.callout-red p { color: #7F1D1D; font-size: 14px; margin: 0; line-height: 1.6; }
+
+.callout-blue {
+  background: #F0F7FF; border: 1px solid #BFE0FF;
+  border-left: 4px solid var(--go-precision-blue);
+  border-radius: var(--radius-md); padding: 14px 20px;
+  font-size: 14px; color: var(--text-body); line-height: 1.6; margin: 16px 0;
+}
+.callout-blue strong { color: var(--go-deep-purple); }
+.callout-title {
+  font-family: var(--font-heading); font-size: 15px;
+  font-weight: 700; margin-bottom: 6px;
+}
+
+/* Comparison boxes */
+.comparison-row { display: flex; gap: 24px; }
+.compare-box { flex: 1; border-radius: var(--radius-lg); padding: 20px 24px; }
+.compare-before { background: #FEF2F2; border: 1px solid #FECACA; }
+.compare-after { background: #F0FDF4; border: 1px solid #BBF7D0; }
+.compare-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; margin-bottom: 12px;
+}
+.compare-before .compare-label, .compare-before td { color: #991B1B; }
+.compare-after .compare-label, .compare-after td { color: #166534; }
+
+/* Entity cards */
+.entity-card {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg); padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.entity-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: white; margin-bottom: 12px;
+}
+.entity-name { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--go-deep-purple); margin-bottom: 4px; }
+.entity-sources { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.entity-example { font-family: var(--font-mono); font-size: 11px; background: #F8F8FA; border: 1px solid var(--border-card); padding: 6px 10px; border-radius: 4px; color: var(--go-deep-purple); overflow-wrap: break-word; word-break: break-word; }
+
+/* Skill cards */
+.skill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.skill-card {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg); padding: 16px 20px;
+  display: flex; gap: 14px; align-items: flex-start;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.skill-num {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-size: 14px; font-weight: 700;
+  color: white; flex-shrink: 0;
+}
+.skill-info { flex: 1; }
+.skill-name { font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: var(--go-deep-purple); margin-bottom: 3px; }
+.skill-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+/* Hero stat banner */
+.hero-stat-banner {
+  text-align: center; padding: 24px;
+  background: #F0FDF4; border: 2px solid #BBF7D0;
+  border-radius: var(--radius-lg);
+}
+.hero-stat-num { font-family: var(--font-heading); font-size: 64px; font-weight: 700; color: #16A34A; line-height: 1; }
+.hero-stat-label { font-size: 18px; color: #166534; margin-top: 4px; }
+.hero-stat-detail { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+
+/* Section label */
+.section-label {
+  font-family: var(--font-heading); font-size: 14px; font-weight: 600;
+  color: var(--go-precision-blue); text-transform: uppercase;
+  letter-spacing: 0.08em; margin-bottom: 8px; margin-top: 14px;
+}
+
+/* Phase cards (roadmap) */
+.phase-card {
+  border-radius: var(--radius-lg); padding: 20px;
+  border: 1px solid var(--border-card);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  display: flex; flex-direction: column;
+}
+.phase-num { font-family: var(--font-heading); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+.phase-title { font-family: var(--font-heading); font-size: 17px; font-weight: 700; color: var(--go-deep-purple); margin-bottom: 12px; }
+.phase-items { list-style: none; padding: 0; }
+.phase-items li { font-size: 13px; line-height: 1.6; color: var(--text-body); padding: 3px 0; border-bottom: 1px solid var(--go-fog); }
+.phase-items li:last-child { border-bottom: none; }
+.phase-items li strong { color: var(--go-deep-purple); }
+
+/* Integration cards */
+.int-card {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg); padding: 16px 20px;
+  display: flex; gap: 14px; align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.int-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.int-name { font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: var(--go-deep-purple); }
+.int-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* Paper cards */
+.paper-card-item {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg); padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.paper-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.paper-name { font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--go-deep-purple); }
+.paper-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 6px; }
+.paper-tasks { font-family: var(--font-mono); font-size: 11px; color: var(--go-precision-blue); }
+.complexity-badge {
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.05em; color: white;
+}
+
+/* Tier badges */
+.tier-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.tier-1 { background: #DCFCE7; color: #166534; }
+.tier-2 { background: #FEF3C7; color: #92400E; }
+
+/* Disclosure tier */
+.tier-row {
+  display: grid; grid-template-columns: 1fr 12px 1fr 12px 1fr 12px 1fr;
+  align-items: stretch; gap: 0; margin: 20px 0;
+}
+.tier-card {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg); padding: 20px; text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.tier-card.active { border-color: var(--go-precision-blue); background: rgba(0,152,252,0.04); }
+.tier-arrow { display: flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: 18px; }
+.tier-name { font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--go-deep-purple); margin-bottom: 4px; }
+.tier-tokens { font-family: var(--font-mono); font-size: 14px; color: var(--go-precision-blue); font-weight: 600; margin-bottom: 8px; }
+.tier-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+/* Reduction pill */
+.reduction-pill {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 12px; font-weight: 700; background: rgba(22,163,74,0.1); color: #16A34A;
+}
+
+/* Chart containers */
+.chart-shell {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.chart-donut-shell {
+  position: relative;
+}
+
+.chart-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.chart-donut-value {
+  font-family: var(--font-heading);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--go-deep-purple);
+  line-height: 1;
+}
+
+.chart-donut-label {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}

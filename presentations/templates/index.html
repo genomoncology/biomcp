@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/static/brand.css">
+  <style>
+    body { width: auto; height: auto; overflow: auto; }
+    .nav-container { max-width: 900px; margin: 40px auto; padding: 40px; font-family: var(--font-body); }
+    .nav-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+    .nav-header img { height: 32px; }
+    .nav-header h1 { font-family: var(--font-heading); font-size: 28px; color: var(--go-deep-purple); margin: 0; }
+    .nav-breadcrumb { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .nav-breadcrumb a { color: var(--go-precision-blue); text-decoration: none; }
+    .nav-breadcrumb a:hover { text-decoration: underline; }
+    .section-title {
+      font-family: var(--font-heading); font-size: 14px; font-weight: 700;
+      color: var(--go-precision-blue); text-transform: uppercase; letter-spacing: 0.08em;
+      margin: 24px 0 10px; padding-top: 12px; border-top: 1px solid var(--border-card);
+    }
+    .slide-list, .deck-list { list-style: none; padding: 0; margin: 0; }
+    .slide-list a {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+      border-radius: var(--radius-md); text-decoration: none; color: var(--text-body); font-size: 15px;
+      flex: 1; min-width: 0;
+    }
+    .slide-list a:hover { background: var(--go-fog); }
+    .slide-num { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-muted); width: 28px; text-align: right; flex-shrink: 0; }
+    .slide-title { font-weight: 600; color: var(--go-deep-purple); }
+    .slide-desc { color: var(--text-muted); font-size: 13px; margin-left: 4px; }
+
+    /* Index card layout */
+    .deck-cards { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
+    .deck-card {
+      display: flex; align-items: stretch; gap: 0;
+      border: 1px solid var(--border-card); border-radius: 12px;
+      background: white; overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: box-shadow 0.2s, transform 0.15s;
+      text-decoration: none; color: inherit;
+    }
+    .deck-card:hover {
+      box-shadow: 0 4px 16px rgba(58,0,106,0.12);
+      transform: translateY(-2px);
+    }
+    .deck-accent {
+      width: 6px; flex-shrink: 0;
+    }
+    .deck-card-body {
+      flex: 1; padding: 20px 24px; display: flex; align-items: center; gap: 20px;
+    }
+    .deck-card-info { flex: 1; }
+    .deck-card-title {
+      font-family: var(--font-heading); font-size: 20px; font-weight: 700;
+      color: var(--go-deep-purple); margin-bottom: 4px;
+    }
+    .deck-card-sub {
+      font-size: 14px; color: var(--text-muted); line-height: 1.4;
+    }
+    .deck-card-audience {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; margin-top: 8px; color: var(--text-dim);
+    }
+    .deck-card-meta {
+      text-align: right; flex-shrink: 0;
+    }
+    .deck-card-slides {
+      font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .deck-play-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--go-deep-purple); color: white; font-size: 18px;
+      text-decoration: none; transition: background 0.15s;
+    }
+    .deck-play-btn:hover { background: var(--go-light-purple); }
+
+    .play-btn-lg {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--go-deep-purple); color: white;
+      padding: 12px 28px; border-radius: 10px; font-size: 16px; font-weight: 600;
+      text-decoration: none; margin-top: 16px;
+      transition: background 0.15s;
+    }
+    .play-btn-lg:hover { background: var(--go-light-purple); }
+  </style>
+  <script>
+    function startPresentation(url, e) {
+      if (e) e.preventDefault();
+      location.href = url;
+    }
+  </script>
+</head>
+<body>
+<div class="nav-container">
+  <div class="nav-header">
+    <img src="/static/logo.png" alt="GenomOncology">
+    <h1>{% if deck %}{{ deck.title }}{% else %}BioMCP Presentations{% endif %}</h1>
+  </div>
+
+  {% if deck %}
+  <div class="nav-breadcrumb"><a href="/">All Decks</a> &rsaquo; {{ deck.title }}</div>
+
+  <a href="#" onclick="startPresentation('/{{ deck.id }}/{{ sections[0].slides[0].slug }}.html'); return false;" class="play-btn-lg">&#9654; Present</a>
+
+  {% for section in sections %}
+  <div class="section-title">{{ section.name }}</div>
+  <ul class="slide-list">
+    {% for s in section.slides %}
+    <li><a href="/{{ deck.id }}/{{ s.slug }}.html">
+      <span class="slide-num">{{ s.page_num }}</span>
+      <span class="slide-title">{{ s.title }}</span>
+      <span class="slide-desc">&mdash; {{ s.subtitle }}</span>
+    </a></li>
+    {% endfor %}
+  </ul>
+  {% endfor %}
+
+  {% else %}
+  <div class="deck-cards">
+    {% for d in decks %}
+    <a href="/{{ d.id }}/" class="deck-card">
+      <div class="deck-accent" style="background: {% if loop.index == 1 %}var(--gradient-ocean){% elif loop.index == 2 %}var(--gradient-sunset){% else %}var(--gradient-purple){% endif %};"></div>
+      <div class="deck-card-body">
+        <div class="deck-card-info">
+          <div class="deck-card-title">{{ d.title }}</div>
+          <div class="deck-card-sub">{{ d.subtitle }}</div>
+          {% if d.config.get('audience') %}
+          <div class="deck-card-audience">{{ d.config.audience }}</div>
+          {% endif %}
+        </div>
+        <div class="deck-card-meta">
+          <div class="deck-card-slides">{{ d.slides|length }} slides</div>
+          <span class="deck-play-btn" onclick="startPresentation('/{{ d.id }}/{{ d.slides[0].slug }}.html', event);">&#9654;</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+</body>
+</html>

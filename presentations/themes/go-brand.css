@@ -1,0 +1,274 @@
+/* GenomOncology Brand Theme for Slides
+ * Based on official 2025 Brand Guidelines
+ * Fonts: Outfit (headings), Noto Sans (body)
+ * Primary: Deep Purple #3A006A
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans:wght@300;400;600;700&display=swap');
+
+:root {
+  /* Brand Primary */
+  --go-deep-purple: #3A006A;
+  --go-light-purple: #9225C8;
+  --go-signal-red: #F23D7F;
+
+  /* Brand Secondary */
+  --go-precision-blue: #0098FC;
+  --go-sky-blue: #00D0F5;
+  --go-pathway-orange: #FC7A40;
+  --go-beacon-yellow: #FFAD00;
+
+  /* Neutrals */
+  --go-black: #000000;
+  --go-fog: #F2F2F2;
+  --go-white: #FFFFFF;
+
+  /* Derived */
+  --go-purple-light: #F5F0F7;
+  --go-purple-dark: #2A004F;
+
+  /* Gradients */
+  --gradient-purple: linear-gradient(90deg, #3A006A, #9225C8);
+  --gradient-ocean: linear-gradient(90deg, #0098FC, #00D0F5);
+  --gradient-sunset: linear-gradient(90deg, #9225C8, #F23D7F);
+  --gradient-warmth: linear-gradient(90deg, #F23D7F, #FFAD00);
+
+  /* Slide tokens */
+  --bg-primary: var(--go-white);
+  --bg-secondary: var(--go-fog);
+  --bg-card: var(--go-white);
+  --border-card: #E0E0E0;
+
+  --text-primary: var(--go-deep-purple);
+  --text-body: #4B4B4B;
+  --text-muted: #737373;
+  --text-dim: #A0A0A0;
+
+  /* Typography */
+  --font-heading: 'Outfit', 'Liberation Sans', sans-serif;
+  --font-body: 'Noto Sans', 'Liberation Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', 'DejaVu Sans Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1280px;
+  height: 720px;
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-body);
+  overflow: hidden;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+}
+
+.slide {
+  width: 1280px;
+  height: 720px;
+  padding: 48px 80px 56px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Top accent bar (brand gradient) */
+.slide::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: var(--gradient-purple);
+}
+
+h1 {
+  font-family: var(--font-heading);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+h2 {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+h3 {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--go-deep-purple);
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 12px;
+}
+
+.accent-line {
+  width: 80px;
+  height: 4px;
+  background: var(--gradient-ocean);
+  border-radius: 2px;
+  margin: 20px 0;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.card h3 {
+  color: var(--go-deep-purple);
+}
+
+.card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; }
+
+.metric {
+  font-family: var(--font-heading);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 14px;
+  color: var(--text-body);
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.metric-detail {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.footer {
+  position: absolute;
+  bottom: 16px;
+  right: 80px;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  font-family: var(--font-body);
+}
+
+.page-num {
+  position: absolute;
+  bottom: 16px;
+  left: 80px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Brand-colored icon containers (matches UX design) */
+.icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.icon-purple { background: linear-gradient(135deg, var(--go-precision-blue), var(--go-deep-purple)); }
+.icon-blue { background: linear-gradient(135deg, var(--go-sky-blue), var(--go-precision-blue)); }
+.icon-orange { background: linear-gradient(135deg, var(--go-beacon-yellow), var(--go-pathway-orange)); }
+.icon-pink { background: linear-gradient(135deg, var(--go-signal-red), var(--go-light-purple)); }
+
+/* Badge styles (matches UX design) */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-purple { background: rgba(58, 0, 106, 0.1); color: var(--go-deep-purple); }
+.badge-blue { background: rgba(0, 152, 252, 0.1); color: var(--go-precision-blue); }
+.badge-orange { background: rgba(252, 122, 64, 0.1); color: var(--go-pathway-orange); }
+.badge-green { background: rgba(22, 163, 74, 0.1); color: #16a34a; }
+
+/* Table styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  text-align: left;
+  padding: 10px 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--go-fog);
+  border-bottom: 2px solid var(--border-card);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-card);
+  color: var(--text-body);
+}
+
+tr:hover td {
+  background: var(--go-purple-light);
+}
+
+ul, ol {
+  padding-left: 24px;
+}
+
+li {
+  font-size: 17px;
+  line-height: 1.8;
+  color: var(--text-body);
+}
+
+li strong {
+  color: var(--text-primary);
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: rgba(58, 0, 106, 0.06);
+  color: var(--go-deep-purple);
+  padding: 2px 6px;
+  border-radius: 4px;
+}

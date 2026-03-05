@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="/static/brand.css">
+  <link rel="stylesheet" href="/static/macros.css">
+  {% set chart_libs = slide.chart_libs if slide is defined and slide.chart_libs is defined else [] %}
+  {% if 'chartjs' in chart_libs %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  {% endif %}
+  {% if 'echarts' in chart_libs %}
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  {% endif %}
+  <style>
+    {% if slide.gradient %}.slide::before { background: var(--{{ slide.gradient }}); }{% endif %}
+    {% if slide.layout == 'center' %}.slide { justify-content: center; }{% endif %}
+  </style>
+  {% block extra_head %}{% endblock %}
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="slide">
+  {% block content %}{% endblock %}
+  <div class="footer">{{ slide.deck_footer or '' }}</div>
+  <div class="page-num">{{ slide.page_num }}</div>
+</div>
+<script src="/{{ slide.deck_id }}/nav.js"></script>
+</body>
+</html>
