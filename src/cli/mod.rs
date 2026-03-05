@@ -340,6 +340,7 @@ EXAMPLES:
   biomcp search article -q \"immunotherapy resistance\" --limit 5
   biomcp search article -g BRAF --date-from 2024-01-01
   biomcp search article -d melanoma --type review --journal Nature --limit 5
+  biomcp search article -g BRAF --source pubtator --limit 20
 
 See also: biomcp list article")]
     Article {
@@ -405,6 +406,10 @@ See also: biomcp list article")]
         /// Sort order [values: date, citations, relevance] (default: date)
         #[arg(long, default_value = "date", value_parser = ["date", "citations", "relevance"])]
         sort: String,
+
+        /// Article source [values: all, pubtator, europepmc] (default: all)
+        #[arg(long, default_value = "all", value_parser = ["all", "pubtator", "europepmc"])]
+        source: String,
 
         /// Maximum results (default: 10)
         #[arg(short, long, default_value = "10")]
@@ -3349,12 +3354,15 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     exclude_retracted,
                     include_retracted,
                     sort,
+                    source,
                     limit,
                     offset,
                 } => {
                     let keyword =
                         resolve_query_input(keyword, positional_query, "--keyword/--query")?;
                     let sort = crate::entities::article::ArticleSort::from_flag(&sort)?;
+                    let source_filter =
+                        crate::entities::article::ArticleSourceFilter::from_flag(&source)?;
                     let exclude_retracted = exclude_retracted || !include_retracted;
                     let gene_anchored = gene
                         .as_deref()
@@ -3416,6 +3424,8 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                                 .then(|| "exclude_retracted=true".to_string())
                         },
                         Some(format!("sort={}", filters.sort.as_str())),
+                        (source_filter != crate::entities::article::ArticleSourceFilter::All)
+                            .then(|| format!("source={source}")),
                         (offset > 0).then(|| format!("offset={offset}")),
                     ]
                     .into_iter()
@@ -3423,7 +3433,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                    let page = crate::entities::article::search_page(&filters, limit, offset).await?;
+                    let page =
+                        crate::entities::article::search_page(&filters, limit, offset, source_filter)
+                            .await?;
                     let results = page.results;
                     let pagination =
                         PaginationMeta::offset(offset, limit, results.len(), page.total);
@@ -4305,6 +4317,33 @@ mod tests {
             } => {
                 assert_eq!(source, "nci");
                 assert_eq!(limit, 3);
+                assert_eq!(offset, 0);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn search_article_parses_source_flag() {
+        let cli = Cli::try_parse_from([
+            "biomcp", "search", "article", "-g", "BRAF", "--source", "pubtator", "--limit", "5",
+        ])
+        .expect("search article with --source should parse");
+
+        match cli.command {
+            Commands::Search {
+                entity:
+                    super::SearchEntity::Article {
+                        gene,
+                        source,
+                        limit,
+                        offset,
+                        ..
+                    },
+            } => {
+                assert_eq!(gene.as_deref(), Some("BRAF"));
+                assert_eq!(source, "pubtator");
+                assert_eq!(limit, 5);
                 assert_eq!(offset, 0);
             }
             other => panic!("unexpected command: {other:?}"),

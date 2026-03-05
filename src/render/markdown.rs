@@ -8,7 +8,7 @@ use crate::entities::adverse_event::{
     AdverseEvent, AdverseEventCountBucket, AdverseEventSearchResult, AdverseEventSearchSummary,
     DeviceEvent, DeviceEventSearchResult, RecallSearchResult,
 };
-use crate::entities::article::{Article, ArticleAnnotations, ArticleSearchResult};
+use crate::entities::article::{Article, ArticleAnnotations, ArticleSearchResult, ArticleSource};
 use crate::entities::disease::{Disease, DiseaseSearchResult, PhenotypeSearchResult};
 use crate::entities::drug::{Drug, DrugSearchResult};
 use crate::entities::gene::{Gene, GeneSearchResult};
@@ -27,6 +27,14 @@ static ENV: OnceLock<Environment<'static>> = OnceLock::new();
 struct XrefRow {
     source: String,
     id: String,
+}
+
+#[derive(serde::Serialize)]
+struct ArticleSearchSourceGroup {
+    source_key: String,
+    source_label: String,
+    count: usize,
+    results: Vec<ArticleSearchResult>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1030,11 +1038,32 @@ pub fn article_search_markdown_with_footer(
     results: &[ArticleSearchResult],
     pagination_footer: &str,
 ) -> Result<String, BioMcpError> {
+    let groups = [ArticleSource::PubTator, ArticleSource::EuropePmc]
+        .into_iter()
+        .filter_map(|source| {
+            let rows = results
+                .iter()
+                .filter(|row| row.source == source)
+                .cloned()
+                .collect::<Vec<_>>();
+            if rows.is_empty() {
+                None
+            } else {
+                Some(ArticleSearchSourceGroup {
+                    source_key: source.as_str().to_string(),
+                    source_label: source.display_name().to_string(),
+                    count: rows.len(),
+                    results: rows,
+                })
+            }
+        })
+        .collect::<Vec<_>>();
+
     let tmpl = env()?.get_template("article_search.md.j2")?;
     let body = tmpl.render(context! {
         query => query,
         count => results.len(),
-        results => results,
+        groups => groups,
         pagination_footer => pagination_footer,
     })?;
     Ok(with_pagination_footer(body, pagination_footer))
@@ -1928,7 +1957,9 @@ pub fn search_all_markdown(
 mod tests {
     use super::*;
     use crate::entities::adverse_event::DeviceEvent;
-    use crate::entities::article::{AnnotationCount, Article, ArticleAnnotations};
+    use crate::entities::article::{
+        AnnotationCount, Article, ArticleAnnotations, ArticleSearchResult, ArticleSource,
+    };
     use crate::entities::gene::Gene;
     use crate::entities::pgx::Pgx;
     use crate::entities::variant::{TreatmentImplication, Variant, VariantOncoKbResult};
@@ -2122,5 +2153,37 @@ mod tests {
         assert!(related.contains(
             &"biomcp search adverse-event --type recall --classification \"Class I\"".to_string()
         ));
+    }
+
+    #[test]
+    fn article_search_markdown_groups_results_by_source() {
+        let rows = vec![
+            ArticleSearchResult {
+                pmid: "1".into(),
+                title: "Entity-ranked".into(),
+                journal: Some("Journal A".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(10),
+                source: ArticleSource::PubTator,
+                score: Some(99.1),
+                is_retracted: false,
+            },
+            ArticleSearchResult {
+                pmid: "2".into(),
+                title: "Field-ranked".into(),
+                journal: Some("Journal B".into()),
+                date: Some("2025-01-02".into()),
+                citation_count: Some(12),
+                source: ArticleSource::EuropePmc,
+                score: None,
+                is_retracted: false,
+            },
+        ];
+
+        let markdown = article_search_markdown("gene=BRAF", &rows).expect("markdown should render");
+        assert!(markdown.contains("## PubTator3"));
+        assert!(markdown.contains("## Europe PMC"));
+        assert!(markdown.contains("| PMID | Title | Journal | Date | Score |"));
+        assert!(markdown.contains("| PMID | Title | Journal | Date | Cit. |"));
     }
 }

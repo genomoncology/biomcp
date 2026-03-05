@@ -3,9 +3,11 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 
-use crate::entities::article::{AnnotationCount, Article, ArticleAnnotations, ArticleSearchResult};
+use crate::entities::article::{
+    AnnotationCount, Article, ArticleAnnotations, ArticleSearchResult, ArticleSource,
+};
 use crate::sources::europepmc::EuropePmcResult;
-use crate::sources::pubtator::PubTatorDocument;
+use crate::sources::pubtator::{PubTatorDocument, PubTatorSearchResult};
 
 fn truncate_utf8(s: &str, max_bytes: usize, suffix: &str) -> String {
     if s.len() <= max_bytes {
@@ -349,7 +351,38 @@ pub fn from_europepmc_search_result(hit: &EuropePmcResult) -> Option<ArticleSear
             .or(hit.pub_year.as_ref())
             .map(|s| s.get(0..10).unwrap_or(s).to_string()),
         citation_count: parse_citation_count(hit.cited_by_count.as_ref()),
+        source: ArticleSource::EuropePmc,
+        score: None,
         is_retracted: is_retracted_publication(hit),
+    })
+}
+
+pub fn from_pubtator_search_result(hit: &PubTatorSearchResult) -> Option<ArticleSearchResult> {
+    let pmid = hit
+        .pmid
+        .as_deref()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())?
+        .to_string();
+    Some(ArticleSearchResult {
+        pmid,
+        title: truncate_title(hit.title.as_deref().unwrap_or_default()),
+        journal: hit
+            .journal
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(|v| v.to_string()),
+        date: hit
+            .date
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(|v| v.get(0..10).unwrap_or(v).to_string()),
+        citation_count: None,
+        source: ArticleSource::PubTator,
+        score: hit.score,
+        is_retracted: false,
     })
 }
 
@@ -646,5 +679,25 @@ mod tests {
 
         let row = from_europepmc_search_result(&hit).expect("search row should map");
         assert!(row.is_retracted);
+    }
+
+    #[test]
+    fn from_pubtator_search_result_maps_source_and_score() {
+        let hit: PubTatorSearchResult = serde_json::from_value(serde_json::json!({
+            "_id": "22663011",
+            "pmid": 22663011,
+            "title": "BRAF in melanoma",
+            "journal": "J Clin Oncol",
+            "date": "2024-01-20T00:00:00Z",
+            "score": 255.9
+        }))
+        .expect("valid pubtator search row");
+
+        let row = from_pubtator_search_result(&hit).expect("row should map");
+        assert_eq!(row.pmid, "22663011");
+        assert_eq!(row.source, ArticleSource::PubTator);
+        assert_eq!(row.score, Some(255.9));
+        assert_eq!(row.citation_count, None);
+        assert!(!row.is_retracted);
     }
 }

@@ -207,6 +207,7 @@ fn list_article() -> String {
 - `search article --exclude-retracted`
 - `search article --include-retracted`
 - `search article --sort <date|citations|relevance>`
+- `search article --source <all|pubtator|europepmc>`
 - `search article ... --limit <N> --offset <N>`
 
 ## Notes

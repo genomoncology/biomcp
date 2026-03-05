@@ -77,8 +77,56 @@ pub struct ArticleSearchResult {
     pub date: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub citation_count: Option<u64>,
+    pub source: ArticleSource,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub score: Option<f64>,
     #[serde(default)]
     pub is_retracted: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ArticleSource {
+    PubTator,
+    EuropePmc,
+}
+
+impl ArticleSource {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PubTator => "pubtator",
+            Self::EuropePmc => "europepmc",
+        }
+    }
+
+    pub fn display_name(self) -> &'static str {
+        match self {
+            Self::PubTator => "PubTator3",
+            Self::EuropePmc => "Europe PMC",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ArticleSourceFilter {
+    #[default]
+    All,
+    PubTator,
+    EuropePmc,
+}
+
+impl ArticleSourceFilter {
+    pub fn from_flag(value: &str) -> Result<Self, BioMcpError> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "" | "all" => Ok(Self::All),
+            "pubtator" => Ok(Self::PubTator),
+            "europepmc" | "europe-pmc" => Ok(Self::EuropePmc),
+            other => Err(BioMcpError::InvalidArgument(format!(
+                "Unknown --source '{other}'. Expected one of: all, pubtator, europepmc."
+            ))),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -147,6 +195,25 @@ pub const ARTICLE_SECTION_NAMES: &[&str] = &[
     ARTICLE_SECTION_FULLTEXT,
     ARTICLE_SECTION_ALL,
 ];
+
+const MAX_SEARCH_LIMIT: usize = 50;
+const EUROPE_PMC_PAGE_SIZE: usize = 25;
+const PUBTATOR_PAGE_SIZE: usize = 25;
+const MAX_PAGE_FETCHES: usize = 50;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BackendPlan {
+    EuropeOnly,
+    PubTatorOnly,
+    Both,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum EntityBiotype {
+    Gene,
+    Disease,
+    Chemical,
+}
 
 fn is_doi(id: &str) -> bool {
     let id = id.trim();
@@ -282,7 +349,7 @@ fn normalize_article_type(value: &str) -> Result<&'static str, BioMcpError> {
     }
 }
 
-fn build_search_query(filters: &ArticleSearchFilters) -> Result<String, BioMcpError> {
+fn validate_required_search_filters(filters: &ArticleSearchFilters) -> Result<(), BioMcpError> {
     if filters.gene.is_none()
         && filters.disease.is_none()
         && filters.drug.is_none()
@@ -295,7 +362,12 @@ fn build_search_query(filters: &ArticleSearchFilters) -> Result<String, BioMcpEr
             "At least one filter is required. Example: biomcp search article -g BRAF".into(),
         ));
     }
+    Ok(())
+}
 
+fn normalized_date_bounds(
+    filters: &ArticleSearchFilters,
+) -> Result<(Option<String>, Option<String>), BioMcpError> {
     let normalized_date_from = filters
         .date_from
         .as_deref()
@@ -311,6 +383,173 @@ fn build_search_query(filters: &ArticleSearchFilters) -> Result<String, BioMcpEr
             "--date-from must be <= --date-to".into(),
         ));
     }
+    Ok((normalized_date_from, normalized_date_to))
+}
+
+fn has_strict_europepmc_filters(filters: &ArticleSearchFilters) -> bool {
+    filters.open_access
+        || filters
+            .article_type
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|value| !value.is_empty())
+}
+
+fn plan_backends(
+    filters: &ArticleSearchFilters,
+    source: ArticleSourceFilter,
+) -> Result<BackendPlan, BioMcpError> {
+    match source {
+        ArticleSourceFilter::EuropePmc => Ok(BackendPlan::EuropeOnly),
+        ArticleSourceFilter::PubTator => {
+            if has_strict_europepmc_filters(filters) {
+                return Err(BioMcpError::InvalidArgument(
+                    "--source pubtator does not support strict filters --open-access or --type. Use --source europepmc or --source all.".into(),
+                ));
+            }
+            Ok(BackendPlan::PubTatorOnly)
+        }
+        ArticleSourceFilter::All => {
+            if has_strict_europepmc_filters(filters) {
+                Ok(BackendPlan::EuropeOnly)
+            } else {
+                Ok(BackendPlan::Both)
+            }
+        }
+    }
+}
+
+fn matches_entity_biotype(value: Option<&str>, expected: EntityBiotype) -> bool {
+    let Some(value) = value else {
+        return false;
+    };
+    let normalized = value.trim().to_ascii_lowercase();
+    if normalized.is_empty() {
+        return false;
+    }
+    match expected {
+        EntityBiotype::Gene => normalized.contains("gene"),
+        EntityBiotype::Disease => normalized.contains("disease"),
+        EntityBiotype::Chemical => normalized.contains("chemical") || normalized.contains("drug"),
+    }
+}
+
+async fn normalize_entity_token(
+    pubtator: &PubTatorClient,
+    token: Option<&str>,
+    expected: EntityBiotype,
+) -> Option<String> {
+    let token = token.map(str::trim).filter(|value| !value.is_empty())?;
+    match pubtator.entity_autocomplete(token).await {
+        Ok(rows) => rows
+            .iter()
+            .find(|row| matches_entity_biotype(row.biotype.as_deref(), expected))
+            .and_then(|row| row.id.as_deref())
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|value| value.to_string())
+            .or_else(|| Some(token.to_string())),
+        Err(err) => {
+            warn!(
+                ?err,
+                token, "pubtator autocomplete failed; falling back to raw token"
+            );
+            Some(token.to_string())
+        }
+    }
+}
+
+fn pubtator_sort(sort: ArticleSort) -> Option<&'static str> {
+    match sort {
+        ArticleSort::Date => Some("date desc"),
+        ArticleSort::Citations | ArticleSort::Relevance => None,
+    }
+}
+
+fn parse_row_date(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(|v| v.get(0..10).unwrap_or(v).to_string())
+}
+
+fn matches_optional_journal_filter(
+    row_journal: Option<&str>,
+    expected_journal: Option<&str>,
+) -> bool {
+    let Some(expected) = expected_journal
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return true;
+    };
+    let Some(actual) = row_journal.map(str::trim).filter(|value| !value.is_empty()) else {
+        return false;
+    };
+    actual
+        .to_ascii_lowercase()
+        .contains(&expected.to_ascii_lowercase())
+}
+
+fn matches_optional_date_filter(
+    row_date: Option<&str>,
+    date_from: Option<&str>,
+    date_to: Option<&str>,
+) -> bool {
+    if date_from.is_none() && date_to.is_none() {
+        return true;
+    }
+    let Some(value) = parse_row_date(row_date) else {
+        return false;
+    };
+    if let Some(from) = date_from
+        && value.as_str() < from
+    {
+        return false;
+    }
+    if let Some(to) = date_to
+        && value.as_str() > to
+    {
+        return false;
+    }
+    true
+}
+
+fn matches_result_filters(
+    row: &ArticleSearchResult,
+    filters: &ArticleSearchFilters,
+    date_from: Option<&str>,
+    date_to: Option<&str>,
+) -> bool {
+    if filters.no_preprints && row.journal.as_deref().is_some_and(is_preprint_journal) {
+        return false;
+    }
+    if filters.exclude_retracted && row.is_retracted {
+        return false;
+    }
+    if !matches_optional_journal_filter(row.journal.as_deref(), filters.journal.as_deref()) {
+        return false;
+    }
+    if !matches_optional_date_filter(row.date.as_deref(), date_from, date_to) {
+        return false;
+    }
+    true
+}
+
+fn dedup_by_pmid_preserve_order(results: Vec<ArticleSearchResult>) -> Vec<ArticleSearchResult> {
+    let mut deduped = Vec::with_capacity(results.len());
+    let mut seen = HashSet::with_capacity(results.len());
+    for row in results {
+        if seen.insert(row.pmid.clone()) {
+            deduped.push(row);
+        }
+    }
+    deduped
+}
+
+fn build_search_query(filters: &ArticleSearchFilters) -> Result<String, BioMcpError> {
+    validate_required_search_filters(filters)?;
+    let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
     let mut terms: Vec<String> = Vec::new();
 
     if let Some(gene) = filters
@@ -396,6 +635,53 @@ fn build_search_query(filters: &ArticleSearchFilters) -> Result<String, BioMcpEr
     }
 
     Ok(terms.join(" AND "))
+}
+
+async fn build_pubtator_query(
+    filters: &ArticleSearchFilters,
+    pubtator: &PubTatorClient,
+) -> Result<String, BioMcpError> {
+    validate_required_search_filters(filters)?;
+    let gene = normalize_entity_token(pubtator, filters.gene.as_deref(), EntityBiotype::Gene).await;
+    let disease =
+        normalize_entity_token(pubtator, filters.disease.as_deref(), EntityBiotype::Disease).await;
+    let drug =
+        normalize_entity_token(pubtator, filters.drug.as_deref(), EntityBiotype::Chemical).await;
+
+    let mut terms: Vec<String> = Vec::new();
+    if let Some(gene) = gene {
+        terms.push(gene);
+    }
+    if let Some(disease) = disease {
+        terms.push(disease);
+    }
+    if let Some(drug) = drug {
+        terms.push(drug);
+    }
+    if let Some(author) = filters
+        .author
+        .as_deref()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+    {
+        terms.push(author.to_string());
+    }
+    if let Some(keyword) = filters
+        .keyword
+        .as_deref()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+    {
+        terms.push(keyword.to_string());
+    }
+
+    if terms.is_empty() {
+        return Err(BioMcpError::InvalidArgument(
+            "At least one queryable token is required for --source pubtator.".into(),
+        ));
+    }
+
+    Ok(terms.join(" "))
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -519,32 +805,26 @@ pub async fn search(
     filters: &ArticleSearchFilters,
     limit: usize,
 ) -> Result<Vec<ArticleSearchResult>, BioMcpError> {
-    Ok(search_page(filters, limit, 0).await?.results)
+    Ok(search_page(filters, limit, 0, ArticleSourceFilter::All)
+        .await?
+        .results)
 }
 
-pub async fn search_page(
+async fn search_europepmc_page(
     filters: &ArticleSearchFilters,
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    const MAX_SEARCH_LIMIT: usize = 50;
-    if limit == 0 || limit > MAX_SEARCH_LIMIT {
-        return Err(BioMcpError::InvalidArgument(format!(
-            "--limit must be between 1 and {MAX_SEARCH_LIMIT}"
-        )));
-    }
-
     let europe = EuropePmcClient::new()?;
     let query = build_search_query(filters)?;
     let europepmc_sort = filters.sort.as_europepmc_sort();
+    let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
 
-    const API_PAGE_SIZE: usize = 25;
-    const MAX_PAGE_FETCHES: usize = 50;
     let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
     let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
     let mut total: Option<usize> = None;
-    let mut page: usize = (offset / API_PAGE_SIZE) + 1;
-    let mut local_skip = offset % API_PAGE_SIZE;
+    let mut page: usize = (offset / EUROPE_PMC_PAGE_SIZE) + 1;
+    let mut local_skip = offset % EUROPE_PMC_PAGE_SIZE;
     let mut fetched_pages = 0usize;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
@@ -554,7 +834,7 @@ pub async fn search_page(
             );
         }
         let resp = europe
-            .search_query_with_sort(&query, page, API_PAGE_SIZE, europepmc_sort)
+            .search_query_with_sort(&query, page, EUROPE_PMC_PAGE_SIZE, europepmc_sort)
             .await?;
         if total.is_none() {
             total = resp.hit_count.map(|v| v as usize);
@@ -574,19 +854,16 @@ pub async fn search_page(
                 local_skip -= 1;
                 continue;
             }
-            if filters.no_preprints
-                && hit
-                    .journal_title
-                    .as_deref()
-                    .is_some_and(is_preprint_journal)
-            {
-                continue;
-            }
 
             let Some(row) = transform::article::from_europepmc_search_result(&hit) else {
                 continue;
             };
-            if filters.exclude_retracted && row.is_retracted {
+            if !matches_result_filters(
+                &row,
+                filters,
+                normalized_date_from.as_deref(),
+                normalized_date_to.as_deref(),
+            ) {
                 continue;
             }
             if !seen_pmids.insert(row.pmid.clone()) {
@@ -618,7 +895,16 @@ pub async fn search_page(
                 .unwrap_or_default()
                 .into_iter()
                 .filter_map(|hit| transform::article::from_europepmc_search_result(&hit))
-                .find(|row| row.is_retracted && !seen_pmids.contains(&row.pmid));
+                .find(|row| {
+                    row.is_retracted
+                        && !seen_pmids.contains(&row.pmid)
+                        && matches_result_filters(
+                            row,
+                            filters,
+                            normalized_date_from.as_deref(),
+                            normalized_date_to.as_deref(),
+                        )
+                });
             if let Some(row) = replacement {
                 if out.len() >= limit && !out.is_empty() {
                     out.pop();
@@ -632,6 +918,138 @@ pub async fn search_page(
     }
 
     Ok(SearchPage::offset(out, total))
+}
+
+async fn search_pubtator_page(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+    let pubtator = PubTatorClient::new()?;
+    let query = build_pubtator_query(filters, &pubtator).await?;
+    let sort = pubtator_sort(filters.sort);
+    let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
+
+    let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
+    let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
+    let mut total: Option<usize> = None;
+    let mut page: usize = (offset / PUBTATOR_PAGE_SIZE) + 1;
+    let mut local_skip = offset % PUBTATOR_PAGE_SIZE;
+    let mut fetched_pages = 0usize;
+    while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
+        fetched_pages = fetched_pages.saturating_add(1);
+        let resp = pubtator
+            .search(&query, page, PUBTATOR_PAGE_SIZE, sort)
+            .await?;
+        if total.is_none() {
+            total = resp.count.map(|v| v as usize);
+            if total.is_some_and(|value| offset >= value) {
+                return Ok(SearchPage::offset(Vec::new(), total));
+            }
+        }
+
+        if resp.results.is_empty() {
+            break;
+        }
+
+        for hit in resp.results {
+            if local_skip > 0 {
+                local_skip -= 1;
+                continue;
+            }
+            let Some(row) = transform::article::from_pubtator_search_result(&hit) else {
+                continue;
+            };
+            if !matches_result_filters(
+                &row,
+                filters,
+                normalized_date_from.as_deref(),
+                normalized_date_to.as_deref(),
+            ) {
+                continue;
+            }
+            if !seen_pmids.insert(row.pmid.clone()) {
+                continue;
+            }
+            out.push(row);
+            if out.len() >= limit {
+                break;
+            }
+        }
+        page += 1;
+    }
+
+    Ok(SearchPage::offset(out, total))
+}
+
+async fn search_federated_page(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+    let (pubtator_leg, europe_leg) = tokio::join!(
+        search_pubtator_page(filters, limit, offset),
+        search_europepmc_page(filters, limit, offset)
+    );
+
+    merge_federated_pages(pubtator_leg, europe_leg, limit)
+}
+
+fn merge_federated_pages(
+    pubtator_leg: Result<SearchPage<ArticleSearchResult>, BioMcpError>,
+    europe_leg: Result<SearchPage<ArticleSearchResult>, BioMcpError>,
+    limit: usize,
+) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+    match (pubtator_leg, europe_leg) {
+        (Ok(pubtator_page), Ok(europe_page)) => {
+            let mut merged = pubtator_page.results;
+            merged.extend(europe_page.results);
+            let mut merged = dedup_by_pmid_preserve_order(merged);
+            merged.truncate(limit);
+            Ok(SearchPage::offset(merged, None))
+        }
+        (Ok(pubtator_page), Err(err)) => {
+            warn!(
+                ?err,
+                "Europe PMC search leg failed; returning PubTator-only results"
+            );
+            let mut rows = pubtator_page.results;
+            rows.truncate(limit);
+            Ok(SearchPage::offset(rows, None))
+        }
+        (Err(err), Ok(europe_page)) => {
+            warn!(
+                ?err,
+                "PubTator search leg failed; returning Europe PMC-only results"
+            );
+            let mut rows = europe_page.results;
+            rows.truncate(limit);
+            Ok(SearchPage::offset(rows, None))
+        }
+        (Err(pubtator_err), Err(europe_err)) => {
+            warn!(?europe_err, "Europe PMC leg also failed");
+            Err(pubtator_err)
+        }
+    }
+}
+
+pub async fn search_page(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+    source: ArticleSourceFilter,
+) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+    if limit == 0 || limit > MAX_SEARCH_LIMIT {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--limit must be between 1 and {MAX_SEARCH_LIMIT}"
+        )));
+    }
+    let plan = plan_backends(filters, source)?;
+    match plan {
+        BackendPlan::EuropeOnly => search_europepmc_page(filters, limit, offset).await,
+        BackendPlan::PubTatorOnly => search_pubtator_page(filters, limit, offset).await,
+        BackendPlan::Both => search_federated_page(filters, limit, offset).await,
+    }
 }
 
 pub async fn get(id: &str, sections: &[String]) -> Result<Article, BioMcpError> {
@@ -949,6 +1367,44 @@ mod tests {
     }
 
     #[test]
+    fn article_source_filter_parses_supported_values() {
+        assert_eq!(
+            ArticleSourceFilter::from_flag("all").expect("all should parse"),
+            ArticleSourceFilter::All
+        );
+        assert_eq!(
+            ArticleSourceFilter::from_flag("pubtator").expect("pubtator should parse"),
+            ArticleSourceFilter::PubTator
+        );
+        assert_eq!(
+            ArticleSourceFilter::from_flag("europepmc").expect("europepmc should parse"),
+            ArticleSourceFilter::EuropePmc
+        );
+        assert!(ArticleSourceFilter::from_flag("pubmed").is_err());
+    }
+
+    #[test]
+    fn planner_routes_all_to_europepmc_for_strict_filters() {
+        let mut filters = empty_filters();
+        filters.gene = Some("BRAF".into());
+        filters.open_access = true;
+
+        let plan = plan_backends(&filters, ArticleSourceFilter::All).expect("planner should work");
+        assert!(matches!(plan, BackendPlan::EuropeOnly));
+    }
+
+    #[test]
+    fn planner_rejects_pubtator_with_unsupported_strict_filters() {
+        let mut filters = empty_filters();
+        filters.gene = Some("BRAF".into());
+        filters.article_type = Some("review".into());
+
+        let err = plan_backends(&filters, ArticleSourceFilter::PubTator)
+            .expect_err("planner should reject strict-only filter on pubtator");
+        assert!(err.to_string().contains("--type"));
+    }
+
+    #[test]
     fn pubtator_lag_error_is_400_or_404_only() {
         let err_400 = BioMcpError::Api {
             api: "pubtator3".into(),
@@ -971,5 +1427,115 @@ mod tests {
         assert!(is_pubtator_lag_error(&err_404));
         assert!(!is_pubtator_lag_error(&err_500));
         assert!(!is_pubtator_lag_error(&other_api_400));
+    }
+
+    fn row(pmid: &str, source: ArticleSource) -> ArticleSearchResult {
+        ArticleSearchResult {
+            pmid: pmid.to_string(),
+            title: format!("title-{pmid}"),
+            journal: Some("Journal".into()),
+            date: Some("2025-01-01".into()),
+            citation_count: Some(1),
+            source,
+            score: (source == ArticleSource::PubTator).then_some(42.0),
+            is_retracted: false,
+        }
+    }
+
+    #[test]
+    fn merge_federated_pages_dedups_with_pubtator_priority() {
+        let pubtator_page = SearchPage::offset(
+            vec![
+                row("100", ArticleSource::PubTator),
+                row("200", ArticleSource::PubTator),
+            ],
+            Some(2),
+        );
+        let europe_page = SearchPage::offset(
+            vec![
+                row("200", ArticleSource::EuropePmc),
+                row("300", ArticleSource::EuropePmc),
+            ],
+            Some(2),
+        );
+
+        let merged = merge_federated_pages(Ok(pubtator_page), Ok(europe_page), 3)
+            .expect("federated merge should succeed");
+        assert_eq!(merged.results.len(), 3);
+        assert_eq!(merged.results[0].pmid, "100");
+        assert_eq!(merged.results[1].pmid, "200");
+        assert_eq!(merged.results[2].pmid, "300");
+        assert_eq!(merged.results[1].source, ArticleSource::PubTator);
+        assert_eq!(merged.total, None);
+    }
+
+    #[test]
+    fn merge_federated_pages_returns_surviving_pubtator_leg() {
+        let pubtator_page = SearchPage::offset(
+            vec![
+                row("100", ArticleSource::PubTator),
+                row("200", ArticleSource::PubTator),
+            ],
+            Some(50),
+        );
+        let europe_err = BioMcpError::Api {
+            api: "europepmc".into(),
+            message: "HTTP 500: upstream".into(),
+        };
+
+        let merged = merge_federated_pages(Ok(pubtator_page), Err(europe_err), 2)
+            .expect("fallback should return pubtator rows");
+        assert_eq!(merged.results.len(), 2);
+        assert!(
+            merged
+                .results
+                .iter()
+                .all(|r| r.source == ArticleSource::PubTator)
+        );
+        assert_eq!(merged.total, None);
+    }
+
+    #[test]
+    fn merge_federated_pages_returns_surviving_europe_leg() {
+        let pubtator_err = BioMcpError::Api {
+            api: "pubtator3".into(),
+            message: "HTTP 500: upstream".into(),
+        };
+        let europe_page = SearchPage::offset(
+            vec![
+                row("100", ArticleSource::EuropePmc),
+                row("200", ArticleSource::EuropePmc),
+                row("300", ArticleSource::EuropePmc),
+            ],
+            Some(50),
+        );
+
+        let merged = merge_federated_pages(Err(pubtator_err), Ok(europe_page), 2)
+            .expect("fallback should return europe rows");
+        assert_eq!(merged.results.len(), 2);
+        assert!(
+            merged
+                .results
+                .iter()
+                .all(|r| r.source == ArticleSource::EuropePmc)
+        );
+        assert_eq!(merged.total, None);
+    }
+
+    #[test]
+    fn merge_federated_pages_returns_first_error_when_both_fail() {
+        let pubtator_err = BioMcpError::Api {
+            api: "pubtator3".into(),
+            message: "HTTP 500: pubtator failed".into(),
+        };
+        let europe_err = BioMcpError::Api {
+            api: "europepmc".into(),
+            message: "HTTP 500: europe failed".into(),
+        };
+
+        let err = merge_federated_pages(Err(pubtator_err), Err(europe_err), 10)
+            .expect_err("both failing legs should return first error");
+        let msg = err.to_string();
+        assert!(msg.contains("pubtator"));
     }
 }

@@ -696,9 +696,15 @@ async fn run_section(
                 open_access: false,
                 no_preprints: false,
                 exclude_retracted: true,
-                sort: crate::entities::article::ArticleSort::Date,
+                sort: crate::entities::article::ArticleSort::Relevance,
             };
-            let page = crate::entities::article::search_page(&filters, input.limit, 0).await?;
+            let page = crate::entities::article::search_page(
+                &filters,
+                input.limit,
+                0,
+                crate::entities::article::ArticleSourceFilter::All,
+            )
+            .await?;
             Ok((to_json_array(page.results)?, page.total))
         }
         SectionKind::Pathway => {
