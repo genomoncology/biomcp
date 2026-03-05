@@ -57,6 +57,39 @@ tokio::task_local! {
     static NO_CACHE: bool;
 }
 
+fn parse_cache_mode(value: Option<&str>) -> Option<CacheMode> {
+    match value {
+        Some("infinite") => Some(CacheMode::ForceCache),
+        Some("off") => Some(CacheMode::NoStore),
+        Some("default") | Some("") | None => None,
+        Some(other) => {
+            warn!("Unknown BIOMCP_CACHE_MODE={other:?}, using default");
+            None
+        }
+    }
+}
+
+fn env_cache_mode() -> Option<CacheMode> {
+    static MODE: OnceLock<Option<CacheMode>> = OnceLock::new();
+    *MODE.get_or_init(|| {
+        let mode = std::env::var("BIOMCP_CACHE_MODE")
+            .ok()
+            .map(|s| s.trim().to_ascii_lowercase());
+        parse_cache_mode(mode.as_deref())
+    })
+}
+
+fn resolve_cache_mode(
+    no_cache: bool,
+    authenticated: bool,
+    env_mode: Option<CacheMode>,
+) -> Option<CacheMode> {
+    if no_cache || authenticated {
+        return Some(CacheMode::NoStore);
+    }
+    env_mode
+}
+
 pub(crate) async fn with_no_cache<R, F>(no_cache: bool, fut: F) -> R
 where
     F: Future<Output = R>,
@@ -65,20 +98,22 @@ where
 }
 
 pub(crate) fn apply_cache_mode(req: RequestBuilder) -> RequestBuilder {
-    match NO_CACHE.try_with(|v| *v) {
-        Ok(true) => req.with_extension(CacheMode::NoStore),
-        _ => req,
+    let no_cache = matches!(NO_CACHE.try_with(|v| *v), Ok(true));
+    if let Some(mode) = resolve_cache_mode(no_cache, false, env_cache_mode()) {
+        return req.with_extension(mode);
     }
+    req
 }
 
 pub(crate) fn apply_cache_mode_with_auth(
     req: RequestBuilder,
     authenticated: bool,
 ) -> RequestBuilder {
-    if authenticated {
-        return req.with_extension(CacheMode::NoStore);
+    let no_cache = matches!(NO_CACHE.try_with(|v| *v), Ok(true));
+    if let Some(mode) = resolve_cache_mode(no_cache, authenticated, env_cache_mode()) {
+        return req.with_extension(mode);
     }
-    apply_cache_mode(req)
+    req
 }
 
 pub(crate) fn env_base(default: &'static str, env_var: &str) -> Cow<'static, str> {
@@ -399,6 +434,63 @@ mod tests {
     };
     use wiremock::matchers::{method, path, query_param};
     use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[test]
+    fn parse_cache_mode_returns_none_for_default_or_unset() {
+        assert!(parse_cache_mode(None).is_none());
+        assert!(parse_cache_mode(Some("default")).is_none());
+        assert!(parse_cache_mode(Some("")).is_none());
+    }
+
+    #[test]
+    fn parse_cache_mode_returns_force_cache_for_infinite() {
+        assert!(matches!(
+            parse_cache_mode(Some("infinite")),
+            Some(CacheMode::ForceCache)
+        ));
+    }
+
+    #[test]
+    fn parse_cache_mode_returns_no_store_for_off() {
+        assert!(matches!(
+            parse_cache_mode(Some("off")),
+            Some(CacheMode::NoStore)
+        ));
+    }
+
+    #[test]
+    fn parse_cache_mode_returns_none_for_unknown_values() {
+        assert!(parse_cache_mode(Some("bogus")).is_none());
+    }
+
+    #[test]
+    fn resolve_cache_mode_prioritizes_no_cache_over_env() {
+        assert!(matches!(
+            resolve_cache_mode(true, false, Some(CacheMode::ForceCache)),
+            Some(CacheMode::NoStore)
+        ));
+    }
+
+    #[test]
+    fn resolve_cache_mode_prioritizes_auth_over_env() {
+        assert!(matches!(
+            resolve_cache_mode(false, true, Some(CacheMode::ForceCache)),
+            Some(CacheMode::NoStore)
+        ));
+    }
+
+    #[test]
+    fn resolve_cache_mode_uses_env_when_no_overrides() {
+        assert!(matches!(
+            resolve_cache_mode(false, false, Some(CacheMode::ForceCache)),
+            Some(CacheMode::ForceCache)
+        ));
+    }
+
+    #[test]
+    fn resolve_cache_mode_defaults_to_none() {
+        assert!(resolve_cache_mode(false, false, None).is_none());
+    }
 
     #[test]
     fn ensure_json_content_type_rejects_html() {

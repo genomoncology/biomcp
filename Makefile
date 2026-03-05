@@ -1,4 +1,4 @@
-.PHONY: build test check run clean
+.PHONY: build test check run clean spec
 
 build:
 	cargo build --release
@@ -15,3 +15,6 @@ run:
 
 clean:
 	cargo clean
+
+spec:
+	BIOMCP_CACHE_MODE=infinite uv run pytest spec/ --mustmatch-lang bash -v
