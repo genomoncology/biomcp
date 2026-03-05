@@ -14,7 +14,7 @@ uv tool install biomcp-cli
 
 This installs the `biomcp` binary on your PATH.
 
-### Binary install (recommended)
+### Binary install
 
 ```bash
 curl -fsSL https://biomcp.org/install.sh | bash
@@ -28,7 +28,7 @@ Install guided investigation workflows into your agent directory:
 biomcp skill install ~/.claude --force
 ```
 
-### For Claude Desktop / Cursor / MCP clients
+### MCP clients
 
 ```json
 {
