@@ -76,8 +76,11 @@ biomcp study list
 biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
 biomcp study query --study brca_tcga_pan_can_atlas_2018 --gene ERBB2 --type cna
 biomcp study query --study paad_qcmg_uq_2016 --gene KRAS --type expression
-biomcp study survival --study brca_tcga_pan_can_atlas_2018 --gene TP53
+biomcp study cohort --study brca_tcga_pan_can_atlas_2018 --gene TP53
+biomcp study survival --study brca_tcga_pan_can_atlas_2018 --gene TP53 --endpoint os
+biomcp study survival --study brca_tcga_pan_can_atlas_2018 --gene TP53 --endpoint dfs
 biomcp study compare --study brca_tcga_pan_can_atlas_2018 --gene TP53 --type expression --target ERBB2
+biomcp study filter --study brca_tcga_pan_can_atlas_2018 --mutated TP53 --amplified ERBB2 --expression-above ERBB2:1.5
 biomcp study co-occurrence --study msk_impact_2017 --genes TP53,KRAS
 ```
 
@@ -87,6 +90,10 @@ Requirements:
 - Study folders should include cBioPortal TSV files such as `meta_study.txt`, `data_mutations.txt`, `data_clinical_sample.txt`, and optional `data_cna.txt` / expression matrices.
 - `study survival` reports KM median survival, 1/3/5 year KM landmarks, and a log-rank p-value. If the median is not reached, BioMCP prints `-`.
 - `study compare --type expression` reports descriptive statistics plus Mann-Whitney U and p-value lines.
+- `study cohort`, `study survival`, and `study compare` require mutation plus clinical sample data.
+- `study survival` accepts `os`, `dfs`, `pfs`, or `dss` for `--endpoint` and requires the matching patient-level columns (e.g., `OS_STATUS` and `OS_MONTHS` for `os`).
+- `study compare` supports `--type expression` and `--type mutations`.
+- `study filter` intersects mutation, CNA, expression, and clinical filters. Combine `--mutated`, `--amplified`, `--deleted`, `--expression-above`, `--expression-below`, and `--cancer-type` as needed.
 
 Rules:
 
