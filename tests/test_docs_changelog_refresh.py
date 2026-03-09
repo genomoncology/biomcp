@@ -18,13 +18,16 @@ def _markdown_section_block(text: str, heading: str) -> str:
     return remainder[:next_heading]
 
 
-def test_changelog_has_backfilled_releases_and_unreleased_header() -> None:
+def test_changelog_has_backfilled_releases_and_release_header() -> None:
     changelog = _read("CHANGELOG.md")
 
-    assert "## [Unreleased]" in changelog
+    assert "## [Unreleased]" not in changelog
+    assert "## 0.8.13 — 2026-03-09" in changelog
     assert "## 0.9.0" not in changelog
 
     expected_releases = [
+        ("0.8.13", "2026-03-09"),
+        ("0.8.12", "2026-03-07"),
         ("0.8.11", "2026-03-06"),
         ("0.8.10", "2026-03-04"),
         ("0.8.9", "2026-03-03"),

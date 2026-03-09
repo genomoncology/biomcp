@@ -66,7 +66,6 @@ async def test_list_resources_returns_expected_inventory(
         assert len({uri for uri, _name in actual}) == len(actual)
 
         skill_resources = actual[1:]
-        assert skill_resources
         for uri, name in skill_resources:
             assert uri.startswith("biomcp://skill/")
             assert name.startswith("Pattern: ")

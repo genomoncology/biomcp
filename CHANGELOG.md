@@ -1,8 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## 0.8.13 — 2026-03-09
 
-- No unreleased entries yet.
+- `study survival` now reports Kaplan-Meier median survival, 1/3/5-year survival landmarks, and two-group log-rank p-values.
+- Fixed survival median calculation: replaced raw follow-up median with Kaplan-Meier median survival.
+- `study compare --type expression` now reports Mann-Whitney U and p-value.
+- Added `study download <study_id>` and `study download --list` for local cBioPortal datahub installs.
+- Hardened `study download`: no total body timeout for large archives, path-like study ID rejection, stream-to-disk download, and cleanup on failed extraction.
+- Refreshed `skills/SKILL.md` with real study command usage, including `cohort`, `filter`, and `survival --endpoint` examples.
 
 ## 0.8.12 — 2026-03-07
 
