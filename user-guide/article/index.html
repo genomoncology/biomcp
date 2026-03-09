@@ -1015,6 +1015,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Search articles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multi-source-federation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-source federation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2115,6 +2132,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Search articles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multi-source-federation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-source federation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2236,25 +2270,34 @@
 <p>Exclude preprints when supported by source metadata:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span>-01-01<span class="w"> </span>--no-preprints<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
+<h3 id="multi-source-federation">Multi-source federation<a class="headerlink" href="#multi-source-federation" title="Permanent link">&para;</a></h3>
+<p>Article search fans out to PubTator3 and Europe PMC in parallel by default.
+Results are deduplicated by PMID when both backends return the same paper.
+Output is grouped by source; PubTator rows include a score column.</p>
+<p>Use <code>--source &lt;all|pubtator|europepmc&gt;</code> to select one backend or keep the default federated search.</p>
+<p>To search a single backend:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--source<span class="w"> </span>pubtator<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--source<span class="w"> </span>europepmc<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
 <h2 id="get-an-article">Get an article<a class="headerlink" href="#get-an-article" title="Permanent link">&para;</a></h2>
 <p>Supported IDs include PMID, PMCID, and DOI.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <h2 id="request-specific-sections">Request specific sections<a class="headerlink" href="#request-specific-sections" title="Permanent link">&para;</a></h2>
 <p>Full text section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
 </code></pre></div>
 <p>Annotation section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
 </code></pre></div>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span><span class="w">   </span><span class="c1"># extract annotated entities via PubTator</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span><span class="w">   </span><span class="c1"># extract annotated entities via PubTator</span>
 </code></pre></div>
 <h2 id="caching-behavior">Caching behavior<a class="headerlink" href="#caching-behavior" title="Permanent link">&para;</a></h2>
 <p>Downloaded content is stored in the BioMCP cache directory.
 This avoids repeated large payload downloads during iterative workflows.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>

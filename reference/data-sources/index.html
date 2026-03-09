@@ -2261,10 +2261,10 @@ and operational caveats so users can reason about result quality and troubleshoo
 </tr>
 <tr>
 <td>Gene sections</td>
-<td>UniProt, QuickGO, STRING</td>
-<td><code>https://rest.uniprot.org</code>, <code>https://www.ebi.ac.uk/QuickGO/services</code>, <code>https://string-db.org/api</code></td>
+<td>UniProt, QuickGO, STRING, GTEx, DGIdb, ClinGen</td>
+<td><code>https://rest.uniprot.org</code>, <code>https://www.ebi.ac.uk/QuickGO/services</code>, <code>https://string-db.org/api</code>, <code>https://gtexportal.org/api/v2</code>, <code>https://dgidb.org/api/graphql</code>, <code>https://search.clinicalgenome.org</code></td>
 <td>No</td>
-<td>Protein summary, GO terms, interaction network</td>
+<td>Protein summary, GO terms, interactions, tissue expression, druggability, gene-disease validity</td>
 </tr>
 <tr>
 <td>Variant</td>
@@ -2323,11 +2323,11 @@ and operational caveats so users can reason about result quality and troubleshoo
 <td><code>search trial --source nci</code></td>
 </tr>
 <tr>
-<td>Article metadata</td>
-<td>Europe PMC + PubMed</td>
-<td><code>https://www.ebi.ac.uk/europepmc/webservices/rest</code></td>
+<td>Article search &amp; metadata</td>
+<td>PubTator3 + Europe PMC</td>
+<td><code>https://www.ncbi.nlm.nih.gov/research/pubtator3-api</code>, <code>https://www.ebi.ac.uk/europepmc/webservices/rest</code></td>
 <td>No</td>
-<td>Search and bibliographic metadata</td>
+<td>Federated search with PMID dedup and source-grouped output</td>
 </tr>
 <tr>
 <td>Article annotations</td>
@@ -2575,8 +2575,9 @@ and practical ceilings observed in command behavior.</p>
 <h2 id="article-pipeline-behavior">Article pipeline behavior<a class="headerlink" href="#article-pipeline-behavior" title="Permanent link">&para;</a></h2>
 <p>Article workflows compose multiple APIs for different tasks:</p>
 <ol>
-<li>Europe PMC / PubMed for search and bibliographic metadata</li>
-<li>PubTator3 for annotations</li>
+<li>PubTator3 + Europe PMC for federated search (parallel fan-out, PMID dedup, PubTator-priority merge for duplicate PMIDs)</li>
+<li>Europe PMC for bibliographic metadata</li>
+<li>PubTator3 for entity annotations</li>
 <li>NCBI ID converter + PMC OA for full-text resolution where available</li>
 </ol>
 <p>This means metadata, annotations, and fulltext may have different availability for the same PMID.</p>

@@ -934,6 +934,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#evidence-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence metadata
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#top-level-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -955,6 +966,17 @@
   
     <nav class="md-nav" aria-label="Search command families">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#all-cross-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        All (cross-entity)
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#gene" class="md-nav__link">
@@ -2372,6 +2394,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#evidence-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence metadata
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#top-level-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2393,6 +2426,17 @@
   
     <nav class="md-nav" aria-label="Search command families">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#all-cross-entity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        All (cross-entity)
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#gene" class="md-nav__link">
@@ -2734,6 +2778,10 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp get &lt;entity&gt; &lt;id&gt; [section...]
 </code></pre></div>
 <p>Section names are positional trailing arguments after <code>&lt;id&gt;</code>.</p>
+<h2 id="evidence-metadata">Evidence metadata<a class="headerlink" href="#evidence-metadata" title="Permanent link">&para;</a></h2>
+<p><code>get</code> responses include outbound evidence links in markdown output where available.
+In JSON mode, links are exposed under <code>_meta.evidence_urls</code> and can include
+Ensembl, OMIM, NCBI Gene, and UniProt URLs.</p>
 <h2 id="top-level-commands">Top-level commands<a class="headerlink" href="#top-level-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp search ...
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp get ...
@@ -2750,98 +2798,104 @@
 <a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>biomcp version
 </code></pre></div>
 <h2 id="search-command-families">Search command families<a class="headerlink" href="#search-command-families" title="Permanent link">&para;</a></h2>
+<h3 id="all-cross-entity">All (cross-entity)<a class="headerlink" href="#all-cross-entity" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--counts-only
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--keyword<span class="w"> </span><span class="s2">&quot;immunotherapy resistance&quot;</span><span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span>-01-01
+</code></pre></div>
 <h3 id="gene">Gene<a class="headerlink" href="#gene" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <h3 id="disease">Disease<a class="headerlink" href="#disease" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>disease<span class="w"> </span>-q<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>mondo<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>disease<span class="w"> </span>-q<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>mondo<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <h3 id="pgx">PGx<a class="headerlink" href="#pgx" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pgx<span class="w"> </span>-g<span class="w"> </span>CYP2D6<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pgx<span class="w"> </span>-d<span class="w"> </span>warfarin<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pgx<span class="w"> </span>-g<span class="w"> </span>CYP2D6<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pgx<span class="w"> </span>-d<span class="w"> </span>warfarin<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <h3 id="phenotype-monarch-semsim">Phenotype (Monarch semsim)<a class="headerlink" href="#phenotype-monarch-semsim" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <h3 id="gwas">GWAS<a class="headerlink" href="#gwas" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>TCF7L2<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>TCF7L2<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <h3 id="article">Article<a class="headerlink" href="#article" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span>-01-01<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span>-01-01<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <h3 id="trial">Trial<a class="headerlink" href="#trial" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--source<span class="w"> </span>ctgov<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--source<span class="w"> </span>ctgov<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <h3 id="variant">Variant<a class="headerlink" href="#variant" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--hgvsp<span class="w"> </span>V600E<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--hgvsp<span class="w"> </span>V600E<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <h3 id="drug">Drug<a class="headerlink" href="#drug" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;kinase inhibitor&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;kinase inhibitor&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <h3 id="pathway">Pathway<a class="headerlink" href="#pathway" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;MAPK signaling&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;MAPK signaling&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <h3 id="protein">Protein<a class="headerlink" href="#protein" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>protein<span class="w"> </span>-q<span class="w"> </span>kinase<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>protein<span class="w"> </span>-q<span class="w"> </span>kinase<span class="w"> </span>--all-species<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>protein<span class="w"> </span>-q<span class="w"> </span>kinase<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>protein<span class="w"> </span>-q<span class="w"> </span>kinase<span class="w"> </span>--all-species<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h3 id="adverse-event">Adverse event<a class="headerlink" href="#adverse-event" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--serious<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--manufacturer<span class="w"> </span>Medtronic<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--product-code<span class="w"> </span>PQP<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--serious<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--manufacturer<span class="w"> </span>Medtronic<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--product-code<span class="w"> </span>PQP<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="get-command-families">Get command families<a class="headerlink" href="#get-command-families" title="Permanent link">&para;</a></h2>
 <h3 id="gene_1">Gene<a class="headerlink" href="#gene_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>diseases
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w"> </span>ontology<span class="w"> </span>diseases<span class="w"> </span>protein
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>go<span class="w"> </span>interactions<span class="w"> </span>civic<span class="w"> </span>expression<span class="w"> </span>druggability<span class="w"> </span>clingen
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>all
 </code></pre></div>
 <h3 id="disease_1">Disease<a class="headerlink" href="#disease_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>melanoma
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>genes<span class="w"> </span>phenotypes
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>variants<span class="w"> </span>models
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>pathways<span class="w"> </span>prevalence<span class="w"> </span>civic
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>all
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>melanoma
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>genes<span class="w"> </span>phenotypes
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>variants<span class="w"> </span>models
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>pathways<span class="w"> </span>prevalence<span class="w"> </span>civic
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>all
 </code></pre></div>
 <h3 id="pgx_1">PGx<a class="headerlink" href="#pgx_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>codeine<span class="w"> </span>recommendations<span class="w"> </span>frequencies
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>warfarin<span class="w"> </span>annotations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>codeine<span class="w"> </span>recommendations<span class="w"> </span>frequencies
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>warfarin<span class="w"> </span>annotations
 </code></pre></div>
 <h3 id="article_1">Article<a class="headerlink" href="#article_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
 </code></pre></div>
 <h3 id="trial_1">Trial<a class="headerlink" href="#trial_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
 </code></pre></div>
 <h3 id="variant_1">Variant<a class="headerlink" href="#variant_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predict
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predict
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
 </code></pre></div>
 <h3 id="drug_1">Drug<a class="headerlink" href="#drug_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>carboplatin<span class="w"> </span>shortage
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>carboplatin<span class="w"> </span>shortage
 </code></pre></div>
 <h3 id="pathway_1">Pathway<a class="headerlink" href="#pathway_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pathway<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pathway<span class="w"> </span>R-HSA-5673001<span class="w"> </span>genes
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pathway<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pathway<span class="w"> </span>R-HSA-5673001<span class="w"> </span>genes
 </code></pre></div>
 <h3 id="protein_1">Protein<a class="headerlink" href="#protein_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>protein<span class="w"> </span>P15056
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>protein<span class="w"> </span>P15056<span class="w"> </span>domains<span class="w"> </span>interactions
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>protein<span class="w"> </span>P15056
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>protein<span class="w"> </span>P15056<span class="w"> </span>domains<span class="w"> </span>interactions
 </code></pre></div>
 <h3 id="adverse-event_1">Adverse event<a class="headerlink" href="#adverse-event_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span>
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>reactions<span class="w"> </span>outcomes
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>concomitant<span class="w"> </span>guidance<span class="w"> </span>all
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>reactions<span class="w"> </span>outcomes
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>concomitant<span class="w"> </span>guidance<span class="w"> </span>all
 </code></pre></div>
 <h2 id="enrichment">Enrichment<a class="headerlink" href="#enrichment" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span><span class="w"> </span>--json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span><span class="w"> </span>--json
 </code></pre></div>
 <h2 id="mcp-mode">MCP mode<a class="headerlink" href="#mcp-mode" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2850,29 +2904,29 @@
 </ul>
 <p>See also: <code>docs/reference/mcp-server.md</code>.</p>
 <h2 id="helper-command-families">Helper command families<a class="headerlink" href="#helper-command-families" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
-<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
-<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
-<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
-<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
-<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
+<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
+<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
+<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
+<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-26-15" name="__codelineno-26-15" href="#__codelineno-26-15"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-26-16" name="__codelineno-26-16" href="#__codelineno-26-16"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-26-17" name="__codelineno-26-17" href="#__codelineno-26-17"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <h2 id="batch-mode">Batch mode<a class="headerlink" href="#batch-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>gene<span class="w"> </span>BRAF,TP53
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>gene<span class="w"> </span>BRAF,TP53<span class="w"> </span>--sections<span class="w"> </span>pathways,interactions
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>trial<span class="w"> </span>NCT02576665,NCT03715933<span class="w"> </span>--source<span class="w"> </span>nci
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>,<span class="s2">&quot;KRAS G12D&quot;</span><span class="w"> </span>--json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>gene<span class="w"> </span>BRAF,TP53
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>gene<span class="w"> </span>BRAF,TP53<span class="w"> </span>--sections<span class="w"> </span>pathways,interactions
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>trial<span class="w"> </span>NCT02576665,NCT03715933<span class="w"> </span>--source<span class="w"> </span>nci
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>,<span class="s2">&quot;KRAS G12D&quot;</span><span class="w"> </span>--json
 </code></pre></div>
 
 

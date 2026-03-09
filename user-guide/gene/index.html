@@ -2325,7 +2325,7 @@
 </ul>
 <h2 id="search-genes">Search genes<a class="headerlink" href="#search-genes" title="Permanent link">&para;</a></h2>
 <p>Start with search when you are unsure of symbol spelling or aliases.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Useful fields in search output typically include symbol, Entrez ID, and species.</p>
 <h2 id="get-a-gene-record">Get a gene record<a class="headerlink" href="#get-a-gene-record" title="Permanent link">&para;</a></h2>
@@ -2352,29 +2352,38 @@
 <p>CIViC evidence summary:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>civic
 </code></pre></div>
+<p>Tissue expression (GTEx):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>expression
+</code></pre></div>
+<p>Druggability profile (DGIdb):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>druggability
+</code></pre></div>
+<p>Gene-disease validity (ClinGen):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>clingen
+</code></pre></div>
 <p>Multiple sections can be chained:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w"> </span>diseases
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w"> </span>diseases
 </code></pre></div>
 <h2 id="gene-helper-commands">Gene helper commands<a class="headerlink" href="#gene-helper-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRAF
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>definition<span class="w"> </span>BRAF
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRAF
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>definition<span class="w"> </span>BRAF
 </code></pre></div>
 <h2 id="common-workflows">Common workflows<a class="headerlink" href="#common-workflows" title="Permanent link">&para;</a></h2>
 <h3 id="clinical-trial-pivot">Clinical trial pivot<a class="headerlink" href="#clinical-trial-pivot" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h3 id="literature-pivot">Literature pivot<a class="headerlink" href="#literature-pivot" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h3 id="variant-pivot">Variant pivot<a class="headerlink" href="#variant-pivot" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
 <p>Use JSON for pipelines or agent post-processing.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF
 </code></pre></div>
 <h2 id="error-handling-expectations">Error handling expectations<a class="headerlink" href="#error-handling-expectations" title="Permanent link">&para;</a></h2>
 <p>If a section name is unsupported, BioMCP returns an explicit unknown-section message
