@@ -617,6 +617,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../getting-started/remote-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote HTTP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../getting-started/api-keys/" class="md-nav__link">
         
   
@@ -1272,6 +1300,45 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-study-analytics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local study analytics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Local study analytics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#study-command-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Study command examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dataset requirements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2736,6 +2803,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#local-study-analytics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local study analytics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Local study analytics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#study-command-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Study command examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dataset requirements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#batch-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2789,14 +2895,28 @@ Ensembl, OMIM, NCBI Gene, and UniProt URLs.</p>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>biomcp batch &lt;entity&gt; &lt;id1,id2,...&gt; [--sections ...] [--source ...]
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>biomcp health [--apis-only]
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>biomcp list [entity]
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>biomcp skill [list|install|&lt;name&gt;]
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>biomcp mcp
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>biomcp serve
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>biomcp serve-http [--host 127.0.0.1] [--port 8080]
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>biomcp update [--check]
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>biomcp uninstall
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>biomcp version
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>biomcp study list
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>biomcp study download [--list] [&lt;study_id&gt;]
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>biomcp study filter --study &lt;id&gt; [--mutated &lt;symbol&gt;] [--amplified &lt;symbol&gt;] [--deleted &lt;symbol&gt;] [--expression-above &lt;gene:threshold&gt;] [--expression-below &lt;gene:threshold&gt;] [--cancer-type &lt;type&gt;]
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>biomcp study query --study &lt;id&gt; --gene &lt;symbol&gt; --type &lt;mutations|cna|expression&gt;
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>biomcp study cohort --study &lt;id&gt; --gene &lt;symbol&gt;
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>biomcp study survival --study &lt;id&gt; --gene &lt;symbol&gt; [--endpoint &lt;os|dfs|pfs|dss&gt;]
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>biomcp study compare --study &lt;id&gt; --gene &lt;symbol&gt; --type &lt;expression|mutations&gt; --target &lt;symbol&gt;
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>biomcp study co-occurrence --study &lt;id&gt; --genes &lt;g1,g2,...&gt;
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>biomcp skill
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>biomcp skill install [dir]
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>biomcp skill list                 # legacy compatibility alias
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>biomcp mcp
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>biomcp serve
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>biomcp serve-http [--host 127.0.0.1] [--port 8080]
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>biomcp serve-sse                  # removed compatibility command; use serve-http
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>biomcp update [--check]
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>biomcp uninstall
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>biomcp version
 </code></pre></div>
+<p>Numeric and slug skill lookups remain compatibility behavior, but they are not
+part of the recommended command synopsis because current builds do not ship a
+browsable embedded catalog.</p>
 <h2 id="search-command-families">Search command families<a class="headerlink" href="#search-command-families" title="Permanent link">&para;</a></h2>
 <h3 id="all-cross-entity">All (cross-entity)<a class="headerlink" href="#all-cross-entity" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma
@@ -2900,7 +3020,10 @@ Ensembl, OMIM, NCBI Gene, and UniProt URLs.</p>
 <h2 id="mcp-mode">MCP mode<a class="headerlink" href="#mcp-mode" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>biomcp serve</code> runs the stdio MCP server.</li>
-<li><code>biomcp serve-http</code> runs MCP over HTTP/SSE.</li>
+<li><code>biomcp serve-http</code> runs the MCP Streamable HTTP server.</li>
+<li>Streamable HTTP clients connect to <code>/mcp</code>.</li>
+<li>Probe routes: <code>/health</code>, <code>/readyz</code>, and <code>/</code>.</li>
+<li><code>biomcp serve-sse</code> remains visible only as a removed compatibility command that points back to <code>biomcp serve-http</code>.</li>
 </ul>
 <p>See also: <code>docs/reference/mcp-server.md</code>.</p>
 <h2 id="helper-command-families">Helper command families<a class="headerlink" href="#helper-command-families" title="Permanent link">&para;</a></h2>
@@ -2922,11 +3045,64 @@ Ensembl, OMIM, NCBI Gene, and UniProt URLs.</p>
 <a id="__codelineno-26-16" name="__codelineno-26-16" href="#__codelineno-26-16"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
 <a id="__codelineno-26-17" name="__codelineno-26-17" href="#__codelineno-26-17"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
+<h2 id="local-study-analytics">Local study analytics<a class="headerlink" href="#local-study-analytics" title="Permanent link">&para;</a></h2>
+<p><code>study</code> is BioMCP's local cBioPortal analytics family for downloaded
+cBioPortal-style datasets. Unlike the 12 remote entity commands, <code>study</code>
+operates on files in your local study root instead of querying remote APIs for
+each request.</p>
+<p>Use <code>BIOMCP_STUDY_DIR</code> when you want an explicit study root for reproducible
+downloads and examples; if it is unset, BioMCP falls back to its default study
+root. <code>biomcp study download --list</code> shows downloadable IDs, and
+<code>biomcp study download &lt;study_id&gt;</code> installs a study into that local root.</p>
+<table>
+<thead>
+<tr>
+<th>Use this</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>biomcp search/get/&lt;entity&gt;</code></td>
+<td>You want live API-backed discovery or detail across the 12 remote entity commands</td>
+</tr>
+<tr>
+<td><code>biomcp study download</code></td>
+<td>You need to fetch a cBioPortal-style study dataset into your local study root</td>
+</tr>
+<tr>
+<td><code>biomcp study ...</code> analytics commands</td>
+<td>You already have local study files and want cohort, query, survival, compare, or co-occurrence analysis</td>
+</tr>
+</tbody>
+</table>
+<h3 id="study-command-examples">Study command examples<a class="headerlink" href="#study-command-examples" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>biomcp<span class="w"> </span>study<span class="w"> </span>list
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>--list
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>msk_impact_2017
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>biomcp<span class="w"> </span>study<span class="w"> </span>filter<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--mutated<span class="w"> </span>TP53<span class="w"> </span>--amplified<span class="w"> </span>ERBB2<span class="w"> </span>--expression-above<span class="w"> </span>ERBB2:1.5
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>biomcp<span class="w"> </span>study<span class="w"> </span>cohort<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>biomcp<span class="w"> </span>study<span class="w"> </span>survival<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--endpoint<span class="w"> </span>os
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>expression<span class="w"> </span>--target<span class="w"> </span>ERBB2
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--target<span class="w"> </span>PIK3CA
+<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a>biomcp<span class="w"> </span>study<span class="w"> </span>co-occurrence<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--genes<span class="w"> </span>TP53,KRAS
+</code></pre></div>
+<h3 id="dataset-requirements">Dataset requirements<a class="headerlink" href="#dataset-requirements" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>study list</code> shows locally available studies.</li>
+<li><code>study download</code> fetches remote datasets into the local study root.</li>
+<li><code>study filter</code> intersects mutation, CNA, expression, and clinical filters.</li>
+<li><code>study query</code> supports <code>mutations</code>, <code>cna</code>, and <code>expression</code> per-gene summaries.</li>
+<li><code>study cohort</code>, <code>study survival</code>, and <code>study compare</code> require <code>data_mutations.txt</code> and <code>data_clinical_sample.txt</code>.</li>
+<li><code>study survival</code> also requires <code>data_clinical_patient.txt</code> with canonical <code>{ENDPOINT}_STATUS</code> and <code>{ENDPOINT}_MONTHS</code> columns.</li>
+<li>Expression workflows require a supported expression matrix file.</li>
+</ul>
 <h2 id="batch-mode">Batch mode<a class="headerlink" href="#batch-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>gene<span class="w"> </span>BRAF,TP53
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>gene<span class="w"> </span>BRAF,TP53<span class="w"> </span>--sections<span class="w"> </span>pathways,interactions
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>trial<span class="w"> </span>NCT02576665,NCT03715933<span class="w"> </span>--source<span class="w"> </span>nci
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>,<span class="s2">&quot;KRAS G12D&quot;</span><span class="w"> </span>--json
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>gene<span class="w"> </span>BRAF,TP53
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>gene<span class="w"> </span>BRAF,TP53<span class="w"> </span>--sections<span class="w"> </span>pathways,interactions
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>trial<span class="w"> </span>NCT02576665,NCT03715933<span class="w"> </span>--source<span class="w"> </span>nci
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>biomcp<span class="w"> </span>batch<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>,<span class="s2">&quot;KRAS G12D&quot;</span><span class="w"> </span>--json
 </code></pre></div>
 
 

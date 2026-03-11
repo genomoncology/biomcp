@@ -598,10 +598,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#option-1-installer-script-recommended" class="md-nav__link">
+  <a href="#option-1-pypi-package" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Option 1: Installer script (recommended)
+        Option 1: PyPI package
       
     </span>
   </a>
@@ -609,10 +609,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#option-2-source-build" class="md-nav__link">
+  <a href="#option-2-installer-script" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Option 2: Source build
+        Option 2: Installer script
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option-3-source-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 3: Source build
       
     </span>
   </a>
@@ -704,6 +715,34 @@
     
   
     Claude Desktop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote HTTP Server
   
 
     
@@ -2052,10 +2091,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#option-1-installer-script-recommended" class="md-nav__link">
+  <a href="#option-1-pypi-package" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Option 1: Installer script (recommended)
+        Option 1: PyPI package
       
     </span>
   </a>
@@ -2063,10 +2102,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#option-2-source-build" class="md-nav__link">
+  <a href="#option-2-installer-script" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Option 2: Source build
+        Option 2: Installer script
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#option-3-source-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 3: Source build
       
     </span>
   </a>
@@ -2129,29 +2179,39 @@
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
 <p>This page covers supported BioMCP installation paths and verification checks.</p>
 <p>After installation, the <code>biomcp</code> command should be available in your shell.</p>
-<h2 id="option-1-installer-script-recommended">Option 1: Installer script (recommended)<a class="headerlink" href="#option-1-installer-script-recommended" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+<h2 id="option-1-pypi-package">Option 1: PyPI package<a class="headerlink" href="#option-1-pypi-package" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># or, inside an active Python environment:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># pip install biomcp-cli</span>
+</code></pre></div>
+<p>Install the <code>biomcp-cli</code> package, then use the <code>biomcp</code> command in the rest of
+this guide.</p>
+<p>Verify:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>--version
+</code></pre></div>
+<h2 id="option-2-installer-script">Option 2: Installer script<a class="headerlink" href="#option-2-installer-script" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
 </code></pre></div>
 <p>The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA256 checksum, and places <code>biomcp</code> in <code>~/.local/bin</code>.</p>
 <p>Pin a specific version:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span>--version<span class="w"> </span><span class="m">0</span>.8.0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span>--version<span class="w"> </span><span class="m">0</span>.8.0
 </code></pre></div>
 <p>Verify:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>--version
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>--version
 </code></pre></div>
-<h2 id="option-2-source-build">Option 2: Source build<a class="headerlink" href="#option-2-source-build" title="Permanent link">&para;</a></h2>
+<h2 id="option-3-source-build">Option 3: Source build<a class="headerlink" href="#option-3-source-build" title="Permanent link">&para;</a></h2>
 <p>From a local checkout:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--locked
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./target/release/biomcp<span class="w"> </span>--version
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--locked
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>./target/release/biomcp<span class="w"> </span>--version
 </code></pre></div>
 <p>Install into Cargo bin path:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>cargo<span class="w"> </span>install<span class="w"> </span>--path<span class="w"> </span>.<span class="w"> </span>--locked
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>--version
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>cargo<span class="w"> </span>install<span class="w"> </span>--path<span class="w"> </span>.<span class="w"> </span>--locked
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>--version
 </code></pre></div>
 <h2 id="post-install-smoke-checks">Post-install smoke checks<a class="headerlink" href="#post-install-smoke-checks" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>list
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>list
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 <h2 id="environment-notes">Environment notes<a class="headerlink" href="#environment-notes" title="Permanent link">&para;</a></h2>
 <ul>

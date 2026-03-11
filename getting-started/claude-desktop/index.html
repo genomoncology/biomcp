@@ -18,7 +18,7 @@
         <link rel="prev" href="../first-query/">
       
       
-        <link rel="next" href="../api-keys/">
+        <link rel="next" href="../remote-http/">
       
       
         
@@ -712,6 +712,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote HTTP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2148,9 +2176,11 @@
 <p>When connected, clients should discover:</p>
 <ul>
 <li>one tool: <code>shell</code></li>
-<li>one help resource (<code>biomcp://help</code>) and one resource per installed skill (<code>biomcp://skill/&lt;slug&gt;</code>)</li>
+<li>one help resource (<code>biomcp://help</code>)</li>
 </ul>
-<p>Resource discovery gives agent clients structured entry points before execution.</p>
+<p>Current builds do not discover a browsable <code>biomcp://skill/&lt;slug&gt;</code> catalog because no embedded use-case files ship.
+Resource discovery still gives agent clients a stable entry point before
+execution.</p>
 <h2 id="operational-tips">Operational tips<a class="headerlink" href="#operational-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Keep API keys in the client launch environment.</li>

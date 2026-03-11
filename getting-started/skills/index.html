@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#skills-embedded-use-cases" class="md-skip">
+        <a href="#skills" class="md-skip">
           Skip to content
         </a>
       
@@ -622,6 +622,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../remote-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote HTTP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../api-keys/" class="md-nav__link">
         
   
@@ -710,21 +738,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#list-skills" class="md-nav__link">
+  <a href="#read-the-guide" class="md-nav__link">
     <span class="md-ellipsis">
       
-        List skills
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#open-a-specific-skill" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Open a specific skill
+        Read the guide
       
     </span>
   </a>
@@ -743,10 +760,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#skill-topics-included" class="md-nav__link">
+  <a href="#install-payload" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Skill topics included
+        Install payload
       
     </span>
   </a>
@@ -754,10 +771,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#relationship-to-mcp-resources" class="md-nav__link">
+  <a href="#legacy-compatibility-note" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Relationship to MCP resources
+        Legacy compatibility note
       
     </span>
   </a>
@@ -2052,21 +2069,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#list-skills" class="md-nav__link">
+  <a href="#read-the-guide" class="md-nav__link">
     <span class="md-ellipsis">
       
-        List skills
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#open-a-specific-skill" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Open a specific skill
+        Read the guide
       
     </span>
   </a>
@@ -2085,10 +2091,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#skill-topics-included" class="md-nav__link">
+  <a href="#install-payload" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Skill topics included
+        Install payload
       
     </span>
   </a>
@@ -2096,10 +2102,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#relationship-to-mcp-resources" class="md-nav__link">
+  <a href="#legacy-compatibility-note" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Relationship to MCP resources
+        Legacy compatibility note
       
     </span>
   </a>
@@ -2126,112 +2132,42 @@
   
 
 
-<h1 id="skills-embedded-use-cases">Skills (Embedded Use Cases)<a class="headerlink" href="#skills-embedded-use-cases" title="Permanent link">&para;</a></h1>
-<p>BioMCP bundles reusable workflow documents as embedded skills.</p>
-<p>Skills are available to both CLI users and MCP clients via resources.</p>
-<h2 id="list-skills">List skills<a class="headerlink" href="#list-skills" title="Permanent link">&para;</a></h2>
+<h1 id="skills">Skills<a class="headerlink" href="#skills" title="Permanent link">&para;</a></h1>
+<p>BioMCP ships one embedded guide plus supporting reference files for agent
+workflows. The current workflow is:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>skill
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>list
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude
 </code></pre></div>
-<h2 id="open-a-specific-skill">Open a specific skill<a class="headerlink" href="#open-a-specific-skill" title="Permanent link">&para;</a></h2>
-<p>By number:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span><span class="m">01</span>
-</code></pre></div>
-<p>By slug:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>variant-to-treatment
-</code></pre></div>
+<h2 id="read-the-guide">Read the guide<a class="headerlink" href="#read-the-guide" title="Permanent link">&para;</a></h2>
+<p><code>biomcp skill</code> prints the embedded <code>skills/SKILL.md</code> overview. Start there if
+you want the current BioMCP workflow guidance without installing anything into
+an agent directory.</p>
 <h2 id="install-into-an-agent-directory">Install into an agent directory<a class="headerlink" href="#install-into-an-agent-directory" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude
+<p>Install the embedded <code>skills/</code> tree into your agent directory:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude
 </code></pre></div>
-<p>Force replace existing files:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude<span class="w"> </span>--force
+<p>Force replacement of an existing install:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude<span class="w"> </span>--force
 </code></pre></div>
-<p>When no directory is provided, BioMCP attempts supported agent-directory detection.</p>
-<h2 id="skill-topics-included">Skill topics included<a class="headerlink" href="#skill-topics-included" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>#</th>
-<th>Slug</th>
-<th>Focus</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>01</td>
-<td><code>variant-to-treatment</code></td>
-<td>Variant to treatment/evidence workflow</td>
-</tr>
-<tr>
-<td>02</td>
-<td><code>drug-investigation</code></td>
-<td>Drug mechanism, safety, alternatives</td>
-</tr>
-<tr>
-<td>03</td>
-<td><code>trial-searching</code></td>
-<td>Trial discovery + patient matching</td>
-</tr>
-<tr>
-<td>04</td>
-<td><code>rare-disease</code></td>
-<td>Rare disease evidence and trial strategy</td>
-</tr>
-<tr>
-<td>05</td>
-<td><code>drug-shortages</code></td>
-<td>Shortage monitoring and alternatives</td>
-</tr>
-<tr>
-<td>06</td>
-<td><code>advanced-therapies</code></td>
-<td>CAR-T/checkpoint therapy workflows</td>
-</tr>
-<tr>
-<td>07</td>
-<td><code>hereditary-cancer</code></td>
-<td>Hereditary syndrome workflows</td>
-</tr>
-<tr>
-<td>08</td>
-<td><code>resistance</code></td>
-<td>Resistance and next-line options</td>
-</tr>
-<tr>
-<td>09</td>
-<td><code>gene-function-lookup</code></td>
-<td>Gene-centric function and context lookup</td>
-</tr>
-<tr>
-<td>10</td>
-<td><code>gene-set-analysis</code></td>
-<td>Enrichment + pathway + interaction synthesis</td>
-</tr>
-<tr>
-<td>11</td>
-<td><code>literature-synthesis</code></td>
-<td>Evidence synthesis with cross-entity checks</td>
-</tr>
-<tr>
-<td>12</td>
-<td><code>pharmacogenomics</code></td>
-<td>PGx gene-drug interactions and dosing</td>
-</tr>
-<tr>
-<td>13</td>
-<td><code>phenotype-triage</code></td>
-<td>Symptom-first rare disease workup</td>
-</tr>
-<tr>
-<td>14</td>
-<td><code>protein-pathway</code></td>
-<td>Protein structure and pathway deep dive</td>
-</tr>
-</tbody>
-</table>
-<h2 id="relationship-to-mcp-resources">Relationship to MCP resources<a class="headerlink" href="#relationship-to-mcp-resources" title="Permanent link">&para;</a></h2>
-<p>The same use cases are readable through <code>resources/list</code> and <code>resources/read</code> with
-<code>biomcp://skill/&lt;slug&gt;</code> URIs.</p>
+<p>The <code>dir</code> argument can point at an agent root such as <code>~/.claude</code>, an existing
+<code>skills/</code> directory, or a <code>skills/biomcp/</code> directory. When you omit <code>dir</code>,
+BioMCP attempts supported agent-directory detection in your home directory and
+the current working tree, then prompts before installing when stdin is a TTY.</p>
+<h2 id="install-payload">Install payload<a class="headerlink" href="#install-payload" title="Permanent link">&para;</a></h2>
+<p>Current builds install the full embedded reference tree into
+<code>&lt;agent&gt;/skills/biomcp/</code>, including:</p>
+<ul>
+<li><code>SKILL.md</code></li>
+<li><code>jq-examples.md</code></li>
+<li><code>examples/</code></li>
+<li><code>schemas/</code></li>
+</ul>
+<h2 id="legacy-compatibility-note">Legacy compatibility note<a class="headerlink" href="#legacy-compatibility-note" title="Permanent link">&para;</a></h2>
+<p><code>biomcp skill list</code> remains as a legacy compatibility alias and currently prints
+<code>No skills found</code>.</p>
+<p>Numeric and slug lookups are also legacy compatibility paths. Commands such as
+<code>biomcp skill 03</code> and <code>biomcp skill variant-to-treatment</code> currently fail with a
+clear not-found message and suggest <code>biomcp skill</code>.</p>
 
 
 

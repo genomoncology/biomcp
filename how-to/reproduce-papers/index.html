@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#reproduce-paper-workflows-with-skills" class="md-skip">
+        <a href="#reproduce-paper-workflows" class="md-skip">
           Skip to content
         </a>
       
@@ -597,6 +597,34 @@
     
   
     Claude Desktop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/remote-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote HTTP Server
   
 
     
@@ -1458,10 +1486,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#basic-flow" class="md-nav__link">
+  <a href="#suggested-execution-pattern" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Flow
+        Suggested execution pattern
       
     </span>
   </a>
@@ -1469,10 +1497,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#suggested-execution-pattern" class="md-nav__link">
+  <a href="#example-session" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Suggested Execution Pattern
+        Example session
       
     </span>
   </a>
@@ -2052,10 +2080,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#basic-flow" class="md-nav__link">
+  <a href="#suggested-execution-pattern" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Flow
+        Suggested execution pattern
       
     </span>
   </a>
@@ -2063,10 +2091,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#suggested-execution-pattern" class="md-nav__link">
+  <a href="#example-session" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Suggested Execution Pattern
+        Example session
       
     </span>
   </a>
@@ -2104,61 +2132,63 @@
   
 
 
-<h1 id="reproduce-paper-workflows-with-skills">Reproduce Paper Workflows with Skills<a class="headerlink" href="#reproduce-paper-workflows-with-skills" title="Permanent link">&para;</a></h1>
-<p>BioMCP paper demos are consolidated into embedded skill workflows so any agent can run them without a custom runtime. Use this guide to map each paper-style task to the canonical skill and execution pattern.</p>
+<h1 id="reproduce-paper-workflows">Reproduce Paper Workflows<a class="headerlink" href="#reproduce-paper-workflows" title="Permanent link">&para;</a></h1>
+<p>BioMCP paper-style workflows are best reproduced with direct CLI commands. If
+you want the agent-facing guide first, run <code>biomcp skill</code> or install it into
+your agent directory, then execute the commands that match the paper pattern you
+want to reproduce.</p>
 <h2 id="mapping">Mapping<a class="headerlink" href="#mapping" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>Paper-style workflow</th>
-<th>Canonical skill</th>
-<th>Typical command</th>
+<th>BioMCP workflow area</th>
+<th>Representative commands</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>GeneGPT</td>
-<td><code>09-gene-function-lookup</code></td>
-<td><code>biomcp skill gene-function-lookup</code></td>
+<td>gene, variant, trial, and article walkthroughs</td>
+<td><code>biomcp get gene BRAF</code>, <code>biomcp get variant "BRAF V600E" population</code>, <code>biomcp variant trials "BRAF V600E" --limit 3</code>, <code>biomcp search article -g BRAF -d melanoma --limit 3</code></td>
 </tr>
 <tr>
 <td>GeneAgent</td>
-<td><code>10-gene-set-analysis</code></td>
-<td><code>biomcp skill gene-set-analysis</code></td>
+<td>pathway, drug, and protein synthesis</td>
+<td><code>biomcp get pathway R-HSA-5673001 genes</code>, <code>biomcp pathway drugs R-HSA-5673001 --limit 3</code>, <code>biomcp protein structures P15056</code></td>
 </tr>
 <tr>
 <td>TrialGPT</td>
-<td><code>03-trial-searching</code> (patient matching section)</td>
-<td><code>biomcp skill 03</code></td>
+<td>trial discovery and patient matching</td>
+<td><code>biomcp search trial -c melanoma --mutation "BRAF V600E" --status recruiting --limit 5</code></td>
 </tr>
 <tr>
 <td>PubMed &amp; Beyond</td>
-<td><code>11-literature-synthesis</code></td>
-<td><code>biomcp skill literature-synthesis</code></td>
+<td>literature synthesis</td>
+<td><code>biomcp search article -g BRAF -d melanoma --limit 5</code>, <code>biomcp get article 22663011 fulltext</code></td>
 </tr>
 </tbody>
 </table>
-<h2 id="basic-flow">Basic Flow<a class="headerlink" href="#basic-flow" title="Permanent link">&para;</a></h2>
+<h2 id="suggested-execution-pattern">Suggested execution pattern<a class="headerlink" href="#suggested-execution-pattern" title="Permanent link">&para;</a></h2>
 <ol>
-<li>List available workflows.</li>
-<li>Retrieve one by number or slug.</li>
-<li>Execute the included CLI steps.</li>
-<li>Verify results against that skill's validation checklist.</li>
+<li>Pick the workflow area that matches the paper task.</li>
+<li>Run the direct CLI commands for that area.</li>
+<li>Save command output in a markdown log with stable IDs such as PMIDs, gene
+   symbols, pathway IDs, and NCT IDs.</li>
+<li>Verify the final summary against the paper's reported entities and evidence.</li>
 </ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>list
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>gene-function-lookup
-</code></pre></div>
-<h2 id="suggested-execution-pattern">Suggested Execution Pattern<a class="headerlink" href="#suggested-execution-pattern" title="Permanent link">&para;</a></h2>
-<p>For a reproducible run, copy command output to a markdown log and keep IDs (PMIDs/NCT IDs) visible in the final summary.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span><span class="s2">&quot;BRCA1,TP53,ATM,CHEK2,PALB2&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRCA1<span class="w"> </span>pathways
+<h2 id="example-session">Example session<a class="headerlink" href="#example-session" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>population
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
 </code></pre></div>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Skills are model agnostic; any shell-capable agent can execute them.</li>
+<li>The BioMCP guide is optional context, not the primary execution path.</li>
 <li>If a service is temporarily rate limited, retry after a short pause.</li>
-<li>If enrichment is unavailable, continue with pathway/interaction/literature verification steps in skill 10.</li>
+<li>If enrichment is unavailable, continue with pathway, interaction, or
+  literature checks that answer the same paper question.</li>
 </ul>
 
 

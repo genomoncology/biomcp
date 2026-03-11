@@ -12,13 +12,13 @@
         <meta name="author" content="Ian Maurer">
       
       
-        <link rel="canonical" href="https://biomcp.org/user-guide/adverse-event/">
+        <link rel="canonical" href="https://biomcp.org/getting-started/remote-http/">
       
       
-        <link rel="prev" href="../protein/">
+        <link rel="prev" href="../claude-desktop/">
       
       
-        <link rel="next" href="../pgx/">
+        <link rel="next" href="../api-keys/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>Adverse Event - BioMCP</title>
+        <title>Remote HTTP Server - BioMCP</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#adverse-event" class="md-skip">
+        <a href="#remote-streamable-http-server" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Adverse Event
+              Remote HTTP Server
             
           </span>
         </div>
@@ -241,11 +241,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../getting-started/installation/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../installation/" class="md-tabs__link">
           
   
   
@@ -281,13 +283,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../cli-reference/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../user-guide/cli-reference/" class="md-tabs__link">
           
   
   
@@ -478,26 +478,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -515,7 +520,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -533,7 +538,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -561,7 +566,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/first-query/" class="md-nav__link">
+      <a href="../first-query/" class="md-nav__link">
         
   
   
@@ -589,7 +594,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/claude-desktop/" class="md-nav__link">
+      <a href="../claude-desktop/" class="md-nav__link">
         
   
   
@@ -614,10 +619,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../getting-started/remote-http/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote HTTP Server
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -633,6 +665,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#start-the-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start the server
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-endpoint-and-probes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP endpoint and probes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#minimal-python-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimal Python client
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runnable-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runnable demo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -645,7 +752,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/api-keys/" class="md-nav__link">
+      <a href="../api-keys/" class="md-nav__link">
         
   
   
@@ -673,7 +780,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/skills/" class="md-nav__link">
+      <a href="../skills/" class="md-nav__link">
         
   
   
@@ -820,31 +927,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
@@ -862,7 +964,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -880,7 +982,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cli-reference/" class="md-nav__link">
+      <a href="../../user-guide/cli-reference/" class="md-nav__link">
         
   
   
@@ -908,7 +1010,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../gene/" class="md-nav__link">
+      <a href="../../user-guide/gene/" class="md-nav__link">
         
   
   
@@ -936,7 +1038,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../variant/" class="md-nav__link">
+      <a href="../../user-guide/variant/" class="md-nav__link">
         
   
   
@@ -964,7 +1066,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../article/" class="md-nav__link">
+      <a href="../../user-guide/article/" class="md-nav__link">
         
   
   
@@ -992,7 +1094,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../trial/" class="md-nav__link">
+      <a href="../../user-guide/trial/" class="md-nav__link">
         
   
   
@@ -1020,7 +1122,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../drug/" class="md-nav__link">
+      <a href="../../user-guide/drug/" class="md-nav__link">
         
   
   
@@ -1048,7 +1150,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../disease/" class="md-nav__link">
+      <a href="../../user-guide/disease/" class="md-nav__link">
         
   
   
@@ -1076,7 +1178,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pathway/" class="md-nav__link">
+      <a href="../../user-guide/pathway/" class="md-nav__link">
         
   
   
@@ -1104,7 +1206,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../protein/" class="md-nav__link">
+      <a href="../../user-guide/protein/" class="md-nav__link">
         
   
   
@@ -1129,37 +1231,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Adverse Event
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../user-guide/adverse-event/" class="md-nav__link">
         
   
   
@@ -1175,114 +1250,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#search-faers-reports" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Search FAERS reports
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#search-recall-notices" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Search recall notices
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#search-device-events-maude" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Search device events (MAUDE)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#get-a-report-by-id" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Get a report by ID
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#request-report-sections" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Request report sections
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#json-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON mode
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#practical-guidance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Practical guidance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related-guides" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Related guides
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1295,7 +1262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pgx/" class="md-nav__link">
+      <a href="../../user-guide/pgx/" class="md-nav__link">
         
   
   
@@ -1323,7 +1290,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../gwas/" class="md-nav__link">
+      <a href="../../user-guide/gwas/" class="md-nav__link">
         
   
   
@@ -1351,7 +1318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../phenotype/" class="md-nav__link">
+      <a href="../../user-guide/phenotype/" class="md-nav__link">
         
   
   
@@ -2113,10 +2080,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#search-faers-reports" class="md-nav__link">
+  <a href="#start-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Search FAERS reports
+        Start the server
       
     </span>
   </a>
@@ -2124,10 +2091,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#search-recall-notices" class="md-nav__link">
+  <a href="#mcp-endpoint-and-probes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Search recall notices
+        MCP endpoint and probes
       
     </span>
   </a>
@@ -2135,10 +2102,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#search-device-events-maude" class="md-nav__link">
+  <a href="#minimal-python-client" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Search device events (MAUDE)
+        Minimal Python client
       
     </span>
   </a>
@@ -2146,10 +2113,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#get-a-report-by-id" class="md-nav__link">
+  <a href="#runnable-demo" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Get a report by ID
+        Runnable demo
       
     </span>
   </a>
@@ -2157,43 +2124,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#request-report-sections" class="md-nav__link">
+  <a href="#related-docs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Request report sections
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#json-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        JSON mode
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#practical-guidance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Practical guidance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related-guides" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Related guides
+        Related docs
       
     </span>
   </a>
@@ -2220,91 +2154,86 @@
   
 
 
-<h1 id="adverse-event">Adverse Event<a class="headerlink" href="#adverse-event" title="Permanent link">&para;</a></h1>
-<p>Use adverse-event commands for FDA safety surveillance across three datasets:</p>
-<ul>
-<li>FAERS reports,</li>
-<li>recall notices,</li>
-<li>device events.</li>
-</ul>
-<h2 id="search-faers-reports">Search FAERS reports<a class="headerlink" href="#search-faers-reports" title="Permanent link">&para;</a></h2>
-<p>By drug:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<h1 id="remote-streamable-http-server">Remote Streamable HTTP Server<a class="headerlink" href="#remote-streamable-http-server" title="Permanent link">&para;</a></h1>
+<p>Use <code>biomcp serve-http</code> when you need one shared MCP server for remote clients,
+multiple agent workers, or a container/network deployment.</p>
+<p>Use <code>biomcp serve</code> when a single local client such as Claude Desktop or Cursor
+launches BioMCP over stdio.</p>
+<h2 id="start-the-server">Start the server<a class="headerlink" href="#start-the-server" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>serve-http<span class="w"> </span>--host<span class="w"> </span><span class="m">127</span>.0.0.1<span class="w"> </span>--port<span class="w"> </span><span class="m">8080</span>
 </code></pre></div>
-<p>Serious reports only:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--serious<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-</code></pre></div>
-<p>Reaction-focused filter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--reaction<span class="w"> </span>pneumonitis<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-</code></pre></div>
-<h2 id="search-recall-notices">Search recall notices<a class="headerlink" href="#search-recall-notices" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>recall<span class="w"> </span>--drug<span class="w"> </span>metformin<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-</code></pre></div>
-<p>Classification filter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>recall<span class="w"> </span>--drug<span class="w"> </span>metformin<span class="w"> </span>--classification<span class="w"> </span><span class="s2">&quot;Class I&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-</code></pre></div>
-<h2 id="search-device-events-maude">Search device events (MAUDE)<a class="headerlink" href="#search-device-events-maude" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--device<span class="w"> </span><span class="s2">&quot;insulin pump&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-</code></pre></div>
-<p>Manufacturer filter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--manufacturer<span class="w"> </span>Medtronic<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-</code></pre></div>
-<p>Product-code filter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--product-code<span class="w"> </span>PQP<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-</code></pre></div>
-<p><code>--manufacturer</code> and <code>--product-code</code> are valid only with <code>--type device</code>.</p>
-<h2 id="get-a-report-by-id">Get a report by ID<a class="headerlink" href="#get-a-report-by-id" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span>
-</code></pre></div>
-<p>Report resolution is source-aware and returns the corresponding markdown format.</p>
-<h2 id="request-report-sections">Request report sections<a class="headerlink" href="#request-report-sections" title="Permanent link">&para;</a></h2>
+<p>Use <code>--host 0.0.0.0</code> only when the server must accept connections from other
+machines or containers.</p>
+<h2 id="mcp-endpoint-and-probes">MCP endpoint and probes<a class="headerlink" href="#mcp-endpoint-and-probes" title="Permanent link">&para;</a></h2>
+<p>The canonical MCP endpoint is <code>/mcp</code>. Probe routes are <code>/health</code>, <code>/readyz</code>,
+and <code>/</code>.</p>
 <table>
 <thead>
 <tr>
-<th>Section</th>
-<th>Description</th>
+<th>Route</th>
+<th>Purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>reactions</code></td>
-<td>Adverse reactions reported</td>
+<td><code>POST /mcp</code></td>
+<td>Streamable HTTP MCP requests</td>
 </tr>
 <tr>
-<td><code>outcomes</code></td>
-<td>Reaction outcomes (death, hospitalization, etc.)</td>
+<td><code>GET /mcp</code></td>
+<td>Streamable HTTP session stream</td>
 </tr>
 <tr>
-<td><code>concomitant</code></td>
-<td>Concomitant medications</td>
+<td><code>GET /health</code></td>
+<td>Liveness check returning <code>{"status":"ok"}</code></td>
 </tr>
 <tr>
-<td><code>guidance</code></td>
-<td>Safety guidance and labeling</td>
+<td><code>GET /readyz</code></td>
+<td>Readiness check returning <code>{"status":"ok"}</code></td>
 </tr>
 <tr>
-<td><code>all</code></td>
-<td>Include all sections</td>
+<td><code>GET /</code></td>
+<td>BioMCP identity document with name, version, transport, and MCP path</td>
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>reactions<span class="w"> </span>outcomes
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>all
+<h2 id="minimal-python-client">Minimal Python client<a class="headerlink" href="#minimal-python-client" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">mcp</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClientSession</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">mcp.client.streamable_http</span><span class="w"> </span><span class="kn">import</span> <span class="n">streamable_http_client</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="k">async</span> <span class="k">with</span> <span class="n">streamable_http_client</span><span class="p">(</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        <span class="s2">&quot;http://127.0.0.1:8080/mcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>        <span class="n">terminate_on_close</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="p">)</span> <span class="k">as</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>        <span class="k">async</span> <span class="k">with</span> <span class="n">ClientSession</span><span class="p">(</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>            <span class="n">r</span><span class="p">,</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>            <span class="n">w</span><span class="p">,</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>            <span class="n">read_timeout_seconds</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">),</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>        <span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>            <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">serverInfo</span><span class="p">)</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </code></pre></div>
-<h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span>
+<h2 id="runnable-demo">Runnable demo<a class="headerlink" href="#runnable-demo" title="Permanent link">&para;</a></h2>
+<p>The repo includes a standalone demo you can run directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>serve-http<span class="w"> </span>--host<span class="w"> </span><span class="m">127</span>.0.0.1<span class="w"> </span>--port<span class="w"> </span><span class="m">8080</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>uv<span class="w"> </span>run<span class="w"> </span>--script<span class="w"> </span>demo/streamable_http_client.py
 </code></pre></div>
-<h2 id="practical-guidance">Practical guidance<a class="headerlink" href="#practical-guidance" title="Permanent link">&para;</a></h2>
+<p>The examples above disable explicit session termination because the current
+Python MCP client logs a warning when the server acknowledges teardown with
+HTTP <code>202 Accepted</code>.</p>
+<h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Include drug generic names for better FAERS recall.</li>
-<li>Treat counts as signal, not incidence estimates.</li>
-<li>Validate serious findings through full source documents when needed.</li>
-</ul>
-<h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../drug/">Drug</a></li>
-<li><a href="../../reference/faq/">FAQ</a></li>
-<li><a href="../../troubleshooting/">Troubleshooting</a></li>
+<li><a href="../claude-desktop/">Claude Desktop (stdio setup)</a></li>
+<li><a href="../../reference/mcp-server/">MCP Server Reference</a></li>
+<li><a href="https://github.com/genomoncology/biomcp/blob/main/RUN.md">RUN.md</a></li>
 </ul>
 
 

@@ -524,10 +524,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#binary-install-recommended" class="md-nav__link">
+  <a href="#pypi-tool-install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Binary install (recommended)
+        PyPI tool install
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#binary-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Binary install
       
     </span>
   </a>
@@ -550,6 +561,17 @@
     <span class="md-ellipsis">
       
         For Claude Desktop / Cursor / MCP clients
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remote-http-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Remote HTTP server
       
     </span>
   </a>
@@ -813,6 +835,34 @@
     
   
     Claude Desktop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="getting-started/remote-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote HTTP Server
   
 
     
@@ -2173,10 +2223,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#binary-install-recommended" class="md-nav__link">
+  <a href="#pypi-tool-install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Binary install (recommended)
+        PyPI tool install
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#binary-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Binary install
       
     </span>
   </a>
@@ -2199,6 +2260,17 @@
     <span class="md-ellipsis">
       
         For Claude Desktop / Cursor / MCP clients
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remote-http-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Remote HTTP server
       
     </span>
   </a>
@@ -2355,37 +2427,55 @@
 <p><strong>Single-binary CLI and MCP server for querying biomedical databases.</strong>
 One command grammar, compact markdown output, 12 entities across 15+ data sources.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
-<h3 id="binary-install-recommended">Binary install (recommended)<a class="headerlink" href="#binary-install-recommended" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+<h3 id="pypi-tool-install">PyPI tool install<a class="headerlink" href="#pypi-tool-install" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># or, inside an active Python environment:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># pip install biomcp-cli</span>
+</code></pre></div>
+<p>Install the <code>biomcp-cli</code> package, then use <code>biomcp</code> for the commands shown
+throughout the docs.</p>
+<h3 id="binary-install">Binary install<a class="headerlink" href="#binary-install" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
 </code></pre></div>
 <h3 id="install-skills">Install skills<a class="headerlink" href="#install-skills" title="Permanent link">&para;</a></h3>
 <p>Install guided investigation workflows into your agent directory:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude<span class="w"> </span>--force
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude<span class="w"> </span>--force
 </code></pre></div>
 <h3 id="for-claude-desktop-cursor-mcp-clients">For Claude Desktop / Cursor / MCP clients<a class="headerlink" href="#for-claude-desktop-cursor-mcp-clients" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&quot;biomcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;biomcp&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;serve&quot;</span><span class="p">]</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">&quot;biomcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;biomcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;serve&quot;</span><span class="p">]</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
 </code></pre></div>
+<h3 id="remote-http-server">Remote HTTP server<a class="headerlink" href="#remote-http-server" title="Permanent link">&para;</a></h3>
+<p>For shared or remote deployments, start BioMCP over Streamable HTTP instead of
+stdio:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>serve-http<span class="w"> </span>--host<span class="w"> </span><span class="m">127</span>.0.0.1<span class="w"> </span>--port<span class="w"> </span><span class="m">8080</span>
+</code></pre></div>
+<p>Remote clients connect to <code>http://127.0.0.1:8080/mcp</code>. Probe routes are
+<code>/health</code>, <code>/readyz</code>, and <code>/</code>. See
+<a href="getting-started/remote-http/">Remote HTTP Server</a> for setup details and
+<code>demo/streamable_http_client.py</code> for a runnable client example.</p>
 <h3 id="from-source">From source<a class="headerlink" href="#from-source" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--locked
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--locked
 </code></pre></div>
 <h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only<span class="w">            </span><span class="c1"># verify API connectivity</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>list<span class="w">                          </span><span class="c1"># show all entities and commands</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>biomcp<span class="w"> </span>list<span class="w"> </span>gene<span class="w">                     </span><span class="c1"># show gene-specific filters and examples</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only<span class="w">            </span><span class="c1"># verify API connectivity</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>list<span class="w">                          </span><span class="c1"># show all entities and commands</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>list<span class="w"> </span>gene<span class="w">                     </span><span class="c1"># show gene-specific filters and examples</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w">  </span><span class="c1"># unified cross-entity discovery</span>
 </code></pre></div>
 <h2 id="command-grammar">Command grammar<a class="headerlink" href="#command-grammar" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>search &lt;entity&gt; [filters]    → discovery
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>get &lt;entity&gt; &lt;id&gt; [sections] → focused detail
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>&lt;entity&gt; &lt;helper&gt; &lt;id&gt;       → cross-entity pivots
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>enrich &lt;GENE1,GENE2,...&gt;     → gene-set enrichment
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>batch &lt;entity&gt; &lt;id1,id2,...&gt; → parallel gets
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>search &lt;entity&gt; [filters]    → discovery
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>get &lt;entity&gt; &lt;id&gt; [sections] → focused detail
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>&lt;entity&gt; &lt;helper&gt; &lt;id&gt;       → cross-entity pivots
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>enrich &lt;GENE1,GENE2,...&gt;     → gene-set enrichment
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>batch &lt;entity&gt; &lt;id1,id2,...&gt; → parallel gets
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>search all [slot filters]    → unified fan-out across all entities
 </code></pre></div>
 <h2 id="entities-and-sources">Entities and sources<a class="headerlink" href="#entities-and-sources" title="Permanent link">&para;</a></h2>
 <table>
@@ -2461,48 +2551,51 @@ One command grammar, compact markdown output, 12 entities across 15+ data source
 </table>
 <h2 id="cross-entity-helpers">Cross-entity helpers<a class="headerlink" href="#cross-entity-helpers" title="Permanent link">&para;</a></h2>
 <p>Pivot between related entities without rebuilding filters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <h2 id="gene-set-enrichment">Gene-set enrichment<a class="headerlink" href="#gene-set-enrichment" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <h2 id="sections-and-progressive-disclosure">Sections and progressive disclosure<a class="headerlink" href="#sections-and-progressive-disclosure" title="Permanent link">&para;</a></h2>
 <p>Every <code>get</code> command supports selectable sections:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w">                    </span><span class="c1"># summary card</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w">           </span><span class="c1"># add pathway section</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>civic<span class="w"> </span>interactions<span class="w"> </span><span class="c1"># multiple sections</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>all<span class="w">                </span><span class="c1"># everything</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>clinvar<span class="w"> </span>population<span class="w"> </span>conservation
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>label<span class="w"> </span>targets<span class="w"> </span>civic<span class="w"> </span>approvals
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span><span class="w"> </span>genes<span class="w"> </span>phenotypes<span class="w"> </span>variants
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility<span class="w"> </span>locations<span class="w"> </span>outcomes
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w">                    </span><span class="c1"># summary card</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w">           </span><span class="c1"># add pathway section</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>civic<span class="w"> </span>interactions<span class="w"> </span><span class="c1"># multiple sections</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>all<span class="w">                </span><span class="c1"># everything</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>clinvar<span class="w"> </span>population<span class="w"> </span>conservation
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>label<span class="w"> </span>targets<span class="w"> </span>civic<span class="w"> </span>approvals
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span><span class="w"> </span>genes<span class="w"> </span>phenotypes<span class="w"> </span>variants
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility<span class="w"> </span>locations<span class="w"> </span>outcomes
 </code></pre></div>
 <h2 id="api-keys">API keys<a class="headerlink" href="#api-keys" title="Permanent link">&para;</a></h2>
 <p>Most commands work without credentials. Optional keys improve rate limits:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCBI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># PubTator, PMC OA, NCBI ID converter</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">     </span><span class="c1"># OpenFDA rate limits</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">         </span><span class="c1"># NCI CTS trial search (--source nci)</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ONCOKB_TOKEN</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># OncoKB variant helper</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w"> </span><span class="c1"># AlphaGenome variant effect prediction</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCBI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># PubTator, PMC OA, NCBI ID converter</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">     </span><span class="c1"># OpenFDA rate limits</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">         </span><span class="c1"># NCI CTS trial search (--source nci)</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ONCOKB_TOKEN</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># OncoKB variant helper</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w"> </span><span class="c1"># AlphaGenome variant effect prediction</span>
 </code></pre></div>
 <h2 id="skills">Skills<a class="headerlink" href="#skills" title="Permanent link">&para;</a></h2>
-<p>14 guided investigation workflows are built in. See <a href="getting-started/skills/">Skills</a> for details.</p>
+<p>BioMCP ships an embedded guide for agent workflows rather than a built-in
+catalog. Read it with <code>biomcp skill</code>, install it with
+<code>biomcp skill install ~/.claude --force</code>, and see
+<a href="getting-started/skills/">Skills</a> for the current workflow and legacy notes.</p>
 <h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="getting-started/installation/">Installation</a></li>
