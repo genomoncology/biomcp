@@ -255,7 +255,7 @@ fn list_drug() -> String {
 - `get drug <name> shortage` - query current shortage status
 - `get drug <name> targets` - enrich with ChEMBL/OpenTargets targets
 - `get drug <name> indications` - enrich with OpenTargets indications
-- `get drug <name> interactions` - DrugBank interaction rows from cached MyChem payload
+- `get drug <name> interactions` - OpenFDA label interaction text when available; otherwise a truthful public-data fallback
 - `get drug <name> civic` - CIViC therapy evidence/assertion summary
 - `get drug <name> approvals` - Drugs@FDA approval/application details
 - `get drug <name> all` - include all sections
@@ -269,7 +269,7 @@ fn list_drug() -> String {
 - `search drug --mechanism <text>`
 - `search drug --atc <code>`
 - `search drug --pharm-class <class>`
-- `search drug --interactions <drug>`
+- `search drug --interactions <drug>` - unavailable from current public data sources
 - `search drug ... --limit <N> --offset <N>`
 
 ## Helpers

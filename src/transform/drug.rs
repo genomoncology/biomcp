@@ -577,6 +577,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         targets,
         indications,
         interactions,
+        interaction_text: None,
         pharm_classes,
         top_adverse_events: Vec::new(),
         label: None,

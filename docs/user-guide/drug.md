@@ -22,6 +22,8 @@ Indication-oriented search:
 biomcp search drug --indication melanoma --limit 5
 ```
 
+`search drug --interactions <drug>` is currently unavailable because the public data sources BioMCP uses do not expose partner-indexed interaction rows.
+
 ## Get a drug record
 
 ```bash
@@ -51,10 +53,10 @@ biomcp get drug pembrolizumab targets
 biomcp get drug pembrolizumab indications
 ```
 
-Interactions (drug-drug interactions):
+Interactions (OpenFDA label text when public interaction details are available; otherwise a truthful fallback):
 
 ```bash
-biomcp get drug vemurafenib interactions
+biomcp get drug warfarin interactions
 ```
 
 CIViC evidence and Drugs@FDA approvals:

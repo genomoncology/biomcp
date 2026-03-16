@@ -44,6 +44,6 @@ install, and maintained at biomcp.org.
 
 ## Repo Analysis Sources
 
-- `analysis/functional/overview.md` — what BioMCP does and who it serves
-- `analysis/technical/overview.md` — system shape, build, runtime constraints
-- `analysis/ux/cli-reference.md` — command grammar and demo workflows
+- `design/functional/overview.md` — what BioMCP does and who it serves
+- `design/technical/overview.md` — system shape, build, runtime constraints
+- `design/ux/cli-reference.md` — command grammar and demo workflows

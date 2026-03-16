@@ -101,4 +101,4 @@ shared deployment contract.
 - Some sources are optional or key-gated
 - OncoKB demo responses can be limited or empty for expected cases
 - PubTator paging constraints still apply
-- Broader technical context lives in `analysis/technical/overview.md`
+- Broader technical context lives in `design/technical/overview.md`

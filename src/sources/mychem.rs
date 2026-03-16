@@ -11,7 +11,7 @@ const MYCHEM_API: &str = "mychem.info";
 const MYCHEM_BASE_ENV: &str = "BIOMCP_MYCHEM_BASE";
 
 pub(crate) const MYCHEM_FIELDS_SEARCH: &str = "_id,_score,drugbank.id,drugbank.name,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,gtopdb.name,gtopdb.interaction_targets.symbol,unii.unii,unii.display_name,unii.substance_type,ndc.nonproprietaryname,ndc.pharm_classes,chebi.name,openfda.generic_name,openfda.brand_name";
-pub(crate) const MYCHEM_FIELDS_GET: &str = "_id,_score,drugbank.id,drugbank.name,drugbank.synonyms,drugbank.drug_interactions,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,gtopdb.name,gtopdb.interaction_targets.symbol,gtopdb.interaction_targets.name,drugcentral.drug_use.indication.concept_name,drugcentral.approval.agency,drugcentral.approval.date,ndc.nonproprietaryname,ndc.pharm_classes,unii.unii,unii.display_name,unii.substance_type,chebi.name";
+pub(crate) const MYCHEM_FIELDS_GET: &str = "_id,_score,drugbank.id,drugbank.name,drugbank.synonyms,drugbank.drug_interactions,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,gtopdb.name,gtopdb.interaction_targets.symbol,drugcentral.drug_use.indication.concept_name,drugcentral.approval.agency,drugcentral.approval.date,ndc.nonproprietaryname,ndc.pharm_classes,unii.unii,unii.display_name,unii.substance_type,chebi.name";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -238,8 +238,6 @@ pub struct MyChemGtoPdb {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyChemGtoPdbTarget {
     pub symbol: Option<String>,
-    #[allow(dead_code)]
-    pub name: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

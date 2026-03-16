@@ -192,7 +192,7 @@ replacing the real BioMCP markdown output.
 
 ## Operator Notes
 
-Runtime operator docs now live in `analysis/technical/staging-demo.md` and
+Runtime operator docs now live in `design/technical/staging-demo.md` and
 `RUN.md`. Use those documents for the shared target, promotion contract, and
 exact release-binary run/smoke commands, then use `scripts/` for the source
 probe inventory and demo helpers.

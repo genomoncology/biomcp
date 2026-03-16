@@ -756,7 +756,9 @@ See also: biomcp list variant")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp search drug pembrolizumab
-  biomcp search drug -q \"kinase inhibitor\" --target EGFR --atc L01 --pharm-class kinase --interactions warfarin --limit 5
+  biomcp search drug -q \"kinase inhibitor\" --target EGFR --atc L01 --pharm-class kinase --limit 5
+
+Note: --interactions is currently unavailable from the public data sources BioMCP uses.
 
 See also: biomcp list drug")]
     Drug {
@@ -788,7 +790,7 @@ See also: biomcp list drug")]
         /// Filter by pharmacologic class
         #[arg(long = "pharm-class")]
         pharm_class: Option<String>,
-        /// Filter by interaction partner drug name
+        /// Filter by interaction partner drug name (currently unavailable from public data sources)
         #[arg(long)]
         interactions: Option<String>,
 
@@ -7325,6 +7327,7 @@ mod next_commands_json_property {
             targets: vec!["EGFR".to_string()],
             indications: Vec::new(),
             interactions: Vec::new(),
+            interaction_text: None,
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             label: None,
