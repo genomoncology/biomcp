@@ -133,6 +133,7 @@ mod tests {
             targets: vec!["EGFR".to_string()],
             indications: vec!["Non-small cell lung cancer".to_string()],
             interactions: Vec::new(),
+            interaction_text: None,
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             label: None,

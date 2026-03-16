@@ -141,7 +141,7 @@ def test_streamable_http_demo_script_is_runnable_repo_artifact() -> None:
 
 
 def test_release_overview_describes_streamable_http_workflow_demo() -> None:
-    overview = _read("analysis/technical/overview.md")
+    overview = _read("design/technical/overview.md")
 
     assert "standalone Streamable HTTP demo client" in overview
     assert "three-step" in overview
@@ -165,7 +165,7 @@ def test_latest_changelog_documents_mcp_tool_rename() -> None:
 
 
 def test_release_overview_mentions_v0_8_15_current_version() -> None:
-    overview = _read("analysis/technical/overview.md")
+    overview = _read("design/technical/overview.md")
 
     assert "**Current version:** 0.8.15 (as of 2026-03-11)" in overview
 

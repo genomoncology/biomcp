@@ -1802,6 +1802,7 @@ pub fn drug_markdown(drug: &Drug, requested_sections: &[String]) -> Result<Strin
         targets => &drug.targets,
         indications => &drug.indications,
         interactions => &drug.interactions,
+        interaction_text => &drug.interaction_text,
         pharm_classes => &drug.pharm_classes,
         label => &drug.label,
         shortage => &drug.shortage,
@@ -2962,6 +2963,7 @@ mod tests {
             targets: Vec::new(),
             indications: Vec::new(),
             interactions: Vec::new(),
+            interaction_text: None,
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             label: None,
@@ -2975,6 +2977,69 @@ mod tests {
             "ChEMBL",
             "https://www.ebi.ac.uk/chembl/compound_report_card/CHEMBL3353410".to_string()
         )));
+    }
+
+    #[test]
+    fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback() {
+        let drug = Drug {
+            name: "warfarin".to_string(),
+            drugbank_id: Some("DB00682".to_string()),
+            chembl_id: None,
+            unii: None,
+            drug_type: None,
+            mechanism: None,
+            mechanisms: Vec::new(),
+            approval_date: None,
+            brand_names: Vec::new(),
+            route: None,
+            targets: Vec::new(),
+            indications: Vec::new(),
+            interactions: Vec::new(),
+            interaction_text: Some(
+                "DRUG INTERACTIONS\n\nWarfarin interacts with aspirin.".to_string(),
+            ),
+            pharm_classes: Vec::new(),
+            top_adverse_events: Vec::new(),
+            label: None,
+            shortage: None,
+            approvals: None,
+            civic: None,
+        };
+
+        let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
+        assert!(markdown.contains("## Interactions"));
+        assert!(markdown.contains("DRUG INTERACTIONS"));
+        assert!(!markdown.contains("No known drug-drug interactions found."));
+    }
+
+    #[test]
+    fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
+        let drug = Drug {
+            name: "pembrolizumab".to_string(),
+            drugbank_id: Some("DB09037".to_string()),
+            chembl_id: None,
+            unii: None,
+            drug_type: None,
+            mechanism: None,
+            mechanisms: Vec::new(),
+            approval_date: None,
+            brand_names: Vec::new(),
+            route: None,
+            targets: Vec::new(),
+            indications: Vec::new(),
+            interactions: Vec::new(),
+            interaction_text: None,
+            pharm_classes: Vec::new(),
+            top_adverse_events: Vec::new(),
+            label: None,
+            shortage: None,
+            approvals: None,
+            civic: None,
+        };
+
+        let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
+        assert!(markdown.contains("Interaction details not available from public sources."));
+        assert!(!markdown.contains("No known drug-drug interactions found."));
     }
 
     #[test]

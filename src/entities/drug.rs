@@ -42,6 +42,8 @@ pub struct Drug {
     pub indications: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub interactions: Vec<DrugInteraction>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interaction_text: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pharm_classes: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -400,14 +402,15 @@ fn build_mychem_query(filters: &DrugSearchFilters) -> Result<String, BioMcpError
         ));
     }
 
-    if let Some(interactions) = filters
+    if filters
         .interactions
         .as_deref()
         .map(str::trim)
-        .filter(|v| !v.is_empty())
+        .is_some_and(|v| !v.is_empty())
     {
-        let escaped = MyChemClient::escape_query_value(interactions);
-        terms.push(format!("drugbank.drug_interactions.name:\"{escaped}\""));
+        return Err(BioMcpError::InvalidArgument(
+            "Interaction-partner drug search is unavailable from the public data sources currently used by BioMCP.".into(),
+        ));
     }
 
     if terms.is_empty() {
@@ -740,6 +743,17 @@ fn extract_inline_label(label_response: &serde_json::Value) -> Option<DrugLabel>
         warnings,
         dosage,
     })
+}
+
+fn extract_interaction_text_from_label(label_response: &serde_json::Value) -> Option<String> {
+    const LABEL_MAX_CHARS: usize = 2000;
+
+    let top = label_response
+        .get("results")
+        .and_then(|v| v.as_array())
+        .and_then(|v| v.first())?;
+
+    label_text(top.get("drug_interactions")).map(|v| truncate_with_note(&v, LABEL_MAX_CHARS))
 }
 
 fn extract_openfda_values(label_response: &serde_json::Value, key: &str) -> Vec<String> {
@@ -1367,6 +1381,9 @@ pub async fn get(name: &str, sections: &[String]) -> Result<Drug, BioMcpError> {
         if section_flags.include_label {
             drug.label = extract_inline_label(label_response);
         }
+        if section_flags.include_interactions {
+            drug.interaction_text = extract_interaction_text_from_label(label_response);
+        }
     }
 
     if section_flags.include_shortage {
@@ -1383,6 +1400,7 @@ pub async fn get(name: &str, sections: &[String]) -> Result<Drug, BioMcpError> {
 
     if !section_flags.include_interactions {
         drug.interactions.clear();
+        drug.interaction_text = None;
     }
     if section_flags.include_civic {
         add_civic_section(&mut drug).await;
@@ -1488,6 +1506,53 @@ mod tests {
 
         let row = search_result_from_openfda_label_response(&response).expect("row");
         assert_eq!(row.name, "pembrolizumab");
+    }
+
+    #[test]
+    fn extract_interaction_text_from_label_uses_openfda_drug_interactions() {
+        let response = serde_json::json!({
+            "results": [{
+                "drug_interactions": [
+                    "DRUG INTERACTIONS",
+                    "Warfarin has documented interactions with aspirin."
+                ]
+            }]
+        });
+
+        let text = extract_interaction_text_from_label(&response).expect("interaction text");
+        assert!(text.contains("DRUG INTERACTIONS"));
+        assert!(text.contains("Warfarin has documented interactions with aspirin."));
+    }
+
+    #[test]
+    fn extract_interaction_text_from_label_returns_none_when_missing() {
+        let response = serde_json::json!({
+            "results": [{
+                "warnings_and_cautions": ["No interaction section present"]
+            }]
+        });
+
+        assert_eq!(extract_interaction_text_from_label(&response), None);
+    }
+
+    #[test]
+    fn build_mychem_query_rejects_public_interaction_filter() {
+        let filters = DrugSearchFilters {
+            query: None,
+            target: None,
+            indication: None,
+            mechanism: None,
+            drug_type: None,
+            atc: None,
+            pharm_class: None,
+            interactions: Some("warfarin".into()),
+        };
+
+        let err = build_mychem_query(&filters).unwrap_err();
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains(
+            "Interaction-partner drug search is unavailable from the public data sources"
+        ));
     }
 
     #[test]

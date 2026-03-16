@@ -79,14 +79,14 @@ def test_strategy_and_frontier_capture_upstream_planning_contract() -> None:
     assert "# BioMCP Frontier" in frontier
     assert "## G002" in frontier
     assert "## G003" in frontier
-    assert "analysis/functional/overview.md" in frontier
-    assert "analysis/technical/overview.md" in frontier
-    assert "analysis/ux/cli-reference.md" in frontier
+    assert "design/functional/overview.md" in frontier
+    assert "design/technical/overview.md" in frontier
+    assert "design/ux/cli-reference.md" in frontier
     assert "Harvest Guidance" in frontier
 
 
 def test_functional_overview_preserves_readme_surface_and_study_family() -> None:
-    functional = _read_repo("analysis/functional/overview.md")
+    functional = _read_repo("design/functional/overview.md")
 
     assert "# BioMCP Functional Overview" in functional
     assert "## Entity Surface" in functional
@@ -124,8 +124,8 @@ def test_functional_overview_preserves_readme_surface_and_study_family() -> None
 
 
 def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> None:
-    technical = _read_repo("analysis/technical/overview.md")
-    ux = _read_repo("analysis/ux/cli-reference.md")
+    technical = _read_repo("design/technical/overview.md")
+    ux = _read_repo("design/ux/cli-reference.md")
 
     assert "CI (`.github/workflows/ci.yml`) runs five parallel jobs" in technical
     assert "`check` (`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`)" in technical
@@ -289,9 +289,9 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
 
 
 def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
-    staging_demo = _read_repo("analysis/technical/staging-demo.md")
+    staging_demo = _read_repo("design/technical/staging-demo.md")
     runbook = _read_repo("RUN.md")
-    technical = _read_repo("analysis/technical/overview.md")
+    technical = _read_repo("design/technical/overview.md")
     scripts_readme = _read_repo("scripts/README.md")
     source_contracts = _read_repo("scripts/source-contracts.md")
     contract_smoke = _read_repo("scripts/contract-smoke.sh")
@@ -338,7 +338,7 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "docs/user-guide/cli-reference.md" in runbook
     assert "docs/reference/mcp-server.md" in runbook
 
-    assert "analysis/technical/staging-demo.md" in technical
+    assert "design/technical/staging-demo.md" in technical
     assert "RUN.md" in technical
     assert "S2_API_KEY" in technical
     assert "Semantic Scholar article enrichment/navigation" in technical

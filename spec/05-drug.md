@@ -42,6 +42,28 @@ echo "$out" | mustmatch like "## Targets"
 echo "$out" | mustmatch like "PDCD1"
 ```
 
+## Drug Interactions With Public Label Text
+
+The public MyChem payload does not reliably expose structured DrugBank interaction rows, so BioMCP should render OpenFDA label text when it exists instead of claiming no interactions are known.
+
+```bash
+out="$(biomcp get drug Warfarin interactions)"
+echo "$out" | mustmatch like "## Interactions"
+echo "$out" | mustmatch like "DRUG INTERACTIONS"
+echo "$out" | mustmatch not like "No known drug-drug interactions found."
+```
+
+## Drug Interactions Truthful Fallback
+
+When public label text is also unavailable, the interactions section must say so explicitly rather than implying the drug has no interactions.
+
+```bash
+out="$(biomcp get drug pembrolizumab interactions)"
+echo "$out" | mustmatch like "## Interactions"
+echo "$out" | mustmatch like "Interaction details not available from public sources."
+echo "$out" | mustmatch not like "No known drug-drug interactions found."
+```
+
 ## Drug to Trials
 
 Intervention-based helper search should return the shared trial table layout. We also assert query echo to confirm the pivot preserved the drug token.

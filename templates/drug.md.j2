@@ -132,8 +132,10 @@ No CIViC records returned for this drug query.
 {% for row in interactions -%}
 | {{ row.drug }} | {{ row.description or "-" }} |
 {% endfor -%}
+{% elif interaction_text -%}
+{{ interaction_text }}
 {% else -%}
-No known drug-drug interactions found.
+Interaction details not available from public sources.
 {% endif -%}
 {% endif -%}
 {% if sections_block %}{{ sections_block }}

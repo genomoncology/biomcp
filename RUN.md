@@ -4,7 +4,7 @@
 
 This is the exact operator guide for the merged-main release binary. For the
 shared target, owned artifacts, and promotion contract, see
-`analysis/technical/staging-demo.md`.
+`design/technical/staging-demo.md`.
 
 ## Prerequisites
 
@@ -107,7 +107,7 @@ BIOMCP_BIN=./target/release/biomcp ./scripts/geneagent-demo.sh
 ./target/release/biomcp article citations 22663011 --limit 3
 ```
 
-Use `analysis/technical/staging-demo.md` for the promotion contract and
+Use `design/technical/staging-demo.md` for the promotion contract and
 `scripts/source-contracts.md` for the deeper source probe inventory.
 
 ## MCP Contract Verification
