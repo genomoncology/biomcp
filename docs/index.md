@@ -68,7 +68,8 @@ cargo build --release --locked
 ```bash
 uv tool install biomcp-cli
 biomcp health --apis-only
-biomcp search all --gene BRAF --disease melanoma
+biomcp list gene
+biomcp search all --gene BRAF --disease melanoma  # unified cross-entity discovery
 biomcp get gene BRAF pathways druggability
 ```
 
