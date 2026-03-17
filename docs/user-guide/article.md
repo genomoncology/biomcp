@@ -97,7 +97,9 @@ biomcp article recommendations 22663011 --limit 3   # Semantic Scholar related p
 
 These Semantic Scholar helper commands require `S2_API_KEY`. Without the key,
 ordinary `get article` still works, but the explicit helper commands return an
-API-key-required error.
+API-key-required error. Citations usually work broadly; references and
+recommendations can be sparse or empty for paywalled papers because of
+publisher elision in the Semantic Scholar graph.
 
 ## Caching behavior
 
@@ -109,6 +111,10 @@ This avoids repeated large payload downloads during iterative workflows.
 ```bash
 biomcp --json get article 22663011
 ```
+
+JSON article responses include `_meta.next_commands`, so article workflows can
+promote the next likely pivots without scraping markdown. JSON-capable article
+follow-ups preserve the same next-step guidance shape.
 
 ## Practical tips
 

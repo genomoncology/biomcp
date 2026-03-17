@@ -92,6 +92,7 @@ The same pattern extends beyond the main four families:
 biomcp pathway drugs R-HSA-5673001 --limit 5
 biomcp protein structures P15056
 biomcp article entities 22663011
+biomcp article references 22663011 --limit 3
 ```
 
 Use these when you already have the pathway ID, protein accession, or article

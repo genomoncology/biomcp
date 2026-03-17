@@ -12,9 +12,15 @@ def _read(path: str) -> str:
 def test_public_skill_docs_match_current_cli_contract() -> None:
     readme = _read("README.md")
     docs_index = _read("docs/index.md")
+    skill_file = _read("skills/SKILL.md")
     skills = _read("docs/getting-started/skills.md")
     reproduce = _read("docs/how-to/reproduce-papers.md")
     cli_reference = _read("docs/user-guide/cli-reference.md")
+    article_guide = _read("docs/user-guide/article.md")
+    data_sources = _read("docs/reference/data-sources.md")
+    quick_reference = _read("docs/reference/quick-reference.md")
+    pivot_guide = _read("docs/how-to/cross-entity-pivots.md")
+    blog = _read("docs/blog/biomcp-kuva-charts.md")
     mcp_server = _read("docs/reference/mcp-server.md")
     claude_desktop = _read("docs/getting-started/claude-desktop.md")
 
@@ -70,3 +76,29 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "one resource per installed skill" not in claude_desktop
     assert "biomcp://help" in claude_desktop
     assert "do not discover a browsable `biomcp://skill/<slug>` catalog" in claude_desktop
+
+    assert "biomcp article references 22663011 --limit 3" in skill_file
+    assert "S2_API_KEY" in skill_file
+    assert "publisher elision" in skill_file
+    assert "biomcp enrich BRAF,KRAS,NRAS --limit 10" in skill_file
+    assert "biomcp batch gene BRAF,TP53 --sections pathways,interactions" in skill_file
+    assert "biomcp chart" in skill_file
+    assert "--theme dark" in skill_file
+    assert "--palette wong" in skill_file
+    assert "_meta.next_commands" in skill_file
+    assert "FDA label interaction text" in skill_file
+
+    assert "publisher elision" in article_guide
+    assert "next_commands" in article_guide
+
+    assert "biomcp enrich` uses **g:Profiler**" in data_sources
+    assert "Gene enrichment sections" in data_sources
+    assert "Enrichr" in data_sources
+
+    assert "biomcp article references 22663011 --limit 3" in quick_reference
+    assert "biomcp article references 22663011 --limit 3" in pivot_guide
+
+    assert "docs/blog/images/tp53-mutation-bar.svg" in blog
+    assert "![TP53 mutation classes as a bar chart](images/tp53-mutation-bar.svg)" in blog
+    assert "![Terminal screenshot placeholder: mutation-bar-terminal.png](images/mutation-bar-terminal.png)" in blog
+    assert "![Terminal screenshot placeholder: ridgeline-terminal.png](images/ridgeline-terminal.png)" in blog

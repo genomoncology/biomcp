@@ -102,6 +102,7 @@ biomcp pathway trials R-HSA-5673001 --limit 3
 biomcp protein structures P15056
 biomcp article entities 22663011
 biomcp article citations 22663011 --limit 3
+biomcp article references 22663011 --limit 3
 biomcp article recommendations 22663011 --limit 3
 ```
 

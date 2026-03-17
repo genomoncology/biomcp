@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.16 — 2026-03-17
+
+- Adopted the shared `bin/lint` script and wired `make lint` / `make check`
+  to the March repo convention for Rust repos.
+- Refreshed the README, homepage, CLI reference, and helper docs so the public
+  release docs match the current BioMCP command surface.
+- Expanded `skills/SKILL.md` for article graph helpers, `enrich`, `batch`,
+  chart discovery, chart flags, and updated drug interaction guidance.
+- Updated the Kuva chart blog post with checked-in SVG outputs for all nine
+  worked examples plus placeholder references for terminal screenshots.
+
 ## 0.8.15 — 2026-03-11
 
 - Fixed the planning-docs CI path regression so release validation uses the

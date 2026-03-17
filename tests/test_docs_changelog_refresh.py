@@ -164,10 +164,10 @@ def test_latest_changelog_documents_mcp_tool_rename() -> None:
     assert "`biomcp`" in latest_release_block
 
 
-def test_release_overview_mentions_v0_8_15_current_version() -> None:
+def test_release_overview_mentions_v0_8_16_current_version() -> None:
     overview = _read("design/technical/overview.md")
 
-    assert "**Current version:** 0.8.15 (as of 2026-03-11)" in overview
+    assert "**Current version:** 0.8.16 (as of 2026-03-17)" in overview
 
 
 def test_gene_guide_includes_new_sections_and_positional_search() -> None:

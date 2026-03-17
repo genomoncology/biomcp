@@ -1,7 +1,6 @@
 # BioMCP
 
-BioMCP is a single-binary CLI and MCP server for querying biomedical databases.
-One command grammar, compact markdown output, 12 remote entities across 15+ data sources, plus local study analytics.
+BioMCP gives researchers, clinicians, and agents one command grammar across biomedical APIs that usually require separate search habits, identifiers, and output formats. It keeps results compact and evidence-oriented so you can move from discovery to detail without rewriting the workflow for each source. One command grammar, compact markdown output, 12 remote entities across 15+ data sources, plus local study analytics.
 
 ## Install
 
@@ -69,16 +68,18 @@ cargo build --release --locked
 
 ## Quick start
 
+First useful query in under 30 seconds:
+
 ```bash
-biomcp health --apis-only            # verify API connectivity
-biomcp list                          # show all entities and commands
-biomcp list gene                     # show gene-specific filters and examples
-biomcp search all --gene BRAF --disease melanoma  # unified cross-entity discovery
+uv tool install biomcp-cli
+biomcp health --apis-only
+biomcp search all --gene BRAF --disease melanoma
+biomcp get gene BRAF pathways druggability
 ```
 
 ## Command grammar
 
-```
+```text
 search <entity> [filters]    → discovery
 get <entity> <id> [sections] → focused detail
 <entity> <helper> <id>       → cross-entity pivots
@@ -87,26 +88,34 @@ batch <entity> <id1,id2,...> → parallel gets
 search all [slot filters]    → counts-first cross-entity orientation
 ```
 
+## Feature highlights
+
+- **Federated article search:** `search article` fans out across PubTator3 and Europe PMC, deduplicates by PMID, and can add Semantic Scholar follow-ups when `S2_API_KEY` is set.
+- **Cross-entity pivots:** move directly from a gene, variant, drug, disease, pathway, protein, or article into the next built-in view.
+- **Study analytics and charting:** downloaded studies support query, cohort, survival, compare, and co-occurrence workflows with native terminal or SVG charts.
+- **Citation graphs and article helpers:** `article citations`, `article references`, `article recommendations`, and `article entities` support literature navigation from a known paper.
+- **Gene-set enrichment and batch retrieval:** use `biomcp enrich` for top-level g:Profiler enrichment and `biomcp batch` for up to 10 focused `get` calls in one command.
+
 ## Entities and sources
 
-| Entity | Sources | Example |
-|--------|---------|---------|
-| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, CIViC | `biomcp get gene BRAF pathways` |
-| variant | MyVariant.info, ClinVar, gnomAD, CIViC, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome | `biomcp get variant "BRAF V600E" clinvar` |
-| article | PubMed, PubTator3, Europe PMC, Semantic Scholar (optional) | `biomcp search article -g BRAF --limit 5` |
-| trial | ClinicalTrials.gov, NCI CTS API | `biomcp search trial -c melanoma -s recruiting` |
-| drug | MyChem.info, ChEMBL, OpenTargets, Drugs\@FDA, CIViC | `biomcp get drug pembrolizumab targets` |
-| disease | Monarch Initiative, MONDO, CIViC, OpenTargets | `biomcp get disease "Lynch syndrome" genes` |
-| pathway | Reactome, g:Profiler | `biomcp get pathway R-HSA-5673001 genes` |
-| protein | UniProt, InterPro, STRING, PDB/AlphaFold | `biomcp get protein P15056 domains` |
-| adverse-event | OpenFDA (FAERS, MAUDE, Recalls) | `biomcp search adverse-event -d pembrolizumab` |
+| Entity | Upstream providers used by BioMCP | Example |
+|--------|-----------------------------------|---------|
+| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, DGIdb, ClinGen | `biomcp get gene BRAF pathways` |
+| variant | MyVariant.info, ClinVar, gnomAD fields via MyVariant, CIViC, Cancer Genome Interpreter, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome | `biomcp get variant "BRAF V600E" clinvar` |
+| article | PubMed, PubTator3, Europe PMC, PMC OA, NCBI ID Converter, Semantic Scholar (optional with `S2_API_KEY`) | `biomcp search article -g BRAF --limit 5` |
+| trial | ClinicalTrials.gov API v2, NCI CTS API | `biomcp search trial -c melanoma -s recruiting` |
+| drug | MyChem.info, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA, CIViC | `biomcp get drug pembrolizumab targets` |
+| disease | MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC | `biomcp get disease "Lynch syndrome" genes` |
+| pathway | Reactome, g:Profiler, Enrichr-backed enrichment sections | `biomcp get pathway R-HSA-5673001 genes` |
+| protein | UniProt, InterPro, STRING, PDB, AlphaFold | `biomcp get protein P15056 domains` |
+| adverse-event | OpenFDA FAERS, MAUDE, Recalls | `biomcp search adverse-event --drug pembrolizumab` |
 | pgx | CPIC, PharmGKB | `biomcp get pgx CYP2D6 recommendations` |
 | gwas | GWAS Catalog | `biomcp search gwas --trait "type 2 diabetes"` |
-| phenotype | Monarch Initiative (HPO) | `biomcp search phenotype "HP:0001250"` |
+| phenotype | Monarch Initiative (HPO semantic similarity) | `biomcp search phenotype "HP:0001250"` |
 
 ## Cross-entity helpers
 
-Pivot between related entities without rebuilding filters:
+Pivot between related entities without rebuilding filters.
 
 See the [cross-entity pivot guide](docs/how-to/cross-entity-pivots.md) for when
 to use a helper versus a fresh search.
@@ -129,6 +138,7 @@ biomcp pathway trials R-HSA-5673001
 biomcp protein structures P15056
 biomcp article entities 22663011
 biomcp article citations 22663011 --limit 3
+biomcp article references 22663011 --limit 3
 biomcp article recommendations 22663011 --limit 3
 ```
 
@@ -137,6 +147,9 @@ biomcp article recommendations 22663011 --limit 3
 ```bash
 biomcp enrich BRAF,KRAS,NRAS --limit 10
 ```
+
+Top-level `biomcp enrich` uses **g:Profiler**. Gene enrichment sections inside
+other entity views still reference **Enrichr** where that is the backing source.
 
 ## Sections and progressive disclosure
 
@@ -155,21 +168,28 @@ biomcp get disease "Lynch syndrome" genes phenotypes variants
 biomcp get trial NCT02576665 eligibility locations outcomes
 ```
 
+In JSON mode, `get` responses expose `_meta.next_commands` for the next likely
+follow-ups, and `batch ... --json` returns per-entity objects with the same
+metadata shape.
+
 ## API keys
 
-Most commands work without credentials. Optional keys improve rate limits:
+Most commands work without credentials. Optional keys improve rate limits or
+unlock optional enrichments:
 
 ```bash
-export NCBI_API_KEY="..."      # PubTator, PMC OA, NCBI ID converter
-export S2_API_KEY="..."        # optional Semantic Scholar TLDR/citation graph/recommendations
-export OPENFDA_API_KEY="..."   # OpenFDA rate limits
-export NCI_API_KEY="..."       # NCI CTS trial search (--source nci)
-export ONCOKB_TOKEN="..."      # OncoKB variant helper
+export NCBI_API_KEY="..."        # PubTator, PMC OA, NCBI ID converter
+export S2_API_KEY="..."          # Semantic Scholar TLDR, citations, references, recommendations
+export OPENFDA_API_KEY="..."     # OpenFDA rate limits
+export NCI_API_KEY="..."         # NCI CTS trial search (--source nci)
+export ONCOKB_TOKEN="..."        # OncoKB variant helper
 export ALPHAGENOME_API_KEY="..." # AlphaGenome variant effect prediction
 ```
 
 `search article` still uses PubTator3 + Europe PMC. `S2_API_KEY` only unlocks
 optional article enrichment and explicit Semantic Scholar helper commands.
+References and recommendations can be empty for paywalled papers because of
+publisher elision in Semantic Scholar upstream coverage.
 
 ## Multi-worker deployment
 
@@ -212,8 +232,7 @@ scripts and demos; if it is unset, BioMCP falls back to its default study root.
 ```bash
 export BIOMCP_STUDY_DIR="$HOME/.local/share/biomcp/studies"
 biomcp study download msk_impact_2017
-biomcp study list
-biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
+biomcp study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar --theme dark --palette wong -o docs/blog/images/tp53-mutation-bar.svg
 ```
 
 See the [CLI reference](docs/user-guide/cli-reference.md#local-study-analytics)
