@@ -29,6 +29,7 @@ biomcp search ...
 biomcp get ...
 biomcp enrich <GENE1,GENE2,...> [--limit N]
 biomcp batch <entity> <id1,id2,...> [--sections ...] [--source ...]
+biomcp chart [type]
 biomcp health [--apis-only]
 biomcp list [entity]
 biomcp study list
@@ -236,6 +237,17 @@ biomcp enrich BRAF,KRAS,NRAS --limit 10
 biomcp enrich BRAF,KRAS,NRAS --limit 10 --json
 ```
 
+## Batch mode
+
+Batch is limited to 10 IDs per command.
+
+```bash
+biomcp batch gene BRAF,TP53
+biomcp batch gene BRAF,TP53 --sections pathways,interactions
+biomcp batch trial NCT02576665,NCT03715933 --source nci
+biomcp batch variant "BRAF V600E","KRAS G12D" --json
+```
+
 ## MCP mode
 
 - `biomcp serve` runs the stdio MCP server.
@@ -266,6 +278,19 @@ biomcp pathway articles R-HSA-5673001
 biomcp pathway trials R-HSA-5673001
 biomcp protein structures P15056
 biomcp article entities 22663011
+biomcp article citations 22663011 --limit 3
+biomcp article references 22663011 --limit 3
+biomcp article recommendations 22663011 --limit 3
+```
+
+## Chart reference
+
+Use `biomcp chart` to list chart families and `biomcp chart <type>` for the
+embedded help page for one chart type.
+
+```bash
+biomcp chart
+biomcp chart violin
 ```
 
 ## Local study analytics
@@ -293,6 +318,7 @@ biomcp study list
 biomcp study download --list
 biomcp study download msk_impact_2017
 biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
+biomcp study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar --theme dark --palette wong -o docs/blog/images/tp53-mutation-bar.svg
 biomcp study filter --study brca_tcga_pan_can_atlas_2018 --mutated TP53 --amplified ERBB2 --expression-above ERBB2:1.5
 biomcp study cohort --study brca_tcga_pan_can_atlas_2018 --gene TP53
 biomcp study survival --study brca_tcga_pan_can_atlas_2018 --gene TP53 --endpoint os
@@ -310,12 +336,3 @@ biomcp study co-occurrence --study msk_impact_2017 --genes TP53,KRAS
 - `study cohort`, `study survival`, and `study compare` require `data_mutations.txt` and `data_clinical_sample.txt`.
 - `study survival` also requires `data_clinical_patient.txt` with canonical `{ENDPOINT}_STATUS` and `{ENDPOINT}_MONTHS` columns.
 - Expression workflows require a supported expression matrix file.
-
-## Batch mode
-
-```bash
-biomcp batch gene BRAF,TP53
-biomcp batch gene BRAF,TP53 --sections pathways,interactions
-biomcp batch trial NCT02576665,NCT03715933 --source nci
-biomcp batch variant "BRAF V600E","KRAS G12D" --json
-```

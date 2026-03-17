@@ -63,7 +63,33 @@ biomcp gene articles BRCA1
 biomcp disease trials melanoma
 biomcp drug adverse-events pembrolizumab
 biomcp protein structures P15056
+biomcp article entities 22663011
+biomcp article citations 22663011 --limit 3
+biomcp article references 22663011 --limit 3
+biomcp article recommendations 22663011 --limit 3
 ```
+
+Semantic Scholar note:
+
+- `S2_API_KEY` is required for `get article ... tldr` and the explicit `article citations`, `article references`, and `article recommendations` helpers.
+- Citations generally work broadly.
+- References and recommendations can be sparse or empty for paywalled papers because of publisher elision in the upstream graph.
+
+Top-level enrichment and batch helpers:
+
+```bash
+biomcp enrich BRAF,KRAS,NRAS --limit 10
+biomcp batch gene BRAF,TP53 --sections pathways,interactions
+biomcp batch article 22663011,31452104 --json
+biomcp chart
+biomcp chart bar
+```
+
+Rules:
+
+- `biomcp batch` is limited to 10 IDs per command.
+- `--sections` is supported in batch mode.
+- Use `biomcp chart` or `biomcp chart <type>` to discover chart-capable study command shapes before choosing a visualization.
 
 ## Study-Native cBioPortal Queries
 
@@ -73,13 +99,13 @@ Use the `study` command family for local matrix-level queries on downloaded cBio
 biomcp study download --list
 biomcp study download msk_impact_2017
 biomcp study list
-biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
-biomcp study query --study brca_tcga_pan_can_atlas_2018 --gene ERBB2 --type cna
-biomcp study query --study paad_qcmg_uq_2016 --gene KRAS --type expression
+biomcp study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar --theme dark --palette wong -o docs/blog/images/tp53-mutation-bar.svg
+biomcp study query --study brca_tcga_pan_can_atlas_2018 --gene ERBB2 --type cna --chart bar -o docs/blog/images/erbb2-cna-bar.svg
+biomcp study query --study paad_qcmg_uq_2016 --gene KRAS --type expression --chart histogram --theme minimal -o docs/blog/images/kras-expression-histogram.svg
 biomcp study cohort --study brca_tcga_pan_can_atlas_2018 --gene TP53
-biomcp study survival --study brca_tcga_pan_can_atlas_2018 --gene TP53 --endpoint os
+biomcp study survival --study brca_tcga_pan_can_atlas_2018 --gene TP53 --endpoint os --chart bar -o docs/blog/images/tp53-survival-bar.svg
 biomcp study survival --study brca_tcga_pan_can_atlas_2018 --gene TP53 --endpoint dfs
-biomcp study compare --study brca_tcga_pan_can_atlas_2018 --gene TP53 --type expression --target ERBB2
+biomcp study compare --study brca_tcga_pan_can_atlas_2018 --gene TP53 --type expression --target ERBB2 --chart violin --theme dark --palette wong -o docs/blog/images/erbb2-by-tp53-violin.svg
 biomcp study filter --study brca_tcga_pan_can_atlas_2018 --mutated TP53 --amplified ERBB2 --expression-above ERBB2:1.5
 biomcp study co-occurrence --study msk_impact_2017 --genes TP53,KRAS
 ```
@@ -164,6 +190,8 @@ Quick safety summary:
 biomcp get drug <name> label interactions approvals
 biomcp drug adverse-events <name>
 ```
+
+`get drug <name> interactions` returns structured interactions when they are available; otherwise BioMCP falls back to FDA label interaction text, and if that is absent it uses the best truthful public-data fallback instead of inventing a structured table.
 
 Filtered FDA adverse-event check:
 
@@ -253,6 +281,34 @@ biomcp --json search trial -c melanoma --limit 5
 ```
 
 Get commands return the entity fields plus `_meta` (`evidence_urls`, `next_commands`).
+That means `biomcp --json get ...` exposes `_meta.next_commands` directly, and
+article workflows surface next-step suggestions in JSON-capable outputs.
+`biomcp --json batch ...` returns per-entity objects with the same `_meta`
+shape so you can preserve evidence URLs and `_meta.next_commands` while fanning
+out across multiple IDs.
+Search commands return:
+
+```json
+{
+  "pagination": {
+    "offset": 0,
+    "limit": 5,
+    "returned": 5,
+    "total": null,
+    "has_more": true,
+    "next_page_token": null
+  },
+  "count": 5,
+  "results": []
+}
+```
+
+JSON-processing references in `skills/`:
+- `schemas/` - JSON schemas for each entity type (`gene`, `variant`, `trial`, `article`, `drug`, `disease`, `pathway`)
+- `examples/` - paired `.json` and `.txt` example outputs for common commands
+- `jq-examples.md` - jq one-liners for extracting common fields from JSON output
+n fields from JSON output
+ommands return the entity fields plus `_meta` (`evidence_urls`, `next_commands`).
 Search commands return:
 
 ```json

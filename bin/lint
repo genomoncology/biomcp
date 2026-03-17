@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+set -u
+
+status=0
+
+fail() {
+  status=1
+  printf '[FAIL] %s\n' "$1"
+}
+
+pass() {
+  printf '[PASS] %s\n' "$1"
+}
+
+skip() {
+  printf '[SKIP] %s\n' "$1"
+}
+
+run_required() {
+  local label="$1"
+  shift
+
+  if "$@"; then
+    pass "$label"
+  else
+    fail "$label"
+  fi
+}
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  printf '[FAIL] git worktree detection\n' >&2
+  exit 1
+}
+
+if [ "$PWD" != "$repo_root" ]; then
+  printf '[FAIL] bin/lint must run from the repo root: %s\n' "$repo_root" >&2
+  exit 1
+fi
+
+report_credential_matches() {
+  local regex="$1"
+  local output
+
+  output="$(git grep -nI -E "$regex" -- . ':!tests/test_lint.py' 2>/dev/null || true)"
+  if [ -n "$output" ]; then
+    if [ "${credential_matches:-0}" -eq 0 ]; then
+      printf 'Credential-like patterns found in tracked files:\n'
+    fi
+    printf '%s\n' "$output"
+    credential_matches=1
+  fi
+}
+
+check_credentials() {
+  credential_matches=0
+  report_credential_matches "postgres://[^[:space:]\"']+:[^[:space:]\"']+@"
+  report_credential_matches "(^|[^A-Za-z0-9_])DSN[[:space:]]*=[[:space:]]*[\"']?[^$\"'[:space:]][^[:space:]]*"
+  report_credential_matches "(^|[^A-Za-z0-9_])(API_KEY|SECRET_KEY|API_SECRET|ACCESS_KEY)[[:space:]]*=[[:space:]]*[\"']?[A-Za-z0-9][^[:space:]]*"
+  [ "$credential_matches" -eq 0 ]
+}
+
+is_tbd_target() {
+  case "$1" in
+    tests/fixtures/*|testdata/*|spec/fixtures/*)
+      return 1
+      ;;
+    Makefile|Dockerfile|*.py|*.sh|*.bash|*.zsh|*.rs|*.zig|*.js|*.ts|*.tsx|*.jsx)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+comment_pattern_for() {
+  case "$1" in
+    *.py|*.sh|*.bash|*.zsh|Makefile|Dockerfile)
+      printf '^[[:space:]]*#'
+      ;;
+    *.rs|*.zig|*.js|*.ts|*.tsx|*.jsx)
+      printf '^[[:space:]]*//'
+      ;;
+    *)
+      printf '^$'
+      ;;
+  esac
+}
+
+check_tbd() {
+  local found=0
+  local file
+
+  while IFS= read -r file; do
+    is_tbd_target "$file" || continue
+    local comment_re
+    comment_re="$(comment_pattern_for "$file")"
+
+    while IFS=: read -r line_no line_text; do
+      [ -n "$line_no" ] || continue
+      if printf '%s\n' "$line_text" | grep -Eq "$comment_re"; then
+        continue
+      fi
+      if printf '%s\n' "$line_text" | grep -Eq '^[[:space:]]*--'; then
+        continue
+      fi
+      if [ "$found" -eq 0 ]; then
+        printf 'TBD markers found in shipped code:\n'
+      fi
+      printf '%s:%s:%s\n' "$file" "$line_no" "$line_text"
+      found=1
+    done < <(grep -n 'TBD' "$file" || true)
+  done < <(git ls-files -- . ':!tests/test_lint.py')
+
+  [ "$found" -eq 0 ]
+}
+
+check_pycache() {
+  local found=0
+  local file
+
+  while IFS= read -r file; do
+    [ -n "$file" ] || continue
+    if [ "$found" -eq 0 ]; then
+      printf 'Tracked __pycache__ paths found (add __pycache__/ to .gitignore):\n'
+    fi
+    printf '%s\n' "$file"
+    found=1
+  done < <(git ls-files | grep '/__pycache__/' || true)
+
+  [ "$found" -eq 0 ]
+}
+
+has_tracked_files() {
+  git ls-files -- "$1" | grep -q .
+}
+
+check_credentials && pass 'credential scan' || fail 'credential scan'
+check_tbd && pass 'TBD scan' || fail 'TBD scan'
+check_pycache && pass 'stale __pycache__ scan' || fail 'stale __pycache__ scan'
+
+if has_tracked_files '*.py'; then
+  if command -v ruff >/dev/null 2>&1; then
+    run_required 'Python lint (ruff check .)' ruff check .
+  else
+    skip 'Python lint (ruff not installed)'
+  fi
+else
+  skip 'Python lint (no tracked Python files)'
+fi
+
+if [ -f build.zig ] || has_tracked_files '*.zig'; then
+  run_required 'Zig lint (zig fmt --check .)' zig fmt --check .
+else
+  skip 'Zig lint (not detected)'
+fi
+
+if [ -f Cargo.toml ]; then
+  run_required 'Rust lint (cargo fmt --check)' cargo fmt --check
+  run_required 'Rust lint (cargo clippy -- -D warnings)' cargo clippy -- -D warnings
+else
+  skip 'Rust lint (not detected)'
+fi
+
+if [ -f package.json ]; then
+  run_required 'JS/TS lint (npm run lint --if-present)' npm run lint --if-present
+else
+  skip 'JS/TS lint (not detected)'
+fi
+
+exit "$status"
