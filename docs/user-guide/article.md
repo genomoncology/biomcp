@@ -74,6 +74,9 @@ Full text section:
 biomcp get article 22663011 fulltext
 ```
 
+This prints a local `Saved to:` path for cached full-text Markdown when PMC
+full text is available.
+
 Annotation section:
 
 ```bash

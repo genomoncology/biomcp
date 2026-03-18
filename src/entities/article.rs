@@ -287,6 +287,7 @@ const FEDERATED_PAGE_SIZE_CAP: usize = if EUROPE_PMC_PAGE_SIZE < PUBTATOR_PAGE_S
     PUBTATOR_PAGE_SIZE
 };
 const MAX_FEDERATED_FETCH_RESULTS: usize = MAX_PAGE_FETCHES * FEDERATED_PAGE_SIZE_CAP;
+const FULLTEXT_CACHE_VERSION: &str = "jats-v1";
 const INVALID_ARTICLE_ID_MSG: &str = "\
 Unsupported identifier format. BioMCP resolves PMID (digits only, e.g., 22663011), \
 PMCID (starts with PMC, e.g., PMC9984800), and DOI (starts with 10., \
@@ -385,6 +386,19 @@ fn parse_arxiv_id(id: &str) -> Option<String> {
         return None;
     }
     Some(format!("ARXIV:{rest}"))
+}
+
+fn fulltext_cache_key(id: &str) -> String {
+    format!("article-fulltext-{FULLTEXT_CACHE_VERSION}:{id}")
+}
+
+async fn render_fulltext_xml(xml: String) -> Result<String, BioMcpError> {
+    tokio::task::spawn_blocking(move || transform::article::extract_text_from_xml(&xml))
+        .await
+        .map_err(|err| BioMcpError::Api {
+            api: "article".to_string(),
+            message: format!("Full text render worker failed: {err}"),
+        })
 }
 
 fn is_semantic_scholar_paper_id(id: &str) -> bool {
@@ -1579,14 +1593,14 @@ pub async fn get(id: &str, sections: &[String]) -> Result<Article, BioMcpError> 
         }
 
         if let Some(xml) = xml {
-            let text = transform::article::extract_text_from_xml(&xml);
+            let text = render_fulltext_xml(xml).await?;
             let key = article
                 .pmid
                 .as_deref()
                 .or(article.doi.as_deref())
                 .or(article.pmcid.as_deref())
                 .unwrap_or(id);
-            let path = download::save_atomic(key, &text).await?;
+            let path = download::save_atomic(&fulltext_cache_key(key), &text).await?;
             article.full_text_path = Some(path);
             article.full_text_note = None;
         } else if let Some(err) = full_text_err {
@@ -1752,6 +1766,13 @@ mod tests {
     #[test]
     fn article_section_names_include_tldr() {
         assert!(ARTICLE_SECTION_NAMES.contains(&"tldr"));
+    }
+
+    #[test]
+    fn fulltext_cache_key_is_versioned() {
+        let key = fulltext_cache_key("22663011");
+        assert!(key.starts_with("article-fulltext-jats-v1:"));
+        assert!(key.ends_with("22663011"));
     }
 
     #[test]
