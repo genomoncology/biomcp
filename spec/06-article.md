@@ -53,6 +53,31 @@ echo "$out" | mustmatch like "## PubTator Annotations"
 echo "$out" | mustmatch like "Genes:"
 ```
 
+## Article Full Text Saved Markdown
+
+Full text remains a path-based contract on stdout. The proof needs to confirm
+that BioMCP still prints `Saved to:` while the cached file now contains
+structured Markdown from PMC/JATS instead of flattened XML.
+
+```bash
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+out="$(TMPDIR="$tmpdir" biomcp get article 27083046 fulltext)"
+echo "$out" | mustmatch like "## Full Text"
+echo "$out" | mustmatch like "Saved to:"
+path="$(printf '%s\n' "$out" | sed -n 's/^Saved to: //p' | head -n1)"
+test -n "$path"
+test -f "$path"
+saved="$(cat "$path")"
+echo "$saved" | mustmatch like "# Synaptotagmin-1 C2B domain interacts simultaneously"
+echo "$saved" | mustmatch like "## Abstract"
+echo "$saved" | mustmatch like "## Introduction"
+echo "$saved" | mustmatch like "## References"
+echo "$saved" | mustmatch like "Zhou et al., 2015"
+echo "$saved" | mustmatch not like "Creative Commons Attribution License"
+echo "$saved" | mustmatch not like "eLife Sciences Publications"
+```
+
 ## Article to Entities
 
 `article entities` exposes actionable next-command pivots by entity class. We check top-level heading and genes subsection marker.

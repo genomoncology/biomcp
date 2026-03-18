@@ -53,6 +53,7 @@ md5 = "0.7"
 # Parsing
 regex = "1"
 csv = "1"
+roxmltree = "0.20"
 
 # MCP
 rmcp = { version = "1.1.1", features = ["server", "transport-io", "transport-streamable-http-server"] }

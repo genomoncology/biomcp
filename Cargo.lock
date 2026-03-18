@@ -317,6 +317,7 @@ dependencies = [
  "reqwest-middleware",
  "reqwest-retry",
  "rmcp",
+ "roxmltree",
  "rust-embed",
  "semver",
  "serde",
