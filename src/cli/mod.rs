@@ -958,7 +958,7 @@ See also: biomcp list gene")]
     Gene {
         /// Gene symbol (e.g., BRAF, TP53, EGFR)
         symbol: String,
-        /// Sections to include (pathways, ontology, diseases, protein, go, interactions, civic, expression, druggability, clingen, all)
+        /// Sections to include (pathways, ontology, diseases, protein, go, interactions, civic, expression, druggability, clingen, constraint, all)
         #[arg(trailing_var_arg = true)]
         sections: Vec<String>,
     },
@@ -7155,6 +7155,7 @@ mod next_commands_json_property {
             expression: None,
             druggability: None,
             clingen: None,
+            constraint: None,
         };
 
         assert_entity_json_next_commands(

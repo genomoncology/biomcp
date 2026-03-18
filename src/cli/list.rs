@@ -63,6 +63,7 @@ fn list_gene() -> String {
 - `get gene <symbol> expression` - GTEx tissue expression summary
 - `get gene <symbol> druggability` - DGIdb target categories/interactions
 - `get gene <symbol> clingen` - ClinGen validity + dosage sensitivity
+- `get gene <symbol> constraint` - gnomAD gene constraint (pLI, LOEUF, mis_z, syn_z)
 - `get gene <symbol> all` - include every section
 - `gene definition <symbol>` - same card as `get gene <symbol>`
 - `gene get <symbol>` - alias for `gene definition <symbol>`
@@ -709,6 +710,7 @@ mod tests {
         assert!(out.contains("get gene <symbol> expression"));
         assert!(out.contains("get gene <symbol> druggability"));
         assert!(out.contains("get gene <symbol> clingen"));
+        assert!(out.contains("get gene <symbol> constraint"));
     }
 
     #[test]

@@ -52,6 +52,21 @@ echo "$out" | mustmatch like "## Pathways"
 echo "$out" | mustmatch like "| ID | Name |"
 ```
 
+## Constraint Section
+
+The constraint section should render gnomAD provenance even when values evolve over time. These checks assert the stable labels rather than exact floating-point scores.
+
+```bash
+out="$(biomcp get gene TP53 constraint)"
+echo "$out" | mustmatch like "## Constraint"
+echo "$out" | mustmatch like "Source: gnomAD"
+echo "$out" | mustmatch like "Version: v4"
+echo "$out" | mustmatch like "Reference genome: GRCh38"
+echo "$out" | mustmatch like "Transcript:"
+echo "$out" | mustmatch like "pLI:"
+echo "$out" | mustmatch like "LOEUF:"
+```
+
 ## Gene to Trials
 
 The trial helper uses a gene biomarker pivot, which is a common translational workflow. We assert on the trial result table shape and the query marker for BRAF.

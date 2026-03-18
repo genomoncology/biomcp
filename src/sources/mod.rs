@@ -27,6 +27,7 @@ pub(crate) mod cpic;
 pub(crate) mod dgidb;
 pub(crate) mod enrichr;
 pub(crate) mod europepmc;
+pub(crate) mod gnomad;
 pub(crate) mod gprofiler;
 pub(crate) mod gtex;
 pub(crate) mod gwas;
