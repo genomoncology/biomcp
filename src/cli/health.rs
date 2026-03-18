@@ -71,6 +71,7 @@ fn affects_for_api(api: &str) -> Option<&'static str> {
         "GTEx" => Some("gene expression section"),
         "DGIdb" => Some("gene druggability section"),
         "ClinGen" => Some("gene clingen section"),
+        "gnomAD" => Some("gene constraint section"),
         _ => None,
     }
 }
@@ -260,6 +261,7 @@ pub async fn check(apis_only: bool) -> Result<HealthReport, BioMcpError> {
         gtex,
         dgidb,
         clingen,
+        gnomad,
     ) = tokio::join!(
         check_one(
             client.clone(),
@@ -333,11 +335,17 @@ pub async fn check(apis_only: bool) -> Result<HealthReport, BioMcpError> {
             "ClinGen",
             "https://search.clinicalgenome.org/api/genes/look/BRAF"
         ),
+        check_one_post_json(
+            client.clone(),
+            "gnomAD",
+            "https://gnomad.broadinstitute.org/api",
+            serde_json::json!({"query":"query { __typename }"})
+        ),
     );
 
     let mut rows = vec![
         mygene, myvariant, mychem, pubtator, ctgov, enrichr, europe_pmc, openfda, cpic, pharmgkb,
-        monarch, gwas, gtex, dgidb, clingen,
+        monarch, gwas, gtex, dgidb, clingen, gnomad,
     ];
     if !apis_only {
         rows.push(check_cache_dir().await);
@@ -409,5 +417,6 @@ mod tests {
         assert_eq!(affects_for_api("GTEx"), Some("gene expression section"));
         assert_eq!(affects_for_api("DGIdb"), Some("gene druggability section"));
         assert_eq!(affects_for_api("ClinGen"), Some("gene clingen section"));
+        assert_eq!(affects_for_api("gnomAD"), Some("gene constraint section"));
     }
 }

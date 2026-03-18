@@ -177,6 +177,7 @@ def test_gene_guide_includes_new_sections_and_positional_search() -> None:
     assert "biomcp get gene BRAF expression" in gene_guide
     assert "biomcp get gene BRAF druggability" in gene_guide
     assert "biomcp get gene BRAF clingen" in gene_guide
+    assert "biomcp get gene BRAF constraint" in gene_guide
 
 
 def test_article_guide_documents_federated_search_and_source_flag() -> None:
@@ -193,10 +194,12 @@ def test_article_guide_documents_federated_search_and_source_flag() -> None:
 def test_data_sources_reference_covers_new_gene_and_article_sources() -> None:
     data_sources = _read("docs/reference/data-sources.md")
 
-    assert "UniProt, QuickGO, STRING, GTEx, DGIdb, ClinGen" in data_sources
+    assert "UniProt, QuickGO, STRING, GTEx, DGIdb, ClinGen, gnomAD GraphQL API" in data_sources
     assert "https://gtexportal.org/api/v2" in data_sources
     assert "https://dgidb.org/api/graphql" in data_sources
     assert "https://search.clinicalgenome.org" in data_sources
+    assert "https://gnomad.broadinstitute.org/api" in data_sources
+    assert "gnomAD v4 GRCh38 gene constraint" in data_sources
     assert "| Article search & metadata | PubTator3 + Europe PMC |" in data_sources
     assert "| Article enrichment and graph helpers | Semantic Scholar |" in data_sources
     assert "PubTator3 + Europe PMC for federated search" in data_sources
@@ -211,7 +214,7 @@ def test_cli_and_quick_reference_cover_search_all_and_gene_sections() -> None:
     assert "biomcp search all --gene BRAF --disease melanoma" in cli_reference
     assert "biomcp get gene BRAF pathways ontology diseases protein" in cli_reference
     assert (
-        "biomcp get gene BRAF go interactions civic expression druggability clingen"
+        "biomcp get gene BRAF go interactions civic expression druggability clingen constraint"
         in cli_reference
     )
     assert "biomcp get gene BRAF all" in cli_reference

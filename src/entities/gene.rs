@@ -11,6 +11,9 @@ use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::clingen::{ClinGenClient, GeneClinGen};
 use crate::sources::dgidb::{DgidbClient, GeneDruggability};
 use crate::sources::enrichr::EnrichrClient;
+use crate::sources::gnomad::{
+    GNOMAD_CONSTRAINT_REFERENCE_GENOME, GNOMAD_CONSTRAINT_VERSION, GnomadClient,
+};
 use crate::sources::gtex::{GeneExpression, GtexClient};
 use crate::sources::mygene::MyGeneClient;
 use crate::sources::opentargets::OpenTargetsClient;
@@ -61,6 +64,8 @@ pub struct Gene {
     pub druggability: Option<GeneDruggability>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub clingen: Option<GeneClinGen>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub constraint: Option<GeneConstraint>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,6 +101,23 @@ pub struct GeneInteraction {
     pub score: Option<f64>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeneConstraint {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pli: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub loeuf: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mis_z: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub syn_z: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcript: Option<String>,
+    pub source: String,
+    pub source_version: String,
+    pub reference_genome: String,
+}
+
 /// Search result (lighter than full Gene)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneSearchResult {
@@ -129,6 +151,7 @@ enum GeneIncludeType {
     Expression,
     Druggability,
     ClinGen,
+    Constraint,
 }
 
 const GENE_SECTION_PATHWAYS: &str = "pathways";
@@ -141,6 +164,7 @@ const GENE_SECTION_CIVIC: &str = "civic";
 const GENE_SECTION_EXPRESSION: &str = "expression";
 const GENE_SECTION_DRUGGABILITY: &str = "druggability";
 const GENE_SECTION_CLINGEN: &str = "clingen";
+const GENE_SECTION_CONSTRAINT: &str = "constraint";
 const GENE_SECTION_ALL: &str = "all";
 
 pub const GENE_SECTION_NAMES: &[&str] = &[
@@ -154,6 +178,7 @@ pub const GENE_SECTION_NAMES: &[&str] = &[
     GENE_SECTION_EXPRESSION,
     GENE_SECTION_DRUGGABILITY,
     GENE_SECTION_CLINGEN,
+    GENE_SECTION_CONSTRAINT,
     GENE_SECTION_ALL,
 ];
 
@@ -170,6 +195,7 @@ impl GeneIncludeType {
             GENE_SECTION_EXPRESSION => Some(Self::Expression),
             GENE_SECTION_DRUGGABILITY | "drugs" => Some(Self::Druggability),
             GENE_SECTION_CLINGEN => Some(Self::ClinGen),
+            GENE_SECTION_CONSTRAINT => Some(Self::Constraint),
             _ => None,
         }
     }
@@ -186,7 +212,8 @@ impl GeneIncludeType {
             | Self::Civic
             | Self::Expression
             | Self::Druggability
-            | Self::ClinGen => &[],
+            | Self::ClinGen
+            | Self::Constraint => &[],
         }
     }
 }
@@ -390,7 +417,8 @@ async fn enrich_gene(
             | GeneIncludeType::Civic
             | GeneIncludeType::Expression
             | GeneIncludeType::Druggability
-            | GeneIncludeType::ClinGen => {}
+            | GeneIncludeType::ClinGen
+            | GeneIncludeType::Constraint => {}
             GeneIncludeType::Ontology => {
                 if let Some(v) = ontology.as_mut() {
                     v.push(result);
@@ -448,6 +476,7 @@ fn parse_sections(sections: &[String]) -> Result<Vec<GeneIncludeType>, BioMcpErr
             GeneIncludeType::Expression,
             GeneIncludeType::Druggability,
             GeneIncludeType::ClinGen,
+            GeneIncludeType::Constraint,
         ];
     }
 
@@ -807,6 +836,68 @@ async fn add_clingen_section(gene: &mut Gene) {
     }
 }
 
+fn gnomad_constraint_section(
+    transcript: Option<String>,
+    pli: Option<f64>,
+    loeuf: Option<f64>,
+    mis_z: Option<f64>,
+    syn_z: Option<f64>,
+) -> GeneConstraint {
+    GeneConstraint {
+        pli,
+        loeuf,
+        mis_z,
+        syn_z,
+        transcript,
+        source: "gnomAD".to_string(),
+        source_version: GNOMAD_CONSTRAINT_VERSION.to_string(),
+        reference_genome: GNOMAD_CONSTRAINT_REFERENCE_GENOME.to_string(),
+    }
+}
+
+async fn add_constraint_section(gene: &mut Gene) {
+    let symbol = gene.symbol.trim();
+    if symbol.is_empty() {
+        gene.constraint = Some(gnomad_constraint_section(None, None, None, None, None));
+        return;
+    }
+
+    let constraint_fut = async {
+        let client = GnomadClient::new()?;
+        client.gene_constraint(symbol).await
+    };
+
+    match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, constraint_fut).await {
+        Ok(Ok(Some(constraint))) => {
+            gene.constraint = Some(gnomad_constraint_section(
+                constraint.transcript,
+                constraint.pli,
+                constraint.loeuf,
+                constraint.mis_z,
+                constraint.syn_z,
+            ));
+        }
+        Ok(Ok(None)) => {
+            gene.constraint = Some(gnomad_constraint_section(None, None, None, None, None));
+        }
+        Ok(Err(err)) => {
+            warn!(
+                symbol = %gene.symbol,
+                "gnomAD unavailable for gene constraint section: {err}"
+            );
+            gene.constraint = Some(gnomad_constraint_section(None, None, None, None, None));
+        }
+        Err(_) => {
+            warn!(
+                symbol = %gene.symbol,
+                timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
+                "gnomAD gene constraint section timed out"
+            );
+            gene.constraint = Some(gnomad_constraint_section(None, None, None, None, None));
+        }
+    }
+}
+
 pub async fn get(symbol: &str, sections: &[String]) -> Result<Gene, BioMcpError> {
     if symbol.trim().is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -893,6 +984,10 @@ pub async fn get(symbol: &str, sections: &[String]) -> Result<Gene, BioMcpError>
 
     if include.contains(&GeneIncludeType::ClinGen) {
         add_clingen_section(&mut gene).await;
+    }
+
+    if include.contains(&GeneIncludeType::Constraint) {
+        add_constraint_section(&mut gene).await;
     }
 
     Ok(gene)
@@ -1257,6 +1352,7 @@ mod tests {
         assert!(GENE_SECTION_NAMES.contains(&"expression"));
         assert!(GENE_SECTION_NAMES.contains(&"druggability"));
         assert!(GENE_SECTION_NAMES.contains(&"clingen"));
+        assert!(GENE_SECTION_NAMES.contains(&"constraint"));
     }
 
     #[test]
@@ -1265,14 +1361,15 @@ mod tests {
             "expression".to_string(),
             "druggability".to_string(),
             "clingen".to_string(),
+            "constraint".to_string(),
         ])
         .expect("new gene sections should parse");
-        assert_eq!(parsed.len(), 3);
+        assert_eq!(parsed.len(), 4);
     }
 
     #[test]
     fn parse_sections_all_includes_new_gene_sections() {
         let parsed = parse_sections(&["all".to_string()]).expect("all should parse");
-        assert_eq!(parsed.len(), 10);
+        assert_eq!(parsed.len(), 11);
     }
 }

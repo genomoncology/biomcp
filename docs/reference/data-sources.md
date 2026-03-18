@@ -9,7 +9,7 @@ and operational caveats so users can reason about result quality and troubleshoo
 | Entity / feature | Primary source(s) | Base URL | Auth required | Notes |
 |------------------|-------------------|----------|---------------|-------|
 | Gene | MyGene.info | `https://mygene.info/v3` | No | Symbol lookup, aliases, summaries |
-| Gene sections | UniProt, QuickGO, STRING, GTEx, DGIdb, ClinGen | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/QuickGO/services`, `https://string-db.org/api`, `https://gtexportal.org/api/v2`, `https://dgidb.org/api/graphql`, `https://search.clinicalgenome.org` | No | Protein summary, GO terms, interactions, tissue expression, druggability, gene-disease validity |
+| Gene sections | UniProt, QuickGO, STRING, GTEx, DGIdb, ClinGen, gnomAD GraphQL API | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/QuickGO/services`, `https://string-db.org/api`, `https://gtexportal.org/api/v2`, `https://dgidb.org/api/graphql`, `https://search.clinicalgenome.org`, `https://gnomad.broadinstitute.org/api` | No | Protein summary, GO terms, interactions, tissue expression, druggability, gene-disease validity, and gnomAD v4 GRCh38 gene constraint |
 | Variant | MyVariant.info | `https://myvariant.info/v1` | No | rsID/HGVS lookup, ClinVar and population annotations |
 | Variant population section | MyVariant.info (gnomAD fields) | `https://myvariant.info/v1` | No | Uses cached gnomAD AF/subpopulation fields from MyVariant payload |
 | Variant GWAS section and GWAS search | GWAS Catalog REST API | `https://www.ebi.ac.uk/gwas/rest/api` | No | rsID, gene, and trait association retrieval |

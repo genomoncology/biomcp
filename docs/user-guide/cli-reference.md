@@ -152,7 +152,7 @@ biomcp search adverse-event --type device --product-code PQP --limit 5
 ```bash
 biomcp get gene BRAF
 biomcp get gene BRAF pathways ontology diseases protein
-biomcp get gene BRAF go interactions civic expression druggability clingen
+biomcp get gene BRAF go interactions civic expression druggability clingen constraint
 biomcp get gene BRAF all
 ```
 

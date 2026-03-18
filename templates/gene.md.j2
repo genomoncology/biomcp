@@ -167,6 +167,25 @@ No ClinGen records returned for this gene query.
 No ClinGen records returned for this gene query.
 {% endif -%}
 {% endif -%}
+{% if show_constraint_section -%}
+## Constraint (gnomAD)
+
+{% if constraint -%}
+- Source: {{ constraint.source }}
+- Version: {{ constraint.source_version }}
+- Reference genome: {{ constraint.reference_genome }}
+{% if constraint.transcript %}- Transcript: {{ constraint.transcript }}{% endif %}
+{% if constraint.pli is defined and constraint.pli is not none %}- pLI: {{ constraint.pli | score }}{% endif %}
+{% if constraint.loeuf is defined and constraint.loeuf is not none %}- LOEUF: {{ constraint.loeuf | score }}{% endif %}
+{% if constraint.mis_z is defined and constraint.mis_z is not none %}- mis_z: {{ constraint.mis_z | score }}{% endif %}
+{% if constraint.syn_z is defined and constraint.syn_z is not none %}- syn_z: {{ constraint.syn_z | score }}{% endif %}
+{% if (constraint.pli is not defined or constraint.pli is none) and (constraint.loeuf is not defined or constraint.loeuf is none) and (constraint.mis_z is not defined or constraint.mis_z is none) and (constraint.syn_z is not defined or constraint.syn_z is none) -%}
+No gnomAD constraint metrics returned for this gene query.
+{% endif -%}
+{% else -%}
+No gnomAD constraint metrics returned for this gene query.
+{% endif -%}
+{% endif -%}
 {% if sections_block %}{{ sections_block }}
 {% endif -%}
 {% if related_block %}{{ related_block }}

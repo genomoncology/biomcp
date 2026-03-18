@@ -966,6 +966,7 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
     let show_druggability_section =
         include_all || has_requested("druggability") || has_requested("drugs");
     let show_clingen_section = include_all || has_requested("clingen");
+    let show_constraint_section = include_all || has_requested("constraint");
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&gene.symbol, requested_sections),
@@ -992,10 +993,12 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
         expression => &gene.expression,
         druggability => &gene.druggability,
         clingen => &gene.clingen,
+        constraint => &gene.constraint,
         show_civic_section => show_civic_section,
         show_expression_section => show_expression_section,
         show_druggability_section => show_druggability_section,
         show_clingen_section => show_clingen_section,
+        show_constraint_section => show_constraint_section,
         sections_block => format_sections_block("gene", &gene.symbol, sections_gene(gene, requested_sections)),
         related_block => format_related_block(related_gene(gene)),
     })?;
@@ -2621,6 +2624,7 @@ mod tests {
             expression: None,
             druggability: None,
             clingen: None,
+            constraint: None,
         };
 
         let markdown = gene_markdown(&gene, &[]).expect("rendered markdown");
@@ -2655,6 +2659,7 @@ mod tests {
             expression: None,
             druggability: None,
             clingen: None,
+            constraint: None,
         };
 
         let markdown = gene_markdown(
@@ -2674,6 +2679,56 @@ mod tests {
         assert!(markdown.contains("No GTEx expression records returned"));
         assert!(markdown.contains("No DGIdb interactions returned"));
         assert!(markdown.contains("No ClinGen records returned"));
+    }
+
+    #[test]
+    fn gene_markdown_section_only_shows_constraint_section() {
+        let gene = Gene {
+            symbol: "TP53".to_string(),
+            name: "tumor protein p53".to_string(),
+            entrez_id: "7157".to_string(),
+            ensembl_id: Some("ENSG00000141510".to_string()),
+            location: Some("17p13.1".to_string()),
+            genomic_coordinates: None,
+            omim_id: None,
+            uniprot_id: Some("P04637".to_string()),
+            summary: Some("Tumor suppressor.".to_string()),
+            gene_type: Some("protein-coding".to_string()),
+            aliases: vec!["P53".to_string()],
+            clinical_diseases: Vec::new(),
+            clinical_drugs: Vec::new(),
+            pathways: None,
+            ontology: None,
+            diseases: None,
+            protein: None,
+            go: None,
+            interactions: None,
+            civic: None,
+            expression: None,
+            druggability: None,
+            clingen: None,
+            constraint: Some(crate::entities::gene::GeneConstraint {
+                pli: None,
+                loeuf: None,
+                mis_z: None,
+                syn_z: None,
+                transcript: Some("ENST00000269305".to_string()),
+                source: "gnomAD".to_string(),
+                source_version: "v4".to_string(),
+                reference_genome: "GRCh38".to_string(),
+            }),
+        };
+
+        let markdown =
+            gene_markdown(&gene, &["constraint".to_string()]).expect("rendered markdown");
+
+        assert!(markdown.contains("# TP53 - constraint"));
+        assert!(markdown.contains("## Constraint (gnomAD)"));
+        assert!(markdown.contains("Source: gnomAD"));
+        assert!(markdown.contains("Version: v4"));
+        assert!(markdown.contains("Reference genome: GRCh38"));
+        assert!(markdown.contains("Transcript: ENST00000269305"));
+        assert!(markdown.contains("No gnomAD constraint metrics returned for this gene query."));
     }
 
     #[test]
@@ -2915,6 +2970,7 @@ mod tests {
             expression: None,
             druggability: None,
             clingen: None,
+            constraint: None,
         };
 
         let urls = gene_evidence_urls(&gene);

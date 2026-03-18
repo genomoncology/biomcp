@@ -85,6 +85,12 @@ Gene-disease validity (ClinGen):
 biomcp get gene BRAF clingen
 ```
 
+Constraint metrics (gnomAD):
+
+```bash
+biomcp get gene BRAF constraint
+```
+
 Multiple sections can be chained:
 
 ```bash

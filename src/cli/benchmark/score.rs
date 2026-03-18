@@ -399,6 +399,7 @@ fn is_section_like_token(token: &str) -> bool {
             | "expression"
             | "druggability"
             | "clingen"
+            | "constraint"
             | "predict"
             | "predictions"
             | "clinvar"
@@ -827,5 +828,6 @@ mod tests {
         assert!(is_section_like_token("expression"));
         assert!(is_section_like_token("druggability"));
         assert!(is_section_like_token("clingen"));
+        assert!(is_section_like_token("constraint"));
     }
 }
