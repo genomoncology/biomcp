@@ -24,3 +24,17 @@ authors:
     family-names: Yeakley
   - given-names: Anibee
     family-names: Zingalis
+preferred-citation:
+  type: software
+  title: BioMCP
+  authors:
+    - given-names: Ian
+      family-names: Maurer
+    - given-names: Justin
+      family-names: Yeakley
+    - given-names: Anibee
+      family-names: Zingalis
+  publisher: Zenodo
+  doi: 10.5281/zenodo.XXXXXXX
+  version: 0.9.0
+  # Release-time placeholder values; replace when the v0.9.0 tag is cut.

@@ -1,0 +1,21 @@
+{
+  "_description": "Archived release data will replace this stub with the sampled claim audit, source-link checks, and verification outcomes used in the paper.",
+  "_is_stub": true,
+  "metadata": {
+    "audit_label": "",
+    "bioMCP_version": "",
+    "sample_design": ""
+  },
+  "summary": {
+    "claims": 0,
+    "source_labeled": 0,
+    "url_present": 0,
+    "url_correct": 0,
+    "api_datum_match": 0,
+    "live_api_datum_match": 0,
+    "contract_plus_raw": 0,
+    "clickthrough_match": 0
+  },
+  "by_entity_type": [],
+  "claims": []
+}
