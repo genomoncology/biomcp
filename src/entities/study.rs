@@ -141,6 +141,8 @@ pub struct SurvivalGroupResult {
     pub survival_3yr: Option<f64>,
     pub survival_5yr: Option<f64>,
     pub event_rate: f64,
+    #[serde(skip, default)]
+    pub km_curve_points: Vec<(f64, f64)>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -658,6 +660,7 @@ impl From<crate::sources::cbioportal_study::SurvivalGroupStats> for SurvivalGrou
             survival_3yr: value.survival_3yr,
             survival_5yr: value.survival_5yr,
             event_rate: value.event_rate,
+            km_curve_points: value.km_curve_points,
         }
     }
 }

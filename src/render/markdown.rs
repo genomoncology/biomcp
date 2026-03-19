@@ -3519,6 +3519,7 @@ mod tests {
                     survival_3yr: Some(0.72),
                     survival_5yr: None,
                     event_rate: 0.141176,
+                    km_curve_points: Vec::new(),
                 },
                 StudySurvivalGroupResult {
                     group_name: "TP53-wildtype".to_string(),
@@ -3530,6 +3531,7 @@ mod tests {
                     survival_3yr: Some(0.88),
                     survival_5yr: Some(0.74),
                     event_rate: 0.088889,
+                    km_curve_points: Vec::new(),
                 },
             ],
             log_rank_p: Some(0.0042),

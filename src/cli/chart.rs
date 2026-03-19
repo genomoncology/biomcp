@@ -18,6 +18,7 @@ pub enum ChartCommand {
     Box,
     Violin,
     Ridgeline,
+    Survival,
 }
 
 fn embedded_text(path: &str) -> Result<String, BioMcpError> {
@@ -43,6 +44,7 @@ pub fn show(command: Option<&ChartCommand>) -> Result<String, BioMcpError> {
         Some(ChartCommand::Box) => "box.md",
         Some(ChartCommand::Violin) => "violin.md",
         Some(ChartCommand::Ridgeline) => "ridgeline.md",
+        Some(ChartCommand::Survival) => "survival.md",
     };
     embedded_text(path)
 }
