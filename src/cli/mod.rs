@@ -1069,12 +1069,13 @@ EXAMPLES:
   biomcp get pathway R-HSA-5673001
   biomcp get pathway hsa05200
   biomcp get pathway R-HSA-5673001 genes
+  biomcp get pathway R-HSA-5673001 events
 
 See also: biomcp list pathway")]
     Pathway {
         /// Pathway ID (e.g., R-HSA-5673001, hsa05200)
         id: String,
-        /// Sections to include (genes, events, enrichment, all)
+        /// Sections to include (genes, events (Reactome only), enrichment (Reactome only), all = all sections available for the resolved source)
         #[arg(trailing_var_arg = true)]
         sections: Vec<String>,
     },
@@ -5593,6 +5594,28 @@ mod tests {
     }
 
     #[test]
+    fn pathway_help_describes_source_aware_section_contract() {
+        let mut command = Cli::command();
+        let get = command
+            .find_subcommand_mut("get")
+            .expect("get subcommand should exist");
+        let pathway = get
+            .find_subcommand_mut("pathway")
+            .expect("pathway subcommand should exist");
+        let mut help = Vec::new();
+        pathway
+            .write_long_help(&mut help)
+            .expect("pathway help should render");
+        let help = String::from_utf8(help).expect("help should be utf-8");
+
+        assert!(help.contains("events (Reactome only)"));
+        assert!(help.contains("enrichment (Reactome only)"));
+        assert!(help.contains("all = all sections available for the resolved source"));
+        assert!(help.contains("biomcp get pathway R-HSA-5673001 events"));
+        assert!(!help.contains("biomcp get pathway hsa05200 enrichment"));
+    }
+
+    #[test]
     fn parse_trial_location_paging_extracts_offset_limit_flags() {
         let sections = vec![
             "locations".to_string(),
@@ -7576,9 +7599,9 @@ mod next_commands_json_property {
     #[test]
     fn pathway_json_next_commands_parse() {
         let pathway = Pathway {
-            source: "Reactome".to_string(),
-            id: "R-HSA-5673001".to_string(),
-            name: "RAF/MAP kinase cascade".to_string(),
+            source: "KEGG".to_string(),
+            id: "hsa05200".to_string(),
+            name: "Pathways in cancer".to_string(),
             species: None,
             summary: None,
             genes: Vec::new(),
@@ -7586,11 +7609,29 @@ mod next_commands_json_property {
             enrichment: Vec::new(),
         };
 
+        let next_commands = crate::render::markdown::related_pathway(&pathway);
+        assert_eq!(
+            next_commands,
+            vec!["biomcp pathway drugs hsa05200".to_string()]
+        );
+        assert!(
+            next_commands
+                .iter()
+                .all(|cmd| !cmd.contains("get pathway hsa05200")),
+            "pathway next_commands should not repeat the current flow"
+        );
+        assert!(
+            next_commands
+                .iter()
+                .all(|cmd| !cmd.contains("events") && !cmd.contains("enrichment")),
+            "pathway next_commands should not suggest unsupported sections"
+        );
+
         assert_entity_json_next_commands(
             "pathway",
             &pathway,
             crate::render::markdown::pathway_evidence_urls(&pathway),
-            crate::render::markdown::related_pathway(&pathway),
+            next_commands,
         );
     }
 

@@ -63,16 +63,30 @@ pub const PATHWAY_SECTION_NAMES: &[&str] = &[
     PATHWAY_SECTION_ALL,
 ];
 
+const REACTOME_PATHWAY_SECTIONS: &[&str] = &[
+    PATHWAY_SECTION_GENES,
+    PATHWAY_SECTION_EVENTS,
+    PATHWAY_SECTION_ENRICHMENT,
+];
+const KEGG_PATHWAY_SECTIONS: &[&str] = &[PATHWAY_SECTION_GENES];
+const REACTOME_PATHWAY_ENRICHMENT_SOURCE: &str = "REAC";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PathwaySourceKind {
+    Reactome,
+    Kegg,
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 struct PathwaySections {
     include_genes: bool,
     include_events: bool,
     include_enrichment: bool,
+    include_all: bool,
 }
 
 fn parse_sections(sections: &[String]) -> Result<PathwaySections, BioMcpError> {
     let mut out = PathwaySections::default();
-    let mut include_all = false;
 
     for raw in sections {
         let section = raw.trim().to_ascii_lowercase();
@@ -87,7 +101,7 @@ fn parse_sections(sections: &[String]) -> Result<PathwaySections, BioMcpError> {
             PATHWAY_SECTION_GENES => out.include_genes = true,
             PATHWAY_SECTION_EVENTS => out.include_events = true,
             PATHWAY_SECTION_ENRICHMENT => out.include_enrichment = true,
-            PATHWAY_SECTION_ALL => include_all = true,
+            PATHWAY_SECTION_ALL => out.include_all = true,
             _ => {
                 return Err(BioMcpError::InvalidArgument(format!(
                     "Unknown section \"{section}\" for pathway. Available: {}",
@@ -97,13 +111,94 @@ fn parse_sections(sections: &[String]) -> Result<PathwaySections, BioMcpError> {
         }
     }
 
-    if include_all {
-        out.include_genes = true;
-        out.include_events = true;
-        out.include_enrichment = true;
+    Ok(out)
+}
+
+fn source_kind_for_pathway_id(st_id: &str) -> PathwaySourceKind {
+    if is_human_pathway_id(st_id) {
+        PathwaySourceKind::Kegg
+    } else {
+        PathwaySourceKind::Reactome
+    }
+}
+
+fn source_kind_for_pathway_source(source: &str) -> PathwaySourceKind {
+    if source.trim().eq_ignore_ascii_case("KEGG") {
+        PathwaySourceKind::Kegg
+    } else {
+        PathwaySourceKind::Reactome
+    }
+}
+
+fn source_label(kind: PathwaySourceKind) -> &'static str {
+    match kind {
+        PathwaySourceKind::Reactome => "Reactome",
+        PathwaySourceKind::Kegg => "KEGG",
+    }
+}
+
+pub(crate) fn supported_pathway_sections_for_source(source: &str) -> &'static [&'static str] {
+    match source_kind_for_pathway_source(source) {
+        PathwaySourceKind::Reactome => REACTOME_PATHWAY_SECTIONS,
+        PathwaySourceKind::Kegg => KEGG_PATHWAY_SECTIONS,
+    }
+}
+
+fn supported_pathway_sections_for_id(st_id: &str) -> &'static [&'static str] {
+    match source_kind_for_pathway_id(st_id) {
+        PathwaySourceKind::Reactome => REACTOME_PATHWAY_SECTIONS,
+        PathwaySourceKind::Kegg => KEGG_PATHWAY_SECTIONS,
+    }
+}
+
+fn unsupported_pathway_section_error(section: &str, source: PathwaySourceKind) -> BioMcpError {
+    let source = source_label(source);
+    BioMcpError::InvalidArgument(format!(
+        "pathway section \"{section}\" is not available for {source} pathways. \
+Use a Reactome pathway ID such as R-HSA-5673001: biomcp get pathway R-HSA-5673001 {section}"
+    ))
+}
+
+fn resolve_sections_for_pathway_id(
+    st_id: &str,
+    raw_sections: &[String],
+) -> Result<PathwaySections, BioMcpError> {
+    let mut resolved = parse_sections(raw_sections)?;
+    let source = source_kind_for_pathway_id(st_id);
+    let supported = supported_pathway_sections_for_id(st_id);
+
+    for raw in raw_sections {
+        let section = raw.trim();
+        if section.is_empty()
+            || section.eq_ignore_ascii_case("--json")
+            || section.eq_ignore_ascii_case("-j")
+        {
+            continue;
+        }
+        if section.eq_ignore_ascii_case(PATHWAY_SECTION_ALL) {
+            continue;
+        }
+        if !supported
+            .iter()
+            .any(|candidate| candidate.eq_ignore_ascii_case(section))
+        {
+            return Err(unsupported_pathway_section_error(section, source));
+        }
     }
 
-    Ok(out)
+    if resolved.include_all {
+        resolved.include_genes = supported
+            .iter()
+            .any(|section| section.eq_ignore_ascii_case(PATHWAY_SECTION_GENES));
+        resolved.include_events = supported
+            .iter()
+            .any(|section| section.eq_ignore_ascii_case(PATHWAY_SECTION_EVENTS));
+        resolved.include_enrichment = supported
+            .iter()
+            .any(|section| section.eq_ignore_ascii_case(PATHWAY_SECTION_ENRICHMENT));
+    }
+
+    Ok(resolved)
 }
 
 fn gene_token_re() -> &'static Regex {
@@ -275,12 +370,6 @@ async fn add_pathway_enrichment(pathway: &mut Pathway, fallback_genes: &[String]
         return;
     }
 
-    let source_filter = if pathway.source.eq_ignore_ascii_case("KEGG") {
-        "KEGG"
-    } else {
-        "REAC"
-    };
-
     let client = match GProfilerClient::new() {
         Ok(client) => client,
         Err(err) => {
@@ -302,7 +391,10 @@ async fn add_pathway_enrichment(pathway: &mut Pathway, fallback_genes: &[String]
                     })
                 })
                 .filter(|r| !r.source.is_empty() && !r.id.is_empty() && !r.name.is_empty())
-                .filter(|r| r.source.eq_ignore_ascii_case(source_filter))
+                .filter(|r| {
+                    r.source
+                        .eq_ignore_ascii_case(REACTOME_PATHWAY_ENRICHMENT_SOURCE)
+                })
                 .collect();
         }
         Err(err) => warn!("g:Profiler enrichment unavailable: {err}"),
@@ -429,18 +521,14 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
         ));
     }
 
-    let parsed_sections = parse_sections(sections)?;
-    if is_human_pathway_id(st_id) {
+    let parsed_sections = resolve_sections_for_pathway_id(st_id, sections)?;
+    if matches!(source_kind_for_pathway_id(st_id), PathwaySourceKind::Kegg) {
         if kegg_disabled() {
             return Err(kegg_disabled_error(st_id));
         }
 
         let record = KeggClient::new()?.get_pathway(st_id).await?;
-        let mut pathway = transform::pathway::from_kegg_record(record);
-        if parsed_sections.include_enrichment {
-            add_pathway_enrichment(&mut pathway, &[]).await;
-        }
-        return Ok(pathway);
+        return Ok(transform::pathway::from_kegg_record(record));
     }
 
     let client = ReactomeClient::new()?;
@@ -489,12 +577,44 @@ mod tests {
     #[test]
     fn parse_sections_supports_all_and_rejects_unknown_values() {
         let flags = parse_sections(&["all".to_string()]).unwrap();
-        assert!(flags.include_genes);
-        assert!(flags.include_events);
-        assert!(flags.include_enrichment);
+        assert!(flags.include_all);
+        assert!(!flags.include_genes);
+        assert!(!flags.include_events);
+        assert!(!flags.include_enrichment);
 
         let err = parse_sections(&["bad".to_string()]).unwrap_err();
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    }
+
+    #[test]
+    fn kegg_explicit_events_section_is_rejected() {
+        let err = resolve_sections_for_pathway_id("hsa05200", &["events".to_string()])
+            .expect_err("KEGG events should fail fast");
+        let message = err.to_string();
+        assert!(message.contains("events"));
+        assert!(message.contains("KEGG"));
+        assert!(message.contains("Reactome"));
+        assert!(message.contains("R-HSA-5673001"));
+    }
+
+    #[test]
+    fn kegg_explicit_enrichment_section_is_rejected() {
+        let err = resolve_sections_for_pathway_id("hsa05200", &["enrichment".to_string()])
+            .expect_err("KEGG enrichment should fail fast");
+        let message = err.to_string();
+        assert!(message.contains("enrichment"));
+        assert!(message.contains("KEGG"));
+        assert!(message.contains("Reactome"));
+        assert!(message.contains("R-HSA-5673001"));
+    }
+
+    #[test]
+    fn kegg_all_expands_to_supported_sections_only() {
+        let flags = resolve_sections_for_pathway_id("hsa05200", &["all".to_string()])
+            .expect("KEGG all should remain valid");
+        assert!(flags.include_genes);
+        assert!(!flags.include_events);
+        assert!(!flags.include_enrichment);
     }
 
     #[test]

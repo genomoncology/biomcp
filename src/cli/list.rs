@@ -501,8 +501,8 @@ fn list_pathway() -> String {
 - `get pathway <id>` - base pathway card
 - `get pathway <id> genes` - pathway participant genes
 - `get pathway <id> events` - contained events (Reactome only)
-- `get pathway <id> enrichment` - g:Profiler enrichment from pathway genes
-- `get pathway <id> all` - include all sections
+- `get pathway <id> enrichment` - g:Profiler enrichment from pathway genes (Reactome only)
+- `get pathway <id> all` - include all sections supported by that pathway source
 
 ## Search filters
 
@@ -521,7 +521,8 @@ fn list_pathway() -> String {
 ## Workflow examples
 
 - To find pathways for an altered gene, run `biomcp search pathway "<gene or process>" --limit 5`.
-- To inspect pathway composition, run `biomcp get pathway <id> genes events`.
+- To inspect pathway composition, run `biomcp get pathway <id> genes`.
+- For Reactome pathways, events are also available: `biomcp get pathway R-HSA-5673001 events`.
 - To pivot to clinical context, run `biomcp pathway trials <id>` and `biomcp pathway articles <id>`.
 "#
     .to_string()
@@ -724,6 +725,20 @@ mod tests {
 
         let article = render(Some("article")).expect("list article should render");
         assert!(article.contains("--since <YYYY-MM-DD>"));
+    }
+
+    #[test]
+    fn list_pathway_describes_source_aware_sections() {
+        let out = render(Some("pathway")).expect("list pathway should render");
+        assert!(out.contains("get pathway <id> events` - contained events (Reactome only)"));
+        assert!(out.contains(
+            "get pathway <id> enrichment` - g:Profiler enrichment from pathway genes (Reactome only)"
+        ));
+        assert!(out.contains(
+            "get pathway <id> all` - include all sections supported by that pathway source"
+        ));
+        assert!(out.contains("biomcp get pathway <id> genes"));
+        assert!(out.contains("Reactome pathways, events are also available"));
     }
 
     #[test]
