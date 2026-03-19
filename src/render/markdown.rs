@@ -765,7 +765,10 @@ fn sections_pathway(pathway: &Pathway, requested: &[String]) -> Vec<String> {
     if id.is_empty() {
         return Vec::new();
     }
-    sections_for(requested, crate::entities::pathway::PATHWAY_SECTION_NAMES)
+    sections_for(
+        requested,
+        crate::entities::pathway::supported_pathway_sections_for_source(&pathway.source),
+    )
 }
 
 fn sections_protein(protein: &Protein, requested: &[String]) -> Vec<String> {
@@ -2665,6 +2668,7 @@ mod tests {
     };
     use crate::entities::drug::Drug;
     use crate::entities::gene::Gene;
+    use crate::entities::pathway::Pathway;
     use crate::entities::pgx::Pgx;
     use crate::entities::study::{
         CnaDistributionResult as StudyCnaDistributionResult,
@@ -2687,6 +2691,47 @@ mod tests {
         assert_eq!(quote_arg("BRAF"), "BRAF");
         assert_eq!(quote_arg("BRAF V600E"), "\"BRAF V600E\"");
         assert_eq!(quote_arg("BRAF \"V600E\""), "\"BRAF \\\"V600E\\\"\"");
+    }
+
+    #[test]
+    fn sections_pathway_for_kegg_excludes_unsupported_sections() {
+        let pathway = Pathway {
+            source: "KEGG".to_string(),
+            id: "hsa05200".to_string(),
+            name: "Pathways in cancer".to_string(),
+            species: None,
+            summary: None,
+            genes: Vec::new(),
+            events: Vec::new(),
+            enrichment: Vec::new(),
+        };
+
+        let sections = sections_pathway(&pathway, &[]);
+        assert_eq!(sections, vec!["genes".to_string()]);
+    }
+
+    #[test]
+    fn sections_pathway_for_reactome_keeps_full_supported_set() {
+        let pathway = Pathway {
+            source: "Reactome".to_string(),
+            id: "R-HSA-5673001".to_string(),
+            name: "RAF/MAP kinase cascade".to_string(),
+            species: None,
+            summary: None,
+            genes: Vec::new(),
+            events: Vec::new(),
+            enrichment: Vec::new(),
+        };
+
+        let sections = sections_pathway(&pathway, &[]);
+        assert_eq!(
+            sections,
+            vec![
+                "genes".to_string(),
+                "events".to_string(),
+                "enrichment".to_string()
+            ]
+        );
     }
 
     #[test]
