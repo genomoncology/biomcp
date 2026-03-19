@@ -1081,13 +1081,14 @@ See also: biomcp list pathway")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp get protein P15056
+  biomcp get protein P15056 complexes
   biomcp get protein P15056 structures
 
 See also: biomcp list protein")]
     Protein {
         /// UniProt accession or HGNC symbol (e.g., P15056 or BRAF)
         accession: String,
-        /// Sections to include (domains, interactions, structures, all)
+        /// Sections to include (domains, interactions, complexes, structures, all)
         #[arg(trailing_var_arg = true)]
         sections: Vec<String>,
     },
@@ -7287,6 +7288,7 @@ mod next_commands_validity {
     #[test]
     fn protein_next_commands_parse() {
         assert_parses("biomcp get protein P00533 structures");
+        assert_parses("biomcp get protein P00533 complexes");
         assert_parses("biomcp get gene EGFR");
     }
 
@@ -7604,6 +7606,7 @@ mod next_commands_json_property {
             structure_count: None,
             domains: Vec::new(),
             interactions: Vec::new(),
+            complexes: Vec::new(),
         };
 
         assert_entity_json_next_commands(

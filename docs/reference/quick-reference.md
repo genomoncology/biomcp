@@ -52,6 +52,7 @@ biomcp get drug carboplatin shortage
 biomcp get disease MONDO:0005105
 biomcp get pathway hsa05200 genes
 biomcp get protein P15056 domains
+biomcp get protein P15056 complexes
 biomcp variant oncokb "BRAF V600E"
 ```
 

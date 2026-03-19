@@ -43,6 +43,20 @@ Showing top {{ structures | length }} of {{ structure_count }} structures by res
 | {{ i.partner }} | {% if i.score is not none %}{{ i.score | score }}{% else %}-{% endif %} |
 {% endfor -%}
 {% endif -%}
+{% if show_complexes_section and complexes -%}
+## Complexes
+
+| ID | Name | Components | Curation |
+|---|---|---|---|
+{% for c in complexes -%}
+| {{ c.accession }} | {{ c.name }} | {{ c.components }} | {{ c.curation }} |
+{% endfor -%}
+{% if complex_descriptions -%}
+{% for c in complex_descriptions -%}
+- `{{ c.accession }}`: {{ c.description }}
+{% endfor -%}
+{% endif -%}
+{% endif -%}
 {% if sections_block %}{{ sections_block }}
 {% endif -%}
 {% if related_block %}{{ related_block }}

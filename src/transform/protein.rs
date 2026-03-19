@@ -52,6 +52,7 @@ pub fn from_uniprot_record_base(record: UniProtRecord) -> Protein {
         structure_count: None,
         domains: Vec::new(),
         interactions: Vec::new(),
+        complexes: Vec::new(),
     }
 }
 
@@ -124,6 +125,7 @@ mod tests {
         );
         assert!(out.domains.is_empty());
         assert!(out.interactions.is_empty());
+        assert!(out.complexes.is_empty());
         assert!(out.structures.is_empty());
     }
 

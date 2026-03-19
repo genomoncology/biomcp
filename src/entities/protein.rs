@@ -6,6 +6,7 @@ use tracing::warn;
 
 use crate::entities::SearchPage;
 use crate::error::BioMcpError;
+use crate::sources::complexportal::{ComplexPortalClient, ComplexPortalComplex};
 use crate::sources::interpro::InterProClient;
 use crate::sources::mygene::MyGeneClient;
 use crate::sources::string::StringClient;
@@ -34,6 +35,8 @@ pub struct Protein {
     pub domains: Vec<ProteinDomain>,
     #[serde(default)]
     pub interactions: Vec<ProteinInteraction>,
+    #[serde(default)]
+    pub complexes: Vec<ProteinComplex>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +56,32 @@ pub struct ProteinInteraction {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProteinComplexCuration {
+    Curated,
+    Predicted,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProteinComplexComponent {
+    pub accession: String,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stoichiometry: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProteinComplex {
+    pub accession: String,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    pub curation: ProteinComplexCuration,
+    #[serde(default)]
+    pub components: Vec<ProteinComplexComponent>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProteinSearchResult {
     pub accession: String,
     pub uniprot_id: String,
@@ -65,14 +94,17 @@ pub struct ProteinSearchResult {
 
 const PROTEIN_SECTION_DOMAINS: &str = "domains";
 const PROTEIN_SECTION_INTERACTIONS: &str = "interactions";
+const PROTEIN_SECTION_COMPLEXES: &str = "complexes";
 const PROTEIN_SECTION_STRUCTURES: &str = "structures";
 const PROTEIN_SECTION_ALL: &str = "all";
+const DEFAULT_COMPLEX_LIMIT: usize = 10;
 const DEFAULT_STRUCTURE_LIMIT: usize = 10;
 const MAX_STRUCTURE_LIMIT: usize = 100;
 
 pub const PROTEIN_SECTION_NAMES: &[&str] = &[
     PROTEIN_SECTION_DOMAINS,
     PROTEIN_SECTION_INTERACTIONS,
+    PROTEIN_SECTION_COMPLEXES,
     PROTEIN_SECTION_STRUCTURES,
     PROTEIN_SECTION_ALL,
 ];
@@ -127,6 +159,7 @@ async fn resolve_accession(value: &str) -> Result<String, BioMcpError> {
 struct ProteinSections {
     include_domains: bool,
     include_interactions: bool,
+    include_complexes: bool,
     include_structures: bool,
 }
 
@@ -146,6 +179,7 @@ fn parse_sections(sections: &[String]) -> Result<ProteinSections, BioMcpError> {
         match section.as_str() {
             PROTEIN_SECTION_DOMAINS => out.include_domains = true,
             PROTEIN_SECTION_INTERACTIONS => out.include_interactions = true,
+            PROTEIN_SECTION_COMPLEXES => out.include_complexes = true,
             PROTEIN_SECTION_STRUCTURES => out.include_structures = true,
             PROTEIN_SECTION_ALL => include_all = true,
             _ => {
@@ -160,6 +194,7 @@ fn parse_sections(sections: &[String]) -> Result<ProteinSections, BioMcpError> {
     if include_all {
         out.include_domains = true;
         out.include_interactions = true;
+        out.include_complexes = true;
         out.include_structures = true;
     }
 
@@ -453,7 +488,22 @@ pub async fn get_with_structure_limit(
         Ok(interactions)
     };
 
-    let (domains_res, interactions_res) = tokio::join!(domains_fut, interactions_fut);
+    let complexes_fut = async {
+        if !parsed_sections.include_complexes {
+            return Ok::<Vec<ProteinComplex>, BioMcpError>(Vec::new());
+        }
+
+        let rows = ComplexPortalClient::new()?
+            .complexes(&protein.accession, DEFAULT_COMPLEX_LIMIT)
+            .await?;
+        Ok(rows
+            .into_iter()
+            .map(map_complexportal_complex)
+            .collect::<Vec<_>>())
+    };
+
+    let (domains_res, interactions_res, complexes_res) =
+        tokio::join!(domains_fut, interactions_fut, complexes_fut);
 
     match domains_res {
         Ok(domains) => protein.domains = domains,
@@ -465,22 +515,78 @@ pub async fn get_with_structure_limit(
         Err(err) => warn!("STRING unavailable for protein interactions: {err}"),
     }
 
+    match complexes_res {
+        Ok(rows) => protein.complexes = rows,
+        Err(err) => warn!("ComplexPortal unavailable for protein complexes: {err}"),
+    }
+
     Ok(protein)
+}
+
+fn map_complexportal_complex(row: ComplexPortalComplex) -> ProteinComplex {
+    ProteinComplex {
+        accession: row.accession,
+        name: row.name,
+        description: row.description,
+        curation: if row.predicted_complex {
+            ProteinComplexCuration::Predicted
+        } else {
+            ProteinComplexCuration::Curated
+        },
+        components: row
+            .participants
+            .into_iter()
+            .map(|participant| ProteinComplexComponent {
+                accession: participant.accession,
+                name: participant.name,
+                stoichiometry: participant.stoichiometry,
+            })
+            .collect(),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::sources::complexportal::ComplexPortalParticipant;
 
     #[test]
     fn parse_sections_supports_all_and_reports_unknown_values() {
+        let flags = parse_sections(&["complexes".to_string()]).unwrap();
+        assert!(flags.include_complexes);
+        assert!(!flags.include_domains);
+        assert!(!flags.include_interactions);
+        assert!(!flags.include_structures);
+
         let flags = parse_sections(&["all".to_string()]).unwrap();
+        assert!(flags.include_complexes);
         assert!(flags.include_domains);
         assert!(flags.include_interactions);
         assert!(flags.include_structures);
 
         let err = parse_sections(&["unexpected".to_string()]).unwrap_err();
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    }
+
+    #[test]
+    fn map_complexportal_complex_uses_explicit_curation_and_components() {
+        let row = ComplexPortalComplex {
+            accession: "CPX-1234".to_string(),
+            name: "BRAF signaling complex".to_string(),
+            description: Some("Complex description".to_string()),
+            predicted_complex: true,
+            participants: vec![ComplexPortalParticipant {
+                accession: "P15056".to_string(),
+                name: "BRAF".to_string(),
+                stoichiometry: Some("minValue: 1, maxValue: 1".to_string()),
+            }],
+        };
+
+        let mapped = map_complexportal_complex(row);
+        assert!(matches!(mapped.curation, ProteinComplexCuration::Predicted));
+        assert_eq!(mapped.components.len(), 1);
+        assert_eq!(mapped.components[0].accession, "P15056");
+        assert_eq!(mapped.components[0].name, "BRAF");
     }
 
     #[tokio::test]
