@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import shlex
-from collections.abc import AsyncIterator, Callable
+import subprocess
+import tempfile
+from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
@@ -13,7 +15,7 @@ from mcp.client.stdio import stdio_client
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SessionFactory = Callable[
-    [],
+    [dict[str, str] | None],
     AsyncIterator[tuple[ClientSession, types.InitializeResult]],
 ]
 
@@ -54,22 +56,58 @@ def _resolve_command(pytestconfig: pytest.Config) -> list[str]:
     return argv
 
 
-def _server_parameters(argv: list[str]) -> StdioServerParameters:
+def _server_parameters(
+    argv: list[str], extra_env: dict[str, str] | None = None
+) -> StdioServerParameters:
+    env = dict(os.environ)
+    if extra_env:
+        env.update(extra_env)
     return StdioServerParameters(
         command=argv[0],
         args=argv[1:],
-        env=dict(os.environ),
+        env=env,
     )
+
+
+def _provision_study_fixture(root: Path) -> str:
+    script = REPO_ROOT / "spec" / "fixtures" / "setup-study-spec-fixture.sh"
+    subprocess.run(["bash", str(script), str(root)], cwd=REPO_ROOT, check=True)
+    result = subprocess.run(
+        [
+            "bash",
+            "-lc",
+            "source .cache/spec-study-env && printf '%s' \"$BIOMCP_STUDY_DIR\"",
+        ],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    study_dir = result.stdout.strip()
+    if not study_dir:
+        raise RuntimeError("study fixture did not set BIOMCP_STUDY_DIR")
+    return study_dir
+
+
+@pytest.fixture
+def study_fixture_env() -> Iterator[dict[str, str]]:
+    root = Path(tempfile.mkdtemp(prefix="biomcp-study-tests-"))
+    try:
+        yield {"BIOMCP_STUDY_DIR": _provision_study_fixture(root)}
+    finally:
+        subprocess.run(["rm", "-rf", str(root)], check=False)
 
 
 @pytest.fixture
 def mcp_session_factory(pytestconfig: pytest.Config) -> SessionFactory:
     argv = _resolve_command(pytestconfig)
     timeout_seconds = float(pytestconfig.getoption("--mcp-timeout"))
-    parameters = _server_parameters(argv)
 
     @asynccontextmanager
-    async def _open_session() -> AsyncIterator[tuple[ClientSession, types.InitializeResult]]:
+    async def _open_session(
+        extra_env: dict[str, str] | None = None,
+    ) -> AsyncIterator[tuple[ClientSession, types.InitializeResult]]:
+        parameters = _server_parameters(argv, extra_env)
         async with stdio_client(parameters) as (read_stream, write_stream):
             async with ClientSession(
                 read_stream,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 
 import pytest
@@ -7,6 +8,14 @@ from mcp import types
 from mcp.shared.exceptions import McpError
 
 EXPECTED_HELP_RESOURCE = ("biomcp://help", "BioMCP Overview")
+
+
+def _mime_type(content: object) -> str | None:
+    return getattr(content, "mimeType", getattr(content, "mime_type", None))
+
+
+def _is_error(result: object) -> bool | None:
+    return getattr(result, "isError", getattr(result, "is_error", None))
 
 
 @pytest.mark.asyncio
@@ -28,7 +37,7 @@ async def test_list_tools_includes_biomcp(mcp_session_factory) -> None:
         result = await session.list_tools()
         names = {tool.name for tool in result.tools}
         assert "biomcp" in names
-        assert 'shell' not in names
+        assert "shell" not in names
 
 
 @pytest.mark.asyncio
@@ -105,3 +114,57 @@ async def test_invalid_resource_uri_returns_mcp_error(
 
         assert exc_info.value.error.code == -32002
         assert "Unknown resource:" in exc_info.value.error.message
+
+
+@pytest.mark.asyncio
+async def test_charted_study_call_returns_text_then_svg_image(
+    mcp_session_factory,
+    study_fixture_env,
+) -> None:
+    async with mcp_session_factory(study_fixture_env) as (session, _initialize_result):
+        result = await session.call_tool(
+            "biomcp",
+            arguments={
+                "command": (
+                    "biomcp study query --study msk_impact_2017 --gene TP53 "
+                    "--type mutations --chart bar"
+                )
+            },
+        )
+
+    assert _is_error(result) is False
+    assert len(result.content) == 2
+    assert isinstance(result.content[0], types.TextContent)
+    assert isinstance(result.content[1], types.ImageContent)
+
+    text = result.content[0].text
+    assert "# Study Mutation Frequency: TP53 (msk_impact_2017)" in text
+
+    image = result.content[1]
+    assert _mime_type(image) == "image/svg+xml"
+    svg = base64.b64decode(image.data).decode("utf-8")
+    stripped = svg.lstrip()
+    assert stripped.startswith("<svg") or stripped.startswith("<?xml")
+    assert "<svg" in svg
+
+
+@pytest.mark.asyncio
+async def test_charted_study_call_rejects_output_file_in_mcp_mode(
+    mcp_session_factory,
+    study_fixture_env,
+) -> None:
+    async with mcp_session_factory(study_fixture_env) as (session, _initialize_result):
+        result = await session.call_tool(
+            "biomcp",
+            arguments={
+                "command": (
+                    "biomcp study query --study msk_impact_2017 --gene TP53 "
+                    "--type mutations --chart bar --output out.svg"
+                )
+            },
+        )
+
+    assert _is_error(result) is True
+    assert result.content
+    assert isinstance(result.content[0], types.TextContent)
+    assert "MCP chart responses do not support --output" in result.content[0].text

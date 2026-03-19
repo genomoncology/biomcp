@@ -22,6 +22,7 @@ const TERMINAL_ROWS: usize = 32;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ChartRenderOptions {
     pub terminal: bool,
+    pub inline_svg: bool,
     pub output: Option<PathBuf>,
     pub title: Option<String>,
     pub theme: Option<String>,
@@ -31,6 +32,7 @@ pub(crate) struct ChartRenderOptions {
 impl ChartRenderOptions {
     pub(crate) fn from_args(
         terminal: bool,
+        inline_svg: bool,
         output: Option<PathBuf>,
         title: Option<String>,
         theme: Option<String>,
@@ -38,6 +40,7 @@ impl ChartRenderOptions {
     ) -> Self {
         Self {
             terminal,
+            inline_svg,
             output,
             title,
             theme,
@@ -50,6 +53,7 @@ enum OutputTarget {
     Terminal,
     Svg(PathBuf),
     Png(PathBuf),
+    InlineSvg,
 }
 
 pub(crate) fn validate_query_chart_type(
@@ -523,10 +527,19 @@ fn render_chart(
             Ok(format!("Wrote SVG chart to {}", path.display()))
         }
         OutputTarget::Png(path) => write_png(&scene, &path),
+        OutputTarget::InlineSvg => Ok(SvgBackend.render_scene(&scene)),
     }
 }
 
 fn output_target(options: &ChartRenderOptions) -> Result<OutputTarget, BioMcpError> {
+    if options.inline_svg {
+        if options.output.is_some() {
+            return Err(BioMcpError::InvalidArgument(
+                "MCP inline chart output cannot be combined with file output.".into(),
+            ));
+        }
+        return Ok(OutputTarget::InlineSvg);
+    }
     if let Some(path) = options.output.clone() {
         let extension = path
             .extension()
@@ -655,6 +668,7 @@ mod tests {
     fn terminal_options() -> ChartRenderOptions {
         ChartRenderOptions {
             terminal: true,
+            inline_svg: false,
             output: None,
             title: None,
             theme: None,
@@ -694,7 +708,19 @@ mod tests {
     fn svg_options(path: PathBuf) -> ChartRenderOptions {
         ChartRenderOptions {
             terminal: false,
+            inline_svg: false,
             output: Some(path),
+            title: Some("Example".into()),
+            theme: Some("minimal".into()),
+            palette: Some("wong".into()),
+        }
+    }
+
+    fn inline_svg_options() -> ChartRenderOptions {
+        ChartRenderOptions {
+            terminal: false,
+            inline_svg: true,
+            output: None,
             title: Some("Example".into()),
             theme: Some("minimal".into()),
             palette: Some("wong".into()),
@@ -733,6 +759,29 @@ mod tests {
         let msg = err.to_string();
         assert!(msg.contains("study survival"));
         assert!(msg.contains("bar"));
+    }
+
+    #[test]
+    fn inline_svg_target_returns_svg_markup() {
+        let mutation = MutationFrequencyResult {
+            study_id: "demo".into(),
+            gene: "TP53".into(),
+            mutation_count: 7,
+            unique_samples: 5,
+            total_samples: 20,
+            frequency: 0.25,
+            top_variant_classes: vec![
+                ("Missense_Mutation".into(), 4),
+                ("Nonsense_Mutation".into(), 3),
+            ],
+            top_protein_changes: vec![("R175H".into(), 3)],
+        };
+
+        let svg = render_mutation_frequency_chart(&mutation, ChartType::Bar, &inline_svg_options())
+            .expect("inline svg should render");
+
+        assert!(svg.contains("<svg"));
+        assert!(svg.contains("Example"));
     }
 
     #[test]
