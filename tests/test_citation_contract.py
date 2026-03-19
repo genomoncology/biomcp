@@ -51,7 +51,11 @@ def test_citation_cff_exists_and_has_expected_cff_keys() -> None:
     assert "family-names: Yeakley" in citation
     assert "given-names: Anibee" in citation
     assert "family-names: Zingalis" in citation
-    assert "doi:" not in citation
+    software_metadata, preferred = citation.split("preferred-citation:", maxsplit=1)
+    assert "doi:" not in software_metadata
+    assert "publisher: Zenodo" in preferred
+    assert "doi: 10.5281/zenodo.XXXXXXX" in preferred
+    assert "version: 0.9.0" in preferred
 
 
 def test_citation_cff_release_metadata_matches_repo_metadata() -> None:

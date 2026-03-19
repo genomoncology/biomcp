@@ -1,0 +1,24 @@
+{
+  "title": "BioMCP",
+  "description": "BioMCP is a single-binary CLI and MCP server for querying biomedical databases with one command grammar, compact markdown output, and local study analytics.",
+  "license": "MIT",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Maurer, Ian"
+    },
+    {
+      "name": "Yeakley, Justin"
+    },
+    {
+      "name": "Zingalis, Anibee"
+    }
+  ],
+  "keywords": [
+    "bioinformatics",
+    "biomedical-databases",
+    "clinical-trials",
+    "genomics",
+    "mcp"
+  ]
+}

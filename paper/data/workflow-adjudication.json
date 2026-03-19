@@ -1,0 +1,16 @@
+{
+  "_description": "Archived release data will replace this stub with workflow definitions, rubric scores, and measured runtimes for the paper workflow evaluation.",
+  "_is_stub": true,
+  "metadata": {
+    "assessment_label": "",
+    "scorer_count": 0,
+    "runtime_source": "",
+    "timing_reuse_note": ""
+  },
+  "summary": {
+    "workflow_count": 0,
+    "passed_all_workflows": 0,
+    "passed_all_fraction": 0.0
+  },
+  "workflows": []
+}

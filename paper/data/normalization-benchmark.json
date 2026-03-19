@@ -1,0 +1,27 @@
+{
+  "_description": "Archived release data will replace this stub with alias, brand-name, and variant-notation normalization benchmark results.",
+  "_is_stub": true,
+  "metadata": {
+    "gene_aliases_note": "",
+    "drug_brands_note": "",
+    "variant_input_parsing_note": ""
+  },
+  "gene_aliases": {
+    "total": 0,
+    "resolved": 0,
+    "rate_pct": 0.0,
+    "results": []
+  },
+  "drug_brands": {
+    "total": 0,
+    "resolved": 0,
+    "rate_pct": 0.0,
+    "results": []
+  },
+  "variant_input_parsing": {
+    "total": 0,
+    "resolved": 0,
+    "rate_pct": 0.0,
+    "results": []
+  }
+}

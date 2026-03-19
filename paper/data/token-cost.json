@@ -1,0 +1,18 @@
+{
+  "_description": "Archived release data will replace this stub with token and byte totals computed from the generated workflow outputs.",
+  "_is_stub": true,
+  "metadata": {
+    "tokenizer": "",
+    "secondary_metric": "",
+    "note": ""
+  },
+  "per_workflow": [],
+  "totals": {
+    "compact_tokens": 0,
+    "naive_tokens": 0,
+    "token_reduction_pct": 0.0,
+    "compact_bytes": 0,
+    "naive_bytes": 0,
+    "byte_reduction_pct": 0.0
+  }
+}
