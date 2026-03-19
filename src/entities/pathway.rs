@@ -509,7 +509,7 @@ pub async fn search_with_filters(
     }
     if !filters.top_level && query.is_none() {
         return Err(BioMcpError::InvalidArgument(
-            "Query is required. Example: biomcp search pathway -q MAPK signaling".into(),
+            "Query is required. Example: biomcp search pathway -q \"MAPK signaling\"".into(),
         ));
     }
 
@@ -680,6 +680,24 @@ mod tests {
         assert!(flags.include_genes);
         assert!(!flags.include_events);
         assert!(!flags.include_enrichment);
+    }
+
+    #[tokio::test]
+    async fn search_requires_query_with_quoted_example() {
+        let filters = PathwaySearchFilters {
+            query: None,
+            pathway_type: None,
+            top_level: false,
+        };
+        let err = search_with_filters(&filters, 5)
+            .await
+            .expect_err("missing query should fail before any source call");
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(
+            err.to_string().contains(
+                "Query is required. Example: biomcp search pathway -q \"MAPK signaling\""
+            )
+        );
     }
 
     #[test]

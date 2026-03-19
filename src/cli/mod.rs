@@ -812,18 +812,22 @@ See also: biomcp list drug")]
         offset: usize,
     },
     /// Search pathways by name or keyword
-    #[command(after_help = "\
+    #[command(
+        override_usage = "biomcp search pathway [OPTIONS] <QUERY>\n       biomcp search pathway [OPTIONS] --top-level [QUERY]",
+        after_help = "\
 EXAMPLES:
   biomcp search pathway \"MAPK signaling\"
   biomcp search pathway \"Pathways in cancer\" --limit 5
-  biomcp search pathway -q \"DNA repair\" --type pathway --top-level --limit 5
+  biomcp search pathway -q \"DNA repair\" --limit 5
+  biomcp search pathway --top-level --limit 5
 
-See also: biomcp list pathway")]
+See also: biomcp list pathway"
+    )]
     Pathway {
         /// Free text query (pathway name, process, keyword)
         #[arg(short, long)]
         query: Option<String>,
-        /// Optional positional query alias for -q/--query
+        /// Positional alias for -q/--query; required unless --top-level is present, and multi-word queries must be quoted
         #[arg(value_name = "QUERY")]
         positional_query: Option<String>,
         /// Entity type filter (e.g., pathway)
@@ -5560,6 +5564,21 @@ mod tests {
         String::from_utf8(help).expect("help should be utf-8")
     }
 
+    fn render_pathway_search_long_help() -> String {
+        let mut command = Cli::command();
+        let search = command
+            .find_subcommand_mut("search")
+            .expect("search subcommand should exist");
+        let pathway = search
+            .find_subcommand_mut("pathway")
+            .expect("pathway subcommand should exist");
+        let mut help = Vec::new();
+        pathway
+            .write_long_help(&mut help)
+            .expect("pathway help should render");
+        String::from_utf8(help).expect("help should be utf-8")
+    }
+
     #[test]
     fn trial_facility_help_names_text_search_and_geo_verify_modes() {
         let help = render_trial_search_long_help();
@@ -5591,6 +5610,17 @@ mod tests {
         let help = render_trial_search_long_help();
 
         assert!(help.contains("age-only CTGov searches report an approximate upstream total"));
+    }
+
+    #[test]
+    fn search_pathway_help_describes_conditional_query_contract() {
+        let help = render_pathway_search_long_help();
+
+        assert!(help.contains("biomcp search pathway [OPTIONS] <QUERY>"));
+        assert!(help.contains("biomcp search pathway [OPTIONS] --top-level [QUERY]"));
+        assert!(help.contains("required unless --top-level is present"));
+        assert!(help.contains("multi-word queries must be quoted"));
+        assert!(help.contains("biomcp search pathway --top-level --limit 5"));
     }
 
     #[test]
@@ -6940,6 +6970,65 @@ mod tests {
     }
 
     #[test]
+    fn search_pathway_parses_multi_word_positional_query() {
+        let cli = Cli::try_parse_from([
+            "biomcp",
+            "search",
+            "pathway",
+            "MAPK signaling",
+            "--limit",
+            "2",
+        ])
+        .expect("search pathway positional query should parse");
+        match cli.command {
+            Commands::Search {
+                entity:
+                    super::SearchEntity::Pathway {
+                        query,
+                        positional_query,
+                        limit,
+                        ..
+                    },
+            } => {
+                assert!(query.is_none());
+                assert_eq!(positional_query.as_deref(), Some("MAPK signaling"));
+                assert_eq!(limit, 2);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn search_pathway_parses_quoted_flag_query() {
+        let cli = Cli::try_parse_from([
+            "biomcp",
+            "search",
+            "pathway",
+            "-q",
+            "DNA repair",
+            "--limit",
+            "2",
+        ])
+        .expect("search pathway -q query should parse");
+        match cli.command {
+            Commands::Search {
+                entity:
+                    super::SearchEntity::Pathway {
+                        query,
+                        positional_query,
+                        limit,
+                        ..
+                    },
+            } => {
+                assert_eq!(query.as_deref(), Some("DNA repair"));
+                assert!(positional_query.is_none());
+                assert_eq!(limit, 2);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
     fn search_adverse_event_parses_positional_query() {
         let cli = Cli::try_parse_from([
             "biomcp",
@@ -7142,6 +7231,22 @@ mod tests {
         .expect_err("search all should require typed slots");
         assert!(err.to_string().contains("at least one typed slot"));
         assert!(err.to_string().contains("--gene"));
+    }
+
+    #[tokio::test]
+    async fn search_pathway_requires_query_unless_top_level() {
+        let err = execute(vec![
+            "biomcp".to_string(),
+            "search".to_string(),
+            "pathway".to_string(),
+        ])
+        .await
+        .expect_err("search pathway should require query unless --top-level");
+        assert!(
+            err.to_string().contains(
+                "Query is required. Example: biomcp search pathway -q \"MAPK signaling\""
+            )
+        );
     }
 
     #[tokio::test]
