@@ -10,7 +10,9 @@ ID: {{ id }}
 
 {{ definition | truncate(200) }}
 {% endif -%}
-{% if top_genes -%}
+{% if top_gene_score_labels -%}
+Genes: {{ top_gene_score_labels | join(", ") }}
+{% elif top_genes -%}
 Genes: {{ top_genes | join(", ") }}
 {% endif -%}
 {% if treatment_landscape -%}
@@ -33,11 +35,11 @@ Recruiting Trials: {{ recruiting_trial_count }}
 {% if show_genes_section -%}
 ## Associated Genes
 
-{% if gene_associations -%}
-| Gene | Relationship | Source |
-|---|---|---|
-{% for row in gene_associations -%}
-| {{ row.gene }} | {{ row.relationship or "-" }} | {{ row.source or "-" }} |
+{% if gene_association_rows -%}
+| Gene | Relationship | Source | OpenTargets |
+|---|---|---|---|
+{% for row in gene_association_rows -%}
+| {{ row.gene }} | {{ row.relationship or "-" }} | {{ row.source or "-" }} | {{ row.opentargets or "-" }} |
 {% endfor -%}
 {% elif associated_genes -%}
 {{ associated_genes | join(", ") }}

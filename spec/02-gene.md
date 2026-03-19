@@ -9,6 +9,7 @@ Genes are a primary anchor in BioMCP and frequently drive downstream trial, arti
 | Detail card | `get gene BRAF` | Confirms rich per-gene card output |
 | Section expansion | `get gene BRAF pathways` | Confirms progressive disclosure |
 | HPA section | `get gene BRAF hpa` | Confirms protein tissue-expression contract |
+| Druggability section | `get gene EGFR druggability` | Confirms combined DGIdb/OpenTargets contract |
 | Trial helper | `gene trials BRAF` | Confirms cross-entity trial pivot |
 | Article helper | `gene articles BRAF` | Confirms cross-entity literature pivot |
 
@@ -78,6 +79,19 @@ echo "$out" | mustmatch like "## Human Protein Atlas"
 echo "$out" | mustmatch like "Reliability:"
 echo "$out" | mustmatch like "Subcellular"
 echo "$out" | mustmatch like "| Tissue | Level |"
+```
+
+## Druggability Section
+
+The druggability section should stay as one section while exposing OpenTargets tractability markers and safety-liability context alongside DGIdb interaction data.
+
+```bash
+out="$(biomcp get gene EGFR druggability)"
+echo "$out" | mustmatch like "## Druggability"
+echo "$out" | mustmatch like "OpenTargets tractability"
+echo "$out" | mustmatch like "small molecule"
+echo "$out" | mustmatch like "antibody"
+echo "$out" | mustmatch like "OpenTargets safety liabilities"
 ```
 
 ## Gene to Trials

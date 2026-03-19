@@ -29,6 +29,7 @@ The disease detail card should resolve the query label to a normalized concept. 
 out="$(biomcp get disease melanoma)"
 echo "$out" | mustmatch like "# melanoma"
 echo "$out" | mustmatch like "ID: MONDO:0005105"
+echo "$out" | mustmatch like "OT "
 ```
 
 ## Disease Genes
@@ -38,7 +39,8 @@ Associated-gene expansion is central for translating phenotype-level queries int
 ```bash
 out="$(biomcp get disease melanoma genes)"
 echo "$out" | mustmatch like "## Associated Genes"
-echo "$out" | mustmatch like "| Gene | Relationship | Source |"
+echo "$out" | mustmatch like "| Gene | Relationship | Source | OpenTargets |"
+echo "$out" | mustmatch like "overall "
 ```
 
 ## Disease to Trials

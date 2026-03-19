@@ -435,6 +435,7 @@ pub fn from_mydisease_hit(hit: MyDiseaseHit) -> Disease {
         associated_genes,
         gene_associations: Vec::new(),
         top_genes: Vec::new(),
+        top_gene_scores: Vec::new(),
         treatment_landscape: Vec::new(),
         recruiting_trial_count: None,
         pathways: Vec::new(),

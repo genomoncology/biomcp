@@ -62,7 +62,7 @@ fn list_gene() -> String {
 - `get gene <symbol> civic` - CIViC evidence/assertion summary
 - `get gene <symbol> expression` - GTEx tissue expression summary
 - `get gene <symbol> hpa` - Human Protein Atlas protein tissue expression + localization
-- `get gene <symbol> druggability` - DGIdb target categories/interactions
+- `get gene <symbol> druggability` - DGIdb interactions plus OpenTargets tractability/safety
 - `get gene <symbol> clingen` - ClinGen validity + dosage sensitivity
 - `get gene <symbol> constraint` - gnomAD gene constraint (pLI, LOEUF, mis_z, syn_z)
 - `get gene <symbol> all` - include every section
@@ -287,8 +287,8 @@ fn list_disease() -> String {
 
 ## Commands
 
-- `get disease <name_or_id>` - resolve MONDO/DOID or best match by name
-- `get disease <name_or_id> genes` - Monarch associations augmented with CIViC drivers
+- `get disease <name_or_id>` - resolve MONDO/DOID or best match by name with OpenTargets gene scores
+- `get disease <name_or_id> genes` - Monarch associations augmented with CIViC drivers and OpenTargets scores
 - `get disease <name_or_id> pathways` - Reactome pathways from associated genes
 - `get disease <name_or_id> phenotypes` - HPO phenotypes with resolved names
 - `get disease <name_or_id> variants` - CIViC disease-associated molecular profiles

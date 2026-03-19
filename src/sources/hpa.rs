@@ -459,18 +459,16 @@ mod tests {
     #[tokio::test]
     async fn protein_data_returns_default_for_not_found() {
         let server = MockServer::start().await;
+        let ensembl_id = "ENSG00000157765";
 
         Mock::given(method("GET"))
-            .and(path("/ENSG00000157764.xml"))
+            .and(path("/ENSG00000157765.xml"))
             .respond_with(ResponseTemplate::new(404))
             .mount(&server)
             .await;
 
         let client = HpaClient::new_for_test(server.uri()).expect("client");
-        let parsed = client
-            .protein_data("ENSG00000157764")
-            .await
-            .expect("default");
+        let parsed = client.protein_data(ensembl_id).await.expect("default");
 
         assert_eq!(parsed, GeneHpa::default());
     }
@@ -480,7 +478,7 @@ mod tests {
         let server = MockServer::start().await;
 
         Mock::given(method("GET"))
-            .and(path("/ENSG00000157764.xml"))
+            .and(path("/ENSG00000157766.xml"))
             .respond_with(
                 ResponseTemplate::new(200)
                     .insert_header("content-type", "text/xml")
@@ -491,7 +489,7 @@ mod tests {
 
         let client = HpaClient::new_for_test(server.uri()).expect("client");
         let parsed = client
-            .protein_data("ensg00000157764.12")
+            .protein_data("ensg00000157766.12")
             .await
             .expect("parsed");
 
