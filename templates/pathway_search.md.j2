@@ -5,10 +5,10 @@ No pathways found
 {% else -%}
 Found {{ count }} pathway{% if count != 1 %}s{% endif %}{% if total %} (of {{ total }} total){% endif %}
 
-| ID | Name |
-|---|---|
+| Source | ID | Name |
+|---|---|---|
 {% for row in results -%}
-| {{ row.id }} | {{ row.name }} |
+| {{ row.source }} | {{ row.id }} | {{ row.name }} |
 {% endfor %}
 
 Use `get pathway <id>` for details.

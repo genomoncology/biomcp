@@ -492,14 +492,14 @@ fn list_pathway() -> String {
 
 ## Commands
 
-- `search pathway <query>` - positional pathway search (Reactome)
-- `search pathway -q <query>` - pathway search (Reactome)
+- `search pathway <query>` - positional pathway search (Reactome + KEGG)
+- `search pathway -q <query>` - pathway search (Reactome + KEGG)
 - `search pathway -q <query> --type pathway`
 - `search pathway --top-level`
 - `search pathway -q <query> --limit <N> --offset <N>`
 - `get pathway <id>` - base pathway card
 - `get pathway <id> genes` - pathway participant genes
-- `get pathway <id> events` - contained events
+- `get pathway <id> events` - contained events (Reactome only)
 - `get pathway <id> enrichment` - g:Profiler enrichment from pathway genes
 - `get pathway <id> all` - include all sections
 

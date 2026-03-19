@@ -50,7 +50,7 @@ biomcp get trial NCT02576665
 biomcp get trial NCT02576665 eligibility
 biomcp get drug carboplatin shortage
 biomcp get disease MONDO:0005105
-biomcp get pathway R-HSA-5673001 genes
+biomcp get pathway hsa05200 genes
 biomcp get protein P15056 domains
 biomcp variant oncokb "BRAF V600E"
 ```
@@ -63,6 +63,7 @@ biomcp search variant -g BRCA1 --significance pathogenic --limit 5
 biomcp search trial -c melanoma --status recruiting --phase 2 --limit 5
 biomcp search article -g BRAF -d melanoma --since 2024-01-01 --limit 5
 biomcp search pathway -q "MAPK signaling" --limit 5
+biomcp search pathway -q "Pathways in cancer" --limit 5
 biomcp search protein -q kinase --limit 5
 biomcp search adverse-event --drug pembrolizumab --serious --limit 5
 biomcp search all --gene BRAF --disease melanoma
@@ -97,6 +98,7 @@ biomcp gene drugs BRAF --limit 3
 biomcp gene articles BRCA1 --limit 3
 biomcp gene pathways BRAF
 biomcp pathway drugs R-HSA-5673001 --limit 3
+biomcp pathway drugs hsa05200 --limit 3
 biomcp pathway articles R-HSA-5673001 --limit 3
 biomcp pathway trials R-HSA-5673001 --limit 3
 biomcp protein structures P15056

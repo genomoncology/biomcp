@@ -76,6 +76,12 @@ impl RateLimiter {
                 "https://api.semanticscholar.org",
                 Duration::from_secs(1),
             ),
+            policy(
+                "kegg",
+                "BIOMCP_KEGG_BASE",
+                "https://rest.kegg.jp",
+                Duration::from_millis(334),
+            ),
         ];
         Self::new(policies, Duration::from_millis(100))
     }
@@ -305,5 +311,14 @@ mod tests {
             .resolve_key_for_str("https://api.semanticscholar.org/graph/v1/paper/PMID%3A22663011")
             .expect("semantic scholar URL should parse");
         assert_eq!(key, "policy:semantic-scholar");
+    }
+
+    #[test]
+    fn kegg_urls_resolve_to_kegg_policy() {
+        let limiter = RateLimiter::from_env();
+        let key = limiter
+            .resolve_key_for_str("https://rest.kegg.jp/find/pathway/MAPK")
+            .expect("kegg URL should parse");
+        assert_eq!(key, "policy:kegg");
     }
 }

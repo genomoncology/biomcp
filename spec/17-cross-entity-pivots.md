@@ -205,11 +205,11 @@ echo "$out" | mustmatch like "| PMID | Title |"
 
 ## Gene to Pathways
 
-Gene-to-pathway pivots should expose the current Reactome search-style heading
-and table columns.
+Gene-to-pathway pivots should expose the current pathway heading and
+source-labelled table columns.
 
 ```bash
 out="$(biomcp gene pathways BRAF --limit 3)"
 echo "$out" | mustmatch like "# BRAF - pathways"
-echo "$out" | mustmatch like "| ID | Name |"
+echo "$out" | mustmatch like "| Source | ID | Name |"
 ```

@@ -81,7 +81,7 @@ biomcp gene pathways BRAF --limit 5
 ```
 
 `gene drugs` pivots into target-based drug lookup. `gene pathways` returns the
-Reactome search-style pathway table for the gene, which is useful when you want
+source-labelled pathway table for the gene, which is useful when you want
 to expand from a biomarker into pathway context without leaving the CLI.
 
 ## Other pivot helpers

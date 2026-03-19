@@ -128,6 +128,7 @@ biomcp search drug -q "kinase inhibitor" --limit 5 --offset 0
 
 ```bash
 biomcp search pathway -q "MAPK signaling" --limit 5 --offset 0
+biomcp search pathway -q "Pathways in cancer" --limit 5 --offset 0
 ```
 
 ### Protein
@@ -213,6 +214,8 @@ biomcp get drug carboplatin shortage
 ```bash
 biomcp get pathway R-HSA-5673001
 biomcp get pathway R-HSA-5673001 genes
+biomcp get pathway hsa05200
+biomcp get pathway hsa05200 genes
 ```
 
 ### Protein
@@ -274,6 +277,7 @@ biomcp gene drugs BRAF
 biomcp gene articles BRCA1
 biomcp gene pathways BRAF
 biomcp pathway drugs R-HSA-5673001
+biomcp pathway drugs hsa05200
 biomcp pathway articles R-HSA-5673001
 biomcp pathway trials R-HSA-5673001
 biomcp protein structures P15056

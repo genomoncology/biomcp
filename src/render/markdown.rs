@@ -472,6 +472,12 @@ pub(crate) fn pathway_evidence_urls(pathway: &Pathway) -> Vec<(&'static str, Str
     if pathway.id.trim().is_empty() {
         return Vec::new();
     }
+    if pathway.source.eq_ignore_ascii_case("KEGG") {
+        return vec![(
+            "KEGG",
+            format!("https://www.kegg.jp/entry/{}", pathway.id.trim()),
+        )];
+    }
     vec![(
         "Reactome",
         format!("https://reactome.org/content/detail/{}", pathway.id.trim()),
@@ -1868,6 +1874,7 @@ pub fn pathway_markdown(
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(pathway_label, requested_sections),
+        source => &pathway.source,
         id => &pathway.id,
         name => &pathway.name,
         species => &pathway.species,
@@ -2729,6 +2736,93 @@ mod tests {
         assert!(markdown.contains("Reference genome: GRCh38"));
         assert!(markdown.contains("Transcript: ENST00000269305"));
         assert!(markdown.contains("No gnomAD constraint metrics returned for this gene query."));
+    }
+
+    #[test]
+    fn gene_markdown_pathways_show_source_labels() {
+        let gene = Gene {
+            symbol: "BRAF".to_string(),
+            name: "B-Raf proto-oncogene".to_string(),
+            entrez_id: "673".to_string(),
+            ensembl_id: None,
+            location: Some("7q34".to_string()),
+            genomic_coordinates: None,
+            omim_id: None,
+            uniprot_id: None,
+            summary: None,
+            gene_type: None,
+            aliases: Vec::new(),
+            clinical_diseases: Vec::new(),
+            clinical_drugs: Vec::new(),
+            pathways: Some(vec![
+                crate::entities::gene::GenePathway {
+                    source: "KEGG".to_string(),
+                    id: "hsa05200".to_string(),
+                    name: "Pathways in cancer".to_string(),
+                },
+                crate::entities::gene::GenePathway {
+                    source: "Reactome".to_string(),
+                    id: "R-HSA-5673001".to_string(),
+                    name: "RAF/MAP kinase cascade".to_string(),
+                },
+            ]),
+            ontology: None,
+            diseases: None,
+            protein: None,
+            go: None,
+            interactions: None,
+            civic: None,
+            expression: None,
+            druggability: None,
+            clingen: None,
+            constraint: None,
+        };
+
+        let markdown = gene_markdown(&gene, &[]).expect("rendered markdown");
+        assert!(markdown.contains("| Source | ID | Name |"));
+        assert!(markdown.contains("| KEGG | hsa05200 | Pathways in cancer |"));
+        assert!(markdown.contains("| Reactome | R-HSA-5673001 | RAF/MAP kinase cascade |"));
+        assert!(!markdown.contains("Showing pathway rows from Reactome search results."));
+    }
+
+    #[test]
+    fn pathway_markdown_uses_source_and_source_specific_evidence_url() {
+        let pathway = Pathway {
+            source: "KEGG".to_string(),
+            id: "hsa05200".to_string(),
+            name: "Pathways in cancer".to_string(),
+            species: Some("Homo sapiens".to_string()),
+            summary: Some("Cancer pathway overview.".to_string()),
+            genes: vec!["BRAF".to_string(), "EGFR".to_string()],
+            events: Vec::new(),
+            enrichment: Vec::new(),
+        };
+
+        let markdown = pathway_markdown(&pathway, &[]).expect("rendered markdown");
+        assert!(markdown.contains("Source: KEGG"));
+        assert!(markdown.contains("[KEGG](https://www.kegg.jp/entry/hsa05200)"));
+    }
+
+    #[test]
+    fn pathway_search_markdown_shows_source_column() {
+        let results = vec![
+            PathwaySearchResult {
+                source: "Reactome".to_string(),
+                id: "R-HSA-5673001".to_string(),
+                name: "RAF/MAP kinase cascade".to_string(),
+            },
+            PathwaySearchResult {
+                source: "KEGG".to_string(),
+                id: "hsa04010".to_string(),
+                name: "MAPK signaling pathway".to_string(),
+            },
+        ];
+
+        let markdown =
+            pathway_search_markdown("MAPK", &results, Some(results.len())).expect("markdown");
+        assert!(markdown.contains("| Source | ID | Name |"));
+        assert!(markdown.contains("| Reactome | R-HSA-5673001 | RAF/MAP kinase cascade |"));
+        assert!(markdown.contains("| KEGG | hsa04010 | MAPK signaling pathway |"));
     }
 
     #[test]

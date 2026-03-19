@@ -1,17 +1,19 @@
 # Pathway
 
-Use pathway commands to move from pathway names/IDs to genes, events, enrichment, and drug pivots.
+Use pathway commands to move from pathway names/IDs to genes, events, enrichment, and drug pivots. Search returns source-labelled Reactome and KEGG rows. `events` remains Reactome-only.
 
 ## Search pathways
 
 ```bash
 biomcp search pathway -q "MAPK signaling" --limit 5
+biomcp search pathway -q "Pathways in cancer" --limit 5
 ```
 
 ## Get pathway records
 
 ```bash
 biomcp get pathway R-HSA-5673001
+biomcp get pathway hsa05200
 ```
 
 ## Request pathway sections
@@ -20,6 +22,7 @@ Genes:
 
 ```bash
 biomcp get pathway R-HSA-5673001 genes
+biomcp get pathway hsa05200 genes
 ```
 
 Contained events:
@@ -32,12 +35,14 @@ Gene-set enrichment:
 
 ```bash
 biomcp get pathway R-HSA-5673001 enrichment
+biomcp get pathway hsa05200 enrichment
 ```
 
 ## Helper commands
 
 ```bash
 biomcp pathway drugs R-HSA-5673001 --limit 5
+biomcp pathway drugs hsa05200 --limit 5
 biomcp pathway articles R-HSA-5673001
 biomcp pathway trials R-HSA-5673001
 ```
@@ -46,6 +51,7 @@ biomcp pathway trials R-HSA-5673001
 
 ```bash
 biomcp --json get pathway R-HSA-5673001 genes
+biomcp --json get pathway hsa05200 genes
 ```
 
 ## Related guides

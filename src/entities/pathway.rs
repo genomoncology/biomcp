@@ -7,11 +7,13 @@ use tracing::warn;
 
 use crate::error::BioMcpError;
 use crate::sources::gprofiler::GProfilerClient;
+use crate::sources::kegg::{KeggClient, is_human_pathway_id};
 use crate::sources::reactome::ReactomeClient;
 use crate::transform;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pathway {
+    pub source: String,
     pub id: String,
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -37,6 +39,7 @@ pub struct PathwayEnrichment {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PathwaySearchResult {
+    pub source: String,
     pub id: String,
     pub name: String,
 }
@@ -206,6 +209,106 @@ fn normalize_pathway_query(query: &str) -> String {
     }
 }
 
+fn kegg_disabled() -> bool {
+    matches!(
+        std::env::var("BIOMCP_DISABLE_KEGG")
+            .ok()
+            .as_deref()
+            .map(str::trim),
+        Some("1") | Some("true") | Some("TRUE") | Some("yes") | Some("YES")
+    )
+}
+
+fn kegg_disabled_error(pathway_id: &str) -> BioMcpError {
+    BioMcpError::SourceUnavailable {
+        source_name: "kegg".to_string(),
+        reason: format!(
+            "KEGG pathway access for {pathway_id} is disabled by BIOMCP_DISABLE_KEGG=1."
+        ),
+        suggestion:
+            "Unset BIOMCP_DISABLE_KEGG or query a Reactome pathway ID such as R-HSA-5673001."
+                .to_string(),
+    }
+}
+
+fn merge_search_results(
+    primary: Vec<PathwaySearchResult>,
+    additional: Vec<PathwaySearchResult>,
+    limit: usize,
+) -> Vec<PathwaySearchResult> {
+    let mut out = Vec::new();
+    fn push_rows(out: &mut Vec<PathwaySearchResult>, rows: Vec<PathwaySearchResult>, limit: usize) {
+        for row in rows {
+            let source = row.source.trim().to_string();
+            let id = row.id.trim().to_string();
+            let name = row.name.trim().to_string();
+            if source.is_empty() || id.is_empty() || name.is_empty() {
+                continue;
+            }
+            if out.iter().any(|existing: &PathwaySearchResult| {
+                existing.source.eq_ignore_ascii_case(&source)
+                    && existing.id.eq_ignore_ascii_case(&id)
+            }) {
+                continue;
+            }
+            out.push(PathwaySearchResult { source, id, name });
+            if out.len() >= limit {
+                return;
+            }
+        }
+    }
+
+    push_rows(&mut out, primary, limit);
+    if out.len() < limit {
+        push_rows(&mut out, additional, limit);
+    }
+    out
+}
+
+async fn add_pathway_enrichment(pathway: &mut Pathway, fallback_genes: &[String]) {
+    let genes = if !pathway.genes.is_empty() {
+        pathway.genes.clone()
+    } else {
+        fallback_genes.to_vec()
+    };
+    if genes.is_empty() {
+        return;
+    }
+
+    let source_filter = if pathway.source.eq_ignore_ascii_case("KEGG") {
+        "KEGG"
+    } else {
+        "REAC"
+    };
+
+    let client = match GProfilerClient::new() {
+        Ok(client) => client,
+        Err(err) => {
+            warn!("g:Profiler enrichment unavailable: {err}");
+            return;
+        }
+    };
+
+    match client.enrich_genes(&genes, 10).await {
+        Ok(rows) => {
+            pathway.enrichment = rows
+                .into_iter()
+                .filter_map(|r| {
+                    Some(PathwayEnrichment {
+                        source: r.source?.trim().to_string(),
+                        id: r.native?.trim().to_string(),
+                        name: r.name?.trim().to_string(),
+                        p_value: r.p_value,
+                    })
+                })
+                .filter(|r| !r.source.is_empty() && !r.id.is_empty() && !r.name.is_empty())
+                .filter(|r| r.source.eq_ignore_ascii_case(source_filter))
+                .collect();
+        }
+        Err(err) => warn!("g:Profiler enrichment unavailable: {err}"),
+    }
+}
+
 pub fn search_query_summary(filters: &PathwaySearchFilters) -> String {
     let mut parts = Vec::new();
     if let Some(query) = filters
@@ -234,6 +337,7 @@ pub async fn search_with_filters(
     filters: &PathwaySearchFilters,
     limit: usize,
 ) -> Result<(Vec<PathwaySearchResult>, Option<usize>), BioMcpError> {
+    let limit = limit.clamp(1, 25);
     let query = filters
         .query
         .as_deref()
@@ -259,7 +363,7 @@ pub async fn search_with_filters(
 
     let client = ReactomeClient::new()?;
     if filters.top_level {
-        let mut hits = client.top_level_pathways(limit.clamp(1, 25)).await?;
+        let mut hits = client.top_level_pathways(limit).await?;
         if let Some(query) = query {
             let query_lower = query.to_ascii_lowercase();
             hits.retain(|row| row.name.to_ascii_lowercase().contains(&query_lower));
@@ -273,15 +377,48 @@ pub async fn search_with_filters(
     }
 
     let effective_query = normalize_pathway_query(query.unwrap_or_default());
-    let (hits, total) = client
-        .search_pathways(&effective_query, limit.clamp(1, 25))
-        .await?;
-    Ok((
-        hits.into_iter()
-            .map(transform::pathway::from_reactome_hit)
-            .collect(),
-        total,
-    ))
+    if kegg_disabled() {
+        warn!("KEGG pathway search disabled by BIOMCP_DISABLE_KEGG=1");
+        let (hits, total) = client.search_pathways(&effective_query, limit).await?;
+        return Ok((
+            hits.into_iter()
+                .map(transform::pathway::from_reactome_hit)
+                .collect(),
+            total,
+        ));
+    }
+
+    let kegg = KeggClient::new()?;
+    let kegg_budget = limit.min(5);
+    let reactome_budget = limit.saturating_sub(kegg_budget).max(1);
+    let (reactome_res, kegg_res) = tokio::join!(
+        client.search_pathways(&effective_query, reactome_budget),
+        kegg.search_pathways(&effective_query, kegg_budget)
+    );
+    let (reactome_hits, reactome_total) = reactome_res?;
+    let reactome_hits = reactome_hits
+        .into_iter()
+        .map(transform::pathway::from_reactome_hit)
+        .collect::<Vec<_>>();
+
+    let (kegg_hits, kegg_succeeded) = match kegg_res {
+        Ok(hits) => (
+            hits.into_iter()
+                .map(transform::pathway::from_kegg_hit)
+                .collect::<Vec<_>>(),
+            true,
+        ),
+        Err(err) => {
+            warn!("KEGG pathway search unavailable: {err}");
+            (Vec::new(), false)
+        }
+    };
+    let total = if kegg_succeeded && !kegg_hits.is_empty() {
+        None
+    } else {
+        reactome_total
+    };
+    Ok((merge_search_results(reactome_hits, kegg_hits, limit), total))
 }
 
 pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpError> {
@@ -293,6 +430,19 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
     }
 
     let parsed_sections = parse_sections(sections)?;
+    if is_human_pathway_id(st_id) {
+        if kegg_disabled() {
+            return Err(kegg_disabled_error(st_id));
+        }
+
+        let record = KeggClient::new()?.get_pathway(st_id).await?;
+        let mut pathway = transform::pathway::from_kegg_record(record);
+        if parsed_sections.include_enrichment {
+            add_pathway_enrichment(&mut pathway, &[]).await;
+        }
+        return Ok(pathway);
+    }
+
     let client = ReactomeClient::new()?;
     let record = client.get_pathway(st_id).await?;
 
@@ -321,32 +471,12 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
     }
 
     if parsed_sections.include_enrichment {
-        let genes = if !pathway.genes.is_empty() {
-            pathway.genes.clone()
-        } else {
+        let fallback_genes = if pathway.genes.is_empty() {
             extract_gene_symbols(&participant_lines, 30)
+        } else {
+            Vec::new()
         };
-
-        if !genes.is_empty() {
-            match GProfilerClient::new()?.enrich_genes(&genes, 10).await {
-                Ok(rows) => {
-                    pathway.enrichment = rows
-                        .into_iter()
-                        .filter_map(|r| {
-                            Some(PathwayEnrichment {
-                                source: r.source?.trim().to_string(),
-                                id: r.native?.trim().to_string(),
-                                name: r.name?.trim().to_string(),
-                                p_value: r.p_value,
-                            })
-                        })
-                        .filter(|r| !r.source.is_empty() && !r.id.is_empty() && !r.name.is_empty())
-                        .filter(|r| r.source.eq_ignore_ascii_case("REAC"))
-                        .collect();
-                }
-                Err(err) => warn!("g:Profiler enrichment unavailable: {err}"),
-            }
-        }
+        add_pathway_enrichment(&mut pathway, &fallback_genes).await;
     }
 
     Ok(pathway)
@@ -408,5 +538,42 @@ mod tests {
             normalize_pathway_query("oxidative phosphorylation"),
             "oxidative phosphorylation"
         );
+    }
+
+    #[test]
+    fn merge_search_results_keeps_source_labels_and_dedupes() {
+        let merged = merge_search_results(
+            vec![PathwaySearchResult {
+                source: "Reactome".to_string(),
+                id: "R-HSA-5673001".to_string(),
+                name: "RAF/MAP kinase cascade".to_string(),
+            }],
+            vec![
+                PathwaySearchResult {
+                    source: "KEGG".to_string(),
+                    id: "hsa04010".to_string(),
+                    name: "MAPK signaling pathway".to_string(),
+                },
+                PathwaySearchResult {
+                    source: "KEGG".to_string(),
+                    id: "HSA04010".to_string(),
+                    name: "duplicate".to_string(),
+                },
+            ],
+            5,
+        );
+
+        assert_eq!(merged.len(), 2);
+        assert_eq!(merged[0].source, "Reactome");
+        assert_eq!(merged[1].source, "KEGG");
+    }
+
+    #[test]
+    fn kegg_disabled_flag_accepts_one() {
+        // Safety: this test is single-threaded and restores the prior process environment.
+        unsafe { std::env::set_var("BIOMCP_DISABLE_KEGG", "1") };
+        assert!(kegg_disabled());
+        // Safety: this test restores the process environment before exit.
+        unsafe { std::env::remove_var("BIOMCP_DISABLE_KEGG") };
     }
 }

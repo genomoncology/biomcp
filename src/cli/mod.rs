@@ -801,10 +801,11 @@ See also: biomcp list drug")]
         #[arg(long, default_value = "0")]
         offset: usize,
     },
-    /// Search pathways by name or keyword (Reactome)
+    /// Search pathways by name or keyword
     #[command(after_help = "\
 EXAMPLES:
   biomcp search pathway \"MAPK signaling\"
+  biomcp search pathway \"Pathways in cancer\" --limit 5
   biomcp search pathway -q \"DNA repair\" --type pathway --top-level --limit 5
 
 See also: biomcp list pathway")]
@@ -1051,15 +1052,16 @@ See also: biomcp list drug")]
         #[arg(trailing_var_arg = true)]
         sections: Vec<String>,
     },
-    /// Get pathway by Reactome stable ID
+    /// Get pathway by ID
     #[command(after_help = "\
 EXAMPLES:
   biomcp get pathway R-HSA-5673001
+  biomcp get pathway hsa05200
   biomcp get pathway R-HSA-5673001 genes
 
 See also: biomcp list pathway")]
     Pathway {
-        /// Reactome stable ID (e.g., R-HSA-5673001)
+        /// Pathway ID (e.g., R-HSA-5673001, hsa05200)
         id: String,
         /// Sections to include (genes, events, enrichment, all)
         #[arg(trailing_var_arg = true)]
@@ -1429,12 +1431,13 @@ pub enum PathwayCommand {
     #[command(after_help = "\
 EXAMPLES:
   biomcp pathway drugs R-HSA-5673001 --limit 5
+  biomcp pathway drugs hsa05200 --limit 5
   biomcp pathway drugs R-HSA-6802957 --limit 5
 
 Note: Searches free-text fields (e.g., eligibility criteria). Results depend on source document wording.
 See also: biomcp list pathway")]
     Drugs {
-        /// Reactome stable ID (e.g., R-HSA-5673001)
+        /// Pathway ID (e.g., R-HSA-5673001, hsa05200)
         id: String,
         /// Maximum results (default: 10)
         #[arg(short, long, default_value = "10")]
@@ -1447,12 +1450,13 @@ See also: biomcp list pathway")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp pathway articles R-HSA-5673001 --limit 5
+  biomcp pathway articles hsa05200 --limit 5
   biomcp pathway articles R-HSA-6802957 --limit 5
 
 Note: Searches free-text fields (e.g., eligibility criteria). Results depend on source document wording.
 See also: biomcp list pathway")]
     Articles {
-        /// Reactome stable ID (e.g., R-HSA-5673001)
+        /// Pathway ID (e.g., R-HSA-5673001, hsa05200)
         id: String,
         /// Maximum results (default: 10)
         #[arg(short, long, default_value = "10")]
@@ -1465,12 +1469,13 @@ See also: biomcp list pathway")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp pathway trials R-HSA-5673001 --limit 5
+  biomcp pathway trials hsa05200 --limit 5
   biomcp pathway trials R-HSA-5673001 --source nci --limit 5
 
 Note: Searches free-text fields (e.g., eligibility criteria). Results depend on source document wording.
 See also: biomcp list pathway")]
     Trials {
-        /// Reactome stable ID (e.g., R-HSA-5673001)
+        /// Pathway ID (e.g., R-HSA-5673001, hsa05200)
         id: String,
         /// Maximum results (default: 10)
         #[arg(short, long, default_value = "10")]
@@ -7348,6 +7353,7 @@ mod next_commands_json_property {
     #[test]
     fn pathway_json_next_commands_parse() {
         let pathway = Pathway {
+            source: "Reactome".to_string(),
             id: "R-HSA-5673001".to_string(),
             name: "RAF/MAP kinase cascade".to_string(),
             species: None,

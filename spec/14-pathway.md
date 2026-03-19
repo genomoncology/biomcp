@@ -1,6 +1,6 @@
 # Pathway Queries
 
-Pathway search should normalize a small set of confirmed alias phrases before querying Reactome. These checks focus on the long-form MAPK regression without relying on unstable upstream totals.
+Pathway search should normalize a small set of confirmed alias phrases before querying the current pathway sources. These checks focus on the long-form MAPK regression without relying on unstable upstream totals.
 
 | Section | Command focus | Why it matters |
 |---|---|---|
@@ -13,6 +13,6 @@ The confirmed long-form MAPK phrase should return MAPK-named pathways instead of
 ```bash
 out="$("$(git rev-parse --show-toplevel)/target/release/biomcp" search pathway "mitogen activated protein kinase" --limit 5)"
 echo "$out" | mustmatch like "# Pathways: mitogen activated protein kinase"
-echo "$out" | mustmatch like "| ID | Name |"
+echo "$out" | mustmatch like "| Source | ID | Name |"
 echo "$out" | mustmatch like "MAPK"
 ```
