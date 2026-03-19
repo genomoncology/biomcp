@@ -52,6 +52,10 @@ parallel across sources and merge results. Federated totals are approximate
 due to cross-source deduplication — `total=None` is the correct design for
 federated counts.
 
+See also: [Source integration architecture](source-integration.md) for the
+detailed contract for adding a new upstream source or deepening an existing
+integration.
+
 ## API Keys
 
 Most commands work without credentials. Optional keys improve rate limits or
