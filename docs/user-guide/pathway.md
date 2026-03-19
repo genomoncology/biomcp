@@ -4,9 +4,12 @@ Use pathway commands to move from pathway names/IDs to genes, events, enrichment
 
 ## Search pathways
 
+`QUERY` is required for normal pathway search. `--top-level` is the only queryless search mode.
+
 ```bash
-biomcp search pathway -q "MAPK signaling" --limit 5
+biomcp search pathway "MAPK signaling" --limit 5
 biomcp search pathway -q "Pathways in cancer" --limit 5
+biomcp search pathway --top-level --limit 5
 ```
 
 ## Get pathway records

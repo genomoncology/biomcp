@@ -3,6 +3,17 @@
 BioMCP exposes structured internal error variants through human-readable CLI messages.
 This reference maps each `BioMcpError` variant to likely causes and practical recovery steps.
 
+## Process exit codes
+
+BioMCP uses process exit codes to distinguish parser failures from command
+execution failures:
+
+- exit `2`: `clap` rejected the command before BioMCP command execution started.
+  Example: `biomcp search pathway --badflag`
+- exit `1`: the command parsed, then BioMCP returned
+  `BioMcpError::InvalidArgument` for invalid or inconsistent usage.
+  Examples: `biomcp search pathway`, `biomcp get pathway hsa05200 events`
+
 ## Error catalog
 
 | Error variant | Meaning | Recovery guidance |

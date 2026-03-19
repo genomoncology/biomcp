@@ -8,6 +8,8 @@ Pathway search should normalize a small set of confirmed alias phrases before qu
 | Default KEGG card stays concise | `get pathway hsa05200` | Confirms KEGG base cards keep genes behind explicit section requests |
 | Explicit KEGG genes section still renders | `get pathway hsa05200 genes` | Confirms the concise default does not break explicit deep-section requests |
 | Exact title match ranks first across sources | `search pathway 'Pathways in cancer'` | Confirms exact matches float ahead of weaker cross-source hits |
+| Query required unless `--top-level` | `search pathway` / `search pathway --top-level` | Confirms the queryless contract and recovery guidance |
+| Parser usage errors exit 2 | `search pathway --badflag` | Confirms clap failures keep a separate exit-code category |
 | Unsupported KEGG `events` | `get pathway hsa05200 events` | Confirms explicit unsupported section requests fail hard |
 | Unsupported KEGG `enrichment` | `get pathway hsa05200 enrichment` | Confirms KEGG enrichment no longer degrades to blank success |
 
@@ -59,6 +61,40 @@ echo "$out" | mustmatch like "| Source | ID | Name |"
 printf '%s\n' "$out" | grep "^| " | tail -n +2 | head -1 | mustmatch like "| KEGG | hsa05200 | Pathways in cancer |"
 ```
 
+## Search Query Is Required Unless `--top-level`
+
+Normal pathway search requires a query. `--top-level` is the only queryless
+search mode, and the remediation example must be shell-safe for multi-word
+queries.
+
+```bash
+unset status
+out="$(biomcp search pathway 2>&1)" || status=$?
+test "${status:-0}" -eq 1
+echo "$out" | mustmatch like 'Invalid argument: Query is required.'
+echo "$out" | mustmatch like 'biomcp search pathway -q "MAPK signaling"'
+```
+
+```bash
+unset status
+out="$(biomcp search pathway --top-level 2>&1)" || status=$?
+test "${status:-0}" -eq 0
+echo "$out" | mustmatch like "# Pathways"
+```
+
+## Parser Usage Errors Exit 2
+
+Clap parser failures should stay distinct from BioMCP runtime argument
+validation failures.
+
+```bash
+unset status
+out="$(biomcp search pathway --badflag 2>&1)" || status=$?
+test "${status:-0}" -eq 2
+echo "$out" | mustmatch like "unexpected argument '--badflag'"
+echo "$out" | mustmatch like "Usage: biomcp search pathway"
+```
+
 ## Unsupported KEGG Events Section
 
 Explicit unsupported KEGG section requests must fail non-zero with a truthful error
@@ -67,7 +103,7 @@ message instead of returning a blank or near-blank success page.
 ```bash
 unset status
 out="$(biomcp get pathway hsa05200 events 2>&1)" || status=$?
-test "${status:-0}" -ne 0
+test "${status:-0}" -eq 1
 echo "$out" | mustmatch like 'Invalid argument: pathway section "events"'
 echo "$out" | mustmatch like "KEGG"
 echo "$out" | mustmatch like "Reactome"
@@ -81,7 +117,7 @@ time, including in the standard CLI surface.
 ```bash
 unset status
 out="$(biomcp get pathway hsa05200 enrichment 2>&1)" || status=$?
-test "${status:-0}" -ne 0
+test "${status:-0}" -eq 1
 echo "$out" | mustmatch like 'Invalid argument: pathway section "enrichment"'
 echo "$out" | mustmatch like "KEGG"
 echo "$out" | mustmatch like "Reactome"
