@@ -17,8 +17,9 @@ install, and maintained at biomcp.org.
   to external systems or modifies upstream data.
 - **Rate limiting is process-local.** A shared `biomcp serve-http` endpoint is
   the canonical scaling answer for multi-worker deployments.
-- **Progressive disclosure.** Default output is a summary card. Sections are
-  additive and user-selected (`get <entity> <id> <section...>`).
+- **Progressive disclosure.** Default output is a concise summary card.
+  Sections are additive and source-aware; requested sections must explain
+  unsupported, empty, or unavailable states truthfully.
 - **Cross-entity pivots over rebuilding filters.** Helper commands (`variant
   trials`, `gene drugs`, etc.) let users move between related entities without
   repeating query context.
@@ -27,9 +28,11 @@ install, and maintained at biomcp.org.
 
 - Skills must produce correct, well-formatted output for common biomedical
   workflows (variant, trial, drug, article).
-- CLI help, error messages, and suggested next steps must be accurate and
-  not reference stale commands.
+- CLI help, error messages, and suggested next steps must be accurate,
+  source-aware, and not reference stale or unsupported commands.
 - Evidence URLs must be present in output and reachable.
+- New source work is not done until specs and operator checks intentionally
+  cover the shipped surface (`biomcp health`, contract-smoke when suitable).
 - `search all` is the unified entry point and must work reliably across all
   entities.
 - Release artifacts: Cargo binary, PyPI wheel (`biomcp-cli`), binary installer
