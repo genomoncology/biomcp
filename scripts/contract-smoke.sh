@@ -54,7 +54,7 @@ probe_get() {
   if [[ ! "$code" =~ $code_re ]]; then
     ok=0
   fi
-  if [[ -n "$body_re" ]] && ! printf '%s' "$body" | grep -qE "$body_re"; then
+  if [[ -n "$body_re" ]] && ! grep -qE "$body_re" <<<"$body"; then
     ok=0
   fi
 
@@ -87,7 +87,7 @@ probe_post_json() {
   if [[ ! "$code" =~ $code_re ]]; then
     ok=0
   fi
-  if [[ -n "$body_re" ]] && ! printf '%s' "$body" | grep -qE "$body_re"; then
+  if [[ -n "$body_re" ]] && ! grep -qE "$body_re" <<<"$body"; then
     ok=0
   fi
 
@@ -120,7 +120,7 @@ probe_get_with_header() {
   if [[ ! "$code" =~ $code_re ]]; then
     ok=0
   fi
-  if [[ -n "$body_re" ]] && ! printf '%s' "$body" | grep -qE "$body_re"; then
+  if [[ -n "$body_re" ]] && ! grep -qE "$body_re" <<<"$body"; then
     ok=0
   fi
 
@@ -199,6 +199,15 @@ else
   probe_get "Reactome invalid" '^404$' '' "https://reactome.org/ContentService/data/query/NOT_A_REAL_STABLE_ID"
 fi
 
+# KEGG
+if [[ $FAST -eq 1 ]]; then
+  probe_get "KEGG fast" '^200$' 'path:map04010|MAPK signaling pathway' "https://rest.kegg.jp/find/pathway/MAPK"
+else
+  probe_get "KEGG happy search" '^200$' 'path:map04010|MAPK signaling pathway' "https://rest.kegg.jp/find/pathway/MAPK"
+  probe_get "KEGG happy get" '^200$' 'ENTRY\s+hsa04010|NAME\s+MAPK signaling pathway' "https://rest.kegg.jp/get/hsa04010"
+  probe_get "KEGG no-hit" '^200$' '^[[:space:]]*$' "https://rest.kegg.jp/find/pathway/NO_SUCH_PATHWAY_091"
+fi
+
 # g:Profiler
 if [[ $FAST -eq 1 ]]; then
   probe_post_json "g:Profiler fast" '^200$' 'result' "https://biit.cs.ut.ee/gprofiler/api/gost/profile/" '{"organism":"hsapiens","query":["BRAF","KRAS"]}'
@@ -208,13 +217,29 @@ else
   probe_post_json "g:Profiler invalid" '^(400|422)$' '' "https://biit.cs.ut.ee/gprofiler/api/gost/profile/" '{"query":"not-an-array"}'
 fi
 
+# HPA
+if [[ $FAST -eq 1 ]]; then
+  probe_get "HPA fast" '^200$' '<entry|proteinAtlas' "https://www.proteinatlas.org/ENSG00000157764.xml"
+else
+  probe_get "HPA happy" '^200$' '<entry|proteinAtlas' "https://www.proteinatlas.org/ENSG00000157764.xml"
+  probe_get "HPA missing gene" '^404$' '' "https://www.proteinatlas.org/ENSG00000999999.xml"
+fi
+
 # InterPro
 if [[ $FAST -eq 1 ]]; then
-  probe_get "InterPro fast" '^200$' 'results|entries|metadata' "https://www.ebi.ac.uk/interpro/api/protein/uniprot/P15056/entry/interpro/?page_size=5"
+  probe_get "InterPro fast" '^200$' 'results|entries|metadata' "https://www.ebi.ac.uk/interpro/api/entry/interpro/protein/uniprot/P15056/?page_size=5"
 else
-  probe_get "InterPro happy" '^200$' 'results|entries|metadata' "https://www.ebi.ac.uk/interpro/api/protein/uniprot/P15056/entry/interpro/?page_size=5"
-  probe_get "InterPro edge" '^(200|404)$' '' "https://www.ebi.ac.uk/interpro/api/protein/uniprot/P99999/entry/interpro/?page_size=5"
-  probe_get "InterPro invalid endpoint" '^404$' '' "https://www.ebi.ac.uk/interpro/api/protein/uniprot/P15056/not-a-real-resource/"
+  probe_get "InterPro happy" '^200$' 'results|entries|metadata' "https://www.ebi.ac.uk/interpro/api/entry/interpro/protein/uniprot/P15056/?page_size=5"
+  probe_get "InterPro edge" '^(200|404)$' '' "https://www.ebi.ac.uk/interpro/api/entry/interpro/protein/uniprot/P99999/?page_size=5"
+  probe_get "InterPro invalid endpoint" '^404$' '' "https://www.ebi.ac.uk/interpro/api/entry/interpro/protein/uniprot/P15056/not-a-real-resource/"
+fi
+
+# ComplexPortal
+if [[ $FAST -eq 1 ]]; then
+  probe_get "ComplexPortal fast" '^200$' 'elements|complexAC|P15056' "https://www.ebi.ac.uk/intact/complex-ws/search/P15056?number=25&filters=species_f:(%22Homo%20sapiens%22)"
+else
+  probe_get "ComplexPortal happy" '^200$' 'elements|complexAC|P15056' "https://www.ebi.ac.uk/intact/complex-ws/search/P15056?number=25&filters=species_f:(%22Homo%20sapiens%22)"
+  probe_get "ComplexPortal no-match" '^200$' '"totalNumberOfResults":0|"elements":\[\]' "https://www.ebi.ac.uk/intact/complex-ws/search/NO_SUCH_PROTEIN_091?number=25&filters=species_f:(%22Homo%20sapiens%22)"
 fi
 
 # Semantic Scholar (optional)
@@ -228,7 +253,7 @@ else
     "x-api-key: $S2_API_KEY_VALUE" \
     "https://api.semanticscholar.org/graph/v1/paper/PMID:22663011?fields=paperId,title"
   if [[ $FAST -ne 1 ]]; then
-    sleep 1
+    sleep 2
     probe_get_with_header \
       "Semantic Scholar citations" \
       '^200$' \
