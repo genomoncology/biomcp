@@ -134,6 +134,8 @@ pub struct DiseaseVariantAssociation {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiseaseModelAssociation {
     pub model: String,
+    #[serde(skip)]
+    pub model_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub organism: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1046,6 +1048,12 @@ fn map_monarch_model(row: MonarchModelAssociation) -> Option<DiseaseModelAssocia
     }
     Some(DiseaseModelAssociation {
         model: model.to_string(),
+        model_id: row
+            .model_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(str::to_string),
         organism: row
             .organism
             .as_deref()

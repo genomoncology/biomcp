@@ -445,6 +445,20 @@ Supported formats:\n\
     )))
 }
 
+pub(crate) fn gnomad_variant_slug(id: &str) -> Option<String> {
+    let VariantIdFormat::HgvsGenomic(hgvs) = parse_variant_id(id).ok()? else {
+        return None;
+    };
+    let caps = hgvs_coords_re().captures(&hgvs)?;
+    Some(format!(
+        "{}-{}-{}-{}",
+        &caps[1][3..],
+        &caps[2],
+        &caps[3],
+        &caps[4]
+    ))
+}
+
 fn score_myvariant_hit(hit: &crate::sources::myvariant::MyVariantHit) -> i32 {
     let mut score = 0;
     if let Some(clinvar) = hit.clinvar.as_ref() {

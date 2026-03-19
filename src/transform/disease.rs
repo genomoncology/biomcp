@@ -29,6 +29,45 @@ fn first_string(value: &serde_json::Value) -> Option<String> {
     .filter(|s| !s.is_empty())
 }
 
+fn normalized_numeric_xref(value: &str, prefixes: &[&str]) -> Option<String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    if trimmed.chars().all(|c| c.is_ascii_digit()) {
+        return Some(trimmed.to_string());
+    }
+
+    let upper = trimmed.to_ascii_uppercase();
+    for prefix in prefixes {
+        let prefix_upper = prefix.to_ascii_uppercase();
+        if let Some(rest) = upper
+            .strip_prefix(&(prefix_upper.clone() + ":"))
+            .or_else(|| upper.strip_prefix(&prefix_upper))
+        {
+            let digits = rest.trim_start_matches(':').trim();
+            if !digits.is_empty() && digits.chars().all(|c| c.is_ascii_digit()) {
+                return Some(digits.to_string());
+            }
+        }
+    }
+
+    None
+}
+
+fn first_normalized_numeric_xref(value: &serde_json::Value, prefixes: &[&str]) -> Option<String> {
+    match value {
+        serde_json::Value::String(s) => normalized_numeric_xref(s, prefixes),
+        serde_json::Value::Array(arr) => arr
+            .iter()
+            .find_map(|v| first_normalized_numeric_xref(v, prefixes)),
+        serde_json::Value::Object(map) => map
+            .values()
+            .find_map(|v| first_normalized_numeric_xref(v, prefixes)),
+        _ => None,
+    }
+}
+
 fn push_unique(out: &mut Vec<String>, seen: &mut HashSet<String>, raw: &str, max: usize) {
     if out.len() >= max {
         return;
@@ -171,6 +210,22 @@ fn collect_xrefs(
         }
 
         if let Some(xrefs) = do_term.get("xrefs").and_then(|v| v.as_object()) {
+            if !out.contains_key("Orphanet")
+                && let Some(v) = xrefs
+                    .get("orphanet")
+                    .or_else(|| xrefs.get("ordo"))
+                    .and_then(|value| first_normalized_numeric_xref(value, &["ORPHA", "ORPHANET"]))
+            {
+                out.insert("Orphanet".into(), v);
+            }
+            if !out.contains_key("OMIM")
+                && let Some(v) = xrefs
+                    .get("omim")
+                    .or_else(|| xrefs.get("mim"))
+                    .and_then(|value| first_normalized_numeric_xref(value, &["OMIM", "MIM"]))
+            {
+                out.insert("OMIM".into(), v);
+            }
             if !out.contains_key("MeSH")
                 && let Some(v) = xrefs.get("mesh").and_then(first_string)
             {
@@ -203,6 +258,20 @@ fn collect_xrefs(
     if let Some(mondo) = mondo
         && let Some(xrefs) = mondo.get("xrefs").and_then(|v| v.as_object())
     {
+        if !out.contains_key("Orphanet")
+            && let Some(v) = xrefs
+                .get("orphanet")
+                .and_then(|value| first_normalized_numeric_xref(value, &["ORPHA", "ORPHANET"]))
+        {
+            out.insert("Orphanet".into(), v);
+        }
+        if !out.contains_key("OMIM")
+            && let Some(v) = xrefs
+                .get("omim")
+                .and_then(|value| first_normalized_numeric_xref(value, &["OMIM", "MIM"]))
+        {
+            out.insert("OMIM".into(), v);
+        }
         if !out.contains_key("MeSH")
             && let Some(v) = xrefs.get("mesh").and_then(first_string)
         {
@@ -606,5 +675,26 @@ mod tests {
         assert!(disease.parents.contains(&"myeloid neoplasm".to_string()));
         assert_eq!(disease.phenotypes.len(), 1);
         assert_eq!(disease.phenotypes[0].hpo_id, "HP:0001878");
+    }
+
+    #[test]
+    fn collect_xrefs_retains_orphanet_and_omim_identifiers() {
+        let mondo = serde_json::json!({
+            "xrefs": {
+                "orphanet": ["ORPHA:586"],
+                "omim": ["219700"]
+            }
+        });
+        let disease_ontology = serde_json::json!({
+            "xrefs": {
+                "ordo": ["Orphanet:586"],
+                "mim": ["MIM:219700"]
+            }
+        });
+
+        let xrefs = collect_xrefs(Some(&mondo), Some(&disease_ontology), None);
+
+        assert_eq!(xrefs.get("Orphanet").map(String::as_str), Some("586"));
+        assert_eq!(xrefs.get("OMIM").map(String::as_str), Some("219700"));
     }
 }

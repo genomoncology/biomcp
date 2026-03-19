@@ -38,6 +38,36 @@ echo "$ae_out" | mustmatch like "[OpenFDA]("
 echo "$ae_out" | mustmatch like "See also:"
 ```
 
+## Repaired Variant, Disease, and Drug Gaps
+
+These commands cover the evidence-url gaps found in the traceability audit.
+The assertions check for stable link prefixes and source labels rather than
+volatile counts or free-text excerpts from upstream APIs.
+
+```bash
+variant_population_out="$(biomcp get variant rs334 population)"
+echo "$variant_population_out" | mustmatch like "[gnomAD](https://gnomad.broadinstitute.org/variant/rs334)"
+
+disease_genes_out="$(biomcp get disease "cystic fibrosis" genes)"
+echo "$disease_genes_out" | mustmatch like "[infores:orphanet](https://www.orpha.net/en/disease/detail/586)"
+echo "$disease_genes_out" | mustmatch like "[Orphanet](https://www.orpha.net/en/disease/detail/586)"
+
+disease_phenotypes_out="$(biomcp get disease "cystic fibrosis" phenotypes)"
+echo "$disease_phenotypes_out" | mustmatch like "[infores:omim](https://www.omim.org/entry/219700)"
+echo "$disease_phenotypes_out" | mustmatch like "[OMIM](https://www.omim.org/entry/219700)"
+
+disease_models_out="$(biomcp get disease "cystic fibrosis" models)"
+echo "$disease_models_out" | mustmatch like "[infores:mgi](https://www.informatics.jax.org/accession/MGI:"
+echo "$disease_models_out" | mustmatch like "[MGI](https://www.informatics.jax.org/accession/MGI:"
+
+drug_all_out="$(biomcp get drug ivacaftor all)"
+echo "$drug_all_out" | mustmatch like "[OpenFDA FAERS](https://api.fda.gov/drug/event.json?search="
+echo "$drug_all_out" | mustmatch like "count=patient.reaction.reactionmeddrapt.exact"
+
+drug_label_out="$(biomcp get drug ivacaftor label)"
+echo "$drug_label_out" | mustmatch like "[DailyMed](https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid="
+```
+
 ## JSON Metadata Contract
 
 JSON entity output should expose evidence links, next commands, and section
@@ -68,6 +98,37 @@ echo "$pgx_json" | mustmatch like '"next_commands": ['
 ae_json="$(biomcp get adverse-event 10222779 --json)"
 echo "$ae_json" | mustmatch like '"label": "OpenFDA"'
 echo "$ae_json" | mustmatch like '"next_commands": ['
+```
+
+## JSON Metadata for Repaired Gaps
+
+The repaired gaps must also surface through `_meta.evidence_urls` in JSON mode
+without widening the top-level entity schema. These assertions target stable
+labels and URL fragments only.
+
+```bash
+variant_population_json="$(biomcp get variant rs334 population --json)"
+echo "$variant_population_json" | mustmatch like '"label": "gnomAD"'
+echo "$variant_population_json" | mustmatch like 'gnomad.broadinstitute.org/variant/rs334'
+
+disease_genes_json="$(biomcp get disease "cystic fibrosis" genes --json)"
+echo "$disease_genes_json" | mustmatch like '"label": "Monarch"'
+echo "$disease_genes_json" | mustmatch like '"label": "Orphanet"'
+
+disease_phenotypes_json="$(biomcp get disease "cystic fibrosis" phenotypes --json)"
+echo "$disease_phenotypes_json" | mustmatch like '"label": "OMIM"'
+
+disease_models_json="$(biomcp get disease "cystic fibrosis" models --json)"
+echo "$disease_models_json" | mustmatch like '"label": "MGI"'
+echo "$disease_models_json" | mustmatch like 'informatics.jax.org/accession/MGI:'
+
+drug_all_json="$(biomcp get drug ivacaftor all --json)"
+echo "$drug_all_json" | mustmatch like '"label": "OpenFDA FAERS"'
+echo "$drug_all_json" | mustmatch like 'count=patient.reaction.reactionmeddrapt.exact'
+
+drug_label_json="$(biomcp get drug ivacaftor label --json)"
+echo "$drug_label_json" | mustmatch like '"label": "DailyMed"'
+echo "$drug_label_json" | mustmatch like 'dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid='
 ```
 
 ## Trial Locations JSON Shape

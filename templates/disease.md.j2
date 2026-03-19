@@ -39,7 +39,7 @@ Recruiting Trials (ClinicalTrials.gov): {{ recruiting_trial_count }}
 | Gene | Relationship | Source | OpenTargets |
 |---|---|---|---|
 {% for row in gene_association_rows -%}
-| {{ row.gene }} | {{ row.relationship or "-" }} | {{ row.source or "-" }} | {{ row.opentargets or "-" }} |
+| {{ row.gene }} | {{ row.relationship or "-" }} | {% if row.source_url %}[{{ row.source }}]({{ row.source_url }}){% else %}{{ row.source or "-" }}{% endif %} | {{ row.opentargets or "-" }} |
 {% endfor -%}
 {% elif associated_genes -%}
 {{ associated_genes | join(", ") }}
@@ -65,7 +65,7 @@ No pathways found from active sources.
 | HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |
 |---|---|---|---|---|---|---|---|
 {% for row in phenotypes -%}
-| {{ row.hpo_id }} | {{ row.name or "-" }} | {{ row.evidence or "-" }}{% if row.qualifiers %} ({{ row.qualifiers | join(", ") }}){% endif %} | {% if row.frequency_qualifier %}{{ row.frequency_qualifier }}{% elif row.frequency %}{{ row.frequency }}{% else %}-{% endif %} | {{ row.onset_qualifier or "-" }} | {{ row.sex_qualifier or "-" }} | {{ row.stage_qualifier or "-" }} | {{ row.source or "-" }} |
+| {{ row.hpo_id }} | {{ row.name or "-" }} | {{ row.evidence or "-" }}{% if row.qualifiers %} ({{ row.qualifiers | join(", ") }}){% endif %} | {% if row.frequency_qualifier %}{{ row.frequency_qualifier }}{% elif row.frequency %}{{ row.frequency }}{% else %}-{% endif %} | {{ row.onset_qualifier or "-" }} | {{ row.sex_qualifier or "-" }} | {{ row.stage_qualifier or "-" }} | {% if row.source_url %}[{{ row.source }}]({{ row.source_url }}){% else %}{{ row.source or "-" }}{% endif %} |
 {% endfor -%}
 {% else -%}
 No phenotype annotations found for this disease.
@@ -91,7 +91,7 @@ No variant associations found for this disease.
 | Model | Organism | Relationship | Source | Evidence |
 |---|---|---|---|---|
 {% for row in models -%}
-| {{ row.model }} | {{ row.organism or "-" }} | {{ row.relationship or "-" }} | {{ row.source or "-" }} | {% if row.evidence_count is not none %}{{ row.evidence_count }}{% else %}-{% endif %} |
+| {{ row.model }} | {{ row.organism or "-" }} | {{ row.relationship or "-" }} | {% if row.source_url %}[{{ row.source }}]({{ row.source_url }}){% else %}{{ row.source or "-" }}{% endif %} | {% if row.evidence_count is not none %}{{ row.evidence_count }}{% else %}-{% endif %} |
 {% endfor -%}
 {% else -%}
 No model associations found for this disease.

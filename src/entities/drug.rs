@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -49,8 +49,14 @@ pub struct Drug {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub top_adverse_events: Vec<String>,
 
+    #[serde(skip)]
+    pub faers_query: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<DrugLabel>,
+
+    #[serde(skip)]
+    pub label_set_id: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub shortage: Option<Vec<DrugShortageEntry>>,
@@ -745,6 +751,28 @@ fn extract_inline_label(label_response: &serde_json::Value) -> Option<DrugLabel>
     })
 }
 
+fn extract_label_set_id(label_response: &serde_json::Value) -> Option<String> {
+    let top = label_response
+        .get("results")
+        .and_then(|v| v.as_array())
+        .and_then(|v| v.first())?;
+
+    top.get("set_id")
+        .and_then(serde_json::Value::as_str)
+        .or_else(|| {
+            top.get("openfda")
+                .and_then(|v| v.get("spl_set_id"))
+                .and_then(|v| match v {
+                    serde_json::Value::String(s) => Some(s.as_str()),
+                    serde_json::Value::Array(items) => items.iter().find_map(|item| item.as_str()),
+                    _ => None,
+                })
+        })
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(str::to_string)
+}
+
 fn extract_interaction_text_from_label(label_response: &serde_json::Value) -> Option<String> {
     const LABEL_MAX_CHARS: usize = 2000;
 
@@ -1116,51 +1144,50 @@ async fn fetch_shortage_entries(drug_name: &str) -> Result<Vec<DrugShortageEntry
     Ok(out)
 }
 
-fn extract_top_adverse_events(
-    resp: &crate::sources::openfda::OpenFdaResponse<crate::sources::openfda::FaersEventResult>,
-) -> Vec<String> {
-    let mut counts: HashMap<String, (String, usize)> = HashMap::new();
-    for report in &resp.results {
-        let Some(patient) = report.patient.as_ref() else {
-            continue;
-        };
-        for reaction in &patient.reaction {
-            let Some(term) = reaction
-                .reactionmeddrapt
-                .as_deref()
-                .map(str::trim)
-                .filter(|v| !v.is_empty())
-            else {
-                continue;
-            };
-            let key = term.to_ascii_lowercase();
-            let entry = counts.entry(key).or_insert_with(|| (term.to_string(), 0));
-            entry.1 += 1;
-        }
-    }
-
-    let mut ranked: Vec<(String, usize)> = counts.into_values().collect();
+fn extract_top_adverse_events(resp: &crate::sources::openfda::OpenFdaCountResponse) -> Vec<String> {
+    let mut ranked: Vec<(String, usize)> = resp
+        .results
+        .iter()
+        .filter_map(|bucket| {
+            let term = bucket.term.trim();
+            if term.is_empty() {
+                return None;
+            }
+            Some((term.to_string(), bucket.count))
+        })
+        .collect();
     ranked.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
     ranked.truncate(3);
     ranked.into_iter().map(|(label, _)| label).collect()
 }
 
-async fn fetch_top_adverse_events(drug_name: &str) -> Result<Vec<String>, BioMcpError> {
+fn faers_adverse_event_query(drug_name: &str) -> Option<String> {
     let drug_name = drug_name.trim();
     if drug_name.is_empty() {
-        return Ok(Vec::new());
+        return None;
     }
 
     let escaped = OpenFdaClient::escape_query_value(drug_name);
-    let q = format!(
+    Some(format!(
         "(patient.drug.openfda.generic_name:\"{escaped}\" OR patient.drug.openfda.brand_name:\"{escaped}\" OR patient.drug.medicinalproduct:\"{escaped}\") AND patient.drug.drugcharacterization:1"
-    );
-    let client = OpenFdaClient::new()?;
-    let resp = client.faers_search(&q, 50, 0).await?;
-    let Some(resp) = resp else {
-        return Ok(Vec::new());
+    ))
+}
+
+async fn fetch_top_adverse_events(
+    drug_name: &str,
+) -> Result<(Vec<String>, Option<String>), BioMcpError> {
+    let Some(q) = faers_adverse_event_query(drug_name) else {
+        return Ok((Vec::new(), None));
     };
-    Ok(extract_top_adverse_events(&resp))
+
+    let client = OpenFdaClient::new()?;
+    let resp = client
+        .faers_count(&q, "patient.reaction.reactionmeddrapt.exact", 50)
+        .await?;
+    let Some(resp) = resp else {
+        return Ok((Vec::new(), Some(q)));
+    };
+    Ok((extract_top_adverse_events(&resp), Some(q)))
 }
 
 fn merge_unique_casefold(dst: &mut Vec<String>, values: impl IntoIterator<Item = String>) {
@@ -1378,6 +1405,7 @@ pub async fn get(name: &str, sections: &[String]) -> Result<Drug, BioMcpError> {
 
     if let Some(label_response) = label_response_opt.as_ref() {
         apply_openfda_metadata(&mut drug, label_response);
+        drug.label_set_id = extract_label_set_id(label_response);
         if section_flags.include_label {
             drug.label = extract_inline_label(label_response);
         }
@@ -1419,8 +1447,9 @@ pub async fn get(name: &str, sections: &[String]) -> Result<Drug, BioMcpError> {
     )
     .await
     {
-        Ok(Ok(events)) => {
+        Ok(Ok((events, faers_query))) => {
             drug.top_adverse_events = events;
+            drug.faers_query = faers_query;
         }
         Ok(Err(err)) => {
             warn!(
@@ -1635,41 +1664,47 @@ mod tests {
     }
 
     #[test]
-    fn extract_top_adverse_events_ranks_by_frequency() {
-        let resp: crate::sources::openfda::OpenFdaResponse<
-            crate::sources::openfda::FaersEventResult,
-        > = serde_json::from_value(serde_json::json!({
-            "meta": {"results": {"skip": 0, "limit": 3, "total": 3}},
-            "results": [
-                {
-                    "safetyreportid": "1",
-                    "patient": {
-                        "reaction": [
-                            {"reactionmeddrapt": "Rash"},
-                            {"reactionmeddrapt": "Nausea"}
-                        ]
-                    }
-                },
-                {
-                    "safetyreportid": "2",
-                    "patient": {
-                        "reaction": [
-                            {"reactionmeddrapt": "Rash"},
-                            {"reactionmeddrapt": "Fatigue"}
-                        ]
-                    }
-                },
-                {
-                    "safetyreportid": "3",
-                    "patient": {
-                        "reaction": [
-                            {"reactionmeddrapt": "Fatigue"}
-                        ]
-                    }
+    fn extract_label_set_id_prefers_top_level_set_id() {
+        let response = serde_json::json!({
+            "results": [{
+                "set_id": "abc-123",
+                "openfda": {
+                    "spl_set_id": ["fallback-456"]
                 }
-            ]
-        }))
-        .expect("valid openfda response");
+            }]
+        });
+
+        assert_eq!(extract_label_set_id(&response).as_deref(), Some("abc-123"));
+    }
+
+    #[test]
+    fn extract_label_set_id_falls_back_to_spl_set_id() {
+        let response = serde_json::json!({
+            "results": [{
+                "openfda": {
+                    "spl_set_id": ["fallback-456"]
+                }
+            }]
+        });
+
+        assert_eq!(
+            extract_label_set_id(&response).as_deref(),
+            Some("fallback-456")
+        );
+    }
+
+    #[test]
+    fn extract_top_adverse_events_ranks_by_frequency() {
+        let resp: crate::sources::openfda::OpenFdaCountResponse =
+            serde_json::from_value(serde_json::json!({
+                "meta": {},
+                "results": [
+                    {"term": "Rash", "count": 2},
+                    {"term": "Nausea", "count": 1},
+                    {"term": "Fatigue", "count": 2}
+                ]
+            }))
+            .expect("valid openfda response");
 
         let out = extract_top_adverse_events(&resp);
         assert_eq!(out, vec!["Fatigue", "Rash", "Nausea"]);
