@@ -209,6 +209,12 @@ impl MonarchClient {
 
             out.push(MonarchModelAssociation {
                 model,
+                model_id: item
+                    .subject
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|v| !v.is_empty())
+                    .map(str::to_string),
                 organism: item.subject_taxon_label,
                 relationship: predicate_label(item.predicate.as_deref()),
                 source: item
@@ -437,6 +443,8 @@ pub struct MonarchPhenotypeAssociation {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct MonarchModelAssociation {
     pub model: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub organism: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

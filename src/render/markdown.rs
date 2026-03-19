@@ -32,6 +32,7 @@ use crate::entities::study::{
 use crate::entities::trial::{Trial, TrialSearchResult};
 use crate::entities::variant::{
     Variant, VariantGwasAssociation, VariantOncoKbResult, VariantPrediction, VariantSearchResult,
+    gnomad_variant_slug,
 };
 use crate::error::BioMcpError;
 
@@ -73,7 +74,33 @@ struct DiseaseGeneAssociationRenderRow {
     gene: String,
     relationship: Option<String>,
     source: Option<String>,
+    source_url: Option<String>,
     opentargets: Option<String>,
+}
+
+#[derive(serde::Serialize)]
+struct DiseasePhenotypeRenderRow {
+    hpo_id: String,
+    name: Option<String>,
+    evidence: Option<String>,
+    frequency: Option<String>,
+    frequency_qualifier: Option<String>,
+    onset_qualifier: Option<String>,
+    sex_qualifier: Option<String>,
+    stage_qualifier: Option<String>,
+    qualifiers: Vec<String>,
+    source: Option<String>,
+    source_url: Option<String>,
+}
+
+#[derive(serde::Serialize)]
+struct DiseaseModelAssociationRenderRow {
+    model: String,
+    organism: Option<String>,
+    relationship: Option<String>,
+    source: Option<String>,
+    source_url: Option<String>,
+    evidence_count: Option<u32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -354,12 +381,131 @@ fn disease_gene_association_rows(disease: &Disease) -> Vec<DiseaseGeneAssociatio
             gene: row.gene.clone(),
             relationship: row.relationship.clone(),
             source: row.source.clone(),
+            source_url: disease_source_url(disease, row.source.as_deref(), None),
             opentargets: row
                 .opentargets_score
                 .as_ref()
                 .map(format_disease_association_score),
         })
         .collect()
+}
+
+fn disease_phenotype_rows(disease: &Disease) -> Vec<DiseasePhenotypeRenderRow> {
+    disease
+        .phenotypes
+        .iter()
+        .map(|row| DiseasePhenotypeRenderRow {
+            hpo_id: row.hpo_id.clone(),
+            name: row.name.clone(),
+            evidence: row.evidence.clone(),
+            frequency: row.frequency.clone(),
+            frequency_qualifier: row.frequency_qualifier.clone(),
+            onset_qualifier: row.onset_qualifier.clone(),
+            sex_qualifier: row.sex_qualifier.clone(),
+            stage_qualifier: row.stage_qualifier.clone(),
+            qualifiers: row.qualifiers.clone(),
+            source: row.source.clone(),
+            source_url: disease_source_url(disease, row.source.as_deref(), None),
+        })
+        .collect()
+}
+
+fn disease_model_rows(disease: &Disease) -> Vec<DiseaseModelAssociationRenderRow> {
+    disease
+        .models
+        .iter()
+        .map(|row| DiseaseModelAssociationRenderRow {
+            model: row.model.clone(),
+            organism: row.organism.clone(),
+            relationship: row.relationship.clone(),
+            source: row.source.clone(),
+            source_url: disease_source_url(disease, row.source.as_deref(), row.model_id.as_deref())
+                .or_else(|| disease_source_url(disease, row.source.as_deref(), Some(&row.model))),
+            evidence_count: row.evidence_count,
+        })
+        .collect()
+}
+
+fn source_matches(source: Option<&str>, needle: &str) -> bool {
+    source
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .is_some_and(|value| value.to_ascii_lowercase().contains(needle))
+}
+
+fn orphanet_disease_url(disease: &Disease) -> Option<String> {
+    disease
+        .xrefs
+        .get("Orphanet")
+        .map(String::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| format!("https://www.orpha.net/en/disease/detail/{value}"))
+}
+
+fn omim_disease_url(disease: &Disease) -> Option<String> {
+    disease
+        .xrefs
+        .get("OMIM")
+        .map(String::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| format!("https://www.omim.org/entry/{value}"))
+}
+
+fn mgi_model_url(model_id: Option<&str>) -> Option<String> {
+    let model_id = model_id
+        .map(str::trim)
+        .filter(|value| value.starts_with("MGI:"))?;
+    Some(format!(
+        "https://www.informatics.jax.org/accession/{model_id}"
+    ))
+}
+
+fn disease_source_url(
+    disease: &Disease,
+    source: Option<&str>,
+    model_id: Option<&str>,
+) -> Option<String> {
+    if source_matches(source, "orphanet") {
+        return orphanet_disease_url(disease);
+    }
+    if source_matches(source, "omim") {
+        return omim_disease_url(disease);
+    }
+    if source_matches(source, "mgi") {
+        return mgi_model_url(model_id);
+    }
+    None
+}
+
+fn openfda_count_query_url(query: &str, count_field: &str, limit: usize) -> Option<String> {
+    let mut url = reqwest::Url::parse("https://api.fda.gov/drug/event.json").ok()?;
+    url.query_pairs_mut()
+        .append_pair("search", query)
+        .append_pair("count", count_field)
+        .append_pair("limit", &limit.to_string());
+    Some(url.into())
+}
+
+fn dailymed_setid_url(set_id: &str) -> Option<String> {
+    let set_id = set_id.trim();
+    if set_id.is_empty() {
+        return None;
+    }
+    let mut url = reqwest::Url::parse("https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm").ok()?;
+    url.query_pairs_mut().append_pair("setid", set_id);
+    Some(url.into())
+}
+
+fn dailymed_search_url(name: &str) -> Option<String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return None;
+    }
+    let mut url = reqwest::Url::parse("https://dailymed.nlm.nih.gov/dailymed/search.cfm").ok()?;
+    url.query_pairs_mut().append_pair("query", name);
+    Some(url.into())
 }
 
 fn append_evidence_urls(mut body: String, urls: Vec<(&str, String)>) -> String {
@@ -462,6 +608,20 @@ pub(crate) fn variant_evidence_urls(variant: &Variant) -> Vec<(&'static str, Str
             format!("https://cancer.sanger.ac.uk/cosmic/mutation/overview?id={cosmic_id}"),
         ));
     }
+    if (variant.gnomad_af.is_some() || variant.population_breakdown.is_some())
+        && let Some(variant_id) = variant
+            .rsid
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+            .or_else(|| gnomad_variant_slug(&variant.id))
+    {
+        urls.push((
+            "gnomAD",
+            format!("https://gnomad.broadinstitute.org/variant/{variant_id}"),
+        ));
+    }
     urls
 }
 
@@ -500,13 +660,43 @@ pub(crate) fn trial_evidence_urls(trial: &Trial) -> Vec<(&'static str, String)> 
 }
 
 pub(crate) fn disease_evidence_urls(disease: &Disease) -> Vec<(&'static str, String)> {
-    if disease.id.trim().is_empty() {
-        return Vec::new();
+    let mut urls = Vec::new();
+    if !disease.id.trim().is_empty() {
+        urls.push((
+            "Monarch",
+            format!("https://monarchinitiative.org/{}", disease.id.trim()),
+        ));
     }
-    vec![(
-        "Monarch",
-        format!("https://monarchinitiative.org/{}", disease.id.trim()),
-    )]
+    if disease
+        .gene_associations
+        .iter()
+        .any(|row| source_matches(row.source.as_deref(), "orphanet"))
+        && let Some(url) = orphanet_disease_url(disease)
+    {
+        urls.push(("Orphanet", url));
+    }
+    let has_omim_source = disease
+        .gene_associations
+        .iter()
+        .any(|row| source_matches(row.source.as_deref(), "omim"))
+        || disease
+            .phenotypes
+            .iter()
+            .any(|row| source_matches(row.source.as_deref(), "omim"));
+    if has_omim_source && let Some(url) = omim_disease_url(disease) {
+        urls.push(("OMIM", url));
+    }
+    if let Some(url) = disease
+        .models
+        .iter()
+        .find(|row| source_matches(row.source.as_deref(), "mgi"))
+        .and_then(|row| {
+            mgi_model_url(row.model_id.as_deref()).or_else(|| mgi_model_url(Some(&row.model)))
+        })
+    {
+        urls.push(("MGI", url));
+    }
+    urls
 }
 
 pub(crate) fn drug_evidence_urls(drug: &Drug) -> Vec<(&'static str, String)> {
@@ -532,6 +722,26 @@ pub(crate) fn drug_evidence_urls(drug: &Drug) -> Vec<(&'static str, String)> {
             "ChEMBL",
             format!("https://www.ebi.ac.uk/chembl/compound_report_card/{chembl_id}"),
         ));
+    }
+    if !drug.top_adverse_events.is_empty()
+        && let Some(query) = drug
+            .faers_query
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        && let Some(url) =
+            openfda_count_query_url(query, "patient.reaction.reactionmeddrapt.exact", 50)
+    {
+        urls.push(("OpenFDA FAERS", url));
+    }
+    if drug.label.is_some()
+        && let Some(url) = drug
+            .label_set_id
+            .as_deref()
+            .and_then(dailymed_setid_url)
+            .or_else(|| dailymed_search_url(&drug.name))
+    {
+        urls.push(("DailyMed", url));
     }
     urls
 }
@@ -1483,6 +1693,8 @@ pub fn disease_markdown(
     let tmpl = env()?.get_template("disease.md.j2")?;
     let top_gene_score_labels = disease_top_gene_score_labels(disease);
     let gene_association_rows = disease_gene_association_rows(disease);
+    let phenotype_rows = disease_phenotype_rows(disease);
+    let model_rows = disease_model_rows(disease);
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(disease_label, requested_sections),
@@ -1500,9 +1712,9 @@ pub fn disease_markdown(
         treatment_landscape => &disease.treatment_landscape,
         recruiting_trial_count => &disease.recruiting_trial_count,
         pathways => &disease.pathways,
-        phenotypes => &disease.phenotypes,
+        phenotypes => phenotype_rows,
         variants => &disease.variants,
-        models => &disease.models,
+        models => model_rows,
         prevalence => &disease.prevalence,
         prevalence_note => &disease.prevalence_note,
         civic => &disease.civic,
@@ -2934,7 +3146,9 @@ mod tests {
             interaction_text: None,
             pharm_classes: Vec::new(),
             top_adverse_events: vec!["Cough".to_string()],
+            faers_query: None,
             label: None,
+            label_set_id: None,
             shortage: Some(Vec::new()),
             approvals: Some(Vec::new()),
             civic: None,
@@ -4108,6 +4322,165 @@ mod tests {
     }
 
     #[test]
+    fn variant_evidence_urls_include_gnomad_for_population_data() {
+        let variant: Variant = serde_json::from_value(serde_json::json!({
+            "id": "chr11:g.5227002A>T",
+            "gene": "HBB",
+            "rsid": "rs334",
+            "gnomad_af": 0.042
+        }))
+        .expect("variant should deserialize");
+
+        let urls = variant_evidence_urls(&variant);
+        assert!(urls.contains(&(
+            "gnomAD",
+            "https://gnomad.broadinstitute.org/variant/rs334".to_string()
+        )));
+    }
+
+    #[test]
+    fn variant_evidence_urls_fall_back_to_hgvs_slug_for_population_data() {
+        let variant: Variant = serde_json::from_value(serde_json::json!({
+            "id": "chr7:g.140453136A>T",
+            "gene": "BRAF",
+            "population_breakdown": {
+                "populations": [{"population": "global", "af": 0.01}]
+            }
+        }))
+        .expect("variant should deserialize");
+
+        let urls = variant_evidence_urls(&variant);
+        assert!(urls.contains(&(
+            "gnomAD",
+            "https://gnomad.broadinstitute.org/variant/7-140453136-A-T".to_string()
+        )));
+    }
+
+    #[test]
+    fn disease_markdown_links_source_cells_and_footer_evidence_urls() {
+        let disease = Disease {
+            id: "MONDO:0009061".to_string(),
+            name: "cystic fibrosis".to_string(),
+            definition: None,
+            synonyms: Vec::new(),
+            parents: Vec::new(),
+            associated_genes: Vec::new(),
+            gene_associations: vec![crate::entities::disease::DiseaseGeneAssociation {
+                gene: "CFTR".to_string(),
+                relationship: Some("gene associated with condition".to_string()),
+                source: Some("infores:orphanet".to_string()),
+                opentargets_score: None,
+            }],
+            top_genes: Vec::new(),
+            top_gene_scores: Vec::new(),
+            treatment_landscape: Vec::new(),
+            recruiting_trial_count: None,
+            pathways: Vec::new(),
+            phenotypes: vec![crate::entities::disease::DiseasePhenotype {
+                hpo_id: "HP:0001945".to_string(),
+                name: Some("Dehydration".to_string()),
+                evidence: None,
+                frequency: None,
+                frequency_qualifier: None,
+                onset_qualifier: None,
+                sex_qualifier: None,
+                stage_qualifier: None,
+                qualifiers: Vec::new(),
+                source: Some("infores:omim".to_string()),
+            }],
+            variants: Vec::new(),
+            models: vec![crate::entities::disease::DiseaseModelAssociation {
+                model: "Cftr tm1Unc".to_string(),
+                model_id: Some("MGI:3698752".to_string()),
+                organism: Some("Mus musculus".to_string()),
+                relationship: Some("model of".to_string()),
+                source: Some("infores:mgi".to_string()),
+                evidence_count: Some(3),
+            }],
+            prevalence: Vec::new(),
+            prevalence_note: None,
+            civic: None,
+            disgenet: None,
+            xrefs: std::collections::HashMap::from([
+                ("Orphanet".to_string(), "586".to_string()),
+                ("OMIM".to_string(), "219700".to_string()),
+            ]),
+        };
+
+        let markdown = disease_markdown(&disease, &["all".to_string()]).expect("markdown");
+        assert!(
+            markdown.contains("[infores:orphanet](https://www.orpha.net/en/disease/detail/586)")
+        );
+        assert!(markdown.contains("[infores:omim](https://www.omim.org/entry/219700)"));
+        assert!(markdown.contains("[infores:mgi](https://www.informatics.jax.org/accession/MGI:"));
+        assert!(markdown.contains("[Orphanet](https://www.orpha.net/en/disease/detail/586)"));
+        assert!(markdown.contains("[OMIM](https://www.omim.org/entry/219700)"));
+        assert!(markdown.contains("[MGI](https://www.informatics.jax.org/accession/MGI:"));
+    }
+
+    #[test]
+    fn disease_evidence_urls_include_record_links() {
+        let disease = Disease {
+            id: "MONDO:0009061".to_string(),
+            name: "cystic fibrosis".to_string(),
+            definition: None,
+            synonyms: Vec::new(),
+            parents: Vec::new(),
+            associated_genes: Vec::new(),
+            gene_associations: vec![crate::entities::disease::DiseaseGeneAssociation {
+                gene: "CFTR".to_string(),
+                relationship: None,
+                source: Some("infores:orphanet".to_string()),
+                opentargets_score: None,
+            }],
+            top_genes: Vec::new(),
+            top_gene_scores: Vec::new(),
+            treatment_landscape: Vec::new(),
+            recruiting_trial_count: None,
+            pathways: Vec::new(),
+            phenotypes: vec![crate::entities::disease::DiseasePhenotype {
+                hpo_id: "HP:0001945".to_string(),
+                name: Some("Dehydration".to_string()),
+                evidence: None,
+                frequency: None,
+                frequency_qualifier: None,
+                onset_qualifier: None,
+                sex_qualifier: None,
+                stage_qualifier: None,
+                qualifiers: Vec::new(),
+                source: Some("infores:omim".to_string()),
+            }],
+            variants: Vec::new(),
+            models: vec![crate::entities::disease::DiseaseModelAssociation {
+                model: "MGI:3698752".to_string(),
+                model_id: None,
+                organism: Some("Mus musculus".to_string()),
+                relationship: Some("model of".to_string()),
+                source: Some("infores:mgi".to_string()),
+                evidence_count: Some(2),
+            }],
+            prevalence: Vec::new(),
+            prevalence_note: None,
+            civic: None,
+            disgenet: None,
+            xrefs: std::collections::HashMap::from([
+                ("Orphanet".to_string(), "586".to_string()),
+                ("OMIM".to_string(), "219700".to_string()),
+            ]),
+        };
+
+        let urls = disease_evidence_urls(&disease);
+        assert!(urls.contains(&(
+            "Orphanet",
+            "https://www.orpha.net/en/disease/detail/586".to_string()
+        )));
+        assert!(urls.contains(&("OMIM", "https://www.omim.org/entry/219700".to_string())));
+        assert!(urls.iter().any(|(label, url)| {
+            *label == "MGI" && url.starts_with("https://www.informatics.jax.org/accession/MGI:")
+        }));
+    }
+
+    #[test]
     fn drug_evidence_urls_include_chembl() {
         let drug = Drug {
             name: "osimertinib".to_string(),
@@ -4126,7 +4499,9 @@ mod tests {
             interaction_text: None,
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
+            faers_query: None,
             label: None,
+            label_set_id: None,
             shortage: None,
             approvals: None,
             civic: None,
@@ -4137,6 +4512,51 @@ mod tests {
             "ChEMBL",
             "https://www.ebi.ac.uk/chembl/compound_report_card/CHEMBL3353410".to_string()
         )));
+    }
+
+    #[test]
+    fn drug_evidence_urls_include_faers_and_dailymed_when_sections_exist() {
+        let drug = Drug {
+            name: "ivacaftor".to_string(),
+            drugbank_id: None,
+            chembl_id: None,
+            unii: None,
+            drug_type: None,
+            mechanism: None,
+            mechanisms: Vec::new(),
+            approval_date: None,
+            brand_names: Vec::new(),
+            route: None,
+            targets: Vec::new(),
+            indications: Vec::new(),
+            interactions: Vec::new(),
+            interaction_text: None,
+            pharm_classes: Vec::new(),
+            top_adverse_events: vec!["Rash".to_string()],
+            faers_query: Some(
+                "(patient.drug.openfda.generic_name:\"ivacaftor\") AND patient.drug.drugcharacterization:1"
+                    .to_string(),
+            ),
+            label: Some(crate::entities::drug::DrugLabel {
+                indications: None,
+                warnings: Some("Warnings".to_string()),
+                dosage: None,
+            }),
+            label_set_id: Some("set-123".to_string()),
+            shortage: None,
+            approvals: None,
+            civic: None,
+        };
+
+        let urls = drug_evidence_urls(&drug);
+        assert!(urls.iter().any(|(label, url)| {
+            *label == "OpenFDA FAERS"
+                && url.starts_with("https://api.fda.gov/drug/event.json?search=")
+                && url.contains("count=patient.reaction.reactionmeddrapt.exact")
+        }));
+        assert!(urls.iter().any(|(label, url)| {
+            *label == "DailyMed" && url.contains("/drugInfo.cfm?setid=set-123")
+        }));
     }
 
     #[test]
@@ -4160,7 +4580,9 @@ mod tests {
             ),
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
+            faers_query: None,
             label: None,
+            label_set_id: None,
             shortage: None,
             approvals: None,
             civic: None,
@@ -4191,7 +4613,9 @@ mod tests {
             interaction_text: None,
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
+            faers_query: None,
             label: None,
+            label_set_id: None,
             shortage: None,
             approvals: None,
             civic: None,
