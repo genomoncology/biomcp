@@ -44,6 +44,31 @@ assert "enable_tools()" in shell
 assert "enable_resources()" in shell
 ```
 
+## Tool Response Content
+
+The `biomcp` tool keeps non-chart calls text-only. In MCP mode, charted `study`
+commands return two success content blocks in order:
+
+- `text` with the normal markdown/table output
+- `image` with `mimeType = "image/svg+xml"` and base64-encoded SVG data
+
+MCP chart calls do not write files. If the caller supplies `--output` or `-o`,
+the tool returns a tool error instructing the caller to consume the inline image
+instead.
+
+```python
+from pathlib import Path
+
+repo_root = Path.cwd()
+shell = (repo_root / "src/mcp/shell.rs").read_text()
+cli = (repo_root / "src/cli/mod.rs").read_text()
+
+assert "crate::cli::execute_mcp(args)" in shell
+assert "CallToolResult::success" in shell
+assert 'Content::image(encoded, "image/svg+xml")' in shell
+assert "MCP chart responses do not support --output/-o" in cli
+```
+
 ## Resource Catalog
 
 Current builds always publish the help resource:
@@ -110,7 +135,9 @@ Protocol-level checks are implemented in Python integration tests:
 These tests validate both transport modes:
 
 - `biomcp serve` stdio initialize/resource behavior,
+- stdio charted-study `text` + `image/svg+xml` responses and MCP `--output` rejection,
 - Streamable HTTP `initialize`/`tools/list`/`tools/call`,
+- Streamable HTTP charted-study `text` + `image/svg+xml` responses,
 - `GET /`, `GET /health`, and `GET /readyz`,
 - invalid URI error semantics.
 

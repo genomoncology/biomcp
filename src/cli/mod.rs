@@ -117,6 +117,14 @@ pub struct ChartArgs {
         help_heading = "Chart Styling"
     )]
     pub palette: Option<String>,
+
+    #[arg(long, hide = true, requires = "chart")]
+    pub mcp_inline: bool,
+}
+
+pub struct CliOutput {
+    pub text: String,
+    pub svg: Option<String>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -1824,6 +1832,149 @@ fn chart_json_conflict(
         ));
     }
     Ok(())
+}
+
+fn mcp_output_flag_error() -> crate::error::BioMcpError {
+    crate::error::BioMcpError::InvalidArgument(
+        "MCP chart responses do not support --output/-o. Omit file output and consume the inline SVG image content instead.".into(),
+    )
+}
+
+fn is_charted_mcp_study_command(cli: &Cli) -> Result<bool, crate::error::BioMcpError> {
+    let chart = match &cli.command {
+        Commands::Study {
+            cmd:
+                StudyCommand::Query { chart, .. }
+                | StudyCommand::Survival { chart, .. }
+                | StudyCommand::Compare { chart, .. }
+                | StudyCommand::CoOccurrence { chart, .. },
+        } => chart,
+        _ => return Ok(false),
+    };
+
+    if chart.chart.is_none() || cli.json {
+        return Ok(false);
+    }
+    if chart.output.is_some() {
+        return Err(mcp_output_flag_error());
+    }
+    Ok(true)
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum McpChartPass {
+    Text,
+    Svg,
+}
+
+fn require_flag_value(
+    args: &[String],
+    index: usize,
+    flag: &str,
+) -> Result<String, crate::error::BioMcpError> {
+    args.get(index + 1).cloned().ok_or_else(|| {
+        crate::error::BioMcpError::InvalidArgument(format!("{flag} requires a value"))
+    })
+}
+
+fn rewrite_mcp_chart_args(
+    args: &[String],
+    pass: McpChartPass,
+) -> Result<Vec<String>, crate::error::BioMcpError> {
+    let mut rewritten = Vec::with_capacity(args.len() + 1);
+    rewritten.push(
+        args.first()
+            .cloned()
+            .unwrap_or_else(|| "biomcp".to_string()),
+    );
+
+    let mut i = 1usize;
+    let mut saw_inline_flag = false;
+    while i < args.len() {
+        let token = &args[i];
+        match token.as_str() {
+            "--chart" => {
+                let value = require_flag_value(args, i, "--chart")?;
+                if pass == McpChartPass::Svg {
+                    rewritten.push(token.clone());
+                    rewritten.push(value);
+                }
+                i += 2;
+            }
+            "--terminal" => {
+                i += 1;
+            }
+            "--output" => {
+                if pass == McpChartPass::Svg {
+                    return Err(mcp_output_flag_error());
+                }
+                let _ = require_flag_value(args, i, "--output")?;
+                i += 2;
+            }
+            "-o" => {
+                if pass == McpChartPass::Svg {
+                    return Err(mcp_output_flag_error());
+                }
+                let _ = require_flag_value(args, i, "-o")?;
+                i += 2;
+            }
+            "--title" | "--theme" | "--palette" => {
+                let value = require_flag_value(args, i, token)?;
+                if pass == McpChartPass::Svg {
+                    rewritten.push(token.clone());
+                    rewritten.push(value);
+                }
+                i += 2;
+            }
+            "--mcp-inline" => {
+                if pass == McpChartPass::Svg {
+                    rewritten.push(token.clone());
+                }
+                saw_inline_flag = true;
+                i += 1;
+            }
+            _ => {
+                if token.starts_with("--chart=") {
+                    if pass == McpChartPass::Svg {
+                        rewritten.push(token.clone());
+                    }
+                    i += 1;
+                    continue;
+                }
+                if token.starts_with("--output=") || token.starts_with("-o=") {
+                    if pass == McpChartPass::Svg {
+                        return Err(mcp_output_flag_error());
+                    }
+                    i += 1;
+                    continue;
+                }
+                if token.starts_with("-o") && token.len() > 2 {
+                    if pass == McpChartPass::Svg {
+                        return Err(mcp_output_flag_error());
+                    }
+                    i += 1;
+                    continue;
+                }
+                if token.starts_with("--title=")
+                    || token.starts_with("--theme=")
+                    || token.starts_with("--palette=")
+                {
+                    if pass == McpChartPass::Svg {
+                        rewritten.push(token.clone());
+                    }
+                    i += 1;
+                    continue;
+                }
+                rewritten.push(token.clone());
+                i += 1;
+            }
+        }
+    }
+
+    if pass == McpChartPass::Svg && !saw_inline_flag {
+        rewritten.push("--mcp-inline".to_string());
+    }
+    Ok(rewritten)
 }
 
 fn normalize_cli_tokens(values: Vec<String>) -> Option<String> {
@@ -3617,6 +3768,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         crate::render::chart::validate_query_chart_type(query_type, chart_type)?;
                         let options = crate::render::chart::ChartRenderOptions::from_args(
                             chart.terminal,
+                            chart.mcp_inline,
                             chart.output,
                             chart.title,
                             chart.theme,
@@ -3767,6 +3919,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         let result = crate::entities::study::survival(&study, &gene, endpoint).await?;
                         let options = crate::render::chart::ChartRenderOptions::from_args(
                             chart.terminal,
+                            chart.mcp_inline,
                             chart.output,
                             chart.title,
                             chart.theme,
@@ -3807,6 +3960,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                                 .await?;
                                 let options = crate::render::chart::ChartRenderOptions::from_args(
                                     chart.terminal,
+                                    chart.mcp_inline,
                                     chart.output,
                                     chart.title,
                                     chart.theme,
@@ -3844,6 +3998,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                                         .await?;
                                 let options = crate::render::chart::ChartRenderOptions::from_args(
                                     chart.terminal,
+                                    chart.mcp_inline,
                                     chart.output,
                                     chart.title,
                                     chart.theme,
@@ -3896,6 +4051,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         let result = crate::entities::study::co_occurrence(&study, &genes).await?;
                         let options = crate::render::chart::ChartRenderOptions::from_args(
                             chart.terminal,
+                            chart.mcp_inline,
                             chart.output,
                             chart.title,
                             chart.theme,
@@ -5274,6 +5430,27 @@ pub async fn execute(mut args: Vec<String>) -> anyhow::Result<String> {
     run(cli).await
 }
 
+pub async fn execute_mcp(mut args: Vec<String>) -> anyhow::Result<CliOutput> {
+    if args.is_empty() {
+        args.push("biomcp".to_string());
+    }
+
+    let cli = Cli::try_parse_from(args.clone())?;
+    if !is_charted_mcp_study_command(&cli)? {
+        return Ok(CliOutput {
+            text: run(cli).await?,
+            svg: None,
+        });
+    }
+
+    let text = execute(rewrite_mcp_chart_args(&args, McpChartPass::Text)?).await?;
+    let svg = execute(rewrite_mcp_chart_args(&args, McpChartPass::Svg)?).await?;
+    Ok(CliOutput {
+        text,
+        svg: Some(svg),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -6355,9 +6532,11 @@ mod tests {
             title: None,
             theme: None,
             palette: None,
+            mcp_inline: false,
         };
         assert_eq!(args.chart, None);
         assert!(!args.terminal);
+        assert!(!args.mcp_inline);
     }
 
     #[test]
