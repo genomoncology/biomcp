@@ -7,21 +7,22 @@ Report ID: {{ report_id }}
 Drug: {{ drug }}{% if indication %} | Indication: {{ indication }}{% endif %}{% if date %} | Date: {{ date }}{% endif %}{% if serious %} | Serious: yes{% else %} | Serious: no{% endif %}
 {% if patient %}Patient: {{ patient }}{% endif %}
 {% if reporter_type or reporter_country %}Reporter: {% if reporter_type %}{{ reporter_type }}{% else %}Unknown{% endif %}{% if reporter_country %} ({{ reporter_country }}){% endif %}{% endif %}
+Source: OpenFDA
 {% endif -%}
 {% if show_reactions_section and reactions -%}
-## Reactions
+## Reactions (OpenFDA)
 {% for value in reactions -%}
 - {{ value }}
 {% endfor %}
 {% endif -%}
 {% if show_outcomes_section and outcomes -%}
-## Outcomes
+## Outcomes (OpenFDA)
 {% for value in outcomes -%}
 - {{ value }}
 {% endfor %}
 {% endif -%}
 {% if show_concomitant_section and concomitant_medications -%}
-## Concomitant Drugs
+## Concomitant Drugs (OpenFDA)
 
 {% for drug_name in concomitant_medications -%}
 - {{ drug_name }}

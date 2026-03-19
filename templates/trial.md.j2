@@ -9,15 +9,16 @@ Title: {{ title }}
 {% if enrollment %}Target Enrollment: {{ enrollment }}{% endif %}
 {% if age_range %}Eligible Ages: {{ age_range }}{% endif %}
 {% if start_date %}Start Date: {{ start_date }}{% endif %}{% if completion_date %} | Completion Date: {{ completion_date }}{% endif %}
+Source: {{ trial_source_label }}
 
 {% if conditions -%}
-## Conditions
+## Conditions ({{ trial_source_label }})
 {% for c in conditions -%}
 - {{ c }}
 {% endfor %}
 {% endif -%}
 {% if interventions -%}
-## Interventions
+## Interventions ({{ trial_source_label }})
 {% for i in interventions[:5] -%}
 - {{ i }}
 {% endfor %}
@@ -26,18 +27,18 @@ _and {{ interventions | length - 5 }} more (see `arms` section)_
 {% endif -%}
 {% endif -%}
 {% if summary -%}
-## Summary
+## Summary ({{ trial_source_label }})
 
 {{ summary }}
 {% endif -%}
 {% endif -%}
 {% if show_eligibility_section and eligibility_text -%}
-## Eligibility
+## Eligibility ({{ trial_source_label }})
 
 {{ eligibility_text }}
 {% endif -%}
 {% if show_locations_section and locations -%}
-## Locations
+## Locations ({{ trial_source_label }})
 
 | Facility | City | Country | Status | Contact |
 |---|---|---|---|---|
@@ -46,7 +47,7 @@ _and {{ interventions | length - 5 }} more (see `arms` section)_
 {% endfor -%}
 {% endif -%}
 {% if show_outcomes_section and outcomes -%}
-## Outcomes
+## Outcomes ({{ trial_source_label }})
 
 {% if outcomes.primary -%}
 ### Primary
@@ -62,7 +63,7 @@ _and {{ interventions | length - 5 }} more (see `arms` section)_
 {% endif -%}
 {% endif -%}
 {% if show_arms_section and arms -%}
-## Arms
+## Arms ({{ trial_source_label }})
 
 | Arm | Type | Interventions | Description |
 |---|---|---|---|
@@ -71,7 +72,7 @@ _and {{ interventions | length - 5 }} more (see `arms` section)_
 {% endfor -%}
 {% endif -%}
 {% if show_references_section and references is not none -%}
-## References
+## References ({{ trial_source_label }})
 {% if references | length == 0 -%}
 No references found.
 {% else -%}

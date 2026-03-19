@@ -9,6 +9,7 @@ Gene: {{ gene }}
 {% if drug -%}
 Drug: {{ drug }}
 {% endif -%}
+Source: CPIC
 
 {% if interactions -%}
 {% if gene -%}
@@ -18,6 +19,8 @@ Affected Genes: {% for row in interactions -%}{{ row.genesymbol }}{% if not loop
 {% endif -%}
 {% endif -%}
 {% endif -%}
+
+## Interactions (CPIC)
 
 {% if interactions -%}
 | Drug | Gene | CPIC Level | PGx Testing |
@@ -30,7 +33,7 @@ No PGx interactions found.
 {% endif -%}
 
 {% if show_recommendations_section -%}
-## Recommendations
+## Recommendations (CPIC)
 
 {% if recommendations -%}
 | Drug | Phenotype | Activity Score | Recommendation | Classification |
@@ -44,7 +47,7 @@ No CPIC recommendations found for this query.
 {% endif -%}
 
 {% if show_frequencies_section -%}
-## Population Frequencies
+## Population Frequencies (CPIC)
 
 {% if frequencies -%}
 | Gene | Allele | Population | Frequency | Subjects |
@@ -58,7 +61,7 @@ No CPIC population frequencies found for this query.
 {% endif -%}
 
 {% if show_guidelines_section -%}
-## Guidelines
+## Guidelines (CPIC)
 
 {% if guidelines -%}
 | Guideline | Genes | Drugs |

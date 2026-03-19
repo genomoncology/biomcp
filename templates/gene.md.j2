@@ -7,9 +7,10 @@ Entrez ID: {{ entrez_id }}
 {% if genomic_coordinates %}Chromosome: {{ genomic_coordinates }}{% elif location %}Location: {{ location }}{% endif %}
 {% if uniprot_id %}UniProt: {{ uniprot_id }}{% endif %}
 {% if gene_type %}Type: {{ gene_type }}{% endif %}
+Source: NCBI Gene / MyGene.info
 
 {% if summary -%}
-## Summary
+## Summary (NCBI Gene)
 
 {{ summary }}
 {% endif -%}
@@ -20,7 +21,7 @@ Diseases: {{ clinical_diseases | join(", ") }}
 Drugs: {{ clinical_drugs | join(", ") }}
 {% endif -%}
 {% if aliases -%}
-## Aliases
+## Aliases (NCBI Gene / MyGene.info)
 
 {{ aliases | join(", ") }}
 {% endif -%}
@@ -35,7 +36,7 @@ Drugs: {{ clinical_drugs | join(", ") }}
 {% endfor -%}
 {% endif -%}
 {% if ontology -%}
-## Ontology
+## Ontology (Enrichr)
 
 Note: single-gene Enrichr p-values are exploratory and should be interpreted cautiously.
 
@@ -48,7 +49,7 @@ Note: single-gene Enrichr p-values are exploratory and should be interpreted cau
 {% endfor -%}
 {% endif -%}
 {% if diseases -%}
-## Diseases
+## Diseases (Enrichr)
 
 | Term | P-value | Library |
 |---|---|---|
@@ -59,7 +60,7 @@ Note: single-gene Enrichr p-values are exploratory and should be interpreted cau
 {% endfor -%}
 {% endif -%}
 {% if protein -%}
-## Protein
+## Protein (UniProt)
 
 - Accession: {{ protein.accession }}
 - Name: {{ protein.name }}
@@ -67,7 +68,7 @@ Note: single-gene Enrichr p-values are exploratory and should be interpreted cau
 {% if protein.function %}- Function: {{ protein.function | truncate(260) }}{% endif %}
 {% endif -%}
 {% if go_terms -%}
-## GO Terms
+## GO Terms (QuickGO)
 
 | ID | Name | Aspect | Evidence |
 |---|---|---|---|
@@ -76,7 +77,7 @@ Note: single-gene Enrichr p-values are exploratory and should be interpreted cau
 {% endfor -%}
 {% endif -%}
 {% if interactions -%}
-## Interactions
+## Interactions (STRING)
 {% for row in interactions -%}
 {{ row.partner }}: {% if row.score is not none %}{{ row.score | score }}{% else %}-{% endif %}
 {% endfor -%}
@@ -140,7 +141,7 @@ No Human Protein Atlas records returned for this gene query.
 {% endif -%}
 {% endif -%}
 {% if show_druggability_section -%}
-## Druggability
+## Druggability (DGIdb / Open Targets)
 
 {% if druggability -%}
 {% if druggability.categories -%}

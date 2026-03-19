@@ -20,7 +20,8 @@ Section names are positional trailing arguments after `<id>`.
 
 `get` responses include outbound evidence links in markdown output where available.
 In JSON mode, links are exposed under `_meta.evidence_urls` and can include
-Ensembl, OMIM, NCBI Gene, and UniProt URLs.
+Ensembl, OMIM, NCBI Gene, and UniProt URLs. Section-level provenance is exposed
+under `_meta.section_sources`.
 
 ## Top-level commands
 
