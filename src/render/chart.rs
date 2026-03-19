@@ -1,9 +1,12 @@
+use std::borrow::Cow;
 use std::fs;
 use std::path::PathBuf;
 
 use kuva::backend::svg::SvgBackend;
 use kuva::backend::terminal::TerminalBackend;
-use kuva::plot::{BarPlot, BoxPlot, DensityPlot, Histogram, PiePlot, RidgelinePlot, ViolinPlot};
+use kuva::plot::{
+    BarPlot, BoxPlot, DensityPlot, Histogram, LinePlot, PiePlot, RidgelinePlot, ViolinPlot,
+};
 use kuva::prelude::{Layout, Palette, PieLabelPosition, Plot, Theme, render_multiple};
 
 #[cfg(feature = "charts-png")]
@@ -18,6 +21,23 @@ use crate::error::BioMcpError;
 
 const TERMINAL_COLS: usize = 100;
 const TERMINAL_ROWS: usize = 32;
+
+fn display_mutation_class(label: &str) -> Cow<'_, str> {
+    match label.trim() {
+        "Missense_Mutation" => Cow::Borrowed("Missense"),
+        "Nonsense_Mutation" => Cow::Borrowed("Nonsense"),
+        "Frame_Shift_Del" => Cow::Borrowed("Frameshift Del"),
+        "Frame_Shift_Ins" => Cow::Borrowed("Frameshift Ins"),
+        "Splice_Site" => Cow::Borrowed("Splice"),
+        "In_Frame_Del" => Cow::Borrowed("In-Frame Del"),
+        "In_Frame_Ins" => Cow::Borrowed("In-Frame Ins"),
+        "Nonstop_Mutation" => Cow::Borrowed("Nonstop"),
+        "Translation_Start_Site" => Cow::Borrowed("Start Site"),
+        "Amp" => Cow::Borrowed("Amp"),
+        "Amplification" => Cow::Borrowed("Amp"),
+        other => Cow::Borrowed(other),
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ChartRenderOptions {
@@ -144,7 +164,9 @@ pub(crate) fn render_mutation_frequency_chart(
                 result
                     .top_variant_classes
                     .iter()
-                    .map(|(label, count)| (label.clone(), *count as f64))
+                    .map(|(label, count)| {
+                        (display_mutation_class(label).into_owned(), *count as f64)
+                    })
                     .collect()
             };
             let plot = BarPlot::new()
@@ -171,7 +193,9 @@ pub(crate) fn render_mutation_frequency_chart(
                 result
                     .top_variant_classes
                     .iter()
-                    .map(|(label, count)| (label.clone(), *count as f64))
+                    .map(|(label, count)| {
+                        (display_mutation_class(label).into_owned(), *count as f64)
+                    })
                     .collect()
             };
             let mut plot = PiePlot::new()
@@ -201,23 +225,17 @@ pub(crate) fn render_cna_chart(
     )?;
     let palette = palette_colors(options.palette.as_deref())?;
     let categories = vec![
-        (
-            "Deep deletion (-2)".to_string(),
-            result.deep_deletion as f64,
-        ),
-        (
-            "Shallow deletion (-1)".to_string(),
-            result.shallow_deletion as f64,
-        ),
-        ("Diploid (0)".to_string(), result.diploid as f64),
-        ("Gain (1)".to_string(), result.gain as f64),
-        ("Amplification (2)".to_string(), result.amplification as f64),
+        ("Deep Del".to_string(), result.deep_deletion as f64),
+        ("Shallow Del".to_string(), result.shallow_deletion as f64),
+        ("Diploid".to_string(), result.diploid as f64),
+        ("Gain".to_string(), result.gain as f64),
+        ("Amplification".to_string(), result.amplification as f64),
     ];
     let title = format!("{} CNA distribution", result.gene);
     match chart_type {
         ChartType::Bar => {
             let plot = BarPlot::new()
-                .with_bars(categories.clone())
+                .with_bars(categories)
                 .with_color(palette[0].clone());
             render_chart(vec![Plot::Bar(plot)], options, &title, "Bucket", "Count")
         }
@@ -472,24 +490,65 @@ pub(crate) fn render_survival_chart(
     chart_type: ChartType,
     options: &ChartRenderOptions,
 ) -> Result<String, BioMcpError> {
-    validate_standalone_chart_type("study survival", chart_type, &[ChartType::Bar])?;
+    validate_standalone_chart_type(
+        "study survival",
+        chart_type,
+        &[ChartType::Bar, ChartType::Survival],
+    )?;
     let palette = palette_colors(options.palette.as_deref())?;
-    let plot = BarPlot::new()
-        .with_bars(
-            result
+    match chart_type {
+        ChartType::Bar => {
+            let plot = BarPlot::new()
+                .with_bars(
+                    result
+                        .groups
+                        .iter()
+                        .map(|group| (group.group_name.clone(), group.event_rate))
+                        .collect::<Vec<_>>(),
+                )
+                .with_color(palette[0].clone());
+            render_chart(
+                vec![Plot::Bar(plot)],
+                options,
+                &format!("{} survival event rate", result.gene),
+                "Group",
+                "Event rate",
+            )
+        }
+        ChartType::Survival => {
+            let plots = result
                 .groups
                 .iter()
-                .map(|group| (group.group_name.clone(), group.event_rate))
-                .collect::<Vec<_>>(),
-        )
-        .with_color(palette[0].clone());
-    render_chart(
-        vec![Plot::Bar(plot)],
-        options,
-        &format!("{} survival event rate", result.gene),
-        "Group",
-        "Event rate",
-    )
+                .enumerate()
+                .filter(|(_, group)| !group.km_curve_points.is_empty())
+                .map(|(idx, group)| {
+                    Plot::Line(
+                        LinePlot::new()
+                            .with_data(group.km_curve_points.iter().copied())
+                            .with_step()
+                            .with_color(palette[idx % palette.len()].clone())
+                            .with_legend(group.group_name.clone()),
+                    )
+                })
+                .collect::<Vec<_>>();
+            if plots.is_empty() {
+                return Err(BioMcpError::InvalidArgument(
+                    "study survival --chart survival requires at least one non-empty KM curve."
+                        .into(),
+                ));
+            }
+            render_chart(
+                plots,
+                options,
+                &format!("{} {} Kaplan-Meier", result.gene, result.endpoint.label()),
+                "Time (months)",
+                "Survival probability",
+            )
+        }
+        other => Err(BioMcpError::InvalidArgument(format!(
+            "Unsupported survival chart type '{other}'"
+        ))),
+    }
 }
 
 fn render_chart(
@@ -657,7 +716,7 @@ mod tests {
     };
 
     use super::{
-        ChartRenderOptions, render_cna_chart, render_co_occurrence_chart,
+        ChartRenderOptions, display_mutation_class, render_cna_chart, render_co_occurrence_chart,
         render_expression_compare_chart, render_expression_density_chart,
         render_expression_histogram_chart, render_mutation_compare_chart,
         render_mutation_frequency_chart, render_survival_chart, validate_compare_chart_type,
@@ -727,6 +786,56 @@ mod tests {
         }
     }
 
+    fn inline_svg_auto_title_options() -> ChartRenderOptions {
+        ChartRenderOptions {
+            terminal: false,
+            inline_svg: true,
+            output: None,
+            title: None,
+            theme: Some("minimal".into()),
+            palette: Some("wong".into()),
+        }
+    }
+
+    #[test]
+    fn display_mutation_class_maps_known_and_passes_through_unknown() {
+        assert_eq!(display_mutation_class("Missense_Mutation"), "Missense");
+        assert_eq!(display_mutation_class("Frame_Shift_Del"), "Frameshift Del");
+        assert_eq!(display_mutation_class("Splice_Site"), "Splice");
+        assert_eq!(display_mutation_class("Amplification"), "Amp");
+        // Unknown labels pass through unchanged
+        assert_eq!(display_mutation_class("CUSTOM_LABEL"), "CUSTOM_LABEL");
+        assert_eq!(display_mutation_class("Some_Other"), "Some_Other");
+    }
+
+    #[test]
+    fn render_survival_chart_returns_error_when_all_groups_have_empty_km_points() {
+        let survival = SurvivalResult {
+            study_id: "demo".into(),
+            gene: "TP53".into(),
+            endpoint: SurvivalEndpoint::Os,
+            groups: vec![SurvivalGroupResult {
+                group_name: "TP53-mutant".into(),
+                n_patients: 5,
+                n_events: 2,
+                n_censored: 3,
+                km_median_months: None,
+                survival_1yr: None,
+                survival_3yr: None,
+                survival_5yr: None,
+                event_rate: 0.4,
+                km_curve_points: vec![],
+            }],
+            log_rank_p: None,
+        };
+        let err = render_survival_chart(&survival, ChartType::Survival, &inline_svg_options())
+            .expect_err("should fail when all groups have empty km_curve_points");
+        assert!(
+            err.to_string().contains("non-empty KM curve"),
+            "unexpected error: {err}"
+        );
+    }
+
     #[test]
     fn query_chart_validation_lists_valid_types() {
         let err = validate_query_chart_type(StudyQueryType::Mutations, ChartType::Violin)
@@ -753,12 +862,13 @@ mod tests {
         let err = validate_standalone_chart_type(
             "study survival",
             ChartType::Histogram,
-            &[ChartType::Bar],
+            &[ChartType::Bar, ChartType::Survival],
         )
         .expect_err("histogram should be rejected for survival");
         let msg = err.to_string();
         assert!(msg.contains("study survival"));
         assert!(msg.contains("bar"));
+        assert!(msg.contains("survival"));
     }
 
     #[test]
@@ -782,6 +892,53 @@ mod tests {
 
         assert!(svg.contains("<svg"));
         assert!(svg.contains("Example"));
+    }
+
+    #[test]
+    fn mutation_and_cna_svg_output_use_human_readable_labels() {
+        let mutation = MutationFrequencyResult {
+            study_id: "demo".into(),
+            gene: "TP53".into(),
+            mutation_count: 7,
+            unique_samples: 5,
+            total_samples: 20,
+            frequency: 0.25,
+            top_variant_classes: vec![
+                ("Missense_Mutation".into(), 4),
+                ("Frame_Shift_Del".into(), 2),
+                ("Splice_Site".into(), 1),
+            ],
+            top_protein_changes: vec![("R175H".into(), 3)],
+        };
+        let cna = CnaDistributionResult {
+            study_id: "demo".into(),
+            gene: "ERBB2".into(),
+            total_samples: 20,
+            deep_deletion: 1,
+            shallow_deletion: 2,
+            diploid: 10,
+            gain: 3,
+            amplification: 4,
+        };
+
+        let mutation_svg =
+            render_mutation_frequency_chart(&mutation, ChartType::Bar, &inline_svg_options())
+                .expect("mutation svg");
+        let cna_svg =
+            render_cna_chart(&cna, ChartType::Bar, &inline_svg_options()).expect("cna svg");
+
+        assert!(mutation_svg.contains("Missense"));
+        assert!(mutation_svg.contains("Frameshift Del"));
+        assert!(mutation_svg.contains("Splice"));
+        assert!(!mutation_svg.contains("Missense_Mutation"));
+        assert!(!mutation_svg.contains("Frame_Shift_Del"));
+        assert!(!mutation_svg.contains("Splice_Site"));
+
+        assert!(cna_svg.contains("Deep Del"));
+        assert!(cna_svg.contains("Shallow Del"));
+        assert!(cna_svg.contains("Diploid"));
+        assert!(!cna_svg.contains("Deep deletion (-2)"));
+        assert!(!cna_svg.contains("Shallow deletion (-1)"));
     }
 
     #[test]
@@ -844,6 +1001,7 @@ mod tests {
                     survival_3yr: Some(0.5),
                     survival_5yr: Some(0.25),
                     event_rate: 0.375,
+                    km_curve_points: vec![(0.0, 1.0), (12.0, 0.75), (36.0, 0.5), (60.0, 0.25)],
                 },
                 SurvivalGroupResult {
                     group_name: "TP53-wildtype".into(),
@@ -855,6 +1013,7 @@ mod tests {
                     survival_3yr: Some(0.8),
                     survival_5yr: Some(0.7),
                     event_rate: 0.1667,
+                    km_curve_points: vec![(0.0, 1.0), (12.0, 0.9), (36.0, 0.8), (60.0, 0.7)],
                 },
             ],
             log_rank_p: Some(0.02),
@@ -954,5 +1113,54 @@ mod tests {
         assert!(!hist.trim().is_empty());
         assert!(!density.trim().is_empty());
         assert!(!violin.trim().is_empty());
+    }
+
+    #[test]
+    fn survival_svg_output_supports_kaplan_meier_curves() {
+        let survival = SurvivalResult {
+            study_id: "demo".into(),
+            gene: "TP53".into(),
+            endpoint: SurvivalEndpoint::Os,
+            groups: vec![
+                SurvivalGroupResult {
+                    group_name: "TP53-mutant".into(),
+                    n_patients: 8,
+                    n_events: 3,
+                    n_censored: 5,
+                    km_median_months: Some(18.0),
+                    survival_1yr: Some(0.75),
+                    survival_3yr: Some(0.5),
+                    survival_5yr: Some(0.25),
+                    event_rate: 0.375,
+                    km_curve_points: vec![(0.0, 1.0), (12.0, 0.75), (36.0, 0.5), (60.0, 0.25)],
+                },
+                SurvivalGroupResult {
+                    group_name: "TP53-wildtype".into(),
+                    n_patients: 12,
+                    n_events: 2,
+                    n_censored: 10,
+                    km_median_months: None,
+                    survival_1yr: Some(0.9),
+                    survival_3yr: Some(0.8),
+                    survival_5yr: Some(0.7),
+                    event_rate: 0.1667,
+                    km_curve_points: vec![(0.0, 1.0), (12.0, 0.9), (36.0, 0.8), (60.0, 0.7)],
+                },
+            ],
+            log_rank_p: Some(0.02),
+        };
+
+        let svg = render_survival_chart(
+            &survival,
+            ChartType::Survival,
+            &inline_svg_auto_title_options(),
+        )
+        .expect("survival svg");
+
+        assert!(svg.contains("Time (months)"));
+        assert!(svg.contains("Survival probability"));
+        assert!(svg.contains("TP53-mutant"));
+        assert!(svg.contains("TP53-wildtype"));
+        assert!(svg.contains("Overall Survival"));
     }
 }

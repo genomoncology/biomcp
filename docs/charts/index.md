@@ -13,6 +13,10 @@ biomcp study query --study msk_impact_2017 --gene TP53 --type mutations \
 biomcp study co-occurrence --study msk_impact_2017 --genes TP53,KRAS \
   --chart pie -o tp53-kras.svg
 
+# SVG Kaplan-Meier curve by TP53 mutation status
+biomcp study survival --study brca_tcga_pan_can_atlas_2018 --gene TP53 \
+  --chart survival -o tp53-km.svg
+
 # Terminal violin plot of ERBB2 expression by TP53 status
 biomcp study compare --study brca_tcga_pan_can_atlas_2018 \
   --gene TP53 --type expression --target ERBB2 \
@@ -29,7 +33,7 @@ biomcp study compare --study brca_tcga_pan_can_atlas_2018 \
 | `study co-occurrence` | `pie`, `bar` |
 | `study compare --type expression` | `box`, `violin`, `ridgeline` |
 | `study compare --type mutations` | `bar` |
-| `study survival` | `bar` |
+| `study survival` | `bar`, `survival` |
 
 Invalid combinations return an error listing the valid options.
 
@@ -71,3 +75,4 @@ SVG is the recommended format for AI-assisted workflows. An AI agent can parse S
 - [`biomcp chart box`](box.md) — Box plot
 - [`biomcp chart violin`](violin.md) — Violin plot
 - [`biomcp chart ridgeline`](ridgeline.md) — Ridgeline plot
+- [`biomcp chart survival`](survival.md) — Kaplan-Meier survival curve

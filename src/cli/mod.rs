@@ -43,6 +43,7 @@ pub enum ChartType {
     Box,
     Violin,
     Ridgeline,
+    Survival,
 }
 
 impl ChartType {
@@ -55,6 +56,7 @@ impl ChartType {
             Self::Box => "box",
             Self::Violin => "violin",
             Self::Ridgeline => "ridgeline",
+            Self::Survival => "survival",
         }
     }
 }
@@ -3914,7 +3916,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         crate::render::chart::validate_standalone_chart_type(
                             "study survival",
                             chart_type,
-                            &[ChartType::Bar],
+                            &[ChartType::Bar, ChartType::Survival],
                         )?;
                         let result = crate::entities::study::survival(&study, &gene, endpoint).await?;
                         let options = crate::render::chart::ChartRenderOptions::from_args(
@@ -6475,6 +6477,44 @@ mod tests {
         match cli.command {
             Commands::Chart { command } => {
                 assert_eq!(format!("{command:?}"), "Some(Violin)");
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn study_survival_parses_survival_chart_flag() {
+        let cli = Cli::try_parse_from([
+            "biomcp",
+            "study",
+            "survival",
+            "--study",
+            "brca_tcga_pan_can_atlas_2018",
+            "--gene",
+            "TP53",
+            "--chart",
+            "survival",
+            "--terminal",
+        ])
+        .expect("study survival chart flags should parse");
+        match cli.command {
+            Commands::Study {
+                cmd: StudyCommand::Survival { chart, .. },
+            } => {
+                assert_eq!(chart.chart, Some(ChartType::Survival));
+                assert!(chart.terminal);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn study_chart_subcommand_parses_survival_topic() {
+        let cli = Cli::try_parse_from(["biomcp", "chart", "survival"])
+            .expect("survival chart docs should parse");
+        match cli.command {
+            Commands::Chart { command } => {
+                assert_eq!(format!("{command:?}"), "Some(Survival)");
             }
             other => panic!("unexpected command: {other:?}"),
         }

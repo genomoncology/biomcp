@@ -275,6 +275,17 @@ test -n "$out"
 echo "$out" | mustmatch not like "# Study Survival"
 ```
 
+## Chart Flag: Survival KM Chart
+
+`--chart survival --terminal` on survival should switch the command into chart mode and render a Kaplan-Meier curve rather than the default markdown summary.
+
+```bash
+. "$PWD/.cache/spec-study-env"
+out="$(biomcp study survival --study brca_tcga_pan_can_atlas_2018 --gene TP53 --chart survival --terminal)"
+test -n "$out"
+echo "$out" | mustmatch not like "# Study Survival"
+```
+
 ## Chart Flag: Invalid Chart Type Error
 
 Incompatible chart type and query type combinations should fail with a clear error listing valid options.
@@ -289,12 +300,13 @@ echo "$out" | mustmatch like "pie"
 
 ## Chart Subcommand: Documentation
 
-`biomcp chart` should show chart overview documentation. `biomcp chart bar` should show bar chart specific docs.
+`biomcp chart` should show chart overview documentation. Specific chart pages should include the new survival chart topic.
 
 ```bash
 out="$(biomcp chart)"
 test -n "$out"
 echo "$out" | mustmatch like "bar"
+echo "$out" | mustmatch like "survival"
 echo "$out" | mustmatch like "violin"
 ```
 
@@ -302,4 +314,10 @@ echo "$out" | mustmatch like "violin"
 out="$(biomcp chart bar)"
 test -n "$out"
 echo "$out" | mustmatch like "Bar"
+```
+
+```bash
+out="$(biomcp chart survival)"
+test -n "$out"
+echo "$out" | mustmatch like "Survival"
 ```

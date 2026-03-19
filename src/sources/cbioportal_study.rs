@@ -136,6 +136,7 @@ pub struct KmEstimate {
     pub survival_1yr: Option<f64>,
     pub survival_3yr: Option<f64>,
     pub survival_5yr: Option<f64>,
+    pub curve_points: Vec<(f64, f64)>,
 }
 
 #[derive(Debug, Clone)]
@@ -149,6 +150,7 @@ pub struct SurvivalGroupStats {
     pub survival_3yr: Option<f64>,
     pub survival_5yr: Option<f64>,
     pub event_rate: f64,
+    pub km_curve_points: Vec<(f64, f64)>,
 }
 
 #[derive(Debug, Clone)]
@@ -1360,6 +1362,22 @@ fn kaplan_meier(records: &[&PatientSurvivalRecord]) -> KmEstimate {
             survival_1yr: None,
             survival_3yr: None,
             survival_5yr: None,
+            curve_points: Vec::new(),
+        };
+    }
+
+    let max_follow_up = records
+        .iter()
+        .map(|record| record.months)
+        .fold(0.0_f64, f64::max);
+    let times = event_times(records);
+    if times.is_empty() {
+        return KmEstimate {
+            km_median_months: None,
+            survival_1yr: Some(1.0),
+            survival_3yr: Some(1.0),
+            survival_5yr: Some(1.0),
+            curve_points: vec![(0.0, 1.0), (max_follow_up, 1.0)],
         };
     }
 
@@ -1368,8 +1386,9 @@ fn kaplan_meier(records: &[&PatientSurvivalRecord]) -> KmEstimate {
     let mut survival_1yr = Some(1.0);
     let mut survival_3yr = Some(1.0);
     let mut survival_5yr = Some(1.0);
+    let mut curve_points = vec![(0.0, 1.0)];
 
-    for time in event_times(records) {
+    for time in times.iter().copied() {
         let at_risk = records
             .iter()
             .filter(|record| record.months >= time)
@@ -1399,6 +1418,13 @@ fn kaplan_meier(records: &[&PatientSurvivalRecord]) -> KmEstimate {
         if time <= 60.0 {
             survival_5yr = Some(survival);
         }
+        curve_points.push((time, survival));
+    }
+
+    if let Some(last_event_time) = times.last().copied()
+        && max_follow_up > last_event_time
+    {
+        curve_points.push((max_follow_up, survival));
     }
 
     KmEstimate {
@@ -1406,6 +1432,7 @@ fn kaplan_meier(records: &[&PatientSurvivalRecord]) -> KmEstimate {
         survival_1yr,
         survival_3yr,
         survival_5yr,
+        curve_points,
     }
 }
 
@@ -1506,6 +1533,7 @@ fn survival_group_stats(
         survival_3yr: km.survival_3yr,
         survival_5yr: km.survival_5yr,
         event_rate,
+        km_curve_points: km.curve_points,
     }
 }
 
@@ -2429,6 +2457,34 @@ ERBB2\t2064\t2.1\t1.0\t3.4\tbad\n",
         assert_eq!(estimate.survival_1yr, Some(0.75));
         assert_eq!(estimate.survival_3yr, Some(0.375));
         assert_eq!(estimate.survival_5yr, Some(0.375));
+        assert_eq!(
+            estimate.curve_points,
+            vec![(0.0, 1.0), (10.0, 0.75), (20.0, 0.375), (30.0, 0.375)]
+        );
+    }
+
+    #[test]
+    fn kaplan_meier_estimate_without_events_returns_flat_curve() {
+        let records = [
+            PatientSurvivalRecord {
+                patient_id: "P1".to_string(),
+                status: SurvivalStatus::Censored,
+                months: 12.0,
+            },
+            PatientSurvivalRecord {
+                patient_id: "P2".to_string(),
+                status: SurvivalStatus::Censored,
+                months: 24.0,
+            },
+        ];
+        let record_refs = records.iter().collect::<Vec<_>>();
+
+        let estimate = kaplan_meier(&record_refs);
+        assert_eq!(estimate.km_median_months, None);
+        assert_eq!(estimate.survival_1yr, Some(1.0));
+        assert_eq!(estimate.survival_3yr, Some(1.0));
+        assert_eq!(estimate.survival_5yr, Some(1.0));
+        assert_eq!(estimate.curve_points, vec![(0.0, 1.0), (24.0, 1.0)]);
     }
 
     #[test]
