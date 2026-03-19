@@ -12,7 +12,9 @@ use crate::entities::article::{
     Article, ArticleAnnotations, ArticleGraphResult, ArticleRecommendationsResult,
     ArticleRelatedPaper, ArticleSearchResult, ArticleSource,
 };
-use crate::entities::disease::{Disease, DiseaseSearchResult, PhenotypeSearchResult};
+use crate::entities::disease::{
+    Disease, DiseaseAssociationScoreSummary, DiseaseSearchResult, PhenotypeSearchResult,
+};
 use crate::entities::drug::{Drug, DrugSearchResult};
 use crate::entities::gene::{Gene, GeneSearchResult};
 use crate::entities::pathway::{Pathway, PathwaySearchResult};
@@ -64,6 +66,14 @@ struct ProteinComplexDetailRow {
     component_preview: String,
     remaining_count: usize,
     description: Option<String>,
+}
+
+#[derive(serde::Serialize)]
+struct DiseaseGeneAssociationRenderRow {
+    gene: String,
+    relationship: Option<String>,
+    source: Option<String>,
+    opentargets: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -311,6 +321,45 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
     Ok(ENV
         .get()
         .expect("ENV should be initialized by the time this is reached"))
+}
+
+fn format_disease_association_score(summary: &DiseaseAssociationScoreSummary) -> String {
+    let mut parts = vec![format!("overall {:.3}", summary.overall_score)];
+    if let Some(score) = summary.gwas_score {
+        parts.push(format!("GWAS {:.3}", score));
+    }
+    if let Some(score) = summary.rare_variant_score {
+        parts.push(format!("rare {:.3}", score));
+    }
+    if let Some(score) = summary.somatic_mutation_score {
+        parts.push(format!("somatic {:.3}", score));
+    }
+    parts.join("; ")
+}
+
+fn disease_top_gene_score_labels(disease: &Disease) -> Vec<String> {
+    disease
+        .top_gene_scores
+        .iter()
+        .take(5)
+        .map(|row| format!("{} (OT {:.3})", row.symbol, row.summary.overall_score))
+        .collect()
+}
+
+fn disease_gene_association_rows(disease: &Disease) -> Vec<DiseaseGeneAssociationRenderRow> {
+    disease
+        .gene_associations
+        .iter()
+        .map(|row| DiseaseGeneAssociationRenderRow {
+            gene: row.gene.clone(),
+            relationship: row.relationship.clone(),
+            source: row.source.clone(),
+            opentargets: row
+                .opentargets_score
+                .as_ref()
+                .map(format_disease_association_score),
+        })
+        .collect()
 }
 
 fn append_evidence_urls(mut body: String, urls: Vec<(&str, String)>) -> String {
@@ -1428,6 +1477,8 @@ pub fn disease_markdown(
     };
 
     let tmpl = env()?.get_template("disease.md.j2")?;
+    let top_gene_score_labels = disease_top_gene_score_labels(disease);
+    let gene_association_rows = disease_gene_association_rows(disease);
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(disease_label, requested_sections),
@@ -1438,7 +1489,10 @@ pub fn disease_markdown(
         parents => &disease.parents,
         associated_genes => &disease.associated_genes,
         gene_associations => &disease.gene_associations,
+        gene_association_rows => gene_association_rows,
         top_genes => &disease.top_genes,
+        top_gene_scores => &disease.top_gene_scores,
+        top_gene_score_labels => top_gene_score_labels,
         treatment_landscape => &disease.treatment_landscape,
         recruiting_trial_count => &disease.recruiting_trial_count,
         pathways => &disease.pathways,
@@ -2827,12 +2881,206 @@ mod tests {
         assert!(markdown.contains("# BRAF - expression, hpa, druggability, clingen"));
         assert!(markdown.contains("## Expression (GTEx)"));
         assert!(markdown.contains("## Human Protein Atlas"));
-        assert!(markdown.contains("## Druggability (DGIdb)"));
+        assert!(markdown.contains("## Druggability"));
         assert!(markdown.contains("## ClinGen"));
         assert!(markdown.contains("No GTEx expression records returned"));
         assert!(markdown.contains("No Human Protein Atlas records returned"));
         assert!(markdown.contains("No DGIdb interactions returned"));
         assert!(markdown.contains("No ClinGen records returned"));
+    }
+
+    #[test]
+    fn gene_markdown_renders_combined_dgidb_and_opentargets_druggability() {
+        let gene = Gene {
+            symbol: "EGFR".to_string(),
+            name: "epidermal growth factor receptor".to_string(),
+            entrez_id: "1956".to_string(),
+            ensembl_id: Some("ENSG00000146648".to_string()),
+            location: Some("7p11.2".to_string()),
+            genomic_coordinates: None,
+            omim_id: None,
+            uniprot_id: Some("P00533".to_string()),
+            summary: None,
+            gene_type: Some("protein-coding".to_string()),
+            aliases: Vec::new(),
+            clinical_diseases: Vec::new(),
+            clinical_drugs: Vec::new(),
+            pathways: None,
+            ontology: None,
+            diseases: None,
+            protein: None,
+            go: None,
+            interactions: None,
+            civic: None,
+            expression: None,
+            hpa: None,
+            druggability: Some(crate::sources::dgidb::GeneDruggability {
+                categories: vec!["Kinase".to_string()],
+                interactions: Vec::new(),
+                tractability: vec![
+                    crate::sources::dgidb::GeneTractabilityModality {
+                        modality: "small molecule".to_string(),
+                        tractable: true,
+                        evidence_labels: vec!["Approved Drug".to_string()],
+                    },
+                    crate::sources::dgidb::GeneTractabilityModality {
+                        modality: "antibody".to_string(),
+                        tractable: true,
+                        evidence_labels: vec!["Clinical Precedence".to_string()],
+                    },
+                ],
+                safety_liabilities: vec![crate::sources::dgidb::GeneSafetyLiability {
+                    event: "Skin rash".to_string(),
+                    datasource: Some("ForceGenetics".to_string()),
+                    effect_direction: Some("activation".to_string()),
+                    biosample: Some("Skin".to_string()),
+                }],
+            }),
+            clingen: None,
+            constraint: None,
+        };
+
+        let markdown =
+            gene_markdown(&gene, &["druggability".to_string()]).expect("rendered markdown");
+
+        assert!(markdown.contains("## Druggability"));
+        assert!(!markdown.contains("## Druggability (DGIdb)"));
+        assert!(markdown.contains("OpenTargets tractability"));
+        assert!(markdown.contains("| Modality | Tractable | Evidence |"));
+        assert!(markdown.contains("| small molecule | yes | Approved Drug |"));
+        assert!(markdown.contains("| antibody | yes | Clinical Precedence |"));
+        assert!(markdown.contains("OpenTargets safety liabilities"));
+        assert!(markdown.contains("Skin rash"));
+        assert!(markdown.contains("No DGIdb interactions returned for this gene query."));
+    }
+
+    #[test]
+    fn gene_markdown_renders_dgidb_interaction_table_alongside_opentargets_data() {
+        let gene = Gene {
+            symbol: "BRAF".to_string(),
+            name: "B-Raf proto-oncogene".to_string(),
+            entrez_id: "673".to_string(),
+            ensembl_id: None,
+            location: None,
+            genomic_coordinates: None,
+            omim_id: None,
+            uniprot_id: None,
+            summary: None,
+            gene_type: None,
+            aliases: Vec::new(),
+            clinical_diseases: Vec::new(),
+            clinical_drugs: Vec::new(),
+            pathways: None,
+            ontology: None,
+            diseases: None,
+            protein: None,
+            go: None,
+            interactions: None,
+            civic: None,
+            expression: None,
+            hpa: None,
+            druggability: Some(crate::sources::dgidb::GeneDruggability {
+                categories: vec!["Kinase".to_string()],
+                interactions: vec![crate::sources::dgidb::DrugInteraction {
+                    drug: "Dabrafenib".to_string(),
+                    interaction_types: vec!["inhibitor".to_string()],
+                    score: Some(1.2),
+                    approved: Some(true),
+                    source_count: 2,
+                }],
+                tractability: vec![crate::sources::dgidb::GeneTractabilityModality {
+                    modality: "small molecule".to_string(),
+                    tractable: true,
+                    evidence_labels: vec!["Approved Drug".to_string()],
+                }],
+                safety_liabilities: Vec::new(),
+            }),
+            clingen: None,
+            constraint: None,
+        };
+
+        let markdown =
+            gene_markdown(&gene, &["druggability".to_string()]).expect("rendered markdown");
+
+        assert!(markdown.contains("## Druggability"));
+        assert!(markdown.contains("OpenTargets tractability"));
+        assert!(markdown.contains("| small molecule | yes | Approved Drug |"));
+        // DGIdb interaction table renders (not replaced by empty-state message)
+        assert!(markdown.contains("| Drug | Interaction Types | Score | Approved | Sources |"));
+        assert!(markdown.contains("| Dabrafenib | inhibitor | 1.200 | yes | 2 |"));
+        assert!(!markdown.contains("No DGIdb interactions returned for this gene query."));
+    }
+
+    #[test]
+    fn disease_markdown_renders_opentargets_scores_in_summary_and_genes_table() {
+        let disease = Disease {
+            id: "MONDO:0005105".to_string(),
+            name: "melanoma".to_string(),
+            definition: None,
+            synonyms: Vec::new(),
+            parents: Vec::new(),
+            associated_genes: vec!["BRAF".to_string(), "NRAS".to_string()],
+            gene_associations: vec![
+                crate::entities::disease::DiseaseGeneAssociation {
+                    gene: "BRAF".to_string(),
+                    relationship: Some("causal".to_string()),
+                    source: Some("Monarch".to_string()),
+                    opentargets_score: Some(
+                        crate::entities::disease::DiseaseAssociationScoreSummary {
+                            overall_score: 0.912,
+                            gwas_score: Some(0.321),
+                            rare_variant_score: Some(0.654),
+                            somatic_mutation_score: Some(0.876),
+                        },
+                    ),
+                },
+                crate::entities::disease::DiseaseGeneAssociation {
+                    gene: "NRAS".to_string(),
+                    relationship: Some("associated".to_string()),
+                    source: Some("CIViC".to_string()),
+                    opentargets_score: None,
+                },
+            ],
+            top_genes: vec!["BRAF".to_string(), "NRAS".to_string()],
+            top_gene_scores: vec![
+                crate::entities::disease::DiseaseTargetScore {
+                    symbol: "BRAF".to_string(),
+                    summary: crate::entities::disease::DiseaseAssociationScoreSummary {
+                        overall_score: 0.912,
+                        gwas_score: Some(0.321),
+                        rare_variant_score: Some(0.654),
+                        somatic_mutation_score: Some(0.876),
+                    },
+                },
+                crate::entities::disease::DiseaseTargetScore {
+                    symbol: "NRAS".to_string(),
+                    summary: crate::entities::disease::DiseaseAssociationScoreSummary {
+                        overall_score: 0.701,
+                        gwas_score: None,
+                        rare_variant_score: None,
+                        somatic_mutation_score: Some(0.443),
+                    },
+                },
+            ],
+            treatment_landscape: Vec::new(),
+            recruiting_trial_count: None,
+            pathways: Vec::new(),
+            phenotypes: Vec::new(),
+            variants: Vec::new(),
+            models: Vec::new(),
+            prevalence: Vec::new(),
+            prevalence_note: None,
+            civic: None,
+            xrefs: std::collections::HashMap::new(),
+        };
+
+        let summary = disease_markdown(&disease, &[]).expect("rendered markdown");
+        assert!(summary.contains("Genes: BRAF (OT 0.912), NRAS (OT 0.701)"));
+
+        let genes = disease_markdown(&disease, &["genes".to_string()]).expect("rendered markdown");
+        assert!(genes.contains("| Gene | Relationship | Source | OpenTargets |"));
+        assert!(genes.contains("overall 0.912; GWAS 0.321; rare 0.654; somatic 0.876"));
+        assert!(genes.contains("| NRAS | associated | CIViC | - |"));
     }
 
     #[test]

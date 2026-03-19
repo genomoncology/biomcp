@@ -140,11 +140,29 @@ No Human Protein Atlas records returned for this gene query.
 {% endif -%}
 {% endif -%}
 {% if show_druggability_section -%}
-## Druggability (DGIdb)
+## Druggability
 
 {% if druggability -%}
 {% if druggability.categories -%}
 Categories: {{ druggability.categories | join(", ") }}
+{% endif -%}
+{% if druggability.tractability -%}
+### OpenTargets tractability
+
+| Modality | Tractable | Evidence |
+|---|---|---|
+{% for row in druggability.tractability -%}
+| {{ row.modality }} | {% if row.tractable %}yes{% else %}no{% endif %} | {% if row.evidence_labels %}{{ row.evidence_labels | join(", ") }}{% else %}-{% endif %} |
+{% endfor -%}
+{% endif -%}
+{% if druggability.safety_liabilities -%}
+### OpenTargets safety liabilities
+
+| Event | Datasource | Effect | Biosample |
+|---|---|---|---|
+{% for row in druggability.safety_liabilities -%}
+| {{ row.event }} | {{ row.datasource or "-" }} | {{ row.effect_direction or "-" }} | {{ row.biosample or "-" }} |
+{% endfor -%}
 {% endif -%}
 {% if druggability.interactions -%}
 | Drug | Interaction Types | Score | Approved | Sources |

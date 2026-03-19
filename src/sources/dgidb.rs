@@ -221,6 +221,8 @@ impl DgidbClient {
         Ok(GeneDruggability {
             categories: categories.into_iter().collect(),
             interactions,
+            tractability: Vec::new(),
+            safety_liabilities: Vec::new(),
         })
     }
 }
@@ -231,6 +233,29 @@ pub struct GeneDruggability {
     pub categories: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub interactions: Vec<DrugInteraction>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tractability: Vec<GeneTractabilityModality>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub safety_liabilities: Vec<GeneSafetyLiability>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeneTractabilityModality {
+    pub modality: String,
+    pub tractable: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub evidence_labels: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeneSafetyLiability {
+    pub event: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub datasource: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub effect_direction: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub biosample: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

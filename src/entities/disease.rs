@@ -36,6 +36,8 @@ pub struct Disease {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub top_genes: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub top_gene_scores: Vec<DiseaseTargetScore>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub treatment_landscape: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub recruiting_trial_count: Option<u32>,
@@ -93,6 +95,26 @@ pub struct DiseaseGeneAssociation {
     pub relationship: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub opentargets_score: Option<DiseaseAssociationScoreSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiseaseAssociationScoreSummary {
+    pub overall_score: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gwas_score: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rare_variant_score: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub somatic_mutation_score: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiseaseTargetScore {
+    pub symbol: String,
+    #[serde(flatten)]
+    pub summary: DiseaseAssociationScoreSummary,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -532,28 +554,44 @@ async fn add_genes_section(disease: &mut Disease) -> Result<(), BioMcpError> {
     let client = OpenTargetsClient::new()?;
     for query in queries {
         let rows = client.disease_associated_targets(&query, 10).await?;
+        if rows.is_empty() {
+            continue;
+        }
+
+        let mut associated_genes: Vec<String> = Vec::new();
+        let mut top_gene_scores = Vec::new();
 
         for row in rows {
             let symbol = row.symbol.trim();
             if symbol.is_empty() {
                 continue;
             }
-            if disease
-                .associated_genes
+            if associated_genes
                 .iter()
                 .any(|v| v.eq_ignore_ascii_case(symbol))
             {
                 continue;
             }
-            disease.associated_genes.push(symbol.to_string());
+            associated_genes.push(symbol.to_string());
+            if let Some(summary) = disease_association_summary(&row) {
+                top_gene_scores.push(DiseaseTargetScore {
+                    symbol: symbol.to_string(),
+                    summary,
+                });
+            }
         }
 
-        if !disease.associated_genes.is_empty() {
-            break;
+        if !associated_genes.is_empty() {
+            disease.associated_genes = associated_genes;
+            disease.top_gene_scores = top_gene_scores;
+            disease.associated_genes.truncate(10);
+            disease.top_gene_scores.truncate(10);
+            return Ok(());
         }
     }
 
     disease.associated_genes.truncate(10);
+    disease.top_gene_scores.clear();
     Ok(())
 }
 
@@ -678,7 +716,33 @@ fn map_monarch_gene_association(row: MonarchGeneAssociation) -> Option<DiseaseGe
             .map(str::trim)
             .filter(|v| !v.is_empty())
             .map(str::to_string),
+        opentargets_score: None,
     })
+}
+
+fn disease_association_summary(
+    row: &crate::sources::opentargets::OpenTargetsAssociatedGene,
+) -> Option<DiseaseAssociationScoreSummary> {
+    Some(DiseaseAssociationScoreSummary {
+        overall_score: row.overall_score?,
+        gwas_score: row.gwas_score,
+        rare_variant_score: row.rare_variant_score,
+        somatic_mutation_score: row.somatic_mutation_score,
+    })
+}
+
+fn attach_opentargets_scores(disease: &mut Disease) {
+    let score_map = disease
+        .top_gene_scores
+        .iter()
+        .map(|row| (row.symbol.to_ascii_lowercase(), row.summary.clone()))
+        .collect::<HashMap<_, _>>();
+
+    for association in &mut disease.gene_associations {
+        association.opentargets_score = score_map
+            .get(&association.gene.to_ascii_lowercase())
+            .cloned();
+    }
 }
 
 async fn add_monarch_gene_section(disease: &mut Disease) -> Result<(), BioMcpError> {
@@ -884,6 +948,7 @@ async fn augment_genes_with_civic(disease: &mut Disease) -> Result<(), BioMcpErr
             gene: symbol,
             relationship: Some("associated with disease".into()),
             source: Some("CIViC".into()),
+            opentargets_score: None,
         });
         if disease.gene_associations.len() >= 20 {
             break;
@@ -1124,7 +1189,16 @@ async fn enrich_base_context(disease: &mut Disease) {
         warn!("OpenTargets unavailable for disease genes context: {err}");
     }
 
-    disease.top_genes = disease.associated_genes.iter().take(5).cloned().collect();
+    disease.top_genes = if disease.top_gene_scores.is_empty() {
+        disease.associated_genes.iter().take(5).cloned().collect()
+    } else {
+        disease
+            .top_gene_scores
+            .iter()
+            .take(5)
+            .map(|row| row.symbol.clone())
+            .collect()
+    };
 
     if let Err(err) = add_treatment_landscape(disease).await {
         warn!("Drug lookup unavailable for disease treatment landscape: {err}");
@@ -1143,6 +1217,7 @@ async fn apply_requested_sections(disease: &mut Disease, sections: DiseaseSectio
         if let Err(err) = augment_genes_with_civic(disease).await {
             warn!("CIViC unavailable for disease gene augmentation: {err}");
         }
+        attach_opentargets_scores(disease);
     }
     if sections.include_pathways
         && let Err(err) = add_pathways_section(disease).await

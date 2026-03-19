@@ -9,6 +9,11 @@ use crate::error::BioMcpError;
 const OPENTARGETS_BASE: &str = "https://api.platform.opentargets.org/api/v4";
 const OPENTARGETS_API: &str = "opentargets";
 const OPENTARGETS_BASE_ENV: &str = "BIOMCP_OPENTARGETS_BASE";
+const GWAS_CREDIBLE_SETS_DATASOURCE_ID: &str = "gwas_credible_sets";
+const SOMATIC_MUTATION_DATATYPE_ID: &str = "somatic_mutation";
+// Derived from the current OpenTargets associationDatasources taxonomy.
+const RARE_VARIANT_DATASOURCE_IDS: &[&str] =
+    &["eva", "gene_burden", "orphanet", "uniprot_variants"];
 
 pub struct OpenTargetsClient {
     client: reqwest_middleware::ClientWithMiddleware,
@@ -196,6 +201,15 @@ query DiseaseGenes($efoId: String!, $size: Int!) {
     name
     associatedTargets(page: {index: 0, size: $size}) {
       rows {
+        score
+        datatypeScores {
+          id
+          score
+        }
+        datasourceScores {
+          id
+          score
+        }
         target {
           approvedSymbol
         }
@@ -250,10 +264,94 @@ query DiseaseGenes($efoId: String!, $size: Int!) {
             };
             out.push(OpenTargetsAssociatedGene {
                 symbol: symbol.to_string(),
+                overall_score: row.score,
+                gwas_score: score_for_id(&row.datasource_scores, GWAS_CREDIBLE_SETS_DATASOURCE_ID),
+                rare_variant_score: max_score_for_ids(
+                    &row.datasource_scores,
+                    RARE_VARIANT_DATASOURCE_IDS,
+                ),
+                somatic_mutation_score: score_for_id(
+                    &row.datatype_scores,
+                    SOMATIC_MUTATION_DATATYPE_ID,
+                ),
             });
         }
 
         Ok(out)
+    }
+
+    pub async fn target_druggability_context(
+        &self,
+        symbol: &str,
+    ) -> Result<OpenTargetsTargetDruggabilityContext, BioMcpError> {
+        let symbol = symbol.trim();
+        if symbol.is_empty() {
+            return Err(BioMcpError::InvalidArgument(
+                "OpenTargets target symbol is required".into(),
+            ));
+        }
+
+        let Some(target_id) = self.resolve_target_id(symbol).await? else {
+            return Ok(OpenTargetsTargetDruggabilityContext::default());
+        };
+
+        let url = self.endpoint("graphql");
+        let body = GraphQlRequest {
+            query: r#"
+query TargetDruggabilityContext($ensemblId: String!) {
+  target(ensemblId: $ensemblId) {
+    tractability {
+      label
+      modality
+      value
+    }
+    safetyLiabilities {
+      event
+      datasource
+      effects {
+        direction
+        dosing
+      }
+      biosamples {
+        tissueLabel
+        cellLabel
+        cellFormat
+      }
+    }
+  }
+}
+"#,
+            variables: serde_json::json!({
+                "ensemblId": target_id,
+            }),
+        };
+
+        let resp: GraphQlResponse<TargetDruggabilityData> =
+            self.post_json(self.client.post(&url), &body).await?;
+
+        if let Some(errors) = resp.errors {
+            let msg = errors
+                .into_iter()
+                .filter_map(|e| e.message)
+                .collect::<Vec<_>>()
+                .join("; ");
+            if !msg.is_empty() {
+                return Err(BioMcpError::Api {
+                    api: OPENTARGETS_API.to_string(),
+                    message: msg,
+                });
+            }
+        }
+
+        let Some(target) = resp.data.and_then(|d| d.target) else {
+            warn_missing_field("TargetDruggabilityContext", "data.target");
+            return Ok(OpenTargetsTargetDruggabilityContext::default());
+        };
+
+        Ok(OpenTargetsTargetDruggabilityContext {
+            tractability: summarize_tractability(target.tractability),
+            safety_liabilities: summarize_safety_liabilities(target.safety_liabilities),
+        })
     }
 
     pub async fn target_clinical_context(
@@ -721,6 +819,31 @@ pub struct OpenTargetsTarget {
 #[derive(Debug, Clone)]
 pub struct OpenTargetsAssociatedGene {
     pub symbol: String,
+    pub overall_score: Option<f64>,
+    pub gwas_score: Option<f64>,
+    pub rare_variant_score: Option<f64>,
+    pub somatic_mutation_score: Option<f64>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct OpenTargetsTargetDruggabilityContext {
+    pub tractability: Vec<OpenTargetsTractabilityModality>,
+    pub safety_liabilities: Vec<OpenTargetsSafetyLiability>,
+}
+
+#[derive(Debug, Clone)]
+pub struct OpenTargetsTractabilityModality {
+    pub modality: String,
+    pub tractable: bool,
+    pub evidence_labels: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct OpenTargetsSafetyLiability {
+    pub event: String,
+    pub datasource: Option<String>,
+    pub effect_direction: Option<String>,
+    pub biosample: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -859,8 +982,20 @@ struct AssociatedTargets {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct AssociatedTargetRow {
+    score: Option<f64>,
+    #[serde(default)]
+    datatype_scores: Vec<AssociationScoreRow>,
+    #[serde(default)]
+    datasource_scores: Vec<AssociationScoreRow>,
     target: Option<TargetNode>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AssociationScoreRow {
+    id: Option<String>,
+    score: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -907,6 +1042,11 @@ struct TargetSearchObject {
 #[derive(Debug, Deserialize)]
 struct TargetClinicalData {
     target: Option<TargetClinicalNode>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TargetDruggabilityData {
+    target: Option<TargetDruggabilityNode>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -958,6 +1098,204 @@ struct TargetDrugNode {
     #[allow(dead_code)]
     id: Option<String>,
     name: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TargetDruggabilityNode {
+    #[serde(default)]
+    tractability: Vec<TractabilityRow>,
+    #[serde(default)]
+    safety_liabilities: Vec<SafetyLiabilityRow>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TractabilityRow {
+    label: Option<String>,
+    modality: Option<String>,
+    value: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SafetyLiabilityRow {
+    event: Option<String>,
+    datasource: Option<String>,
+    #[serde(default)]
+    effects: Vec<SafetyEffectRow>,
+    #[serde(default)]
+    biosamples: Vec<SafetyBiosampleRow>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SafetyEffectRow {
+    direction: Option<String>,
+    #[allow(dead_code)]
+    dosing: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SafetyBiosampleRow {
+    tissue_label: Option<String>,
+    cell_label: Option<String>,
+    cell_format: Option<String>,
+}
+
+fn clean_optional(value: Option<String>) -> Option<String> {
+    value
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+fn score_for_id(rows: &[AssociationScoreRow], id: &str) -> Option<f64> {
+    rows.iter().find_map(|row| {
+        row.id
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| value.eq_ignore_ascii_case(id))
+            .and(row.score)
+    })
+}
+
+fn max_score_for_ids(rows: &[AssociationScoreRow], ids: &[&str]) -> Option<f64> {
+    rows.iter()
+        .filter_map(|row| {
+            let id = row.id.as_deref().map(str::trim)?;
+            if ids
+                .iter()
+                .any(|candidate| id.eq_ignore_ascii_case(candidate))
+            {
+                row.score
+            } else {
+                None
+            }
+        })
+        .fold(None, |best, score| match best {
+            Some(current) if current >= score => Some(current),
+            _ => Some(score),
+        })
+}
+
+fn summarize_tractability(rows: Vec<TractabilityRow>) -> Vec<OpenTargetsTractabilityModality> {
+    if rows.is_empty() {
+        return Vec::new();
+    }
+
+    const KNOWN_MODALITIES: [(&str, &str); 4] = [
+        ("SM", "small molecule"),
+        ("AB", "antibody"),
+        ("PR", "PROTAC"),
+        ("OC", "other modality"),
+    ];
+
+    #[derive(Default)]
+    struct TractabilityAccumulator {
+        tractable: bool,
+        evidence_labels: Vec<String>,
+    }
+
+    let mut by_modality: std::collections::HashMap<String, TractabilityAccumulator> =
+        std::collections::HashMap::new();
+    let mut unknown_order: Vec<String> = Vec::new();
+
+    for row in rows {
+        let Some(modality_code) =
+            clean_optional(row.modality).map(|value| value.to_ascii_uppercase())
+        else {
+            continue;
+        };
+
+        if !KNOWN_MODALITIES
+            .iter()
+            .any(|(code, _)| modality_code.eq_ignore_ascii_case(code))
+            && !unknown_order.iter().any(|value| value == &modality_code)
+        {
+            unknown_order.push(modality_code.clone());
+        }
+
+        let accumulator = by_modality.entry(modality_code).or_default();
+        if row.value.unwrap_or(false) {
+            accumulator.tractable = true;
+            if let Some(label) = clean_optional(row.label)
+                && !accumulator
+                    .evidence_labels
+                    .iter()
+                    .any(|existing| existing.eq_ignore_ascii_case(&label))
+            {
+                accumulator.evidence_labels.push(label);
+            }
+        }
+    }
+
+    let mut out = KNOWN_MODALITIES
+        .into_iter()
+        .map(|(code, label)| {
+            let summary = by_modality.remove(code).unwrap_or_default();
+            OpenTargetsTractabilityModality {
+                modality: label.to_string(),
+                tractable: summary.tractable,
+                evidence_labels: summary.evidence_labels,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    for modality_code in unknown_order {
+        let summary = by_modality.remove(&modality_code).unwrap_or_default();
+        out.push(OpenTargetsTractabilityModality {
+            modality: modality_code.to_ascii_lowercase(),
+            tractable: summary.tractable,
+            evidence_labels: summary.evidence_labels,
+        });
+    }
+
+    out
+}
+
+fn summarize_safety_liabilities(rows: Vec<SafetyLiabilityRow>) -> Vec<OpenTargetsSafetyLiability> {
+    let mut out: Vec<OpenTargetsSafetyLiability> = Vec::new();
+    let mut indices: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+
+    for row in rows {
+        let Some(event) = clean_optional(row.event) else {
+            continue;
+        };
+        let key = event.trim().to_ascii_lowercase();
+        let idx = if let Some(idx) = indices.get(&key).copied() {
+            idx
+        } else {
+            out.push(OpenTargetsSafetyLiability {
+                event,
+                datasource: None,
+                effect_direction: None,
+                biosample: None,
+            });
+            let idx = out.len() - 1;
+            indices.insert(key, idx);
+            idx
+        };
+
+        let liability = &mut out[idx];
+        if liability.datasource.is_none() {
+            liability.datasource = clean_optional(row.datasource);
+        }
+        if liability.effect_direction.is_none() {
+            liability.effect_direction = row
+                .effects
+                .into_iter()
+                .find_map(|effect| clean_optional(effect.direction));
+        }
+        if liability.biosample.is_none() {
+            liability.biosample = row.biosamples.into_iter().find_map(|biosample| {
+                clean_optional(biosample.tissue_label)
+                    .or_else(|| clean_optional(biosample.cell_label))
+                    .or_else(|| clean_optional(biosample.cell_format))
+            });
+        }
+    }
+
+    out.truncate(8);
+    out
 }
 
 #[cfg(test)]
@@ -1073,8 +1411,21 @@ mod tests {
                     "disease": {
                         "associatedTargets": {
                             "rows": [
-                                {"target": {"approvedSymbol": "BRAF"}},
-                                {"target": {"approvedSymbol": "KRAS"}}
+                                {
+                                    "score": 0.91,
+                                    "datatypeScores": [{"id": "somatic_mutation", "score": 0.67}],
+                                    "datasourceScores": [
+                                        {"id": "gwas_credible_sets", "score": 0.42},
+                                        {"id": "eva", "score": 0.88}
+                                    ],
+                                    "target": {"approvedSymbol": "BRAF"}
+                                },
+                                {
+                                    "score": 0.76,
+                                    "datatypeScores": [],
+                                    "datasourceScores": [],
+                                    "target": {"approvedSymbol": "KRAS"}
+                                }
                             ]
                         }
                     }
@@ -1090,7 +1441,15 @@ mod tests {
             .unwrap();
         assert_eq!(genes.len(), 2);
         assert_eq!(genes[0].symbol, "BRAF");
+        assert_eq!(genes[0].overall_score, Some(0.91));
+        assert_eq!(genes[0].gwas_score, Some(0.42));
+        assert_eq!(genes[0].rare_variant_score, Some(0.88));
+        assert_eq!(genes[0].somatic_mutation_score, Some(0.67));
         assert_eq!(genes[1].symbol, "KRAS");
+        assert_eq!(genes[1].overall_score, Some(0.76));
+        assert_eq!(genes[1].gwas_score, None);
+        assert_eq!(genes[1].rare_variant_score, None);
+        assert_eq!(genes[1].somatic_mutation_score, None);
     }
 
     #[tokio::test]
@@ -1129,6 +1488,148 @@ mod tests {
             .await
             .unwrap();
         assert!(genes.is_empty());
+    }
+
+    #[tokio::test]
+    async fn target_druggability_context_groups_modalities_and_safety_summary() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/graphql"))
+            .and(body_string_contains("SearchTarget"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "data": {
+                    "search": {
+                        "hits": [
+                            {"id": "ENSG00000146648", "entity": "target", "object": {"approvedSymbol": "EGFR"}}
+                        ]
+                    }
+                }
+            })))
+            .mount(&server)
+            .await;
+
+        Mock::given(method("POST"))
+            .and(path("/graphql"))
+            .and(body_string_contains("TargetDruggabilityContext"))
+            .and(body_string_contains("\"ensemblId\":\"ENSG00000146648\""))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "data": {
+                    "target": {
+                        "tractability": [
+                            {"label": "Approved Drug", "modality": "SM", "value": true},
+                            {"label": "Clinical Precedence", "modality": "SM", "value": true},
+                            {"label": "High-quality binder", "modality": "AB", "value": false},
+                            {"label": "Clinical Precedence", "modality": "AB", "value": true},
+                            {"label": "Discovery chemistry", "modality": "PR", "value": false},
+                            {"label": "Ligand present", "modality": "OC", "value": true},
+                            {"label": "Exploratory", "modality": "XX", "value": true}
+                        ],
+                        "safetyLiabilities": [
+                            {
+                                "event": "Skin rash",
+                                "datasource": "ForceGenetics",
+                                "effects": [{"direction": "activation", "dosing": "chronic"}],
+                                "biosamples": [{"tissueLabel": "Skin", "cellLabel": null, "cellFormat": null}]
+                            },
+                            {
+                                "event": "skin rash",
+                                "datasource": "",
+                                "effects": [{"direction": "", "dosing": null}],
+                                "biosamples": [{"tissueLabel": null, "cellLabel": "Keratinocyte", "cellFormat": null}]
+                            },
+                            {
+                                "event": "Cardiotoxicity",
+                                "datasource": null,
+                                "effects": [{"direction": "inhibition", "dosing": null}],
+                                "biosamples": [{"tissueLabel": null, "cellLabel": null, "cellFormat": "iPSC cardiomyocyte"}]
+                            }
+                        ]
+                    }
+                }
+            })))
+            .mount(&server)
+            .await;
+
+        let client = OpenTargetsClient::new_for_test(server.uri()).unwrap();
+        let context = client.target_druggability_context("EGFR").await.unwrap();
+
+        assert_eq!(context.tractability.len(), 5);
+        assert_eq!(context.tractability[0].modality, "small molecule");
+        assert!(context.tractability[0].tractable);
+        assert_eq!(
+            context.tractability[0].evidence_labels,
+            vec!["Approved Drug", "Clinical Precedence"]
+        );
+        assert_eq!(context.tractability[1].modality, "antibody");
+        assert!(context.tractability[1].tractable);
+        assert_eq!(
+            context.tractability[1].evidence_labels,
+            vec!["Clinical Precedence"]
+        );
+        assert_eq!(context.tractability[2].modality, "PROTAC");
+        assert!(!context.tractability[2].tractable);
+        assert!(context.tractability[2].evidence_labels.is_empty());
+        assert_eq!(context.tractability[3].modality, "other modality");
+        assert!(context.tractability[3].tractable);
+        assert_eq!(context.tractability[4].modality, "xx");
+        assert!(context.tractability[4].tractable);
+
+        assert_eq!(context.safety_liabilities.len(), 2);
+        assert_eq!(context.safety_liabilities[0].event, "Skin rash");
+        assert_eq!(
+            context.safety_liabilities[0].datasource.as_deref(),
+            Some("ForceGenetics")
+        );
+        assert_eq!(
+            context.safety_liabilities[0].effect_direction.as_deref(),
+            Some("activation")
+        );
+        assert_eq!(
+            context.safety_liabilities[0].biosample.as_deref(),
+            Some("Skin")
+        );
+        assert_eq!(context.safety_liabilities[1].event, "Cardiotoxicity");
+        assert_eq!(
+            context.safety_liabilities[1].biosample.as_deref(),
+            Some("iPSC cardiomyocyte")
+        );
+    }
+
+    #[tokio::test]
+    async fn target_druggability_context_returns_default_when_target_missing() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/graphql"))
+            .and(body_string_contains("SearchTarget"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "data": {
+                    "search": {
+                        "hits": [
+                            {"id": "ENSG00000146648", "entity": "target", "object": {"approvedSymbol": "EGFR"}}
+                        ]
+                    }
+                }
+            })))
+            .mount(&server)
+            .await;
+
+        Mock::given(method("POST"))
+            .and(path("/graphql"))
+            .and(body_string_contains("TargetDruggabilityContext"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "data": {
+                    "target": null
+                }
+            })))
+            .mount(&server)
+            .await;
+
+        let client = OpenTargetsClient::new_for_test(server.uri()).unwrap();
+        let context = client.target_druggability_context("EGFR").await.unwrap();
+        assert!(context.tractability.is_empty());
+        assert!(context.safety_liabilities.is_empty());
     }
 
     #[tokio::test]

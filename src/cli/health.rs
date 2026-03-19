@@ -330,7 +330,7 @@ const HEALTH_SOURCES: &[SourceDescriptor] = &[
     },
     SourceDescriptor {
         api: "OpenTargets",
-        affects: Some("drug target and disease association sections"),
+        affects: Some("gene druggability, drug target, and disease association sections"),
         probe: ProbeKind::PostJson {
             url: "https://api.platform.opentargets.org/api/v4/graphql",
             payload: r#"{"query":"query { drug(chemblId: \"CHEMBL25\") { id name } }"}"#,
@@ -1007,6 +1007,10 @@ mod tests {
     fn markdown_shows_new_affects_mappings() {
         assert_eq!(affects_for_api("GTEx"), Some("gene expression section"));
         assert_eq!(affects_for_api("DGIdb"), Some("gene druggability section"));
+        assert_eq!(
+            affects_for_api("OpenTargets"),
+            Some("gene druggability, drug target, and disease association sections")
+        );
         assert_eq!(affects_for_api("ClinGen"), Some("gene clingen section"));
         assert_eq!(affects_for_api("gnomAD"), Some("gene constraint section"));
         assert_eq!(

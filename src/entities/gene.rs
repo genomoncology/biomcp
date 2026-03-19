@@ -9,7 +9,9 @@ use crate::entities::SearchPage;
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::clingen::{ClinGenClient, GeneClinGen};
-use crate::sources::dgidb::{DgidbClient, GeneDruggability};
+use crate::sources::dgidb::{
+    DgidbClient, GeneDruggability, GeneSafetyLiability, GeneTractabilityModality,
+};
 use crate::sources::enrichr::EnrichrClient;
 use crate::sources::gnomad::{
     GNOMAD_CONSTRAINT_REFERENCE_GENOME, GNOMAD_CONSTRAINT_VERSION, GnomadClient,
@@ -17,7 +19,7 @@ use crate::sources::gnomad::{
 use crate::sources::gtex::{GeneExpression, GtexClient};
 use crate::sources::hpa::{GeneHpa, HpaClient};
 use crate::sources::mygene::MyGeneClient;
-use crate::sources::opentargets::OpenTargetsClient;
+use crate::sources::opentargets::{OpenTargetsClient, OpenTargetsTargetDruggabilityContext};
 use crate::sources::quickgo::QuickGoClient;
 use crate::sources::reactome::ReactomeClient;
 use crate::sources::string::StringClient;
@@ -859,19 +861,25 @@ async fn add_druggability_section(gene: &mut Gene) {
         return;
     }
 
-    let dgidb_fut = async {
+    let dgidb_fut = tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, async {
         let client = DgidbClient::new()?;
         client.gene_interactions(symbol).await
-    };
+    });
+    let opentargets_fut = tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, async {
+        let client = OpenTargetsClient::new()?;
+        client.target_druggability_context(symbol).await
+    });
 
-    match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, dgidb_fut).await {
-        Ok(Ok(druggability)) => gene.druggability = Some(druggability),
+    let (dgidb_result, opentargets_result) = tokio::join!(dgidb_fut, opentargets_fut);
+
+    let dgidb_result = match dgidb_result {
+        Ok(Ok(druggability)) => Ok(druggability),
         Ok(Err(err)) => {
             warn!(
                 symbol = %gene.symbol,
                 "DGIdb unavailable for gene druggability section: {err}"
             );
-            gene.druggability = Some(GeneDruggability::default());
+            Err(err)
         }
         Err(_) => {
             warn!(
@@ -879,9 +887,72 @@ async fn add_druggability_section(gene: &mut Gene) {
                 timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
                 "DGIdb gene section timed out"
             );
-            gene.druggability = Some(GeneDruggability::default());
+            Err(BioMcpError::Api {
+                api: "dgidb".to_string(),
+                message: "timed out".to_string(),
+            })
         }
+    };
+
+    let opentargets_result = match opentargets_result {
+        Ok(Ok(context)) => Ok(context),
+        Ok(Err(err)) => {
+            warn!(
+                symbol = %gene.symbol,
+                "OpenTargets unavailable for gene druggability section: {err}"
+            );
+            Err(err)
+        }
+        Err(_) => {
+            warn!(
+                symbol = %gene.symbol,
+                timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
+                "OpenTargets gene druggability section timed out"
+            );
+            Err(BioMcpError::Api {
+                api: "opentargets".to_string(),
+                message: "timed out".to_string(),
+            })
+        }
+    };
+
+    gene.druggability = Some(merge_druggability_results(dgidb_result, opentargets_result));
+}
+
+fn merge_druggability_results(
+    dgidb_result: Result<GeneDruggability, BioMcpError>,
+    opentargets_result: Result<OpenTargetsTargetDruggabilityContext, BioMcpError>,
+) -> GeneDruggability {
+    let mut merged = GeneDruggability::default();
+
+    if let Ok(dgidb) = dgidb_result {
+        merged.categories = dgidb.categories;
+        merged.interactions = dgidb.interactions;
     }
+
+    if let Ok(context) = opentargets_result {
+        merged.tractability = context
+            .tractability
+            .into_iter()
+            .map(|row| GeneTractabilityModality {
+                modality: row.modality,
+                tractable: row.tractable,
+                evidence_labels: row.evidence_labels,
+            })
+            .collect();
+        merged.safety_liabilities = context
+            .safety_liabilities
+            .into_iter()
+            .map(|row| GeneSafetyLiability {
+                event: row.event,
+                datasource: row.datasource,
+                effect_direction: row.effect_direction,
+                biosample: row.biosample,
+            })
+            .collect();
+    }
+
+    merged
 }
 
 async fn add_clingen_section(gene: &mut Gene) {
@@ -1491,5 +1562,56 @@ mod tests {
         assert_eq!(merged.len(), 2);
         assert_eq!(merged[0].source, "KEGG");
         assert_eq!(merged[1].source, "Reactome");
+    }
+
+    #[test]
+    fn merge_druggability_keeps_successful_source_data_when_other_source_fails() {
+        let merged = merge_druggability_results(
+            Err(BioMcpError::Api {
+                api: "dgidb".to_string(),
+                message: "down".to_string(),
+            }),
+            Ok(
+                crate::sources::opentargets::OpenTargetsTargetDruggabilityContext {
+                    tractability: vec![
+                        crate::sources::opentargets::OpenTargetsTractabilityModality {
+                            modality: "small molecule".to_string(),
+                            tractable: true,
+                            evidence_labels: vec!["Approved Drug".to_string()],
+                        },
+                    ],
+                    safety_liabilities: vec![
+                        crate::sources::opentargets::OpenTargetsSafetyLiability {
+                            event: "Skin rash".to_string(),
+                            datasource: Some("ForceGenetics".to_string()),
+                            effect_direction: Some("activation".to_string()),
+                            biosample: Some("Skin".to_string()),
+                        },
+                    ],
+                },
+            ),
+        );
+
+        assert!(merged.categories.is_empty());
+        assert!(merged.interactions.is_empty());
+        assert_eq!(merged.tractability.len(), 1);
+        assert_eq!(merged.safety_liabilities.len(), 1);
+
+        let merged = merge_druggability_results(
+            Ok(GeneDruggability {
+                categories: vec!["Kinase".to_string()],
+                interactions: Vec::new(),
+                tractability: Vec::new(),
+                safety_liabilities: Vec::new(),
+            }),
+            Err(BioMcpError::Api {
+                api: "opentargets".to_string(),
+                message: "down".to_string(),
+            }),
+        );
+
+        assert_eq!(merged.categories, vec!["Kinase"]);
+        assert!(merged.tractability.is_empty());
+        assert!(merged.safety_liabilities.is_empty());
     }
 }

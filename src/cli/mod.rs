@@ -7576,6 +7576,7 @@ mod next_commands_json_property {
             associated_genes: Vec::new(),
             gene_associations: Vec::new(),
             top_genes: Vec::new(),
+            top_gene_scores: Vec::new(),
             treatment_landscape: Vec::new(),
             recruiting_trial_count: None,
             pathways: Vec::new(),

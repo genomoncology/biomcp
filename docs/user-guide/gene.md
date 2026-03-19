@@ -79,7 +79,7 @@ Protein tissue expression and localization (Human Protein Atlas):
 biomcp get gene BRAF hpa
 ```
 
-Druggability profile (DGIdb):
+Druggability profile (DGIdb interactions plus OpenTargets tractability and safety):
 
 ```bash
 biomcp get gene BRAF druggability
@@ -140,6 +140,9 @@ Use JSON for pipelines or agent post-processing.
 ```bash
 biomcp --json get gene BRAF
 ```
+
+`biomcp --json get gene BRAF druggability` now includes DGIdb interaction fields plus
+OpenTargets `tractability[]` modality summaries and `safety_liabilities[]` event summaries.
 
 ## Error handling expectations
 
