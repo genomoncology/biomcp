@@ -50,17 +50,20 @@ struct ArticleSearchSourceGroup {
 }
 
 #[derive(serde::Serialize)]
-struct ProteinComplexRow {
+struct ProteinComplexSummaryRow {
     accession: String,
     name: String,
-    components: String,
+    component_count: usize,
     curation: String,
 }
 
 #[derive(serde::Serialize)]
-struct ProteinComplexDescriptionRow {
+struct ProteinComplexDetailRow {
     accession: String,
-    description: String,
+    component_count: usize,
+    component_preview: String,
+    remaining_count: usize,
+    description: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -919,12 +922,18 @@ pub(crate) fn related_pathway(pathway: &Pathway) -> Vec<String> {
     vec![format!("biomcp pathway drugs {id}")]
 }
 
-pub(crate) fn related_protein(protein: &Protein) -> Vec<String> {
+pub(crate) fn related_protein(protein: &Protein, requested_sections: &[String]) -> Vec<String> {
     let accession = quote_arg(&protein.accession);
+    let requested = requested_section_names(requested_sections);
+    let requested_section = |name: &str| requested.iter().any(|value| value == name);
     let mut out = Vec::new();
     if !accession.is_empty() {
-        out.push(format!("biomcp get protein {accession} structures"));
-        out.push(format!("biomcp get protein {accession} complexes"));
+        if !requested_section("structures") {
+            out.push(format!("biomcp get protein {accession} structures"));
+        }
+        if !requested_section("complexes") {
+            out.push(format!("biomcp get protein {accession} complexes"));
+        }
     }
     if let Some(symbol) = protein
         .gene_symbol
@@ -952,22 +961,13 @@ fn format_protein_complex_component(component: &ProteinComplexComponent) -> Stri
     }
 }
 
-fn protein_complex_rows(complexes: &[ProteinComplex]) -> Vec<ProteinComplexRow> {
+fn protein_complex_summary_rows(complexes: &[ProteinComplex]) -> Vec<ProteinComplexSummaryRow> {
     complexes
         .iter()
-        .map(|complex| ProteinComplexRow {
-            accession: complex.accession.clone(),
-            name: complex.name.clone(),
-            components: if complex.components.is_empty() {
-                "-".to_string()
-            } else {
-                complex
-                    .components
-                    .iter()
-                    .map(format_protein_complex_component)
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            },
+        .map(|complex| ProteinComplexSummaryRow {
+            accession: markdown_cell(&complex.accession),
+            name: markdown_cell(&complex.name),
+            component_count: complex.components.len(),
             curation: match &complex.curation {
                 ProteinComplexCuration::Curated => "curated".to_string(),
                 ProteinComplexCuration::Predicted => "predicted".to_string(),
@@ -976,21 +976,34 @@ fn protein_complex_rows(complexes: &[ProteinComplex]) -> Vec<ProteinComplexRow> 
         .collect()
 }
 
-fn protein_complex_description_rows(
-    complexes: &[ProteinComplex],
-) -> Vec<ProteinComplexDescriptionRow> {
+fn protein_complex_detail_rows(complexes: &[ProteinComplex]) -> Vec<ProteinComplexDetailRow> {
     complexes
         .iter()
-        .filter_map(|complex| {
-            let description = complex
-                .description
-                .as_deref()
-                .map(str::trim)
-                .filter(|value| !value.is_empty())?;
-            Some(ProteinComplexDescriptionRow {
-                accession: complex.accession.clone(),
-                description: description.to_string(),
-            })
+        .map(|complex| {
+            let component_count = complex.components.len();
+            let preview_components = complex
+                .components
+                .iter()
+                .take(5)
+                .map(format_protein_complex_component)
+                .map(|component| markdown_cell(&component))
+                .collect::<Vec<_>>();
+            ProteinComplexDetailRow {
+                accession: markdown_cell(&complex.accession),
+                component_count,
+                component_preview: if preview_components.is_empty() {
+                    "none listed".to_string()
+                } else {
+                    preview_components.join(", ")
+                },
+                remaining_count: component_count.saturating_sub(preview_components.len()),
+                description: complex
+                    .description
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(markdown_cell),
+            }
         })
         .collect()
 }
@@ -2016,8 +2029,8 @@ pub fn protein_markdown(
     } else {
         protein.name.as_str()
     };
-    let complex_rows = protein_complex_rows(&protein.complexes);
-    let complex_descriptions = protein_complex_description_rows(&protein.complexes);
+    let complex_summaries = protein_complex_summary_rows(&protein.complexes);
+    let complex_details = protein_complex_detail_rows(&protein.complexes);
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(protein_label, requested_sections),
@@ -2032,14 +2045,14 @@ pub fn protein_markdown(
         structure_count => &protein.structure_count,
         domains => &protein.domains,
         interactions => &protein.interactions,
-        complexes => complex_rows,
-        complex_descriptions => complex_descriptions,
+        complexes => complex_summaries,
+        complex_details => complex_details,
         show_domains_section => show_domains_section,
         show_interactions_section => show_interactions_section,
         show_complexes_section => show_complexes_section,
         show_structures_section => show_structures_section,
         sections_block => format_sections_block("protein", &protein.accession, sections_protein(protein, requested_sections)),
-        related_block => format_related_block(related_protein(protein)),
+        related_block => format_related_block(related_protein(protein, requested_sections)),
     })?;
     Ok(append_evidence_urls(body, protein_evidence_urls(protein)))
 }
@@ -3465,14 +3478,40 @@ mod tests {
             complexes: Vec::new(),
         };
 
-        let related = related_protein(&protein);
+        let related = related_protein(&protein, &[]);
         assert!(related.contains(&"biomcp get protein P15056 structures".to_string()));
         assert!(related.contains(&"biomcp get protein P15056 complexes".to_string()));
         assert!(related.contains(&"biomcp get gene BRAF".to_string()));
     }
 
     #[test]
-    fn protein_markdown_renders_complexes_table_and_descriptions() {
+    fn related_protein_excludes_requested_sections() {
+        let protein = Protein {
+            accession: "P15056".to_string(),
+            entry_id: Some("BRAF_HUMAN".to_string()),
+            name: "Serine/threonine-protein kinase B-raf".to_string(),
+            gene_symbol: Some("BRAF".to_string()),
+            organism: Some("Homo sapiens".to_string()),
+            length: Some(766),
+            function: None,
+            structures: vec!["6V34".to_string()],
+            structure_count: Some(1),
+            domains: Vec::new(),
+            interactions: Vec::new(),
+            complexes: Vec::new(),
+        };
+
+        let related = related_protein(
+            &protein,
+            &["complexes".to_string(), "structures".to_string()],
+        );
+        assert!(!related.contains(&"biomcp get protein P15056 structures".to_string()));
+        assert!(!related.contains(&"biomcp get protein P15056 complexes".to_string()));
+        assert!(related.contains(&"biomcp get gene BRAF".to_string()));
+    }
+
+    #[test]
+    fn protein_markdown_renders_complexes_summary_and_detail_bullets() {
         let protein = Protein {
             accession: "P15056".to_string(),
             entry_id: Some("BRAF_HUMAN".to_string()),
@@ -3485,32 +3524,78 @@ mod tests {
             structure_count: None,
             domains: Vec::new(),
             interactions: Vec::new(),
-            complexes: vec![ProteinComplex {
-                accession: "CPX-1234".to_string(),
-                name: "BRAF signaling complex".to_string(),
-                description: Some("Signals through MAPK.".to_string()),
-                curation: ProteinComplexCuration::Curated,
-                components: vec![
-                    ProteinComplexComponent {
-                        accession: "P15056".to_string(),
-                        name: "BRAF".to_string(),
-                        stoichiometry: Some("minValue: 1, maxValue: 1".to_string()),
-                    },
-                    ProteinComplexComponent {
-                        accession: "Q02750".to_string(),
-                        name: "MAP2K1".to_string(),
-                        stoichiometry: None,
-                    },
-                ],
-            }],
+            complexes: vec![
+                ProteinComplex {
+                    accession: "CPX-1234".to_string(),
+                    name: "BRAF signaling complex with an intentionally long display label that should truncate in the summary table".to_string(),
+                    description: Some("Signals through MAPK.".to_string()),
+                    curation: ProteinComplexCuration::Curated,
+                    components: vec![
+                        ProteinComplexComponent {
+                            accession: "P15056".to_string(),
+                            name: "BRAF".to_string(),
+                            stoichiometry: Some("1".to_string()),
+                        },
+                        ProteinComplexComponent {
+                            accession: "Q02750".to_string(),
+                            name: "MAP2K1".to_string(),
+                            stoichiometry: None,
+                        },
+                        ProteinComplexComponent {
+                            accession: "P10398".to_string(),
+                            name: "RAF1".to_string(),
+                            stoichiometry: None,
+                        },
+                        ProteinComplexComponent {
+                            accession: "P07900".to_string(),
+                            name: "HSP90AA1".to_string(),
+                            stoichiometry: None,
+                        },
+                        ProteinComplexComponent {
+                            accession: "Q16543".to_string(),
+                            name: "CDC37".to_string(),
+                            stoichiometry: None,
+                        },
+                        ProteinComplexComponent {
+                            accession: "Q9Y243".to_string(),
+                            name: "AKT3".to_string(),
+                            stoichiometry: None,
+                        },
+                        ProteinComplexComponent {
+                            accession: "P31749".to_string(),
+                            name: "AKT1".to_string(),
+                            stoichiometry: None,
+                        },
+                    ],
+                },
+                ProteinComplex {
+                    accession: "CPX-5678".to_string(),
+                    name: "Complex with no listed members".to_string(),
+                    description: None,
+                    curation: ProteinComplexCuration::Predicted,
+                    components: Vec::new(),
+                },
+            ],
         };
 
         let markdown = protein_markdown(&protein, &["complexes".to_string()]).expect("markdown");
         assert!(markdown.contains("## Complexes"));
-        assert!(markdown.contains("| ID | Name | Components | Curation |"));
-        assert!(markdown.contains("BRAF (minValue: 1, maxValue: 1), MAP2K1"));
-        assert!(markdown.contains("| CPX-1234 | BRAF signaling complex |"));
-        assert!(markdown.contains("- `CPX-1234`: Signals through MAPK."));
+        assert!(markdown.contains("| ID | Name | Members | Curation |"));
+        assert!(!markdown.contains("| ID | Name | Components | Curation |"));
+        assert!(
+            markdown.contains(
+                "| CPX-1234 | BRAF signaling complex with an intentionally long di… | 7 | curated |"
+            ),
+            "expected truncated complex summary row, got:\n{markdown}"
+        );
+        assert!(markdown.contains(
+            "- `CPX-1234` members (7): BRAF (1), MAP2K1, RAF1, HSP90AA1, CDC37, +2 more\n  Description: Signals through MAPK."
+        ));
+        assert!(markdown.contains("- `CPX-5678` members (0): none listed"));
+        assert!(!markdown.contains("- `CPX-1234`: Signals through MAPK."));
+        assert!(!markdown.contains("AKT3"));
+        assert!(!markdown.contains("AKT1"));
+        assert!(!markdown.contains("See also: biomcp get protein P15056 complexes"));
     }
 
     #[test]
