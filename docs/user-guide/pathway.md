@@ -1,6 +1,6 @@
 # Pathway
 
-Use pathway commands to move from pathway names/IDs to genes, events, enrichment, and drug pivots. Search returns source-labelled Reactome and KEGG rows. `events` and pathway `enrichment` are Reactome-only. `all` means all sections available for the resolved pathway source.
+Use pathway commands to move from pathway names/IDs to genes, events, enrichment, and drug pivots. Search returns source-labelled Reactome and KEGG rows, and exact title matches are shown first across sources. KEGG base cards stay summary-only unless you explicitly request `genes`. `events` and pathway `enrichment` are Reactome-only. `all` means all sections available for the resolved pathway source.
 
 ## Search pathways
 

@@ -326,38 +326,98 @@ fn kegg_disabled_error(pathway_id: &str) -> BioMcpError {
     }
 }
 
-fn merge_search_results(
-    primary: Vec<PathwaySearchResult>,
-    additional: Vec<PathwaySearchResult>,
+fn normalize_pathway_match_text(value: &str) -> String {
+    value
+        .split_ascii_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_ascii_lowercase()
+}
+
+fn pathway_title_match_tier(name: &str, query: &str) -> u8 {
+    let normalized_name = normalize_pathway_match_text(name);
+    let normalized_query = normalize_pathway_match_text(query);
+    if normalized_name.is_empty() || normalized_query.is_empty() {
+        return 0;
+    }
+    if normalized_name == normalized_query {
+        return 3;
+    }
+    if normalized_name.starts_with(&normalized_query) {
+        return 2;
+    }
+    if normalized_name.contains(&normalized_query) {
+        return 1;
+    }
+    0
+}
+
+fn rerank_pathway_search_results(
+    query: &str,
+    reactome_hits: Vec<PathwaySearchResult>,
+    kegg_hits: Vec<PathwaySearchResult>,
     limit: usize,
 ) -> Vec<PathwaySearchResult> {
-    let mut out = Vec::new();
-    fn push_rows(out: &mut Vec<PathwaySearchResult>, rows: Vec<PathwaySearchResult>, limit: usize) {
-        for row in rows {
-            let source = row.source.trim().to_string();
-            let id = row.id.trim().to_string();
-            let name = row.name.trim().to_string();
-            if source.is_empty() || id.is_empty() || name.is_empty() {
-                continue;
-            }
-            if out.iter().any(|existing: &PathwaySearchResult| {
-                existing.source.eq_ignore_ascii_case(&source)
-                    && existing.id.eq_ignore_ascii_case(&id)
-            }) {
-                continue;
-            }
-            out.push(PathwaySearchResult { source, id, name });
-            if out.len() >= limit {
-                return;
-            }
+    let mut seen = HashSet::new();
+    let mut ranked = Vec::new();
+
+    for (upstream_idx, row) in reactome_hits.into_iter().enumerate() {
+        let source = row.source.trim().to_string();
+        let id = row.id.trim().to_string();
+        let name = row.name.trim().to_string();
+        if source.is_empty() || id.is_empty() || name.is_empty() {
+            continue;
         }
+
+        let dedupe_key = format!(
+            "{}:{}",
+            source.to_ascii_lowercase(),
+            id.to_ascii_lowercase()
+        );
+        if !seen.insert(dedupe_key) {
+            continue;
+        }
+
+        ranked.push((
+            pathway_title_match_tier(&name, query),
+            upstream_idx,
+            id.clone(),
+            PathwaySearchResult { source, id, name },
+        ));
     }
 
-    push_rows(&mut out, primary, limit);
-    if out.len() < limit {
-        push_rows(&mut out, additional, limit);
+    for (upstream_idx, row) in kegg_hits.into_iter().enumerate() {
+        let source = row.source.trim().to_string();
+        let id = row.id.trim().to_string();
+        let name = row.name.trim().to_string();
+        if source.is_empty() || id.is_empty() || name.is_empty() {
+            continue;
+        }
+
+        let dedupe_key = format!(
+            "{}:{}",
+            source.to_ascii_lowercase(),
+            id.to_ascii_lowercase()
+        );
+        if !seen.insert(dedupe_key) {
+            continue;
+        }
+
+        ranked.push((
+            pathway_title_match_tier(&name, query),
+            upstream_idx,
+            id.clone(),
+            PathwaySearchResult { source, id, name },
+        ));
     }
-    out
+
+    ranked.sort_by(|a, b| {
+        b.0.cmp(&a.0)
+            .then_with(|| a.1.cmp(&b.1))
+            .then_with(|| a.2.cmp(&b.2))
+    });
+    ranked.truncate(limit);
+    ranked.into_iter().map(|(_, _, _, row)| row).collect()
 }
 
 async fn add_pathway_enrichment(pathway: &mut Pathway, fallback_genes: &[String]) {
@@ -481,11 +541,9 @@ pub async fn search_with_filters(
     }
 
     let kegg = KeggClient::new()?;
-    let kegg_budget = limit.min(5);
-    let reactome_budget = limit.saturating_sub(kegg_budget).max(1);
     let (reactome_res, kegg_res) = tokio::join!(
-        client.search_pathways(&effective_query, reactome_budget),
-        kegg.search_pathways(&effective_query, kegg_budget)
+        client.search_pathways(&effective_query, limit),
+        kegg.search_pathways(&effective_query, limit)
     );
     let (reactome_hits, reactome_total) = reactome_res?;
     let reactome_hits = reactome_hits
@@ -510,7 +568,10 @@ pub async fn search_with_filters(
     } else {
         reactome_total
     };
-    Ok((merge_search_results(reactome_hits, kegg_hits, limit), total))
+    Ok((
+        rerank_pathway_search_results(&effective_query, reactome_hits, kegg_hits, limit),
+        total,
+    ))
 }
 
 pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpError> {
@@ -528,7 +589,11 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
         }
 
         let record = KeggClient::new()?.get_pathway(st_id).await?;
-        return Ok(transform::pathway::from_kegg_record(record));
+        let mut pathway = transform::pathway::from_kegg_record(record);
+        if !parsed_sections.include_genes {
+            pathway.genes.clear();
+        }
+        return Ok(pathway);
     }
 
     let client = ReactomeClient::new()?;
@@ -661,31 +726,71 @@ mod tests {
     }
 
     #[test]
-    fn merge_search_results_keeps_source_labels_and_dedupes() {
-        let merged = merge_search_results(
+    fn pathway_title_match_tier_prefers_exact_then_prefix_then_contains() {
+        assert!(
+            pathway_title_match_tier("Pathways in cancer", "Pathways in cancer")
+                > pathway_title_match_tier("Pathways in cancer and immunity", "Pathways in cancer")
+        );
+        assert!(
+            pathway_title_match_tier("Pathways in cancer and immunity", "Pathways in cancer")
+                > pathway_title_match_tier(
+                    "Human Pathways in cancer overview",
+                    "Pathways in cancer"
+                )
+        );
+        assert!(
+            pathway_title_match_tier("Human Pathways in cancer overview", "Pathways in cancer")
+                > pathway_title_match_tier("Cell cycle", "Pathways in cancer")
+        );
+    }
+
+    #[test]
+    fn rerank_pathway_search_results_floats_exact_match_across_sources() {
+        let ranked = rerank_pathway_search_results(
+            "Pathways in cancer",
             vec![PathwaySearchResult {
                 source: "Reactome".to_string(),
-                id: "R-HSA-5673001".to_string(),
-                name: "RAF/MAP kinase cascade".to_string(),
+                id: "R-HSA-9824443".to_string(),
+                name: "Parasitic Infection Pathways".to_string(),
             }],
-            vec![
-                PathwaySearchResult {
-                    source: "KEGG".to_string(),
-                    id: "hsa04010".to_string(),
-                    name: "MAPK signaling pathway".to_string(),
-                },
-                PathwaySearchResult {
-                    source: "KEGG".to_string(),
-                    id: "HSA04010".to_string(),
-                    name: "duplicate".to_string(),
-                },
-            ],
+            vec![PathwaySearchResult {
+                source: "KEGG".to_string(),
+                id: "hsa05200".to_string(),
+                name: "Pathways in cancer".to_string(),
+            }],
             5,
         );
 
-        assert_eq!(merged.len(), 2);
-        assert_eq!(merged[0].source, "Reactome");
-        assert_eq!(merged[1].source, "KEGG");
+        let ids = ranked.iter().map(|row| row.id.as_str()).collect::<Vec<_>>();
+        assert_eq!(ids, vec!["hsa05200", "R-HSA-9824443"]);
+    }
+
+    #[test]
+    fn rerank_pathway_search_results_uses_upstream_position_for_same_tier() {
+        let ranked = rerank_pathway_search_results(
+            "MAPK",
+            vec![
+                PathwaySearchResult {
+                    source: "Reactome".to_string(),
+                    id: "R-HSA-0002".to_string(),
+                    name: "Cell cycle".to_string(),
+                },
+                PathwaySearchResult {
+                    source: "Reactome".to_string(),
+                    id: "R-HSA-0003".to_string(),
+                    name: "MAPK adaptor proteins".to_string(),
+                },
+            ],
+            vec![PathwaySearchResult {
+                source: "KEGG".to_string(),
+                id: "hsa04010".to_string(),
+                name: "MAPK signaling pathway".to_string(),
+            }],
+            5,
+        );
+
+        let ids = ranked.iter().map(|row| row.id.as_str()).collect::<Vec<_>>();
+        assert_eq!(ids, vec!["hsa04010", "R-HSA-0003", "R-HSA-0002"]);
     }
 
     #[test]

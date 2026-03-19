@@ -5,6 +5,9 @@ Pathway search should normalize a small set of confirmed alias phrases before qu
 | Section | Command focus | Why it matters |
 |---|---|---|
 | Long-form alias search | `search pathway 'mitogen activated protein kinase'` | Confirms alias normalization to MAPK |
+| Default KEGG card stays concise | `get pathway hsa05200` | Confirms KEGG base cards keep genes behind explicit section requests |
+| Explicit KEGG genes section still renders | `get pathway hsa05200 genes` | Confirms the concise default does not break explicit deep-section requests |
+| Exact title match ranks first across sources | `search pathway 'Pathways in cancer'` | Confirms exact matches float ahead of weaker cross-source hits |
 | Unsupported KEGG `events` | `get pathway hsa05200 events` | Confirms explicit unsupported section requests fail hard |
 | Unsupported KEGG `enrichment` | `get pathway hsa05200 enrichment` | Confirms KEGG enrichment no longer degrades to blank success |
 
@@ -17,6 +20,43 @@ out="$("$(git rev-parse --show-toplevel)/target/release/biomcp" search pathway "
 echo "$out" | mustmatch like "# Pathways: mitogen activated protein kinase"
 echo "$out" | mustmatch like "| Source | ID | Name |"
 echo "$out" | mustmatch like "MAPK"
+```
+
+## Default KEGG Card Stays Concise
+
+KEGG base cards should remain summary-first unless the caller explicitly asks for
+the `genes` section. This regression checks both markdown output and JSON shape.
+
+```bash
+out="$(biomcp get pathway hsa05200)"
+echo "$out" | mustmatch like "# Pathways in cancer"
+echo "$out" | mustmatch not like "## Genes"
+echo "$out" | mustmatch not like "BRAF"
+
+json_out="$(biomcp --json get pathway hsa05200)"
+echo "$json_out" | mustmatch like '"genes": []'
+```
+
+## Explicit KEGG Genes Section Still Renders
+
+Requesting `genes` explicitly should still return the KEGG gene section after the
+default-card fix.
+
+```bash
+out="$(biomcp get pathway hsa05200 genes)"
+echo "$out" | mustmatch like "## Genes"
+echo "$out" | mustmatch like "BRAF"
+```
+
+## Exact Title Match Ranks First Across Sources
+
+When a query exactly matches a pathway title, that exact row should surface first
+even when other sources return weaker matches nearby.
+
+```bash
+out="$("$(git rev-parse --show-toplevel)/target/release/biomcp" search pathway "Pathways in cancer" --limit 3)"
+echo "$out" | mustmatch like "| Source | ID | Name |"
+printf '%s\n' "$out" | grep "^| " | tail -n +2 | head -1 | mustmatch like "| KEGG | hsa05200 | Pathways in cancer |"
 ```
 
 ## Unsupported KEGG Events Section
