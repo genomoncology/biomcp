@@ -34,21 +34,24 @@ BioMCP exposes 12 entity types. All support `search` and `get` commands.
 
 | Entity | Key Sources | Representative Command |
 |--------|-------------|----------------------|
-| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, CIViC | `biomcp get gene BRAF pathways` |
+| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen, gnomAD, CIViC | `biomcp get gene BRAF pathways` |
 | variant | MyVariant.info, ClinVar, gnomAD, CIViC, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome | `biomcp get variant "BRAF V600E" clinvar` |
 | article | PubMed, PubTator3, Europe PMC, Semantic Scholar (optional) | `biomcp search article -g BRAF --limit 5` |
 | trial | ClinicalTrials.gov, NCI CTS API | `biomcp search trial -c melanoma -s recruiting` |
 | drug | MyChem.info, ChEMBL, OpenTargets, Drugs@FDA, CIViC | `biomcp get drug pembrolizumab targets` |
 | disease | Monarch Initiative, MONDO, CIViC, OpenTargets | `biomcp get disease "Lynch syndrome" genes` |
-| pathway | Reactome, g:Profiler | `biomcp get pathway R-HSA-5673001 genes` |
-| protein | UniProt, InterPro, STRING, PDB/AlphaFold | `biomcp get protein P15056 domains` |
+| pathway | Reactome, KEGG, g:Profiler | `biomcp get pathway R-HSA-5673001 genes` |
+| protein | UniProt, InterPro, STRING, ComplexPortal, PDB, AlphaFold | `biomcp get protein P15056 domains` |
 | adverse-event | OpenFDA (FAERS, MAUDE, Recalls) | `biomcp search adverse-event -d pembrolizumab` |
 | pgx | CPIC, PharmGKB | `biomcp get pgx CYP2D6 recommendations` |
 | gwas | GWAS Catalog | `biomcp search gwas --trait "type 2 diabetes"` |
 | phenotype | Monarch Initiative (HPO) | `biomcp search phenotype "HP:0001250"` |
 
-This 12-row table matches the public README surface. It intentionally does not
-fold the local `study` analytics family into the entity list.
+This 12-row table is the high-level public entity surface. It intentionally
+does not fold the local `study` analytics family into the entity list.
+
+This table is a high-level shipped source map; section-specific constraints and
+transport details live in the technical architecture docs.
 
 ## Study Command Family
 

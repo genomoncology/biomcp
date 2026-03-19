@@ -42,10 +42,15 @@ BioMCP integrates with 15+ upstream APIs. Integration patterns:
 | Pattern | Examples |
 |---------|---------|
 | REST JSON | UniProt, ChEMBL, InterPro, ClinicalTrials.gov, cBioPortal, OncoKB, OpenFDA |
-| GraphQL | gnomAD, OpenTargets |
-| Custom REST | MyGene.info, MyVariant.info, MyChem.info, PubMed/PubTator3, Reactome, g:Profiler |
+| GraphQL | gnomAD, OpenTargets, CIViC, DGIdb |
+| Custom REST JSON | MyGene.info, MyVariant.info, MyChem.info, PubMed/PubTator3, Reactome, g:Profiler |
+| Flat-file / XML REST | KEGG (plain-text flat-file / TSV-like responses), HPA (XML) |
 
 All queries are read-only. BioMCP never writes to upstream systems.
+Shared HTTP-client reuse is preferred but not universal: source modules may
+reuse the shared middleware client or use a source-specific request path when
+timeout, retry, caching, request-construction, or transport needs differ.
+These transport differences are architectural, not implementation accidents.
 
 Federated queries (e.g., `search all`, unified article search) fan out in
 parallel across sources and merge results. Federated totals are approximate
@@ -109,17 +114,18 @@ version bump should ship with the release commit.
 
 ## Verification Approach
 
-BioMCP has three verification layers:
+BioMCP has six distinct verification and operator-inspection surfaces.
 
-### 1. GitHub Workflows
+### 1. CI and Repo Gates
 
-CI (`.github/workflows/ci.yml`) runs five parallel jobs: `check` (`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`), `version-sync` (`bash scripts/check-version-sync.sh`), `climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`), `contracts` (`cargo build --release --locked`, `uv sync --extra dev`, `uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, `uv run mkdocs build --strict`), and `spec-stable` (`cargo build --release --locked`, then `make spec-pr`).
-Contract smoke checks run in `.github/workflows/contracts.yml` on a schedule
-and by manual dispatch via `bash scripts/contract-smoke.sh`.
-Volatile live-network headings run separately in `.github/workflows/spec-smoke.yml`
-via the full `make spec` suite.
-release validation runs `pytest tests/` and `mkdocs build --strict` after the
-Rust checks before packaging and publishing artifacts.
+- `make check` is the required local ticket gate. In the current `Makefile`,
+  that means `lint` plus `test`.
+- CI in `.github/workflows/ci.yml` runs the broader repo baseline in parallel:
+  `check`, `version-sync`, `climb-hygiene`, `contracts`, and `spec-stable`.
+- Docs-site validation and Python contract tests do not run under `make check`;
+  they live in `make test-contracts` and the CI `contracts` job.
+- The grounding implementation surfaces for this split are `Makefile`,
+  `.github/workflows/ci.yml`, and `.github/workflows/contracts.yml`.
 
 ### 2. Spec Suite (`spec/`)
 
@@ -128,11 +134,12 @@ exercises CLI output at the command level using stable structural markers
 (headers, table columns, query echoes) rather than brittle upstream data
 values.
 
-PR CI now runs `make spec-pr` via the `spec-stable` job in `.github/workflows/ci.yml`.
-That job builds the release binary first, then relies on the Makefile's
-`target/release`-first `PATH` handling so specs do not accidentally execute a
-stale `.venv/bin/biomcp`. Volatile live-network headings run in the separate
-`Spec smoke (volatile live-network)` workflow instead.
+PR CI runs `make spec-pr` via the `spec-stable` job in
+`.github/workflows/ci.yml`. That job builds the release binary first, then
+relies on the Makefile's `target/release`-first `PATH` handling so specs do
+not accidentally execute a stale `.venv/bin/biomcp`. Volatile live-network
+headings run in the separate `Spec smoke (volatile live-network)` workflow
+instead.
 
 Run locally with `make spec`.
 
@@ -140,15 +147,35 @@ Important: `uv run` may execute a stale `.venv/bin/biomcp`. Either refresh
 with `uv pip install -e .` or ensure `target/release` is ahead of `.venv/bin`
 when running CLI specs.
 
-### 3. Contract Smoke Checks (`scripts/contract-smoke.sh`)
+### 3. `biomcp health`
 
-Lightweight API contract probes for each integrated source. Three probes per
-source: happy path, edge/empty path, invalid path. Not a replacement for unit
-tests - source-facing contract verification only.
+`biomcp health` is a curated operator inspection surface, not a full source
+inventory ledger.
+
+- The command is grounded in `src/cli/health.rs`.
+- It shows per-source connectivity for readiness-significant sources.
+- Key-gated sources appear as `excluded` rows when the required environment
+  variable is absent.
+- `--apis-only` omits the cache-writability row.
+- Partial upstream failures remain visible in the rendered report.
+- Current CLI behavior is report-first: the command exits `0` when the report
+  renders, even if some upstream rows are failing.
+
+### 4. Contract Smoke Checks (`scripts/contract-smoke.sh`)
+
+`scripts/contract-smoke.sh` is an optional live probe runner for a selected set
+of stable public endpoints, not a universal ledger for every integrated source.
+
+- Many covered sources use happy / edge / invalid trios.
+- Coverage is selective and operationally curated.
+- Secret-gated, volatile, or otherwise unsuitable providers may be skipped or
+  reduced.
+- The grounding implementation surfaces are `scripts/contract-smoke.sh`,
+  `scripts/README.md`, and `.github/workflows/contracts.yml`.
 
 Run: `./scripts/contract-smoke.sh` from the repo root.
 
-### 4. Demo Scripts (`scripts/genegpt-demo.sh`, `scripts/geneagent-demo.sh`)
+### 5. Demo Scripts (`scripts/genegpt-demo.sh`, `scripts/geneagent-demo.sh`)
 
 End-to-end demo flows that reproduce paper-style GeneGPT and GeneAgent
 workflows. These scripts:
@@ -159,7 +186,7 @@ workflows. These scripts:
 
 These are the canonical smoke checks for a working release.
 
-### 5. Remote HTTP Demo Artifact (`demo/streamable_http_client.py`)
+### 6. Remote HTTP Demo Artifact (`demo/streamable_http_client.py`)
 
 Release verification for the Streamable HTTP surface also includes the
 standalone Streamable HTTP demo client

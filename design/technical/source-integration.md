@@ -74,6 +74,97 @@ Entity integration shapes differ by entity, but common patterns include:
 - keeping helper commands for true cross-entity pivots rather than routine
   upstream enrichment.
 
+## Source-Aware Section Capability Contract
+
+Multi-source entities must define one authoritative capability model for their
+section surface.
+
+The current pathway implementation is the concrete example:
+
+- section constants and parsing live in `src/entities/pathway.rs`
+- source-specific capability lists live there as
+  `REACTOME_PATHWAY_SECTIONS` and `KEGG_PATHWAY_SECTIONS`
+- runtime validation resolves against the capability list for the resolved
+  source
+- `all` expands to the sections supported by the resolved source, not the
+  union of all sections across every source for that entity
+
+For source-aware entities, "all" means all sections available for the resolved
+source, not all sections ever defined for that entity.
+
+This contract defines three user-visible states:
+
+- **unsupported**: the resolved source does not offer that section. Fail fast
+  with a source-aware `InvalidArgument` error and a recovery hint. Current
+  pathway example: KEGG `events` and `enrichment`.
+- **empty**: the section is supported and the upstream call succeeded, but no
+  data came back. Return the entity's truthful empty shape.
+- **unavailable**: the section is supported, but the upstream failed or timed
+  out. Treat this as unavailable, not unsupported, and degrade in the owning
+  entity's established shape rather than inventing a new hard failure path.
+
+Downstream surfaces must stay in lockstep with the capability model:
+
+- `src/cli/mod.rs` help text must describe source-specific limits accurately
+- `src/cli/list.rs` must not advertise unsupported sections as universally
+  valid
+- renderer follow-on commands and section suggestions must derive from the
+  resolved source capability list
+- docs that teach sections, including `design/functional/overview.md`,
+  `docs/concepts/progressive-disclosure.md`, and user-guide pages, must either
+  describe the source-aware constraint inline or show examples valid for the
+  named source
+
+## Multi-Source Search Ranking
+
+When an entity search fans out across multiple upstreams, ranking happens after
+the combined fetch, not by hard-coding a preferred source.
+
+The current pathway search contract is the model:
+
+1. Normalize the query once for upstream search and ranking.
+2. Fetch Reactome and KEGG results in parallel when both sources are enabled.
+3. Score title matches globally across both source result sets:
+   - Tier 3: exact normalized title match
+   - Tier 2: normalized title starts with the normalized query
+   - Tier 1: normalized title contains the normalized query
+   - Tier 0: no title match
+4. Sort by tier descending, then upstream position ascending, then stable ID
+   ascending as the final tiebreaker.
+5. Preserve source identity on every row.
+6. Truncate after ranking.
+
+Two semantics are non-negotiable:
+
+- there is no fixed source-priority rule within the same title-match tier
+- federated totals are source-aware:
+  - if rows from both sources are merged, the total is not presented as an
+    exact combined count
+  - if only one source contributes rows and that source has an authoritative
+    total, that source total may be preserved
+
+## Non-JSON Transport Guidance
+
+Source integrations do not have to be JSON to fit the repo's architecture.
+
+- Keep using the repo's bounded-body and readable-error conventions.
+- Name the response media type and parsing approach in module-level docs or
+  nearby architectural prose so reviewers can orient quickly.
+- Prefer the shared HTTP client when it fits; transport format alone does not
+  justify a new client.
+- Inline parsing is acceptable for small line-oriented text payloads.
+- Move synchronous parsing to `tokio::task::spawn_blocking` when parser cost or
+  payload size would block the async runtime inappropriately.
+- Reject obviously wrong content types when an upstream commonly falls back to
+  HTML or another human-facing error surface.
+
+Current concrete examples:
+
+- KEGG uses plain-text flat-file / tab-separated style responses and parses
+  them inline in `src/sources/kegg.rs`.
+- HPA uses XML and parses it with `roxmltree` behind `spawn_blocking` in
+  `src/sources/hpa.rs`.
+
 ## Provenance and Rendering
 
 Source identity must remain visible in output.
@@ -121,9 +212,10 @@ shape is entity-specific.
   enrichments, and 10 seconds for PGx enrichment.
 - If a prerequisite identifier is missing, prefer an empty/default/note result
   for optional sections over a hard failure.
-- On upstream failure or timeout, warn and degrade gracefully in the shape that
-  matches the entity: default section structs, empty collections, omitted
-  optional fields, or explanatory notes are all used in the current repo.
+- On upstream failure or timeout, treat supported sections as unavailable, not
+  unsupported, and warn and degrade gracefully in the shape that matches the
+  entity: default section structs, empty collections, omitted optional fields,
+  or explanatory notes are all used in the current repo.
 - Returned output must stay truthful about missing or unavailable data.
 
 Default-path integrations can still return hard errors when the source is
@@ -148,8 +240,18 @@ Source additions must preserve BioMCP's runtime boundaries.
 
 ## Source Addition Checklist
 
-Every new source or source-deepening ticket should evaluate and update the
-following surfaces when applicable:
+Minimum required proof surface:
+
+| Surface | Required when | Contract |
+|---------|---------------|----------|
+| Targeted Rust tests near `src/sources/`, `src/entities/`, or `src/render/` | All source additions and source-deepening work | Verify behavior and edge handling for the new integration contract |
+| `spec/` BDD update | Any user-visible CLI contract change | Cover stable user-visible behavior such as new sections, new flags, or changed output structure |
+| `scripts/contract-smoke.sh` | Stable public endpoints with deterministic probe shapes | Add or update live probes when operationally suitable; skip or reduce secret-gated or volatile sources explicitly |
+| `src/cli/health.rs` | Readiness-significant sources that operators should inspect directly | Include the source when it materially affects baseline availability; key-gated sources may appear as excluded when unconfigured |
+| `CHANGELOG.md` | User-visible source additions or major deepening | Record the shipped surface change |
+
+Every new source or source-deepening ticket should then evaluate the following
+surfaces when applicable:
 
 - `src/sources/<source>.rs`
 - `src/sources/mod.rs`
