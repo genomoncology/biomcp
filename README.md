@@ -172,8 +172,8 @@ biomcp get trial NCT02576665 eligibility locations outcomes
 ```
 
 In JSON mode, `get` responses expose `_meta.next_commands` for the next likely
-follow-ups, and `batch ... --json` returns per-entity objects with the same
-metadata shape.
+follow-ups and `_meta.section_sources` for section-level provenance. `batch ...
+--json` returns per-entity objects with the same metadata shape.
 
 ## API keys
 

@@ -9,15 +9,16 @@ Accession: {{ accession }}
 {% if gene_symbol %}Gene: {{ gene_symbol }}{% endif %}
 {% if organism %}Organism: {{ organism }}{% endif %}
 {% if length %}Length: {{ length }} aa{% endif %}
+Source: UniProt
 
 {% if function -%}
-## Function
+## Function (UniProt)
 
 {{ function }}
 {% endif -%}
 {% endif -%}
 {% if show_structures_section and structures -%}
-## Structures
+## Structures (PDB / AlphaFold via UniProt)
 {% if structure_count and structure_count > (structures | length) -%}
 Showing top {{ structures | length }} of {{ structure_count }} structures by resolution.
 {% endif -%}
@@ -26,7 +27,7 @@ Showing top {{ structures | length }} of {{ structure_count }} structures by res
 {% endfor -%}
 {% endif -%}
 {% if show_domains_section and domains -%}
-## Domains
+## Domains (InterPro)
 
 | Accession | Name | Type |
 |---|---|---|
@@ -35,7 +36,7 @@ Showing top {{ structures | length }} of {{ structure_count }} structures by res
 {% endfor -%}
 {% endif -%}
 {% if show_interactions_section and interactions -%}
-## Interactions
+## Interactions (STRING)
 
 | Partner | Score |
 |---|---|
@@ -44,7 +45,7 @@ Showing top {{ structures | length }} of {{ structure_count }} structures by res
 {% endfor -%}
 {% endif -%}
 {% if show_complexes_section and complexes -%}
-## Complexes
+## Complexes (ComplexPortal)
 
 | ID | Name | Members | Curation |
 |---|---|---:|---|

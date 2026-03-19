@@ -10,6 +10,7 @@ ID: {{ id }}
 {% if consequence %}Consequence: {{ consequence }}{% endif %}
 {% if cosmic_id %}COSMIC: {{ cosmic_id }}{% endif %}
 {% if significance %}Significance: {{ significance }}{% endif %}
+Source: MyVariant.info / ClinVar
 {% endif -%}
 {% if show_prediction_section and prediction -%}
 ## AlphaGenome Prediction
@@ -40,7 +41,7 @@ Conditions ({% if clinvar_condition_reports %}{{ clinvar_condition_reports }}{% 
 {% endif -%}
 {% endif -%}
 {% if show_conservation_section -%}
-## Conservation
+## Conservation (MyVariant.info)
 {% if conservation -%}
 {% if conservation.phylop_100way_vertebrate is defined and conservation.phylop_100way_vertebrate is not none %}phyloP (100-way vertebrate): {{ conservation.phylop_100way_vertebrate | score }}
 {% endif -%}
@@ -57,7 +58,7 @@ No conservation scores reported.
 {% endif -%}
 {% endif -%}
 {% if show_predictions_section -%}
-## Expanded Predictions
+## Expanded Predictions (MyVariant.info)
 {% if expanded_predictions -%}
 | Tool | Score | Prediction |
 |---|---|---|
@@ -69,7 +70,7 @@ No expanded prediction scores reported.
 {% endif -%}
 {% endif -%}
 {% if show_population_section -%}
-## Population
+## Population (gnomAD via MyVariant.info)
 {% if gnomad_af is defined and gnomad_af is not none %}gnomAD AF: {{ gnomad_af | af }}{% else %}gnomAD AF: Not reported{% endif %}
 {% if population_breakdown and population_breakdown.populations -%}
 {% for p in population_breakdown.populations -%}
@@ -96,7 +97,7 @@ No COSMIC context reported.
 {% endif -%}
 {% endif -%}
 {% if show_cgi_section -%}
-## CGI Drug Associations
+## CGI Drug Associations (Cancer Genome Interpreter)
 {% if cgi_associations -%}
 | Drug | Association | Tumor Type | Evidence |
 |---|---|---|---|
@@ -144,7 +145,7 @@ No CIViC records returned for this variant.
 {% endif -%}
 {% endif -%}
 {% if not section_only and (cadd_score or sift_pred or polyphen_pred) -%}
-## Predictions
+## Predictions (MyVariant.info)
 {% if cadd_score -%}
 - CADD: {{ cadd_score }}
 {% endif -%}
@@ -168,7 +169,7 @@ No cBioPortal frequency data available.
 {% endif -%}
 {% endif -%}
 {% if show_gwas_section -%}
-## GWAS
+## GWAS (GWAS Catalog)
 {% if gwas -%}
 | rsID | Trait | p-value | Effect | Confidence | Risk AF | Risk Allele | Study | PMID | Author |
 |---|---|---|---|---|---|---|---|---|---|

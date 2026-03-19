@@ -8,24 +8,24 @@ ID: {{ id }}
 {% if species %}Species: {{ species }}{% endif %}
 
 {% if summary -%}
-## Summary
+## Summary ({{ pathway_source_label }})
 
 {{ summary }}
 {% endif -%}
 {% endif -%}
 {% if show_genes_section and genes -%}
-## Genes
+## Genes ({{ pathway_source_label }})
 
 {{ genes | join(", ") }}
 {% endif -%}
 {% if show_events_section and events -%}
-## Events
+## Events ({{ pathway_source_label }})
 {% for event in events -%}
 - {{ event }}
 {% endfor -%}
 {% endif -%}
 {% if show_enrichment_section and enrichment -%}
-## Enrichment
+## Enrichment (g:Profiler)
 
 | Source | ID | Name | P-value |
 |---|---|---|---|

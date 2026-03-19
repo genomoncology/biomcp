@@ -6,28 +6,28 @@
 ID: {{ id }}
 
 {% if definition -%}
-## Definition
+## Definition (MyDisease.info)
 
 {{ definition | truncate(200) }}
 {% endif -%}
 {% if top_gene_score_labels -%}
-Genes: {{ top_gene_score_labels | join(", ") }}
+Genes (Open Targets): {{ top_gene_score_labels | join(", ") }}
 {% elif top_genes -%}
-Genes: {{ top_genes | join(", ") }}
+Genes (Open Targets): {{ top_genes | join(", ") }}
 {% endif -%}
 {% if treatment_landscape -%}
-Treatments: {{ treatment_landscape | join(", ") }}
+Treatments (MyChem.info indication search): {{ treatment_landscape | join(", ") }}
 {% endif -%}
 {% if recruiting_trial_count is not none -%}
-Recruiting Trials: {{ recruiting_trial_count }}
+Recruiting Trials (ClinicalTrials.gov): {{ recruiting_trial_count }}
 {% endif -%}
 {% if synonyms -%}
-## Synonyms
+## Synonyms (MONDO / Disease Ontology via MyDisease.info)
 
 {{ synonyms | join(", ") }}
 {% endif -%}
 {% if parents -%}
-## Parents
+## Parents (MONDO / Disease Ontology via MyDisease.info)
 
 {{ parents | join(", ") }}
 {% endif -%}
@@ -48,7 +48,7 @@ No associated genes found from active sources.
 {% endif -%}
 {% endif -%}
 {% if show_pathways_section -%}
-## Pathways
+## Pathways (Reactome)
 
 {% if pathways -%}
 {% for p in pathways -%}

@@ -12,14 +12,15 @@
 {% if publication_type %}Type: {{ publication_type }}{% endif %}
 {% if open_access is not none %}Open Access: {% if open_access %}Yes{% else %}No{% endif %}{% endif %}
 {% if pmid %}[PubMed](https://pubmed.ncbi.nlm.nih.gov/{{ pmid }}/){% endif %}
+Source: PubMed / Europe PMC
 
 {% if authors -%}
-## Authors
+## Authors (PubMed / Europe PMC)
 
 {{ authors | join(", ") }}
 {% endif -%}
 {% if abstract_text -%}
-## Abstract
+## Abstract (PubMed / Europe PMC)
 
 {{ abstract_text }}
 {% endif -%}
@@ -44,7 +45,7 @@ _Note: Entity annotations unavailable for this article (PubTator3 lag). Metadata
 {% endif -%}
 {% endif -%}
 {% if show_fulltext_section and (full_text_path or full_text_note) -%}
-## Full Text
+## Full Text (PMC OA)
 
 {% if full_text_path -%}
 Saved to: {{ full_text_path }}

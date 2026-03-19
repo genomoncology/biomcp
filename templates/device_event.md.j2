@@ -3,9 +3,10 @@
 Report Key: {{ report_id }}{% if report_number %} | Report #: {{ report_number }}{% endif %}
 
 Device: {{ device }}{% if manufacturer %} | Manufacturer: {{ manufacturer }}{% endif %}{% if event_type %} | Event Type: {{ event_type }}{% endif %}{% if date %} | Date: {{ date }}{% endif %}
+Source: OpenFDA
 
 {% if description -%}
-## Description
+## Description (OpenFDA)
 
 {{ description }}
 {% endif -%}

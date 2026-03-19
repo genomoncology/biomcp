@@ -2219,6 +2219,7 @@ async fn render_gene_card(
             &gene,
             crate::render::markdown::gene_evidence_urls(&gene),
             crate::render::markdown::related_gene(&gene),
+            crate::render::provenance::gene_section_sources(&gene),
         )?)
     } else {
         Ok(crate::render::markdown::gene_markdown(&gene, sections)?)
@@ -2251,6 +2252,7 @@ fn trial_locations_json(
         },
         crate::render::markdown::trial_evidence_urls(trial),
         crate::render::markdown::related_trial(trial),
+        crate::render::provenance::trial_section_sources(trial),
     )
     .map_err(Into::into)
 }
@@ -2783,6 +2785,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         &article,
                         crate::render::markdown::article_evidence_urls(&article),
                         crate::render::markdown::related_article(&article),
+                        crate::render::provenance::article_section_sources(&article),
                     )?)
                 } else {
                     Ok(crate::render::markdown::article_markdown(&article, &sections)?)
@@ -2803,6 +2806,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         &disease,
                         crate::render::markdown::disease_evidence_urls(&disease),
                         crate::render::markdown::related_disease(&disease),
+                        crate::render::provenance::disease_section_sources(&disease),
                     )?)
                 } else {
                     Ok(crate::render::markdown::disease_markdown(&disease, &sections)?)
@@ -2819,6 +2823,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         &pgx,
                         crate::render::markdown::pgx_evidence_urls(&pgx),
                         crate::render::markdown::related_pgx(&pgx),
+                        crate::render::provenance::pgx_section_sources(&pgx),
                     )?)
                 } else {
                     Ok(crate::render::markdown::pgx_markdown(&pgx, &sections)?)
@@ -2864,6 +2869,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             &trial,
                             crate::render::markdown::trial_evidence_urls(&trial),
                             crate::render::markdown::related_trial(&trial),
+                            crate::render::provenance::trial_section_sources(&trial),
                         )?)
                     }
                 } else {
@@ -2897,6 +2903,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         &variant,
                         crate::render::markdown::variant_evidence_urls(&variant),
                         crate::render::markdown::related_variant(&variant),
+                        crate::render::provenance::variant_section_sources(&variant),
                     )?)
                 } else {
                     Ok(crate::render::markdown::variant_markdown(&variant, &sections)?)
@@ -2913,6 +2920,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         &drug,
                         crate::render::markdown::drug_evidence_urls(&drug),
                         crate::render::markdown::related_drug(&drug),
+                        crate::render::provenance::drug_section_sources(&drug),
                     )?)
                 } else {
                     Ok(crate::render::markdown::drug_markdown(&drug, &sections)?)
@@ -2929,6 +2937,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         &pathway,
                         crate::render::markdown::pathway_evidence_urls(&pathway),
                         crate::render::markdown::related_pathway(&pathway),
+                        crate::render::provenance::pathway_section_sources(&pathway),
                     )?)
                 } else {
                     Ok(crate::render::markdown::pathway_markdown(&pathway, &sections)?)
@@ -2948,6 +2957,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         &protein,
                         crate::render::markdown::protein_evidence_urls(&protein),
                         crate::render::markdown::related_protein(&protein, &sections),
+                        crate::render::provenance::protein_section_sources(&protein),
                     )?)
                 } else {
                     Ok(crate::render::markdown::protein_markdown(&protein, &sections)?)
@@ -2970,6 +2980,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                                 &event,
                                 crate::render::markdown::adverse_event_evidence_urls(r),
                                 crate::render::markdown::related_adverse_event(r),
+                                crate::render::provenance::adverse_event_report_section_sources(
+                                    &event,
+                                ),
                             )?)
                         }
                         crate::entities::adverse_event::AdverseEventReport::Device(r) => {
@@ -2977,6 +2990,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                                 &event,
                                 crate::render::markdown::device_event_evidence_urls(r),
                                 crate::render::markdown::related_device_event(r),
+                                crate::render::provenance::adverse_event_report_section_sources(
+                                    &event,
+                                ),
                             )?)
                         }
                     };
@@ -3105,6 +3121,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             &variant,
                             crate::render::markdown::variant_evidence_urls(&variant),
                             crate::render::markdown::related_variant(&variant),
+                            crate::render::provenance::variant_section_sources(&variant),
                         )?)
                     } else {
                         Ok(crate::render::markdown::variant_markdown(
@@ -3214,6 +3231,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             &drug,
                             crate::render::markdown::drug_evidence_urls(&drug),
                             crate::render::markdown::related_drug(&drug),
+                            crate::render::provenance::drug_section_sources(&drug),
                         )?)
                     } else {
                         Ok(crate::render::markdown::drug_markdown(&drug, empty_sections())?)
@@ -5661,7 +5679,7 @@ mod tests {
     }
 
     #[test]
-    fn trial_locations_json_preserves_location_pagination_and_meta() {
+    fn trial_locations_json_preserves_location_pagination_and_section_sources() {
         let trial = crate::entities::trial::Trial {
             nct_id: "NCT00000001".to_string(),
             source: Some("ctgov".to_string()),
@@ -5710,6 +5728,18 @@ mod tests {
         assert_eq!(value["location_pagination"]["limit"], 10);
         assert_eq!(value["location_pagination"]["has_more"], true);
         assert!(value.get("_meta").is_some());
+        assert_eq!(value["_meta"]["section_sources"][0]["key"], "overview");
+        assert_eq!(
+            value["_meta"]["section_sources"][0]["sources"][0],
+            "ClinicalTrials.gov"
+        );
+        assert!(
+            value["_meta"]["section_sources"]
+                .as_array()
+                .expect("section sources array")
+                .iter()
+                .any(|entry| entry["key"] == "locations")
+        );
     }
 
     #[test]
@@ -7478,9 +7508,15 @@ mod next_commands_json_property {
         entity: &T,
         evidence_urls: Vec<(&'static str, String)>,
         next_commands: Vec<String>,
+        section_sources: Vec<crate::render::provenance::SectionSource>,
     ) {
-        let json = crate::render::json::to_entity_json(entity, evidence_urls, next_commands)
-            .unwrap_or_else(|e| panic!("{label}: failed to render entity json: {e}"));
+        let json = crate::render::json::to_entity_json(
+            entity,
+            evidence_urls,
+            next_commands,
+            section_sources,
+        )
+        .unwrap_or_else(|e| panic!("{label}: failed to render entity json: {e}"));
         assert_json_next_commands_parse(label, &json);
     }
 
@@ -7520,6 +7556,7 @@ mod next_commands_json_property {
             &gene,
             crate::render::markdown::gene_evidence_urls(&gene),
             crate::render::markdown::related_gene(&gene),
+            crate::render::provenance::gene_section_sources(&gene),
         );
     }
 
@@ -7563,6 +7600,7 @@ mod next_commands_json_property {
             &article,
             crate::render::markdown::article_evidence_urls(&article),
             crate::render::markdown::related_article(&article),
+            crate::render::provenance::article_section_sources(&article),
         );
     }
 
@@ -7596,6 +7634,7 @@ mod next_commands_json_property {
             &disease,
             crate::render::markdown::disease_evidence_urls(&disease),
             crate::render::markdown::related_disease(&disease),
+            crate::render::provenance::disease_section_sources(&disease),
         );
     }
 
@@ -7618,6 +7657,7 @@ mod next_commands_json_property {
             &pgx,
             crate::render::markdown::pgx_evidence_urls(&pgx),
             crate::render::markdown::related_pgx(&pgx),
+            crate::render::provenance::pgx_section_sources(&pgx),
         );
     }
 
@@ -7650,6 +7690,7 @@ mod next_commands_json_property {
             &trial,
             crate::render::markdown::trial_evidence_urls(&trial),
             crate::render::markdown::related_trial(&trial),
+            crate::render::provenance::trial_section_sources(&trial),
         );
     }
 
@@ -7668,6 +7709,7 @@ mod next_commands_json_property {
             &variant,
             crate::render::markdown::variant_evidence_urls(&variant),
             crate::render::markdown::related_variant(&variant),
+            crate::render::provenance::variant_section_sources(&variant),
         );
     }
 
@@ -7701,6 +7743,7 @@ mod next_commands_json_property {
             &drug,
             crate::render::markdown::drug_evidence_urls(&drug),
             crate::render::markdown::related_drug(&drug),
+            crate::render::provenance::drug_section_sources(&drug),
         );
     }
 
@@ -7740,6 +7783,7 @@ mod next_commands_json_property {
             &pathway,
             crate::render::markdown::pathway_evidence_urls(&pathway),
             next_commands,
+            crate::render::provenance::pathway_section_sources(&pathway),
         );
     }
 
@@ -7779,6 +7823,7 @@ mod next_commands_json_property {
             &protein,
             crate::render::markdown::protein_evidence_urls(&protein),
             section_next_commands,
+            crate::render::provenance::protein_section_sources(&protein),
         );
     }
 
@@ -7804,6 +7849,7 @@ mod next_commands_json_property {
             &report,
             crate::render::markdown::adverse_event_evidence_urls(&faers),
             crate::render::markdown::related_adverse_event(&faers),
+            crate::render::provenance::adverse_event_report_section_sources(&report),
         );
     }
 
@@ -7825,6 +7871,7 @@ mod next_commands_json_property {
             &report,
             crate::render::markdown::device_event_evidence_urls(&device),
             crate::render::markdown::related_device_event(&device),
+            crate::render::provenance::adverse_event_report_section_sources(&report),
         );
     }
 }

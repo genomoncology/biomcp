@@ -115,9 +115,10 @@ This avoids repeated large payload downloads during iterative workflows.
 biomcp --json get article 22663011
 ```
 
-JSON article responses include `_meta.next_commands`, so article workflows can
-promote the next likely pivots without scraping markdown. JSON-capable article
-follow-ups preserve the same next-step guidance shape.
+JSON article responses include `_meta.next_commands` and `_meta.section_sources`,
+so article workflows can promote the next likely pivots and preserve section
+provenance without scraping markdown. JSON-capable article follow-ups preserve
+the same next-step guidance shape.
 
 ## Practical tips
 

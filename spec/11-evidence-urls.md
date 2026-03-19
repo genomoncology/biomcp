@@ -40,13 +40,17 @@ echo "$ae_out" | mustmatch like "See also:"
 
 ## JSON Metadata Contract
 
-JSON entity output should expose evidence links and next commands under `_meta`.
+JSON entity output should expose evidence links, next commands, and section
+provenance under `_meta`. The `section_sources` field lists each rendered
+section with its upstream source name(s) so callers can attribute data without
+parsing markdown.
 
 ```bash
 gene_json="$(biomcp get gene BRAF --json)"
 echo "$gene_json" | mustmatch like '"_meta": {'
 echo "$gene_json" | mustmatch like '"evidence_urls": ['
 echo "$gene_json" | mustmatch like '"next_commands": ['
+echo "$gene_json" | mustmatch like '"section_sources": ['
 
 variant_json="$(biomcp get variant "BRAF V600E" --json)"
 echo "$variant_json" | mustmatch like '"label": "dbSNP"'
