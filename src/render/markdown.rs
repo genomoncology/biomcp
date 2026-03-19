@@ -3000,6 +3000,24 @@ mod tests {
     }
 
     #[test]
+    fn pathway_markdown_hides_genes_section_when_genes_are_empty() {
+        let pathway = Pathway {
+            source: "KEGG".to_string(),
+            id: "hsa05200".to_string(),
+            name: "Pathways in cancer".to_string(),
+            species: Some("Homo sapiens".to_string()),
+            summary: Some("Cancer pathway overview.".to_string()),
+            genes: Vec::new(),
+            events: Vec::new(),
+            enrichment: Vec::new(),
+        };
+
+        let markdown = pathway_markdown(&pathway, &[]).expect("rendered markdown");
+        assert!(!markdown.contains("## Genes"));
+        assert!(!markdown.contains("BRAF"));
+    }
+
+    #[test]
     fn pathway_search_markdown_shows_source_column() {
         let results = vec![
             PathwaySearchResult {
