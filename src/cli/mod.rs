@@ -2943,7 +2943,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     Ok(crate::render::json::to_entity_json(
                         &protein,
                         crate::render::markdown::protein_evidence_urls(&protein),
-                        crate::render::markdown::related_protein(&protein),
+                        crate::render::markdown::related_protein(&protein, &sections),
                     )?)
                 } else {
                     Ok(crate::render::markdown::protein_markdown(&protein, &sections)?)
@@ -7652,11 +7652,25 @@ mod next_commands_json_property {
             complexes: Vec::new(),
         };
 
+        let base_next_commands = crate::render::markdown::related_protein(&protein, &[]);
+        assert!(base_next_commands.contains(&"biomcp get protein P00533 structures".to_string()));
+        assert!(base_next_commands.contains(&"biomcp get protein P00533 complexes".to_string()));
+
+        let section_next_commands =
+            crate::render::markdown::related_protein(&protein, &["complexes".to_string()]);
+        assert!(
+            !section_next_commands.contains(&"biomcp get protein P00533 complexes".to_string())
+        );
+        assert!(
+            section_next_commands.contains(&"biomcp get protein P00533 structures".to_string())
+        );
+        assert!(section_next_commands.contains(&"biomcp get gene EGFR".to_string()));
+
         assert_entity_json_next_commands(
             "protein",
             &protein,
             crate::render::markdown::protein_evidence_urls(&protein),
-            crate::render::markdown::related_protein(&protein),
+            section_next_commands,
         );
     }
 

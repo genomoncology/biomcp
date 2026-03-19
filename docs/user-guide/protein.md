@@ -34,6 +34,18 @@ Complexes:
 biomcp get protein P15056 complexes
 ```
 
+Complexes render as a narrow summary table first, then one bounded member-preview bullet
+per complex so long names and large memberships stay readable in a terminal.
+
+```text
+## Complexes
+
+| ID | Name | Members | Curation |
+|---|---|---:|---|
+| CPX-13454 | BRAF:DELE1 stress-response complex | 2 | predicted |
+- `CPX-13454` members (2): DELE1, BRAF
+```
+
 Structures:
 
 ```bash
