@@ -121,6 +121,21 @@ curl -sS -L "https://reactome.org/ContentService/search/query?query=NO_SUCH_PATH
 curl -sS -L "https://reactome.org/ContentService/data/query/NOT_A_REAL_STABLE_ID"
 ```
 
+## KEGG
+
+- Happy search
+```bash
+curl -sS -L "https://rest.kegg.jp/find/pathway/MAPK"
+```
+- Happy get
+```bash
+curl -sS -L "https://rest.kegg.jp/get/hsa04010"
+```
+- No-hit
+```bash
+curl -sS -L "https://rest.kegg.jp/find/pathway/NO_SUCH_PATHWAY_091"
+```
+
 ## g:Profiler
 
 - Happy
@@ -142,19 +157,41 @@ curl -sS -L -X POST "https://biit.cs.ut.ee/gprofiler/api/gost/profile/" \
   -d '{"query":"not-an-array"}'
 ```
 
+## HPA
+
+- Happy
+```bash
+curl -sS -L "https://www.proteinatlas.org/ENSG00000157764.xml"
+```
+- Missing gene
+```bash
+curl -sS -L "https://www.proteinatlas.org/ENSG00000999999.xml"
+```
+
 ## InterPro
 
 - Happy
 ```bash
-curl -sS -L "https://www.ebi.ac.uk/interpro/api/protein/uniprot/P15056/entry/interpro/?page_size=5"
+curl -sS -L "https://www.ebi.ac.uk/interpro/api/entry/interpro/protein/uniprot/P15056/?page_size=5"
 ```
 - Edge
 ```bash
-curl -sS -L "https://www.ebi.ac.uk/interpro/api/protein/uniprot/P99999/entry/interpro/?page_size=5"
+curl -sS -L "https://www.ebi.ac.uk/interpro/api/entry/interpro/protein/uniprot/P99999/?page_size=5"
 ```
 - Invalid
 ```bash
-curl -sS -L "https://www.ebi.ac.uk/interpro/api/protein/uniprot/P15056/not-a-real-resource/"
+curl -sS -L "https://www.ebi.ac.uk/interpro/api/entry/interpro/protein/uniprot/P15056/not-a-real-resource/"
+```
+
+## ComplexPortal
+
+- Happy
+```bash
+curl -sS -L "https://www.ebi.ac.uk/intact/complex-ws/search/P15056?number=25&filters=species_f:(%22Homo%20sapiens%22)"
+```
+- No-match
+```bash
+curl -sS -L "https://www.ebi.ac.uk/intact/complex-ws/search/NO_SUCH_PROTEIN_091?number=25&filters=species_f:(%22Homo%20sapiens%22)"
 ```
 
 ## Semantic Scholar (optional, requires `S2_API_KEY`)

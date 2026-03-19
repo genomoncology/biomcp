@@ -17,7 +17,7 @@ biomcp search all [slot filters]      → unified fan-out
 
 Ops commands:
 ```
-biomcp health [--apis-only]   → check all API connectivity
+biomcp health [--apis-only]   → inspect per-source connectivity and excluded key-gated rows
 biomcp version                → show version and build info
 biomcp update [--check]       → self-update or check for updates
 biomcp list [entity]          → show entities, commands, and filters
@@ -205,8 +205,9 @@ These properties should be preserved across releases:
    examples must be runnable
 3. **JSON output** (`--json` flag) is available on all query commands and
    produces valid JSON — scripts and agents depend on this
-4. **`biomcp health`** exits 0 only when all APIs are reachable — must not
-   silently pass on partial failures
+4. **`biomcp health`** reports per-source connectivity, cache writability, and
+   excluded key-gated sources in one inspection view; partial upstream failures
+   stay visible in output even though the command currently exits 0
 5. **Error messages** include suggested next steps — suggestions must name
    real commands
 
