@@ -581,6 +581,7 @@ fn list_protein() -> String {
 - `get protein <accession_or_symbol>` - base protein card
 - `get protein <accession> domains` - InterPro domains
 - `get protein <accession> interactions` - STRING interactions
+- `get protein <accession> complexes` - ComplexPortal protein complexes
 - `get protein <accession> structures` - structure IDs (PDB/AlphaFold)
 - `get protein <accession> all` - include all sections
 
@@ -602,6 +603,7 @@ fn list_protein() -> String {
 ## Workflow examples
 
 - To find a target protein from a gene symbol, run `biomcp search protein BRAF --limit 5`.
+- To inspect complex membership, run `biomcp get protein <accession> complexes`.
 - To inspect structural context, run `biomcp get protein <accession> structures`.
 - To continue result browsing, run `biomcp search protein <query> --limit <N> --offset <N>`.
 "#

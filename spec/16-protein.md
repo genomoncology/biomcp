@@ -9,6 +9,7 @@ keys — rather than volatile upstream record values.
 | Positional search | `search protein BRAF` | Confirms positional arg accepted (no `-q` flag) |
 | Table structure | `search protein BRAF` | Confirms stable result schema with Accession column |
 | Detail card | `get protein P15056` | Confirms card sections: Gene, Function, `More:`, UniProt link, related hints |
+| Complexes section | `get protein P15056 complexes` | Confirms ComplexPortal-backed complex table renders for BRAF |
 | JSON metadata | `get protein P15056 --json` | Confirms `_meta.evidence_urls` and `_meta.next_commands` are present |
 
 ## Positional Search Query
@@ -52,6 +53,21 @@ echo "$out" | mustmatch like "[UniProt]("
 echo "$out" | mustmatch like "See also:"
 ```
 
+## Protein Complexes Section
+
+`get protein <accession> complexes` should surface ComplexPortal complexes as a dedicated
+section on the protein card. We assert stable structural markers: the section heading,
+table columns, a ComplexPortal accession, and the queried protein among the components.
+
+```bash
+out="$(biomcp get protein P15056 complexes)"
+echo "$out" | mustmatch like "Accession: P15056"
+echo "$out" | mustmatch like "## Complexes"
+echo "$out" | mustmatch like "| ID | Name | Components | Curation |"
+echo "$out" | mustmatch '/CPX-[0-9]+/'
+echo "$out" | mustmatch like "BRAF"
+```
+
 ## JSON Metadata Contract
 
 JSON output must carry `_meta.evidence_urls` and `_meta.next_commands`, and both must
@@ -65,4 +81,5 @@ echo "$out" | mustmatch like '"evidence_urls": ['
 echo "$out" | mustmatch like '"label": "UniProt"'
 echo "$out" | mustmatch like '"next_commands": ['
 echo "$out" | mustmatch like 'biomcp get protein P15056'
+echo "$out" | mustmatch like 'biomcp get protein P15056 complexes'
 ```

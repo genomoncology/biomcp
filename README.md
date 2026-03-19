@@ -108,7 +108,7 @@ search all [slot filters]    → counts-first cross-entity orientation
 | drug | MyChem.info, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA, CIViC | `biomcp get drug pembrolizumab targets` |
 | disease | MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC | `biomcp get disease "Lynch syndrome" genes` |
 | pathway | Reactome, KEGG, g:Profiler, Enrichr-backed enrichment sections | `biomcp get pathway hsa05200 genes` |
-| protein | UniProt, InterPro, STRING, PDB, AlphaFold | `biomcp get protein P15056 domains` |
+| protein | UniProt, InterPro, STRING, ComplexPortal, PDB, AlphaFold | `biomcp get protein P15056 complexes` |
 | adverse-event | OpenFDA FAERS, MAUDE, Recalls | `biomcp search adverse-event --drug pembrolizumab` |
 | pgx | CPIC, PharmGKB | `biomcp get pgx CYP2D6 recommendations` |
 | gwas | GWAS Catalog | `biomcp search gwas --trait "type 2 diabetes"` |

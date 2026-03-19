@@ -33,7 +33,7 @@ and operational caveats so users can reason about result quality and troubleshoo
 | PGx core interactions/recommendations | CPIC API | `https://api.cpicpgx.org/v1` | No | Pair, recommendation, frequency, and guideline views |
 | PGx annotations section | PharmGKB API | `https://api.pharmgkb.org/v1` | No | Clinical/guideline/label annotation enrichment |
 | Pathway | Reactome + KEGG + g:Profiler | `https://reactome.org/ContentService`, `https://rest.kegg.jp`, `https://biit.cs.ut.ee/gprofiler/api` | No | Pathway search and detail use Reactome + KEGG; `events` remains Reactome-only; top-level `biomcp enrich` uses **g:Profiler** |
-| Protein | UniProt + InterPro + STRING | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/interpro/api`, `https://string-db.org/api` | No | Protein cards, domains, interactions, structures |
+| Protein | UniProt + InterPro + STRING + ComplexPortal | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/interpro/api`, `https://string-db.org/api`, `https://www.ebi.ac.uk/intact/complex-ws` | No | Protein cards, domains, interactions, structures, and human protein complex membership |
 | Adverse events and recalls | OpenFDA | `https://api.fda.gov` | Optional (`OPENFDA_API_KEY`) | FAERS, recalls, and MAUDE device events |
 | Gene enrichment sections | Enrichr | `https://maayanlab.cloud/Enrichr` | No | Gene enrichment sections inside entity outputs use Enrichr; this is distinct from top-level `biomcp enrich` |
 | Cohort frequencies (best effort) | cBioPortal | `https://www.cbioportal.org/api` | No | Supplemental cancer frequency context |

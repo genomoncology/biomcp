@@ -1,6 +1,6 @@
 # Protein
 
-Use protein commands to query UniProt accessions and expand into domains, interactions, and structure IDs.
+Use protein commands to query UniProt accessions and expand into domains, interactions, complexes, and structure IDs.
 
 ## Search proteins
 
@@ -26,6 +26,12 @@ Interactions:
 
 ```bash
 biomcp get protein P15056 interactions
+```
+
+Complexes:
+
+```bash
+biomcp get protein P15056 complexes
 ```
 
 Structures:

@@ -23,6 +23,7 @@ pub(crate) mod chembl;
 pub(crate) mod civic;
 pub(crate) mod clingen;
 pub(crate) mod clinicaltrials;
+pub(crate) mod complexportal;
 pub(crate) mod cpic;
 pub(crate) mod dgidb;
 pub(crate) mod enrichr;

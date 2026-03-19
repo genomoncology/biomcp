@@ -223,6 +223,7 @@ biomcp get pathway hsa05200 genes
 ```bash
 biomcp get protein P15056
 biomcp get protein P15056 domains interactions
+biomcp get protein P15056 complexes
 ```
 
 ### Adverse event

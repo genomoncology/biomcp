@@ -17,7 +17,9 @@ use crate::entities::drug::{Drug, DrugSearchResult};
 use crate::entities::gene::{Gene, GeneSearchResult};
 use crate::entities::pathway::{Pathway, PathwaySearchResult};
 use crate::entities::pgx::{Pgx, PgxSearchResult};
-use crate::entities::protein::{Protein, ProteinSearchResult};
+use crate::entities::protein::{
+    Protein, ProteinComplex, ProteinComplexComponent, ProteinComplexCuration, ProteinSearchResult,
+};
 use crate::entities::study::{
     CoOccurrenceResult as StudyCoOccurrenceResult, CohortResult as StudyCohortResult,
     ExpressionComparisonResult as StudyExpressionComparisonResult,
@@ -45,6 +47,20 @@ struct ArticleSearchSourceGroup {
     source_label: String,
     count: usize,
     results: Vec<ArticleSearchResult>,
+}
+
+#[derive(serde::Serialize)]
+struct ProteinComplexRow {
+    accession: String,
+    name: String,
+    components: String,
+    curation: String,
+}
+
+#[derive(serde::Serialize)]
+struct ProteinComplexDescriptionRow {
+    accession: String,
+    description: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -905,6 +921,7 @@ pub(crate) fn related_protein(protein: &Protein) -> Vec<String> {
     let mut out = Vec::new();
     if !accession.is_empty() {
         out.push(format!("biomcp get protein {accession} structures"));
+        out.push(format!("biomcp get protein {accession} complexes"));
     }
     if let Some(symbol) = protein
         .gene_symbol
@@ -915,6 +932,64 @@ pub(crate) fn related_protein(protein: &Protein) -> Vec<String> {
         out.push(format!("biomcp get gene {symbol}"));
     }
     out
+}
+
+fn format_protein_complex_component(component: &ProteinComplexComponent) -> String {
+    let accession = component.accession.trim();
+    let name = component.name.trim();
+    let label = if name.is_empty() { accession } else { name };
+    let stoichiometry = component
+        .stoichiometry
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    match stoichiometry {
+        Some(stoichiometry) => format!("{label} ({stoichiometry})"),
+        None => label.to_string(),
+    }
+}
+
+fn protein_complex_rows(complexes: &[ProteinComplex]) -> Vec<ProteinComplexRow> {
+    complexes
+        .iter()
+        .map(|complex| ProteinComplexRow {
+            accession: complex.accession.clone(),
+            name: complex.name.clone(),
+            components: if complex.components.is_empty() {
+                "-".to_string()
+            } else {
+                complex
+                    .components
+                    .iter()
+                    .map(format_protein_complex_component)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            },
+            curation: match &complex.curation {
+                ProteinComplexCuration::Curated => "curated".to_string(),
+                ProteinComplexCuration::Predicted => "predicted".to_string(),
+            },
+        })
+        .collect()
+}
+
+fn protein_complex_description_rows(
+    complexes: &[ProteinComplex],
+) -> Vec<ProteinComplexDescriptionRow> {
+    complexes
+        .iter()
+        .filter_map(|complex| {
+            let description = complex
+                .description
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())?;
+            Some(ProteinComplexDescriptionRow {
+                accession: complex.accession.clone(),
+                description: description.to_string(),
+            })
+        })
+        .collect()
 }
 
 pub(crate) fn related_drug(drug: &Drug) -> Vec<String> {
@@ -1928,12 +2003,15 @@ pub fn protein_markdown(
     let has_requested = |name: &str| requested.iter().any(|s| s.eq_ignore_ascii_case(name));
     let show_domains_section = !section_only || include_all || has_requested("domains");
     let show_interactions_section = !section_only || include_all || has_requested("interactions");
+    let show_complexes_section = !section_only || include_all || has_requested("complexes");
     let show_structures_section = !section_only || include_all || has_requested("structures");
     let protein_label = if protein.name.trim().is_empty() {
         protein.accession.as_str()
     } else {
         protein.name.as_str()
     };
+    let complex_rows = protein_complex_rows(&protein.complexes);
+    let complex_descriptions = protein_complex_description_rows(&protein.complexes);
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(protein_label, requested_sections),
@@ -1948,8 +2026,11 @@ pub fn protein_markdown(
         structure_count => &protein.structure_count,
         domains => &protein.domains,
         interactions => &protein.interactions,
+        complexes => complex_rows,
+        complex_descriptions => complex_descriptions,
         show_domains_section => show_domains_section,
         show_interactions_section => show_interactions_section,
+        show_complexes_section => show_complexes_section,
         show_structures_section => show_structures_section,
         sections_block => format_sections_block("protein", &protein.accession, sections_protein(protein, requested_sections)),
         related_block => format_related_block(related_protein(protein)),
@@ -3231,6 +3312,71 @@ mod tests {
         assert!(related.contains(
             &"biomcp search adverse-event --type recall --classification \"Class I\"".to_string()
         ));
+    }
+
+    #[test]
+    fn related_protein_includes_complexes_follow_up() {
+        let protein = Protein {
+            accession: "P15056".to_string(),
+            entry_id: Some("BRAF_HUMAN".to_string()),
+            name: "Serine/threonine-protein kinase B-raf".to_string(),
+            gene_symbol: Some("BRAF".to_string()),
+            organism: Some("Homo sapiens".to_string()),
+            length: Some(766),
+            function: None,
+            structures: vec!["6V34".to_string()],
+            structure_count: Some(1),
+            domains: Vec::new(),
+            interactions: Vec::new(),
+            complexes: Vec::new(),
+        };
+
+        let related = related_protein(&protein);
+        assert!(related.contains(&"biomcp get protein P15056 structures".to_string()));
+        assert!(related.contains(&"biomcp get protein P15056 complexes".to_string()));
+        assert!(related.contains(&"biomcp get gene BRAF".to_string()));
+    }
+
+    #[test]
+    fn protein_markdown_renders_complexes_table_and_descriptions() {
+        let protein = Protein {
+            accession: "P15056".to_string(),
+            entry_id: Some("BRAF_HUMAN".to_string()),
+            name: "Serine/threonine-protein kinase B-raf".to_string(),
+            gene_symbol: Some("BRAF".to_string()),
+            organism: Some("Homo sapiens".to_string()),
+            length: Some(766),
+            function: None,
+            structures: Vec::new(),
+            structure_count: None,
+            domains: Vec::new(),
+            interactions: Vec::new(),
+            complexes: vec![ProteinComplex {
+                accession: "CPX-1234".to_string(),
+                name: "BRAF signaling complex".to_string(),
+                description: Some("Signals through MAPK.".to_string()),
+                curation: ProteinComplexCuration::Curated,
+                components: vec![
+                    ProteinComplexComponent {
+                        accession: "P15056".to_string(),
+                        name: "BRAF".to_string(),
+                        stoichiometry: Some("minValue: 1, maxValue: 1".to_string()),
+                    },
+                    ProteinComplexComponent {
+                        accession: "Q02750".to_string(),
+                        name: "MAP2K1".to_string(),
+                        stoichiometry: None,
+                    },
+                ],
+            }],
+        };
+
+        let markdown = protein_markdown(&protein, &["complexes".to_string()]).expect("markdown");
+        assert!(markdown.contains("## Complexes"));
+        assert!(markdown.contains("| ID | Name | Components | Curation |"));
+        assert!(markdown.contains("BRAF (minValue: 1, maxValue: 1), MAP2K1"));
+        assert!(markdown.contains("| CPX-1234 | BRAF signaling complex |"));
+        assert!(markdown.contains("- `CPX-1234`: Signals through MAPK."));
     }
 
     #[test]
