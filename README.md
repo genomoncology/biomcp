@@ -75,7 +75,7 @@ uv tool install biomcp-cli
 biomcp health --apis-only
 biomcp list gene
 biomcp search all --gene BRAF --disease melanoma  # unified cross-entity discovery
-biomcp get gene BRAF pathways druggability
+biomcp get gene BRAF pathways hpa
 ```
 
 ## Command grammar
@@ -101,7 +101,7 @@ search all [slot filters]    → counts-first cross-entity orientation
 
 | Entity | Upstream providers used by BioMCP | Example |
 |--------|-----------------------------------|---------|
-| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, DGIdb, ClinGen | `biomcp get gene BRAF pathways` |
+| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen | `biomcp get gene BRAF pathways hpa` |
 | variant | MyVariant.info, ClinVar, gnomAD fields via MyVariant, CIViC, Cancer Genome Interpreter, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome | `biomcp get variant "BRAF V600E" clinvar` |
 | article | PubMed, PubTator3, Europe PMC, PMC OA, NCBI ID Converter, Semantic Scholar (optional with `S2_API_KEY`) | `biomcp search article -g BRAF --limit 5` |
 | trial | ClinicalTrials.gov API v2, NCI CTS API | `biomcp search trial -c melanoma -s recruiting` |
@@ -160,6 +160,7 @@ Every `get` command supports selectable sections for focused output:
 ```bash
 biomcp get gene BRAF                    # summary card
 biomcp get gene BRAF pathways           # add pathway section
+biomcp get gene BRAF hpa                # protein tissue expression + localization
 biomcp get gene BRAF civic interactions # multiple sections
 biomcp get gene BRAF all                # everything
 

@@ -108,6 +108,7 @@ mod tests {
             interactions: None,
             civic: None,
             expression: None,
+            hpa: None,
             druggability: None,
             clingen: None,
             constraint: None,

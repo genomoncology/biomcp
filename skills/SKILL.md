@@ -249,7 +249,7 @@ Rules:
 
 ## Common Real Sections
 
-- gene: `pathways`, `ontology`, `diseases`, `protein`, `go`, `interactions`, `civic`, `expression`, `druggability`, `clingen`
+- gene: `pathways`, `ontology`, `diseases`, `protein`, `go`, `interactions`, `civic`, `expression`, `hpa`, `druggability`, `clingen`, `constraint`
 - variant: `clinvar`, `predict`, `predictions`, `population`, `conservation`, `civic`, `cgi`, `cbioportal`, `gwas`
 - article: `annotations`, `fulltext`
 - trial: `eligibility`, `locations`, `outcomes`, `arms`, `references`

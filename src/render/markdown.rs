@@ -1044,6 +1044,7 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
     let has_requested = |name: &str| requested.iter().any(|s| s.eq_ignore_ascii_case(name));
     let show_civic_section = include_all || has_requested("civic");
     let show_expression_section = include_all || has_requested("expression");
+    let show_hpa_section = include_all || has_requested("hpa");
     let show_druggability_section =
         include_all || has_requested("druggability") || has_requested("drugs");
     let show_clingen_section = include_all || has_requested("clingen");
@@ -1072,11 +1073,13 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
         interactions => &gene.interactions,
         civic => &gene.civic,
         expression => &gene.expression,
+        hpa => &gene.hpa,
         druggability => &gene.druggability,
         clingen => &gene.clingen,
         constraint => &gene.constraint,
         show_civic_section => show_civic_section,
         show_expression_section => show_expression_section,
+        show_hpa_section => show_hpa_section,
         show_druggability_section => show_druggability_section,
         show_clingen_section => show_clingen_section,
         show_constraint_section => show_constraint_section,
@@ -2710,6 +2713,7 @@ mod tests {
             interactions: None,
             civic: None,
             expression: None,
+            hpa: None,
             druggability: None,
             clingen: None,
             constraint: None,
@@ -2745,6 +2749,7 @@ mod tests {
             interactions: None,
             civic: None,
             expression: None,
+            hpa: None,
             druggability: None,
             clingen: None,
             constraint: None,
@@ -2754,19 +2759,82 @@ mod tests {
             &gene,
             &[
                 "expression".to_string(),
+                "hpa".to_string(),
                 "druggability".to_string(),
                 "clingen".to_string(),
             ],
         )
         .expect("rendered markdown");
 
-        assert!(markdown.contains("# BRAF - expression, druggability, clingen"));
+        assert!(markdown.contains("# BRAF - expression, hpa, druggability, clingen"));
         assert!(markdown.contains("## Expression (GTEx)"));
+        assert!(markdown.contains("## Human Protein Atlas"));
         assert!(markdown.contains("## Druggability (DGIdb)"));
         assert!(markdown.contains("## ClinGen"));
         assert!(markdown.contains("No GTEx expression records returned"));
+        assert!(markdown.contains("No Human Protein Atlas records returned"));
         assert!(markdown.contains("No DGIdb interactions returned"));
         assert!(markdown.contains("No ClinGen records returned"));
+    }
+
+    #[test]
+    fn gene_markdown_renders_hpa_section_details() {
+        let gene = Gene {
+            symbol: "BRAF".to_string(),
+            name: "B-Raf proto-oncogene".to_string(),
+            entrez_id: "673".to_string(),
+            ensembl_id: Some("ENSG00000157764".to_string()),
+            location: Some("7q34".to_string()),
+            genomic_coordinates: None,
+            omim_id: None,
+            uniprot_id: Some("P15056".to_string()),
+            summary: Some("Kinase involved in MAPK signaling.".to_string()),
+            gene_type: Some("protein-coding".to_string()),
+            aliases: vec!["BRAF1".to_string()],
+            clinical_diseases: Vec::new(),
+            clinical_drugs: Vec::new(),
+            pathways: None,
+            ontology: None,
+            diseases: None,
+            protein: None,
+            go: None,
+            interactions: None,
+            civic: None,
+            expression: None,
+            hpa: Some(crate::sources::hpa::GeneHpa {
+                tissues: vec![
+                    crate::sources::hpa::HpaTissueExpression {
+                        tissue: "Liver".to_string(),
+                        level: "High".to_string(),
+                    },
+                    crate::sources::hpa::HpaTissueExpression {
+                        tissue: "Kidney".to_string(),
+                        level: "Medium".to_string(),
+                    },
+                ],
+                subcellular_main_location: vec!["cytosol".to_string(), "vesicles".to_string()],
+                subcellular_additional_location: vec!["plasma membrane".to_string()],
+                reliability: Some("Supported".to_string()),
+                protein_summary: Some("Ubiquitous cytoplasmic expression.".to_string()),
+                rna_summary: Some("Low tissue specificity; Detected in all".to_string()),
+            }),
+            druggability: None,
+            clingen: None,
+            constraint: None,
+        };
+
+        let markdown = gene_markdown(&gene, &["hpa".to_string()]).expect("rendered markdown");
+
+        assert!(markdown.contains("# BRAF - hpa"));
+        assert!(markdown.contains("## Human Protein Atlas"));
+        assert!(markdown.contains("Reliability: Supported"));
+        assert!(markdown.contains("Protein summary: Ubiquitous cytoplasmic expression."));
+        assert!(markdown.contains("RNA summary: Low tissue specificity; Detected in all"));
+        assert!(markdown.contains("Subcellular main locations: cytosol, vesicles"));
+        assert!(markdown.contains("Subcellular additional locations: plasma membrane"));
+        assert!(markdown.contains("| Tissue | Level |"));
+        assert!(markdown.contains("| Liver | High |"));
+        assert!(markdown.contains("| Kidney | Medium |"));
     }
 
     #[test]
@@ -2793,6 +2861,7 @@ mod tests {
             interactions: None,
             civic: None,
             expression: None,
+            hpa: None,
             druggability: None,
             clingen: None,
             constraint: Some(crate::entities::gene::GeneConstraint {
@@ -2854,6 +2923,7 @@ mod tests {
             interactions: None,
             civic: None,
             expression: None,
+            hpa: None,
             druggability: None,
             clingen: None,
             constraint: None,
@@ -3143,6 +3213,7 @@ mod tests {
             interactions: None,
             civic: None,
             expression: None,
+            hpa: None,
             druggability: None,
             clingen: None,
             constraint: None,

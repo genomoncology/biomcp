@@ -73,6 +73,12 @@ Tissue expression (GTEx):
 biomcp get gene BRAF expression
 ```
 
+Protein tissue expression and localization (Human Protein Atlas):
+
+```bash
+biomcp get gene BRAF hpa
+```
+
 Druggability profile (DGIdb):
 
 ```bash

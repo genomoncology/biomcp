@@ -397,6 +397,7 @@ fn is_section_like_token(token: &str) -> bool {
             | "interactions"
             | "civic"
             | "expression"
+            | "hpa"
             | "druggability"
             | "clingen"
             | "constraint"
@@ -826,6 +827,7 @@ mod tests {
     #[test]
     fn section_like_tokens_include_new_gene_enrichment_sections() {
         assert!(is_section_like_token("expression"));
+        assert!(is_section_like_token("hpa"));
         assert!(is_section_like_token("druggability"));
         assert!(is_section_like_token("clingen"));
         assert!(is_section_like_token("constraint"));
