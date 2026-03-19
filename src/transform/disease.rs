@@ -445,6 +445,7 @@ pub fn from_mydisease_hit(hit: MyDiseaseHit) -> Disease {
         prevalence: Vec::new(),
         prevalence_note: None,
         civic: None,
+        disgenet: None,
         xrefs,
     }
 }

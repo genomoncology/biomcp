@@ -82,3 +82,18 @@ out="$("$(git rev-parse --show-toplevel)/target/release/biomcp" search disease "
 echo "$out" | mustmatch like "| ID | Name | Synonyms |"
 echo "$out" | mustmatch like "| MONDO:0024331 | colorectal carcinoma |"
 ```
+
+## Disease DisGeNET Associations
+
+DisGeNET scored disease-gene associations require `DISGENET_API_KEY`. The section heading and table schema are stable invariants; individual scores and row counts vary by API tier.
+
+```bash
+out="$(biomcp get disease melanoma disgenet)"
+echo "$out" | mustmatch like "## DisGeNET"
+echo "$out" | mustmatch like "| Gene | Entrez ID | Score | PMIDs | Trials | EL | EI |"
+```
+
+```bash
+out="$(biomcp get disease melanoma disgenet --json)"
+echo "$out" | mustmatch json ".disgenet.associations | length > 0"
+```

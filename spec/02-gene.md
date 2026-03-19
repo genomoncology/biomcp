@@ -129,3 +129,18 @@ out="$("$(git rev-parse --show-toplevel)/target/release/biomcp" search gene P53 
 echo "$out" | mustmatch like "# Genes: P53"
 echo "$out" | mustmatch like "TP53"
 ```
+
+## Gene DisGeNET Associations
+
+DisGeNET scored gene-disease associations require `DISGENET_API_KEY`. The section heading and table schema are stable invariants; individual scores and row counts vary by API tier.
+
+```bash
+out="$(biomcp get gene TP53 disgenet)"
+echo "$out" | mustmatch like "## DisGeNET"
+echo "$out" | mustmatch like "| Disease | UMLS CUI | Score | PMIDs | Trials | EL | EI |"
+```
+
+```bash
+out="$(biomcp get gene TP53 disgenet --json)"
+echo "$out" | mustmatch json ".disgenet.associations | length > 0"
+```

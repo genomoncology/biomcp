@@ -180,6 +180,7 @@ pub fn from_mygene_get(resp: MyGeneGetResponse) -> Gene {
         druggability: None,
         clingen: None,
         constraint: None,
+        disgenet: None,
     }
 }
 

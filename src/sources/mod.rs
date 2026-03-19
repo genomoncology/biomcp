@@ -26,6 +26,7 @@ pub(crate) mod clinicaltrials;
 pub(crate) mod complexportal;
 pub(crate) mod cpic;
 pub(crate) mod dgidb;
+pub(crate) mod disgenet;
 pub(crate) mod enrichr;
 pub(crate) mod europepmc;
 pub(crate) mod gnomad;

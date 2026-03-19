@@ -10,6 +10,7 @@ and operational caveats so users can reason about result quality and troubleshoo
 |------------------|-------------------|----------|---------------|-------|
 | Gene | MyGene.info | `https://mygene.info/v3` | No | Symbol lookup, aliases, summaries |
 | Gene sections | UniProt, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, OpenTargets, ClinGen, gnomAD GraphQL API | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/QuickGO/services`, `https://string-db.org/api`, `https://gtexportal.org/api/v2`, `https://www.proteinatlas.org`, `https://dgidb.org/api/graphql`, `https://api.platform.opentargets.org/api/v4/graphql`, `https://search.clinicalgenome.org`, `https://gnomad.broadinstitute.org/api` | No | Protein summary, GO terms, interactions, GTEx RNA tissue expression, HPA protein tissue expression and subcellular localization, combined DGIdb/OpenTargets druggability, gene-disease validity, and gnomAD v4 GRCh38 gene constraint |
+| Gene `disgenet` section | DisGeNET REST API | `https://api.disgenet.com/api/v1` | Yes (`DISGENET_API_KEY`) | Ranked scored gene-disease associations with PMIDs, clinical-trial counts, evidence index, and evidence level |
 | Variant | MyVariant.info | `https://myvariant.info/v1` | No | rsID/HGVS lookup, ClinVar and population annotations |
 | Variant population section | MyVariant.info (gnomAD fields) | `https://myvariant.info/v1` | No | Uses cached gnomAD AF/subpopulation fields from MyVariant payload |
 | Variant GWAS section and GWAS search | GWAS Catalog REST API | `https://www.ebi.ac.uk/gwas/rest/api` | No | rsID, gene, and trait association retrieval |
@@ -29,6 +30,7 @@ and operational caveats so users can reason about result quality and troubleshoo
 | Disease `genes` and `phenotypes` sections | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | No | Core disease associations and phenotype evidence |
 | Disease `genes` and `variants` augmentation | CIViC | `https://civicdb.org/api` | No | Somatic driver augmentation for genes and disease-associated molecular profiles |
 | Disease `models` section | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | No | Model-organism evidence with relationship and provenance |
+| Disease `disgenet` section | DisGeNET REST API | `https://api.disgenet.com/api/v1` | Yes (`DISGENET_API_KEY`) | Ranked scored disease-gene associations; disease lookup uses UMLS-backed DisGeNET identifiers |
 | Phenotype search (`search phenotype`) | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | No | HPO set similarity search to ranked diseases |
 | PGx core interactions/recommendations | CPIC API | `https://api.cpicpgx.org/v1` | No | Pair, recommendation, frequency, and guideline views |
 | PGx annotations section | PharmGKB API | `https://api.pharmgkb.org/v1` | No | Clinical/guideline/label annotation enrichment |
@@ -59,6 +61,7 @@ BioMCP only requires API keys for a subset of sources.
 | Semantic Scholar | `S2_API_KEY` | Running `article citations|references|recommendations`; enriching `get article` with TLDR and influence data |
 | NCI CTS API | `NCI_API_KEY` | Trial operations with `--source nci` |
 | OncoKB | `ONCOKB_TOKEN` | Running `variant oncokb <id>` |
+| DisGeNET | `DISGENET_API_KEY` | Running `get gene <symbol> disgenet` or `get disease <name_or_id> disgenet` |
 | OpenFDA | `OPENFDA_API_KEY` | Optional; improves quota headroom |
 
 ## Source-specific rate and payload constraints
@@ -78,6 +81,7 @@ and practical ceilings observed in command behavior.
 | Article search | `--limit` defaults to 10 | Use `--since` and entity filters to constrain results |
 | KEGG pathway search/detail | Rate-limited to 1 request / 334ms | Matches KEGG's published 3 requests / second guidance |
 | Semantic Scholar article helpers | 1 request / second, process-local | Use explicit helper commands and batch normalization for multi-paper recommendation inputs |
+| DisGeNET `disgenet` sections | Server-enforced; trial accounts may return first-page-only results and `429` with `X-Rate-Limit-Retry-After-Seconds` | Keep requests explicit, avoid fan-out loops, and retry after the server-provided cooldown |
 
 ## Trial source behavior
 

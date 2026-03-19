@@ -112,6 +112,7 @@ mod tests {
             druggability: None,
             clingen: None,
             constraint: None,
+            disgenet: None,
         };
 
         let json = to_pretty(&gene).expect("gene json");

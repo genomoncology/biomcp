@@ -974,7 +974,7 @@ See also: biomcp list gene")]
     Gene {
         /// Gene symbol (e.g., BRAF, TP53, EGFR)
         symbol: String,
-        /// Sections to include (pathways, ontology, diseases, protein, go, interactions, civic, expression, hpa, druggability, clingen, constraint, all)
+        /// Sections to include (pathways, ontology, diseases, protein, go, interactions, civic, expression, hpa, druggability, clingen, constraint, disgenet, all)
         #[arg(trailing_var_arg = true)]
         sections: Vec<String>,
     },
@@ -1003,7 +1003,7 @@ See also: biomcp list disease")]
     Disease {
         /// Disease name (e.g., melanoma) or ID (e.g., MONDO:0005105)
         name_or_id: String,
-        /// Sections to include (genes, pathways, phenotypes, variants, models, prevalence, civic, all)
+        /// Sections to include (genes, pathways, phenotypes, variants, models, prevalence, civic, disgenet, all)
         #[arg(trailing_var_arg = true)]
         sections: Vec<String>,
     },
@@ -7512,6 +7512,7 @@ mod next_commands_json_property {
             druggability: None,
             clingen: None,
             constraint: None,
+            disgenet: None,
         };
 
         assert_entity_json_next_commands(
@@ -7586,6 +7587,7 @@ mod next_commands_json_property {
             prevalence: Vec::new(),
             prevalence_note: None,
             civic: None,
+            disgenet: None,
             xrefs: std::collections::HashMap::new(),
         };
 

@@ -65,6 +65,7 @@ fn list_gene() -> String {
 - `get gene <symbol> druggability` - DGIdb interactions plus OpenTargets tractability/safety
 - `get gene <symbol> clingen` - ClinGen validity + dosage sensitivity
 - `get gene <symbol> constraint` - gnomAD gene constraint (pLI, LOEUF, mis_z, syn_z)
+- `get gene <symbol> disgenet` - DisGeNET scored gene-disease associations (requires `DISGENET_API_KEY`)
 - `get gene <symbol> all` - include every section
 - `gene definition <symbol>` - same card as `get gene <symbol>`
 - `gene get <symbol>` - alias for `gene definition <symbol>`
@@ -295,6 +296,7 @@ fn list_disease() -> String {
 - `get disease <name_or_id> models` - Monarch model-organism evidence
 - `get disease <name_or_id> prevalence` - OpenTargets prevalence-like evidence
 - `get disease <name_or_id> civic` - CIViC disease-context evidence
+- `get disease <name_or_id> disgenet` - DisGeNET scored disease-gene associations (requires `DISGENET_API_KEY`)
 - `get disease <name_or_id> all` - include all disease sections
 - `search disease <query>` - positional search by name
 - `search disease -q <query>` - search by name
@@ -716,6 +718,13 @@ mod tests {
         assert!(out.contains("get gene <symbol> druggability"));
         assert!(out.contains("get gene <symbol> clingen"));
         assert!(out.contains("get gene <symbol> constraint"));
+        assert!(out.contains("get gene <symbol> disgenet"));
+    }
+
+    #[test]
+    fn list_disease_mentions_disgenet_section() {
+        let out = render(Some("disease")).expect("list disease should render");
+        assert!(out.contains("get disease <name_or_id> disgenet"));
     }
 
     #[test]
