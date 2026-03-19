@@ -1114,6 +1114,7 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
         include_all || has_requested("druggability") || has_requested("drugs");
     let show_clingen_section = include_all || has_requested("clingen");
     let show_constraint_section = include_all || has_requested("constraint");
+    let show_disgenet_section = include_all || has_requested("disgenet");
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&gene.symbol, requested_sections),
@@ -1142,12 +1143,14 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
         druggability => &gene.druggability,
         clingen => &gene.clingen,
         constraint => &gene.constraint,
+        disgenet => &gene.disgenet,
         show_civic_section => show_civic_section,
         show_expression_section => show_expression_section,
         show_hpa_section => show_hpa_section,
         show_druggability_section => show_druggability_section,
         show_clingen_section => show_clingen_section,
         show_constraint_section => show_constraint_section,
+        show_disgenet_section => show_disgenet_section,
         sections_block => format_sections_block("gene", &gene.symbol, sections_gene(gene, requested_sections)),
         related_block => format_related_block(related_gene(gene)),
     })?;
@@ -1470,6 +1473,7 @@ pub fn disease_markdown(
     let show_models_section = include_all || has_requested("models");
     let show_prevalence_section = include_all || has_requested("prevalence");
     let show_civic_section = include_all || has_requested("civic");
+    let show_disgenet_section = include_all || has_requested("disgenet");
     let disease_label = if disease.name.trim().is_empty() {
         disease.id.as_str()
     } else {
@@ -1502,6 +1506,7 @@ pub fn disease_markdown(
         prevalence => &disease.prevalence,
         prevalence_note => &disease.prevalence_note,
         civic => &disease.civic,
+        disgenet => &disease.disgenet,
         show_genes_section => show_genes_section,
         show_pathways_section => show_pathways_section,
         show_phenotypes_section => show_phenotypes_section,
@@ -1509,6 +1514,7 @@ pub fn disease_markdown(
         show_models_section => show_models_section,
         show_prevalence_section => show_prevalence_section,
         show_civic_section => show_civic_section,
+        show_disgenet_section => show_disgenet_section,
         xrefs => xrefs,
         sections_block => format_sections_block("disease", &disease.id, sections_disease(disease, requested_sections)),
         related_block => format_related_block(related_disease(disease)),
@@ -2829,6 +2835,7 @@ mod tests {
             druggability: None,
             clingen: None,
             constraint: None,
+            disgenet: None,
         };
 
         let markdown = gene_markdown(&gene, &[]).expect("rendered markdown");
@@ -2865,6 +2872,7 @@ mod tests {
             druggability: None,
             clingen: None,
             constraint: None,
+            disgenet: None,
         };
 
         let markdown = gene_markdown(
@@ -2938,6 +2946,7 @@ mod tests {
             }),
             clingen: None,
             constraint: None,
+            disgenet: None,
         };
 
         let markdown =
@@ -2997,6 +3006,7 @@ mod tests {
             }),
             clingen: None,
             constraint: None,
+            disgenet: None,
         };
 
         let markdown =
@@ -3071,6 +3081,7 @@ mod tests {
             prevalence: Vec::new(),
             prevalence_note: None,
             civic: None,
+            disgenet: None,
             xrefs: std::collections::HashMap::new(),
         };
 
@@ -3127,6 +3138,7 @@ mod tests {
             druggability: None,
             clingen: None,
             constraint: None,
+            disgenet: None,
         };
 
         let markdown = gene_markdown(&gene, &["hpa".to_string()]).expect("rendered markdown");
@@ -3180,6 +3192,7 @@ mod tests {
                 source_version: "v4".to_string(),
                 reference_genome: "GRCh38".to_string(),
             }),
+            disgenet: None,
         };
 
         let markdown =
@@ -3192,6 +3205,59 @@ mod tests {
         assert!(markdown.contains("Reference genome: GRCh38"));
         assert!(markdown.contains("Transcript: ENST00000269305"));
         assert!(markdown.contains("No gnomAD constraint metrics returned for this gene query."));
+    }
+
+    #[test]
+    fn gene_markdown_section_only_shows_disgenet_section() {
+        let gene = Gene {
+            symbol: "TP53".to_string(),
+            name: "tumor protein p53".to_string(),
+            entrez_id: "7157".to_string(),
+            ensembl_id: None,
+            location: None,
+            genomic_coordinates: None,
+            omim_id: None,
+            uniprot_id: None,
+            summary: None,
+            gene_type: None,
+            aliases: Vec::new(),
+            clinical_diseases: Vec::new(),
+            clinical_drugs: Vec::new(),
+            pathways: None,
+            ontology: None,
+            diseases: None,
+            protein: None,
+            go: None,
+            interactions: None,
+            civic: None,
+            expression: None,
+            hpa: None,
+            druggability: None,
+            clingen: None,
+            constraint: None,
+            disgenet: Some(crate::entities::gene::GeneDisgenet {
+                associations: vec![crate::entities::gene::GeneDisgenetAssociation {
+                    disease_name: "Breast Carcinoma".to_string(),
+                    disease_cui: "C0678222".to_string(),
+                    score: 0.91,
+                    publication_count: Some(1234),
+                    clinical_trial_count: Some(4),
+                    evidence_index: Some(0.72),
+                    evidence_level: Some("Definitive".to_string()),
+                }],
+            }),
+        };
+
+        let markdown = gene_markdown(&gene, &["disgenet".to_string()]).expect("rendered markdown");
+
+        assert!(markdown.contains("# TP53 - disgenet"));
+        assert!(markdown.contains("## DisGeNET"));
+        assert!(markdown.contains("| Disease | UMLS CUI | Score | PMIDs | Trials | EL | EI |"));
+        assert!(
+            markdown.contains(
+                "| Breast Carcinoma | C0678222 | 0.910 | 1234 | 4 | Definitive | 0.720 |"
+            )
+        );
     }
 
     #[test]
@@ -3233,6 +3299,7 @@ mod tests {
             druggability: None,
             clingen: None,
             constraint: None,
+            disgenet: None,
         };
 
         let markdown = gene_markdown(&gene, &[]).expect("rendered markdown");
@@ -3541,6 +3608,7 @@ mod tests {
             druggability: None,
             clingen: None,
             constraint: None,
+            disgenet: None,
         };
 
         let urls = gene_evidence_urls(&gene);
@@ -3549,6 +3617,50 @@ mod tests {
             "https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000157764".to_string()
         )));
         assert!(urls.contains(&("OMIM", "https://www.omim.org/entry/164757".to_string())));
+    }
+
+    #[test]
+    fn disease_markdown_section_only_shows_disgenet_section() {
+        let disease = Disease {
+            id: "MONDO:0007254".to_string(),
+            name: "breast cancer".to_string(),
+            definition: None,
+            synonyms: Vec::new(),
+            parents: Vec::new(),
+            associated_genes: Vec::new(),
+            gene_associations: Vec::new(),
+            top_genes: Vec::new(),
+            top_gene_scores: Vec::new(),
+            treatment_landscape: Vec::new(),
+            recruiting_trial_count: None,
+            pathways: Vec::new(),
+            phenotypes: Vec::new(),
+            variants: Vec::new(),
+            models: Vec::new(),
+            prevalence: Vec::new(),
+            prevalence_note: None,
+            civic: None,
+            disgenet: Some(crate::entities::disease::DiseaseDisgenet {
+                associations: vec![crate::entities::disease::DiseaseDisgenetAssociation {
+                    symbol: "TP53".to_string(),
+                    entrez_id: Some(7157),
+                    score: 0.91,
+                    publication_count: Some(1234),
+                    clinical_trial_count: Some(4),
+                    evidence_index: Some(0.72),
+                    evidence_level: Some("Definitive".to_string()),
+                }],
+            }),
+            xrefs: std::collections::HashMap::new(),
+        };
+
+        let markdown =
+            disease_markdown(&disease, &["disgenet".to_string()]).expect("rendered markdown");
+
+        assert!(markdown.contains("# breast cancer - disgenet"));
+        assert!(markdown.contains("## DisGeNET"));
+        assert!(markdown.contains("| Gene | Entrez ID | Score | PMIDs | Trials | EL | EI |"));
+        assert!(markdown.contains("| TP53 | 7157 | 0.910 | 1234 | 4 | Definitive | 0.720 |"));
     }
 
     #[test]

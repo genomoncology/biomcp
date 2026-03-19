@@ -189,6 +189,16 @@ const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "DisGeNET",
+        affects: Some("gene and disease disgenet sections"),
+        probe: ProbeKind::AuthGet {
+            url: "https://api.disgenet.com/api/v1/gda/summary?gene_ncbi_id=7157&page_number=0",
+            env_var: "DISGENET_API_KEY",
+            header_name: "Authorization",
+            header_value_prefix: "",
+        },
+    },
+    SourceDescriptor {
         api: "AlphaGenome",
         affects: Some("variant predict section"),
         probe: ProbeKind::AlphaGenomeConnect {
@@ -866,6 +876,7 @@ mod tests {
                 "Enrichr",
                 "OpenFDA",
                 "OncoKB",
+                "DisGeNET",
                 "AlphaGenome",
                 "Semantic Scholar",
                 "CPIC",

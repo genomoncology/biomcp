@@ -12,6 +12,7 @@ use crate::sources::clingen::{ClinGenClient, GeneClinGen};
 use crate::sources::dgidb::{
     DgidbClient, GeneDruggability, GeneSafetyLiability, GeneTractabilityModality,
 };
+use crate::sources::disgenet::{DisgenetAssociationRecord, DisgenetClient};
 use crate::sources::enrichr::EnrichrClient;
 use crate::sources::gnomad::{
     GNOMAD_CONSTRAINT_REFERENCE_GENOME, GNOMAD_CONSTRAINT_VERSION, GnomadClient,
@@ -71,6 +72,8 @@ pub struct Gene {
     pub clingen: Option<GeneClinGen>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub constraint: Option<GeneConstraint>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disgenet: Option<GeneDisgenet>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -124,6 +127,26 @@ pub struct GeneConstraint {
     pub reference_genome: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeneDisgenetAssociation {
+    pub disease_name: String,
+    pub disease_cui: String,
+    pub score: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub publication_count: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clinical_trial_count: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_index: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_level: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GeneDisgenet {
+    pub associations: Vec<GeneDisgenetAssociation>,
+}
+
 /// Search result (lighter than full Gene)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneSearchResult {
@@ -159,6 +182,7 @@ enum GeneIncludeType {
     Druggability,
     ClinGen,
     Constraint,
+    Disgenet,
 }
 
 const GENE_SECTION_PATHWAYS: &str = "pathways";
@@ -173,6 +197,7 @@ const GENE_SECTION_HPA: &str = "hpa";
 const GENE_SECTION_DRUGGABILITY: &str = "druggability";
 const GENE_SECTION_CLINGEN: &str = "clingen";
 const GENE_SECTION_CONSTRAINT: &str = "constraint";
+const GENE_SECTION_DISGENET: &str = "disgenet";
 const GENE_SECTION_ALL: &str = "all";
 
 pub const GENE_SECTION_NAMES: &[&str] = &[
@@ -188,6 +213,7 @@ pub const GENE_SECTION_NAMES: &[&str] = &[
     GENE_SECTION_DRUGGABILITY,
     GENE_SECTION_CLINGEN,
     GENE_SECTION_CONSTRAINT,
+    GENE_SECTION_DISGENET,
     GENE_SECTION_ALL,
 ];
 
@@ -206,6 +232,7 @@ impl GeneIncludeType {
             GENE_SECTION_DRUGGABILITY | "drugs" => Some(Self::Druggability),
             GENE_SECTION_CLINGEN => Some(Self::ClinGen),
             GENE_SECTION_CONSTRAINT => Some(Self::Constraint),
+            GENE_SECTION_DISGENET => Some(Self::Disgenet),
             _ => None,
         }
     }
@@ -224,7 +251,8 @@ impl GeneIncludeType {
             | Self::Hpa
             | Self::Druggability
             | Self::ClinGen
-            | Self::Constraint => &[],
+            | Self::Constraint
+            | Self::Disgenet => &[],
         }
     }
 }
@@ -430,7 +458,8 @@ async fn enrich_gene(
             | GeneIncludeType::Hpa
             | GeneIncludeType::Druggability
             | GeneIncludeType::ClinGen
-            | GeneIncludeType::Constraint => {}
+            | GeneIncludeType::Constraint
+            | GeneIncludeType::Disgenet => {}
             GeneIncludeType::Ontology => {
                 if let Some(v) = ontology.as_mut() {
                     v.push(result);
@@ -1055,6 +1084,30 @@ async fn add_constraint_section(gene: &mut Gene) {
     }
 }
 
+fn map_disgenet_gene_association(row: DisgenetAssociationRecord) -> GeneDisgenetAssociation {
+    GeneDisgenetAssociation {
+        disease_name: row.disease_name,
+        disease_cui: row.disease_umls_cui,
+        score: row.score,
+        publication_count: row.publication_count,
+        clinical_trial_count: row.clinical_trial_count,
+        evidence_index: row.evidence_index,
+        evidence_level: row.evidence_level,
+    }
+}
+
+async fn add_disgenet_section(gene: &mut Gene) -> Result<(), BioMcpError> {
+    let client = DisgenetClient::new()?;
+    let associations = client
+        .fetch_gene_associations(gene, 10)
+        .await?
+        .into_iter()
+        .map(map_disgenet_gene_association)
+        .collect();
+    gene.disgenet = Some(GeneDisgenet { associations });
+    Ok(())
+}
+
 pub async fn get(symbol: &str, sections: &[String]) -> Result<Gene, BioMcpError> {
     if symbol.trim().is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -1149,6 +1202,10 @@ pub async fn get(symbol: &str, sections: &[String]) -> Result<Gene, BioMcpError>
 
     if include.contains(&GeneIncludeType::Constraint) {
         add_constraint_section(&mut gene).await;
+    }
+
+    if include.contains(&GeneIncludeType::Disgenet) {
+        add_disgenet_section(&mut gene).await?;
     }
 
     Ok(gene)
@@ -1515,6 +1572,7 @@ mod tests {
         assert!(GENE_SECTION_NAMES.contains(&"druggability"));
         assert!(GENE_SECTION_NAMES.contains(&"clingen"));
         assert!(GENE_SECTION_NAMES.contains(&"constraint"));
+        assert!(GENE_SECTION_NAMES.contains(&"disgenet"));
     }
 
     #[test]
@@ -1525,15 +1583,17 @@ mod tests {
             "druggability".to_string(),
             "clingen".to_string(),
             "constraint".to_string(),
+            "disgenet".to_string(),
         ])
         .expect("new gene sections should parse");
-        assert_eq!(parsed.len(), 5);
+        assert_eq!(parsed.len(), 6);
     }
 
     #[test]
-    fn parse_sections_all_includes_new_gene_sections() {
+    fn parse_sections_all_keeps_disgenet_opt_in() {
         let parsed = parse_sections(&["all".to_string()]).expect("all should parse");
         assert_eq!(parsed.len(), 12);
+        assert!(!parsed.contains(&GeneIncludeType::Disgenet));
     }
 
     #[test]

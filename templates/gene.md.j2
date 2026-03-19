@@ -222,6 +222,19 @@ No gnomAD constraint metrics returned for this gene query.
 No gnomAD constraint metrics returned for this gene query.
 {% endif -%}
 {% endif -%}
+{% if show_disgenet_section -%}
+## DisGeNET
+
+{% if disgenet and disgenet.associations -%}
+| Disease | UMLS CUI | Score | PMIDs | Trials | EL | EI |
+|---|---|---|---|---|---|---|
+{% for row in disgenet.associations -%}
+| {{ row.disease_name | truncate(45) }} | {{ row.disease_cui }} | {{ row.score | score }} | {% if row.publication_count is not none %}{{ row.publication_count }}{% else %}-{% endif %} | {% if row.clinical_trial_count is not none %}{{ row.clinical_trial_count }}{% else %}-{% endif %} | {{ row.evidence_level or "-" }} | {% if row.evidence_index is not none %}{{ row.evidence_index | score }}{% else %}-{% endif %} |
+{% endfor -%}
+{% else -%}
+No DisGeNET associations returned for this gene query.
+{% endif -%}
+{% endif -%}
 {% if sections_block %}{{ sections_block }}
 {% endif -%}
 {% if related_block %}{{ related_block }}

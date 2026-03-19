@@ -18,7 +18,9 @@ SPEC_PR_DESELECT_ARGS = \
 	--deselect "spec/06-article.md::Article Full Text Saved Markdown" \
 	--deselect "spec/06-article.md::Sort Behavior" \
 	--deselect "spec/07-disease.md::Disease to Articles" \
-	--deselect "spec/12-search-positionals.md::GWAS Positional Query"
+	--deselect "spec/12-search-positionals.md::GWAS Positional Query" \
+	--deselect "spec/02-gene.md::Gene DisGeNET Associations" \
+	--deselect "spec/07-disease.md::Disease DisGeNET Associations"
 
 build:
 	cargo build --release

@@ -35,6 +35,18 @@ export NCI_API_KEY="..."
 biomcp search trial -c melanoma --source nci
 ```
 
+### `DISGENET_API_KEY`
+
+Required for DisGeNET scored association sections on genes and diseases.
+
+Register at: <https://www.disgenet.com/>
+
+```bash
+export DISGENET_API_KEY="..."
+biomcp get gene TP53 disgenet
+biomcp get disease "breast cancer" disgenet
+```
+
 ### `NCBI_API_KEY`
 
 Improves rate limits for PubTator, PMC OA, and NCBI ID converter (3 → 10 req/sec).
