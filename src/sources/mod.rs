@@ -33,6 +33,7 @@ pub(crate) mod gtex;
 pub(crate) mod gwas;
 pub(crate) mod hpo;
 pub(crate) mod interpro;
+pub(crate) mod kegg;
 pub(crate) mod monarch;
 pub(crate) mod mychem;
 pub(crate) mod mydisease;

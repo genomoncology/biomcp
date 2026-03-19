@@ -28,12 +28,10 @@ Drugs: {{ clinical_drugs | join(", ") }}
 {% if pathways -%}
 ## Pathways
 
-Showing pathway rows from Reactome search results.
-
-| ID | Name |
-|---|---|
+| Source | ID | Name |
+|---|---|---|
 {% for pathway in pathways -%}
-| {{ pathway.id }} | {{ pathway.name | truncate(75) }} |
+| {{ pathway.source }} | {{ pathway.id }} | {{ pathway.name | truncate(75) }} |
 {% endfor -%}
 {% endif -%}
 {% if ontology -%}

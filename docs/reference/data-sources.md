@@ -32,7 +32,7 @@ and operational caveats so users can reason about result quality and troubleshoo
 | Phenotype search (`search phenotype`) | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | No | HPO set similarity search to ranked diseases |
 | PGx core interactions/recommendations | CPIC API | `https://api.cpicpgx.org/v1` | No | Pair, recommendation, frequency, and guideline views |
 | PGx annotations section | PharmGKB API | `https://api.pharmgkb.org/v1` | No | Clinical/guideline/label annotation enrichment |
-| Pathway | Reactome + g:Profiler | `https://reactome.org/ContentService`, `https://biit.cs.ut.ee/gprofiler/api` | No | Pathway search, events, participants, enrichment; top-level `biomcp enrich` uses **g:Profiler** |
+| Pathway | Reactome + KEGG + g:Profiler | `https://reactome.org/ContentService`, `https://rest.kegg.jp`, `https://biit.cs.ut.ee/gprofiler/api` | No | Pathway search and detail use Reactome + KEGG; `events` remains Reactome-only; top-level `biomcp enrich` uses **g:Profiler** |
 | Protein | UniProt + InterPro + STRING | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/interpro/api`, `https://string-db.org/api` | No | Protein cards, domains, interactions, structures |
 | Adverse events and recalls | OpenFDA | `https://api.fda.gov` | Optional (`OPENFDA_API_KEY`) | FAERS, recalls, and MAUDE device events |
 | Gene enrichment sections | Enrichr | `https://maayanlab.cloud/Enrichr` | No | Gene enrichment sections inside entity outputs use Enrichr; this is distinct from top-level `biomcp enrich` |
@@ -76,6 +76,7 @@ and practical ceilings observed in command behavior.
 | GWAS search (`search gwas`) | `--limit` must be 1-50 | Prefer specific gene or trait queries to avoid broad result sets |
 | Trial search | `--limit` defaults to 10, supports pagination | Use `--offset` to page and keep filters stable |
 | Article search | `--limit` defaults to 10 | Use `--since` and entity filters to constrain results |
+| KEGG pathway search/detail | Rate-limited to 1 request / 334ms | Matches KEGG's published 3 requests / second guidance |
 | Semantic Scholar article helpers | 1 request / second, process-local | Use explicit helper commands and batch normalization for multi-paper recommendation inputs |
 
 ## Trial source behavior

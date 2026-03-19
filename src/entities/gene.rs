@@ -70,6 +70,7 @@ pub struct Gene {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenePathway {
+    pub source: String,
     pub id: String,
     pub name: String,
 }
@@ -675,7 +676,11 @@ async fn fetch_pathways_section(symbol: &str) -> Result<Option<Vec<GenePathway>>
         if out.iter().any(|p| p.id.eq_ignore_ascii_case(&id)) {
             continue;
         }
-        out.push(GenePathway { id, name });
+        out.push(GenePathway {
+            source: "Reactome".to_string(),
+            id,
+            name,
+        });
     }
 
     if out.is_empty() {
@@ -683,6 +688,39 @@ async fn fetch_pathways_section(symbol: &str) -> Result<Option<Vec<GenePathway>>
     } else {
         Ok(Some(out))
     }
+}
+
+fn merge_pathways(
+    existing: Option<Vec<GenePathway>>,
+    additional: Option<Vec<GenePathway>>,
+) -> Option<Vec<GenePathway>> {
+    let mut out = Vec::new();
+    let mut push_rows = |rows: Vec<GenePathway>| {
+        for row in rows {
+            let source = row.source.trim().to_string();
+            let id = row.id.trim().to_string();
+            let name = row.name.trim().to_string();
+            if source.is_empty() || id.is_empty() || name.is_empty() {
+                continue;
+            }
+            if out.iter().any(|existing: &GenePathway| {
+                existing.source.eq_ignore_ascii_case(&source)
+                    && existing.id.eq_ignore_ascii_case(&id)
+            }) {
+                continue;
+            }
+            out.push(GenePathway { source, id, name });
+        }
+    };
+
+    if let Some(rows) = existing {
+        push_rows(rows);
+    }
+    if let Some(rows) = additional {
+        push_rows(rows);
+    }
+
+    (!out.is_empty()).then_some(out)
 }
 
 async fn add_clinical_context(gene: &mut Gene) -> Result<(), BioMcpError> {
@@ -918,7 +956,7 @@ pub async fn get(symbol: &str, sections: &[String]) -> Result<Gene, BioMcpError>
 
     if include.contains(&GeneIncludeType::Pathways) {
         gene.pathways = match fetch_pathways_section(&gene.symbol).await {
-            Ok(v) => v,
+            Ok(v) => merge_pathways(gene.pathways.take(), v),
             Err(err) => {
                 warn!("Reactome unavailable for gene pathways section: {err}");
                 gene.pathways
@@ -1371,5 +1409,33 @@ mod tests {
     fn parse_sections_all_includes_new_gene_sections() {
         let parsed = parse_sections(&["all".to_string()]).expect("all should parse");
         assert_eq!(parsed.len(), 11);
+    }
+
+    #[test]
+    fn merge_pathways_keeps_kegg_then_appends_reactome_without_duplicates() {
+        let merged = merge_pathways(
+            Some(vec![GenePathway {
+                source: "KEGG".to_string(),
+                id: "hsa04010".to_string(),
+                name: "MAPK signaling pathway".to_string(),
+            }]),
+            Some(vec![
+                GenePathway {
+                    source: "Reactome".to_string(),
+                    id: "R-HSA-5673001".to_string(),
+                    name: "RAF/MAP kinase cascade".to_string(),
+                },
+                GenePathway {
+                    source: "KEGG".to_string(),
+                    id: "HSA04010".to_string(),
+                    name: "duplicate".to_string(),
+                },
+            ]),
+        )
+        .expect("merged");
+
+        assert_eq!(merged.len(), 2);
+        assert_eq!(merged[0].source, "KEGG");
+        assert_eq!(merged[1].source, "Reactome");
     }
 }

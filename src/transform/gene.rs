@@ -109,6 +109,7 @@ fn extract_kegg_pathways(value: Option<&serde_json::Value>) -> Option<Vec<GenePa
             return;
         };
         out.push(GenePathway {
+            source: "KEGG".to_string(),
             id: id.to_string(),
             name: name.to_string(),
         });
@@ -267,6 +268,7 @@ mod tests {
         let pathways = extract_kegg_pathways(Some(&value)).expect("pathways");
         assert_eq!(pathways.len(), 2);
         assert_eq!(pathways[0].id, "hsa04010");
+        assert_eq!(pathways[0].source, "KEGG");
     }
 
     #[test]
