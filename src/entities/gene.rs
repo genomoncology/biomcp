@@ -15,6 +15,7 @@ use crate::sources::gnomad::{
     GNOMAD_CONSTRAINT_REFERENCE_GENOME, GNOMAD_CONSTRAINT_VERSION, GnomadClient,
 };
 use crate::sources::gtex::{GeneExpression, GtexClient};
+use crate::sources::hpa::{GeneHpa, HpaClient};
 use crate::sources::mygene::MyGeneClient;
 use crate::sources::opentargets::OpenTargetsClient;
 use crate::sources::quickgo::QuickGoClient;
@@ -60,6 +61,8 @@ pub struct Gene {
     pub civic: Option<CivicContext>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expression: Option<GeneExpression>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hpa: Option<GeneHpa>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub druggability: Option<GeneDruggability>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -150,6 +153,7 @@ enum GeneIncludeType {
     Interactions,
     Civic,
     Expression,
+    Hpa,
     Druggability,
     ClinGen,
     Constraint,
@@ -163,6 +167,7 @@ const GENE_SECTION_GO: &str = "go";
 const GENE_SECTION_INTERACTIONS: &str = "interactions";
 const GENE_SECTION_CIVIC: &str = "civic";
 const GENE_SECTION_EXPRESSION: &str = "expression";
+const GENE_SECTION_HPA: &str = "hpa";
 const GENE_SECTION_DRUGGABILITY: &str = "druggability";
 const GENE_SECTION_CLINGEN: &str = "clingen";
 const GENE_SECTION_CONSTRAINT: &str = "constraint";
@@ -177,6 +182,7 @@ pub const GENE_SECTION_NAMES: &[&str] = &[
     GENE_SECTION_INTERACTIONS,
     GENE_SECTION_CIVIC,
     GENE_SECTION_EXPRESSION,
+    GENE_SECTION_HPA,
     GENE_SECTION_DRUGGABILITY,
     GENE_SECTION_CLINGEN,
     GENE_SECTION_CONSTRAINT,
@@ -194,6 +200,7 @@ impl GeneIncludeType {
             GENE_SECTION_INTERACTIONS | "interaction" => Some(Self::Interactions),
             GENE_SECTION_CIVIC => Some(Self::Civic),
             GENE_SECTION_EXPRESSION => Some(Self::Expression),
+            GENE_SECTION_HPA => Some(Self::Hpa),
             GENE_SECTION_DRUGGABILITY | "drugs" => Some(Self::Druggability),
             GENE_SECTION_CLINGEN => Some(Self::ClinGen),
             GENE_SECTION_CONSTRAINT => Some(Self::Constraint),
@@ -212,6 +219,7 @@ impl GeneIncludeType {
             | Self::Interactions
             | Self::Civic
             | Self::Expression
+            | Self::Hpa
             | Self::Druggability
             | Self::ClinGen
             | Self::Constraint => &[],
@@ -417,6 +425,7 @@ async fn enrich_gene(
             | GeneIncludeType::Interactions
             | GeneIncludeType::Civic
             | GeneIncludeType::Expression
+            | GeneIncludeType::Hpa
             | GeneIncludeType::Druggability
             | GeneIncludeType::ClinGen
             | GeneIncludeType::Constraint => {}
@@ -475,6 +484,7 @@ fn parse_sections(sections: &[String]) -> Result<Vec<GeneIncludeType>, BioMcpErr
             GeneIncludeType::Interactions,
             GeneIncludeType::Civic,
             GeneIncludeType::Expression,
+            GeneIncludeType::Hpa,
             GeneIncludeType::Druggability,
             GeneIncludeType::ClinGen,
             GeneIncludeType::Constraint,
@@ -804,6 +814,44 @@ async fn add_expression_section(gene: &mut Gene) {
     }
 }
 
+async fn add_hpa_section(gene: &mut Gene) {
+    let Some(ensembl_id) = gene
+        .ensembl_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+    else {
+        gene.hpa = Some(GeneHpa::default());
+        return;
+    };
+
+    let hpa_fut = async {
+        let client = HpaClient::new()?;
+        client.protein_data(ensembl_id).await
+    };
+
+    match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, hpa_fut).await {
+        Ok(Ok(hpa)) => gene.hpa = Some(hpa),
+        Ok(Err(err)) => {
+            warn!(
+                symbol = %gene.symbol,
+                ensembl_id = %ensembl_id,
+                "HPA unavailable for gene section: {err}"
+            );
+            gene.hpa = Some(GeneHpa::default());
+        }
+        Err(_) => {
+            warn!(
+                symbol = %gene.symbol,
+                ensembl_id = %ensembl_id,
+                timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
+                "HPA gene section timed out"
+            );
+            gene.hpa = Some(GeneHpa::default());
+        }
+    }
+}
+
 async fn add_druggability_section(gene: &mut Gene) {
     let symbol = gene.symbol.trim();
     if symbol.is_empty() {
@@ -1014,6 +1062,10 @@ pub async fn get(symbol: &str, sections: &[String]) -> Result<Gene, BioMcpError>
 
     if include.contains(&GeneIncludeType::Expression) {
         add_expression_section(&mut gene).await;
+    }
+
+    if include.contains(&GeneIncludeType::Hpa) {
+        add_hpa_section(&mut gene).await;
     }
 
     if include.contains(&GeneIncludeType::Druggability) {
@@ -1388,6 +1440,7 @@ mod tests {
     #[test]
     fn gene_section_names_include_new_enrichment_sections() {
         assert!(GENE_SECTION_NAMES.contains(&"expression"));
+        assert!(GENE_SECTION_NAMES.contains(&"hpa"));
         assert!(GENE_SECTION_NAMES.contains(&"druggability"));
         assert!(GENE_SECTION_NAMES.contains(&"clingen"));
         assert!(GENE_SECTION_NAMES.contains(&"constraint"));
@@ -1397,18 +1450,19 @@ mod tests {
     fn parse_sections_accepts_new_enrichment_sections() {
         let parsed = parse_sections(&[
             "expression".to_string(),
+            "hpa".to_string(),
             "druggability".to_string(),
             "clingen".to_string(),
             "constraint".to_string(),
         ])
         .expect("new gene sections should parse");
-        assert_eq!(parsed.len(), 4);
+        assert_eq!(parsed.len(), 5);
     }
 
     #[test]
     fn parse_sections_all_includes_new_gene_sections() {
         let parsed = parse_sections(&["all".to_string()]).expect("all should parse");
-        assert_eq!(parsed.len(), 11);
+        assert_eq!(parsed.len(), 12);
     }
 
     #[test]

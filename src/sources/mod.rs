@@ -32,6 +32,7 @@ pub(crate) mod gnomad;
 pub(crate) mod gprofiler;
 pub(crate) mod gtex;
 pub(crate) mod gwas;
+pub(crate) mod hpa;
 pub(crate) mod hpo;
 pub(crate) mod interpro;
 pub(crate) mod kegg;

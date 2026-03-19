@@ -964,12 +964,13 @@ pub enum GetEntity {
 EXAMPLES:
   biomcp get gene BRAF
   biomcp get gene BRAF pathways
+  biomcp get gene BRAF hpa
 
 See also: biomcp list gene")]
     Gene {
         /// Gene symbol (e.g., BRAF, TP53, EGFR)
         symbol: String,
-        /// Sections to include (pathways, ontology, diseases, protein, go, interactions, civic, expression, druggability, clingen, constraint, all)
+        /// Sections to include (pathways, ontology, diseases, protein, go, interactions, civic, expression, hpa, druggability, clingen, constraint, all)
         #[arg(trailing_var_arg = true)]
         sections: Vec<String>,
     },
@@ -7379,6 +7380,7 @@ mod next_commands_json_property {
             interactions: None,
             civic: None,
             expression: None,
+            hpa: None,
             druggability: None,
             clingen: None,
             constraint: None,

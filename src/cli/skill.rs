@@ -596,7 +596,7 @@ mod tests {
         assert!(overview.contains("biomcp search variant BRAF V600E"));
         assert!(overview.contains("biomcp search trial melanoma --status recruiting --limit 5"));
         assert!(overview.contains("biomcp search all BRAF"));
-        assert!(overview.contains("`expression`, `druggability`, `clingen`"));
+        assert!(overview.contains("`expression`, `hpa`, `druggability`, `clingen`"));
 
         Ok(())
     }

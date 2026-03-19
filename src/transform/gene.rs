@@ -176,6 +176,7 @@ pub fn from_mygene_get(resp: MyGeneGetResponse) -> Gene {
         interactions: None,
         civic: None,
         expression: None,
+        hpa: None,
         druggability: None,
         clingen: None,
         constraint: None,

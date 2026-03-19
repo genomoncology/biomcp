@@ -61,6 +61,7 @@ fn list_gene() -> String {
 - `get gene <symbol> interactions` - STRING interactions
 - `get gene <symbol> civic` - CIViC evidence/assertion summary
 - `get gene <symbol> expression` - GTEx tissue expression summary
+- `get gene <symbol> hpa` - Human Protein Atlas protein tissue expression + localization
 - `get gene <symbol> druggability` - DGIdb target categories/interactions
 - `get gene <symbol> clingen` - ClinGen validity + dosage sensitivity
 - `get gene <symbol> constraint` - gnomAD gene constraint (pLI, LOEUF, mis_z, syn_z)
@@ -710,6 +711,7 @@ mod tests {
     fn list_gene_mentions_new_gene_sections() {
         let out = list_gene();
         assert!(out.contains("get gene <symbol> expression"));
+        assert!(out.contains("get gene <symbol> hpa"));
         assert!(out.contains("get gene <symbol> druggability"));
         assert!(out.contains("get gene <symbol> clingen"));
         assert!(out.contains("get gene <symbol> constraint"));

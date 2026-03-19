@@ -8,6 +8,7 @@ Genes are a primary anchor in BioMCP and frequently drive downstream trial, arti
 | Table structure | `search gene BRAF` | Confirms stable result schema |
 | Detail card | `get gene BRAF` | Confirms rich per-gene card output |
 | Section expansion | `get gene BRAF pathways` | Confirms progressive disclosure |
+| HPA section | `get gene BRAF hpa` | Confirms protein tissue-expression contract |
 | Trial helper | `gene trials BRAF` | Confirms cross-entity trial pivot |
 | Article helper | `gene articles BRAF` | Confirms cross-entity literature pivot |
 
@@ -65,6 +66,18 @@ echo "$out" | mustmatch like "Reference genome: GRCh38"
 echo "$out" | mustmatch like "Transcript:"
 echo "$out" | mustmatch like "pLI:"
 echo "$out" | mustmatch like "LOEUF:"
+```
+
+## Human Protein Atlas Section
+
+The HPA section should expose protein tissue expression, localization context, and stable HPA labels without dumping the raw upstream record.
+
+```bash
+out="$(biomcp get gene BRAF hpa)"
+echo "$out" | mustmatch like "## Human Protein Atlas"
+echo "$out" | mustmatch like "Reliability:"
+echo "$out" | mustmatch like "Subcellular"
+echo "$out" | mustmatch like "| Tissue | Level |"
 ```
 
 ## Gene to Trials
