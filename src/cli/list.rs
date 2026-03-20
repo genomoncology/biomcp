@@ -212,8 +212,9 @@ fn list_article() -> String {
 ## Notes
 
 - Set `NCBI_API_KEY` to increase throughput for NCBI-backed article enrichment.
-- Set `S2_API_KEY` to unlock optional Semantic Scholar TLDR, citation graph, and recommendation helpers.
-- `search article` remains PubTator3 + Europe PMC only; Semantic Scholar is enrichment/navigation, not search fan-out.
+- Set `S2_API_KEY` to unlock optional Semantic Scholar search fan-out plus TLDR, citation graph, and recommendation helpers.
+- `search article` still keeps `--source <all|pubtator|europepmc>` in v1; Semantic Scholar is automatic when the key is present and the filter set is compatible.
+- Default `search article --sort relevance` is directness-first rather than citation-first.
 "#
     .to_string()
 }

@@ -212,9 +212,11 @@ const HEALTH_SOURCES: &[SourceDescriptor] = &[
     },
     SourceDescriptor {
         api: "Semantic Scholar",
-        affects: Some("article enrichment, citations, references, and recommendations"),
+        affects: Some(
+            "article search fan-out, enrichment, citations, references, and recommendations",
+        ),
         probe: ProbeKind::AuthGet {
-            url: "https://api.semanticscholar.org/graph/v1/paper/PMID:22663011?fields=paperId,title",
+            url: "https://api.semanticscholar.org/graph/v1/paper/search?query=BRAF&fields=paperId,title&limit=1",
             env_var: "S2_API_KEY",
             header_name: "x-api-key",
             header_value_prefix: "",

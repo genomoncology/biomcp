@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -104,6 +104,10 @@ pub struct AnnotationCount {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArticleSearchResult {
     pub pmid: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pmcid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub doi: Option<String>,
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub journal: Option<String>,
@@ -111,11 +115,39 @@ pub struct ArticleSearchResult {
     pub date: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub citation_count: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub influential_citation_count: Option<u64>,
     pub source: ArticleSource,
+    #[serde(default)]
+    pub matched_sources: Vec<ArticleSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub score: Option<f64>,
     #[serde(default)]
     pub is_retracted: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub abstract_snippet: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ranking: Option<ArticleRankingMetadata>,
+    #[serde(skip)]
+    pub normalized_title: String,
+    #[serde(skip)]
+    pub normalized_abstract: String,
+    #[serde(skip)]
+    pub publication_type: Option<String>,
+    #[serde(skip)]
+    pub insertion_index: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleRankingMetadata {
+    pub directness_tier: u8,
+    pub anchor_count: u8,
+    pub title_anchor_hits: u8,
+    pub abstract_anchor_hits: u8,
+    pub combined_anchor_hits: u8,
+    pub all_anchors_in_title: bool,
+    pub all_anchors_in_text: bool,
+    pub study_or_review_cue: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -167,20 +199,15 @@ pub struct ArticleRecommendationsResult {
 pub enum ArticleSource {
     PubTator,
     EuropePmc,
+    SemanticScholar,
 }
 
 impl ArticleSource {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::PubTator => "pubtator",
-            Self::EuropePmc => "europepmc",
-        }
-    }
-
     pub fn display_name(self) -> &'static str {
         match self {
             Self::PubTator => "PubTator3",
             Self::EuropePmc => "Europe PMC",
+            Self::SemanticScholar => "Semantic Scholar",
         }
     }
 }
@@ -562,6 +589,18 @@ fn plan_backends(
     }
 }
 
+pub fn semantic_scholar_search_enabled(
+    filters: &ArticleSearchFilters,
+    source: ArticleSourceFilter,
+) -> bool {
+    if source != ArticleSourceFilter::All || has_strict_europepmc_filters(filters) {
+        return false;
+    }
+    SemanticScholarClient::new()
+        .map(|client| client.is_configured())
+        .unwrap_or(false)
+}
+
 fn matches_entity_biotype(value: Option<&str>, expected: EntityBiotype) -> bool {
     let Some(value) = value else {
         return false;
@@ -686,20 +725,131 @@ fn matches_result_filters(
     true
 }
 
-fn dedup_by_pmid_preserve_order(results: Vec<ArticleSearchResult>) -> Vec<ArticleSearchResult> {
-    let mut deduped: Vec<ArticleSearchResult> = Vec::with_capacity(results.len());
-    let mut seen: HashMap<String, usize> = HashMap::with_capacity(results.len());
-    for row in results {
-        if let Some(existing_idx) = seen.get(&row.pmid).copied() {
-            if deduped[existing_idx].is_retracted.is_none() && row.is_retracted.is_some() {
-                deduped[existing_idx].is_retracted = row.is_retracted;
-            }
-        } else {
-            seen.insert(row.pmid.clone(), deduped.len());
-            deduped.push(row);
+fn normalize_row_identifier(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_ascii_lowercase())
+}
+
+fn article_source_priority(source: ArticleSource) -> u8 {
+    match source {
+        ArticleSource::PubTator => 0,
+        ArticleSource::EuropePmc => 1,
+        ArticleSource::SemanticScholar => 2,
+    }
+}
+
+fn stable_article_identifier(row: &ArticleSearchResult) -> String {
+    normalize_row_identifier(Some(&row.pmid))
+        .or_else(|| normalize_row_identifier(row.pmcid.as_deref()))
+        .or_else(|| normalize_row_identifier(row.doi.as_deref()))
+        .unwrap_or_else(|| row.title.to_ascii_lowercase())
+}
+
+fn ensure_matched_sources(row: &mut ArticleSearchResult) {
+    if !row.matched_sources.contains(&row.source) {
+        row.matched_sources.push(row.source);
+    }
+    row.matched_sources
+        .sort_by_key(|source| article_source_priority(*source));
+    row.matched_sources.dedup();
+}
+
+fn article_rows_overlap(left: &ArticleSearchResult, right: &ArticleSearchResult) -> bool {
+    let left_pmid = normalize_row_identifier(Some(&left.pmid));
+    let right_pmid = normalize_row_identifier(Some(&right.pmid));
+    let left_pmcid = normalize_row_identifier(left.pmcid.as_deref());
+    let right_pmcid = normalize_row_identifier(right.pmcid.as_deref());
+    let left_doi = normalize_row_identifier(left.doi.as_deref());
+    let right_doi = normalize_row_identifier(right.doi.as_deref());
+
+    left_pmid.is_some() && left_pmid == right_pmid
+        || left_pmcid.is_some() && left_pmcid == right_pmcid
+        || left_doi.is_some() && left_doi == right_doi
+}
+
+fn merge_missing_string(target: &mut Option<String>, incoming: Option<String>) {
+    if target
+        .as_deref()
+        .map(str::trim)
+        .is_none_or(|value| value.is_empty())
+    {
+        *target = incoming
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
+    }
+}
+
+fn merge_missing_u64(target: &mut Option<u64>, incoming: Option<u64>) {
+    if target.is_none() {
+        *target = incoming;
+    }
+}
+
+fn merge_article_candidate(target: &mut ArticleSearchResult, incoming: ArticleSearchResult) {
+    merge_missing_string(&mut target.pmcid, incoming.pmcid);
+    merge_missing_string(&mut target.doi, incoming.doi);
+    if target.pmid.trim().is_empty() && !incoming.pmid.trim().is_empty() {
+        target.pmid = incoming.pmid;
+    }
+    if target.title.trim().is_empty() && !incoming.title.trim().is_empty() {
+        target.title = incoming.title;
+    }
+    merge_missing_string(&mut target.journal, incoming.journal);
+    merge_missing_string(&mut target.date, incoming.date);
+    merge_missing_u64(&mut target.citation_count, incoming.citation_count);
+    merge_missing_u64(
+        &mut target.influential_citation_count,
+        incoming.influential_citation_count,
+    );
+    if target.score.is_none() {
+        target.score = incoming.score;
+    }
+    if target.is_retracted.is_none() && incoming.is_retracted.is_some() {
+        target.is_retracted = incoming.is_retracted;
+    }
+    merge_missing_string(&mut target.abstract_snippet, incoming.abstract_snippet);
+    if target.ranking.is_none() {
+        target.ranking = incoming.ranking;
+    }
+    if target.normalized_title.is_empty() && !incoming.normalized_title.is_empty() {
+        target.normalized_title = incoming.normalized_title;
+    }
+    if target.normalized_abstract.is_empty() && !incoming.normalized_abstract.is_empty() {
+        target.normalized_abstract = incoming.normalized_abstract;
+    }
+    merge_missing_string(&mut target.publication_type, incoming.publication_type);
+    target.insertion_index = target.insertion_index.min(incoming.insertion_index);
+    target.matched_sources.extend(incoming.matched_sources);
+    ensure_matched_sources(target);
+}
+
+fn merge_article_candidates(results: Vec<ArticleSearchResult>) -> Vec<ArticleSearchResult> {
+    let mut merged: Vec<ArticleSearchResult> = Vec::with_capacity(results.len());
+
+    for mut row in results {
+        ensure_matched_sources(&mut row);
+        let matches = merged
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, existing)| article_rows_overlap(existing, &row).then_some(idx))
+            .collect::<Vec<_>>();
+
+        if matches.is_empty() {
+            merged.push(row);
+            continue;
+        }
+
+        let keep_idx = matches[0];
+        merge_article_candidate(&mut merged[keep_idx], row);
+        for idx in matches.into_iter().skip(1).rev() {
+            let duplicate = merged.remove(idx);
+            merge_article_candidate(&mut merged[keep_idx], duplicate);
         }
     }
-    deduped
+
+    merged
 }
 
 fn compare_optional_dates_desc(
@@ -732,9 +882,156 @@ fn compare_optional_citations_desc(
     }
 }
 
-fn sort_federated_rows(rows: &mut [ArticleSearchResult], sort: ArticleSort) {
+fn build_anchor_set(filters: &ArticleSearchFilters) -> Vec<String> {
+    let mut anchors = Vec::new();
+    let mut seen = HashSet::new();
+    for value in [
+        filters.gene.as_deref(),
+        filters.disease.as_deref(),
+        filters.drug.as_deref(),
+        filters.keyword.as_deref(),
+    ] {
+        let Some(anchor) = value
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(transform::article::normalize_article_search_text)
+        else {
+            continue;
+        };
+        if seen.insert(anchor.clone()) {
+            anchors.push(anchor);
+        }
+    }
+    anchors
+}
+
+fn anchor_matches_text(text: &str, anchor: &str) -> bool {
+    if anchor.is_empty() || text.is_empty() {
+        return false;
+    }
+    if anchor.chars().any(|ch| ch.is_whitespace()) {
+        return text.contains(anchor);
+    }
+
+    for (idx, _) in text.match_indices(anchor) {
+        let start_ok = text[..idx]
+            .chars()
+            .next_back()
+            .is_none_or(|ch| !ch.is_ascii_alphanumeric());
+        let end_idx = idx + anchor.len();
+        let end_ok = text[end_idx..]
+            .chars()
+            .next()
+            .is_none_or(|ch| !ch.is_ascii_alphanumeric());
+        if start_ok && end_ok {
+            return true;
+        }
+    }
+    false
+}
+
+fn has_study_or_review_cue(row: &ArticleSearchResult) -> bool {
+    let title = row.normalized_title.as_str();
+    let publication_type = row
+        .publication_type
+        .as_deref()
+        .map(str::to_ascii_lowercase)
+        .unwrap_or_default();
+    [
+        "review",
+        "meta-analysis",
+        "meta analysis",
+        "systematic review",
+        "clinical trial",
+    ]
+    .into_iter()
+    .any(|cue| title.contains(cue) || publication_type.contains(cue))
+}
+
+fn rank_articles_by_directness(rows: &mut [ArticleSearchResult], filters: &ArticleSearchFilters) {
+    let anchors = build_anchor_set(filters);
+
+    for row in rows.iter_mut() {
+        ensure_matched_sources(row);
+        let title_hits = anchors
+            .iter()
+            .filter(|anchor| anchor_matches_text(&row.normalized_title, anchor))
+            .count();
+        let abstract_hits = anchors
+            .iter()
+            .filter(|anchor| anchor_matches_text(&row.normalized_abstract, anchor))
+            .count();
+        let combined_hits = anchors
+            .iter()
+            .filter(|anchor| {
+                anchor_matches_text(&row.normalized_title, anchor)
+                    || anchor_matches_text(&row.normalized_abstract, anchor)
+            })
+            .count();
+        let anchor_count = anchors.len();
+        let all_anchors_in_title = anchor_count > 0 && title_hits == anchor_count;
+        let all_anchors_in_text = anchor_count > 0 && combined_hits == anchor_count;
+        let directness_tier = if all_anchors_in_title {
+            3
+        } else if all_anchors_in_text {
+            2
+        } else if combined_hits > 0 {
+            1
+        } else {
+            0
+        };
+
+        row.ranking = Some(ArticleRankingMetadata {
+            directness_tier,
+            anchor_count: anchor_count.min(u8::MAX as usize) as u8,
+            title_anchor_hits: title_hits.min(u8::MAX as usize) as u8,
+            abstract_anchor_hits: abstract_hits.min(u8::MAX as usize) as u8,
+            combined_anchor_hits: combined_hits.min(u8::MAX as usize) as u8,
+            all_anchors_in_title,
+            all_anchors_in_text,
+            study_or_review_cue: has_study_or_review_cue(row),
+        });
+    }
+
+    rows.sort_by(|left, right| {
+        let left_ranking = left.ranking.as_ref();
+        let right_ranking = right.ranking.as_ref();
+        right_ranking
+            .map(|ranking| ranking.directness_tier)
+            .cmp(&left_ranking.map(|ranking| ranking.directness_tier))
+            .then_with(|| {
+                right_ranking
+                    .map(|ranking| ranking.title_anchor_hits)
+                    .cmp(&left_ranking.map(|ranking| ranking.title_anchor_hits))
+            })
+            .then_with(|| {
+                right_ranking
+                    .map(|ranking| ranking.combined_anchor_hits)
+                    .cmp(&left_ranking.map(|ranking| ranking.combined_anchor_hits))
+            })
+            .then_with(|| {
+                right_ranking
+                    .map(|ranking| ranking.study_or_review_cue)
+                    .cmp(&left_ranking.map(|ranking| ranking.study_or_review_cue))
+            })
+            .then_with(|| compare_optional_citations_desc(Some(left), Some(right)))
+            .then_with(|| {
+                right
+                    .influential_citation_count
+                    .cmp(&left.influential_citation_count)
+            })
+            .then_with(|| left.insertion_index.cmp(&right.insertion_index))
+            .then_with(|| stable_article_identifier(left).cmp(&stable_article_identifier(right)))
+    });
+}
+
+fn sort_article_rows(
+    rows: &mut [ArticleSearchResult],
+    sort: ArticleSort,
+    filters: &ArticleSearchFilters,
+) {
     match sort {
-        ArticleSort::Relevance => {}
+        ArticleSort::Relevance => rank_articles_by_directness(rows, filters),
         ArticleSort::Citations => rows.sort_by(|left, right| {
             compare_optional_citations_desc(Some(left), Some(right))
                 .then_with(|| compare_optional_dates_desc(Some(left), Some(right)))
@@ -1392,6 +1689,133 @@ async fn search_pubtator_page(
     Ok(SearchPage::offset(out, total))
 }
 
+fn build_semantic_scholar_query(filters: &ArticleSearchFilters) -> String {
+    [
+        filters.gene.as_deref(),
+        filters.disease.as_deref(),
+        filters.drug.as_deref(),
+        filters.keyword.as_deref(),
+        filters.author.as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+    .map(str::trim)
+    .filter(|value| !value.is_empty())
+    .collect::<Vec<_>>()
+    .join(" ")
+}
+
+async fn search_semantic_scholar_candidates(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+) -> Result<Vec<ArticleSearchResult>, BioMcpError> {
+    let client = SemanticScholarClient::new()?;
+    if !client.is_configured() {
+        return Ok(Vec::new());
+    }
+
+    let query = build_semantic_scholar_query(filters);
+    if query.trim().is_empty() {
+        return Ok(Vec::new());
+    }
+    let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
+
+    let response = match client.paper_search(&query, limit).await {
+        Ok(response) => response,
+        Err(err) => {
+            warn!(?err, query, "Semantic Scholar article search leg failed");
+            return Ok(Vec::new());
+        }
+    };
+
+    let mut rows = Vec::with_capacity(response.data.len());
+    for paper in response.data {
+        let external_ids = paper.external_ids.as_ref();
+        let title = paper
+            .title
+            .as_deref()
+            .map(transform::article::clean_title)
+            .unwrap_or_default();
+        let abstract_text = paper
+            .abstract_text
+            .as_deref()
+            .map(transform::article::clean_abstract);
+        let row = ArticleSearchResult {
+            pmid: external_ids
+                .and_then(|ids| ids.pubmed.clone())
+                .unwrap_or_default()
+                .trim()
+                .to_string(),
+            pmcid: external_ids
+                .and_then(|ids| ids.pmcid.clone())
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty()),
+            doi: external_ids
+                .and_then(|ids| ids.doi.clone())
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty()),
+            title,
+            journal: paper
+                .venue
+                .as_ref()
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty()),
+            date: paper.year.map(|year| year.to_string()),
+            citation_count: paper.citation_count,
+            influential_citation_count: paper.influential_citation_count,
+            source: ArticleSource::SemanticScholar,
+            matched_sources: vec![ArticleSource::SemanticScholar],
+            score: None,
+            is_retracted: None,
+            abstract_snippet: abstract_text
+                .as_deref()
+                .and_then(transform::article::article_search_abstract_snippet),
+            ranking: None,
+            normalized_title: paper
+                .title
+                .as_deref()
+                .map(transform::article::normalize_article_search_text)
+                .unwrap_or_default(),
+            normalized_abstract: abstract_text
+                .as_deref()
+                .map(transform::article::normalize_article_search_text)
+                .unwrap_or_default(),
+            publication_type: None,
+            insertion_index: 0,
+        };
+        if matches_result_filters(
+            &row,
+            filters,
+            normalized_date_from.as_deref(),
+            normalized_date_to.as_deref(),
+        ) {
+            rows.push(row);
+        }
+    }
+
+    Ok(rows)
+}
+
+fn finalize_article_candidates(
+    mut rows: Vec<ArticleSearchResult>,
+    limit: usize,
+    offset: usize,
+    total: Option<usize>,
+    filters: &ArticleSearchFilters,
+) -> SearchPage<ArticleSearchResult> {
+    for (idx, row) in rows.iter_mut().enumerate() {
+        row.insertion_index = idx;
+        ensure_matched_sources(row);
+    }
+
+    let mut rows = merge_article_candidates(rows);
+    sort_article_rows(&mut rows, filters.sort, filters);
+    rows.retain(|row| !row.pmid.trim().is_empty());
+    rows.drain(0..offset.min(rows.len()));
+    rows.truncate(limit);
+    SearchPage::offset(rows, total)
+}
+
 async fn search_federated_page(
     filters: &ArticleSearchFilters,
     limit: usize,
@@ -1403,30 +1827,49 @@ async fn search_federated_page(
             "--offset + --limit must be <= {MAX_FEDERATED_FETCH_RESULTS} for federated article search"
         )));
     }
-    let (pubtator_leg, europe_leg) = tokio::join!(
+    let (pubtator_leg, europe_leg, semantic_scholar_leg) = tokio::join!(
         search_pubtator_page(filters, fetch_count, 0),
-        search_europepmc_page(filters, fetch_count, 0)
+        search_europepmc_page(filters, fetch_count, 0),
+        search_semantic_scholar_candidates(filters, fetch_count)
     );
 
-    merge_federated_pages(pubtator_leg, europe_leg, limit, offset, filters.sort)
+    merge_federated_pages(
+        pubtator_leg,
+        europe_leg,
+        semantic_scholar_leg,
+        limit,
+        offset,
+        filters,
+    )
 }
 
 fn merge_federated_pages(
     pubtator_leg: Result<SearchPage<ArticleSearchResult>, BioMcpError>,
     europe_leg: Result<SearchPage<ArticleSearchResult>, BioMcpError>,
+    semantic_scholar_leg: Result<Vec<ArticleSearchResult>, BioMcpError>,
     limit: usize,
     offset: usize,
-    sort: ArticleSort,
+    filters: &ArticleSearchFilters,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+    let semantic_scholar_rows = match semantic_scholar_leg {
+        Ok(rows) => rows,
+        Err(err) => {
+            warn!(
+                ?err,
+                "Semantic Scholar search leg failed; continuing without it"
+            );
+            Vec::new()
+        }
+    };
+
     match (pubtator_leg, europe_leg) {
         (Ok(pubtator_page), Ok(europe_page)) => {
             let mut merged = pubtator_page.results;
             merged.extend(europe_page.results);
-            let mut merged = dedup_by_pmid_preserve_order(merged);
-            sort_federated_rows(&mut merged, sort);
-            merged.drain(0..offset.min(merged.len()));
-            merged.truncate(limit);
-            Ok(SearchPage::offset(merged, None))
+            merged.extend(semantic_scholar_rows);
+            Ok(finalize_article_candidates(
+                merged, limit, offset, None, filters,
+            ))
         }
         (Ok(pubtator_page), Err(err)) => {
             warn!(
@@ -1434,10 +1877,10 @@ fn merge_federated_pages(
                 "Europe PMC search leg failed; returning PubTator-only results"
             );
             let mut rows = pubtator_page.results;
-            sort_federated_rows(&mut rows, sort);
-            rows.drain(0..offset.min(rows.len()));
-            rows.truncate(limit);
-            Ok(SearchPage::offset(rows, None))
+            rows.extend(semantic_scholar_rows);
+            Ok(finalize_article_candidates(
+                rows, limit, offset, None, filters,
+            ))
         }
         (Err(err), Ok(europe_page)) => {
             warn!(
@@ -1445,15 +1888,53 @@ fn merge_federated_pages(
                 "PubTator search leg failed; returning Europe PMC-only results"
             );
             let mut rows = europe_page.results;
-            sort_federated_rows(&mut rows, sort);
-            rows.drain(0..offset.min(rows.len()));
-            rows.truncate(limit);
-            Ok(SearchPage::offset(rows, None))
+            rows.extend(semantic_scholar_rows);
+            Ok(finalize_article_candidates(
+                rows, limit, offset, None, filters,
+            ))
         }
         (Err(pubtator_err), Err(europe_err)) => {
             warn!(?europe_err, "Europe PMC leg also failed");
             Err(pubtator_err)
         }
+    }
+}
+
+async fn search_relevance_page(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+    plan: BackendPlan,
+) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+    let fetch_count = limit.saturating_add(offset);
+    if fetch_count > MAX_FEDERATED_FETCH_RESULTS {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--offset + --limit must be <= {MAX_FEDERATED_FETCH_RESULTS} for federated article search"
+        )));
+    }
+
+    match plan {
+        BackendPlan::EuropeOnly => {
+            let page = search_europepmc_page(filters, fetch_count, 0).await?;
+            Ok(finalize_article_candidates(
+                page.results,
+                limit,
+                offset,
+                page.total,
+                filters,
+            ))
+        }
+        BackendPlan::PubTatorOnly => {
+            let page = search_pubtator_page(filters, fetch_count, 0).await?;
+            Ok(finalize_article_candidates(
+                page.results,
+                limit,
+                offset,
+                page.total,
+                filters,
+            ))
+        }
+        BackendPlan::Both => search_federated_page(filters, limit, offset).await,
     }
 }
 
@@ -1469,6 +1950,9 @@ pub async fn search_page(
         )));
     }
     let plan = plan_backends(filters, source)?;
+    if filters.sort == ArticleSort::Relevance {
+        return search_relevance_page(filters, limit, offset, plan).await;
+    }
     match plan {
         BackendPlan::EuropeOnly => search_europepmc_page(filters, limit, offset).await,
         BackendPlan::PubTatorOnly => search_pubtator_page(filters, limit, offset).await,
@@ -2067,13 +2551,23 @@ mod tests {
     ) -> ArticleSearchResult {
         ArticleSearchResult {
             pmid: pmid.to_string(),
+            pmcid: None,
+            doi: None,
             title: format!("title-{pmid}"),
             journal: Some("Journal".into()),
             date: date.map(str::to_string),
             citation_count,
+            influential_citation_count: None,
             source,
+            matched_sources: vec![source],
             score: (source == ArticleSource::PubTator).then_some(42.0),
             is_retracted,
+            abstract_snippet: None,
+            ranking: None,
+            normalized_title: format!("title-{pmid}"),
+            normalized_abstract: String::new(),
+            publication_type: None,
+            insertion_index: 0,
         }
     }
 
@@ -2097,9 +2591,10 @@ mod tests {
         let merged = merge_federated_pages(
             Ok(pubtator_page),
             Ok(europe_page),
+            Ok(Vec::new()),
             3,
             0,
-            ArticleSort::Relevance,
+            &empty_filters(),
         )
         .expect("federated merge should succeed");
         assert_eq!(merged.results.len(), 3);
@@ -2127,9 +2622,10 @@ mod tests {
         let merged = merge_federated_pages(
             Ok(pubtator_page),
             Err(europe_err),
+            Ok(Vec::new()),
             2,
             0,
-            ArticleSort::Relevance,
+            &empty_filters(),
         )
         .expect("fallback should return pubtator rows");
         assert_eq!(merged.results.len(), 2);
@@ -2160,9 +2656,10 @@ mod tests {
         let merged = merge_federated_pages(
             Err(pubtator_err),
             Ok(europe_page),
+            Ok(Vec::new()),
             2,
             0,
-            ArticleSort::Relevance,
+            &empty_filters(),
         )
         .expect("fallback should return europe rows");
         assert_eq!(merged.results.len(), 2);
@@ -2208,9 +2705,18 @@ mod tests {
             Some(3),
         );
 
-        let merged =
-            merge_federated_pages(Err(pubtator_err), Ok(europe_page), 1, 1, ArticleSort::Date)
-                .expect("fallback should sort surviving rows before offset");
+        let merged = merge_federated_pages(
+            Err(pubtator_err),
+            Ok(europe_page),
+            Ok(Vec::new()),
+            1,
+            1,
+            &ArticleSearchFilters {
+                sort: ArticleSort::Date,
+                ..empty_filters()
+            },
+        )
+        .expect("fallback should sort surviving rows before offset");
         assert_eq!(merged.results.len(), 1);
         assert_eq!(merged.results[0].pmid, "100");
     }
@@ -2229,9 +2735,10 @@ mod tests {
         let err = merge_federated_pages(
             Err(pubtator_err),
             Err(europe_err),
+            Ok(Vec::new()),
             10,
             0,
-            ArticleSort::Relevance,
+            &empty_filters(),
         )
         .expect_err("both failing legs should return first error");
         let msg = err.to_string();
@@ -2261,9 +2768,10 @@ mod tests {
         let merged = merge_federated_pages(
             Ok(pubtator_page),
             Ok(europe_page),
+            Ok(Vec::new()),
             2,
             3,
-            ArticleSort::Relevance,
+            &empty_filters(),
         )
         .expect("federated merge should succeed");
 
@@ -2315,9 +2823,13 @@ mod tests {
         let citation_merged = merge_federated_pages(
             Ok(citation_pubtator_page),
             Ok(citation_europe_page),
+            Ok(Vec::new()),
             10,
             0,
-            ArticleSort::Citations,
+            &ArticleSearchFilters {
+                sort: ArticleSort::Citations,
+                ..empty_filters()
+            },
         )
         .expect("citation merge should succeed");
         let citation_pmids: Vec<&str> = citation_merged
@@ -2363,9 +2875,13 @@ mod tests {
         let date_merged = merge_federated_pages(
             Ok(date_pubtator_page),
             Ok(date_europe_page),
+            Ok(Vec::new()),
             10,
             0,
-            ArticleSort::Date,
+            &ArticleSearchFilters {
+                sort: ArticleSort::Date,
+                ..empty_filters()
+            },
         )
         .expect("date merge should succeed");
         let date_pmids: Vec<&str> = date_merged
@@ -2472,9 +2988,10 @@ mod tests {
         let merged = merge_federated_pages(
             Ok(pubtator_page),
             Ok(europe_page),
+            Ok(Vec::new()),
             10,
             0,
-            ArticleSort::Relevance,
+            &empty_filters(),
         )
         .expect("federated merge should succeed");
 
@@ -2496,5 +3013,281 @@ mod tests {
         let value = serde_json::to_value(&row).expect("search row should serialize");
         assert!(value.get("is_retracted").is_some());
         assert!(value["is_retracted"].is_null());
+    }
+
+    #[test]
+    fn merge_article_candidates_dedups_transitively_across_identifiers() {
+        let merged = merge_article_candidates(vec![
+            ArticleSearchResult {
+                pmid: "100".into(),
+                pmcid: Some("PMC100".into()),
+                doi: None,
+                title: "Primary PMID row".into(),
+                journal: Some("Journal".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: None,
+                influential_citation_count: None,
+                source: ArticleSource::PubTator,
+                score: Some(42.0),
+                is_retracted: None,
+                abstract_snippet: None,
+                ranking: None,
+                matched_sources: vec![ArticleSource::PubTator],
+                normalized_title: "primary pmid row".into(),
+                normalized_abstract: String::new(),
+                publication_type: None,
+                insertion_index: 0,
+            },
+            ArticleSearchResult {
+                pmid: String::new(),
+                pmcid: Some("PMC100".into()),
+                doi: Some("10.1000/example".into()),
+                title: "Europe metadata".into(),
+                journal: Some("Journal".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(15),
+                influential_citation_count: None,
+                source: ArticleSource::EuropePmc,
+                score: None,
+                is_retracted: Some(false),
+                abstract_snippet: Some("Europe abstract".into()),
+                ranking: None,
+                matched_sources: vec![ArticleSource::EuropePmc],
+                normalized_title: "europe metadata".into(),
+                normalized_abstract: "europe abstract".into(),
+                publication_type: Some("Review".into()),
+                insertion_index: 1,
+            },
+            ArticleSearchResult {
+                pmid: String::new(),
+                pmcid: None,
+                doi: Some("10.1000/example".into()),
+                title: "Semantic Scholar metadata".into(),
+                journal: Some("Journal".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(99),
+                influential_citation_count: Some(7),
+                source: ArticleSource::SemanticScholar,
+                score: None,
+                is_retracted: None,
+                abstract_snippet: Some("Semantic Scholar abstract".into()),
+                ranking: None,
+                matched_sources: vec![ArticleSource::SemanticScholar],
+                normalized_title: "semantic scholar metadata".into(),
+                normalized_abstract: "semantic scholar abstract".into(),
+                publication_type: None,
+                insertion_index: 2,
+            },
+        ]);
+
+        assert_eq!(merged.len(), 1);
+        assert_eq!(merged[0].source, ArticleSource::PubTator);
+        assert_eq!(merged[0].pmid, "100");
+        assert_eq!(merged[0].pmcid.as_deref(), Some("PMC100"));
+        assert_eq!(merged[0].doi.as_deref(), Some("10.1000/example"));
+        assert_eq!(
+            merged[0].matched_sources,
+            vec![
+                ArticleSource::PubTator,
+                ArticleSource::EuropePmc,
+                ArticleSource::SemanticScholar,
+            ]
+        );
+        assert_eq!(merged[0].citation_count, Some(15));
+        assert_eq!(merged[0].influential_citation_count, Some(7));
+        assert_eq!(
+            merged[0].abstract_snippet.as_deref(),
+            Some("Europe abstract")
+        );
+        assert_eq!(merged[0].is_retracted, Some(false));
+    }
+
+    #[test]
+    fn directness_ranking_uses_full_title_and_token_boundaries() {
+        let mut filters = empty_filters();
+        filters.gene = Some("MET".into());
+        filters.keyword = Some("ALL".into());
+
+        let long_prefix =
+            "This intentionally long prefix exists to push the anchors well past sixty bytes";
+        let mut rows = vec![
+            ArticleSearchResult {
+                pmid: "100".into(),
+                pmcid: None,
+                doi: None,
+                title: format!("{long_prefix} MET ALL response study"),
+                journal: Some("Journal A".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(10),
+                influential_citation_count: Some(1),
+                source: ArticleSource::EuropePmc,
+                score: None,
+                is_retracted: Some(false),
+                abstract_snippet: Some("Direct abstract".into()),
+                ranking: None,
+                matched_sources: vec![ArticleSource::EuropePmc],
+                normalized_title: format!(
+                    "{} met all response study",
+                    long_prefix.to_ascii_lowercase()
+                ),
+                normalized_abstract: "direct abstract".into(),
+                publication_type: None,
+                insertion_index: 0,
+            },
+            ArticleSearchResult {
+                pmid: "200".into(),
+                pmcid: None,
+                doi: None,
+                title: "Meta-analysis of small molecule therapy".into(),
+                journal: Some("Journal B".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(500),
+                influential_citation_count: Some(50),
+                source: ArticleSource::EuropePmc,
+                score: None,
+                is_retracted: Some(false),
+                abstract_snippet: None,
+                ranking: None,
+                matched_sources: vec![ArticleSource::EuropePmc],
+                normalized_title: "meta-analysis of small molecule therapy".into(),
+                normalized_abstract: String::new(),
+                publication_type: Some("Meta-Analysis".into()),
+                insertion_index: 1,
+            },
+            ArticleSearchResult {
+                pmid: "300".into(),
+                pmcid: None,
+                doi: None,
+                title: "ALL biomarker response study".into(),
+                journal: Some("Journal C".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(100),
+                influential_citation_count: Some(5),
+                source: ArticleSource::EuropePmc,
+                score: None,
+                is_retracted: Some(false),
+                abstract_snippet: Some("MET is discussed in the abstract".into()),
+                ranking: None,
+                matched_sources: vec![ArticleSource::EuropePmc],
+                normalized_title: "all biomarker response study".into(),
+                normalized_abstract: "met is discussed in the abstract".into(),
+                publication_type: None,
+                insertion_index: 2,
+            },
+        ];
+
+        rank_articles_by_directness(&mut rows, &filters);
+
+        assert_eq!(rows[0].pmid, "100");
+        assert_eq!(
+            rows[0]
+                .ranking
+                .as_ref()
+                .map(|ranking| ranking.directness_tier),
+            Some(3)
+        );
+        assert_eq!(
+            rows[1]
+                .ranking
+                .as_ref()
+                .map(|ranking| ranking.directness_tier),
+            Some(2)
+        );
+        assert_eq!(
+            rows[2]
+                .ranking
+                .as_ref()
+                .map(|ranking| ranking.directness_tier),
+            Some(0)
+        );
+        assert_eq!(
+            rows[2]
+                .ranking
+                .as_ref()
+                .map(|ranking| ranking.combined_anchor_hits),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn directness_ranking_prefers_cue_then_citation_then_insertion() {
+        let mut filters = empty_filters();
+        filters.gene = Some("BRAF".into());
+        filters.keyword = Some("melanoma".into());
+
+        let mut rows = vec![
+            ArticleSearchResult {
+                pmid: "100".into(),
+                pmcid: None,
+                doi: None,
+                title: "BRAF melanoma study".into(),
+                journal: Some("Journal A".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(10),
+                influential_citation_count: Some(1),
+                source: ArticleSource::EuropePmc,
+                score: None,
+                is_retracted: Some(false),
+                abstract_snippet: None,
+                ranking: None,
+                matched_sources: vec![ArticleSource::EuropePmc],
+                normalized_title: "braf melanoma study".into(),
+                normalized_abstract: String::new(),
+                publication_type: None,
+                insertion_index: 0,
+            },
+            ArticleSearchResult {
+                pmid: "200".into(),
+                pmcid: None,
+                doi: None,
+                title: "BRAF melanoma systematic review".into(),
+                journal: Some("Journal B".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(5),
+                influential_citation_count: Some(0),
+                source: ArticleSource::EuropePmc,
+                score: None,
+                is_retracted: Some(false),
+                abstract_snippet: None,
+                ranking: None,
+                matched_sources: vec![ArticleSource::EuropePmc],
+                normalized_title: "braf melanoma systematic review".into(),
+                normalized_abstract: String::new(),
+                publication_type: Some("Review".into()),
+                insertion_index: 1,
+            },
+            ArticleSearchResult {
+                pmid: "300".into(),
+                pmcid: None,
+                doi: None,
+                title: "BRAF melanoma clinical trial review".into(),
+                journal: Some("Journal C".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(50),
+                influential_citation_count: Some(7),
+                source: ArticleSource::EuropePmc,
+                score: None,
+                is_retracted: Some(false),
+                abstract_snippet: None,
+                ranking: None,
+                matched_sources: vec![ArticleSource::EuropePmc],
+                normalized_title: "braf melanoma clinical trial review".into(),
+                normalized_abstract: String::new(),
+                publication_type: Some("Clinical Trial".into()),
+                insertion_index: 2,
+            },
+        ];
+
+        rank_articles_by_directness(&mut rows, &filters);
+
+        let pmids: Vec<&str> = rows.iter().map(|row| row.pmid.as_str()).collect();
+        assert_eq!(pmids, vec!["300", "200", "100"]);
+        assert_eq!(
+            rows[0]
+                .ranking
+                .as_ref()
+                .map(|ranking| ranking.study_or_review_cue),
+            Some(true)
+        );
     }
 }

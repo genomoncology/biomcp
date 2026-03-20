@@ -1595,6 +1595,7 @@ fn dedupe_gwas_rows(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::entities::article::{ArticleRankingMetadata, ArticleSearchResult, ArticleSource};
     use crate::entities::drug::DrugSearchResult;
     use crate::entities::trial::TrialSearchResult;
     use crate::entities::variant::VariantGwasAssociation;
@@ -1738,6 +1739,50 @@ mod tests {
         assert_eq!(quote_arg("BRAF"), "BRAF");
         assert_eq!(quote_arg("BRAF V600E"), "\"BRAF V600E\"");
         assert_eq!(quote_arg("BRAF \"V600E\""), "\"BRAF \\\"V600E\\\"\"");
+    }
+
+    #[test]
+    fn to_json_array_preserves_article_source_and_ranking_metadata() {
+        let rows = to_json_array(vec![ArticleSearchResult {
+            pmid: "22663011".into(),
+            pmcid: Some("PMC9984800".into()),
+            doi: Some("10.1056/NEJMoa1203421".into()),
+            title: "BRAF melanoma review".into(),
+            journal: Some("Journal".into()),
+            date: Some("2025-01-01".into()),
+            citation_count: Some(12),
+            influential_citation_count: Some(4),
+            source: ArticleSource::EuropePmc,
+            matched_sources: vec![ArticleSource::EuropePmc, ArticleSource::SemanticScholar],
+            score: None,
+            is_retracted: Some(false),
+            abstract_snippet: Some("Abstract".into()),
+            ranking: Some(ArticleRankingMetadata {
+                directness_tier: 3,
+                anchor_count: 2,
+                title_anchor_hits: 2,
+                abstract_anchor_hits: 0,
+                combined_anchor_hits: 2,
+                all_anchors_in_title: true,
+                all_anchors_in_text: true,
+                study_or_review_cue: true,
+            }),
+            normalized_title: "braf melanoma review".into(),
+            normalized_abstract: "abstract".into(),
+            publication_type: Some("Review".into()),
+            insertion_index: 0,
+        }])
+        .expect("article rows should serialize");
+
+        assert_eq!(
+            rows[0]["source"],
+            serde_json::Value::String("europepmc".into())
+        );
+        assert_eq!(
+            rows[0]["matched_sources"][1],
+            serde_json::Value::String("semanticscholar".into())
+        );
+        assert_eq!(rows[0]["ranking"]["study_or_review_cue"], true);
     }
 
     fn gwas_row(

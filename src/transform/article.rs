@@ -41,19 +41,24 @@ fn strip_inline_html_tags(value: &str) -> String {
     re.replace_all(value, "").to_string()
 }
 
-fn clean_title(value: &str) -> String {
+pub fn clean_title(value: &str) -> String {
     strip_inline_html_tags(&decode_html_entities(value))
         .trim()
         .to_string()
 }
 
-fn clean_abstract(value: &str) -> String {
+pub fn clean_abstract(value: &str) -> String {
     strip_inline_html_tags(&decode_html_entities(value))
         .trim()
         .to_string()
 }
 
-pub fn truncate_title(title: &str) -> String {
+pub fn normalize_article_search_text(value: &str) -> String {
+    collapse_whitespace(&clean_abstract(value)).to_ascii_lowercase()
+}
+
+#[cfg(test)]
+fn truncate_title(title: &str) -> String {
     const MAX_TITLE_BYTES: usize = 60;
     truncate_utf8(&clean_title(title), MAX_TITLE_BYTES, "…")
 }
@@ -71,6 +76,20 @@ pub fn truncate_abstract(text: &str) -> String {
     let short = truncate_utf8(trimmed, MAX_ABSTRACT_BYTES, "...");
     let total = trimmed.chars().count();
     format!("{short}\n\n(truncated, {total} chars total)")
+}
+
+pub fn article_search_abstract_snippet(text: &str) -> Option<String> {
+    const MAX_ABSTRACT_BYTES: usize = 240;
+    let cleaned = clean_abstract(text);
+    if cleaned.is_empty() {
+        return None;
+    }
+    let snippet = if cleaned.len() <= MAX_ABSTRACT_BYTES {
+        cleaned
+    } else {
+        truncate_utf8(&cleaned, MAX_ABSTRACT_BYTES, "...")
+    };
+    Some(snippet)
 }
 
 pub fn truncate_authors(authors: &[String]) -> Vec<String> {
@@ -340,9 +359,21 @@ pub fn from_europepmc_search_result(hit: &EuropePmcResult) -> Option<ArticleSear
         .map(str::trim)
         .filter(|v| !v.is_empty())?
         .to_string();
+    let title = clean_title(hit.title.as_deref().unwrap_or_default());
+    let abstract_text = hit.abstract_text.as_deref().map(clean_abstract);
     Some(ArticleSearchResult {
         pmid,
-        title: truncate_title(hit.title.as_deref().unwrap_or_default()),
+        pmcid: hit
+            .pmcid
+            .as_ref()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty()),
+        doi: hit
+            .doi
+            .as_ref()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty()),
+        title,
         journal: hit
             .journal_title
             .as_ref()
@@ -354,9 +385,22 @@ pub fn from_europepmc_search_result(hit: &EuropePmcResult) -> Option<ArticleSear
             .or(hit.pub_year.as_ref())
             .map(|s| s.get(0..10).unwrap_or(s).to_string()),
         citation_count: parse_citation_count(hit.cited_by_count.as_ref()),
+        influential_citation_count: None,
         source: ArticleSource::EuropePmc,
         score: None,
         is_retracted: Some(is_retracted_publication(hit)),
+        abstract_snippet: abstract_text
+            .as_deref()
+            .and_then(article_search_abstract_snippet),
+        ranking: None,
+        matched_sources: vec![ArticleSource::EuropePmc],
+        normalized_title: normalize_article_search_text(hit.title.as_deref().unwrap_or_default()),
+        normalized_abstract: abstract_text
+            .as_deref()
+            .map(normalize_article_search_text)
+            .unwrap_or_default(),
+        publication_type: parse_publication_type(hit),
+        insertion_index: 0,
     })
 }
 
@@ -369,7 +413,9 @@ pub fn from_pubtator_search_result(hit: &PubTatorSearchResult) -> Option<Article
         .to_string();
     Some(ArticleSearchResult {
         pmid,
-        title: truncate_title(hit.title.as_deref().unwrap_or_default()),
+        pmcid: None,
+        doi: None,
+        title: clean_title(hit.title.as_deref().unwrap_or_default()),
         journal: hit
             .journal
             .as_deref()
@@ -383,9 +429,17 @@ pub fn from_pubtator_search_result(hit: &PubTatorSearchResult) -> Option<Article
             .filter(|v| !v.is_empty())
             .map(|v| v.get(0..10).unwrap_or(v).to_string()),
         citation_count: None,
+        influential_citation_count: None,
         source: ArticleSource::PubTator,
         score: hit.score,
         is_retracted: None,
+        abstract_snippet: None,
+        ranking: None,
+        matched_sources: vec![ArticleSource::PubTator],
+        normalized_title: normalize_article_search_text(hit.title.as_deref().unwrap_or_default()),
+        normalized_abstract: String::new(),
+        publication_type: None,
+        insertion_index: 0,
     })
 }
 

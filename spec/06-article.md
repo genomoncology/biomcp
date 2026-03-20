@@ -101,6 +101,31 @@ echo "$out" | mustmatch like "Journal:"
 echo "$out" | mustmatch not like "Semantic Scholar"
 ```
 
+## Article Search JSON Without Semantic Scholar Key
+
+No-key article search must stay explicit and functional. JSON should report the
+disabled state while still surfacing ranking metadata from the local relevance
+policy.
+
+```bash
+out="$(env -u S2_API_KEY biomcp --json search article -g BRAF --limit 3)"
+echo "$out" | mustmatch like "\"semantic_scholar_enabled\": false"
+echo "$out" | mustmatch like "\"ranking\": {"
+echo "$out" | mustmatch not like "\"source\": \"semanticscholar\""
+```
+
+## Article Search JSON With Semantic Scholar Key
+
+When `S2_API_KEY` is present, article search should expose the keyed search-leg
+state and merged source metadata in JSON.
+
+```bash
+out="$(biomcp --json search article -g BRAF -d melanoma --include-retracted --limit 5)"
+echo "$out" | mustmatch like "\"semantic_scholar_enabled\": true"
+echo "$out" | mustmatch like "\"matched_sources\": ["
+echo "$out" | mustmatch like "\"ranking\": {"
+```
+
 ## Semantic Scholar TLDR Section
 
 When `S2_API_KEY` is present, `get article ... tldr` isolates the Semantic

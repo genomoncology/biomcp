@@ -10,7 +10,7 @@ use crate::entities::adverse_event::{
 };
 use crate::entities::article::{
     Article, ArticleAnnotations, ArticleGraphResult, ArticleRecommendationsResult,
-    ArticleRelatedPaper, ArticleSearchResult, ArticleSource,
+    ArticleRelatedPaper, ArticleSearchResult, ArticleSort, ArticleSource,
 };
 use crate::entities::discover::{DiscoverResult, DiscoverType};
 use crate::entities::disease::{
@@ -46,11 +46,14 @@ struct XrefRow {
 }
 
 #[derive(serde::Serialize)]
-struct ArticleSearchSourceGroup {
-    source_key: String,
-    source_label: String,
-    count: usize,
-    results: Vec<ArticleSearchResult>,
+struct ArticleSearchRenderRow {
+    pmid: String,
+    title: String,
+    sources: String,
+    date: Option<String>,
+    why: String,
+    citation_count: Option<u64>,
+    is_retracted: Option<bool>,
 }
 
 #[derive(serde::Serialize)]
@@ -1713,36 +1716,80 @@ pub fn article_recommendations_markdown(
     Ok(out)
 }
 
-pub fn article_search_markdown(
-    query: &str,
-    results: &[ArticleSearchResult],
-) -> Result<String, BioMcpError> {
-    article_search_markdown_with_footer(query, results, "")
+fn article_sources_label(row: &ArticleSearchResult) -> String {
+    let mut sources = if row.matched_sources.is_empty() {
+        vec![row.source]
+    } else {
+        row.matched_sources.clone()
+    };
+    sources.dedup();
+    sources
+        .into_iter()
+        .map(ArticleSource::display_name)
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
-pub fn article_search_markdown_with_footer(
+fn article_ranking_why(row: &ArticleSearchResult, sort: ArticleSort) -> String {
+    if sort != ArticleSort::Relevance {
+        return "-".to_string();
+    }
+    let Some(ranking) = row.ranking.as_ref() else {
+        return "-".to_string();
+    };
+    if ranking.anchor_count == 0 {
+        return "-".to_string();
+    }
+    if ranking.all_anchors_in_title {
+        return format!(
+            "title {}/{}",
+            ranking.title_anchor_hits, ranking.anchor_count
+        );
+    }
+    if ranking.all_anchors_in_text {
+        return format!(
+            "title+abstract {}/{}",
+            ranking.combined_anchor_hits, ranking.anchor_count
+        );
+    }
+    if ranking.abstract_anchor_hits > 0 && ranking.title_anchor_hits > 0 {
+        return format!(
+            "title+abstract {}/{}",
+            ranking.combined_anchor_hits, ranking.anchor_count
+        );
+    }
+    if ranking.abstract_anchor_hits > 0 {
+        return format!(
+            "abstract {}/{}",
+            ranking.abstract_anchor_hits, ranking.anchor_count
+        );
+    }
+    if ranking.title_anchor_hits > 0 {
+        return format!(
+            "title {}/{}",
+            ranking.title_anchor_hits, ranking.anchor_count
+        );
+    }
+    "-".to_string()
+}
+
+pub fn article_search_markdown_with_footer_and_context(
     query: &str,
     results: &[ArticleSearchResult],
     pagination_footer: &str,
+    sort: ArticleSort,
+    semantic_scholar_enabled: bool,
 ) -> Result<String, BioMcpError> {
-    let groups = [ArticleSource::PubTator, ArticleSource::EuropePmc]
-        .into_iter()
-        .filter_map(|source| {
-            let rows = results
-                .iter()
-                .filter(|row| row.source == source)
-                .cloned()
-                .collect::<Vec<_>>();
-            if rows.is_empty() {
-                None
-            } else {
-                Some(ArticleSearchSourceGroup {
-                    source_key: source.as_str().to_string(),
-                    source_label: source.display_name().to_string(),
-                    count: rows.len(),
-                    results: rows,
-                })
-            }
+    let rows = results
+        .iter()
+        .map(|row| ArticleSearchRenderRow {
+            pmid: row.pmid.clone(),
+            title: row.title.clone(),
+            sources: article_sources_label(row),
+            date: row.date.clone(),
+            why: article_ranking_why(row, sort),
+            citation_count: row.citation_count,
+            is_retracted: row.is_retracted,
         })
         .collect::<Vec<_>>();
 
@@ -1750,7 +1797,10 @@ pub fn article_search_markdown_with_footer(
     let body = tmpl.render(context! {
         query => query,
         count => results.len(),
-        groups => groups,
+        rows => rows,
+        semantic_scholar_enabled => semantic_scholar_enabled,
+        sort => sort.as_str(),
+        ranking_policy => "directness-first (title coverage > title+abstract coverage > study/review cue > citation support)",
         pagination_footer => pagination_footer,
     })?;
     Ok(with_pagination_footer(body, pagination_footer))
@@ -5079,35 +5129,120 @@ mod tests {
     }
 
     #[test]
-    fn article_search_markdown_groups_results_by_source() {
+    fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
         let rows = vec![
             ArticleSearchResult {
                 pmid: "1".into(),
                 title: "Entity-ranked".into(),
+                pmcid: Some("PMC1".into()),
+                doi: Some("10.1000/one".into()),
                 journal: Some("Journal A".into()),
                 date: Some("2025-01-01".into()),
                 citation_count: Some(10),
+                influential_citation_count: Some(4),
                 source: ArticleSource::PubTator,
                 score: Some(99.1),
                 is_retracted: Some(false),
+                abstract_snippet: Some("Abstract one".into()),
+                ranking: Some(crate::entities::article::ArticleRankingMetadata {
+                    directness_tier: 3,
+                    anchor_count: 2,
+                    title_anchor_hits: 2,
+                    abstract_anchor_hits: 0,
+                    combined_anchor_hits: 2,
+                    all_anchors_in_title: true,
+                    all_anchors_in_text: true,
+                    study_or_review_cue: false,
+                }),
+                matched_sources: vec![ArticleSource::PubTator, ArticleSource::SemanticScholar],
+                normalized_title: "entity-ranked".into(),
+                normalized_abstract: "abstract one".into(),
+                publication_type: None,
+                insertion_index: 0,
             },
             ArticleSearchResult {
                 pmid: "2".into(),
                 title: "Field-ranked".into(),
+                pmcid: None,
+                doi: None,
                 journal: Some("Journal B".into()),
                 date: Some("2025-01-02".into()),
                 citation_count: Some(12),
+                influential_citation_count: Some(1),
                 source: ArticleSource::EuropePmc,
                 score: None,
                 is_retracted: Some(false),
+                abstract_snippet: Some("Abstract two".into()),
+                ranking: Some(crate::entities::article::ArticleRankingMetadata {
+                    directness_tier: 2,
+                    anchor_count: 2,
+                    title_anchor_hits: 1,
+                    abstract_anchor_hits: 1,
+                    combined_anchor_hits: 2,
+                    all_anchors_in_title: false,
+                    all_anchors_in_text: true,
+                    study_or_review_cue: true,
+                }),
+                matched_sources: vec![ArticleSource::EuropePmc],
+                normalized_title: "field-ranked".into(),
+                normalized_abstract: "abstract two".into(),
+                publication_type: Some("Review".into()),
+                insertion_index: 1,
             },
         ];
 
-        let markdown = article_search_markdown("gene=BRAF", &rows).expect("markdown should render");
-        assert!(markdown.contains("## PubTator3"));
-        assert!(markdown.contains("## Europe PMC"));
-        assert!(markdown.contains("| PMID | Title | Journal | Date | Score |"));
-        assert!(markdown.contains("| PMID | Title | Journal | Date | Cit. |"));
+        let markdown = article_search_markdown_with_footer_and_context(
+            "gene=BRAF",
+            &rows,
+            "",
+            crate::entities::article::ArticleSort::Relevance,
+            true,
+        )
+        .expect("markdown should render");
+        assert!(markdown.contains("Semantic Scholar: enabled"));
+        assert!(markdown.contains("Ranking: directness-first"));
+        assert!(markdown.contains("| PMID | Title | Source(s) | Date | Why | Cit. |"));
+        assert!(markdown.contains("PubTator3, Semantic Scholar"));
+        assert!(markdown.contains("title 2/2"));
+        assert!(markdown.contains("title+abstract 2/2"));
+        assert!(!markdown.contains("## PubTator3"));
+        assert!(!markdown.contains("## Europe PMC"));
+        assert!(markdown.find("|1|").unwrap() < markdown.find("|2|").unwrap());
+    }
+
+    #[test]
+    fn article_ranking_why_tier1_mixed_shows_title_plus_abstract() {
+        let row = ArticleSearchResult {
+            pmid: "1".into(),
+            title: "Partial coverage".into(),
+            pmcid: None,
+            doi: None,
+            journal: None,
+            date: None,
+            citation_count: None,
+            influential_citation_count: None,
+            source: ArticleSource::EuropePmc,
+            matched_sources: vec![ArticleSource::EuropePmc],
+            score: None,
+            is_retracted: None,
+            abstract_snippet: None,
+            ranking: Some(crate::entities::article::ArticleRankingMetadata {
+                directness_tier: 1,
+                anchor_count: 3,
+                title_anchor_hits: 1,
+                abstract_anchor_hits: 1,
+                combined_anchor_hits: 2,
+                all_anchors_in_title: false,
+                all_anchors_in_text: false,
+                study_or_review_cue: false,
+            }),
+            normalized_title: "partial coverage".into(),
+            normalized_abstract: String::new(),
+            publication_type: None,
+            insertion_index: 0,
+        };
+        let why = article_ranking_why(&row, ArticleSort::Relevance);
+        assert_eq!(why, "title+abstract 2/3");
     }
 
     #[test]

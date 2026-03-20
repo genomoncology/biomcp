@@ -91,7 +91,7 @@ search all [slot filters]    → counts-first cross-entity orientation
 
 ## Feature highlights
 
-- **Federated article search:** `search article` fans out across PubTator3 and Europe PMC, deduplicates by PMID, and can add Semantic Scholar follow-ups when `S2_API_KEY` is set.
+- **Federated article search:** `search article` fans out across PubTator3 and Europe PMC, optionally adds a Semantic Scholar search leg when `S2_API_KEY` is set, merges identifiers across PMID/PMCID/DOI, and ranks relevance directness-first.
 - **Cross-entity pivots:** move directly from a gene, variant, drug, disease, pathway, protein, or article into the next built-in view.
 - **Study analytics and charting:** downloaded studies support query, cohort, survival, compare, and co-occurrence workflows with native terminal or SVG charts.
 - **Citation graphs and article helpers:** `article citations`, `article references`, `article recommendations`, and `article entities` support literature navigation from a known paper.
@@ -182,15 +182,17 @@ unlock optional enrichments:
 
 ```bash
 export NCBI_API_KEY="..."        # PubTator, PMC OA, NCBI ID converter
-export S2_API_KEY="..."          # Semantic Scholar TLDR, citations, references, recommendations
+export S2_API_KEY="..."          # Semantic Scholar search leg, TLDR, citations, references, recommendations
 export OPENFDA_API_KEY="..."     # OpenFDA rate limits
 export NCI_API_KEY="..."         # NCI CTS trial search (--source nci)
 export ONCOKB_TOKEN="..."        # OncoKB variant helper
 export ALPHAGENOME_API_KEY="..." # AlphaGenome variant effect prediction
 ```
 
-`search article` still uses PubTator3 + Europe PMC. `S2_API_KEY` only unlocks
-optional article enrichment and explicit Semantic Scholar helper commands.
+`search article` works without `S2_API_KEY`; when the key is present it also
+fans out to Semantic Scholar and exposes ranking/support metadata in the search
+output. `--source` still remains `all|pubtator|europepmc` in v1, so the S2 leg
+is automatic rather than directly selectable.
 References and recommendations can be empty for paywalled papers because of
 publisher elision in Semantic Scholar upstream coverage.
 

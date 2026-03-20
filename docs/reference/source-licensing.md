@@ -517,16 +517,16 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 
 ### Semantic Scholar
 
-- BioMCP surfaces: `get article <id> tldr; article citations <id>; article references <id>; article recommendations <id>`
+- BioMCP surfaces: `search article; get article <id> tldr; article citations <id>; article references <id>; article recommendations <id>`
 - Integration mode: `direct_api`
 - BioMCP auth: `required_env` via `S2_API_KEY`
-- Provider access / registration: API key required for the BioMCP helper commands and governed by the API license agreement
+- Provider access / registration: API key required for BioMCP's Semantic Scholar search/helper path and governed by the API license agreement
 - License / terms summary: custom API license agreement
 - Redistribution / reuse summary: the API license restricts repackaging, resale, and broad commercial redistribution without expanded licensing
 - Official terms URL: <https://www.semanticscholar.org/product/api/license>
 - API key / account URL: <https://www.semanticscholar.org/product/api>
 - Reviewed on: `2026-03-20`
-- Notes: The overview page says many endpoints are publicly reachable without auth, but BioMCP's helper commands deliberately require `S2_API_KEY` to stay within the supported quota path.
+- Notes: The overview page says many endpoints are publicly reachable without auth, but BioMCP's article search leg and helper commands deliberately require `S2_API_KEY` to stay within the supported quota path.
 
 ### UMLS
 
