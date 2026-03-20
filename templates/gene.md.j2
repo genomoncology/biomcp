@@ -230,7 +230,7 @@ No gnomAD constraint metrics returned for this gene query.
 | Disease | UMLS CUI | Score | PMIDs | Trials | EL | EI |
 |---|---|---|---|---|---|---|
 {% for row in disgenet.associations -%}
-| {{ row.disease_name | truncate(45) }} | {{ row.disease_cui }} | {{ row.score | score }} | {% if row.publication_count is not none %}{{ row.publication_count }}{% else %}-{% endif %} | {% if row.clinical_trial_count is not none %}{{ row.clinical_trial_count }}{% else %}-{% endif %} | {{ row.evidence_level or "-" }} | {% if row.evidence_index is not none %}{{ row.evidence_index | score }}{% else %}-{% endif %} |
+| {{ row.disease_name | truncate(45) }} | {{ row.disease_cui }} | {{ row.score | score }} | {% if row.publication_count is defined and row.publication_count is not none %}{{ row.publication_count }}{% else %}-{% endif %} | {% if row.clinical_trial_count is defined and row.clinical_trial_count is not none %}{{ row.clinical_trial_count }}{% else %}-{% endif %} | {{ row.evidence_level or "-" }} | {% if row.evidence_index is defined and row.evidence_index is not none %}{{ row.evidence_index | score }}{% else %}-{% endif %} |
 {% endfor -%}
 {% else -%}
 No DisGeNET associations returned for this gene query.
