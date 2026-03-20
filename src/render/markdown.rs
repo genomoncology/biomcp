@@ -4038,6 +4038,53 @@ mod tests {
     }
 
     #[test]
+    fn gene_markdown_disgenet_renders_sparse_optional_fields() {
+        let gene = Gene {
+            symbol: "KYNU".to_string(),
+            name: "kynureninase".to_string(),
+            entrez_id: "8942".to_string(),
+            ensembl_id: None,
+            location: None,
+            genomic_coordinates: None,
+            omim_id: None,
+            uniprot_id: None,
+            summary: None,
+            gene_type: None,
+            aliases: Vec::new(),
+            clinical_diseases: Vec::new(),
+            clinical_drugs: Vec::new(),
+            pathways: None,
+            ontology: None,
+            diseases: None,
+            protein: None,
+            go: None,
+            interactions: None,
+            civic: None,
+            expression: None,
+            hpa: None,
+            druggability: None,
+            clingen: None,
+            constraint: None,
+            disgenet: Some(crate::entities::gene::GeneDisgenet {
+                associations: vec![crate::entities::gene::GeneDisgenetAssociation {
+                    disease_name: "Sparse Disease".to_string(),
+                    disease_cui: "C1234567".to_string(),
+                    score: 0.23,
+                    publication_count: None,
+                    clinical_trial_count: None,
+                    evidence_index: None,
+                    evidence_level: None,
+                }],
+            }),
+        };
+
+        let markdown = gene_markdown(&gene, &["disgenet".to_string()]).expect("rendered markdown");
+
+        assert!(markdown.contains("| Disease | UMLS CUI | Score | PMIDs | Trials | EL | EI |"));
+        assert!(markdown.contains("| Sparse Disease | C1234567 | 0.230 | - | - | - | - |"));
+    }
+
+    #[test]
     fn gene_markdown_pathways_show_source_labels() {
         let gene = Gene {
             symbol: "BRAF".to_string(),
@@ -4455,6 +4502,48 @@ mod tests {
         assert!(markdown.contains("## DisGeNET"));
         assert!(markdown.contains("| Gene | Entrez ID | Score | PMIDs | Trials | EL | EI |"));
         assert!(markdown.contains("| TP53 | 7157 | 0.910 | 1234 | 4 | Definitive | 0.720 |"));
+    }
+
+    #[test]
+    fn disease_markdown_disgenet_renders_sparse_optional_fields() {
+        let disease = Disease {
+            id: "MONDO:0000001".to_string(),
+            name: "sparse disease".to_string(),
+            definition: None,
+            synonyms: Vec::new(),
+            parents: Vec::new(),
+            associated_genes: Vec::new(),
+            gene_associations: Vec::new(),
+            top_genes: Vec::new(),
+            top_gene_scores: Vec::new(),
+            treatment_landscape: Vec::new(),
+            recruiting_trial_count: None,
+            pathways: Vec::new(),
+            phenotypes: Vec::new(),
+            variants: Vec::new(),
+            models: Vec::new(),
+            prevalence: Vec::new(),
+            prevalence_note: None,
+            civic: None,
+            disgenet: Some(crate::entities::disease::DiseaseDisgenet {
+                associations: vec![crate::entities::disease::DiseaseDisgenetAssociation {
+                    symbol: "KYNU".to_string(),
+                    entrez_id: None,
+                    score: 0.23,
+                    publication_count: None,
+                    clinical_trial_count: None,
+                    evidence_index: None,
+                    evidence_level: None,
+                }],
+            }),
+            xrefs: std::collections::HashMap::new(),
+        };
+
+        let markdown =
+            disease_markdown(&disease, &["disgenet".to_string()]).expect("rendered markdown");
+
+        assert!(markdown.contains("| Gene | Entrez ID | Score | PMIDs | Trials | EL | EI |"));
+        assert!(markdown.contains("| KYNU | - | 0.230 | - | - | - | - |"));
     }
 
     #[test]

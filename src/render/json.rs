@@ -329,6 +329,60 @@ mod tests {
     }
 
     #[test]
+    fn json_render_gene_entity_with_sparse_disgenet_omits_optional_fields() {
+        let gene = Gene {
+            symbol: "KYNU".to_string(),
+            name: "kynureninase".to_string(),
+            entrez_id: "8942".to_string(),
+            ensembl_id: None,
+            location: None,
+            genomic_coordinates: None,
+            omim_id: None,
+            uniprot_id: None,
+            summary: None,
+            gene_type: None,
+            aliases: Vec::new(),
+            clinical_diseases: Vec::new(),
+            clinical_drugs: Vec::new(),
+            pathways: None,
+            ontology: None,
+            diseases: None,
+            protein: None,
+            go: None,
+            interactions: None,
+            civic: None,
+            expression: None,
+            hpa: None,
+            druggability: None,
+            clingen: None,
+            constraint: None,
+            disgenet: Some(crate::entities::gene::GeneDisgenet {
+                associations: vec![crate::entities::gene::GeneDisgenetAssociation {
+                    disease_name: "Sparse Disease".to_string(),
+                    disease_cui: "C1234567".to_string(),
+                    score: 0.23,
+                    publication_count: None,
+                    clinical_trial_count: None,
+                    evidence_index: None,
+                    evidence_level: None,
+                }],
+            }),
+        };
+
+        let json = to_pretty(&gene).expect("gene json");
+        let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
+        let association = &value["disgenet"]["associations"][0];
+
+        assert_eq!(association["disease_name"], "Sparse Disease");
+        assert_eq!(association["disease_cui"], "C1234567");
+        assert_eq!(association["score"], 0.23);
+        assert!(association.get("publication_count").is_none());
+        assert!(association.get("clinical_trial_count").is_none());
+        assert!(association.get("evidence_index").is_none());
+        assert!(association.get("evidence_level").is_none());
+    }
+
+    #[test]
     fn json_render_drug_entity() {
         let drug = Drug {
             name: "osimertinib".to_string(),
