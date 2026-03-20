@@ -11,6 +11,7 @@ New to BioMCP? Try:
 - `skill install` - install BioMCP skill guidance to your agent
 - `get gene BRAF` - look up a gene
 - `get variant "BRAF V600E"` - annotate a variant
+- `discover "chest pain"` - resolve free text before choosing an entity
 - `search trial -c melanoma` - find clinical trials
 - `search all --gene BRAF --disease melanoma` - cross-entity summary card
 
@@ -33,6 +34,7 @@ New to BioMCP? Try:
 ## Patterns
 
 - `search <entity> [query|filters]` - find entities
+- `discover <query>` - resolve free-text concepts into typed follow-up commands
 - `search all [slot filters]` - curated multi-entity orientation (`--gene/--variant/--disease/--drug/--keyword`)
 - `search trial [filters]` - trial search is filter-only
 - `get <entity> <id> [section...]` - fetch by identifier with optional sections

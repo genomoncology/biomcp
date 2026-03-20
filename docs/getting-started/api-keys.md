@@ -47,6 +47,16 @@ biomcp get gene TP53 disgenet
 biomcp get disease "breast cancer" disgenet
 ```
 
+### `UMLS_API_KEY`
+
+Adds optional clinical crosswalk enrichment to `biomcp discover`.
+
+```bash
+export UMLS_API_KEY="..."
+biomcp discover "cystic fibrosis"
+biomcp --json discover diabetes
+```
+
 ### `NCBI_API_KEY`
 
 Improves rate limits for PubTator, PMC OA, and NCBI ID converter (3 → 10 req/sec).
@@ -84,3 +94,4 @@ biomcp search adverse-event --drug pembrolizumab --limit 5
 - Set keys in the same environment used by your MCP client.
 - Rotate keys when sharing machines or CI runners.
 - `S2_API_KEY` is optional; when absent, `search article` and ordinary `get article` still work.
+- `UMLS_API_KEY` is optional; when absent, `discover` still works with OLS4-only results.

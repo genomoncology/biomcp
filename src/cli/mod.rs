@@ -8,6 +8,7 @@ use futures::{StreamExt, future::try_join_all};
 use tracing::{debug, warn};
 
 pub mod chart;
+pub mod discover;
 pub mod health;
 pub mod list;
 pub mod search_all;
@@ -261,6 +262,19 @@ EXAMPLES:
         /// Maximum enrichment terms (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
+    },
+    /// Resolve free-text biomedical text into typed concepts and suggested commands
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp discover ERBB1
+  biomcp discover Keytruda
+  biomcp discover \"chest pain\"
+  biomcp --json discover diabetes
+
+See also: biomcp list discover")]
+    Discover {
+        /// Free-text biomedical query
+        query: String,
     },
     /// Show version
     Version {
@@ -5429,6 +5443,10 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     Ok(enrich_markdown(&genes, &terms))
                 }
             }
+            Commands::Discover { query } => {
+                crate::cli::discover::run(crate::cli::discover::DiscoverArgs { query }, cli.json)
+                    .await
+            }
             Commands::List { entity } => {
                 crate::cli::list::render(entity.as_deref()).map_err(Into::into)
             }
@@ -6010,6 +6028,16 @@ mod tests {
             Commands::Variant {
                 cmd: VariantCommand::External(args),
             } => assert_eq!(args, vec!["BRAF V600E"]),
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn discover_top_level_command_parses_query() {
+        let cli =
+            Cli::try_parse_from(["biomcp", "discover", "ERBB1"]).expect("discover should parse");
+        match cli.command {
+            Commands::Discover { query } => assert_eq!(query, "ERBB1"),
             other => panic!("unexpected command: {other:?}"),
         }
     }
@@ -7462,6 +7490,32 @@ mod next_commands_validity {
     fn device_event_next_commands_parse() {
         assert_parses("biomcp search adverse-event --type device --device HeartValve");
         assert_parses(r#"biomcp search adverse-event --type recall --classification "Class I""#);
+    }
+
+    #[test]
+    fn discover_next_commands_parse() {
+        // gene — unambiguous and ambiguous
+        assert_parses("biomcp get gene EGFR");
+        assert_parses(r#"biomcp search gene -q "ERBB1" --limit 10"#);
+        // drug
+        assert_parses(r#"biomcp get drug "pembrolizumab""#);
+        // disease — unambiguous helpers and ambiguous fallback
+        assert_parses(r#"biomcp get disease "cystic fibrosis""#);
+        assert_parses(r#"biomcp disease trials "cystic fibrosis""#);
+        assert_parses(r#"biomcp search article -k "cystic fibrosis" --limit 5"#);
+        assert_parses(r#"biomcp search disease -q "diabetes" --limit 10"#);
+        // symptom
+        assert_parses(r#"biomcp search disease -q "chest pain" --limit 10"#);
+        assert_parses(r#"biomcp search trial -c "chest pain" --limit 5"#);
+        assert_parses(r#"biomcp search article -k "chest pain" --limit 5"#);
+        // pathway
+        assert_parses(r#"biomcp search pathway -q "MAPK signaling" --limit 5"#);
+        // variant with and without gene inference
+        assert_parses(r#"biomcp get variant "BRAF V600E""#);
+        assert_parses(r#"biomcp search article -k "V600E" --limit 5"#);
+        // trial intent
+        assert_parses(r#"biomcp search trial -c "Breast Cancer" --limit 5"#);
+        assert_parses(r#"biomcp search article -k "Breast Cancer" --limit 5"#);
     }
 }
 

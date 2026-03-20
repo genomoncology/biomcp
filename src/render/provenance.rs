@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use crate::entities::adverse_event::{AdverseEvent, AdverseEventReport, DeviceEvent};
 use crate::entities::article::Article;
+use crate::entities::discover::DiscoverResult;
 use crate::entities::disease::Disease;
 use crate::entities::drug::Drug;
 use crate::entities::gene::Gene;
@@ -88,6 +89,30 @@ fn push_section<I, S>(
     {
         out.push(section);
     }
+}
+
+pub(crate) fn discover_section_sources(result: &DiscoverResult) -> Vec<SectionSource> {
+    let mut out = Vec::new();
+    let structured_sources = result
+        .concepts
+        .iter()
+        .flat_map(|concept| concept.sources.iter().map(|source| source.source.as_str()))
+        .collect::<Vec<_>>();
+    push_section(
+        &mut out,
+        !structured_sources.is_empty(),
+        "structured_concepts",
+        "Structured Concepts",
+        structured_sources,
+    );
+    push_section(
+        &mut out,
+        result.plain_language.is_some(),
+        "plain_language",
+        "Plain Language",
+        ["MedlinePlus"],
+    );
+    out
 }
 
 pub(crate) fn trial_source_label(source: Option<&str>) -> String {

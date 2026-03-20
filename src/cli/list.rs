@@ -20,11 +20,12 @@ pub fn render(entity: Option<&str>) -> Result<String, BioMcpError> {
             "study" => Ok(list_study()),
             "adverse-event" | "adverse_event" | "adverseevent" => Ok(list_adverse_event()),
             "search-all" | "search_all" | "searchall" => Ok(list_search_all()),
+            "discover" => Ok(list_discover()),
             "batch" => Ok(list_batch()),
             "enrich" => Ok(list_enrich()),
             "skill" | "skills" => Ok(crate::cli::skill::list_use_cases()?),
             other => Err(BioMcpError::InvalidArgument(format!(
-                "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- trial\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- protein\n- study\n- adverse-event\n- search-all\n- batch\n- enrich\n- skill"
+                "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- trial\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- protein\n- study\n- adverse-event\n- search-all\n- discover\n- batch\n- enrich\n- skill"
             ))),
         },
     }
@@ -45,6 +46,17 @@ fn list_all() -> String {
         );
     }
     out
+}
+
+fn list_discover() -> String {
+    r#"# discover
+
+## Commands
+
+- `discover <query>` - resolve free-text biomedical text into typed concepts and suggested BioMCP follow-up commands
+- `--json discover <query>` - emit structured concepts plus discover-specific `_meta` metadata for agents
+"#
+    .to_string()
 }
 
 fn list_gene() -> String {
@@ -648,8 +660,17 @@ mod tests {
         let out = render(None).expect("list root should render");
         assert!(out.contains("## Quickstart"));
         assert!(out.contains("`skill install` - install BioMCP skill guidance to your agent"));
+        assert!(out.contains("`discover <query>`"));
         assert!(!out.contains("`skill list`"));
         assert!(!out.contains("Run `biomcp skill list` to browse all skills."));
+    }
+
+    #[test]
+    fn list_discover_page_exists() {
+        let out = render(Some("discover")).expect("list discover should render");
+        assert!(out.contains("# discover"));
+        assert!(out.contains("discover <query>"));
+        assert!(out.contains("--json discover <query>"));
     }
 
     #[test]
@@ -769,5 +790,6 @@ mod tests {
         assert!(msg.contains("- enrich"));
         assert!(msg.contains("- batch"));
         assert!(msg.contains("- study"));
+        assert!(msg.contains("- discover"));
     }
 }

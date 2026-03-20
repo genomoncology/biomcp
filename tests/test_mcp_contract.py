@@ -39,6 +39,15 @@ async def test_list_tools_includes_biomcp(mcp_session_factory) -> None:
         assert "biomcp" in names
         assert "shell" not in names
 
+        biomcp = next(tool for tool in result.tools if tool.name == "biomcp")
+        annotations = biomcp.annotations
+        assert annotations is not None
+        assert getattr(annotations, "title", None) == "BioMCP"
+        read_only = getattr(annotations, "readOnlyHint", None)
+        if read_only is None:
+            read_only = getattr(annotations, "read_only_hint", None)
+        assert read_only is True
+
 
 @pytest.mark.asyncio
 async def test_biomcp_description_matches_list_contract(
@@ -168,3 +177,17 @@ async def test_charted_study_call_rejects_output_file_in_mcp_mode(
     assert result.content
     assert isinstance(result.content[0], types.TextContent)
     assert "MCP chart responses do not support --output" in result.content[0].text
+
+
+@pytest.mark.asyncio
+async def test_discover_command_is_allowed_via_mcp(mcp_session_factory) -> None:
+    async with mcp_session_factory() as (session, _initialize_result):
+        result = await session.call_tool(
+            "biomcp",
+            arguments={"command": "biomcp discover BRCA1"},
+        )
+
+    assert _is_error(result) is False
+    assert result.content
+    assert isinstance(result.content[0], types.TextContent)
+    assert "BRCA1" in result.content[0].text
