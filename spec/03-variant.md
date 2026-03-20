@@ -32,6 +32,56 @@ echo "$out" | mustmatch like "hgvsp=V600E"
 echo "$out" | mustmatch like "V600E"
 ```
 
+## Residue Alias Search
+
+Gene-scoped residue aliases should stay on the variant path instead of falling
+through to condition text. The query echo should describe the dedicated alias
+search honestly.
+
+```bash
+out="$(biomcp search variant "PTPN22 620W" --limit 5)"
+echo "$out" | mustmatch like "gene=PTPN22"
+echo "$out" | mustmatch like "residue_alias=620W"
+```
+
+## Residue Alias Search with Gene Flag
+
+A residue alias supplied as a positional token alongside `--gene` should use the
+same dedicated alias search path as the two-token positional form.
+
+```bash
+out="$(biomcp search variant -g PTPN22 620W --limit 5)"
+echo "$out" | mustmatch like "gene=PTPN22"
+echo "$out" | mustmatch like "residue_alias=620W"
+```
+
+## Protein Shorthand with Gene Context
+
+Standalone protein shorthand becomes safe once the gene is already supplied in a
+flag. The query echo should show the normal exact protein filter rather than an
+ambiguous gene search.
+
+```bash
+out="$(biomcp search variant -g PTPN22 R620W --limit 5)"
+echo "$out" | mustmatch like "gene=PTPN22"
+echo "$out" | mustmatch like "hgvsp=R620W"
+```
+
+## Standalone Protein Shorthand Guidance
+
+Without gene context, a shorthand like `R620W` is too ambiguous for automatic
+typed search. BioMCP should return variant-specific next commands rather than
+silently rewriting the query into a gene or condition search.
+
+```bash
+status=0
+out="$(biomcp search variant R620W 2>&1)" || status=$?
+test "${status}" -eq 1
+echo "$out" | mustmatch like "without gene context"
+echo "$out" | mustmatch like "biomcp search variant --hgvsp R620W --limit 10"
+echo "$out" | mustmatch like "biomcp discover R620W"
+```
+
 ## Getting Variant Details
 
 The default variant card should include both human-readable and identifier-centric fields. We assert on a stable rsID and pathogenicity marker.
@@ -60,6 +110,37 @@ Population frequency context helps distinguish rare versus common variation. We 
 out="$(biomcp get variant "BRAF V600E" population)"
 echo "$out" | mustmatch like "## Population"
 echo "$out" | mustmatch like "gnomAD AF"
+```
+
+## Get with Residue Alias Guidance
+
+`get variant` remains exact-only, so residue aliases should return recovery
+guidance that keeps the user on the variant search path.
+
+```bash
+status=0
+out="$(biomcp get variant "PTPN22 620W" 2>&1)" || status=$?
+test "${status}" -eq 1
+echo "$out" | mustmatch like "BioMCP could not map 'PTPN22 620W' to an exact variant."
+echo "$out" | mustmatch like "biomcp search variant \"PTPN22 620W\" --limit 10"
+echo "$out" | mustmatch like "biomcp search variant -g PTPN22 --limit 10"
+```
+
+## JSON Guidance Metadata
+
+JSON error output for variant shorthand should expose the same high-level
+contract as the alias fallback flow: structured `_meta.alias_resolution`,
+ordered `_meta.next_commands`, and a non-zero exit.
+
+```bash
+status=0
+out="$(biomcp --json get variant R620W)" || status=$?
+test "${status}" -eq 1
+echo "$out" | mustmatch like '"alias_resolution": {'
+echo "$out" | mustmatch like '"kind": "protein_change_only"'
+echo "$out" | mustmatch like '"requested_entity": "variant"'
+echo "$out" | mustmatch like '"next_commands": ['
+echo "$out" | mustmatch like '"biomcp discover R620W"'
 ```
 
 ## Variant to Trials

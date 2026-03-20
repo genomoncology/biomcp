@@ -11,6 +11,9 @@ BioMCP supports multiple input forms:
 - HGVS genomic: `chr7:g.140453136A>T`
 - gene-protein form: `BRAF V600E`
 
+These exact formats are accepted by `biomcp get variant` and the exact-ID
+helper commands.
+
 ## Get a variant record
 
 ```bash
@@ -20,6 +23,9 @@ biomcp get variant "BRAF V600E"
 ```
 
 The default output favors concise, clinically relevant context first.
+
+Shorthand such as `PTPN22 620W` or `R620W` is not treated as an exact variant
+ID. Use `biomcp search variant` for those inputs.
 
 ## Request variant sections
 
@@ -104,6 +110,21 @@ By gene and protein change:
 ```bash
 biomcp search variant -g BRAF --hgvsp V600E --limit 5
 ```
+
+By residue alias shorthand:
+
+```bash
+biomcp search variant "PTPN22 620W" --limit 5
+```
+
+By protein shorthand when gene context is already supplied:
+
+```bash
+biomcp search variant -g PTPN22 R620W --limit 5
+```
+
+Standalone protein shorthand like `R620W` returns variant-specific recovery
+guidance instead of falling back to gene or condition discovery.
 
 By significance:
 

@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer, Serialize};
 
+use crate::entities::variant::VariantProteinAlias;
 use crate::error::BioMcpError;
 use crate::sources::is_valid_gene_symbol;
 use crate::utils::serde::StringOrVec;
@@ -74,6 +75,7 @@ pub struct VariantSearchParams {
     pub hgvsp: Option<String>,
     pub hgvsc: Option<String>,
     pub rsid: Option<String>,
+    pub protein_alias: Option<VariantProteinAlias>,
     pub significance: Option<String>,
     pub max_frequency: Option<f64>,
     pub min_cadd: Option<f64>,
@@ -357,13 +359,13 @@ impl MyVariantClient {
         )?;
 
         let mut terms: Vec<String> = Vec::new();
-
-        if let Some(gene) = params
+        let gene = params
             .gene
             .as_deref()
             .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
+            .filter(|v| !v.is_empty());
+
+        if let Some(gene) = gene {
             if !is_valid_gene_symbol(gene) {
                 return Err(BioMcpError::InvalidArgument(
                     "Gene symbol filter must contain only letters, numbers, '_' or '-'".into(),
@@ -372,6 +374,19 @@ impl MyVariantClient {
             terms.push(format!(
                 "dbnsfp.genename:{}",
                 Self::escape_query_value(gene)
+            ));
+        }
+
+        if let Some(alias) = params.protein_alias.as_ref() {
+            if gene.is_none() {
+                return Err(BioMcpError::InvalidArgument(
+                    "Residue alias search requires a gene symbol. Example: biomcp search variant -g PTPN22 620W".into(),
+                ));
+            }
+            let trailing_alias = alias.label();
+            let leading_alias = format!("{}{}*", alias.residue, alias.position);
+            terms.push(format!(
+                "(dbnsfp.hgvsp:*{trailing_alias} OR dbnsfp.hgvsp:*{leading_alias})"
             ));
         }
 
@@ -1029,6 +1044,7 @@ mod tests {
             hgvsp: None,
             hgvsc: None,
             rsid: None,
+            protein_alias: None,
             significance: None,
             max_frequency: None,
             min_cadd: None,
@@ -1061,6 +1077,7 @@ mod tests {
             hgvsp: None,
             hgvsc: None,
             rsid: None,
+            protein_alias: None,
             significance: None,
             max_frequency: None,
             min_cadd: None,
@@ -1093,6 +1110,7 @@ mod tests {
             hgvsp: None,
             hgvsc: None,
             rsid: None,
+            protein_alias: None,
             significance: None,
             max_frequency: None,
             min_cadd: None,
@@ -1144,6 +1162,7 @@ mod tests {
                 hgvsp: None,
                 hgvsc: Some("1799T>A".into()),
                 rsid: None,
+                protein_alias: None,
                 significance: None,
                 max_frequency: None,
                 min_cadd: None,
@@ -1190,6 +1209,60 @@ mod tests {
                 hgvsp: None,
                 hgvsc: None,
                 rsid: Some("RS113488022".into()),
+                protein_alias: None,
+                significance: None,
+                max_frequency: None,
+                min_cadd: None,
+                consequence: None,
+                review_status: None,
+                population: None,
+                revel_min: None,
+                gerp_min: None,
+                tumor_site: None,
+                condition: None,
+                impact: None,
+                lof: false,
+                has: None,
+                missing: None,
+                therapy: None,
+                limit: 5,
+                offset: 0,
+            })
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn search_builds_gene_residue_alias_clause() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("GET"))
+            .and(path("/query"))
+            .and(query_param(
+                "q",
+                "dbnsfp.genename:PTPN22 AND (dbnsfp.hgvsp:*620W OR dbnsfp.hgvsp:*W620*)",
+            ))
+            .and(query_param("size", "5"))
+            .and(query_param("from", "0"))
+            .and(query_param("fields", MYVARIANT_FIELDS_SEARCH))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "total": 0,
+                "hits": []
+            })))
+            .mount(&server)
+            .await;
+
+        let client = MyVariantClient::new_for_test(server.uri()).unwrap();
+        let _ = client
+            .search(&VariantSearchParams {
+                gene: Some("PTPN22".into()),
+                hgvsp: None,
+                hgvsc: None,
+                rsid: None,
+                protein_alias: Some(crate::entities::variant::VariantProteinAlias {
+                    position: 620,
+                    residue: 'W',
+                }),
                 significance: None,
                 max_frequency: None,
                 min_cadd: None,
