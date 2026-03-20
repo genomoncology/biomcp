@@ -163,6 +163,14 @@ export UMLS_API_KEY="..."        # discover crosswalk enrichment
 export ALPHAGENOME_API_KEY="..." # AlphaGenome variant effect prediction
 ```
 
+## Data Sources and Licensing
+
+BioMCP is MIT-licensed. It performs on-demand queries against upstream providers instead of vendoring or mirroring their datasets, but upstream terms govern reuse of retrieved results.
+
+Some providers are fully open, some BioMCP features require registration or API keys, and some queryable sources still impose notable reuse limits. The two biggest cautions are KEGG, which distinguishes academic and non-academic use, and COSMIC, which BioMCP keeps indirect-only because its licensing model is incompatible with a direct open integration.
+
+Use [Source Licensing and Terms](reference/source-licensing.md) for the per-source breakdown and [API Keys](getting-started/api-keys.md) for setup steps and registration links.
+
 ## Skills
 
 BioMCP ships an embedded guide for agent workflows rather than a built-in
@@ -188,6 +196,7 @@ biomcp study query --study msk_impact_2017 --gene TP53 --type mutations --chart 
 - [First Query](getting-started/first-query.md)
 - [Search All Workflow](how-to/search-all-workflow.md)
 - [Discover](user-guide/discover.md)
+- [Source Licensing and Terms](reference/source-licensing.md)
 - [Data Sources](reference/data-sources.md)
 - [Quick Reference](reference/quick-reference.md)
 - [Troubleshooting](troubleshooting.md)

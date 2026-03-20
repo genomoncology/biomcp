@@ -258,6 +258,7 @@ Full documentation at [biomcp.org](https://biomcp.org/).
 - [Getting Started](docs/getting-started/installation.md)
 - [Search All Workflow](docs/how-to/search-all-workflow.md)
 - [Cross-Entity Pivot Guide](docs/how-to/cross-entity-pivots.md)
+- [Source Licensing and Terms](docs/reference/source-licensing.md)
 - [Data Sources](docs/reference/data-sources.md)
 - [Quick Reference](docs/reference/quick-reference.md)
 - [Troubleshooting](docs/troubleshooting.md)
@@ -266,6 +267,14 @@ Full documentation at [biomcp.org](https://biomcp.org/).
 
 If you use BioMCP in research, cite it via [`CITATION.cff`](CITATION.cff).
 GitHub also exposes `Cite this repository` in the repository sidebar when that file is present.
+
+## Data Sources and Licensing
+
+BioMCP is MIT-licensed. It performs on-demand queries against upstream providers instead of vendoring or mirroring their datasets, but upstream terms govern reuse of retrieved results.
+
+Some providers are fully open, some BioMCP features require registration or API keys, and some queryable sources still impose notable reuse limits. The two biggest cautions are KEGG, which distinguishes academic and non-academic use, and COSMIC, which BioMCP keeps indirect-only because its licensing model is incompatible with a direct open integration.
+
+Use [Source Licensing and Terms](docs/reference/source-licensing.md) for the per-source breakdown and [API Keys](docs/getting-started/api-keys.md) for setup steps and registration links.
 
 ## License
 

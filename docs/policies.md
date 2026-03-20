@@ -8,7 +8,7 @@ BioMCP is distributed under the MIT license.
 
 BioMCP queries third-party APIs. Each provider may have its own terms of service, attribution requirements, and rate limits.
 
-See [Data sources](reference/data-sources.md) for the full list and which features depend on which APIs.
+See [Source licensing reference](reference/source-licensing.md) for provider terms and [Data sources](reference/data-sources.md) for the operational source matrix.
 
 ## Privacy and sensitive data
 

@@ -56,6 +56,7 @@ nav:
   - Reference:
       - Quick Reference: reference/quick-reference.md
       - Data Sources: reference/data-sources.md
+      - Source Licensing: reference/source-licensing.md
       - MCP Server: reference/mcp-server.md
       - Error Codes: reference/error-codes.md
       - Benchmarks: reference/benchmarks.md

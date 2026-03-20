@@ -1,7 +1,7 @@
 # API Keys
 
 Most BioMCP workflows run without credentials.
-Some enrichment and higher-rate access paths improve with API keys.
+Some enrichment and higher-rate access paths improve with API keys. For provider terms, redistribution caveats, and which sources are only indirect provenance, see the [source-licensing reference](../reference/source-licensing.md).
 
 ## Required for prediction section
 
@@ -9,17 +9,21 @@ Some enrichment and higher-rate access paths improve with API keys.
 
 Used by variant prediction lookups:
 
+Provider access: <https://deepmind.google/science/alphagenome/>
+
 ```bash
 export ALPHAGENOME_API_KEY="..."
 biomcp get variant "chr7:g.140453136A>T" predict
 ```
 
-## Optional enrichment keys
+## Additional API keys
 
 ### `ONCOKB_TOKEN`
 
 Used for production OncoKB enrichment.
 If omitted, BioMCP uses the public/demo path when possible.
+
+Register at: <https://www.oncokb.org/account/register>
 
 ```bash
 export ONCOKB_TOKEN="..."
@@ -29,6 +33,8 @@ biomcp get variant "BRAF V600E"
 ### `NCI_API_KEY`
 
 Used for NCI CTS trial calls.
+
+Request access at: <https://clinicaltrialsapi.cancer.gov/>
 
 ```bash
 export NCI_API_KEY="..."
@@ -51,6 +57,8 @@ biomcp get disease "breast cancer" disgenet
 
 Adds optional clinical crosswalk enrichment to `biomcp discover`.
 
+Register at: <https://uts.nlm.nih.gov/uts/signup-login>
+
 ```bash
 export UMLS_API_KEY="..."
 biomcp discover "cystic fibrosis"
@@ -60,6 +68,8 @@ biomcp --json discover diabetes
 ### `NCBI_API_KEY`
 
 Improves rate limits for PubTator, PMC OA, and NCBI ID converter (3 → 10 req/sec).
+
+Create one in My NCBI: <https://www.ncbi.nlm.nih.gov/account/settings/>
 
 ```bash
 export NCBI_API_KEY="..."
@@ -72,6 +82,8 @@ Unlocks optional Semantic Scholar article enrichment and navigation. Use it for
 `get article ... tldr`, `article citations`, `article references`, and
 `article recommendations`.
 
+Request a key at: <https://www.semanticscholar.org/product/api>
+
 ```bash
 export S2_API_KEY="..."
 biomcp get article 22663011 tldr
@@ -81,6 +93,8 @@ biomcp article citations 22663011 --limit 3
 ### `OPENFDA_API_KEY`
 
 Improves OpenFDA rate limits for drug safety lookups.
+
+Request a key at: <https://open.fda.gov/apis/authentication/>
 
 ```bash
 export OPENFDA_API_KEY="..."
@@ -93,5 +107,7 @@ biomcp search adverse-event --drug pembrolizumab --limit 5
 - Do not commit secrets into source control.
 - Set keys in the same environment used by your MCP client.
 - Rotate keys when sharing machines or CI runners.
-- `S2_API_KEY` is optional; when absent, `search article` and ordinary `get article` still work.
+- `S2_API_KEY` is optional for `search article` and plain `get article`, but is required for the specific Semantic Scholar helper commands listed above (`tldr`, `citations`, `references`, `recommendations`).
 - `UMLS_API_KEY` is optional; when absent, `discover` still works with OLS4-only results.
+
+See also: [Source Licensing and Terms](../reference/source-licensing.md)
