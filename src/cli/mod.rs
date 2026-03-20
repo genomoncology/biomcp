@@ -512,7 +512,7 @@ See also: biomcp list gwas")]
         #[arg(long, default_value = "0")]
         offset: usize,
     },
-    /// Search articles by gene, disease, drug, keyword, or author (PubMed/PubTator3)
+    /// Search articles by gene, disease, drug, keyword, or author (PubTator3 + Europe PMC, optional Semantic Scholar)
     #[command(after_help = "\
 EXAMPLES:
   biomcp search article \"BRAF resistance\"
@@ -2782,6 +2782,40 @@ fn search_json<T: serde::Serialize>(
     .map_err(Into::into)
 }
 
+fn article_search_json(
+    query: &str,
+    sort: crate::entities::article::ArticleSort,
+    semantic_scholar_enabled: bool,
+    results: Vec<crate::entities::article::ArticleSearchResult>,
+    pagination: PaginationMeta,
+) -> anyhow::Result<String> {
+    #[derive(serde::Serialize)]
+    struct ArticleSearchResponse {
+        query: String,
+        sort: String,
+        semantic_scholar_enabled: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        ranking_policy: Option<&'static str>,
+        pagination: PaginationMeta,
+        count: usize,
+        results: Vec<crate::entities::article::ArticleSearchResult>,
+    }
+
+    let count = results.len();
+    crate::render::json::to_pretty(&ArticleSearchResponse {
+        query: query.to_string(),
+        sort: sort.as_str().to_string(),
+        semantic_scholar_enabled,
+        ranking_policy: (sort == crate::entities::article::ArticleSort::Relevance).then_some(
+            "directness-first (title coverage > title+abstract coverage > study/review cue > citation support)",
+        ),
+        pagination,
+        count,
+        results,
+    })
+    .map_err(Into::into)
+}
+
 fn pagination_footer_offset(meta: &PaginationMeta) -> String {
     crate::render::markdown::pagination_footer(
         crate::render::markdown::PaginationFooterMode::Offset,
@@ -3536,8 +3570,15 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             results,
                         })?)
                     } else {
-                        Ok(crate::render::markdown::article_search_markdown(
-                            &query, &results,
+                        Ok(crate::render::markdown::article_search_markdown_with_footer_and_context(
+                            &query,
+                            &results,
+                            "",
+                            filters.sort,
+                            crate::entities::article::semantic_scholar_search_enabled(
+                                &filters,
+                                crate::entities::article::ArticleSourceFilter::All,
+                            ),
                         )?)
                     }
                 }
@@ -3749,8 +3790,15 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             results,
                         })?)
                     } else {
-                        Ok(crate::render::markdown::article_search_markdown(
-                            &query, &results,
+                        Ok(crate::render::markdown::article_search_markdown_with_footer_and_context(
+                            &query,
+                            &results,
+                            "",
+                            filters.sort,
+                            crate::entities::article::semantic_scholar_search_enabled(
+                                &filters,
+                                crate::entities::article::ArticleSourceFilter::All,
+                            ),
                         )?)
                     }
                 }
@@ -3975,8 +4023,15 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             results,
                         })?)
                     } else {
-                        Ok(crate::render::markdown::article_search_markdown(
-                            &query, &results,
+                        Ok(crate::render::markdown::article_search_markdown_with_footer_and_context(
+                            &query,
+                            &results,
+                            "",
+                            filters.sort,
+                            crate::entities::article::semantic_scholar_search_enabled(
+                                &filters,
+                                crate::entities::article::ArticleSourceFilter::All,
+                            ),
                         )?)
                     }
                 }
@@ -4068,8 +4123,15 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             results,
                         })?)
                     } else {
-                        Ok(crate::render::markdown::article_search_markdown(
-                            &query, &results,
+                        Ok(crate::render::markdown::article_search_markdown_with_footer_and_context(
+                            &query,
+                            &results,
+                            "",
+                            filters.sort,
+                            crate::entities::article::semantic_scholar_search_enabled(
+                                &filters,
+                                crate::entities::article::ArticleSourceFilter::All,
+                            ),
                         )?)
                     }
                 }
@@ -5123,12 +5185,27 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     let results = page.results;
                     let pagination =
                         PaginationMeta::offset(offset, limit, results.len(), page.total);
+                    let semantic_scholar_enabled =
+                        crate::entities::article::semantic_scholar_search_enabled(
+                            &filters,
+                            source_filter,
+                        );
                     if cli.json {
-                        search_json(results, pagination)
+                        article_search_json(
+                            &query,
+                            filters.sort,
+                            semantic_scholar_enabled,
+                            results,
+                            pagination,
+                        )
                     } else {
                         let footer = pagination_footer_offset(&pagination);
-                        Ok(crate::render::markdown::article_search_markdown_with_footer(
-                            &query, &results, &footer,
+                        Ok(crate::render::markdown::article_search_markdown_with_footer_and_context(
+                            &query,
+                            &results,
+                            &footer,
+                            filters.sort,
+                            semantic_scholar_enabled,
                         )?)
                     }
                 }
@@ -6067,10 +6144,10 @@ pub async fn execute_mcp(mut args: Vec<String>) -> anyhow::Result<CliOutput> {
 mod tests {
     use super::{
         ArticleCommand, ChartArgs, ChartType, Cli, Commands, DrugCommand, GeneCommand, GetEntity,
-        OutputStream, ProteinCommand, StudyCommand, VariantCommand, VariantSearchPlan, execute,
-        execute_mcp, extract_json_from_sections, paginate_trial_locations,
-        parse_simple_gene_change, parse_trial_location_paging, resolve_query_input,
-        resolve_variant_query, run_outcome, should_try_pathway_trial_fallback,
+        OutputStream, PaginationMeta, ProteinCommand, StudyCommand, VariantCommand,
+        VariantSearchPlan, article_search_json, execute, execute_mcp, extract_json_from_sections,
+        paginate_trial_locations, parse_simple_gene_change, parse_trial_location_paging,
+        resolve_query_input, resolve_variant_query, run_outcome, should_try_pathway_trial_fallback,
         trial_locations_json, trial_search_query_summary, truncate_article_annotations,
     };
     use clap::{CommandFactory, Parser};
@@ -6458,6 +6535,62 @@ mod tests {
                 .expect("section sources array")
                 .iter()
                 .any(|entry| entry["key"] == "locations")
+        );
+    }
+
+    #[test]
+    fn article_search_json_includes_query_and_ranking_context() {
+        let pagination = PaginationMeta::offset(0, 3, 1, Some(1));
+        let json = article_search_json(
+            "gene=BRAF, sort=relevance",
+            crate::entities::article::ArticleSort::Relevance,
+            true,
+            vec![crate::entities::article::ArticleSearchResult {
+                pmid: "22663011".into(),
+                pmcid: Some("PMC9984800".into()),
+                doi: Some("10.1056/NEJMoa1203421".into()),
+                title: "BRAF melanoma review".into(),
+                journal: Some("Journal".into()),
+                date: Some("2025-01-01".into()),
+                citation_count: Some(12),
+                influential_citation_count: Some(4),
+                source: crate::entities::article::ArticleSource::EuropePmc,
+                matched_sources: vec![
+                    crate::entities::article::ArticleSource::EuropePmc,
+                    crate::entities::article::ArticleSource::SemanticScholar,
+                ],
+                score: None,
+                is_retracted: Some(false),
+                abstract_snippet: Some("Abstract".into()),
+                ranking: Some(crate::entities::article::ArticleRankingMetadata {
+                    directness_tier: 3,
+                    anchor_count: 2,
+                    title_anchor_hits: 2,
+                    abstract_anchor_hits: 0,
+                    combined_anchor_hits: 2,
+                    all_anchors_in_title: true,
+                    all_anchors_in_text: true,
+                    study_or_review_cue: true,
+                }),
+                normalized_title: "braf melanoma review".into(),
+                normalized_abstract: "abstract".into(),
+                publication_type: Some("Review".into()),
+                insertion_index: 0,
+            }],
+            pagination,
+        )
+        .expect("article search json should render");
+
+        let value: serde_json::Value =
+            serde_json::from_str(&json).expect("json should parse successfully");
+        assert_eq!(value["query"], "gene=BRAF, sort=relevance");
+        assert_eq!(value["sort"], "relevance");
+        assert_eq!(value["semantic_scholar_enabled"], true);
+        assert!(value["ranking_policy"].as_str().is_some());
+        assert_eq!(value["results"][0]["ranking"]["directness_tier"], 3);
+        assert_eq!(
+            value["results"][0]["matched_sources"][1],
+            serde_json::Value::String("semanticscholar".into())
         );
     }
 

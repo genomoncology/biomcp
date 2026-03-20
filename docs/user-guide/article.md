@@ -38,8 +38,15 @@ biomcp search article -g BRAF --since 2024-01-01 --no-preprints --limit 5
 ### Multi-source federation
 
 Article search fans out to PubTator3 and Europe PMC in parallel by default.
-Results are deduplicated by PMID when both backends return the same paper.
-Output is grouped by source; PubTator rows include a score column.
+When `S2_API_KEY` is set, BioMCP also adds a Semantic Scholar search leg for
+the same typed query and merges duplicates across PMID, PMCID, and DOI where
+possible.
+
+Default `--sort relevance` is directness-first: title coverage ranks ahead of
+title+abstract coverage, then study/review cues, then citation support.
+Markdown preserves the merged rank order, and JSON includes row-level
+`matched_sources`, `ranking`, `citation_count`, and
+`influential_citation_count`.
 
 Use `--source <all|pubtator|europepmc>` to select one backend or keep the default federated search.
 
@@ -62,9 +69,9 @@ biomcp get article 22663011
 
 When `S2_API_KEY` is set, default article output also includes an optional
 Semantic Scholar section with TLDR text, influence counts, and open-access PDF
-metadata when that paper resolves in Semantic Scholar. `search article` still
-fans out only to PubTator3 and Europe PMC; Semantic Scholar is enrichment and
-navigation, not federated search.
+metadata when that paper resolves in Semantic Scholar. `search article` also
+uses the key to add the Semantic Scholar search leg when compatible, but
+`--source` still stays `all|pubtator|europepmc` in v1.
 
 ## Request specific sections
 
@@ -113,12 +120,14 @@ This avoids repeated large payload downloads during iterative workflows.
 
 ```bash
 biomcp --json get article 22663011
+biomcp --json search article -g BRAF --limit 3
 ```
 
 JSON article responses include `_meta.next_commands` and `_meta.section_sources`,
 so article workflows can promote the next likely pivots and preserve section
-provenance without scraping markdown. JSON-capable article follow-ups preserve
-the same next-step guidance shape.
+provenance without scraping markdown. JSON `search article` responses also echo
+`query`, `sort`, `semantic_scholar_enabled`, and row-level ranking/provenance
+metadata.
 
 ## Practical tips
 

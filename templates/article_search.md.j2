@@ -7,23 +7,15 @@ Try broader search terms or check spelling.
 {% else -%}
 Found {{ count }} article{% if count != 1 %}s{% endif %}
 
-{% for group in groups -%}
-## {{ group.source_label }} ({{ group.count }})
-
-{% if group.source_key == "pubtator" -%}
-| PMID | Title | Journal | Date | Score |
-|---|---|---|---|---|
-{% for article in group.results -%}
-|{{ article.pmid }}|{% if article.is_retracted %}[RETRACTED] {% endif %}{{ article.title | truncate(60) }}|{{ article.journal | default("-") | truncate(20) }}|{{ article.date | default("-") }}|{{ article.score | default("-") }}|
-{% endfor %}
-{% else -%}
-| PMID | Title | Journal | Date | Cit. |
-|---|---|---|---|---|
-{% for article in group.results -%}
-|{{ article.pmid }}|{% if article.is_retracted %}[RETRACTED] {% endif %}{{ article.title | truncate(60) }}|{{ article.journal | default("-") | truncate(20) }}|{{ article.date | default("-") }}|{{ article.citation_count | default("-") }}|
-{% endfor %}
+Semantic Scholar: {% if semantic_scholar_enabled %}enabled{% else %}disabled{% endif %}
+{% if sort == "relevance" %}
+Ranking: {{ ranking_policy }}
 {% endif %}
 
+| PMID | Title | Source(s) | Date | Why | Cit. |
+|---|---|---|---|---|---|
+{% for article in rows -%}
+|{{ article.pmid }}|{% if article.is_retracted %}[RETRACTED] {% endif %}{{ article.title | truncate(60) }}|{{ article.sources }}|{{ article.date | default("-") }}|{{ article.why }}|{{ article.citation_count | default("-") }}|
 {% endfor %}
 
 Use `get article <pmid>` for details.

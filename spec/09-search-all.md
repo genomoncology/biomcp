@@ -51,3 +51,15 @@ out="$(biomcp search all -k "checkpoint inhibitor" --limit 3)"
 echo "$out" | mustmatch like "# Search All: keyword=checkpoint inhibitor"
 echo "$out" | mustmatch like "## Articles"
 ```
+
+## JSON Search All Preserves Article Metadata
+
+The article section in `search all` should reuse the stabilized article search
+pipeline rather than flattening away row-level source and ranking metadata.
+
+```bash
+out="$(biomcp --json search all -g BRAF --limit 3)"
+echo "$out" | mustmatch like "\"entity\": \"article\""
+echo "$out" | mustmatch like "\"source\":"
+echo "$out" | mustmatch like "\"ranking\": {"
+```
