@@ -67,6 +67,21 @@ assert "crate::cli::execute_mcp(args)" in shell
 assert "CallToolResult::success" in shell
 assert 'Content::image(encoded, "image/svg+xml")' in shell
 assert "MCP chart responses do not support --output/-o" in cli
+assert 'annotations(title = "BioMCP", read_only_hint = true)' in shell
+```
+
+## Read-only Allowlist
+
+The MCP `biomcp` tool accepts read-only CLI commands, including `discover`.
+Mutating commands remain blocked.
+
+```python
+from pathlib import Path
+
+repo_root = Path.cwd()
+shell = (repo_root / "src/mcp/shell.rs").read_text()
+assert '"discover" => true' in shell or '| "discover" => true' in shell
+assert "discover/skill" in shell or "discover/skill)." in shell
 ```
 
 ## Resource Catalog

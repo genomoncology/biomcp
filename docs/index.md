@@ -68,6 +68,7 @@ cargo build --release --locked
 ```bash
 uv tool install biomcp-cli
 biomcp health --apis-only
+biomcp discover "chest pain"
 biomcp list gene
 biomcp search all --gene BRAF --disease melanoma  # unified cross-entity discovery
 biomcp get gene BRAF pathways hpa
@@ -77,6 +78,7 @@ biomcp get gene BRAF pathways hpa
 
 ```text
 search <entity> [filters]    → discovery
+discover <query>            → concept resolution before entity selection
 get <entity> <id> [sections] → focused detail
 <entity> <helper> <id>       → cross-entity pivots
 enrich <GENE1,GENE2,...>     → gene-set enrichment
@@ -87,6 +89,7 @@ search all [slot filters]    → counts-first cross-entity orientation
 ## Feature highlights
 
 - **Federated article search:** PubTator3 and Europe PMC run together for `search article`, then deduplicate by PMID.
+- **Free-text discovery:** `biomcp discover` resolves aliases, brands, symptoms, and pathways before you commit to a typed entity command.
 - **Cross-entity pivots:** move directly from a known entity into trials, articles, drugs, pathways, structures, or article graph helpers.
 - **Study analytics + charts:** `study` commands support local cohort analytics plus native terminal, SVG, and PNG chart output.
 - **Citation graph helpers:** `article citations`, `article references`, and `article recommendations` add literature navigation from a known paper when `S2_API_KEY` is configured.
@@ -156,6 +159,7 @@ export S2_API_KEY="..."          # Semantic Scholar TLDR, citations, references,
 export OPENFDA_API_KEY="..."     # OpenFDA rate limits
 export NCI_API_KEY="..."         # NCI CTS trial search (--source nci)
 export ONCOKB_TOKEN="..."        # OncoKB variant helper
+export UMLS_API_KEY="..."        # discover crosswalk enrichment
 export ALPHAGENOME_API_KEY="..." # AlphaGenome variant effect prediction
 ```
 
@@ -183,6 +187,7 @@ biomcp study query --study msk_impact_2017 --gene TP53 --type mutations --chart 
 - [Installation](getting-started/installation.md)
 - [First Query](getting-started/first-query.md)
 - [Search All Workflow](how-to/search-all-workflow.md)
+- [Discover](user-guide/discover.md)
 - [Data Sources](reference/data-sources.md)
 - [Quick Reference](reference/quick-reference.md)
 - [Troubleshooting](troubleshooting.md)

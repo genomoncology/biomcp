@@ -26,6 +26,9 @@ and operational caveats so users can reason about result quality and troubleshoo
 | Drug | MyChem.info | `https://mychem.info/v1` | No | Drug metadata, targets, synonyms |
 | Drug section enrichments | ChEMBL + OpenTargets | `https://www.ebi.ac.uk/chembl/api/data`, `https://api.platform.opentargets.org/api/v4/graphql` | No | Target and indication expansion sections |
 | Disease normalization | MyDisease.info | `https://mydisease.info/v1` | No | MONDO-oriented disease normalization |
+| Discover structured concepts | OLS4 | `https://www.ebi.ac.uk/ols4` | No | Free-text ontology search for `biomcp discover`; OLS4 is the required backbone |
+| Discover clinical crosswalks | UMLS REST API | `https://uts-ws.nlm.nih.gov/rest` | Optional (`UMLS_API_KEY`) | Adds ICD-10, SNOMED CT, RxNorm, OMIM, and related cross-vocabulary IDs to discover results |
+| Discover plain-language topics | MedlinePlus Search | `https://wsearch.nlm.nih.gov/ws/query` | No | Best-effort disease/symptom context for `biomcp discover`; suppressed for gene/drug/pathway flows |
 | Disease genes/pathways/prevalence | OpenTargets GraphQL + Reactome | `https://api.platform.opentargets.org/api/v4/graphql`, `https://reactome.org/ContentService` | No | Baseline disease context with ranked associated targets and OpenTargets score summaries |
 | Disease `genes` and `phenotypes` sections | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | No | Core disease associations and phenotype evidence |
 | Disease `genes` and `variants` augmentation | CIViC | `https://civicdb.org/api` | No | Somatic driver augmentation for genes and disease-associated molecular profiles |
@@ -63,6 +66,7 @@ BioMCP only requires API keys for a subset of sources.
 | OncoKB | `ONCOKB_TOKEN` | Running `variant oncokb <id>` |
 | DisGeNET | `DISGENET_API_KEY` | Running `get gene <symbol> disgenet` or `get disease <name_or_id> disgenet` |
 | OpenFDA | `OPENFDA_API_KEY` | Optional; improves quota headroom |
+| UMLS | `UMLS_API_KEY` | Optional clinical crosswalk enrichment for `biomcp discover <query>` |
 
 ## Source-specific rate and payload constraints
 

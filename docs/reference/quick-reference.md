@@ -30,6 +30,7 @@ platform-specific notes.
 
 ```text
 biomcp search <entity> [filters]       # discovery
+biomcp discover <query>                # concept resolution before typed search/get
 biomcp get <entity> <id> [section...]  # focused detail
 biomcp <entity> <helper> <id>          # cross-entity pivots
 biomcp enrich <GENE1,GENE2,...>        # gene-set enrichment
@@ -69,6 +70,7 @@ biomcp search protein -q kinase --limit 5
 biomcp search adverse-event --drug pembrolizumab --serious --limit 5
 biomcp search all --gene BRAF --disease melanoma
 biomcp search all --keyword resistance --counts-only
+biomcp discover "chest pain"
 ```
 
 See also: [Search All Workflow](../how-to/search-all-workflow.md)
@@ -77,6 +79,7 @@ See also: [Search All Workflow](../how-to/search-all-workflow.md)
 
 ```bash
 biomcp --json search gene -q BRAF --limit 3
+biomcp --json discover Keytruda
 biomcp search trial -c melanoma --limit 3
 biomcp list
 biomcp list trial

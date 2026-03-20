@@ -21,6 +21,7 @@ nav:
       - Progressive Disclosure: concepts/progressive-disclosure.md
   - User Guide:
       - CLI Reference: user-guide/cli-reference.md
+      - Discover: user-guide/discover.md
       - Gene: user-guide/gene.md
       - Variant: user-guide/variant.md
       - Article: user-guide/article.md

@@ -12,6 +12,7 @@ use crate::entities::article::{
     Article, ArticleAnnotations, ArticleGraphResult, ArticleRecommendationsResult,
     ArticleRelatedPaper, ArticleSearchResult, ArticleSource,
 };
+use crate::entities::discover::{DiscoverResult, DiscoverType};
 use crate::entities::disease::{
     Disease, DiseaseAssociationScoreSummary, DiseaseSearchResult, PhenotypeSearchResult,
 };
@@ -343,6 +344,10 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
         "search_all.md.j2",
         include_str!("../../templates/search_all.md.j2"),
     )?;
+    env.add_template(
+        "discover.md.j2",
+        include_str!("../../templates/discover.md.j2"),
+    )?;
 
     let _ = ENV.set(env);
     Ok(ENV
@@ -621,6 +626,21 @@ pub(crate) fn variant_evidence_urls(variant: &Variant) -> Vec<(&'static str, Str
             "gnomAD",
             format!("https://gnomad.broadinstitute.org/variant/{variant_id}"),
         ));
+    }
+    urls
+}
+
+pub(crate) fn discover_evidence_urls(result: &DiscoverResult) -> Vec<(&'static str, String)> {
+    let mut urls = Vec::new();
+    if let Ok(mut url) = reqwest::Url::parse("https://www.ebi.ac.uk/ols4/api/search") {
+        url.query_pairs_mut()
+            .append_pair("q", result.query.trim())
+            .append_pair("rows", "10")
+            .append_pair("groupField", "iri");
+        urls.push(("OLS4", url.into()));
+    }
+    if let Some(topic) = result.plain_language.as_ref() {
+        urls.push(("MedlinePlus", topic.url.clone()));
     }
     urls
 }
@@ -2949,6 +2969,76 @@ pub fn search_all_markdown(
         searches_with_results => results.searches_with_results,
         wall_time_ms => results.wall_time_ms,
     })?)
+}
+
+pub fn render_discover(result: &DiscoverResult) -> Result<String, BioMcpError> {
+    #[derive(serde::Serialize)]
+    struct DiscoverConceptView {
+        label: String,
+        primary_id: Option<String>,
+        synonyms: Vec<String>,
+        xrefs: Vec<String>,
+        sources: Vec<String>,
+    }
+
+    #[derive(serde::Serialize)]
+    struct DiscoverGroupView {
+        label: String,
+        concepts: Vec<DiscoverConceptView>,
+    }
+
+    let tmpl = env()?.get_template("discover.md.j2")?;
+    let groups = [
+        DiscoverType::Gene,
+        DiscoverType::Drug,
+        DiscoverType::Disease,
+        DiscoverType::Symptom,
+        DiscoverType::Pathway,
+        DiscoverType::Variant,
+        DiscoverType::Unknown,
+    ]
+    .into_iter()
+    .filter_map(|kind| {
+        let concepts = result
+            .concepts
+            .iter()
+            .filter(|concept| concept.primary_type == kind)
+            .map(|concept| DiscoverConceptView {
+                label: concept.label.clone(),
+                primary_id: concept.primary_id.clone(),
+                synonyms: concept.synonyms.clone(),
+                xrefs: concept
+                    .xrefs
+                    .iter()
+                    .map(|xref| format!("{}:{}", xref.source, xref.id))
+                    .collect(),
+                sources: concept
+                    .sources
+                    .iter()
+                    .map(|source| format!("{} ({})", source.source, source.source_type))
+                    .collect(),
+            })
+            .collect::<Vec<_>>();
+        if concepts.is_empty() {
+            None
+        } else {
+            Some(DiscoverGroupView {
+                label: kind.label().to_string(),
+                concepts,
+            })
+        }
+    })
+    .collect::<Vec<_>>();
+
+    let body = tmpl.render(context! {
+        query => &result.query,
+        notes => &result.notes,
+        ambiguous => result.ambiguous,
+        groups => groups,
+        plain_language => &result.plain_language,
+        next_commands => &result.next_commands,
+    })?;
+    Ok(append_evidence_urls(body, discover_evidence_urls(result)))
 }
 
 #[cfg(test)]

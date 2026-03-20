@@ -84,6 +84,11 @@ enum ProbeKind {
         header_name: &'static str,
         header_value_prefix: &'static str,
     },
+    AuthQueryParam {
+        url: &'static str,
+        env_var: &'static str,
+        param_name: &'static str,
+    },
     #[allow(dead_code)]
     AuthPostJson {
         url: &'static str,
@@ -382,6 +387,29 @@ const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "OLS4",
+        affects: Some("discover command concept resolution"),
+        probe: ProbeKind::Get {
+            url: "https://www.ebi.ac.uk/ols4/api/search?q=BRCA1&rows=1&groupField=iri&ontology=hgnc",
+        },
+    },
+    SourceDescriptor {
+        api: "UMLS",
+        affects: Some("discover command clinical crosswalk enrichment"),
+        probe: ProbeKind::AuthQueryParam {
+            url: "https://uts-ws.nlm.nih.gov/rest/search/current?string=BRCA1&pageSize=1",
+            env_var: "UMLS_API_KEY",
+            param_name: "apiKey",
+        },
+    },
+    SourceDescriptor {
+        api: "MedlinePlus",
+        affects: Some("discover command plain-language disease and symptom context"),
+        probe: ProbeKind::Get {
+            url: "https://wsearch.nlm.nih.gov/ws/query?db=healthTopics&term=chest+pain&retmax=1",
+        },
+    },
+    SourceDescriptor {
         api: "cBioPortal",
         affects: Some("cohort frequency section"),
         probe: ProbeKind::Get {
@@ -556,6 +584,37 @@ async fn check_auth_get(
     .await
 }
 
+async fn check_auth_query_param(
+    client: reqwest::Client,
+    api: &str,
+    url: &str,
+    env_var: &str,
+    param_name: &str,
+    affects: Option<&'static str>,
+) -> HealthRow {
+    let Some(key) = configured_key(env_var) else {
+        return excluded_row(api, env_var, affects);
+    };
+
+    let key_hint = masked_key_hint(&key);
+    let req = match reqwest::Url::parse(url) {
+        Ok(mut parsed) => {
+            parsed.query_pairs_mut().append_pair(param_name, &key);
+            client.get(parsed)
+        }
+        Err(err) => {
+            return health_row(
+                api,
+                decorated_status("error", Some(&key_hint)),
+                format!("invalid url: {err}"),
+                affects,
+            );
+        }
+    };
+
+    send_request(api, affects, req, Some(key_hint)).await
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn check_auth_post_json(
     client: reqwest::Client,
@@ -637,6 +696,14 @@ async fn probe_source(client: reqwest::Client, source: &SourceDescriptor) -> Hea
                 source.affects,
             )
             .await
+        }
+        ProbeKind::AuthQueryParam {
+            url,
+            env_var,
+            param_name,
+        } => {
+            check_auth_query_param(client, source.api, url, env_var, param_name, source.affects)
+                .await
         }
         ProbeKind::AuthPostJson {
             url,
@@ -909,6 +976,9 @@ mod tests {
                 "HPA",
                 "InterPro",
                 "ComplexPortal",
+                "OLS4",
+                "UMLS",
+                "MedlinePlus",
                 "cBioPortal",
             ]
         );

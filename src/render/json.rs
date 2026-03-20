@@ -1,6 +1,8 @@
 use serde::Serialize;
 
+use crate::entities::discover::DiscoverResult;
 use crate::error::BioMcpError;
+use crate::render::markdown::discover_evidence_urls;
 use crate::render::provenance::SectionSource;
 
 pub fn to_pretty<T: Serialize>(value: &T) -> Result<String, BioMcpError> {
@@ -25,6 +27,21 @@ struct EntityJsonResponse<'a, T: Serialize> {
     #[serde(flatten)]
     entity: &'a T,
     _meta: EntityMeta,
+}
+
+#[derive(Serialize)]
+struct DiscoverMeta {
+    evidence_urls: Vec<EvidenceUrl>,
+    next_commands: Vec<String>,
+    section_sources: Vec<SectionSource>,
+    discovery_sources: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct DiscoverJsonResponse<'a> {
+    #[serde(flatten)]
+    result: &'a DiscoverResult,
+    _meta: DiscoverMeta,
 }
 
 pub fn to_entity_json<T: Serialize>(
@@ -67,9 +84,59 @@ pub fn to_entity_json<T: Serialize>(
     })
 }
 
+pub fn to_discover_json(result: &DiscoverResult) -> Result<String, BioMcpError> {
+    let evidence_urls = discover_evidence_urls(result)
+        .into_iter()
+        .filter_map(|(label, url)| {
+            let label = label.trim();
+            let url = url.trim();
+            if label.is_empty() || url.is_empty() {
+                return None;
+            }
+            Some(EvidenceUrl {
+                label: label.to_string(),
+                url: url.to_string(),
+            })
+        })
+        .collect::<Vec<_>>();
+    let next_commands = result
+        .next_commands
+        .iter()
+        .map(|cmd| cmd.trim().to_string())
+        .filter(|cmd| !cmd.is_empty())
+        .collect::<Vec<_>>();
+    let section_sources = crate::render::provenance::discover_section_sources(result)
+        .into_iter()
+        .filter_map(SectionSource::normalized)
+        .collect::<Vec<_>>();
+    let mut discovery_sources = Vec::new();
+    let mut seen_sources = std::collections::HashSet::new();
+    for section in &section_sources {
+        for source in &section.sources {
+            if seen_sources.insert(source.to_ascii_lowercase()) {
+                discovery_sources.push(source.clone());
+            }
+        }
+    }
+
+    to_pretty(&DiscoverJsonResponse {
+        result,
+        _meta: DiscoverMeta {
+            evidence_urls,
+            next_commands,
+            section_sources,
+            discovery_sources,
+        },
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{to_entity_json, to_pretty};
+    use super::{to_discover_json, to_entity_json, to_pretty};
+    use crate::entities::discover::{
+        ConceptSource, ConceptXref, DiscoverConcept, DiscoverConfidence, DiscoverIntent,
+        DiscoverResult, DiscoverType, MatchTier, PlainLanguageTopic,
+    };
     use crate::entities::drug::Drug;
     use crate::entities::gene::Gene;
     use crate::render::provenance::SectionSource;
@@ -276,5 +343,53 @@ mod tests {
         assert_eq!(section_sources[0]["key"], "identity");
         assert_eq!(section_sources[0]["label"], "Identity");
         assert_eq!(section_sources[0]["sources"][0], "NCBI Gene / MyGene.info");
+    }
+
+    #[test]
+    fn to_discover_json_adds_discover_meta_aliases() {
+        let json = to_discover_json(&DiscoverResult {
+            query: "Keytruda".to_string(),
+            normalized_query: "keytruda".to_string(),
+            concepts: vec![DiscoverConcept {
+                label: "pembrolizumab".to_string(),
+                primary_id: Some("RXNORM:1547545".to_string()),
+                primary_type: DiscoverType::Drug,
+                synonyms: vec!["Keytruda".to_string()],
+                xrefs: vec![ConceptXref {
+                    source: "RXNORM".to_string(),
+                    id: "1547545".to_string(),
+                }],
+                sources: vec![ConceptSource {
+                    source: "OLS4".to_string(),
+                    id: "DRON:00018671".to_string(),
+                    label: "pembrolizumab".to_string(),
+                    source_type: "DRON".to_string(),
+                }],
+                match_tier: MatchTier::Exact,
+                confidence: DiscoverConfidence::CanonicalId,
+            }],
+            plain_language: Some(PlainLanguageTopic {
+                title: "Chest Pain".to_string(),
+                url: "https://medlineplus.gov/chestpain.html".to_string(),
+                summary_excerpt: "Summary".to_string(),
+            }),
+            next_commands: vec!["biomcp get drug pembrolizumab".to_string()],
+            notes: vec!["UMLS enrichment unavailable (set UMLS_API_KEY)".to_string()],
+            ambiguous: false,
+            intent: DiscoverIntent::General,
+        })
+        .expect("discover json");
+
+        let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
+        assert_eq!(
+            value["_meta"]["next_commands"][0],
+            "biomcp get drug pembrolizumab"
+        );
+        assert_eq!(
+            value["_meta"]["section_sources"][0]["key"],
+            "structured_concepts"
+        );
+        assert_eq!(value["_meta"]["discovery_sources"][0], "OLS4");
+        assert_eq!(value["_meta"]["evidence_urls"][0]["label"], "OLS4");
     }
 }

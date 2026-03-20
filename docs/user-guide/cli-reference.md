@@ -28,6 +28,7 @@ under `_meta.section_sources`.
 ```text
 biomcp search ...
 biomcp get ...
+biomcp discover <query>
 biomcp enrich <GENE1,GENE2,...> [--limit N]
 biomcp batch <entity> <id1,id2,...> [--sections ...] [--source ...]
 biomcp chart [type]
@@ -58,6 +59,19 @@ part of the recommended command synopsis because current builds do not ship a
 browsable embedded catalog.
 
 ## Search command families
+
+## Discover
+
+```bash
+biomcp discover ERBB1
+biomcp discover "chest pain"
+biomcp --json discover diabetes
+```
+
+Use `discover` when the user starts with free text rather than a known entity
+type. Markdown output groups resolved concepts by type and suggests concrete
+follow-up BioMCP commands. JSON adds `_meta.discovery_sources` alongside the
+standard `_meta.next_commands` and `_meta.section_sources` metadata.
 
 ### All (cross-entity)
 
