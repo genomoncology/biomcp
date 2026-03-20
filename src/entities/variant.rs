@@ -239,12 +239,58 @@ pub struct VariantOncoKbResult {
     pub therapies: Vec<TreatmentImplication>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VariantProteinAlias {
+    pub position: u32,
+    pub residue: char,
+}
+
+impl VariantProteinAlias {
+    pub fn label(&self) -> String {
+        format!("{}{}", self.position, self.residue)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VariantShorthand {
+    GeneResidueAlias {
+        gene: String,
+        alias: String,
+        position: u32,
+        residue: char,
+    },
+    ProteinChangeOnly {
+        change: String,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VariantInputKind {
+    Exact(VariantIdFormat),
+    Shorthand(VariantShorthand),
+    Unsupported,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum VariantGuidanceKind {
+    GeneResidueAlias { gene: String, alias: String },
+    ProteinChangeOnly { change: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VariantGuidance {
+    pub query: String,
+    pub kind: VariantGuidanceKind,
+    pub next_commands: Vec<String>,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct VariantSearchFilters {
     pub gene: Option<String>,
     pub hgvsp: Option<String>,
     pub hgvsc: Option<String>,
     pub rsid: Option<String>,
+    pub protein_alias: Option<VariantProteinAlias>,
     pub significance: Option<String>,
     pub max_frequency: Option<f64>,
     pub min_cadd: Option<f64>,
@@ -361,6 +407,7 @@ fn parse_sections(sections: &[String]) -> Result<VariantSections, BioMcpError> {
     Ok(out)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VariantIdFormat {
     RsId(String),
     HgvsGenomic(String),
@@ -389,6 +436,124 @@ fn gene_protein_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"^([A-Z][A-Z0-9]+)\s+([A-Z]\d+[A-Z*])$").expect("valid regex"))
 }
 
+fn gene_residue_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^([A-Z][A-Z0-9]+)\s+(\d+)([A-Z*])$").expect("valid regex"))
+}
+
+fn residue_alias_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^(\d+)([A-Z*])$").expect("valid regex"))
+}
+
+fn protein_change_only_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^([A-Z]\d+[A-Z*])$").expect("valid regex"))
+}
+
+fn quote_command_arg(value: &str) -> String {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    if trimmed.chars().any(|c| c.is_whitespace()) {
+        return format!("\"{}\"", trimmed.replace('\"', "\\\""));
+    }
+    trimmed.to_string()
+}
+
+pub fn parse_variant_protein_alias(alias: &str) -> Option<VariantProteinAlias> {
+    let trimmed = alias.trim();
+    let caps = residue_alias_re().captures(trimmed)?;
+    Some(VariantProteinAlias {
+        position: caps[1].parse().ok()?,
+        residue: caps[2].chars().next()?,
+    })
+}
+
+fn parse_gene_residue_alias(query: &str) -> Option<(String, VariantProteinAlias)> {
+    let trimmed = query.trim();
+    let caps = gene_residue_re().captures(trimmed)?;
+    Some((
+        caps[1].to_string(),
+        VariantProteinAlias {
+            position: caps[2].parse().ok()?,
+            residue: caps[3].chars().next()?,
+        },
+    ))
+}
+
+pub fn classify_variant_input(input: &str) -> VariantInputKind {
+    let input = input.trim();
+    if input.is_empty() {
+        return VariantInputKind::Unsupported;
+    }
+
+    if let Some(caps) = rsid_re().captures(input) {
+        return VariantInputKind::Exact(VariantIdFormat::RsId(caps[1].to_ascii_lowercase()));
+    }
+    if let Some(caps) = hgvs_re().captures(input) {
+        return VariantInputKind::Exact(VariantIdFormat::HgvsGenomic(caps[1].to_string()));
+    }
+    if let Some(caps) = gene_protein_re().captures(input) {
+        return VariantInputKind::Exact(VariantIdFormat::GeneProteinChange {
+            gene: caps[1].to_string(),
+            change: caps[2].to_string(),
+        });
+    }
+    if let Some((gene, alias)) = parse_gene_residue_alias(input) {
+        let alias_label = alias.label();
+        return VariantInputKind::Shorthand(VariantShorthand::GeneResidueAlias {
+            gene,
+            alias: alias_label,
+            position: alias.position,
+            residue: alias.residue,
+        });
+    }
+    if let Some(caps) = protein_change_only_re().captures(input) {
+        return VariantInputKind::Shorthand(VariantShorthand::ProteinChangeOnly {
+            change: caps[1].to_string(),
+        });
+    }
+
+    VariantInputKind::Unsupported
+}
+
+pub fn variant_guidance(input: &str) -> Option<VariantGuidance> {
+    let query = input.trim();
+    let shorthand = match classify_variant_input(query) {
+        VariantInputKind::Shorthand(shorthand) => shorthand,
+        _ => return None,
+    };
+
+    Some(match shorthand {
+        VariantShorthand::GeneResidueAlias { gene, alias, .. } => VariantGuidance {
+            query: query.to_string(),
+            kind: VariantGuidanceKind::GeneResidueAlias {
+                gene: gene.clone(),
+                alias: alias.clone(),
+            },
+            next_commands: vec![
+                format!(
+                    "biomcp search variant {} --limit 10",
+                    quote_command_arg(query)
+                ),
+                format!("biomcp search variant -g {gene} --limit 10"),
+            ],
+        },
+        VariantShorthand::ProteinChangeOnly { change } => VariantGuidance {
+            query: query.to_string(),
+            kind: VariantGuidanceKind::ProteinChangeOnly {
+                change: change.clone(),
+            },
+            next_commands: vec![
+                format!("biomcp search variant --hgvsp {change} --limit 10"),
+                format!("biomcp discover {}", quote_command_arg(query)),
+            ],
+        },
+    })
+}
+
 pub fn parse_variant_id(id: &str) -> Result<VariantIdFormat, BioMcpError> {
     let id = id.trim();
     if id.is_empty() {
@@ -397,17 +562,8 @@ pub fn parse_variant_id(id: &str) -> Result<VariantIdFormat, BioMcpError> {
         ));
     }
 
-    if let Some(caps) = rsid_re().captures(id) {
-        return Ok(VariantIdFormat::RsId(caps[1].to_ascii_lowercase()));
-    }
-    if let Some(caps) = hgvs_re().captures(id) {
-        return Ok(VariantIdFormat::HgvsGenomic(caps[1].to_string()));
-    }
-    if let Some(caps) = gene_protein_re().captures(id) {
-        return Ok(VariantIdFormat::GeneProteinChange {
-            gene: caps[1].to_string(),
-            change: caps[2].to_string(),
-        });
+    if let VariantInputKind::Exact(exact) = classify_variant_input(id) {
+        return Ok(exact);
     }
 
     let looks_like_search_phrase = {
@@ -427,13 +583,22 @@ pub fn parse_variant_id(id: &str) -> Result<VariantIdFormat, BioMcpError> {
         .any(|needle| lower.contains(needle))
     };
 
-    let search_hint = if looks_like_search_phrase {
-        format!(
+    let search_hint = match classify_variant_input(id) {
+        VariantInputKind::Shorthand(VariantShorthand::GeneResidueAlias { .. }) => format!(
+            "\n\nThis looks like search-only shorthand, not an exact variant ID.\n\
+Use `biomcp search variant \"{id}\"` to resolve it, or pass an exact rsID/HGVS/gene+protein change to `get variant`."
+        ),
+        VariantInputKind::Shorthand(VariantShorthand::ProteinChangeOnly { change }) => format!(
+            "\n\nThis looks like search-only shorthand, not an exact variant ID.\n\
+Try:\n\
+1. biomcp search variant --hgvsp {change} --limit 10\n\
+2. biomcp discover {change}"
+        ),
+        _ if looks_like_search_phrase => format!(
             "\n\nThis looks like a search phrase or alteration description, not an exact variant ID.\n\
 Use `biomcp search variant \"{id}\"` to search, or pass an exact rsID/HGVS/gene+protein change to `get variant`."
-        )
-    } else {
-        String::new()
+        ),
+        _ => String::new(),
     };
 
     Err(BioMcpError::InvalidArgument(format!(
@@ -688,6 +853,7 @@ fn exon_deletion_fallback_params(
         hgvsp: None,
         hgvsc: None,
         rsid: None,
+        protein_alias: None,
         significance: filters.significance.clone(),
         max_frequency: filters.max_frequency,
         min_cadd: filters.min_cadd,
@@ -717,6 +883,9 @@ pub fn search_query_summary(filters: &VariantSearchFilters) -> String {
         .filter(|v| !v.is_empty())
     {
         parts.push(format!("gene={v}"));
+    }
+    if let Some(alias) = filters.protein_alias.as_ref() {
+        parts.push(format!("residue_alias={}", alias.label()));
     }
     if let Some(v) = filters
         .hgvsp
@@ -876,6 +1045,7 @@ pub async fn search_page(
             .as_deref()
             .map(str::trim)
             .is_some_and(|v| !v.is_empty())
+        || filters.protein_alias.is_some()
         || filters
             .significance
             .as_deref()
@@ -942,6 +1112,7 @@ pub async fn search_page(
         hgvsp: filters.hgvsp.clone(),
         hgvsc: filters.hgvsc.clone(),
         rsid: filters.rsid.clone(),
+        protein_alias: filters.protein_alias.clone(),
         significance: filters.significance.clone(),
         max_frequency: filters.max_frequency,
         min_cadd: filters.min_cadd,
@@ -1829,6 +2000,42 @@ mod tests {
     }
 
     #[test]
+    fn classify_variant_input_detects_search_only_shorthand() {
+        match classify_variant_input("PTPN22 620W") {
+            VariantInputKind::Shorthand(VariantShorthand::GeneResidueAlias {
+                gene,
+                alias,
+                position,
+                residue,
+            }) => {
+                assert_eq!(gene, "PTPN22");
+                assert_eq!(alias, "620W");
+                assert_eq!(position, 620);
+                assert_eq!(residue, 'W');
+            }
+            other => panic!("expected gene residue alias, got {other:?}"),
+        }
+
+        match classify_variant_input("R620W") {
+            VariantInputKind::Shorthand(VariantShorthand::ProteinChangeOnly { change }) => {
+                assert_eq!(change, "R620W");
+            }
+            other => panic!("expected protein change shorthand, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_variant_id_points_search_only_shorthand_to_search_variant() {
+        let residue_alias = parse_variant_id("PTPN22 620W").unwrap_err().to_string();
+        assert!(residue_alias.contains("search-only shorthand"));
+        assert!(residue_alias.contains("biomcp search variant \"PTPN22 620W\""));
+
+        let protein_change_only = parse_variant_id("R620W").unwrap_err().to_string();
+        assert!(protein_change_only.contains("search-only shorthand"));
+        assert!(protein_change_only.contains("biomcp search variant --hgvsp R620W"));
+    }
+
+    #[test]
     fn parse_variant_id_suggests_search_for_complex_alteration_text() {
         let message = match parse_variant_id("EGFR Exon 19 Deletion") {
             Ok(_) => panic!("expected complex alteration text to be rejected"),
@@ -1847,6 +2054,19 @@ mod tests {
             ..Default::default()
         });
         assert_eq!(summary, "gene=BRAF, hgvsc=c.1799T>A, rsid=rs113488022");
+    }
+
+    #[test]
+    fn search_query_summary_includes_residue_alias_marker() {
+        let summary = search_query_summary(&VariantSearchFilters {
+            gene: Some("PTPN22".into()),
+            protein_alias: Some(VariantProteinAlias {
+                position: 620,
+                residue: 'W',
+            }),
+            ..Default::default()
+        });
+        assert_eq!(summary, "gene=PTPN22, residue_alias=620W");
     }
 
     #[test]

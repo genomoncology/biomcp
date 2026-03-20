@@ -901,6 +901,33 @@ pub(crate) fn alias_fallback_suggestion(
     }
 }
 
+pub(crate) fn variant_guidance_suggestion(
+    guidance: &crate::entities::variant::VariantGuidance,
+) -> String {
+    match &guidance.kind {
+        crate::entities::variant::VariantGuidanceKind::GeneResidueAlias { .. } => {
+            let mut out = format!(
+                "BioMCP could not map '{}' to an exact variant.\n\nTry:",
+                guidance.query
+            );
+            for (idx, command) in guidance.next_commands.iter().enumerate() {
+                out.push_str(&format!("\n{}. {command}", idx + 1));
+            }
+            out
+        }
+        crate::entities::variant::VariantGuidanceKind::ProteinChangeOnly { .. } => {
+            let mut out = format!(
+                "BioMCP could not map '{}' to an exact variant without gene context.\n\nTry:",
+                guidance.query
+            );
+            for (idx, command) in guidance.next_commands.iter().enumerate() {
+                out.push_str(&format!("\n{}. {command}", idx + 1));
+            }
+            out
+        }
+    }
+}
+
 fn has_all_section(requested: &[String]) -> bool {
     requested
         .iter()

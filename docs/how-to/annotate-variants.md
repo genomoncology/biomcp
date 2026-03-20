@@ -18,6 +18,28 @@ biomcp get variant "chr7:g.140453136A>T"
 biomcp get variant "BRAF V600E"
 ```
 
+`get variant` stays exact-only. If you have shorthand like `PTPN22 620W` or
+`R620W`, resolve it through `search variant` first.
+
+## Search shorthand aliases
+
+`biomcp search variant` accepts a few common search-only shorthand forms in
+addition to the exact identifiers above:
+
+- Gene + residue alias: `PTPN22 620W`
+- Gene flag + protein shorthand: `biomcp search variant -g PTPN22 R620W`
+
+Examples:
+
+```bash
+biomcp search variant "PTPN22 620W" --limit 10
+biomcp search variant -g PTPN22 R620W --limit 10
+```
+
+Standalone protein shorthand like `R620W` is still too ambiguous to run
+automatically. BioMCP returns variant-specific guidance instead of silently
+searching the wrong entity.
+
 ## Filter search results
 
 ```bash

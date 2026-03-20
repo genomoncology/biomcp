@@ -1,6 +1,7 @@
 use serde::Serialize;
 
 use crate::entities::discover::{AliasFallbackDecision, DiscoverResult};
+use crate::entities::variant::{VariantGuidance, VariantGuidanceKind};
 use crate::error::BioMcpError;
 use crate::render::markdown::discover_evidence_urls;
 use crate::render::provenance::SectionSource;
@@ -180,6 +181,37 @@ enum AliasResolution<'a> {
     },
 }
 
+#[derive(Serialize)]
+struct VariantGuidanceJsonResponse<'a> {
+    error: AliasError,
+    _meta: VariantGuidanceMeta<'a>,
+}
+
+#[derive(Serialize)]
+struct VariantGuidanceMeta<'a> {
+    not_found: bool,
+    alias_resolution: VariantAliasResolution<'a>,
+    next_commands: &'a [String],
+}
+
+#[derive(Serialize)]
+#[serde(tag = "kind")]
+enum VariantAliasResolution<'a> {
+    #[serde(rename = "gene_residue_alias")]
+    GeneResidueAlias {
+        requested_entity: &'static str,
+        query: &'a str,
+        gene: &'a str,
+        alias: &'a str,
+    },
+    #[serde(rename = "protein_change_only")]
+    ProteinChangeOnly {
+        requested_entity: &'static str,
+        query: &'a str,
+        change: &'a str,
+    },
+}
+
 pub(crate) fn to_alias_suggestion_json(
     decision: &AliasFallbackDecision,
 ) -> Result<String, BioMcpError> {
@@ -242,6 +274,53 @@ pub(crate) fn to_alias_suggestion_json(
     }
 }
 
+fn variant_guidance_message(guidance: &VariantGuidance) -> String {
+    match &guidance.kind {
+        VariantGuidanceKind::GeneResidueAlias { .. } => {
+            format!(
+                "BioMCP could not map '{}' to an exact variant.",
+                guidance.query
+            )
+        }
+        VariantGuidanceKind::ProteinChangeOnly { .. } => format!(
+            "BioMCP could not map '{}' to an exact variant without gene context.",
+            guidance.query
+        ),
+    }
+}
+
+pub(crate) fn to_variant_guidance_json(guidance: &VariantGuidance) -> Result<String, BioMcpError> {
+    let alias_resolution = match &guidance.kind {
+        VariantGuidanceKind::GeneResidueAlias { gene, alias } => {
+            VariantAliasResolution::GeneResidueAlias {
+                requested_entity: "variant",
+                query: &guidance.query,
+                gene,
+                alias,
+            }
+        }
+        VariantGuidanceKind::ProteinChangeOnly { change } => {
+            VariantAliasResolution::ProteinChangeOnly {
+                requested_entity: "variant",
+                query: &guidance.query,
+                change,
+            }
+        }
+    };
+
+    to_pretty(&VariantGuidanceJsonResponse {
+        error: AliasError {
+            code: "not_found",
+            message: variant_guidance_message(guidance),
+        },
+        _meta: VariantGuidanceMeta {
+            not_found: true,
+            alias_resolution,
+            next_commands: &guidance.next_commands,
+        },
+    })
+}
+
 fn discover_confidence_name(
     confidence: crate::entities::discover::DiscoverConfidence,
 ) -> &'static str {
@@ -263,7 +342,10 @@ fn match_tier_name(match_tier: crate::entities::discover::MatchTier) -> &'static
 
 #[cfg(test)]
 mod tests {
-    use super::{to_alias_suggestion_json, to_discover_json, to_entity_json, to_pretty};
+    use super::{
+        to_alias_suggestion_json, to_discover_json, to_entity_json, to_pretty,
+        to_variant_guidance_json,
+    };
     use crate::entities::discover::{
         AliasCanonicalMatch, AliasFallbackDecision, ConceptSource, ConceptXref, DiscoverConcept,
         DiscoverConfidence, DiscoverIntent, DiscoverResult, DiscoverType, MatchTier,
@@ -639,6 +721,36 @@ mod tests {
         assert_eq!(
             value["_meta"]["next_commands"][1],
             "biomcp search gene -q V600E"
+        );
+    }
+
+    #[test]
+    fn to_variant_guidance_json_includes_alias_resolution_and_next_commands() {
+        let json = to_variant_guidance_json(&crate::entities::variant::VariantGuidance {
+            query: "PTPN22 620W".to_string(),
+            kind: crate::entities::variant::VariantGuidanceKind::GeneResidueAlias {
+                gene: "PTPN22".to_string(),
+                alias: "620W".to_string(),
+            },
+            next_commands: vec![
+                "biomcp search variant \"PTPN22 620W\" --limit 10".to_string(),
+                "biomcp search variant -g PTPN22 --limit 10".to_string(),
+            ],
+        })
+        .expect("variant guidance json");
+
+        let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
+        assert_eq!(value["error"]["code"], "not_found");
+        assert_eq!(value["_meta"]["not_found"], true);
+        assert_eq!(
+            value["_meta"]["alias_resolution"]["kind"],
+            "gene_residue_alias"
+        );
+        assert_eq!(value["_meta"]["alias_resolution"]["gene"], "PTPN22");
+        assert_eq!(value["_meta"]["alias_resolution"]["alias"], "620W");
+        assert_eq!(
+            value["_meta"]["next_commands"][0],
+            "biomcp search variant \"PTPN22 620W\" --limit 10"
         );
     }
 }
