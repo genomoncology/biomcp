@@ -122,3 +122,63 @@ echo "$out" | mustmatch like 'Invalid argument: pathway section "enrichment"'
 echo "$out" | mustmatch like "KEGG"
 echo "$out" | mustmatch like "Reactome"
 ```
+
+## WikiPathways Search Presence
+
+Normal pathway search should include WikiPathways results alongside Reactome and KEGG.
+
+```bash
+out="$("$(git rev-parse --show-toplevel)/target/release/biomcp" search pathway "apoptosis" --limit 10)"
+echo "$out" | mustmatch like "| Source | ID | Name |"
+echo "$out" | mustmatch like "WikiPathways"
+echo "$out" | mustmatch like "WP"
+```
+
+## WikiPathways Pathway Detail
+
+`get pathway WP254` should return a pathway card with WikiPathways source attribution.
+
+```bash
+out="$(biomcp get pathway WP254)"
+echo "$out" | mustmatch like "Source: WikiPathways"
+echo "$out" | mustmatch like "WP254"
+echo "$out" | mustmatch like "Homo sapiens"
+```
+
+## WikiPathways Genes Section
+
+`get pathway WP254 genes` should resolve xref Entrez IDs to HGNC symbols via MyGene.
+
+```bash
+out="$(biomcp get pathway WP254 genes)"
+echo "$out" | mustmatch like "## Genes"
+echo "$out" | mustmatch like "WikiPathways"
+```
+
+## Unsupported WikiPathways Events Section
+
+WikiPathways does not support the `events` section; the command must fail non-zero
+with a helpful error pointing to Reactome.
+
+```bash
+unset status
+out="$(biomcp get pathway WP254 events 2>&1)" || status=$?
+test "${status:-0}" -eq 1
+echo "$out" | mustmatch like 'Invalid argument: pathway section "events"'
+echo "$out" | mustmatch like "WikiPathways"
+echo "$out" | mustmatch like "Reactome"
+```
+
+## Unsupported WikiPathways Enrichment Section
+
+WikiPathways does not support the `enrichment` section; the command must fail non-zero
+with a helpful error pointing to Reactome.
+
+```bash
+unset status
+out="$(biomcp get pathway WP254 enrichment 2>&1)" || status=$?
+test "${status:-0}" -eq 1
+echo "$out" | mustmatch like 'Invalid argument: pathway section "enrichment"'
+echo "$out" | mustmatch like "WikiPathways"
+echo "$out" | mustmatch like "Reactome"
+```

@@ -92,6 +92,11 @@ echo "$pathway_json" | mustmatch like '"section_sources": ['
 echo "$pathway_json" | mustmatch like '"key": "identity"'
 echo "$pathway_json" | mustmatch like "Reactome"
 
+wp_json="$(biomcp get pathway WP254 --json)"
+echo "$wp_json" | mustmatch like '"section_sources": ['
+echo "$wp_json" | mustmatch like '"key": "identity"'
+echo "$wp_json" | mustmatch like "WikiPathways"
+
 protein_json="$(biomcp get protein P15056 --json)"
 echo "$protein_json" | mustmatch like '"section_sources": ['
 echo "$protein_json" | mustmatch like '"key": "identity"'

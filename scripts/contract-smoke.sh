@@ -208,6 +208,15 @@ else
   probe_get "KEGG no-hit" '^200$' '^[[:space:]]*$' "https://rest.kegg.jp/find/pathway/NO_SUCH_PATHWAY_091"
 fi
 
+# WikiPathways
+if [[ $FAST -eq 1 ]]; then
+  probe_get "WikiPathways fast" '^200$' 'result' "https://webservice.wikipathways.org/findPathwaysByText?query=apoptosis&organism=Homo+sapiens&format=json"
+else
+  probe_get "WikiPathways happy search" '^200$' 'result' "https://webservice.wikipathways.org/findPathwaysByText?query=apoptosis&organism=Homo+sapiens&format=json"
+  probe_get "WikiPathways happy get" '^200$' 'pathwayInfo' "https://webservice.wikipathways.org/getPathwayInfo?pwId=WP254&format=json"
+  probe_get "WikiPathways no-hit" '^200$' '"result"' "https://webservice.wikipathways.org/findPathwaysByText?query=NO_SUCH_PATHWAY_091&organism=Homo+sapiens&format=json"
+fi
+
 # g:Profiler
 if [[ $FAST -eq 1 ]]; then
   probe_post_json "g:Profiler fast" '^200$' 'result' "https://biit.cs.ut.ee/gprofiler/api/gost/profile/" '{"organism":"hsapiens","query":["BRAF","KRAS"]}'

@@ -331,6 +331,13 @@ const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "WikiPathways",
+        affects: Some("pathway search and WikiPathways detail/genes sections"),
+        probe: ProbeKind::Get {
+            url: "https://webservice.wikipathways.org/findPathwaysByText?query=apoptosis&organism=Homo%20sapiens&format=json",
+        },
+    },
+    SourceDescriptor {
         api: "g:Profiler",
         affects: Some("gene enrichment (biomcp enrich)"),
         probe: ProbeKind::PostJson {
@@ -895,6 +902,7 @@ mod tests {
                 "STRING",
                 "Reactome",
                 "KEGG",
+                "WikiPathways",
                 "g:Profiler",
                 "OpenTargets",
                 "ChEMBL",
