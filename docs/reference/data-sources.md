@@ -3,6 +3,7 @@
 BioMCP unifies multiple biomedical data providers behind one CLI grammar.
 This reference explains source provenance, authentication requirements, base endpoints,
 and operational caveats so users can reason about result quality and troubleshooting.
+Use [Source Licensing and Terms](source-licensing.md) for provider terms, reuse constraints, and indirect-only provenance rows.
 
 ## Source matrix
 
@@ -29,6 +30,7 @@ and operational caveats so users can reason about result quality and troubleshoo
 | Discover structured concepts | OLS4 | `https://www.ebi.ac.uk/ols4` | No | Free-text ontology search for `biomcp discover`; OLS4 is the required backbone |
 | Discover clinical crosswalks | UMLS REST API | `https://uts-ws.nlm.nih.gov/rest` | Optional (`UMLS_API_KEY`) | Adds ICD-10, SNOMED CT, RxNorm, OMIM, and related cross-vocabulary IDs to discover results |
 | Discover plain-language topics | MedlinePlus Search | `https://wsearch.nlm.nih.gov/ws/query` | No | Best-effort disease/symptom context for `biomcp discover`; suppressed for gene/drug/pathway flows |
+| Phenotype term resolution | HPO JAX API | `https://ontology.jax.org/api/hp` | No | Direct HPO term lookup and normalization used by phenotype workflows |
 | Disease genes/pathways/prevalence | OpenTargets GraphQL + Reactome | `https://api.platform.opentargets.org/api/v4/graphql`, `https://reactome.org/ContentService` | No | Baseline disease context with ranked associated targets and OpenTargets score summaries |
 | Disease `genes` and `phenotypes` sections | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | No | Core disease associations and phenotype evidence |
 | Disease `genes` and `variants` augmentation | CIViC | `https://civicdb.org/api` | No | Somatic driver augmentation for genes and disease-associated molecular profiles |
@@ -38,8 +40,8 @@ and operational caveats so users can reason about result quality and troubleshoo
 | PGx core interactions/recommendations | CPIC API | `https://api.cpicpgx.org/v1` | No | Pair, recommendation, frequency, and guideline views |
 | PGx annotations section | PharmGKB API | `https://api.pharmgkb.org/v1` | No | Clinical/guideline/label annotation enrichment |
 | Pathway | Reactome + KEGG + WikiPathways + g:Profiler | `https://reactome.org/ContentService`, `https://rest.kegg.jp`, `https://webservice.wikipathways.org`, `https://biit.cs.ut.ee/gprofiler/api` | No | Pathway search and detail use Reactome + KEGG + WikiPathways; `genes` are available across all three sources, while `events` and pathway `enrichment` remain Reactome-only; top-level `biomcp enrich` uses **g:Profiler** |
-| Protein | UniProt + InterPro + STRING + ComplexPortal | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/interpro/api`, `https://string-db.org/api`, `https://www.ebi.ac.uk/intact/complex-ws` | No | Protein cards, domains, interactions, structures, and human protein complex membership |
-| Adverse events and recalls | OpenFDA | `https://api.fda.gov` | Optional (`OPENFDA_API_KEY`) | FAERS, recalls, and MAUDE device events |
+| Protein | UniProt + InterPro + STRING + ComplexPortal | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/interpro/api`, `https://string-db.org/api`, `https://www.ebi.ac.uk/intact/complex-ws` | No | Protein cards, domains, interactions, structures, and human protein complex membership; structure IDs are surfaced from UniProt cross-references to PDB and AlphaFold DB |
+| Drug/device safety, labels, shortages, and approvals | OpenFDA | `https://api.fda.gov` | Optional (`OPENFDA_API_KEY`) | FAERS, MAUDE, recalls, drug labels, shortages, and Drugs@FDA-derived approvals |
 | Gene enrichment sections | Enrichr | `https://maayanlab.cloud/Enrichr` | No | Gene enrichment sections inside entity outputs use Enrichr; this is distinct from top-level `biomcp enrich` |
 | Cohort frequencies (best effort) | cBioPortal | `https://www.cbioportal.org/api` | No | Supplemental cancer frequency context |
 
@@ -65,6 +67,7 @@ BioMCP only requires API keys for a subset of sources.
 | NCI CTS API | `NCI_API_KEY` | Trial operations with `--source nci` |
 | OncoKB | `ONCOKB_TOKEN` | Running `variant oncokb <id>` |
 | DisGeNET | `DISGENET_API_KEY` | Running `get gene <symbol> disgenet` or `get disease <name_or_id> disgenet` |
+| NCBI E-utilities | `NCBI_API_KEY` | Optional; improves PubTator3, PMC OA, and NCBI ID Converter quota headroom |
 | OpenFDA | `OPENFDA_API_KEY` | Optional; improves quota headroom |
 | UMLS | `UMLS_API_KEY` | Optional clinical crosswalk enrichment for `biomcp discover <query>` |
 
