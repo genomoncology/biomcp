@@ -683,15 +683,17 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Mutex, OnceLock};
-
     use super::*;
+    use tokio::sync::MutexGuard;
     use wiremock::matchers::{method, path, query_param};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
-    fn env_lock() -> &'static Mutex<()> {
-        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        ENV_LOCK.get_or_init(|| Mutex::new(()))
+    fn env_lock() -> MutexGuard<'static, ()> {
+        crate::test_support::env_lock().blocking_lock()
+    }
+
+    async fn env_lock_async() -> tokio::sync::MutexGuard<'static, ()> {
+        crate::test_support::env_lock().lock().await
     }
 
     struct EnvVarGuard {
@@ -938,7 +940,7 @@ mod tests {
 
     #[tokio::test]
     async fn search_with_filters_keeps_wikipathways_enabled_when_kegg_is_disabled() {
-        let _guard = env_lock().lock().expect("env lock");
+        let _guard = env_lock_async().await;
         let reactome = MockServer::start().await;
         let wikipathways = MockServer::start().await;
         let _reactome_base = set_env_var("BIOMCP_REACTOME_BASE", Some(&reactome.uri()));
@@ -989,7 +991,7 @@ mod tests {
 
     #[test]
     fn kegg_disabled_flag_accepts_one() {
-        let _guard = env_lock().lock().expect("env lock");
+        let _guard = env_lock();
         let _env = set_env_var("BIOMCP_DISABLE_KEGG", Some("1"));
         assert!(kegg_disabled());
     }

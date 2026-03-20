@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::entities::discover::DiscoverResult;
+use crate::entities::discover::{AliasFallbackDecision, DiscoverResult};
 use crate::error::BioMcpError;
 use crate::render::markdown::discover_evidence_urls;
 use crate::render::provenance::SectionSource;
@@ -130,12 +130,144 @@ pub fn to_discover_json(result: &DiscoverResult) -> Result<String, BioMcpError> 
     })
 }
 
+#[derive(Serialize)]
+struct AliasError {
+    code: &'static str,
+    message: String,
+}
+
+#[derive(Serialize)]
+struct AliasJsonResponse<'a> {
+    error: AliasError,
+    _meta: AliasMeta<'a>,
+}
+
+#[derive(Serialize)]
+struct AliasMeta<'a> {
+    not_found: bool,
+    alias_resolution: AliasResolution<'a>,
+    next_commands: &'a [String],
+}
+
+#[derive(Serialize)]
+struct AliasCandidateJson<'a> {
+    label: &'a str,
+    primary_type: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    primary_id: Option<&'a str>,
+    confidence: &'static str,
+    match_tier: &'static str,
+}
+
+#[derive(Serialize)]
+#[serde(tag = "kind")]
+enum AliasResolution<'a> {
+    #[serde(rename = "canonical")]
+    Canonical {
+        requested_entity: &'static str,
+        query: &'a str,
+        canonical: &'a str,
+        canonical_id: &'a str,
+        confidence: &'static str,
+        match_tier: &'static str,
+        sources: &'a [String],
+    },
+    #[serde(rename = "ambiguous")]
+    Ambiguous {
+        requested_entity: &'static str,
+        query: &'a str,
+        candidates: Vec<AliasCandidateJson<'a>>,
+    },
+}
+
+pub(crate) fn to_alias_suggestion_json(
+    decision: &AliasFallbackDecision,
+) -> Result<String, BioMcpError> {
+    match decision {
+        AliasFallbackDecision::Canonical(alias) => to_pretty(&AliasJsonResponse {
+            error: AliasError {
+                code: "not_found",
+                message: format!(
+                    "No exact {} match for '{}'.",
+                    alias.requested_entity.cli_name(),
+                    alias.query
+                ),
+            },
+            _meta: AliasMeta {
+                not_found: true,
+                alias_resolution: AliasResolution::Canonical {
+                    requested_entity: alias.requested_entity.cli_name(),
+                    query: &alias.query,
+                    canonical: &alias.canonical,
+                    canonical_id: &alias.canonical_id,
+                    confidence: discover_confidence_name(alias.confidence),
+                    match_tier: match_tier_name(alias.match_tier),
+                    sources: &alias.sources,
+                },
+                next_commands: &alias.next_commands,
+            },
+        }),
+        AliasFallbackDecision::Ambiguous(alias) => to_pretty(&AliasJsonResponse {
+            error: AliasError {
+                code: "not_found",
+                message: format!(
+                    "No exact {} match for '{}'.",
+                    alias.requested_entity.cli_name(),
+                    alias.query
+                ),
+            },
+            _meta: AliasMeta {
+                not_found: true,
+                alias_resolution: AliasResolution::Ambiguous {
+                    requested_entity: alias.requested_entity.cli_name(),
+                    query: &alias.query,
+                    candidates: alias
+                        .candidates
+                        .iter()
+                        .map(|candidate| AliasCandidateJson {
+                            label: &candidate.label,
+                            primary_type: candidate.primary_type.cli_name(),
+                            primary_id: candidate.primary_id.as_deref(),
+                            confidence: discover_confidence_name(candidate.confidence),
+                            match_tier: match_tier_name(candidate.match_tier),
+                        })
+                        .collect(),
+                },
+                next_commands: &alias.next_commands,
+            },
+        }),
+        AliasFallbackDecision::None => Err(BioMcpError::InvalidArgument(
+            "Alias suggestion JSON requires a canonical or ambiguous alias decision".into(),
+        )),
+    }
+}
+
+fn discover_confidence_name(
+    confidence: crate::entities::discover::DiscoverConfidence,
+) -> &'static str {
+    match confidence {
+        crate::entities::discover::DiscoverConfidence::CanonicalId => "CanonicalId",
+        crate::entities::discover::DiscoverConfidence::UmlsOnly => "UmlsOnly",
+        crate::entities::discover::DiscoverConfidence::LabelOnly => "LabelOnly",
+    }
+}
+
+fn match_tier_name(match_tier: crate::entities::discover::MatchTier) -> &'static str {
+    match match_tier {
+        crate::entities::discover::MatchTier::Exact => "Exact",
+        crate::entities::discover::MatchTier::Prefix => "Prefix",
+        crate::entities::discover::MatchTier::Contains => "Contains",
+        crate::entities::discover::MatchTier::Weak => "Weak",
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{to_discover_json, to_entity_json, to_pretty};
+    use super::{to_alias_suggestion_json, to_discover_json, to_entity_json, to_pretty};
     use crate::entities::discover::{
-        ConceptSource, ConceptXref, DiscoverConcept, DiscoverConfidence, DiscoverIntent,
-        DiscoverResult, DiscoverType, MatchTier, PlainLanguageTopic,
+        AliasCanonicalMatch, AliasFallbackDecision, ConceptSource, ConceptXref, DiscoverConcept,
+        DiscoverConfidence, DiscoverIntent, DiscoverResult, DiscoverType, MatchTier,
+        PlainLanguageTopic,
     };
     use crate::entities::drug::Drug;
     use crate::entities::gene::Gene;
@@ -391,5 +523,68 @@ mod tests {
         );
         assert_eq!(value["_meta"]["discovery_sources"][0], "OLS4");
         assert_eq!(value["_meta"]["evidence_urls"][0]["label"], "OLS4");
+    }
+
+    #[test]
+    fn to_alias_suggestion_json_includes_alias_resolution_and_next_commands() {
+        let json =
+            to_alias_suggestion_json(&AliasFallbackDecision::Canonical(AliasCanonicalMatch {
+                requested_entity: DiscoverType::Gene,
+                query: "ERBB1".to_string(),
+                canonical: "EGFR".to_string(),
+                canonical_id: "HGNC:3236".to_string(),
+                confidence: DiscoverConfidence::CanonicalId,
+                match_tier: MatchTier::Exact,
+                sources: vec!["OLS4/HGNC".to_string()],
+                next_commands: vec!["biomcp get gene EGFR".to_string()],
+            }))
+            .expect("alias json");
+
+        let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
+        assert_eq!(value["error"]["code"], "not_found");
+        assert_eq!(value["_meta"]["not_found"], true);
+        assert_eq!(value["_meta"]["alias_resolution"]["kind"], "canonical");
+        assert_eq!(value["_meta"]["alias_resolution"]["canonical"], "EGFR");
+        assert_eq!(value["_meta"]["next_commands"][0], "biomcp get gene EGFR");
+    }
+
+    #[test]
+    fn to_alias_suggestion_json_includes_ambiguous_resolution() {
+        use crate::entities::discover::{AliasAmbiguity, AliasCandidateSummary};
+        let json = to_alias_suggestion_json(&AliasFallbackDecision::Ambiguous(AliasAmbiguity {
+            requested_entity: DiscoverType::Gene,
+            query: "V600E".to_string(),
+            candidates: vec![AliasCandidateSummary {
+                label: "V600E".to_string(),
+                primary_type: DiscoverType::Variant,
+                primary_id: Some("SO:0001583".to_string()),
+                confidence: DiscoverConfidence::CanonicalId,
+                match_tier: MatchTier::Exact,
+            }],
+            next_commands: vec![
+                "biomcp discover V600E".to_string(),
+                "biomcp search gene -q V600E".to_string(),
+            ],
+        }))
+        .expect("ambiguous alias json");
+
+        let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
+        assert_eq!(value["error"]["code"], "not_found");
+        assert_eq!(value["_meta"]["not_found"], true);
+        assert_eq!(value["_meta"]["alias_resolution"]["kind"], "ambiguous");
+        assert_eq!(value["_meta"]["alias_resolution"]["query"], "V600E");
+        assert_eq!(
+            value["_meta"]["alias_resolution"]["candidates"][0]["label"],
+            "V600E"
+        );
+        assert_eq!(
+            value["_meta"]["alias_resolution"]["candidates"][0]["primary_type"],
+            "variant"
+        );
+        assert_eq!(value["_meta"]["next_commands"][0], "biomcp discover V600E");
+        assert_eq!(
+            value["_meta"]["next_commands"][1],
+            "biomcp search gene -q V600E"
+        );
     }
 }

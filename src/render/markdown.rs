@@ -843,7 +843,7 @@ pub(crate) fn pgx_evidence_urls(pgx: &Pgx) -> Vec<(&'static str, String)> {
     urls
 }
 
-fn quote_arg(value: &str) -> String {
+pub(crate) fn quote_arg(value: &str) -> String {
     let v = value.trim();
     if v.is_empty() {
         return String::new();
@@ -852,6 +852,53 @@ fn quote_arg(value: &str) -> String {
         return format!("\"{}\"", v.replace('\"', "\\\""));
     }
     v.to_string()
+}
+
+pub(crate) fn alias_fallback_suggestion(
+    decision: &crate::entities::discover::AliasFallbackDecision,
+) -> String {
+    match decision {
+        crate::entities::discover::AliasFallbackDecision::Canonical(alias) => {
+            let command = alias.next_commands.first().cloned().unwrap_or_else(|| {
+                format!(
+                    "biomcp get {} {}",
+                    alias.requested_entity.cli_name(),
+                    quote_arg(&alias.canonical)
+                )
+            });
+            format!("Did you mean: `{command}`")
+        }
+        crate::entities::discover::AliasFallbackDecision::Ambiguous(alias) => {
+            let mut out = format!(
+                "BioMCP could not map '{}' to a single {}.\n\nTry:",
+                alias.query,
+                alias.requested_entity.cli_name()
+            );
+            for (idx, command) in alias.next_commands.iter().enumerate() {
+                out.push_str(&format!("\n{}. {command}", idx + 1));
+            }
+            if !alias.candidates.is_empty() {
+                out.push_str("\n\nPossible matches:");
+                for candidate in &alias.candidates {
+                    match candidate.primary_id.as_deref() {
+                        Some(primary_id) => out.push_str(&format!(
+                            "\n- {} ({}, {})",
+                            candidate.label,
+                            candidate.primary_type.label(),
+                            primary_id
+                        )),
+                        None => out.push_str(&format!(
+                            "\n- {} ({})",
+                            candidate.label,
+                            candidate.primary_type.label()
+                        )),
+                    }
+                }
+            }
+            out
+        }
+        crate::entities::discover::AliasFallbackDecision::None => String::new(),
+    }
 }
 
 fn has_all_section(requested: &[String]) -> bool {

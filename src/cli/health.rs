@@ -830,7 +830,7 @@ pub async fn check(apis_only: bool) -> Result<HealthReport, BioMcpError> {
 #[cfg(test)]
 mod tests {
     use std::future::Future;
-    use std::sync::{Mutex, OnceLock};
+    use tokio::sync::MutexGuard;
 
     use super::{
         HealthReport, HealthRow, ProbeKind, affects_for_api, health_sources, masked_key_hint,
@@ -845,9 +845,8 @@ mod tests {
             .block_on(future)
     }
 
-    fn env_lock() -> &'static Mutex<()> {
-        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        ENV_LOCK.get_or_init(|| Mutex::new(()))
+    fn env_lock() -> MutexGuard<'static, ()> {
+        crate::test_support::env_lock().blocking_lock()
     }
 
     struct EnvVarGuard {
@@ -986,7 +985,7 @@ mod tests {
 
     #[test]
     fn key_gated_source_is_excluded_when_env_missing() {
-        let _lock = env_lock().lock().expect("env lock");
+        let _lock = env_lock();
         let _env = set_env_var("ONCOKB_TOKEN", None);
         let source = health_sources()
             .iter()
@@ -1012,7 +1011,7 @@ mod tests {
 
     #[test]
     fn empty_key_is_treated_as_missing() {
-        let _lock = env_lock().lock().expect("env lock");
+        let _lock = env_lock();
         let _env = set_env_var("NCI_API_KEY", Some("   "));
         let source = health_sources()
             .iter()

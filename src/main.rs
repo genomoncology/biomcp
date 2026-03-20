@@ -41,10 +41,13 @@ async fn main() -> std::process::ExitCode {
                 std::process::ExitCode::from(1)
             }
         },
-        _ => match biomcp_cli::cli::run(cli).await {
+        _ => match biomcp_cli::cli::run_outcome(cli).await {
             Ok(output) => {
-                println!("{output}");
-                std::process::ExitCode::SUCCESS
+                match output.stream {
+                    biomcp_cli::cli::OutputStream::Stdout => println!("{}", output.text),
+                    biomcp_cli::cli::OutputStream::Stderr => eprintln!("{}", output.text),
+                }
+                std::process::ExitCode::from(output.exit_code)
             }
             Err(err) => {
                 if let Some(bio_err) = err.downcast_ref::<biomcp_cli::error::BioMcpError>() {
