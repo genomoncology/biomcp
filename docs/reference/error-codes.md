@@ -13,6 +13,9 @@ execution failures:
 - exit `1`: the command parsed, then BioMCP returned
   `BioMcpError::InvalidArgument` for invalid or inconsistent usage.
   Examples: `biomcp search pathway`, `biomcp get pathway hsa05200 events`
+- exit `1`: alias fallback guidance for `get gene` / `get drug` still counts as a
+  not-found miss even when BioMCP can suggest a canonical retry command.
+  Example: `biomcp get gene ERBB1`
 
 ## Error catalog
 
@@ -48,6 +51,10 @@ When you get a `NotFound` error, validate in this order:
 1. Identifier syntax (`rs...`, `NCT...`, `PMID`, `MONDO:...`)
 2. Search by keyword or symbol
 3. Retry with a broader query
+4. If BioMCP prints `Did you mean: ...`, re-run the suggested canonical `get`
+   command. In JSON mode, the same guidance is printed to stdout under
+   `_meta.alias_resolution` and `_meta.next_commands` while the process still
+   exits `1`.
 
 Examples:
 

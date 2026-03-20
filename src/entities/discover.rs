@@ -92,6 +92,44 @@ pub(crate) enum DiscoverConfidence {
     LabelOnly,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct AliasCanonicalMatch {
+    pub requested_entity: DiscoverType,
+    pub query: String,
+    pub canonical: String,
+    pub canonical_id: String,
+    pub confidence: DiscoverConfidence,
+    pub match_tier: MatchTier,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sources: Vec<String>,
+    pub next_commands: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct AliasCandidateSummary {
+    pub label: String,
+    pub primary_type: DiscoverType,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub primary_id: Option<String>,
+    pub confidence: DiscoverConfidence,
+    pub match_tier: MatchTier,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct AliasAmbiguity {
+    pub requested_entity: DiscoverType,
+    pub query: String,
+    pub candidates: Vec<AliasCandidateSummary>,
+    pub next_commands: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum AliasFallbackDecision {
+    Canonical(AliasCanonicalMatch),
+    Ambiguous(AliasAmbiguity),
+    None,
+}
+
 impl DiscoverType {
     pub(crate) fn label(self) -> &'static str {
         match self {
@@ -102,6 +140,18 @@ impl DiscoverType {
             Self::Pathway => "Pathway",
             Self::Variant => "Variant",
             Self::Unknown => "Unknown",
+        }
+    }
+
+    pub(crate) fn cli_name(self) -> &'static str {
+        match self {
+            Self::Gene => "gene",
+            Self::Drug => "drug",
+            Self::Disease => "disease",
+            Self::Symptom => "symptom",
+            Self::Pathway => "pathway",
+            Self::Variant => "variant",
+            Self::Unknown => "unknown",
         }
     }
 }
@@ -125,6 +175,53 @@ impl DiscoverConfidence {
             Self::LabelOnly => 2,
         }
     }
+}
+
+pub(crate) fn classify_alias_fallback(
+    result: &DiscoverResult,
+    requested_entity: DiscoverType,
+) -> AliasFallbackDecision {
+    if !matches!(requested_entity, DiscoverType::Gene | DiscoverType::Drug) {
+        return AliasFallbackDecision::None;
+    }
+
+    let Some(top) = result.concepts.first() else {
+        return AliasFallbackDecision::None;
+    };
+
+    if result.ambiguous {
+        return AliasFallbackDecision::Ambiguous(AliasAmbiguity {
+            requested_entity,
+            query: result.query.clone(),
+            candidates: alias_candidates(result),
+            next_commands: alias_ambiguous_next_commands(requested_entity, &result.query),
+        });
+    }
+
+    let canonical = canonical_alias_label(requested_entity, &top.label);
+    if top.primary_type == requested_entity
+        && top.confidence == DiscoverConfidence::CanonicalId
+        && top.match_tier == MatchTier::Exact
+        && let (Some(canonical), Some(canonical_id)) = (canonical, top.primary_id.clone())
+    {
+        return AliasFallbackDecision::Canonical(AliasCanonicalMatch {
+            requested_entity,
+            query: result.query.clone(),
+            canonical: canonical.clone(),
+            canonical_id,
+            confidence: top.confidence,
+            match_tier: top.match_tier,
+            sources: alias_sources(top),
+            next_commands: alias_canonical_next_commands(requested_entity, &canonical),
+        });
+    }
+
+    AliasFallbackDecision::Ambiguous(AliasAmbiguity {
+        requested_entity,
+        query: result.query.clone(),
+        candidates: alias_candidates(result),
+        next_commands: alias_ambiguous_next_commands(requested_entity, &result.query),
+    })
 }
 
 pub(crate) fn build_result(
@@ -844,9 +941,78 @@ fn xref_key(xref: &ConceptXref) -> String {
     )
 }
 
+fn canonical_alias_label(requested_entity: DiscoverType, label: &str) -> Option<String> {
+    let label = label.trim();
+    match requested_entity {
+        DiscoverType::Gene if crate::sources::is_valid_gene_symbol(label) => {
+            Some(label.to_string())
+        }
+        DiscoverType::Drug if !label.is_empty() => Some(label.to_ascii_lowercase()),
+        _ => None,
+    }
+}
+
+fn alias_sources(concept: &DiscoverConcept) -> Vec<String> {
+    dedupe_strings(
+        concept
+            .sources
+            .iter()
+            .map(|source| {
+                let source_type = source.source_type.trim();
+                if source_type.is_empty() {
+                    source.source.clone()
+                } else {
+                    format!("{}/{}", source.source, source_type)
+                }
+            })
+            .collect(),
+    )
+}
+
+fn alias_command(entity: DiscoverType, value: &str) -> Option<String> {
+    let quoted = crate::render::markdown::quote_arg(value);
+    if quoted.is_empty() {
+        return None;
+    }
+    Some(format!("biomcp get {} {quoted}", entity.cli_name()))
+}
+
+fn alias_canonical_next_commands(entity: DiscoverType, canonical: &str) -> Vec<String> {
+    alias_command(entity, canonical).into_iter().collect()
+}
+
+fn alias_ambiguous_next_commands(entity: DiscoverType, query: &str) -> Vec<String> {
+    let query = crate::render::markdown::quote_arg(query);
+    if query.is_empty() {
+        return Vec::new();
+    }
+    vec![
+        format!("biomcp discover {query}"),
+        format!("biomcp search {} -q {query}", entity.cli_name()),
+    ]
+}
+
+fn alias_candidates(result: &DiscoverResult) -> Vec<AliasCandidateSummary> {
+    result
+        .concepts
+        .iter()
+        .take(3)
+        .map(|concept| AliasCandidateSummary {
+            label: concept.label.clone(),
+            primary_type: concept.primary_type,
+            primary_id: concept.primary_id.clone(),
+            confidence: concept.confidence,
+            match_tier: concept.match_tier,
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{DiscoverIntent, DiscoverType, build_result};
+    use super::{
+        AliasFallbackDecision, DiscoverConfidence, DiscoverIntent, DiscoverResult, DiscoverType,
+        MatchTier, build_result, classify_alias_fallback,
+    };
     use crate::sources::medlineplus::MedlinePlusTopic;
     use crate::sources::ols4::OlsDoc;
     use crate::sources::umls::{UmlsConcept, UmlsXref};
@@ -1023,5 +1189,95 @@ mod tests {
             result.next_commands[0],
             "biomcp search disease -q \"diabetes\" --limit 10"
         );
+    }
+
+    #[test]
+    fn alias_fallback_classifier_returns_canonical_for_exact_gene_alias() {
+        let result = build_result(
+            "ERBB1",
+            &[OlsDoc {
+                iri: "http://example.org/hgnc/3236".to_string(),
+                ontology_name: "hgnc".to_string(),
+                ontology_prefix: "hgnc".to_string(),
+                short_form: Some("hgnc:3236".to_string()),
+                obo_id: Some("HGNC:3236".to_string()),
+                label: "EGFR".to_string(),
+                description: Vec::new(),
+                exact_synonyms: vec!["ERBB1".to_string()],
+                is_defining_ontology: true,
+                doc_type: Some("class".to_string()),
+            }],
+            &[],
+            &[],
+            Vec::new(),
+        );
+
+        let decision = classify_alias_fallback(&result, DiscoverType::Gene);
+        match decision {
+            AliasFallbackDecision::Canonical(alias) => {
+                assert_eq!(alias.canonical, "EGFR");
+                assert_eq!(alias.canonical_id, "HGNC:3236");
+                assert_eq!(alias.confidence, DiscoverConfidence::CanonicalId);
+                assert_eq!(alias.match_tier, MatchTier::Exact);
+                assert_eq!(
+                    alias.next_commands,
+                    vec!["biomcp get gene EGFR".to_string()]
+                );
+            }
+            other => panic!("expected canonical alias decision, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn alias_fallback_classifier_returns_ambiguous_for_type_mismatch() {
+        let result = build_result(
+            "V600E",
+            &[OlsDoc {
+                iri: "http://example.org/so/0001583".to_string(),
+                ontology_name: "so".to_string(),
+                ontology_prefix: "so".to_string(),
+                short_form: Some("so:0001583".to_string()),
+                obo_id: Some("SO:0001583".to_string()),
+                label: "V600E".to_string(),
+                description: Vec::new(),
+                exact_synonyms: vec!["V600E".to_string()],
+                is_defining_ontology: true,
+                doc_type: Some("class".to_string()),
+            }],
+            &[],
+            &[],
+            Vec::new(),
+        );
+
+        let decision = classify_alias_fallback(&result, DiscoverType::Gene);
+        match decision {
+            AliasFallbackDecision::Ambiguous(alias) => {
+                assert_eq!(alias.requested_entity, DiscoverType::Gene);
+                assert_eq!(alias.query, "V600E");
+                assert_eq!(alias.next_commands[0], "biomcp discover V600E");
+                assert_eq!(alias.next_commands[1], "biomcp search gene -q V600E");
+                assert_eq!(alias.candidates[0].primary_type, DiscoverType::Variant);
+            }
+            other => panic!("expected ambiguous alias decision, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn alias_fallback_classifier_returns_none_without_discovery_signal() {
+        let result = DiscoverResult {
+            query: "notarealalias".to_string(),
+            normalized_query: "notarealalias".to_string(),
+            concepts: Vec::new(),
+            plain_language: None,
+            next_commands: Vec::new(),
+            notes: Vec::new(),
+            ambiguous: false,
+            intent: DiscoverIntent::General,
+        };
+
+        assert!(matches!(
+            classify_alias_fallback(&result, DiscoverType::Gene),
+            AliasFallbackDecision::None
+        ));
     }
 }

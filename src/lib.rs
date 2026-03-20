@@ -11,5 +11,7 @@ pub mod mcp;
 mod entities;
 mod render;
 mod sources;
+#[cfg(test)]
+pub(crate) mod test_support;
 mod transform;
 mod utils;

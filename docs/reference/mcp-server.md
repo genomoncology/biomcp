@@ -56,6 +56,11 @@ MCP chart calls do not write files. If the caller supplies `--output` or `-o`,
 the tool returns a tool error instructing the caller to consume the inline image
 instead.
 
+Alias fallback is the main exception to the usual CLI stderr contract: failed
+`get gene` / `get drug` alias suggestions are returned to MCP as structured JSON
+ text content with `_meta.alias_resolution` and `_meta.next_commands` so agents
+ can apply their own retry policy without parsing markdown.
+
 ```python
 from pathlib import Path
 
