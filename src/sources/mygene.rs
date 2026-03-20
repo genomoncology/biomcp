@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::{HashMap, HashSet};
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -11,6 +12,7 @@ const MYGENE_BASE: &str = "https://mygene.info/v3";
 const MYGENE_API: &str = "mygene.info";
 const MYGENE_BASE_ENV: &str = "BIOMCP_MYGENE_BASE";
 const MYGENE_MAX_RESULT_WINDOW: usize = 10_000;
+const MYGENE_BATCH_GENE_LIMIT: usize = 200;
 
 pub struct MyGeneClient {
     client: reqwest_middleware::ClientWithMiddleware,
@@ -179,6 +181,66 @@ impl MyGeneClient {
                 ),
             })
     }
+
+    pub async fn symbols_for_entrez_ids(&self, ids: &[String]) -> Result<Vec<String>, BioMcpError> {
+        let ids = ids
+            .iter()
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        if ids.is_empty() {
+            return Err(BioMcpError::InvalidArgument(
+                "MyGene Entrez ID batch must include at least one ID".into(),
+            ));
+        }
+        if ids.len() > MYGENE_BATCH_GENE_LIMIT {
+            return Err(BioMcpError::InvalidArgument(format!(
+                "MyGene Entrez ID batch supports at most {MYGENE_BATCH_GENE_LIMIT} IDs per request"
+            )));
+        }
+
+        let url = self.endpoint("gene");
+        let ids_csv = ids.join(",");
+        let rows: Vec<MyGeneBatchGeneHit> = self
+            .get_json(self.client.post(&url).form(&[
+                ("ids", ids_csv.as_str()),
+                ("fields", "symbol"),
+                ("species", "human"),
+            ]))
+            .await?;
+
+        let mut symbol_by_id = HashMap::new();
+        for row in rows {
+            let symbol = row
+                .symbol
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty());
+            let key = row
+                .query
+                .or(row.id)
+                .map(|value| value.as_string())
+                .filter(|value| !value.is_empty());
+            let (Some(symbol), Some(key)) = (symbol, key) else {
+                continue;
+            };
+            symbol_by_id.entry(key).or_insert(symbol);
+        }
+
+        let mut out = Vec::new();
+        let mut seen = HashSet::new();
+        for id in ids {
+            let Some(symbol) = symbol_by_id.get(id.as_str()) else {
+                continue;
+            };
+            if !seen.insert(symbol.clone()) {
+                continue;
+            }
+            out.push(symbol.clone());
+        }
+
+        Ok(out)
+    }
 }
 
 fn first_string_value(value: &serde_json::Value) -> Option<String> {
@@ -255,6 +317,14 @@ pub struct MyGeneGetResponse {
     pub mim: Option<serde_json::Value>,
     pub uniprot: Option<serde_json::Value>,
     pub pathway: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct MyGeneBatchGeneHit {
+    query: Option<StringOrU64>,
+    #[serde(rename = "_id")]
+    id: Option<StringOrU64>,
+    symbol: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -585,5 +655,55 @@ mod tests {
 
         let err = client.resolve_uniprot_accession("BRAF").await.unwrap_err();
         assert!(matches!(err, BioMcpError::NotFound { .. }));
+    }
+
+    #[tokio::test]
+    async fn symbols_for_entrez_ids_preserves_input_order_and_dedupes_symbols() {
+        let server = MockServer::start().await;
+        let client = MyGeneClient::new_for_test(format!("{}/v3", server.uri())).unwrap();
+
+        Mock::given(method("POST"))
+            .and(path("/v3/gene"))
+            .respond_with(ResponseTemplate::new(200).set_body_raw(
+                r#"[
+                  {"query":"7157","_id":"7157","symbol":"TP53"},
+                  {"query":"1956","_id":"1956","symbol":"EGFR"},
+                  {"query":"1956","_id":"1956","symbol":"EGFR"},
+                  {"query":"672","_id":"672","symbol":"BRCA1"}
+                ]"#,
+                "application/json",
+            ))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let symbols = client
+            .symbols_for_entrez_ids(&[
+                "1956".to_string(),
+                "7157".to_string(),
+                "1956".to_string(),
+                "672".to_string(),
+            ])
+            .await
+            .unwrap();
+
+        assert_eq!(symbols, vec!["EGFR", "TP53", "BRCA1"]);
+    }
+
+    #[tokio::test]
+    async fn symbols_for_entrez_ids_rejects_empty_input() {
+        let client = MyGeneClient::new_for_test("http://127.0.0.1/v3".into()).unwrap();
+        let err = client.symbols_for_entrez_ids(&[]).await.unwrap_err();
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains("at least one ID"));
+    }
+
+    #[tokio::test]
+    async fn symbols_for_entrez_ids_rejects_oversized_batch() {
+        let client = MyGeneClient::new_for_test("http://127.0.0.1/v3".into()).unwrap();
+        let ids: Vec<String> = (1..=201).map(|n| n.to_string()).collect();
+        let err = client.symbols_for_entrez_ids(&ids).await.unwrap_err();
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains("200"));
     }
 }

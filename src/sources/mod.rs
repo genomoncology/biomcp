@@ -56,6 +56,7 @@ pub(crate) mod reactome;
 pub(crate) mod semantic_scholar;
 pub(crate) mod string;
 pub(crate) mod uniprot;
+pub(crate) mod wikipathways;
 
 const ERROR_BODY_MAX_BYTES: usize = 2048;
 pub(crate) const DEFAULT_MAX_BODY_BYTES: usize = 8 * 1024 * 1024;

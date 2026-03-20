@@ -108,10 +108,17 @@ pub(crate) fn trial_source_label(source: Option<&str>) -> String {
 }
 
 pub(crate) fn pathway_source_label(source: &str) -> String {
-    if source.trim().eq_ignore_ascii_case("kegg") {
+    let source = source.trim();
+    if source.eq_ignore_ascii_case("kegg") {
         "KEGG".to_string()
-    } else {
+    } else if source.eq_ignore_ascii_case("reactome") {
         "Reactome".to_string()
+    } else if source.eq_ignore_ascii_case("wikipathways") {
+        "WikiPathways".to_string()
+    } else if source.is_empty() {
+        "Reactome".to_string()
+    } else {
+        source.to_string()
     }
 }
 
@@ -880,5 +887,61 @@ pub(crate) fn adverse_event_report_section_sources(
     match report {
         AdverseEventReport::Faers(event) => adverse_event_section_sources(event),
         AdverseEventReport::Device(event) => device_event_section_sources(event),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::entities::pathway::Pathway;
+
+    #[test]
+    fn pathway_source_label_maps_known_sources() {
+        assert_eq!(pathway_source_label("WikiPathways"), "WikiPathways");
+        assert_eq!(pathway_source_label("wikipathways"), "WikiPathways");
+        assert_eq!(pathway_source_label("KEGG"), "KEGG");
+        assert_eq!(pathway_source_label("kegg"), "KEGG");
+        assert_eq!(pathway_source_label("Reactome"), "Reactome");
+        assert_eq!(pathway_source_label("reactome"), "Reactome");
+    }
+
+    #[test]
+    fn pathway_source_label_passes_through_unknown_non_empty_source() {
+        assert_eq!(pathway_source_label("SomeOtherDB"), "SomeOtherDB");
+    }
+
+    #[test]
+    fn pathway_source_label_falls_back_to_reactome_for_empty() {
+        assert_eq!(pathway_source_label(""), "Reactome");
+        assert_eq!(pathway_source_label("   "), "Reactome");
+    }
+
+    #[test]
+    fn pathway_section_sources_emits_wikipathways_not_reactome_for_wp_card() {
+        let pathway = Pathway {
+            source: "WikiPathways".to_string(),
+            id: "WP254".to_string(),
+            name: "Apoptosis".to_string(),
+            species: Some("Homo sapiens".to_string()),
+            summary: None,
+            genes: vec!["TP53".to_string()],
+            events: Vec::new(),
+            enrichment: Vec::new(),
+        };
+
+        let sections = pathway_section_sources(&pathway);
+        for section in &sections {
+            for source in &section.sources {
+                assert_ne!(
+                    source, "Reactome",
+                    "section '{}' incorrectly attributed to Reactome for a WikiPathways card",
+                    section.key
+                );
+                assert_eq!(source, "WikiPathways");
+            }
+        }
+        let keys: Vec<&str> = sections.iter().map(|s| s.key.as_str()).collect();
+        assert!(keys.contains(&"identity"), "identity section expected");
+        assert!(keys.contains(&"genes"), "genes section expected");
     }
 }

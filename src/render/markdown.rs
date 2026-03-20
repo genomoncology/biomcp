@@ -747,18 +747,22 @@ pub(crate) fn drug_evidence_urls(drug: &Drug) -> Vec<(&'static str, String)> {
 }
 
 pub(crate) fn pathway_evidence_urls(pathway: &Pathway) -> Vec<(&'static str, String)> {
-    if pathway.id.trim().is_empty() {
+    let id = pathway.id.trim();
+    if id.is_empty() {
         return Vec::new();
     }
     if pathway.source.eq_ignore_ascii_case("KEGG") {
+        return vec![("KEGG", format!("https://www.kegg.jp/entry/{id}"))];
+    }
+    if pathway.source.eq_ignore_ascii_case("WikiPathways") {
         return vec![(
-            "KEGG",
-            format!("https://www.kegg.jp/entry/{}", pathway.id.trim()),
+            "WikiPathways",
+            format!("https://www.wikipathways.org/pathways/{id}.html"),
         )];
     }
     vec![(
         "Reactome",
-        format!("https://reactome.org/content/detail/{}", pathway.id.trim()),
+        format!("https://reactome.org/content/detail/{id}"),
     )]
 }
 
@@ -3961,6 +3965,23 @@ mod tests {
         let markdown = pathway_markdown(&pathway, &[]).expect("rendered markdown");
         assert!(markdown.contains("Source: KEGG"));
         assert!(markdown.contains("[KEGG](https://www.kegg.jp/entry/hsa05200)"));
+
+        let wikipathways = Pathway {
+            source: "WikiPathways".to_string(),
+            id: "WP254".to_string(),
+            name: "Apoptosis".to_string(),
+            species: Some("Homo sapiens".to_string()),
+            summary: None,
+            genes: vec!["TP53".to_string()],
+            events: Vec::new(),
+            enrichment: Vec::new(),
+        };
+
+        let markdown = pathway_markdown(&wikipathways, &[]).expect("rendered markdown");
+        assert!(markdown.contains("Source: WikiPathways"));
+        assert!(
+            markdown.contains("[WikiPathways](https://www.wikipathways.org/pathways/WP254.html)")
+        );
     }
 
     #[test]

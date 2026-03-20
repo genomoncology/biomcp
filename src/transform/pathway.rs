@@ -1,6 +1,7 @@
 use crate::entities::pathway::{Pathway, PathwaySearchResult};
 use crate::sources::kegg::{KeggPathwayHit, KeggPathwayRecord};
 use crate::sources::reactome::{ReactomePathwayHit, ReactomePathwayRecord};
+use crate::sources::wikipathways::{WikiPathwaysHit, WikiPathwaysRecord};
 
 pub fn from_reactome_hit(hit: ReactomePathwayHit) -> PathwaySearchResult {
     PathwaySearchResult {
@@ -39,6 +40,27 @@ pub fn from_kegg_record(record: KeggPathwayRecord) -> Pathway {
         species: Some("Homo sapiens".to_string()),
         summary: record.summary,
         genes: record.genes,
+        events: Vec::new(),
+        enrichment: Vec::new(),
+    }
+}
+
+pub fn from_wikipathways_hit(hit: WikiPathwaysHit) -> PathwaySearchResult {
+    PathwaySearchResult {
+        source: "WikiPathways".to_string(),
+        id: hit.id,
+        name: hit.name,
+    }
+}
+
+pub fn from_wikipathways_record(record: WikiPathwaysRecord) -> Pathway {
+    Pathway {
+        source: "WikiPathways".to_string(),
+        id: record.id,
+        name: record.name,
+        species: record.species,
+        summary: None,
+        genes: Vec::new(),
         events: Vec::new(),
         enrichment: Vec::new(),
     }
@@ -138,5 +160,37 @@ mod tests {
         assert_eq!(out.species.as_deref(), Some("Homo sapiens"));
         assert_eq!(out.genes, vec!["BRAF".to_string(), "EGFR".to_string()]);
         assert!(out.events.is_empty());
+    }
+
+    #[test]
+    fn from_wikipathways_hit_maps_fields() {
+        let hit = WikiPathwaysHit {
+            id: "WP254".to_string(),
+            name: "Apoptosis".to_string(),
+        };
+
+        let out = from_wikipathways_hit(hit);
+        assert_eq!(out.source, "WikiPathways");
+        assert_eq!(out.id, "WP254");
+        assert_eq!(out.name, "Apoptosis");
+    }
+
+    #[test]
+    fn from_wikipathways_record_maps_fields() {
+        let record = WikiPathwaysRecord {
+            id: "WP254".to_string(),
+            name: "Apoptosis".to_string(),
+            species: Some("Homo sapiens".to_string()),
+        };
+
+        let out = from_wikipathways_record(record);
+        assert_eq!(out.source, "WikiPathways");
+        assert_eq!(out.id, "WP254");
+        assert_eq!(out.name, "Apoptosis");
+        assert_eq!(out.species.as_deref(), Some("Homo sapiens"));
+        assert!(out.summary.is_none());
+        assert!(out.genes.is_empty());
+        assert!(out.events.is_empty());
+        assert!(out.enrichment.is_empty());
     }
 }
