@@ -454,11 +454,6 @@ fn residue_alias_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"^(\d+)([A-Z*])$").expect("valid regex"))
 }
 
-fn protein_change_only_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^([A-Z]\d+[A-Z*])$").expect("valid regex"))
-}
-
 fn quote_command_arg(value: &str) -> String {
     let trimmed = value.trim();
     if trimmed.is_empty() {
@@ -491,6 +486,35 @@ fn parse_gene_residue_alias(query: &str) -> Option<(String, VariantProteinAlias)
     ))
 }
 
+fn is_exact_gene_token(token: &str) -> bool {
+    let mut chars = token.chars();
+    matches!(chars.next(), Some(first) if first.is_ascii_uppercase())
+        && chars.clone().next().is_some()
+        && chars.all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit())
+}
+
+fn split_gene_change_tokens(input: &str) -> Option<(&str, &str)> {
+    let mut parts = input.split_whitespace();
+    let gene = parts.next()?;
+    let change = parts.next()?;
+    if parts.next().is_some() {
+        return None;
+    }
+    Some((gene, change))
+}
+
+fn parse_exact_gene_protein_change(input: &str) -> Option<VariantIdFormat> {
+    let (gene, change) = split_gene_change_tokens(input)?;
+    if !is_exact_gene_token(gene) {
+        return None;
+    }
+    let change = normalize_protein_change(change)?;
+    Some(VariantIdFormat::GeneProteinChange {
+        gene: gene.to_string(),
+        change,
+    })
+}
+
 pub fn classify_variant_input(input: &str) -> VariantInputKind {
     let input = input.trim();
     if input.is_empty() {
@@ -509,6 +533,9 @@ pub fn classify_variant_input(input: &str) -> VariantInputKind {
             change: caps[2].to_string(),
         });
     }
+    if let Some(exact) = parse_exact_gene_protein_change(input) {
+        return VariantInputKind::Exact(exact);
+    }
     if let Some((gene, alias)) = parse_gene_residue_alias(input) {
         let alias_label = alias.label();
         return VariantInputKind::Shorthand(VariantShorthand::GeneResidueAlias {
@@ -518,10 +545,8 @@ pub fn classify_variant_input(input: &str) -> VariantInputKind {
             residue: alias.residue,
         });
     }
-    if let Some(caps) = protein_change_only_re().captures(input) {
-        return VariantInputKind::Shorthand(VariantShorthand::ProteinChangeOnly {
-            change: caps[1].to_string(),
-        });
+    if let Some(change) = normalize_protein_change(input) {
+        return VariantInputKind::Shorthand(VariantShorthand::ProteinChangeOnly { change });
     }
 
     VariantInputKind::Unsupported
@@ -614,7 +639,7 @@ Use `biomcp search variant \"{id}\"` to search, or pass an exact rsID/HGVS/gene+
 Supported formats:\n\
 - rsID: rs113488022\n\
 - HGVS genomic: chr7:g.140453136A>T\n\
-- Gene + protein: BRAF V600E"
+- Gene + protein: BRAF V600E, BRAF p.Val600Glu"
     )))
 }
 
@@ -685,7 +710,7 @@ fn amino_acid_one_letter(token: &str) -> Option<char> {
     }
 }
 
-fn normalize_oncokb_protein_change(value: &str) -> Option<String> {
+pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
     let trimmed = value
         .trim()
         .trim_start_matches("p.")
@@ -721,12 +746,12 @@ fn oncokb_alteration_from_variant(
 ) -> Option<String> {
     match id_format {
         VariantIdFormat::GeneProteinChange { change, .. } => {
-            normalize_oncokb_protein_change(change).or_else(|| Some(change.clone()))
+            normalize_protein_change(change).or_else(|| Some(change.clone()))
         }
         _ => variant
             .hgvs_p
             .as_deref()
-            .and_then(normalize_oncokb_protein_change)
+            .and_then(normalize_protein_change)
             .filter(|s| !s.is_empty()),
     }
 }
@@ -2036,6 +2061,28 @@ mod tests {
     }
 
     #[test]
+    fn parse_variant_id_accepts_long_form_gene_protein_change() {
+        match parse_variant_id("BRAF p.Val600Glu").unwrap() {
+            VariantIdFormat::GeneProteinChange { gene, change } => {
+                assert_eq!(gene, "BRAF");
+                assert_eq!(change, "V600E");
+            }
+            _ => panic!("expected gene+protein"),
+        }
+    }
+
+    #[test]
+    fn parse_variant_id_accepts_prefixed_short_gene_protein_change() {
+        match parse_variant_id("BRAF p.V600E").unwrap() {
+            VariantIdFormat::GeneProteinChange { gene, change } => {
+                assert_eq!(gene, "BRAF");
+                assert_eq!(change, "V600E");
+            }
+            _ => panic!("expected gene+protein"),
+        }
+    }
+
+    #[test]
     fn classify_variant_input_detects_search_only_shorthand() {
         match classify_variant_input("PTPN22 620W") {
             VariantInputKind::Shorthand(VariantShorthand::GeneResidueAlias {
@@ -2061,6 +2108,16 @@ mod tests {
     }
 
     #[test]
+    fn classify_variant_input_normalizes_long_form_single_token_protein_change() {
+        match classify_variant_input("p.Val600Glu") {
+            VariantInputKind::Shorthand(VariantShorthand::ProteinChangeOnly { change }) => {
+                assert_eq!(change, "V600E");
+            }
+            other => panic!("expected protein change shorthand, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn parse_variant_id_points_search_only_shorthand_to_search_variant() {
         let residue_alias = parse_variant_id("PTPN22 620W").unwrap_err().to_string();
         assert!(residue_alias.contains("search-only shorthand"));
@@ -2069,6 +2126,13 @@ mod tests {
         let protein_change_only = parse_variant_id("R620W").unwrap_err().to_string();
         assert!(protein_change_only.contains("search-only shorthand"));
         assert!(protein_change_only.contains("biomcp search variant --hgvsp R620W"));
+    }
+
+    #[test]
+    fn parse_variant_id_points_long_form_single_token_to_search_variant() {
+        let protein_change_only = parse_variant_id("p.Val600Glu").unwrap_err().to_string();
+        assert!(protein_change_only.contains("search-only shorthand"));
+        assert!(protein_change_only.contains("biomcp search variant --hgvsp V600E"));
     }
 
     #[test]

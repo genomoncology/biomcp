@@ -300,7 +300,7 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
 def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     makefile = _read_repo("Makefile")
 
-    assert ".PHONY: build test lint check run clean spec spec-pr validate-skills test-contracts" in makefile
+    assert ".PHONY: build test lint check run clean spec spec-pr validate-skills test-contracts install" in makefile
     assert "Volatile live-network spec headings." in makefile
     assert "PR gate: repo-local checks plus live-backed headings that have been stable" in makefile
     assert "Smoke lane: `search article`, `gene articles`, `variant articles`," in makefile
@@ -315,6 +315,14 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         'spec/07-disease.md::Disease to Articles',
     ):
         assert f'--deselect "{node_id}"' in makefile
+    assert re.search(
+        r'^install:\n'
+        r'\tmkdir -p "\$\(HOME\)/\.local/bin"\n'
+        r"\tcargo build --release --locked\n"
+        r'\tinstall -m 755 target/release/biomcp "\$\(HOME\)/\.local/bin/biomcp"$',
+        makefile,
+        flags=re.MULTILINE,
+    )
     assert re.search(
         r"^spec-pr:\n\tXDG_CACHE_HOME=\"\$\(CURDIR\)/\.cache\" PATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" \\\n\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" pytest spec/ --mustmatch-lang bash --mustmatch-timeout 60 -v \$\(SPEC_PR_DESELECT_ARGS\)'$",
         makefile,

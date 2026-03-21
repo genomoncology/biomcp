@@ -1,4 +1,4 @@
-.PHONY: build test lint check run clean spec spec-pr validate-skills test-contracts
+.PHONY: build test lint check run clean spec spec-pr validate-skills test-contracts install
 
 # Volatile live-network spec headings. These headings fan out across article
 # search backends or have repeated timeout history in GitHub Actions, so they
@@ -46,6 +46,11 @@ run:
 
 clean:
 	cargo clean
+
+install:
+	mkdir -p "$(HOME)/.local/bin"
+	cargo build --release --locked
+	install -m 755 target/release/biomcp "$(HOME)/.local/bin/biomcp"
 
 spec:
 	XDG_CACHE_HOME="$(CURDIR)/.cache" PATH="$(CURDIR)/target/release:$(PATH)" \

@@ -46,15 +46,8 @@ biomcp --version
 From a local checkout:
 
 ```bash
-cargo build --release --locked
-./target/release/biomcp --version
-```
-
-Install into Cargo bin path:
-
-```bash
-cargo install --path . --locked
-biomcp --version
+make install
+"$HOME/.local/bin/biomcp" --version
 ```
 
 ## Post-install smoke checks

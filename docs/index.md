@@ -60,7 +60,8 @@ Remote clients connect to `http://127.0.0.1:8080/mcp`. Probe routes are
 ### From source
 
 ```bash
-cargo build --release --locked
+make install
+"$HOME/.local/bin/biomcp" --version
 ```
 
 ## Quick start

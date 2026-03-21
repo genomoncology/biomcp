@@ -8,7 +8,7 @@ BioMCP provides lightweight variant annotation suitable for triage and workflow 
 
 - rsID: `rs113488022`
 - HGVS genomic: `chr7:g.140453136A>T`
-- Gene + protein change: `BRAF V600E`
+- Gene + protein change: `BRAF V600E`, `BRAF p.Val600Glu`
 
 Examples:
 
@@ -16,6 +16,7 @@ Examples:
 biomcp get variant rs113488022
 biomcp get variant "chr7:g.140453136A>T"
 biomcp get variant "BRAF V600E"
+biomcp get variant "BRAF p.Val600Glu"
 ```
 
 `get variant` stays exact-only. If you have shorthand like `PTPN22 620W` or
@@ -28,12 +29,14 @@ addition to the exact identifiers above:
 
 - Gene + residue alias: `PTPN22 620W`
 - Gene flag + protein shorthand: `biomcp search variant -g PTPN22 R620W`
+- Long-form protein notation: `biomcp search variant -g BRAF --hgvsp p.Val600Glu`
 
 Examples:
 
 ```bash
 biomcp search variant "PTPN22 620W" --limit 10
 biomcp search variant -g PTPN22 R620W --limit 10
+biomcp search variant BRAF p.Val600Glu --limit 10
 ```
 
 Standalone protein shorthand like `R620W` is still too ambiguous to run

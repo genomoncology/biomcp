@@ -32,6 +32,18 @@ echo "$out" | mustmatch like "hgvsp=V600E"
 echo "$out" | mustmatch like "V600E"
 ```
 
+## Long-Form Protein Filter
+
+Long-form `--hgvsp` input should normalize into the same typed protein filter as
+the short form instead of being passed through as raw text.
+
+```bash
+out="$(biomcp search variant -g BRAF --hgvsp p.Val600Glu --limit 3)"
+echo "$out" | mustmatch like "gene=BRAF"
+echo "$out" | mustmatch like "hgvsp=V600E"
+echo "$out" | mustmatch like "V600E"
+```
+
 ## Residue Alias Search
 
 Gene-scoped residue aliases should stay on the variant path instead of falling
@@ -88,6 +100,17 @@ The default variant card should include both human-readable and identifier-centr
 
 ```bash
 out="$(biomcp get variant "BRAF V600E")"
+echo "$out" | mustmatch like "rs113488022"
+echo "$out" | mustmatch like "Significance: Pathogenic"
+```
+
+## Long-Form Exact Variant Details
+
+Long-form exact input should resolve through the same exact variant path as the
+equivalent short protein change.
+
+```bash
+out="$(biomcp get variant "BRAF p.Val600Glu")"
 echo "$out" | mustmatch like "rs113488022"
 echo "$out" | mustmatch like "Significance: Pathogenic"
 ```

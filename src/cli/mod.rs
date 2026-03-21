@@ -754,9 +754,10 @@ EXAMPLES:
   biomcp search variant BRAF --limit 5
   biomcp search variant \"PTPN22 620W\" --limit 5
   biomcp search variant -g PTPN22 R620W --limit 5
+  biomcp search variant BRAF p.Val600Glu --limit 5
   biomcp search variant -g BRAF --significance pathogenic
   biomcp search variant -g BRCA1 --review-status 2 --revel-min 0.7 --consequence missense_variant --limit 5
-  biomcp search variant --hgvsp V600E -g BRAF --limit 5
+  biomcp search variant --hgvsp p.Val600Glu -g BRAF --limit 5
 
 For variant mentions in trials: biomcp variant trials \"BRAF V600E\"
 See also: biomcp list variant")]
@@ -768,7 +769,7 @@ See also: biomcp list variant")]
         #[arg(value_name = "QUERY", num_args = 0..)]
         positional_query: Vec<String>,
 
-        /// Filter by protein change (e.g., V600E or p.V600E)
+        /// Filter by protein change (e.g., V600E, p.V600E, or p.Val600Glu)
         #[arg(long)]
         hgvsp: Option<String>,
 
@@ -1105,17 +1106,18 @@ See also: biomcp list trial")]
         #[arg(long, default_value = "ctgov")]
         source: String,
     },
-    /// Get variant by exact rsID, HGVS, or "GENE CHANGE" (e.g., "BRAF V600E")
+    /// Get variant by exact rsID, HGVS, or "GENE CHANGE" (e.g., "BRAF V600E" or "BRAF p.Val600Glu")
     #[command(after_help = "\
 EXAMPLES:
   biomcp get variant rs113488022
   biomcp get variant \"BRAF V600E\" clinvar
+  biomcp get variant \"BRAF p.Val600Glu\"
 
 Shorthand like \"PTPN22 620W\" or \"R620W\" should go through `biomcp search variant`.
 
 See also: biomcp list variant")]
     Variant {
-        /// Exact rsID, HGVS, or "GENE CHANGE" (e.g., rs113488022, "BRAF V600E")
+        /// Exact rsID, HGVS, or "GENE CHANGE" (e.g., rs113488022, "BRAF V600E", "BRAF p.Val600Glu")
         id: String,
         /// Sections to include (predict, predictions, clinvar, population, conservation, cosmic, cgi, civic, cbioportal, gwas, all)
         #[arg(trailing_var_arg = true)]
@@ -2203,7 +2205,8 @@ fn resolve_variant_query(
     positional_tokens: Vec<String>,
 ) -> Result<VariantSearchPlan, crate::error::BioMcpError> {
     let gene_flag = normalize_cli_query(gene_flag);
-    let hgvsp_flag = normalize_cli_query(hgvsp_flag);
+    let hgvsp_flag = normalize_cli_query(hgvsp_flag)
+        .map(|value| crate::entities::variant::normalize_protein_change(&value).unwrap_or(value));
     let consequence_flag = normalize_cli_query(consequence_flag);
     let condition_flag = normalize_cli_query(condition_flag);
 
@@ -3170,68 +3173,11 @@ fn trial_search_query_summary(
     .join(", ")
 }
 
-fn amino_acid_one_letter(code: &str) -> Option<char> {
-    match code.trim().to_ascii_uppercase().as_str() {
-        "A" | "ALA" => Some('A'),
-        "R" | "ARG" => Some('R'),
-        "N" | "ASN" => Some('N'),
-        "D" | "ASP" => Some('D'),
-        "C" | "CYS" => Some('C'),
-        "Q" | "GLN" => Some('Q'),
-        "E" | "GLU" => Some('E'),
-        "G" | "GLY" => Some('G'),
-        "H" | "HIS" => Some('H'),
-        "I" | "ILE" => Some('I'),
-        "L" | "LEU" => Some('L'),
-        "K" | "LYS" => Some('K'),
-        "M" | "MET" => Some('M'),
-        "F" | "PHE" => Some('F'),
-        "P" | "PRO" => Some('P'),
-        "S" | "SER" => Some('S'),
-        "T" | "THR" => Some('T'),
-        "W" | "TRP" => Some('W'),
-        "Y" | "TYR" => Some('Y'),
-        "V" | "VAL" => Some('V'),
-        "*" | "TER" | "STOP" => Some('*'),
-        _ => None,
-    }
-}
-
-fn normalize_protein_change(value: &str) -> String {
-    let trimmed = value
+fn trim_protein_change_prefix(value: &str) -> &str {
+    value
         .trim()
         .trim_start_matches("p.")
-        .trim_start_matches("P.");
-    if trimmed.is_empty() {
-        return String::new();
-    }
-
-    let bytes = trimmed.as_bytes();
-    let Some(start_digits) = bytes.iter().position(|b| b.is_ascii_digit()) else {
-        return trimmed.to_string();
-    };
-    let end_digits = bytes[start_digits..]
-        .iter()
-        .position(|b| !b.is_ascii_digit())
-        .map(|i| start_digits + i)
-        .unwrap_or(bytes.len());
-
-    if end_digits <= start_digits {
-        return trimmed.to_string();
-    }
-
-    let from = &trimmed[..start_digits];
-    let pos = &trimmed[start_digits..end_digits];
-    let to = &trimmed[end_digits..];
-
-    let Some(from_aa) = amino_acid_one_letter(from) else {
-        return trimmed.to_string();
-    };
-    let Some(to_aa) = amino_acid_one_letter(to) else {
-        return trimmed.to_string();
-    };
-
-    format!("{from_aa}{pos}{to_aa}")
+        .trim_start_matches("P.")
 }
 
 async fn variant_trial_mutation_query(id: &str) -> String {
@@ -3243,7 +3189,8 @@ async fn variant_trial_mutation_query(id: &str) -> String {
     if let Ok(crate::entities::variant::VariantIdFormat::GeneProteinChange { gene, change }) =
         crate::entities::variant::parse_variant_id(id)
     {
-        let normalized = normalize_protein_change(&change);
+        let normalized = crate::entities::variant::normalize_protein_change(&change)
+            .unwrap_or_else(|| trim_protein_change_prefix(&change).to_string());
         if !normalized.is_empty() {
             return format!("{gene} {normalized}");
         }
@@ -3254,7 +3201,10 @@ async fn variant_trial_mutation_query(id: &str) -> String {
         let protein = variant
             .hgvs_p
             .as_deref()
-            .map(normalize_protein_change)
+            .map(|value| {
+                crate::entities::variant::normalize_protein_change(value)
+                    .unwrap_or_else(|| trim_protein_change_prefix(value).to_string())
+            })
             .unwrap_or_default();
         if !gene.is_empty() && !protein.is_empty() {
             return format!("{gene} {protein}");
@@ -6836,6 +6786,10 @@ mod tests {
             parse_simple_gene_change("BRAF p.V600E"),
             Some(("BRAF".into(), "V600E".into()))
         );
+        assert_eq!(
+            parse_simple_gene_change("BRAF p.Val600Glu"),
+            Some(("BRAF".into(), "V600E".into()))
+        );
     }
 
     #[test]
@@ -6864,6 +6818,26 @@ mod tests {
         let resolved =
             resolve_variant_query(None, None, None, None, vec!["BRAF".into(), "V600E".into()])
                 .unwrap();
+        let VariantSearchPlan::Standard(resolved) = resolved else {
+            panic!("expected standard search plan");
+        };
+        assert_eq!(resolved.gene.as_deref(), Some("BRAF"));
+        assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
+        assert!(resolved.hgvsc.is_none());
+        assert!(resolved.rsid.is_none());
+        assert!(resolved.condition.is_none());
+    }
+
+    #[test]
+    fn resolve_variant_query_maps_long_form_positional_gene_change_to_gene_and_hgvsp() {
+        let resolved = resolve_variant_query(
+            None,
+            None,
+            None,
+            None,
+            vec!["BRAF".into(), "p.Val600Glu".into()],
+        )
+        .unwrap();
         let VariantSearchPlan::Standard(resolved) = resolved else {
             panic!("expected standard search plan");
         };
@@ -6988,6 +6962,24 @@ mod tests {
     }
 
     #[test]
+    fn resolve_variant_query_uses_gene_context_for_long_form_single_token_change() {
+        let resolved = resolve_variant_query(
+            Some("BRAF".into()),
+            None,
+            None,
+            None,
+            vec!["p.Val600Glu".into()],
+        )
+        .unwrap();
+        let VariantSearchPlan::Standard(resolved) = resolved else {
+            panic!("expected standard search plan");
+        };
+        assert_eq!(resolved.gene.as_deref(), Some("BRAF"));
+        assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
+        assert!(resolved.protein_alias.is_none());
+    }
+
+    #[test]
     fn resolve_variant_query_returns_guidance_for_standalone_protein_change() {
         let resolved = resolve_variant_query(None, None, None, None, vec!["R620W".into()]).unwrap();
         let VariantSearchPlan::Guidance(guidance) = resolved else {
@@ -6998,6 +6990,44 @@ mod tests {
             guidance.kind,
             crate::entities::variant::VariantGuidanceKind::ProteinChangeOnly { .. }
         ));
+    }
+
+    #[test]
+    fn resolve_variant_query_returns_guidance_for_long_form_single_token_change() {
+        let resolved =
+            resolve_variant_query(None, None, None, None, vec!["p.Val600Glu".into()]).unwrap();
+        let VariantSearchPlan::Guidance(guidance) = resolved else {
+            panic!("expected guidance plan");
+        };
+        assert_eq!(guidance.query, "p.Val600Glu");
+        assert!(matches!(
+            guidance.kind,
+            crate::entities::variant::VariantGuidanceKind::ProteinChangeOnly { .. }
+        ));
+        assert_eq!(
+            guidance.next_commands.first().map(String::as_str),
+            Some("biomcp search variant --hgvsp V600E --limit 10")
+        );
+    }
+
+    #[test]
+    fn resolve_variant_query_normalizes_long_form_hgvsp_flag() {
+        let resolved = resolve_variant_query(
+            Some("BRAF".into()),
+            Some("p.Val600Glu".into()),
+            None,
+            None,
+            Vec::new(),
+        )
+        .unwrap();
+        let VariantSearchPlan::Standard(resolved) = resolved else {
+            panic!("expected standard search plan");
+        };
+        assert_eq!(resolved.gene.as_deref(), Some("BRAF"));
+        assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
+        assert!(resolved.hgvsc.is_none());
+        assert!(resolved.rsid.is_none());
+        assert!(resolved.condition.is_none());
     }
 
     #[test]
