@@ -43,6 +43,23 @@ echo "$out" | mustmatch like "| Gene | Relationship | Source | OpenTargets |"
 echo "$out" | mustmatch like "overall "
 ```
 
+## Disease Top Variant Summary
+
+Variant expansions should expose the top-ranked disease-to-variant anchor directly in both JSON and markdown, while keeping the full table intact.
+
+```bash
+out="$(biomcp --json get disease melanoma variants)"
+echo "$out" | jq -e '.top_variant.variant | type == "string"' > /dev/null
+echo "$out" | jq -e '.top_variant.source | type == "string"' > /dev/null
+echo "$out" | jq -e '.top_variant.evidence_count | type == "number"' > /dev/null
+```
+
+```bash
+out="$(biomcp get disease melanoma variants)"
+echo "$out" | mustmatch like "## Variants"
+echo "$out" | mustmatch like "Top Variant:"
+```
+
 ## Disease to Trials
 
 Disease helper commands should map directly into trial search with condition context retained. The check asserts query echo and trial columns.

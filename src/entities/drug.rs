@@ -32,6 +32,12 @@ pub struct Drug {
     pub mechanisms: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub approval_date: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub approval_date_raw: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub approval_date_display: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub approval_summary: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub brand_names: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

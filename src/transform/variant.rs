@@ -139,6 +139,21 @@ fn first_nonempty(values: &StringOrVec) -> Option<String> {
         .map(str::to_string)
 }
 
+fn format_af_percent(af: f64) -> String {
+    if af == 0.0 {
+        return "0%".to_string();
+    }
+
+    let percent = af * 100.0;
+    if af < 0.0001 {
+        "< 0.01%".to_string()
+    } else if af < 0.01 {
+        format!("{percent:.4}%")
+    } else {
+        format!("{percent:.2}%")
+    }
+}
+
 fn extract_conservation(hit: &MyVariantHit) -> Option<VariantConservationScores> {
     let dbnsfp = hit.dbnsfp.as_ref()?;
 
@@ -903,10 +918,11 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         .unwrap_or((None, None, None, Vec::new(), Vec::new(), None));
 
     let gnomad_af = best_gnomad_af(hit).and_then(|a| a.af);
-
+    let allele_frequency_percent = gnomad_af.map(format_af_percent);
     let cadd_score = hit.cadd.as_ref().and_then(|c| c.phred);
     let consequence = pick_consequence(hit);
     let cached_civic = extract_civic_cached_evidence(hit);
+    let top_disease = clinvar_conditions.first().cloned();
 
     Variant {
         id: hit.id.clone(),
@@ -923,6 +939,8 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         clinvar_conditions,
         clinvar_condition_reports,
         gnomad_af,
+        allele_frequency_raw: gnomad_af,
+        allele_frequency_percent,
         consequence,
         cadd_score,
         sift_pred,
@@ -936,9 +954,11 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
             cached_evidence: cached_civic,
             graphql: None,
         }),
+        top_disease,
         cancer_frequencies: Vec::new(),
         cancer_frequency_source: None,
         gwas: Vec::new(),
+        supporting_pmids: None,
         prediction: None,
     }
 }
@@ -1177,6 +1197,49 @@ mod tests {
                 .map(|v| v.cached_evidence.len())
                 .unwrap_or_default(),
             1
+        );
+    }
+
+    #[test]
+    fn format_af_percent_respects_thresholds() {
+        assert_eq!(format_af_percent(0.0), "0%");
+        assert_eq!(format_af_percent(0.00001), "< 0.01%");
+        assert_eq!(format_af_percent(0.0001), "0.0100%");
+        assert_eq!(format_af_percent(0.0123), "1.23%");
+    }
+
+    #[test]
+    fn from_myvariant_hit_sets_top_disease_from_sorted_clinvar_rows() {
+        let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+            "_id": "chr7:g.140453136A>T",
+            "dbnsfp": {
+                "genename": "BRAF",
+                "hgvsp": "p.V600E"
+            },
+            "clinvar": {
+                "rcv": [
+                    {"conditions": [{"name": "Melanoma"}, {"name": "Lung cancer"}]},
+                    {"conditions": {"name": "Melanoma"}}
+                ]
+            }
+        }))
+        .expect("variant payload should parse");
+
+        let variant = from_myvariant_hit(&hit);
+        assert_eq!(
+            variant
+                .top_disease
+                .as_ref()
+                .map(|row| row.condition.as_str()),
+            Some("Melanoma")
+        );
+        assert_eq!(variant.top_disease.as_ref().map(|row| row.reports), Some(2));
+        assert_eq!(
+            variant
+                .clinvar_conditions
+                .first()
+                .map(|row| row.condition.as_str()),
+            Some("Melanoma")
         );
     }
 }

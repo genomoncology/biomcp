@@ -25,6 +25,9 @@ Note: AlphaGenome reports this field as a gene-level identifier from its model o
 {% endif -%}
 {% if show_clinvar_section and (conditions or clinvar_id or clinvar_conditions) -%}
 ## ClinVar
+{% if top_disease -%}
+Top disease (ClinVar): {{ top_disease.condition }} ({{ top_disease.reports }} report{% if top_disease.reports != 1 %}s{% endif %})
+{% endif -%}
 {% if clinvar_conditions -%}
 Conditions ({% if clinvar_condition_reports %}{{ clinvar_condition_reports }}{% else %}{{ clinvar_conditions | length }}{% endif %} reports):
 {% for row in clinvar_conditions -%}
@@ -71,7 +74,7 @@ No expanded prediction scores reported.
 {% endif -%}
 {% if show_population_section -%}
 ## Population (gnomAD via MyVariant.info)
-{% if gnomad_af is defined and gnomad_af is not none %}gnomAD AF: {{ gnomad_af | af }}{% else %}gnomAD AF: Not reported{% endif %}
+{% if gnomad_af is defined and gnomad_af is not none %}gnomAD AF: {{ gnomad_af | af }}{% if allele_frequency_percent %} ({{ allele_frequency_percent }}){% endif %}{% else %}gnomAD AF: Not reported{% endif %}
 {% if population_breakdown and population_breakdown.populations -%}
 {% for p in population_breakdown.populations -%}
 {% if p.is_subgroup %}  {% endif %}{{ p.population }}: {{ p.af | af }}

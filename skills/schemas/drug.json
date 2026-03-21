@@ -15,6 +15,9 @@
       "items": { "type": "string" }
     },
     "approval_date": { "type": ["string", "null"] },
+    "approval_date_raw": { "type": ["string", "null"] },
+    "approval_date_display": { "type": ["string", "null"] },
+    "approval_summary": { "type": ["string", "null"] },
     "brand_names": {
       "type": ["array", "null"],
       "items": { "type": "string" }

@@ -19,6 +19,8 @@
       "items": { "type": "string" }
     },
     "gnomad_af": { "type": ["number", "null"] },
+    "allele_frequency_raw": { "type": ["number", "null"] },
+    "allele_frequency_percent": { "type": ["string", "null"] },
     "consequence": { "type": ["string", "null"] },
     "cadd_score": { "type": ["number", "null"] },
     "polyphen_pred": { "type": ["string", "null"] },
@@ -40,11 +42,24 @@
       "items": { "type": "object" }
     },
     "clinvar_condition_reports": { "type": ["integer", "null"] },
+    "top_disease": {
+      "type": ["object", "null"],
+      "properties": {
+        "condition": { "type": "string" },
+        "reports": { "type": "integer" }
+      },
+      "required": ["condition", "reports"],
+      "additionalProperties": true
+    },
     "cancer_frequencies": {
       "type": ["array", "null"],
       "items": { "type": "object" }
     },
     "cancer_frequency_source": { "type": ["string", "null"] },
+    "supporting_pmids": {
+      "type": ["array", "null"],
+      "items": { "type": "string" }
+    },
     "prediction": { "type": ["object", "null"] },
     "_meta": {
       "type": ["object", "null"],

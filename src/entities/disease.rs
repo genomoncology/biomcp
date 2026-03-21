@@ -48,6 +48,8 @@ pub struct Disease {
     pub phenotypes: Vec<DiseasePhenotype>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub variants: Vec<DiseaseVariantAssociation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub top_variant: Option<DiseaseVariantAssociation>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub models: Vec<DiseaseModelAssociation>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1037,6 +1039,7 @@ async fn add_civic_variants(disease: &mut Disease) -> Result<(), BioMcpError> {
             .then_with(|| a.variant.cmp(&b.variant))
     });
     rows.truncate(20);
+    disease.top_variant = rows.first().cloned();
     disease.variants = rows;
     Ok(())
 }
@@ -1328,6 +1331,7 @@ async fn apply_requested_sections(
     }
     if !sections.include_variants {
         disease.variants.clear();
+        disease.top_variant = None;
     }
     if !sections.include_models {
         disease.models.clear();

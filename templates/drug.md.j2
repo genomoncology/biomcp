@@ -5,7 +5,7 @@
 
 DrugBank ID: {% if drugbank_id %}{{ drugbank_id }}{% else %}-{% endif %}
 {% if drug_type %}Type (MyChem.info): {{ drug_type }}{% endif %}
-{% if approval_date %}FDA Approved (DrugCentral): {{ approval_date }}{% endif %}
+{% if approval_date_display %}FDA Approved (DrugCentral): {{ approval_date_display }}{% endif %}
 {% if brand_names %}Brand Names (DrugBank): {{ brand_names | join(", ") }}{% endif %}
 {% if route %}Route (MyChem.info): {{ route }}{% endif %}
 {% if top_adverse_events -%}

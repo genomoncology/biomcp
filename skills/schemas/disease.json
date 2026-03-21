@@ -28,6 +28,17 @@
       "items": { "type": "string" }
     },
     "recruiting_trial_count": { "type": ["integer", "number", "null"] },
+    "top_variant": {
+      "type": ["object", "null"],
+      "properties": {
+        "variant": { "type": "string" },
+        "relationship": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] },
+        "evidence_count": { "type": ["integer", "null"] }
+      },
+      "required": ["variant"],
+      "additionalProperties": true
+    },
     "xrefs": { "type": ["object", "null"] },
     "_meta": {
       "type": ["object", "null"],

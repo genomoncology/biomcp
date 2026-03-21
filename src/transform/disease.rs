@@ -510,6 +510,7 @@ pub fn from_mydisease_hit(hit: MyDiseaseHit) -> Disease {
         pathways: Vec::new(),
         phenotypes,
         variants: Vec::new(),
+        top_variant: None,
         models: Vec::new(),
         prevalence: Vec::new(),
         prevalence_note: None,
