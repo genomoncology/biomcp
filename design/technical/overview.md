@@ -91,19 +91,13 @@ share one limiter budget and one Streamable HTTP `/mcp` surface.
 2. Commit and push to `main`
 3. Cut a GitHub release with a semver tag
 4. GitHub Actions validates and publishes:
-   - CI (`.github/workflows/ci.yml`) runs five parallel jobs: `check`
-     (`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`),
-     `version-sync` (`bash scripts/check-version-sync.sh`),
-     `climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`), and
-     `contracts` (`cargo build --release --locked`, `uv sync --extra dev`,
-     `uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`,
-     `uv run mkdocs build --strict`), and `spec-stable`
-     (`cargo build --release --locked`, then `make spec-pr`).
+   - CI (`.github/workflows/ci.yml`) runs five parallel jobs: `check` (`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`), `version-sync` (`bash scripts/check-version-sync.sh`), `climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`), and `contracts` (`cargo build --release --locked`, `uv sync --extra dev`, `uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, `uv run mkdocs build --strict`), and `spec-stable` (`cargo build --release --locked`, then `make spec-pr`).
    - Volatile live-network headings run separately in `.github/workflows/spec-smoke.yml`,
      which runs the full `make spec` suite on a schedule and by manual dispatch.
    - Release validation runs the Rust checks again, then
      `uv run pytest tests/ -v --mcp-cmd "biomcp serve"` and
      `uv run mkdocs build --strict`.
+   - release validation runs `pytest tests/` and `mkdocs build --strict`.
    - Release build jobs package cross-platform binaries, publish PyPI wheels,
      and deploy docs.
 5. `install.sh` resolves the latest tagged release with downloadable assets
@@ -141,6 +135,9 @@ not accidentally execute a stale `.venv/bin/biomcp`. Volatile live-network
 headings run in the separate `Spec smoke (volatile live-network)` workflow
 instead.
 
+PR CI now runs `make spec-pr` via the `spec-stable` job in `.github/workflows/ci.yml`.
+Volatile live-network headings run separately in `.github/workflows/spec-smoke.yml`.
+
 Run locally with `make spec`.
 
 Important: `uv run` may execute a stale `.venv/bin/biomcp`. Either refresh
@@ -172,6 +169,8 @@ of stable public endpoints, not a universal ledger for every integrated source.
   reduced.
 - The grounding implementation surfaces are `scripts/contract-smoke.sh`,
   `scripts/README.md`, and `.github/workflows/contracts.yml`.
+
+Contract smoke checks run in `.github/workflows/contracts.yml`.
 
 Run: `./scripts/contract-smoke.sh` from the repo root.
 

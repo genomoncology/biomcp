@@ -6,6 +6,7 @@ This file validates positional-query consistency across `search` subcommands and
 |---|---|---|
 | Variant positional unquoted | `search variant BRAF V600E` | Ensures multi-token positional joins into a single query |
 | Variant positional quoted | `search variant "BRAF V600E"` | Ensures quoted gene-change auto-splits to gene+hgvsp |
+| Variant positional long-form | `search variant BRAF p.Val600Glu` | Ensures long-form protein notation normalizes into typed gene+hgvsp search |
 | Variant positional complex free text | `search variant "EGFR Exon 19 Deletion"` | Ensures non-simple text stays in search space (`condition`) |
 | Variant positional plus flag | `search variant BRAF V600E --limit 5` | Ensures positional and later flags coexist |
 | Trial positional | `search trial melanoma` | Ensures positional maps to `--condition` |
@@ -32,6 +33,17 @@ Quoted `GENE CHANGE` input should resolve through the same normalization path an
 
 ```bash
 out="$(biomcp search variant "BRAF V600E" --limit 3)"
+echo "$out" | mustmatch like "gene=BRAF"
+echo "$out" | mustmatch like "hgvsp=V600E"
+```
+
+## Variant Positional Long-Form
+
+Long-form protein notation should normalize to the same canonical typed query as
+the short one-letter form.
+
+```bash
+out="$(biomcp search variant BRAF p.Val600Glu --limit 3)"
 echo "$out" | mustmatch like "gene=BRAF"
 echo "$out" | mustmatch like "hgvsp=V600E"
 ```

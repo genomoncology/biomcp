@@ -9,7 +9,7 @@ BioMCP supports multiple input forms:
 
 - rsID: `rs113488022`
 - HGVS genomic: `chr7:g.140453136A>T`
-- gene-protein form: `BRAF V600E`
+- gene-protein form: `BRAF V600E`, `BRAF p.Val600Glu`
 
 These exact formats are accepted by `biomcp get variant` and the exact-ID
 helper commands.
@@ -20,6 +20,7 @@ helper commands.
 biomcp get variant rs113488022
 biomcp get variant "chr7:g.140453136A>T"
 biomcp get variant "BRAF V600E"
+biomcp get variant "BRAF p.Val600Glu"
 ```
 
 The default output favors concise, clinically relevant context first.
@@ -120,6 +121,8 @@ By gene and protein change:
 
 ```bash
 biomcp search variant -g BRAF --hgvsp V600E --limit 5
+biomcp search variant -g BRAF --hgvsp p.Val600Glu --limit 5
+biomcp search variant BRAF p.Val600Glu --limit 5
 ```
 
 By residue alias shorthand:

@@ -159,7 +159,7 @@ fn list_variant() -> String {
 Supported formats:
 - rsID: `rs113488022`
 - HGVS genomic: `chr7:g.140453136A>T`
-- Gene + protein: `BRAF V600E`
+- Gene + protein: `BRAF V600E`, `BRAF p.Val600Glu`
 
 ## Helpers
 

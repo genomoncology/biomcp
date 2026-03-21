@@ -39,6 +39,20 @@ def test_installation_doc_covers_pypi_package_and_command_contract() -> None:
     assert "biomcp --version" in pypi_block
 
 
+def test_installation_doc_source_build_uses_canonical_make_install_path() -> None:
+    installation = _read("docs/getting-started/installation.md")
+
+    source_block = _markdown_section_block(
+        installation,
+        "## Option 3: Source build",
+        "\n## Post-install smoke checks",
+    )
+
+    assert "make install" in source_block
+    assert '"$HOME/.local/bin/biomcp" --version' in source_block
+    assert "cargo install --path ." not in source_block
+
+
 def test_docs_index_lists_pypi_install_before_binary_install() -> None:
     docs_index = _read("docs/index.md")
 
