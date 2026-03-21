@@ -5,6 +5,11 @@ Use it when you know the biomedical phrase but do not yet know whether the next
 step should be `get gene`, `search disease`, `search pathway`, or another typed
 command.
 
+Use `search all` after you already have typed slots such as `--gene`,
+`--disease`, `--drug`, `--variant`, or `--keyword`. `discover` resolves free
+text into concepts first; `search all` fans out from the typed slots you
+already trust.
+
 ## Examples
 
 ```bash

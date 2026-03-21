@@ -18,6 +18,10 @@ biomcp search all --variant "BRAF V600E"
 biomcp search all --keyword "checkpoint inhibitor"
 ```
 
+`--keyword` is the orientation leg. `search all` does not spray that term into
+every typed query. Trial and drug legs stay driven by their typed slots, while
+the article leg keeps the broader keyword context.
+
 Short flags are equivalent where supported:
 
 ```bash
@@ -52,6 +56,10 @@ biomcp --json search all --gene BRAF --disease melanoma --debug-plan
 
 Markdown prepends a `## Debug plan` fenced JSON block. JSON mode adds the same
 payload under `debug_plan`.
+
+When the same normalized token appears in both `--disease` and `--keyword`,
+`--debug-plan` marks that the article/orientation leg kept the shared token as
+controlled fallback instead of duplicating it across downstream commands.
 
 ## Narrow the next command intentionally
 

@@ -357,6 +357,10 @@ pub async fn dispatch(input: &SearchAllInput) -> Result<SearchAllResults, BioMcp
 }
 
 fn build_result_plan(input: &PreparedInput, sections: &[SearchAllSection]) -> DebugPlan {
+    let disease_leg_ungrounded = sections
+        .iter()
+        .find(|section| section.entity == SectionKind::Disease.entity())
+        .is_some_and(|section| section.count == 0 && section.error.is_none());
     let legs = sections
         .iter()
         .filter_map(|section| {
@@ -365,7 +369,7 @@ fn build_result_plan(input: &PreparedInput, sections: &[SearchAllSection]) -> De
                 leg: kind.entity().to_string(),
                 entity: kind.entity().to_string(),
                 filters: leg_filters(kind, input),
-                routing: leg_routing(kind, input, section),
+                routing: leg_routing(kind, input, section, disease_leg_ungrounded),
                 sources: leg_sources(kind, input),
                 matched_sources: if kind == SectionKind::Article {
                     article_matched_sources(section)
@@ -429,12 +433,7 @@ fn leg_filters(kind: SectionKind, input: &PreparedInput) -> Vec<String> {
             .unwrap_or_default(),
         SectionKind::Drug => {
             let mut filters = Vec::new();
-            let query = match (input.drug.as_deref(), input.keyword_pushdown()) {
-                (Some(drug), _) => Some(drug),
-                (None, Some(keyword)) => Some(keyword),
-                (None, None) => None,
-            };
-            if let Some(value) = query {
+            if let Some(value) = input.drug_query() {
                 filters.push(format!("query={value}"));
             }
             if let Some(value) = input.gene_anchor() {
@@ -469,13 +468,13 @@ fn leg_filters(kind: SectionKind, input: &PreparedInput) -> Vec<String> {
             if let Some(value) = input.gene_anchor() {
                 filters.push(format!("gene={value}"));
             }
-            if let Some(value) = input.disease.as_deref() {
+            if let Some(value) = input.article_disease_filter() {
                 filters.push(format!("disease={value}"));
             }
             if let Some(value) = input.drug.as_deref() {
                 filters.push(format!("drug={value}"));
             }
-            if let Some(value) = input.keyword.as_deref() {
+            if let Some(value) = input.article_keyword_filter() {
                 filters.push(format!("keyword={value}"));
             }
             if let Some(value) = input.since.as_deref() {
@@ -524,6 +523,7 @@ fn leg_routing(
     kind: SectionKind,
     input: &PreparedInput,
     section: &SearchAllSection,
+    disease_leg_ungrounded: bool,
 ) -> Vec<String> {
     let mut routing = vec![format!("anchor={}", input.anchor.as_str())];
 
@@ -540,13 +540,17 @@ fn leg_routing(
                 routing.push("fallback=gene_only_variant_backfill".to_string());
             }
         }
-        SectionKind::Drug => {
-            if input.drug.is_none() && input.keyword_pushdown().is_some() {
-                routing.push("routing=keyword_pushdown".to_string());
+        SectionKind::Drug => {}
+        SectionKind::Trial => routing.push("routing=recruiting_preference_backfill".to_string()),
+        SectionKind::Article => {
+            routing.push("routing=source_federation".to_string());
+            if input.has_shared_disease_keyword() {
+                routing.push("fallback=shared_disease_keyword_orientation".to_string());
+                if disease_leg_ungrounded && section.error.is_none() {
+                    routing.push("fallback=disease_leg_ungrounded_keyword_survived".to_string());
+                }
             }
         }
-        SectionKind::Trial => routing.push("routing=recruiting_preference_backfill".to_string()),
-        SectionKind::Article => routing.push("routing=source_federation".to_string()),
         SectionKind::Gene
         | SectionKind::Disease
         | SectionKind::Pathway
@@ -591,10 +595,10 @@ fn article_filters(input: &PreparedInput) -> crate::entities::article::ArticleSe
     crate::entities::article::ArticleSearchFilters {
         gene: input.gene_anchor().map(str::to_string),
         gene_anchored: matches!(input.anchor, Anchor::Gene) && input.gene.is_some(),
-        disease: input.disease.clone(),
+        disease: input.article_disease_filter().map(str::to_string),
         drug: input.drug.clone(),
         author: None,
-        keyword: input.keyword.clone(),
+        keyword: input.article_keyword_filter().map(str::to_string),
         date_from: input.since.clone(),
         date_to: None,
         article_type: None,
@@ -726,12 +730,27 @@ impl PreparedInput {
         })
     }
 
-    fn keyword_pushdown(&self) -> Option<&str> {
-        if self.keyword.is_some() && (self.gene.is_some() || self.disease.is_some()) {
-            self.keyword.as_deref()
-        } else {
+    fn has_shared_disease_keyword(&self) -> bool {
+        matches!(
+            (self.disease.as_deref(), self.keyword.as_deref()),
+            (Some(disease), Some(keyword)) if tokens_equal_normalized(disease, keyword)
+        )
+    }
+
+    fn article_disease_filter(&self) -> Option<&str> {
+        if self.has_shared_disease_keyword() {
             None
+        } else {
+            self.disease.as_deref()
         }
+    }
+
+    fn article_keyword_filter(&self) -> Option<&str> {
+        self.keyword.as_deref()
+    }
+
+    fn drug_query(&self) -> Option<&str> {
+        self.drug.as_deref()
     }
 
     fn variant_trial_query(&self) -> Option<String> {
@@ -745,13 +764,13 @@ impl PreparedInput {
         Some(context.raw.clone())
     }
 
-    fn trial_condition_query(&self) -> Option<String> {
-        match (self.disease.as_deref(), self.keyword_pushdown()) {
-            (Some(disease), Some(keyword)) => Some(format!("{disease} {keyword}")),
-            (Some(disease), None) => Some(disease.to_string()),
-            (None, _) => None,
-        }
+    fn trial_condition_query(&self) -> Option<&str> {
+        self.disease.as_deref()
     }
+}
+
+fn tokens_equal_normalized(a: &str, b: &str) -> bool {
+    a.trim().eq_ignore_ascii_case(b.trim())
 }
 
 fn parse_variant_context(raw: &str) -> VariantContext {
@@ -999,16 +1018,8 @@ async fn run_section(
             Ok(SectionResult::new(to_json_array(page.results)?, page.total))
         }
         SectionKind::Drug => {
-            // When --drug is explicit, use it as-is. Keyword pushdown only
-            // applies for drug *discovery* (no --drug) with gene/disease anchors.
-            let query = match (input.drug.as_deref(), input.keyword_pushdown()) {
-                (Some(drug), _) => Some(drug.to_string()),
-                (None, Some(keyword)) => Some(keyword.to_string()),
-                (None, None) => None,
-            };
-
             let filters = crate::entities::drug::DrugSearchFilters {
-                query,
+                query: input.drug_query().map(str::to_string),
                 target: input.gene_anchor().map(str::to_string),
                 indication: input.disease.clone(),
                 ..Default::default()
@@ -1041,7 +1052,7 @@ async fn run_section(
         }
         SectionKind::Trial => {
             let base_filters = crate::entities::trial::TrialSearchFilters {
-                condition: input.trial_condition_query(),
+                condition: input.trial_condition_query().map(str::to_string),
                 intervention: input.drug.clone(),
                 biomarker: input.gene_anchor().map(str::to_string),
                 mutation: input.variant_trial_query(),
@@ -1099,22 +1110,7 @@ async fn run_section(
             Ok(SectionResult::new(to_json_array(rows)?, total))
         }
         SectionKind::Article => {
-            let filters = crate::entities::article::ArticleSearchFilters {
-                gene: input.gene_anchor().map(str::to_string),
-                gene_anchored: matches!(input.anchor, Anchor::Gene) && input.gene.is_some(),
-                disease: input.disease.clone(),
-                drug: input.drug.clone(),
-                author: None,
-                keyword: input.keyword.clone(),
-                date_from: input.since.clone(),
-                date_to: None,
-                article_type: None,
-                journal: None,
-                open_access: false,
-                no_preprints: false,
-                exclude_retracted: true,
-                sort: crate::entities::article::ArticleSort::Relevance,
-            };
+            let filters = article_filters(input);
             let page = crate::entities::article::search_page(
                 &filters,
                 input.limit,
@@ -1361,17 +1357,7 @@ fn filter_hints(kind: SectionKind, input: &PreparedInput) -> Vec<SearchAllLink> 
                 ),
             });
         }
-        SectionKind::Drug => {
-            // Keep anchored keyword exploration visible even when the initial
-            // drug result page is empty after upstream filtering.
-            if input.drug.is_none() && input.keyword_pushdown().is_some() {
-                hints.push(SearchAllLink {
-                    rel: "filter.hint".to_string(),
-                    title: "Expand drug discovery query".to_string(),
-                    command: canonical_search_command(kind, input, input.limit),
-                });
-            }
-        }
+        SectionKind::Drug => {}
         SectionKind::AdverseEvent => {
             if let Some(drug) = input.drug.as_deref() {
                 hints.push(SearchAllLink {
@@ -1486,18 +1472,12 @@ fn canonical_search_command(kind: SectionKind, input: &PreparedInput, limit: usi
             push_opt(&mut args, "--query", input.disease.as_deref());
         }
         SectionKind::Drug => {
-            // Mirror run_section: explicit --drug wins; keyword only for discovery.
-            let query = match (input.drug.as_deref(), input.keyword_pushdown()) {
-                (Some(drug), _) => Some(drug.to_string()),
-                (None, Some(keyword)) => Some(keyword.to_string()),
-                (None, None) => None,
-            };
-            push_opt_owned(&mut args, "--query", query);
+            push_opt(&mut args, "--query", input.drug_query());
             push_opt(&mut args, "--target", input.gene_anchor());
             push_opt(&mut args, "--indication", input.disease.as_deref());
         }
         SectionKind::Trial => {
-            push_opt_owned(&mut args, "--condition", input.trial_condition_query());
+            push_opt(&mut args, "--condition", input.trial_condition_query());
             push_opt(&mut args, "--intervention", input.drug.as_deref());
             push_opt(&mut args, "--biomarker", input.gene_anchor());
             push_opt_owned(&mut args, "--mutation", input.variant_trial_query());
@@ -1505,9 +1485,9 @@ fn canonical_search_command(kind: SectionKind, input: &PreparedInput, limit: usi
         }
         SectionKind::Article => {
             push_opt(&mut args, "--gene", input.gene_anchor());
-            push_opt(&mut args, "--disease", input.disease.as_deref());
+            push_opt(&mut args, "--disease", input.article_disease_filter());
             push_opt(&mut args, "--drug", input.drug.as_deref());
-            push_opt(&mut args, "--keyword", input.keyword.as_deref());
+            push_opt(&mut args, "--keyword", input.article_keyword_filter());
             push_opt(&mut args, "--since", input.since.as_deref());
         }
         SectionKind::Pathway => {
@@ -1996,7 +1976,7 @@ mod tests {
     }
 
     #[test]
-    fn canonical_drug_command_pushes_keyword_with_gene_anchor() {
+    fn canonical_drug_command_stays_typed_only_with_gene_anchor() {
         let prepared = PreparedInput::new(&SearchAllInput {
             gene: Some("BRAF".to_string()),
             variant: None,
@@ -2013,11 +1993,11 @@ mod tests {
         let command = canonical_search_command(SectionKind::Drug, &prepared, 3);
         assert!(command.contains("search drug"));
         assert!(command.contains("--target BRAF"));
-        assert!(command.contains("--query resistance"));
+        assert!(!command.contains("--query resistance"));
     }
 
     #[test]
-    fn canonical_drug_command_does_not_push_unanchored_keyword() {
+    fn canonical_article_command_keeps_keyword_only_search() {
         let prepared = PreparedInput::new(&SearchAllInput {
             gene: None,
             variant: None,
@@ -2034,6 +2014,68 @@ mod tests {
         let command = canonical_search_command(SectionKind::Article, &prepared, 3);
         assert!(command.contains("search article"));
         assert!(command.contains("--keyword resistance"));
+    }
+
+    #[test]
+    fn canonical_article_command_dedupes_shared_disease_keyword_token() {
+        let prepared = PreparedInput::new(&SearchAllInput {
+            gene: None,
+            variant: None,
+            disease: Some("cancer".to_string()),
+            drug: None,
+            keyword: Some("Cancer".to_string()),
+            since: None,
+            limit: 3,
+            counts_only: false,
+            debug_plan: false,
+        })
+        .expect("valid prepared input");
+
+        let command = canonical_search_command(SectionKind::Article, &prepared, 3);
+        assert!(command.contains("search article"));
+        assert!(!command.contains("--disease cancer"));
+        assert!(command.contains("--keyword Cancer"));
+    }
+
+    #[test]
+    fn canonical_article_command_keeps_distinct_disease_and_keyword_filters() {
+        let prepared = PreparedInput::new(&SearchAllInput {
+            gene: None,
+            variant: None,
+            disease: Some("melanoma".to_string()),
+            drug: None,
+            keyword: Some("BRAF".to_string()),
+            since: None,
+            limit: 3,
+            counts_only: false,
+            debug_plan: false,
+        })
+        .expect("valid prepared input");
+
+        let command = canonical_search_command(SectionKind::Article, &prepared, 3);
+        assert!(command.contains("--disease melanoma"));
+        assert!(command.contains("--keyword BRAF"));
+    }
+
+    #[test]
+    fn canonical_trial_command_stays_typed_only_with_distinct_keyword() {
+        let prepared = PreparedInput::new(&SearchAllInput {
+            gene: None,
+            variant: None,
+            disease: Some("melanoma".to_string()),
+            drug: None,
+            keyword: Some("BRAF".to_string()),
+            since: None,
+            limit: 3,
+            counts_only: false,
+            debug_plan: false,
+        })
+        .expect("valid prepared input");
+
+        let command = canonical_search_command(SectionKind::Trial, &prepared, 3);
+        assert!(command.contains("--condition melanoma"));
+        assert!(!command.contains("melanoma BRAF"));
+        assert!(!command.contains("--condition BRAF"));
     }
 
     #[test]
@@ -2166,13 +2208,13 @@ mod tests {
     }
 
     #[test]
-    fn build_result_plan_marks_drug_keyword_pushdown() {
+    fn build_result_plan_marks_shared_disease_keyword_orientation_fallback() {
         let prepared = PreparedInput::new(&SearchAllInput {
-            gene: Some("BRAF".to_string()),
+            gene: None,
             variant: None,
-            disease: None,
+            disease: Some("cancer".to_string()),
             drug: None,
-            keyword: Some("resistance".to_string()),
+            keyword: Some("Cancer".to_string()),
             since: None,
             limit: 3,
             counts_only: false,
@@ -2180,29 +2222,138 @@ mod tests {
         })
         .expect("valid prepared input");
         let sections = vec![SearchAllSection {
-            entity: "drug".to_string(),
-            label: "Drugs".to_string(),
-            count: 0,
+            entity: "article".to_string(),
+            label: "Articles".to_string(),
+            count: 1,
             total: None,
             error: None,
             note: None,
-            results: vec![],
+            results: vec![json!({"pmid":"1"})],
             links: Vec::new(),
         }];
 
         let plan = build_result_plan(&prepared, &sections);
 
-        let drug_leg = plan
+        let article_leg = plan
             .legs
             .iter()
-            .find(|l| l.leg == "drug")
-            .expect("drug leg");
+            .find(|l| l.leg == "article")
+            .expect("article leg");
         assert!(
-            drug_leg
+            article_leg
                 .routing
-                .contains(&"routing=keyword_pushdown".to_string()),
-            "drug leg routing should include keyword_pushdown when no --drug but keyword+gene: {:?}",
-            drug_leg.routing
+                .contains(&"fallback=shared_disease_keyword_orientation".to_string()),
+            "article leg routing should include shared-token fallback marker: {:?}",
+            article_leg.routing
+        );
+        assert!(
+            !article_leg.filters.contains(&"disease=cancer".to_string()),
+            "article leg filters should drop the duplicate disease token: {:?}",
+            article_leg.filters
+        );
+    }
+
+    #[test]
+    fn build_result_plan_marks_ungrounded_disease_fallback_on_article_leg() {
+        let prepared = PreparedInput::new(&SearchAllInput {
+            gene: None,
+            variant: None,
+            disease: Some("cancer".to_string()),
+            drug: None,
+            keyword: Some("cancer".to_string()),
+            since: None,
+            limit: 3,
+            counts_only: false,
+            debug_plan: true,
+        })
+        .expect("valid prepared input");
+        let sections = vec![
+            SearchAllSection {
+                entity: "disease".to_string(),
+                label: "Diseases".to_string(),
+                count: 0,
+                total: Some(0),
+                error: None,
+                note: None,
+                results: vec![],
+                links: Vec::new(),
+            },
+            SearchAllSection {
+                entity: "article".to_string(),
+                label: "Articles".to_string(),
+                count: 1,
+                total: Some(1),
+                error: None,
+                note: None,
+                results: vec![json!({"pmid":"1"})],
+                links: Vec::new(),
+            },
+        ];
+
+        let plan = build_result_plan(&prepared, &sections);
+        let article_leg = plan
+            .legs
+            .iter()
+            .find(|l| l.leg == "article")
+            .expect("article leg");
+        assert!(
+            article_leg
+                .routing
+                .contains(&"fallback=disease_leg_ungrounded_keyword_survived".to_string()),
+            "article leg routing should note the ungrounded disease fallback: {:?}",
+            article_leg.routing
+        );
+    }
+
+    #[test]
+    fn build_result_plan_skips_ungrounded_marker_when_disease_leg_errors() {
+        let prepared = PreparedInput::new(&SearchAllInput {
+            gene: None,
+            variant: None,
+            disease: Some("cancer".to_string()),
+            drug: None,
+            keyword: Some("cancer".to_string()),
+            since: None,
+            limit: 3,
+            counts_only: false,
+            debug_plan: true,
+        })
+        .expect("valid prepared input");
+        let sections = vec![
+            SearchAllSection {
+                entity: "disease".to_string(),
+                label: "Diseases".to_string(),
+                count: 0,
+                total: None,
+                error: Some("upstream timeout".to_string()),
+                note: None,
+                results: vec![],
+                links: Vec::new(),
+            },
+            SearchAllSection {
+                entity: "article".to_string(),
+                label: "Articles".to_string(),
+                count: 1,
+                total: Some(1),
+                error: None,
+                note: None,
+                results: vec![json!({"pmid":"1"})],
+                links: Vec::new(),
+            },
+        ];
+
+        let plan = build_result_plan(&prepared, &sections);
+        let article_leg = plan
+            .legs
+            .iter()
+            .find(|l| l.leg == "article")
+            .expect("article leg");
+        assert!(
+            !article_leg
+                .routing
+                .contains(&"fallback=disease_leg_ungrounded_keyword_survived".to_string()),
+            "transport errors must not masquerade as ungrounded disease fallback: {:?}",
+            article_leg.routing
         );
     }
 

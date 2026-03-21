@@ -82,3 +82,33 @@ echo "$json_out" | mustmatch like "\"surface\": \"search_all\""
 echo "$json_out" | mustmatch like "\"anchor\": \"gene\""
 echo "$json_out" | mustmatch like "\"legs\": ["
 ```
+
+## Shared Disease And Keyword Token
+
+When the same normalized token appears in both `--disease` and `--keyword`,
+`search all` should keep the disease leg typed, keep the article orientation
+leg keyword-driven, and avoid duplicated follow-up commands.
+
+```bash
+out="$(biomcp search all -d cancer -k cancer --debug-plan --counts-only)"
+echo "$out" | mustmatch like "## Debug plan"
+echo "$out" | mustmatch like "fallback=shared_disease_keyword_orientation"
+echo "$out" | mustmatch like "\"filters\": ["
+echo "$out" | mustmatch like "\"keyword=cancer\""
+echo "$out" | mustmatch not like "cancer cancer"
+echo "$out" | mustmatch not like "--disease cancer --keyword cancer"
+```
+
+## Distinct Disease And Keyword Stay Separate
+
+Distinct disease and keyword inputs may stay combined on the article leg, but
+they should not be cross-routed into typed trial queries.
+
+```bash
+out="$(biomcp search all -d melanoma -k BRAF --debug-plan --counts-only)"
+echo "$out" | mustmatch like "## Debug plan"
+echo "$out" | mustmatch like "--disease melanoma --keyword BRAF"
+echo "$out" | mustmatch like "\"condition=melanoma\""
+echo "$out" | mustmatch not like "condition=melanoma BRAF"
+echo "$out" | mustmatch not like "fallback=shared_disease_keyword_orientation"
+```
