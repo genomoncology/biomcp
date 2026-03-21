@@ -15,6 +15,8 @@ SPEC_PR_DESELECT_ARGS = \
 	--deselect "spec/03-variant.md::Variant to Articles" \
 	--deselect "spec/06-article.md::Searching by Gene" \
 	--deselect "spec/06-article.md::Searching by Keyword" \
+	--deselect "spec/06-article.md::Source-Specific PubTator Search Uses Default Retraction Filter" \
+	--deselect "spec/06-article.md::Federated Search Preserves Non-EuropePMC Matches Under Default Retraction Filter" \
 	--deselect "spec/06-article.md::Article Full Text Saved Markdown" \
 	--deselect "spec/06-article.md::Sort Behavior" \
 	--deselect "spec/07-disease.md::Disease to Articles" \

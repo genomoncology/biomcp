@@ -6,6 +6,8 @@ Article commands provide literature retrieval and annotation-focused enrichment 
 |---|---|---|
 | Gene search | `search article -g BRAF` | Confirms gene-linked literature lookup |
 | Keyword search | `search article -k immunotherapy` | Confirms free-text discovery |
+| PubTator source search | `search article --source pubtator` | Confirms default filtering still allows source-specific PubTator results |
+| Federated source preservation | `--json search article -q ...` | Confirms default filtering still preserves non-EuropePMC matches |
 | Article detail | `get article 22663011` | Confirms canonical article card output |
 | Annotation section | `get article ... annotations` | Confirms PubTator integration |
 | Entity helper | `article entities 22663011` | Confirms entity extraction pivot |
@@ -32,6 +34,31 @@ Keyword search supports broad discovery before narrowing to specific entities. T
 out="$(biomcp search article -k immunotherapy --limit 3)"
 echo "$out" | mustmatch like "keyword=immunotherapy"
 echo "$out" | mustmatch like "PMID"
+```
+
+## Source-Specific PubTator Search Uses Default Retraction Filter
+
+Default article search still excludes confirmed retractions, but PubTator rows
+without retraction metadata should remain eligible when the user selects the
+PubTator source directly.
+
+```bash
+out="$(biomcp search article -q 'alternative microexon splicing metastasis' --source pubtator --limit 3)"
+echo "$out" | mustmatch like "| PMID | Title |"
+echo "$out" | mustmatch not like "No articles found"
+```
+
+## Federated Search Preserves Non-EuropePMC Matches Under Default Retraction Filter
+
+JSON article search preserves the tri-state `is_retracted` contract as
+`true`, `false`, or `null`. Under the default filter, only confirmed
+retractions are excluded, so federated search can still surface PubTator or
+other non-EuropePMC matches when those sources lack retraction metadata.
+
+```bash
+out="$(biomcp --json search article -q 'alternative microexon splicing metastasis' --limit 5)"
+echo "$out" | mustmatch like "\"matched_sources\": ["
+echo "$out" | mustmatch like "\"pubtator\""
 ```
 
 ## Getting Article Details

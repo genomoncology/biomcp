@@ -748,10 +748,6 @@ fn pubtator_sort(sort: ArticleSort) -> Option<&'static str> {
     }
 }
 
-fn pubtator_source_can_satisfy(filters: &ArticleSearchFilters) -> bool {
-    !filters.exclude_retracted
-}
-
 fn parse_row_date(value: Option<&str>) -> Option<String> {
     let value = value.map(str::trim).filter(|v| !v.is_empty())?;
     let truncated = value.get(0..10).unwrap_or(value);
@@ -813,7 +809,9 @@ fn matches_result_filters(
     if filters.no_preprints && row.journal.as_deref().is_some_and(is_preprint_journal) {
         return false;
     }
-    if filters.exclude_retracted && row.is_retracted.unwrap_or(true) {
+    // `None` means the source does not expose retraction metadata; default exclusion
+    // only hides rows that are positively confirmed as retracted.
+    if filters.exclude_retracted && row.is_retracted == Some(true) {
         return false;
     }
     if !matches_optional_journal_filter(row.journal.as_deref(), filters.journal.as_deref()) {
@@ -1937,10 +1935,6 @@ async fn search_pubtator_page(
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    if !pubtator_source_can_satisfy(filters) {
-        return Ok(SearchPage::offset(Vec::new(), Some(0)));
-    }
-
     let pubtator = PubTatorClient::new()?;
     let query = build_pubtator_query(filters, &pubtator).await?;
     let sort = pubtator_sort(filters.sort);
@@ -2469,6 +2463,41 @@ pub async fn recommendations(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wiremock::matchers::{header, method, path, query_param};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    async fn lock_env() -> tokio::sync::MutexGuard<'static, ()> {
+        crate::test_support::env_lock().lock().await
+    }
+
+    struct EnvVarGuard {
+        name: &'static str,
+        previous: Option<String>,
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            // Safety: tests serialize environment mutation with `lock_env()`.
+            unsafe {
+                match &self.previous {
+                    Some(value) => std::env::set_var(self.name, value),
+                    None => std::env::remove_var(self.name),
+                }
+            }
+        }
+    }
+
+    fn set_env_var(name: &'static str, value: Option<&str>) -> EnvVarGuard {
+        let previous = std::env::var(name).ok();
+        // Safety: tests serialize environment mutation with `lock_env()`.
+        unsafe {
+            match value {
+                Some(value) => std::env::set_var(name, value),
+                None => std::env::remove_var(name),
+            }
+        }
+        EnvVarGuard { name, previous }
+    }
 
     fn empty_filters() -> ArticleSearchFilters {
         ArticleSearchFilters {
@@ -2830,18 +2859,6 @@ mod tests {
         assert_eq!(summary.routing, vec!["planner=pubtator_only".to_string()]);
         assert_eq!(summary.sources, vec!["PubTator3".to_string()]);
         assert!(summary.matched_sources.is_empty());
-    }
-
-    #[test]
-    fn pubtator_source_cannot_satisfy_exclude_retracted() {
-        let include_filters = empty_filters();
-        let exclude_filters = ArticleSearchFilters {
-            exclude_retracted: true,
-            ..empty_filters()
-        };
-
-        assert!(pubtator_source_can_satisfy(&include_filters));
-        assert!(!pubtator_source_can_satisfy(&exclude_filters));
     }
 
     #[test]
@@ -3420,13 +3437,20 @@ mod tests {
     }
 
     #[test]
-    fn exclude_retracted_filters_pubtator_source_rows() {
-        let row = row_with(
+    fn exclude_retracted_only_filters_confirmed_retractions() {
+        let confirmed_retracted = row_with(
             "100",
             ArticleSource::PubTator,
             Some("2025-01-01"),
             Some(1),
             Some(true),
+        );
+        let confirmed_not_retracted = row_with(
+            "101",
+            ArticleSource::PubTator,
+            Some("2025-01-01"),
+            Some(1),
+            Some(false),
         );
         let exclude_filters = ArticleSearchFilters {
             exclude_retracted: true,
@@ -3437,12 +3461,28 @@ mod tests {
             ..empty_filters()
         };
 
-        assert!(!matches_result_filters(&row, &exclude_filters, None, None));
-        assert!(matches_result_filters(&row, &include_filters, None, None));
+        assert!(!matches_result_filters(
+            &confirmed_retracted,
+            &exclude_filters,
+            None,
+            None
+        ));
+        assert!(matches_result_filters(
+            &confirmed_retracted,
+            &include_filters,
+            None,
+            None
+        ));
+        assert!(matches_result_filters(
+            &confirmed_not_retracted,
+            &exclude_filters,
+            None,
+            None
+        ));
     }
 
     #[test]
-    fn exclude_retracted_excludes_unknown_retraction_status_by_default() {
+    fn exclude_retracted_keeps_unknown_retraction_status() {
         let row = row_with(
             "100",
             ArticleSource::PubTator,
@@ -3459,8 +3499,227 @@ mod tests {
             ..empty_filters()
         };
 
-        assert!(!matches_result_filters(&row, &exclude_filters, None, None));
+        assert!(matches_result_filters(&row, &exclude_filters, None, None));
         assert!(matches_result_filters(&row, &include_filters, None, None));
+    }
+
+    #[tokio::test]
+    async fn source_specific_pubtator_search_uses_default_retraction_filter() {
+        let _guard = lock_env().await;
+        let server = MockServer::start().await;
+        let _pubtator_base = set_env_var("BIOMCP_PUBTATOR_BASE", Some(&server.uri()));
+
+        Mock::given(method("GET"))
+            .and(query_param("page", "1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "results": [{
+                    "_id": "pt-1",
+                    "pmid": 22663011,
+                    "title": "Alternative microexon splicing in metastasis",
+                    "journal": "Cancer Cell",
+                    "date": "2025-01-01",
+                    "score": 42.0
+                }],
+                "count": 1,
+                "total_pages": 1,
+                "current": 1,
+                "page_size": 25,
+                "facets": {}
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        Mock::given(method("GET"))
+            .and(query_param("page", "2"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "results": [],
+                "count": 1,
+                "total_pages": 1,
+                "current": 2,
+                "page_size": 25,
+                "facets": {}
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let page = search_page(
+            &ArticleSearchFilters {
+                keyword: Some("alternative microexon splicing metastasis".into()),
+                exclude_retracted: true,
+                ..empty_filters()
+            },
+            3,
+            0,
+            ArticleSourceFilter::PubTator,
+        )
+        .await
+        .expect("pubtator search should succeed");
+
+        assert_eq!(page.results.len(), 1);
+        assert_eq!(page.results[0].source, ArticleSource::PubTator);
+        assert_eq!(page.results[0].pmid, "22663011");
+    }
+
+    #[tokio::test]
+    async fn semantic_scholar_candidates_keep_unknown_retraction_rows() {
+        let _guard = lock_env().await;
+        let server = MockServer::start().await;
+        let _s2_base = set_env_var("BIOMCP_S2_BASE", Some(&server.uri()));
+        let _s2_key = set_env_var("S2_API_KEY", Some("dummy-key"));
+
+        Mock::given(method("GET"))
+            .and(path("/graph/v1/paper/search"))
+            .and(query_param(
+                "query",
+                "alternative microexon splicing metastasis",
+            ))
+            .and(query_param("limit", "3"))
+            .and(header("x-api-key", "dummy-key"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "total": 1,
+                "data": [{
+                    "paperId": "paper-1",
+                    "externalIds": {
+                        "PubMed": "22663011",
+                        "DOI": "10.1000/example"
+                    },
+                    "title": "Alternative microexon splicing in metastasis",
+                    "venue": "Cancer Cell",
+                    "year": 2025,
+                    "citationCount": 12,
+                    "influentialCitationCount": 4,
+                    "abstract": "Microexon splicing contributes to metastatic progression."
+                }]
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        let rows = search_semantic_scholar_candidates(
+            &ArticleSearchFilters {
+                keyword: Some("alternative microexon splicing metastasis".into()),
+                exclude_retracted: true,
+                ..empty_filters()
+            },
+            3,
+        )
+        .await
+        .expect("semantic scholar search should succeed");
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].source, ArticleSource::SemanticScholar);
+        assert_eq!(rows[0].is_retracted, None);
+    }
+
+    #[tokio::test]
+    async fn federated_search_keeps_non_europepmc_matches_under_default_retraction_filter() {
+        let _guard = lock_env().await;
+        let pubtator = MockServer::start().await;
+        let europepmc = MockServer::start().await;
+        let _pubtator_base = set_env_var("BIOMCP_PUBTATOR_BASE", Some(&pubtator.uri()));
+        let _europepmc_base = set_env_var("BIOMCP_EUROPEPMC_BASE", Some(&europepmc.uri()));
+        let _s2_base = set_env_var("BIOMCP_S2_BASE", None);
+        let _s2_key = set_env_var("S2_API_KEY", None);
+
+        Mock::given(method("GET"))
+            .and(query_param("page", "1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "results": [{
+                    "_id": "pt-1",
+                    "pmid": 22663011,
+                    "title": "Alternative microexon splicing in metastasis",
+                    "journal": "Cancer Cell",
+                    "date": "2025-01-01",
+                    "score": 42.0
+                }],
+                "count": 1,
+                "total_pages": 1,
+                "current": 1,
+                "page_size": 25,
+                "facets": {}
+            })))
+            .expect(1)
+            .mount(&pubtator)
+            .await;
+
+        Mock::given(method("GET"))
+            .and(query_param("page", "2"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "results": [],
+                "count": 1,
+                "total_pages": 1,
+                "current": 2,
+                "page_size": 25,
+                "facets": {}
+            })))
+            .expect(1)
+            .mount(&pubtator)
+            .await;
+
+        Mock::given(method("GET"))
+            .and(path("/search"))
+            .and(query_param(
+                "query",
+                "alternative microexon splicing metastasis AND NOT PUB_TYPE:\"retracted publication\"",
+            ))
+            .and(query_param("format", "json"))
+            .and(query_param("page", "1"))
+            .and(query_param("pageSize", "25"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "hitCount": 1,
+                "resultList": {
+                    "result": [{
+                        "id": "EP-1",
+                        "pmid": "22663012",
+                        "title": "Europe PMC match",
+                        "journalTitle": "Nature",
+                        "firstPublicationDate": "2024-01-01",
+                        "citedByCount": 25,
+                        "pubType": "journal article"
+                    }]
+                }
+            })))
+            .expect(1)
+            .mount(&europepmc)
+            .await;
+
+        Mock::given(method("GET"))
+            .and(path("/search"))
+            .and(query_param("page", "2"))
+            .and(query_param("format", "json"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "hitCount": 1,
+                "resultList": {
+                    "result": []
+                }
+            })))
+            .expect(1)
+            .mount(&europepmc)
+            .await;
+
+        let page = search_page(
+            &ArticleSearchFilters {
+                keyword: Some("alternative microexon splicing metastasis".into()),
+                exclude_retracted: true,
+                ..empty_filters()
+            },
+            5,
+            0,
+            ArticleSourceFilter::All,
+        )
+        .await
+        .expect("federated search should succeed");
+
+        assert!(!page.results.is_empty());
+        assert!(page.results.iter().any(|row| {
+            row.source == ArticleSource::PubTator
+                || row
+                    .matched_sources
+                    .iter()
+                    .any(|source| *source == ArticleSource::PubTator)
+        }));
     }
 
     #[test]
