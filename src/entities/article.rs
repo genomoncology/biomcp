@@ -232,6 +232,14 @@ impl ArticleSourceFilter {
             ))),
         }
     }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::PubTator => "pubtator",
+            Self::EuropePmc => "europepmc",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -599,6 +607,60 @@ pub fn semantic_scholar_search_enabled(
     SemanticScholarClient::new()
         .map(|client| client.is_configured())
         .unwrap_or(false)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ArticleSearchDebugSummary {
+    pub routing: Vec<String>,
+    pub sources: Vec<String>,
+    pub matched_sources: Vec<String>,
+}
+
+pub(crate) fn summarize_debug_plan(
+    filters: &ArticleSearchFilters,
+    source: ArticleSourceFilter,
+    results: &[ArticleSearchResult],
+) -> Result<ArticleSearchDebugSummary, BioMcpError> {
+    let plan = plan_backends(filters, source)?;
+    let planner = match (plan, source) {
+        (BackendPlan::EuropeOnly, ArticleSourceFilter::All)
+            if has_strict_europepmc_filters(filters) =>
+        {
+            "planner=europe_only_strict_filters"
+        }
+        (BackendPlan::EuropeOnly, _) => "planner=europe_only",
+        (BackendPlan::PubTatorOnly, _) => "planner=pubtator_only",
+        (BackendPlan::Both, _) => "planner=federated",
+    };
+
+    let mut sources = match plan {
+        BackendPlan::EuropeOnly => vec!["Europe PMC".to_string()],
+        BackendPlan::PubTatorOnly => vec!["PubTator3".to_string()],
+        BackendPlan::Both => vec!["PubTator3".to_string(), "Europe PMC".to_string()],
+    };
+    if semantic_scholar_search_enabled(filters, source) {
+        sources.push("Semantic Scholar".to_string());
+    }
+
+    let matched_sources = [
+        ArticleSource::PubTator,
+        ArticleSource::EuropePmc,
+        ArticleSource::SemanticScholar,
+    ]
+    .into_iter()
+    .filter(|candidate| {
+        results.iter().any(|row| {
+            row.source == *candidate || row.matched_sources.iter().any(|source| source == candidate)
+        })
+    })
+    .map(|source| source.display_name().to_string())
+    .collect();
+
+    Ok(ArticleSearchDebugSummary {
+        routing: vec![planner.to_string()],
+        sources,
+        matched_sources,
+    })
 }
 
 fn matches_entity_biotype(value: Option<&str>, expected: EntityBiotype) -> bool {
@@ -2499,6 +2561,73 @@ mod tests {
         let err = plan_backends(&filters, ArticleSourceFilter::PubTator)
             .expect_err("planner should reject strict-only filter on pubtator");
         assert!(err.to_string().contains("--type"));
+    }
+
+    #[test]
+    fn summarize_debug_plan_reports_federated_sources_and_matches() {
+        let mut filters = empty_filters();
+        filters.gene = Some("BRAF".into());
+        let results = vec![ArticleSearchResult {
+            pmid: "22663011".into(),
+            pmcid: None,
+            doi: None,
+            title: "BRAF melanoma".into(),
+            journal: None,
+            date: None,
+            citation_count: None,
+            influential_citation_count: None,
+            source: ArticleSource::PubTator,
+            matched_sources: vec![ArticleSource::PubTator, ArticleSource::SemanticScholar],
+            score: None,
+            is_retracted: Some(false),
+            abstract_snippet: None,
+            ranking: None,
+            normalized_title: "braf melanoma".into(),
+            normalized_abstract: String::new(),
+            publication_type: None,
+            insertion_index: 0,
+        }];
+
+        let summary =
+            summarize_debug_plan(&filters, ArticleSourceFilter::All, &results).expect("summary");
+
+        assert_eq!(summary.routing, vec!["planner=federated".to_string()]);
+        assert!(summary.sources.contains(&"PubTator3".to_string()));
+        assert!(summary.sources.contains(&"Europe PMC".to_string()));
+        assert_eq!(
+            summary.matched_sources,
+            vec!["PubTator3".to_string(), "Semantic Scholar".to_string()]
+        );
+    }
+
+    #[test]
+    fn summarize_debug_plan_strict_filter_emits_europe_only_strict() {
+        let mut filters = empty_filters();
+        filters.gene = Some("BRAF".into());
+        filters.open_access = true;
+
+        let summary =
+            summarize_debug_plan(&filters, ArticleSourceFilter::All, &[]).expect("summary");
+
+        assert_eq!(
+            summary.routing,
+            vec!["planner=europe_only_strict_filters".to_string()]
+        );
+        assert_eq!(summary.sources, vec!["Europe PMC".to_string()]);
+        assert!(summary.matched_sources.is_empty());
+    }
+
+    #[test]
+    fn summarize_debug_plan_explicit_pubtator_emits_pubtator_only() {
+        let mut filters = empty_filters();
+        filters.gene = Some("BRAF".into());
+
+        let summary =
+            summarize_debug_plan(&filters, ArticleSourceFilter::PubTator, &[]).expect("summary");
+
+        assert_eq!(summary.routing, vec!["planner=pubtator_only".to_string()]);
+        assert_eq!(summary.sources, vec!["PubTator3".to_string()]);
+        assert!(summary.matched_sources.is_empty());
     }
 
     #[test]

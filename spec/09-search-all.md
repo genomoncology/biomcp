@@ -63,3 +63,22 @@ echo "$out" | mustmatch like "\"entity\": \"article\""
 echo "$out" | mustmatch like "\"source\":"
 echo "$out" | mustmatch like "\"ranking\": {"
 ```
+
+## Debug Plan
+
+`search all` should expose the executed typed legs and routing markers only when
+explicitly requested.
+
+```bash
+out="$(biomcp search all -g BRAF --debug-plan --limit 3)"
+echo "$out" | mustmatch like "## Debug plan"
+echo "$out" | mustmatch like "\"surface\": \"search_all\""
+echo "$out" | mustmatch like "\"anchor\": \"gene\""
+echo "$out" | mustmatch like "\"anchor=gene\""
+
+json_out="$(biomcp --json search all -g BRAF --debug-plan --limit 3)"
+echo "$json_out" | mustmatch like "\"debug_plan\": {"
+echo "$json_out" | mustmatch like "\"surface\": \"search_all\""
+echo "$json_out" | mustmatch like "\"anchor\": \"gene\""
+echo "$json_out" | mustmatch like "\"legs\": ["
+```

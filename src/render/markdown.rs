@@ -3,6 +3,7 @@ use std::sync::OnceLock;
 
 use minijinja::{Environment, context};
 
+use crate::cli::debug_plan::DebugPlan;
 use crate::cli::search_all::SearchAllResults;
 use crate::entities::adverse_event::{
     AdverseEvent, AdverseEventCountBucket, AdverseEventSearchResult, AdverseEventSearchSummary,
@@ -1779,6 +1780,7 @@ pub fn article_search_markdown_with_footer_and_context(
     pagination_footer: &str,
     sort: ArticleSort,
     semantic_scholar_enabled: bool,
+    debug_plan: Option<&DebugPlan>,
 ) -> Result<String, BioMcpError> {
     let rows = results
         .iter()
@@ -1803,7 +1805,19 @@ pub fn article_search_markdown_with_footer_and_context(
         ranking_policy => "directness-first (title coverage > title+abstract coverage > study/review cue > citation support)",
         pagination_footer => pagination_footer,
     })?;
-    Ok(with_pagination_footer(body, pagination_footer))
+    let body = with_pagination_footer(body, pagination_footer);
+    if let Some(debug_plan) = debug_plan {
+        Ok(format!("{}{}", render_debug_plan_block(debug_plan)?, body))
+    } else {
+        Ok(body)
+    }
+}
+
+fn render_debug_plan_block(debug_plan: &DebugPlan) -> Result<String, BioMcpError> {
+    Ok(format!(
+        "## Debug plan\n\n```json\n{}\n```\n\n",
+        serde_json::to_string_pretty(debug_plan)?
+    ))
 }
 
 pub fn disease_markdown(
@@ -3089,14 +3103,20 @@ pub fn search_all_markdown(
         })
         .collect::<Vec<_>>();
 
-    Ok(tmpl.render(context! {
+    let body = tmpl.render(context! {
         query => &results.query,
         sections => sections,
         counts_only => counts_only,
         searches_dispatched => results.searches_dispatched,
         searches_with_results => results.searches_with_results,
         wall_time_ms => results.wall_time_ms,
-    })?)
+    })?;
+
+    if let Some(debug_plan) = results.debug_plan.as_ref() {
+        Ok(format!("{}{}", render_debug_plan_block(debug_plan)?, body))
+    } else {
+        Ok(body)
+    }
 }
 
 pub fn render_discover(result: &DiscoverResult) -> Result<String, BioMcpError> {
@@ -5283,6 +5303,7 @@ mod tests {
             "",
             crate::entities::article::ArticleSort::Relevance,
             true,
+            None,
         )
         .expect("markdown should render");
         assert!(markdown.contains("Semantic Scholar: enabled"));
@@ -5355,12 +5376,68 @@ mod tests {
             searches_dispatched: 1,
             searches_with_results: 1,
             wall_time_ms: 42,
+            debug_plan: None,
         };
 
         let markdown = search_all_markdown(&results, false).expect("markdown should render");
         assert!(
             markdown.contains("> No disease-filtered variants found; showing top gene variants.")
         );
+    }
+
+    #[test]
+    fn article_search_markdown_prepends_debug_plan_block() {
+        let debug_plan = DebugPlan {
+            surface: "search_article",
+            query: "gene=BRAF".to_string(),
+            anchor: None,
+            legs: vec![crate::cli::debug_plan::DebugPlanLeg {
+                leg: "article".to_string(),
+                entity: "article".to_string(),
+                filters: vec!["gene=BRAF".to_string()],
+                routing: vec!["planner=federated".to_string()],
+                sources: vec!["PubTator3".to_string(), "Europe PMC".to_string()],
+                matched_sources: vec!["PubTator3".to_string()],
+                count: 1,
+                total: Some(1),
+                note: None,
+                error: None,
+            }],
+        };
+        let rows = vec![ArticleSearchResult {
+            pmid: "1".into(),
+            title: "Entity-ranked".into(),
+            pmcid: None,
+            doi: None,
+            journal: Some("Journal A".into()),
+            date: Some("2025-01-01".into()),
+            citation_count: Some(10),
+            influential_citation_count: Some(4),
+            source: ArticleSource::PubTator,
+            score: Some(99.1),
+            is_retracted: Some(false),
+            abstract_snippet: Some("Abstract one".into()),
+            ranking: None,
+            matched_sources: vec![ArticleSource::PubTator],
+            normalized_title: "entity-ranked".into(),
+            normalized_abstract: "abstract one".into(),
+            publication_type: None,
+            insertion_index: 0,
+        }];
+
+        let markdown = article_search_markdown_with_footer_and_context(
+            "gene=BRAF",
+            &rows,
+            "",
+            crate::entities::article::ArticleSort::Relevance,
+            true,
+            Some(&debug_plan),
+        )
+        .expect("markdown should render");
+
+        assert!(markdown.starts_with("## Debug plan"));
+        assert!(markdown.contains("\"surface\": \"search_article\""));
+        assert!(markdown.contains("# Articles: gene=BRAF"));
     }
 
     #[test]

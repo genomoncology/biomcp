@@ -37,6 +37,9 @@ date in the base card.
 
 ## Request drug sections
 
+Supported sections: `label`, `shortage`, `targets`, `indications`,
+`interactions`, `civic`, `approvals`, `all`.
+
 FDA label section:
 
 ```bash
