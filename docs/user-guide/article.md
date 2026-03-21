@@ -50,6 +50,10 @@ Markdown preserves the merged rank order, and JSON includes row-level
 `influential_citation_count`.
 
 Use `--source <all|pubtator|europepmc>` to select one backend or keep the default federated search.
+Default article search excludes confirmed retractions unless you pass
+`--include-retracted`. Sources that do not expose retraction metadata still
+participate in the search, and JSON search rows keep the tri-state contract:
+`"is_retracted": true`, `false`, or `null`.
 
 To search a single backend:
 
