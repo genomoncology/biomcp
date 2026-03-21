@@ -36,6 +36,17 @@ biomcp search article -g BRAF --since 2024-01-01 --no-preprints --limit 10
 biomcp get article 22663011 fulltext
 ```
 
+## Fetch several shortlisted papers at once
+
+```bash
+biomcp article batch 22663011 24200969 39073865
+```
+
+Use `article batch` after search when you already know the candidate PMIDs or
+DOIs and want compact title/journal/year/entity cards before opening one paper
+in full detail. The helper preserves input order and still works when
+`S2_API_KEY` is unset.
+
 ## Inspect the ranking rationale in JSON
 
 ```bash

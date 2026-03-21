@@ -9,6 +9,7 @@ Article commands provide literature retrieval and annotation-focused enrichment 
 | Article detail | `get article 22663011` | Confirms canonical article card output |
 | Annotation section | `get article ... annotations` | Confirms PubTator integration |
 | Entity helper | `article entities 22663011` | Confirms entity extraction pivot |
+| Batch helper | `article batch 22663011 24200969` | Confirms compact multi-article fetch |
 | Semantic Scholar detail | `get article 22663011 tldr` | Confirms optional-key enrichment section |
 | Semantic Scholar graph | `article citations|references 22663011` | Confirms citation graph pivots |
 | Semantic Scholar recommendations | `article recommendations ...` | Confirms related-paper pivots |
@@ -86,6 +87,52 @@ echo "$saved" | mustmatch not like "eLife Sciences Publications"
 out="$(biomcp article entities 22663011)"
 echo "$out" | mustmatch like "# Entities in PMID 22663011"
 echo "$out" | mustmatch like "## Genes"
+```
+
+## Article Batch
+
+`article batch` returns compact numbered cards for known IDs without
+changing single-article output. The markdown contract exposes a stable heading,
+numbered card sections with PMID/bibliographic fields, and degrades cleanly
+without Semantic Scholar TLDR data.
+
+```bash
+out="$(biomcp article batch 22663011 24200969)"
+echo "$out" | mustmatch like "# Article Batch (2)"
+echo "$out" | mustmatch like "## 1."
+echo "$out" | mustmatch like "## 2."
+echo "$out" | mustmatch like "PMID: 22663011"
+echo "$out" | mustmatch like "PMID: 24200969"
+
+json_out="$(biomcp --json article batch 22663011 24200969)"
+echo "$json_out" | mustmatch like "\"requested_id\": \"22663011\""
+echo "$json_out" | mustmatch like "\"pmid\": \"22663011\""
+echo "$json_out" | mustmatch like "\"title\":"
+echo "$json_out" | mustmatch like "\"year\":"
+
+no_key_out="$(env -u S2_API_KEY biomcp --json article batch 22663011)"
+echo "$no_key_out" | mustmatch like "\"requested_id\": \"22663011\""
+echo "$no_key_out" | mustmatch like "\"title\":"
+echo "$no_key_out" | mustmatch not like "\"tldr\":"
+```
+
+## Article Batch Invalid Identifier
+
+An unsupported identifier format should fail with the existing supported
+identifier guidance rather than a generic error.
+
+```bash
+out="$(biomcp article batch S1535610826000103 2>&1 || true)"
+echo "$out" | mustmatch like "Unsupported identifier"
+```
+
+## Article Batch Limit Enforcement
+
+More than 20 IDs should fail immediately, before any network work.
+
+```bash
+out="$(biomcp article batch 1000001 1000002 1000003 1000004 1000005 1000006 1000007 1000008 1000009 1000010 1000011 1000012 1000013 1000014 1000015 1000016 1000017 1000018 1000019 1000020 1000021 2>&1 || true)"
+echo "$out" | mustmatch like "limited to 20"
 ```
 
 ## Optional-Key Get Article Path

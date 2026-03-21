@@ -187,6 +187,7 @@ fn list_article() -> String {
 - `get article <id> fulltext` - download/cache full text
 - `get article <id> all` - include all article sections
 - `article entities <pmid> --limit <N>` - annotated entities with next commands
+- `article batch <id> [<id>...]` - compact multi-article summary cards
 - `article citations <id> --limit <N>` - citation graph with contexts/intents (`S2_API_KEY`)
 - `article references <id> --limit <N>` - reference graph with contexts/intents (`S2_API_KEY`)
 - `article recommendations <id> [<id>...] [--negative <id>...] --limit <N>` - related papers (`S2_API_KEY`)
@@ -758,6 +759,7 @@ mod tests {
 
         let article = render(Some("article")).expect("list article should render");
         assert!(article.contains("--since <YYYY-MM-DD>"));
+        assert!(article.contains("article batch <id> [<id>...]"));
     }
 
     #[test]

@@ -41,6 +41,7 @@ Article search fans out to PubTator3 and Europe PMC in parallel by default.
 When `S2_API_KEY` is set, BioMCP also adds a Semantic Scholar search leg for
 the same typed query and merges duplicates across PMID, PMCID, and DOI where
 possible.
+Search results are still deduplicated by PMID when BioMCP can resolve one.
 
 Default `--sort relevance` is directness-first: title coverage ranks ahead of
 title+abstract coverage, then study/review cues, then citation support.
@@ -100,16 +101,23 @@ biomcp get article 22663011 tldr
 
 ```bash
 biomcp article entities 22663011   # extract annotated entities via PubTator
+biomcp article batch 22663011 24200969          # compact multi-article summary cards
 biomcp article citations 22663011 --limit 3         # Semantic Scholar citation graph
 biomcp article references 22663011 --limit 3        # Semantic Scholar reference graph
 biomcp article recommendations 22663011 --limit 3   # Semantic Scholar related papers
 ```
 
-These Semantic Scholar helper commands require `S2_API_KEY`. Without the key,
-ordinary `get article` still works, but the explicit helper commands return an
-API-key-required error. Citations usually work broadly; references and
-recommendations can be sparse or empty for paywalled papers because of
-publisher elision in the Semantic Scholar graph.
+`article batch` works without `S2_API_KEY` and echoes the original
+`requested_id` together with resolved PMID/PMCID/DOI fields. When the key is
+present, the batch helper adds optional TLDR and citation metadata with one
+Semantic Scholar batch request.
+
+The Semantic Scholar graph helpers still require `S2_API_KEY`. Without the
+key, ordinary `get article` and `article batch` still work, but the explicit
+graph/recommendation helpers return an API-key-required error. Citations
+usually work broadly; references and recommendations can be sparse or empty
+for paywalled papers because of publisher elision in the Semantic Scholar
+graph.
 
 ## Caching behavior
 
@@ -121,13 +129,15 @@ This avoids repeated large payload downloads during iterative workflows.
 ```bash
 biomcp --json get article 22663011
 biomcp --json search article -g BRAF --limit 3
+biomcp --json article batch 22663011 24200969
 ```
 
 JSON article responses include `_meta.next_commands` and `_meta.section_sources`,
 so article workflows can promote the next likely pivots and preserve section
 provenance without scraping markdown. JSON `search article` responses also echo
 `query`, `sort`, `semantic_scholar_enabled`, and row-level ranking/provenance
-metadata.
+metadata. JSON `article batch` responses are a bare array of compact cards so
+callers can map results back to the original input order.
 
 ## Practical tips
 

@@ -10,8 +10,9 @@ use crate::entities::adverse_event::{
     DeviceEvent, DeviceEventSearchResult, RecallSearchResult,
 };
 use crate::entities::article::{
-    Article, ArticleAnnotations, ArticleGraphResult, ArticleRecommendationsResult,
-    ArticleRelatedPaper, ArticleSearchResult, ArticleSort, ArticleSource,
+    AnnotationCount, Article, ArticleAnnotations, ArticleBatchEntitySummary, ArticleBatchItem,
+    ArticleGraphResult, ArticleRecommendationsResult, ArticleRelatedPaper, ArticleSearchResult,
+    ArticleSort, ArticleSource,
 };
 use crate::entities::discover::{DiscoverResult, DiscoverType};
 use crate::entities::disease::{
@@ -1626,6 +1627,71 @@ pub fn article_entities_markdown(
         chemicals => chemicals,
         mutations => mutations,
     })?)
+}
+
+fn article_batch_counts(label: &str, rows: &[AnnotationCount]) -> Option<String> {
+    if rows.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "{label}: {}",
+        rows.iter()
+            .map(|row| format!("{} ({})", row.text.trim(), row.count))
+            .collect::<Vec<_>>()
+            .join(", ")
+    ))
+}
+
+fn article_batch_entities(summary: Option<&ArticleBatchEntitySummary>) -> Option<String> {
+    let summary = summary?;
+    let parts = [
+        article_batch_counts("Genes", &summary.genes),
+        article_batch_counts("Diseases", &summary.diseases),
+        article_batch_counts("Chemicals", &summary.chemicals),
+        article_batch_counts("Mutations", &summary.mutations),
+    ]
+    .into_iter()
+    .flatten()
+    .collect::<Vec<_>>();
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.join("; "))
+    }
+}
+
+pub fn article_batch_markdown(items: &[ArticleBatchItem]) -> Result<String, BioMcpError> {
+    let mut out = format!("# Article Batch ({})\n\n", items.len());
+    for (idx, item) in items.iter().enumerate() {
+        out.push_str(&format!("## {}. {}\n", idx + 1, item.title.trim()));
+        if let Some(pmid) = &item.pmid {
+            out.push_str(&format!("PMID: {}\n", pmid.trim()));
+        } else if let Some(pmcid) = &item.pmcid {
+            out.push_str(&format!("PMCID: {}\n", pmcid.trim()));
+        } else if let Some(doi) = &item.doi {
+            out.push_str(&format!("DOI: {}\n", doi.trim()));
+        }
+        if let Some(journal) = &item.journal {
+            out.push_str(&format!("Journal: {}\n", journal.trim()));
+        }
+        if let Some(year) = item.year {
+            out.push_str(&format!("Year: {}\n", year));
+        }
+        if let Some(entities) = article_batch_entities(item.entity_summary.as_ref()) {
+            out.push_str(&format!("Entities: {}\n", entities));
+        }
+        if let Some(tldr) = &item.tldr {
+            out.push_str(&format!("TLDR: {}\n", tldr.trim()));
+        }
+        match (item.citation_count, item.influential_citation_count) {
+            (Some(c), Some(ic)) => out.push_str(&format!("Citations: {c} (influential: {ic})\n")),
+            (Some(c), None) => out.push_str(&format!("Citations: {c}\n")),
+            (None, Some(ic)) => out.push_str(&format!("Citations: influential {ic}\n")),
+            (None, None) => {}
+        }
+        out.push('\n');
+    }
+    Ok(out)
 }
 
 pub fn article_graph_markdown(
@@ -4567,6 +4633,62 @@ mod tests {
         assert!(markdown.contains(
             "| 24200969 | Related paper | Background | yes | Important supporting context |"
         ));
+    }
+
+    #[test]
+    fn article_batch_markdown_renders_compact_rows() {
+        let rows = vec![
+            crate::entities::article::ArticleBatchItem {
+                requested_id: "22663011".to_string(),
+                pmid: Some("22663011".to_string()),
+                pmcid: None,
+                doi: Some("10.1056/NEJMoa1203421".to_string()),
+                title: "Improved survival with vemurafenib".to_string(),
+                journal: Some("NEJM".to_string()),
+                year: Some(2012),
+                entity_summary: Some(crate::entities::article::ArticleBatchEntitySummary {
+                    genes: vec![crate::entities::article::AnnotationCount {
+                        text: "BRAF".to_string(),
+                        count: 4,
+                    }],
+                    diseases: vec![crate::entities::article::AnnotationCount {
+                        text: "melanoma".to_string(),
+                        count: 2,
+                    }],
+                    chemicals: Vec::new(),
+                    mutations: Vec::new(),
+                }),
+                tldr: Some("BRAF inhibitor benefit in melanoma.".to_string()),
+                citation_count: Some(120),
+                influential_citation_count: Some(18),
+            },
+            crate::entities::article::ArticleBatchItem {
+                requested_id: "PMC9984800".to_string(),
+                pmid: Some("24200969".to_string()),
+                pmcid: Some("PMC9984800".to_string()),
+                doi: None,
+                title: "Follow-up trial".to_string(),
+                journal: Some("Nature".to_string()),
+                year: Some(2014),
+                entity_summary: None,
+                tldr: None,
+                citation_count: None,
+                influential_citation_count: None,
+            },
+        ];
+
+        let markdown = article_batch_markdown(&rows).expect("batch markdown");
+        assert!(markdown.contains("# Article Batch (2)"));
+        assert!(markdown.contains("## 1. Improved survival with vemurafenib"));
+        assert!(markdown.contains("PMID: 22663011"));
+        assert!(markdown.contains("Entities: Genes: BRAF (4); Diseases: melanoma (2)"));
+        assert!(markdown.contains("TLDR: BRAF inhibitor benefit in melanoma."));
+        assert!(markdown.contains("Citations: 120 (influential: 18)"));
+        assert!(markdown.contains("## 2. Follow-up trial"));
+        assert!(markdown.contains("PMID: 24200969"));
+        // Absent optional fields are omitted, not printed as placeholders
+        assert!(!markdown.contains("TLDR: -"));
+        assert!(!markdown.contains("Entities: -"));
     }
 
     #[test]
