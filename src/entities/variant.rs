@@ -43,6 +43,10 @@ pub struct Variant {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gnomad_af: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub allele_frequency_raw: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub allele_frequency_percent: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub consequence: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -68,6 +72,8 @@ pub struct Variant {
     pub clinvar_conditions: Vec<ConditionReportCount>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub clinvar_condition_reports: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub top_disease: Option<ConditionReportCount>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub cancer_frequencies: Vec<crate::sources::cbioportal::CancerFrequency>,
@@ -75,6 +81,8 @@ pub struct Variant {
     pub cancer_frequency_source: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub gwas: Vec<VariantGwasAssociation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supporting_pmids: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prediction: Option<VariantPrediction>,
@@ -1806,6 +1814,8 @@ fn map_gwas_association(
 }
 
 async fn add_gwas_section(variant: &mut Variant, query_id: &str) -> Result<(), BioMcpError> {
+    variant.supporting_pmids = Some(Vec::new());
+
     let fallback_rsid = parse_variant_id(query_id)
         .ok()
         .and_then(|parsed| match parsed {
@@ -1832,8 +1842,28 @@ async fn add_gwas_section(variant: &mut Variant, query_id: &str) -> Result<(), B
         .filter_map(|assoc| map_gwas_association(assoc, Some(&rsid)))
         .collect();
     rows = dedupe_gwas_rows(rows, 10)?;
+    let supporting_pmids = collect_supporting_pmids(&rows);
     variant.gwas = rows;
+    variant.supporting_pmids = Some(supporting_pmids);
     Ok(())
+}
+
+fn collect_supporting_pmids(rows: &[VariantGwasAssociation]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    for pmid in rows.iter().filter_map(|row| row.pmid.as_deref()) {
+        let pmid = pmid.trim();
+        if pmid.is_empty() {
+            continue;
+        }
+        let key = pmid.to_ascii_lowercase();
+        if seen.insert(key) {
+            out.push(pmid.to_string());
+        }
+    }
+
+    out
 }
 
 fn is_gwas_only_request(flags: &VariantSections) -> bool {
@@ -1863,6 +1893,8 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         clinvar_review_stars: None,
         conditions: Vec::new(),
         gnomad_af: None,
+        allele_frequency_raw: None,
+        allele_frequency_percent: None,
         consequence: None,
         cadd_score: None,
         sift_pred: None,
@@ -1875,9 +1907,11 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         civic: None,
         clinvar_conditions: Vec::new(),
         clinvar_condition_reports: None,
+        top_disease: None,
         cancer_frequencies: Vec::new(),
         cancer_frequency_source: None,
         gwas: Vec::new(),
+        supporting_pmids: None,
         prediction: None,
     }
 }
@@ -1886,6 +1920,7 @@ fn strip_clinvar_details(variant: &mut Variant) {
     variant.conditions.clear();
     variant.clinvar_conditions.clear();
     variant.clinvar_condition_reports = None;
+    variant.top_disease = None;
     variant.clinvar_id = None;
     variant.clinvar_review_status = None;
     variant.clinvar_review_stars = None;
@@ -1929,6 +1964,7 @@ pub async fn get(id: &str, sections: &[String]) -> Result<Variant, BioMcpError> 
     }
     if !section_flags.include_gwas {
         variant.gwas.clear();
+        variant.supporting_pmids = None;
     }
     if section_flags.include_prediction {
         add_prediction(&mut variant).await?;
@@ -2199,6 +2235,8 @@ mod tests {
             clinvar_review_stars: None,
             conditions: Vec::new(),
             gnomad_af: None,
+            allele_frequency_raw: None,
+            allele_frequency_percent: None,
             consequence: None,
             cadd_score: None,
             sift_pred: None,
@@ -2211,15 +2249,88 @@ mod tests {
             civic: None,
             clinvar_conditions: Vec::new(),
             clinvar_condition_reports: None,
+            top_disease: None,
             cancer_frequencies: Vec::new(),
             cancer_frequency_source: None,
             gwas: Vec::new(),
+            supporting_pmids: None,
             prediction: None,
         };
 
         assert_eq!(
             civic_molecular_profile_name(&variant).as_deref(),
             Some("BRAF V600E")
+        );
+    }
+
+    #[test]
+    fn collect_supporting_pmids_dedupes_case_insensitively() {
+        let rows = vec![
+            VariantGwasAssociation {
+                rsid: "rs1".to_string(),
+                trait_name: None,
+                p_value: None,
+                effect_size: None,
+                effect_type: None,
+                confidence_interval: None,
+                risk_allele_frequency: None,
+                risk_allele: None,
+                mapped_genes: Vec::new(),
+                study_accession: None,
+                pmid: Some("12345".to_string()),
+                author: None,
+                sample_description: None,
+            },
+            VariantGwasAssociation {
+                rsid: "rs1".to_string(),
+                trait_name: None,
+                p_value: None,
+                effect_size: None,
+                effect_type: None,
+                confidence_interval: None,
+                risk_allele_frequency: None,
+                risk_allele: None,
+                mapped_genes: Vec::new(),
+                study_accession: None,
+                pmid: Some("12345".to_string()),
+                author: None,
+                sample_description: None,
+            },
+            VariantGwasAssociation {
+                rsid: "rs1".to_string(),
+                trait_name: None,
+                p_value: None,
+                effect_size: None,
+                effect_type: None,
+                confidence_interval: None,
+                risk_allele_frequency: None,
+                risk_allele: None,
+                mapped_genes: Vec::new(),
+                study_accession: None,
+                pmid: Some("PMID-ABC".to_string()),
+                author: None,
+                sample_description: None,
+            },
+            VariantGwasAssociation {
+                rsid: "rs1".to_string(),
+                trait_name: None,
+                p_value: None,
+                effect_size: None,
+                effect_type: None,
+                confidence_interval: None,
+                risk_allele_frequency: None,
+                risk_allele: None,
+                mapped_genes: Vec::new(),
+                study_accession: None,
+                pmid: Some("pmid-abc".to_string()),
+                author: None,
+                sample_description: None,
+            },
+        ];
+
+        assert_eq!(
+            collect_supporting_pmids(&rows),
+            vec!["12345".to_string(), "PMID-ABC".to_string()]
         );
     }
 

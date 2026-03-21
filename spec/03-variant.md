@@ -102,6 +102,16 @@ echo "$out" | mustmatch like "## ClinVar"
 echo "$out" | mustmatch like "Variant ID:"
 ```
 
+## ClinVar Compact Disease Anchor
+
+ClinVar output should expose the top ranked disease aggregate directly so agents can read the leading condition without re-parsing the full list.
+
+```bash
+out="$(biomcp --json get variant "BRAF V600E" clinvar)"
+echo "$out" | jq -e '.top_disease.condition | type == "string"' > /dev/null
+echo "$out" | jq -e '.top_disease.reports | type == "number"' > /dev/null
+```
+
 ## Population Frequencies
 
 Population frequency context helps distinguish rare versus common variation. We assert on population section labeling and gnomAD field presence.
@@ -110,6 +120,35 @@ Population frequency context helps distinguish rare versus common variation. We 
 out="$(biomcp get variant "BRAF V600E" population)"
 echo "$out" | mustmatch like "## Population"
 echo "$out" | mustmatch like "gnomAD AF"
+```
+
+## Population Compact Fields
+
+Population JSON should expose both a stable raw field and a compact percentage string so agents can answer frequency questions without table parsing.
+
+```bash
+out="$(biomcp --json get variant "BRAF V600E" population)"
+echo "$out" | jq -e '.allele_frequency_raw | type == "number"' > /dev/null
+echo "$out" | jq -e '.allele_frequency_percent | type == "string"' > /dev/null
+```
+
+## Population Compact Markdown
+
+The markdown population line should keep the raw AF and append the compact percentage inline in the same section.
+
+```bash
+out="$(biomcp get variant "BRAF V600E" population)"
+echo "$out" | mustmatch like "gnomAD AF:"
+echo "$out" | mustmatch like "%"
+```
+
+## GWAS Supporting PMIDs
+
+GWAS JSON should expose ordered supporting PMIDs as a dedicated array without requiring agents to traverse the full GWAS rows.
+
+```bash
+out="$(biomcp --json get variant rs7903146 gwas)"
+echo "$out" | jq -e '.supporting_pmids | type == "array"' > /dev/null
 ```
 
 ## Get with Residue Alias Guidance

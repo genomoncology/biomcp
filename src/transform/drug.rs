@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use time::Month;
+
 use crate::entities::drug::{Drug, DrugInteraction, DrugSearchResult};
 use crate::sources::mychem::{MyChemHit, MyChemNdcField, MyChemPharmClass};
 
@@ -229,6 +231,19 @@ fn normalize_approval_date(value: &str) -> Option<String> {
         return Some(format!("{}-{}-{}", &v[0..4], &v[4..6], &v[6..8]));
     }
     None
+}
+
+fn approval_date_display(raw: &str) -> Option<String> {
+    let normalized = normalize_approval_date(raw)?;
+    let year: i32 = normalized[0..4].parse().ok()?;
+    let month: u8 = normalized[5..7].parse().ok()?;
+    let day: u8 = normalized[8..10].parse().ok()?;
+    let month = Month::try_from(month).ok()?;
+    Some(format!("{month} {day}, {year}"))
+}
+
+fn approval_summary(display: Option<&str>) -> Option<String> {
+    display.map(|value| format!("FDA approved on {value}"))
 }
 
 fn approval_date_from_hit(hit: &MyChemHit) -> Option<String> {
@@ -562,6 +577,12 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     }
 
     let mechanism = mechanisms.first().cloned();
+    let approval_date_raw = approval_date.clone();
+    let approval_date_display = approval_date_raw
+        .as_deref()
+        .and_then(approval_date_display)
+        .or_else(|| approval_date_raw.clone());
+    let approval_summary = approval_summary(approval_date_display.as_deref());
 
     Drug {
         name,
@@ -572,6 +593,9 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         mechanism,
         mechanisms,
         approval_date,
+        approval_date_raw,
+        approval_date_display,
+        approval_summary,
         brand_names,
         route: None,
         targets,
@@ -705,6 +729,15 @@ mod tests {
         assert_eq!(drug.targets.first().map(String::as_str), Some("EGFR"));
         assert_eq!(drug.drug_type.as_deref(), Some("small-molecule"));
         assert_eq!(drug.approval_date.as_deref(), Some("2015-11-13"));
+        assert_eq!(drug.approval_date_raw.as_deref(), Some("2015-11-13"));
+        assert_eq!(
+            drug.approval_date_display.as_deref(),
+            Some("November 13, 2015")
+        );
+        assert_eq!(
+            drug.approval_summary.as_deref(),
+            Some("FDA approved on November 13, 2015")
+        );
     }
 
     #[test]
@@ -751,6 +784,18 @@ mod tests {
 
         let row = from_mychem_search_hit(&hit).expect("openfda names should produce a row");
         assert_eq!(row.name, "pembrolizumab");
+    }
+
+    #[test]
+    fn approval_date_display_formats_month_name() {
+        assert_eq!(
+            approval_date_display("2014-09-04").as_deref(),
+            Some("September 4, 2014")
+        );
+        assert_eq!(
+            approval_date_display("20140904").as_deref(),
+            Some("September 4, 2014")
+        );
     }
 
     #[test]

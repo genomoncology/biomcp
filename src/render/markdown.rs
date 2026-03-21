@@ -1862,6 +1862,7 @@ pub fn disease_markdown(
         pathways => &disease.pathways,
         phenotypes => phenotype_rows,
         variants => &disease.variants,
+        top_variant => &disease.top_variant,
         models => model_rows,
         prevalence => &disease.prevalence,
         prevalence_note => &disease.prevalence_note,
@@ -2095,7 +2096,9 @@ pub fn variant_markdown(
         conditions => &variant.conditions,
         clinvar_conditions => &variant.clinvar_conditions,
         clinvar_condition_reports => &variant.clinvar_condition_reports,
+        top_disease => &variant.top_disease,
         gnomad_af => &variant.gnomad_af,
+        allele_frequency_percent => &variant.allele_frequency_percent,
         population_breakdown => &variant.population_breakdown,
         cadd_score => &variant.cadd_score,
         sift_pred => &variant.sift_pred,
@@ -2321,6 +2324,7 @@ pub fn drug_markdown(drug: &Drug, requested_sections: &[String]) -> Result<Strin
         mechanism => &drug.mechanism,
         mechanisms => &drug.mechanisms,
         approval_date => &drug.approval_date,
+        approval_date_display => &drug.approval_date_display,
         brand_names => &drug.brand_names,
         route => &drug.route,
         top_adverse_events => &drug.top_adverse_events,
@@ -3172,6 +3176,7 @@ mod tests {
     use crate::entities::article::{
         AnnotationCount, Article, ArticleAnnotations, ArticleSearchResult, ArticleSource,
     };
+    use crate::entities::disease::{Disease, DiseaseVariantAssociation};
     use crate::entities::drug::Drug;
     use crate::entities::gene::Gene;
     use crate::entities::pathway::Pathway;
@@ -3353,6 +3358,9 @@ mod tests {
             mechanism: Some("CFTR potentiator".to_string()),
             mechanisms: vec!["Potentiates CFTR chloride transport.".to_string()],
             approval_date: Some("2012-01-31".to_string()),
+            approval_date_raw: Some("2012-01-31".to_string()),
+            approval_date_display: Some("January 31, 2012".to_string()),
+            approval_summary: Some("FDA approved on January 31, 2012".to_string()),
             brand_names: vec!["Kalydeco".to_string()],
             route: Some("Oral".to_string()),
             targets: vec!["CFTR".to_string()],
@@ -3373,7 +3381,7 @@ mod tests {
         };
         let drug_markdown = drug_markdown(&drug, &["all".to_string()]).expect("drug markdown");
         assert!(drug_markdown.contains("Type (MyChem.info): small molecule"));
-        assert!(drug_markdown.contains("FDA Approved (DrugCentral): 2012-01-31"));
+        assert!(drug_markdown.contains("FDA Approved (DrugCentral): January 31, 2012"));
         assert!(drug_markdown.contains("Brand Names (DrugBank): Kalydeco"));
         assert!(drug_markdown.contains("Safety (OpenFDA FAERS): Cough"));
         assert!(drug_markdown.contains("## Mechanisms (MyChem.info / ChEMBL)"));
@@ -3401,6 +3409,7 @@ mod tests {
             }],
             phenotypes: Vec::new(),
             variants: Vec::new(),
+            top_variant: None,
             models: Vec::new(),
             prevalence: Vec::new(),
             prevalence_note: None,
@@ -3931,6 +3940,7 @@ mod tests {
             pathways: Vec::new(),
             phenotypes: Vec::new(),
             variants: Vec::new(),
+            top_variant: None,
             models: Vec::new(),
             prevalence: Vec::new(),
             prevalence_note: None,
@@ -4301,6 +4311,66 @@ mod tests {
     }
 
     #[test]
+    fn variant_markdown_renders_compact_clinvar_and_population_fields() {
+        let variant: Variant = serde_json::from_value(serde_json::json!({
+            "id": "chr7:g.140453136A>T",
+            "gene": "BRAF",
+            "gnomad_af": 0.0001,
+            "allele_frequency_percent": "0.0100%",
+            "top_disease": {"condition": "Melanoma", "reports": 2},
+            "clinvar_conditions": [{"condition": "Melanoma", "reports": 2}]
+        }))
+        .expect("variant should deserialize");
+
+        let markdown = variant_markdown(&variant, &["all".to_string()]).expect("rendered markdown");
+        assert!(markdown.contains("Top disease (ClinVar): Melanoma (2 reports)"));
+        assert!(markdown.contains("gnomAD AF:"));
+        assert!(markdown.contains("(0.0100%)"));
+    }
+
+    #[test]
+    fn disease_markdown_renders_top_variant_summary() {
+        let disease = Disease {
+            id: "MONDO:0005105".to_string(),
+            name: "melanoma".to_string(),
+            definition: None,
+            synonyms: Vec::new(),
+            parents: Vec::new(),
+            associated_genes: Vec::new(),
+            gene_associations: Vec::new(),
+            top_genes: Vec::new(),
+            top_gene_scores: Vec::new(),
+            treatment_landscape: Vec::new(),
+            recruiting_trial_count: None,
+            pathways: Vec::new(),
+            phenotypes: Vec::new(),
+            variants: vec![DiseaseVariantAssociation {
+                variant: "BRAF V600E".to_string(),
+                relationship: Some("associated with disease".to_string()),
+                source: Some("CIViC".to_string()),
+                evidence_count: Some(3),
+            }],
+            top_variant: Some(DiseaseVariantAssociation {
+                variant: "BRAF V600E".to_string(),
+                relationship: Some("associated with disease".to_string()),
+                source: Some("CIViC".to_string()),
+                evidence_count: Some(3),
+            }),
+            models: Vec::new(),
+            prevalence: Vec::new(),
+            prevalence_note: None,
+            civic: None,
+            disgenet: None,
+            xrefs: std::collections::HashMap::new(),
+        };
+
+        let markdown = disease_markdown(&disease, &["variants".to_string()]).expect("markdown");
+        assert!(markdown.contains(
+            "Top Variant: BRAF V600E - associated with disease (CIViC, 3 evidence items)"
+        ));
+    }
+
+    #[test]
     fn variant_oncokb_markdown_shows_truncation_note() {
         let result = VariantOncoKbResult {
             gene: "EGFR".to_string(),
@@ -4554,6 +4624,7 @@ mod tests {
             pathways: Vec::new(),
             phenotypes: Vec::new(),
             variants: Vec::new(),
+            top_variant: None,
             models: Vec::new(),
             prevalence: Vec::new(),
             prevalence_note: None,
@@ -4598,6 +4669,7 @@ mod tests {
             pathways: Vec::new(),
             phenotypes: Vec::new(),
             variants: Vec::new(),
+            top_variant: None,
             models: Vec::new(),
             prevalence: Vec::new(),
             prevalence_note: None,
@@ -4713,6 +4785,7 @@ mod tests {
                 source: Some("infores:omim".to_string()),
             }],
             variants: Vec::new(),
+            top_variant: None,
             models: vec![crate::entities::disease::DiseaseModelAssociation {
                 model: "Cftr tm1Unc".to_string(),
                 model_id: Some("MGI:3698752".to_string()),
@@ -4775,6 +4848,7 @@ mod tests {
                 source: Some("infores:omim".to_string()),
             }],
             variants: Vec::new(),
+            top_variant: None,
             models: vec![crate::entities::disease::DiseaseModelAssociation {
                 model: "MGI:3698752".to_string(),
                 model_id: None,
@@ -4815,6 +4889,9 @@ mod tests {
             mechanism: None,
             mechanisms: Vec::new(),
             approval_date: None,
+            approval_date_raw: None,
+            approval_date_display: None,
+            approval_summary: None,
             brand_names: Vec::new(),
             route: None,
             targets: Vec::new(),
@@ -4849,6 +4926,9 @@ mod tests {
             mechanism: None,
             mechanisms: Vec::new(),
             approval_date: None,
+            approval_date_raw: None,
+            approval_date_display: None,
+            approval_summary: None,
             brand_names: Vec::new(),
             route: None,
             targets: Vec::new(),
@@ -4894,6 +4974,9 @@ mod tests {
             mechanism: None,
             mechanisms: Vec::new(),
             approval_date: None,
+            approval_date_raw: None,
+            approval_date_display: None,
+            approval_summary: None,
             brand_names: Vec::new(),
             route: None,
             targets: Vec::new(),
@@ -4929,6 +5012,9 @@ mod tests {
             mechanism: None,
             mechanisms: Vec::new(),
             approval_date: None,
+            approval_date_raw: None,
+            approval_date_display: None,
+            approval_summary: None,
             brand_names: Vec::new(),
             route: None,
             targets: Vec::new(),

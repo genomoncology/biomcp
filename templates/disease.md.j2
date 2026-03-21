@@ -75,6 +75,9 @@ No phenotype annotations found for this disease.
 ## Variants
 
 {% if variants -%}
+{% if top_variant -%}
+Top Variant: {{ top_variant.variant }}{% if top_variant.relationship %} - {{ top_variant.relationship }}{% endif %}{% if top_variant.source or top_variant.evidence_count is not none %} ({% if top_variant.source %}{{ top_variant.source }}{% endif %}{% if top_variant.source and top_variant.evidence_count is not none %}, {% endif %}{% if top_variant.evidence_count is not none %}{{ top_variant.evidence_count }} evidence item{% if top_variant.evidence_count != 1 %}s{% endif %}{% endif %}){% endif %}
+{% endif -%}
 | Variant | Relationship | Source | Evidence |
 |---|---|---|---|
 {% for row in variants -%}

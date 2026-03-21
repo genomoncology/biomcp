@@ -17,6 +17,13 @@ The section includes:
 - key product rows (brand/dosage form/route/status),
 - submission timeline rows (type/number/status/date).
 
+Base drug cards and JSON also expose compact approval fields derived from the
+existing normalized approval date:
+
+- `approval_date_raw` keeps the stable ISO form,
+- `approval_date_display` provides a human-friendly month-name rendering,
+- `approval_summary` provides a one-line `"FDA approved on <date>"` summary.
+
 ## FAERS summary statistics
 
 FAERS search responses include summary metadata above the report table:

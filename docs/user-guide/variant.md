@@ -41,11 +41,18 @@ ClinVar-focused section:
 biomcp get variant rs113488022 clinvar
 ```
 
+ClinVar JSON also exposes `top_disease` when condition aggregation is available,
+reusing the highest-ranked ClinVar condition row already shown in the section.
+
 Population section:
 
 ```bash
 biomcp get variant "chr7:g.140453136A>T" population
 ```
+
+Population JSON exposes additive compact frequency fields:
+`allele_frequency_raw` and `allele_frequency_percent`. Markdown keeps the raw
+gnomAD AF line and appends the compact percent inline.
 
 CIViC section:
 
@@ -58,6 +65,10 @@ GWAS section (trait associations from GWAS Catalog):
 ```bash
 biomcp get variant rs7903146 gwas
 ```
+
+GWAS JSON exposes `supporting_pmids` as an ordered, deduplicated array. `null`
+means the GWAS section was not loaded; `[]` means the section loaded but no
+PMIDs were available.
 
 Predictions (aggregated prediction scores):
 

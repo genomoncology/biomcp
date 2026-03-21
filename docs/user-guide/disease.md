@@ -42,11 +42,15 @@ Phenotypes (HPO phenotypes with qualifiers):
 biomcp get disease MONDO:0005105 phenotypes
 ```
 
-Variants (Monarch disease-associated variants):
+Variants (CIViC disease-associated variants):
 
 ```bash
 biomcp get disease MONDO:0005105 variants
 ```
+
+When the variants section is loaded, JSON also exposes `top_variant` as the
+highest-ranked CIViC-backed association, and markdown shows the same compact
+anchor above the full variants table.
 
 Models (Monarch model-organism evidence):
 
