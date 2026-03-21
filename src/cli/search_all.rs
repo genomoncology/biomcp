@@ -5,6 +5,7 @@ use futures::future::join_all;
 use serde::Serialize;
 use serde_json::{Value, json};
 
+use crate::cli::debug_plan::{DebugPlan, DebugPlanLeg};
 use crate::error::BioMcpError;
 use crate::utils::date::validate_since;
 
@@ -23,6 +24,7 @@ pub struct SearchAllInput {
     pub since: Option<String>,
     pub limit: usize,
     pub counts_only: bool,
+    pub debug_plan: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -144,6 +146,8 @@ pub struct SearchAllResults {
     pub searches_dispatched: usize,
     pub searches_with_results: usize,
     pub wall_time_ms: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) debug_plan: Option<DebugPlan>,
 }
 
 #[derive(Debug, Clone)]
@@ -167,6 +171,22 @@ enum SectionKind {
 }
 
 impl SectionKind {
+    fn from_entity(entity: &str) -> Option<Self> {
+        match entity {
+            "gene" => Some(Self::Gene),
+            "variant" => Some(Self::Variant),
+            "disease" => Some(Self::Disease),
+            "drug" => Some(Self::Drug),
+            "trial" => Some(Self::Trial),
+            "article" => Some(Self::Article),
+            "pathway" => Some(Self::Pathway),
+            "pgx" => Some(Self::Pgx),
+            "gwas" => Some(Self::Gwas),
+            "adverse-event" => Some(Self::AdverseEvent),
+            _ => None,
+        }
+    }
+
     fn entity(self) -> &'static str {
         match self {
             Self::Gene => "gene",
@@ -268,6 +288,18 @@ enum Anchor {
     Keyword,
 }
 
+impl Anchor {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Gene => "gene",
+            Self::Disease => "disease",
+            Self::Drug => "drug",
+            Self::Variant => "variant",
+            Self::Keyword => "keyword",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct VariantContext {
     raw: String,
@@ -314,11 +346,293 @@ pub async fn dispatch(input: &SearchAllInput) -> Result<SearchAllResults, BioMcp
 
     Ok(SearchAllResults {
         query: prepared.query_summary(),
+        debug_plan: input
+            .debug_plan
+            .then(|| build_result_plan(&prepared, &sections)),
         sections,
         searches_dispatched,
         searches_with_results,
         wall_time_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
     })
+}
+
+fn build_result_plan(input: &PreparedInput, sections: &[SearchAllSection]) -> DebugPlan {
+    let legs = sections
+        .iter()
+        .filter_map(|section| {
+            let kind = SectionKind::from_entity(section.entity.as_str())?;
+            Some(DebugPlanLeg {
+                leg: kind.entity().to_string(),
+                entity: kind.entity().to_string(),
+                filters: leg_filters(kind, input),
+                routing: leg_routing(kind, input, section),
+                sources: leg_sources(kind, input),
+                matched_sources: if kind == SectionKind::Article {
+                    article_matched_sources(section)
+                } else {
+                    Vec::new()
+                },
+                count: section.count,
+                total: section.total,
+                note: section.note.clone(),
+                error: section.error.clone(),
+            })
+        })
+        .collect();
+
+    DebugPlan {
+        surface: "search_all",
+        query: input.query_summary(),
+        anchor: Some(input.anchor.as_str()),
+        legs,
+    }
+}
+
+fn leg_filters(kind: SectionKind, input: &PreparedInput) -> Vec<String> {
+    match kind {
+        SectionKind::Gene => input
+            .gene_anchor()
+            .map(|value| vec![format!("query={value}")])
+            .unwrap_or_default(),
+        SectionKind::Variant => {
+            if let Some(variant_id) = input
+                .variant_context
+                .as_ref()
+                .and_then(|ctx| (ctx.parsed_gene.is_none()).then_some(ctx.raw.as_str()))
+            {
+                return vec![format!("variant={variant_id}")];
+            }
+
+            let mut filters = Vec::new();
+            if let Some(value) = input.gene_anchor() {
+                filters.push(format!("gene={value}"));
+            }
+            if let Some(value) = input
+                .variant_context
+                .as_ref()
+                .and_then(|ctx| ctx.parsed_change.as_deref())
+            {
+                filters.push(format!("hgvsp={value}"));
+            }
+            if let Some(value) = input.disease.as_deref() {
+                filters.push(format!("condition={value}"));
+            }
+            if let Some(value) = input.drug.as_deref() {
+                filters.push(format!("therapy={value}"));
+            }
+            filters
+        }
+        SectionKind::Disease => input
+            .disease
+            .as_deref()
+            .map(|value| vec![format!("query={value}")])
+            .unwrap_or_default(),
+        SectionKind::Drug => {
+            let mut filters = Vec::new();
+            let query = match (input.drug.as_deref(), input.keyword_pushdown()) {
+                (Some(drug), _) => Some(drug),
+                (None, Some(keyword)) => Some(keyword),
+                (None, None) => None,
+            };
+            if let Some(value) = query {
+                filters.push(format!("query={value}"));
+            }
+            if let Some(value) = input.gene_anchor() {
+                filters.push(format!("target={value}"));
+            }
+            if let Some(value) = input.disease.as_deref() {
+                filters.push(format!("indication={value}"));
+            }
+            filters
+        }
+        SectionKind::Trial => {
+            let mut filters = Vec::new();
+            if let Some(value) = input.trial_condition_query() {
+                filters.push(format!("condition={value}"));
+            }
+            if let Some(value) = input.drug.as_deref() {
+                filters.push(format!("intervention={value}"));
+            }
+            if let Some(value) = input.gene_anchor() {
+                filters.push(format!("biomarker={value}"));
+            }
+            if let Some(value) = input.variant_trial_query() {
+                filters.push(format!("mutation={value}"));
+            }
+            if let Some(value) = input.since.as_deref() {
+                filters.push(format!("date_from={value}"));
+            }
+            filters
+        }
+        SectionKind::Article => {
+            let mut filters = Vec::new();
+            if let Some(value) = input.gene_anchor() {
+                filters.push(format!("gene={value}"));
+            }
+            if let Some(value) = input.disease.as_deref() {
+                filters.push(format!("disease={value}"));
+            }
+            if let Some(value) = input.drug.as_deref() {
+                filters.push(format!("drug={value}"));
+            }
+            if let Some(value) = input.keyword.as_deref() {
+                filters.push(format!("keyword={value}"));
+            }
+            if let Some(value) = input.since.as_deref() {
+                filters.push(format!("date_from={value}"));
+            }
+            filters
+        }
+        SectionKind::Pathway => input
+            .gene_anchor()
+            .map(|value| vec![format!("query={value}")])
+            .unwrap_or_default(),
+        SectionKind::Pgx => {
+            let mut filters = Vec::new();
+            if let Some(value) = input.gene_anchor() {
+                filters.push(format!("gene={value}"));
+            }
+            if let Some(value) = input.drug.as_deref() {
+                filters.push(format!("drug={value}"));
+            }
+            filters
+        }
+        SectionKind::Gwas => {
+            let mut filters = Vec::new();
+            if let Some(value) = input.gene_anchor() {
+                filters.push(format!("gene={value}"));
+            }
+            if let Some(value) = input.disease.as_deref() {
+                filters.push(format!("trait={value}"));
+            }
+            filters
+        }
+        SectionKind::AdverseEvent => {
+            let mut filters = Vec::new();
+            if let Some(value) = input.drug.as_deref() {
+                filters.push(format!("drug={value}"));
+            }
+            if let Some(value) = input.since.as_deref() {
+                filters.push(format!("since={value}"));
+            }
+            filters
+        }
+    }
+}
+
+fn leg_routing(
+    kind: SectionKind,
+    input: &PreparedInput,
+    section: &SearchAllSection,
+) -> Vec<String> {
+    let mut routing = vec![format!("anchor={}", input.anchor.as_str())];
+
+    match kind {
+        SectionKind::Variant => {
+            if input
+                .variant_context
+                .as_ref()
+                .is_some_and(|ctx| ctx.parsed_gene.is_none())
+            {
+                routing.push("routing=direct_get".to_string());
+            }
+            if section.note.is_some() && input.gene_anchor().is_some() && input.disease.is_some() {
+                routing.push("fallback=gene_only_variant_backfill".to_string());
+            }
+        }
+        SectionKind::Drug => {
+            if input.drug.is_none() && input.keyword_pushdown().is_some() {
+                routing.push("routing=keyword_pushdown".to_string());
+            }
+        }
+        SectionKind::Trial => routing.push("routing=recruiting_preference_backfill".to_string()),
+        SectionKind::Article => routing.push("routing=source_federation".to_string()),
+        SectionKind::Gene
+        | SectionKind::Disease
+        | SectionKind::Pathway
+        | SectionKind::Pgx
+        | SectionKind::Gwas
+        | SectionKind::AdverseEvent => {}
+    }
+
+    routing
+}
+
+fn leg_sources(kind: SectionKind, input: &PreparedInput) -> Vec<String> {
+    match kind {
+        SectionKind::Gene => vec!["MyGene.info".to_string()],
+        SectionKind::Variant => vec!["MyVariant.info".to_string()],
+        SectionKind::Disease => vec!["MyDisease.info".to_string()],
+        SectionKind::Drug => vec!["MyChem.info".to_string()],
+        SectionKind::Trial => vec!["ClinicalTrials.gov".to_string()],
+        SectionKind::Article => {
+            let filters = article_filters(input);
+            let mut sources = vec!["PubTator3".to_string(), "Europe PMC".to_string()];
+            if crate::entities::article::semantic_scholar_search_enabled(
+                &filters,
+                crate::entities::article::ArticleSourceFilter::All,
+            ) {
+                sources.push("Semantic Scholar".to_string());
+            }
+            sources
+        }
+        SectionKind::Pathway => vec![
+            "Reactome".to_string(),
+            "KEGG".to_string(),
+            "WikiPathways".to_string(),
+        ],
+        SectionKind::Pgx => vec!["CPIC".to_string()],
+        SectionKind::Gwas => vec!["GWAS Catalog".to_string()],
+        SectionKind::AdverseEvent => vec!["OpenFDA".to_string()],
+    }
+}
+
+fn article_filters(input: &PreparedInput) -> crate::entities::article::ArticleSearchFilters {
+    crate::entities::article::ArticleSearchFilters {
+        gene: input.gene_anchor().map(str::to_string),
+        gene_anchored: matches!(input.anchor, Anchor::Gene) && input.gene.is_some(),
+        disease: input.disease.clone(),
+        drug: input.drug.clone(),
+        author: None,
+        keyword: input.keyword.clone(),
+        date_from: input.since.clone(),
+        date_to: None,
+        article_type: None,
+        journal: None,
+        open_access: false,
+        no_preprints: false,
+        exclude_retracted: true,
+        sort: crate::entities::article::ArticleSort::Relevance,
+    }
+}
+
+fn article_matched_sources(section: &SearchAllSection) -> Vec<String> {
+    let mut matched = Vec::new();
+    for source in ["pubtator", "europepmc", "semanticscholar"] {
+        let present = section.results.iter().any(|row| {
+            row.get("matched_sources")
+                .and_then(Value::as_array)
+                .is_some_and(|values| {
+                    values
+                        .iter()
+                        .filter_map(Value::as_str)
+                        .any(|value| value == source)
+                })
+        });
+        if present && let Some(display) = article_source_display_name(source) {
+            matched.push(display.to_string());
+        }
+    }
+    matched
+}
+
+fn article_source_display_name(source: &str) -> Option<&'static str> {
+    match source {
+        "pubtator" => Some("PubTator3"),
+        "europepmc" => Some("Europe PMC"),
+        "semanticscholar" => Some("Semantic Scholar"),
+        _ => None,
+    }
 }
 
 impl PreparedInput {
@@ -1611,6 +1925,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         }
     }
 
@@ -1637,6 +1952,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         });
         let entities = plan.iter().map(|spec| spec.entity).collect::<Vec<_>>();
         assert_eq!(entities, vec!["article"]);
@@ -1653,6 +1969,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         });
         let entities = plan.iter().map(|spec| spec.entity).collect::<Vec<_>>();
         assert_eq!(
@@ -1672,6 +1989,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         })
         .expect_err("expected validation error");
         assert!(err.to_string().contains("at least one typed slot"));
@@ -1688,6 +2006,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         })
         .expect("valid prepared input");
 
@@ -1708,6 +2027,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         })
         .expect("valid prepared input");
 
@@ -1727,6 +2047,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         })
         .expect("valid prepared input");
 
@@ -1785,6 +2106,106 @@ mod tests {
         assert_eq!(rows[0]["ranking"]["study_or_review_cue"], true);
     }
 
+    #[test]
+    fn build_result_plan_includes_fallback_and_article_matched_sources() {
+        let prepared = PreparedInput::new(&SearchAllInput {
+            gene: Some("BRAF".to_string()),
+            variant: None,
+            disease: Some("melanoma".to_string()),
+            drug: None,
+            keyword: None,
+            since: None,
+            limit: 3,
+            counts_only: false,
+            debug_plan: true,
+        })
+        .expect("valid prepared input");
+        let sections = vec![
+            SearchAllSection {
+                entity: "variant".to_string(),
+                label: "Variants".to_string(),
+                count: 1,
+                total: Some(5),
+                error: None,
+                note: Some(
+                    "No disease-filtered variants found; showing top gene variants.".to_string(),
+                ),
+                results: vec![json!({"id":"rs113488022","gene":"BRAF"})],
+                links: Vec::new(),
+            },
+            SearchAllSection {
+                entity: "article".to_string(),
+                label: "Articles".to_string(),
+                count: 1,
+                total: Some(10),
+                error: None,
+                note: None,
+                results: vec![json!({
+                    "pmid": "22663011",
+                    "matched_sources": ["pubtator", "semanticscholar"]
+                })],
+                links: Vec::new(),
+            },
+        ];
+
+        let plan = build_result_plan(&prepared, &sections);
+
+        assert_eq!(plan.surface, "search_all");
+        assert_eq!(plan.anchor, Some("gene"));
+        assert_eq!(plan.query, "gene=BRAF disease=melanoma");
+        assert!(plan.legs[0].routing.contains(&"anchor=gene".to_string()));
+        assert!(
+            plan.legs[0]
+                .routing
+                .contains(&"fallback=gene_only_variant_backfill".to_string())
+        );
+        assert_eq!(
+            plan.legs[1].matched_sources,
+            vec!["PubTator3".to_string(), "Semantic Scholar".to_string()]
+        );
+    }
+
+    #[test]
+    fn build_result_plan_marks_drug_keyword_pushdown() {
+        let prepared = PreparedInput::new(&SearchAllInput {
+            gene: Some("BRAF".to_string()),
+            variant: None,
+            disease: None,
+            drug: None,
+            keyword: Some("resistance".to_string()),
+            since: None,
+            limit: 3,
+            counts_only: false,
+            debug_plan: true,
+        })
+        .expect("valid prepared input");
+        let sections = vec![SearchAllSection {
+            entity: "drug".to_string(),
+            label: "Drugs".to_string(),
+            count: 0,
+            total: None,
+            error: None,
+            note: None,
+            results: vec![],
+            links: Vec::new(),
+        }];
+
+        let plan = build_result_plan(&prepared, &sections);
+
+        let drug_leg = plan
+            .legs
+            .iter()
+            .find(|l| l.leg == "drug")
+            .expect("drug leg");
+        assert!(
+            drug_leg
+                .routing
+                .contains(&"routing=keyword_pushdown".to_string()),
+            "drug leg routing should include keyword_pushdown when no --drug but keyword+gene: {:?}",
+            drug_leg.routing
+        );
+    }
+
     fn gwas_row(
         rsid: &str,
         trait_name: Option<&str>,
@@ -1839,6 +2260,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         })
         .expect("valid input");
         let results = vec![
@@ -1860,6 +2282,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         })
         .expect("valid input");
         let results = vec![
@@ -1881,6 +2304,7 @@ mod tests {
             since: None,
             limit: 3,
             counts_only: false,
+            debug_plan: false,
         })
         .expect("valid input");
         let results = vec![

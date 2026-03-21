@@ -45,6 +45,24 @@ env -u S2_API_KEY biomcp --json search article -g BRAF --limit 3
 Look for `semantic_scholar_enabled`, row-level `matched_sources`, and
 `ranking` metadata to see why a paper ranked where it did.
 
+## Inspect the executed search plan
+
+Markdown:
+
+```bash
+env -u S2_API_KEY biomcp search article -g BRAF --debug-plan --limit 3
+```
+
+JSON / MCP-friendly text output:
+
+```bash
+env -u S2_API_KEY biomcp --json search article -g BRAF --debug-plan --limit 3
+```
+
+`--debug-plan` adds a top-level `debug_plan` payload in JSON and prepends the
+same payload as a fenced JSON block in markdown. Request JSON+plan for MCP
+callers with `--json --debug-plan`.
+
 ## Follow-up pattern
 
 After identifying key papers, pivot to trials or variants:

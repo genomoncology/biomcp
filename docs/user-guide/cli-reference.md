@@ -79,6 +79,7 @@ standard `_meta.next_commands` and `_meta.section_sources` metadata.
 biomcp search all --gene BRAF --disease melanoma
 biomcp search all --gene BRAF --counts-only
 biomcp search all --keyword "immunotherapy resistance" --since 2024-01-01
+biomcp search all --gene BRAF --debug-plan
 ```
 
 See also: [Search All Workflow](../how-to/search-all-workflow.md)
@@ -119,6 +120,7 @@ biomcp search gwas --trait "type 2 diabetes" --limit 10
 
 ```bash
 biomcp search article -g BRAF -d melanoma --since 2024-01-01 --limit 5 --offset 0
+biomcp --json search article -g BRAF --debug-plan --limit 5
 ```
 
 ### Trial
@@ -199,8 +201,9 @@ biomcp get article 22663011 tldr
 ```
 
 `S2_API_KEY` is optional. It unlocks `get article ... tldr` plus the explicit
-`article citations|references|recommendations` helpers; `search article`
-remains PubTator3 + Europe PMC.
+`article citations|references|recommendations` helpers. `search article`
+remains PubTator3 + Europe PMC, and can add an optional Semantic Scholar leg
+when the key is present and the filter set is compatible.
 
 ### Trial
 

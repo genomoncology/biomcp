@@ -40,6 +40,19 @@ biomcp search all --drug pembrolizumab --counts-only
 In markdown output, each section keeps its heading and shows the stable marker
 ``Rows omitted (`--counts-only`).``
 
+## Use `--debug-plan` to see the executed leg routing
+
+When you need to understand which typed legs ran, which fallback path was used,
+or which upstreams fed the result, add `--debug-plan`.
+
+```bash
+biomcp search all --gene BRAF --debug-plan
+biomcp --json search all --gene BRAF --disease melanoma --debug-plan
+```
+
+Markdown prepends a `## Debug plan` fenced JSON block. JSON mode adds the same
+payload under `debug_plan`.
+
 ## Narrow the next command intentionally
 
 After the orientation pass, move to the entity that best matches your question:

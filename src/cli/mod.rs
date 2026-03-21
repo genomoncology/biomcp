@@ -7,7 +7,10 @@ use clap::{Args, Parser, Subcommand, ValueEnum};
 use futures::{StreamExt, future::try_join_all};
 use tracing::{debug, warn};
 
+use crate::cli::debug_plan::{DebugPlan, DebugPlanLeg};
+
 pub mod chart;
+pub mod debug_plan;
 pub mod discover;
 pub mod health;
 pub mod list;
@@ -332,6 +335,7 @@ EXAMPLES:
   biomcp search all --gene BRAF --disease melanoma
   biomcp search all --keyword resistance
   biomcp search all --gene BRAF --counts-only
+  biomcp search all --gene BRAF --debug-plan
 
 See also: biomcp list search-all")]
     All {
@@ -362,6 +366,9 @@ See also: biomcp list search-all")]
         /// Render counts per section only (skip section rows)
         #[arg(long = "counts-only")]
         counts_only: bool,
+        /// Include the executed multi-leg routing plan in markdown or JSON output
+        #[arg(long = "debug-plan")]
+        debug_plan: bool,
     },
     /// Search genes by symbol, name, type, or chromosome (MyGene.info)
     #[command(after_help = "\
@@ -520,6 +527,7 @@ EXAMPLES:
   biomcp search article -g BRAF --date-from 2024-01-01
   biomcp search article -d melanoma --type review --journal Nature --limit 5
   biomcp search article -g BRAF --source pubtator --limit 20
+  biomcp search article -g BRAF --debug-plan --limit 5
 
 See also: biomcp list article")]
     Article {
@@ -597,6 +605,9 @@ See also: biomcp list article")]
         /// Skip the first N results
         #[arg(long, default_value = "0")]
         offset: usize,
+        /// Include the executed search planner output in markdown or JSON output
+        #[arg(long = "debug-plan")]
+        debug_plan: bool,
     },
     /// Search trials by condition, intervention, mutation, or location (ClinicalTrials.gov)
     #[command(after_help = "\
@@ -1115,12 +1126,13 @@ See also: biomcp list variant")]
 EXAMPLES:
   biomcp get drug pembrolizumab
   biomcp get drug pembrolizumab targets
+  biomcp get drug pembrolizumab approvals
 
 See also: biomcp list drug")]
     Drug {
         /// Drug name (e.g., pembrolizumab, carboplatin)
         name: String,
-        /// Sections to include (label, shortage, targets, indications, interactions, all)
+        /// Sections to include (label, shortage, targets, indications, interactions, civic, approvals, all)
         #[arg(trailing_var_arg = true)]
         sections: Vec<String>,
     },
@@ -2782,10 +2794,109 @@ fn search_json<T: serde::Serialize>(
     .map_err(Into::into)
 }
 
+fn article_query_summary(
+    filters: &crate::entities::article::ArticleSearchFilters,
+    source_filter: crate::entities::article::ArticleSourceFilter,
+    include_retracted: bool,
+    offset: usize,
+) -> String {
+    vec![
+        filters.gene.as_deref().map(|v| format!("gene={v}")),
+        filters.disease.as_deref().map(|v| format!("disease={v}")),
+        filters.drug.as_deref().map(|v| format!("drug={v}")),
+        filters.author.as_deref().map(|v| format!("author={v}")),
+        filters.keyword.as_deref().map(|v| format!("keyword={v}")),
+        filters.article_type.as_deref().map(|v| format!("type={v}")),
+        filters
+            .date_from
+            .as_deref()
+            .map(|v| format!("date_from={v}")),
+        filters.date_to.as_deref().map(|v| format!("date_to={v}")),
+        filters.journal.as_deref().map(|v| format!("journal={v}")),
+        filters.open_access.then(|| "open_access=true".to_string()),
+        filters
+            .no_preprints
+            .then(|| "no_preprints=true".to_string()),
+        if include_retracted {
+            Some("include_retracted=true".to_string())
+        } else {
+            filters
+                .exclude_retracted
+                .then(|| "exclude_retracted=true".to_string())
+        },
+        Some(format!("sort={}", filters.sort.as_str())),
+        (source_filter != crate::entities::article::ArticleSourceFilter::All)
+            .then(|| format!("source={}", source_filter.as_str())),
+        (offset > 0).then(|| format!("offset={offset}")),
+    ]
+    .into_iter()
+    .flatten()
+    .collect::<Vec<_>>()
+    .join(", ")
+}
+
+fn article_debug_filters(
+    filters: &crate::entities::article::ArticleSearchFilters,
+    source_filter: crate::entities::article::ArticleSourceFilter,
+) -> Vec<String> {
+    vec![
+        filters.gene.as_deref().map(|v| format!("gene={v}")),
+        filters.disease.as_deref().map(|v| format!("disease={v}")),
+        filters.drug.as_deref().map(|v| format!("drug={v}")),
+        filters.author.as_deref().map(|v| format!("author={v}")),
+        filters.keyword.as_deref().map(|v| format!("keyword={v}")),
+        filters
+            .date_from
+            .as_deref()
+            .map(|v| format!("date_from={v}")),
+        filters.date_to.as_deref().map(|v| format!("date_to={v}")),
+        filters.article_type.as_deref().map(|v| format!("type={v}")),
+        filters.journal.as_deref().map(|v| format!("journal={v}")),
+        filters.open_access.then(|| "open_access=true".to_string()),
+        filters
+            .no_preprints
+            .then(|| "no_preprints=true".to_string()),
+        Some(format!("exclude_retracted={}", filters.exclude_retracted)),
+        Some(format!("sort={}", filters.sort.as_str())),
+        Some(format!("source={}", source_filter.as_str())),
+    ]
+    .into_iter()
+    .flatten()
+    .collect()
+}
+
+fn build_article_debug_plan(
+    query: &str,
+    filters: &crate::entities::article::ArticleSearchFilters,
+    source_filter: crate::entities::article::ArticleSourceFilter,
+    results: &[crate::entities::article::ArticleSearchResult],
+    pagination: &PaginationMeta,
+) -> Result<DebugPlan, crate::error::BioMcpError> {
+    let summary = crate::entities::article::summarize_debug_plan(filters, source_filter, results)?;
+    Ok(DebugPlan {
+        surface: "search_article",
+        query: query.to_string(),
+        anchor: None,
+        legs: vec![DebugPlanLeg {
+            leg: "article".to_string(),
+            entity: "article".to_string(),
+            filters: article_debug_filters(filters, source_filter),
+            routing: summary.routing,
+            sources: summary.sources,
+            matched_sources: summary.matched_sources,
+            count: results.len(),
+            total: pagination.total,
+            note: None,
+            error: None,
+        }],
+    })
+}
+
 fn article_search_json(
     query: &str,
     sort: crate::entities::article::ArticleSort,
     semantic_scholar_enabled: bool,
+    debug_plan: Option<DebugPlan>,
     results: Vec<crate::entities::article::ArticleSearchResult>,
     pagination: PaginationMeta,
 ) -> anyhow::Result<String> {
@@ -2799,6 +2910,8 @@ fn article_search_json(
         pagination: PaginationMeta,
         count: usize,
         results: Vec<crate::entities::article::ArticleSearchResult>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        debug_plan: Option<DebugPlan>,
     }
 
     let count = results.len();
@@ -2812,6 +2925,7 @@ fn article_search_json(
         pagination,
         count,
         results,
+        debug_plan,
     })
     .map_err(Into::into)
 }
@@ -3579,6 +3693,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                                 &filters,
                                 crate::entities::article::ArticleSourceFilter::All,
                             ),
+                            None,
                         )?)
                     }
                 }
@@ -3799,6 +3914,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                                 &filters,
                                 crate::entities::article::ArticleSourceFilter::All,
                             ),
+                            None,
                         )?)
                     }
                 }
@@ -4032,6 +4148,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                                 &filters,
                                 crate::entities::article::ArticleSourceFilter::All,
                             ),
+                            None,
                         )?)
                     }
                 }
@@ -4132,6 +4249,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                                 &filters,
                                 crate::entities::article::ArticleSourceFilter::All,
                             ),
+                            None,
                         )?)
                     }
                 }
@@ -4879,6 +4997,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     since,
                     limit,
                     counts_only,
+                    debug_plan,
                 } => {
                     let keyword = resolve_query_input(keyword, positional_query, "--keyword")?;
                     let input = crate::cli::search_all::SearchAllInput {
@@ -4890,6 +5009,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         since,
                         limit,
                         counts_only,
+                        debug_plan,
                     };
                     let results = crate::cli::search_all::dispatch(&input).await?;
                     if cli.json {
@@ -5096,6 +5216,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     source,
                     limit,
                     offset,
+                    debug_plan,
                 } => {
                     let disease = normalize_cli_tokens(disease);
                     let drug = normalize_cli_tokens(drug);
@@ -5147,37 +5268,12 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                         sort,
                     };
 
-                    let query = vec![
-                        filters.gene.as_deref().map(|v| format!("gene={v}")),
-                        filters.disease.as_deref().map(|v| format!("disease={v}")),
-                        filters.drug.as_deref().map(|v| format!("drug={v}")),
-                        filters.author.as_deref().map(|v| format!("author={v}")),
-                        filters.keyword.as_deref().map(|v| format!("keyword={v}")),
-                        filters
-                            .article_type
-                            .as_deref()
-                            .map(|v| format!("type={v}")),
-                        filters.date_from.as_deref().map(|v| format!("date_from={v}")),
-                        filters.date_to.as_deref().map(|v| format!("date_to={v}")),
-                        filters.journal.as_deref().map(|v| format!("journal={v}")),
-                        filters.open_access.then(|| "open_access=true".to_string()),
-                        filters.no_preprints.then(|| "no_preprints=true".to_string()),
-                        if include_retracted {
-                            Some("include_retracted=true".to_string())
-                        } else {
-                            filters
-                                .exclude_retracted
-                                .then(|| "exclude_retracted=true".to_string())
-                        },
-                        Some(format!("sort={}", filters.sort.as_str())),
-                        (source_filter != crate::entities::article::ArticleSourceFilter::All)
-                            .then(|| format!("source={source}")),
-                        (offset > 0).then(|| format!("offset={offset}")),
-                    ]
-                    .into_iter()
-                    .flatten()
-                    .collect::<Vec<_>>()
-                    .join(", ");
+                    let query = article_query_summary(
+                        &filters,
+                        source_filter,
+                        include_retracted,
+                        offset,
+                    );
 
                     let page =
                         crate::entities::article::search_page(&filters, limit, offset, source_filter)
@@ -5190,11 +5286,23 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             &filters,
                             source_filter,
                         );
+                    let debug_plan = if debug_plan {
+                        Some(build_article_debug_plan(
+                            &query,
+                            &filters,
+                            source_filter,
+                            &results,
+                            &pagination,
+                        )?)
+                    } else {
+                        None
+                    };
                     if cli.json {
                         article_search_json(
                             &query,
                             filters.sort,
                             semantic_scholar_enabled,
+                            debug_plan,
                             results,
                             pagination,
                         )
@@ -5206,6 +5314,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             &footer,
                             filters.sort,
                             semantic_scholar_enabled,
+                            debug_plan.as_ref(),
                         )?)
                     }
                 }
@@ -6545,6 +6654,7 @@ mod tests {
             "gene=BRAF, sort=relevance",
             crate::entities::article::ArticleSort::Relevance,
             true,
+            None,
             vec![crate::entities::article::ArticleSearchResult {
                 pmid: "22663011".into(),
                 pmcid: Some("PMC9984800".into()),
@@ -6996,7 +7106,16 @@ mod tests {
     #[test]
     fn search_article_parses_source_flag() {
         let cli = Cli::try_parse_from([
-            "biomcp", "search", "article", "-g", "BRAF", "--source", "pubtator", "--limit", "5",
+            "biomcp",
+            "search",
+            "article",
+            "-g",
+            "BRAF",
+            "--source",
+            "pubtator",
+            "--debug-plan",
+            "--limit",
+            "5",
         ])
         .expect("search article with --source should parse");
 
@@ -7006,6 +7125,7 @@ mod tests {
                     super::SearchEntity::Article {
                         gene,
                         source,
+                        debug_plan,
                         limit,
                         offset,
                         ..
@@ -7013,6 +7133,7 @@ mod tests {
             } => {
                 assert_eq!(gene.as_deref(), Some("BRAF"));
                 assert_eq!(source, "pubtator");
+                assert!(debug_plan);
                 assert_eq!(limit, 5);
                 assert_eq!(offset, 0);
             }
@@ -8050,6 +8171,7 @@ mod tests {
             "--since",
             "2024-01-01",
             "--counts-only",
+            "--debug-plan",
             "--limit",
             "4",
         ])
@@ -8064,6 +8186,7 @@ mod tests {
                         keyword,
                         since,
                         counts_only,
+                        debug_plan,
                         limit,
                         ..
                     },
@@ -8073,6 +8196,7 @@ mod tests {
                 assert_eq!(keyword.as_deref(), Some("resistance"));
                 assert_eq!(since.as_deref(), Some("2024-01-01"));
                 assert!(counts_only);
+                assert!(debug_plan);
                 assert_eq!(limit, 4);
             }
             other => panic!("unexpected command: {other:?}"),

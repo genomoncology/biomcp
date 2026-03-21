@@ -126,6 +126,24 @@ echo "$out" | mustmatch like "\"matched_sources\": ["
 echo "$out" | mustmatch like "\"ranking\": {"
 ```
 
+## Article Debug Plan
+
+The optional debug plan should expose the actual search surface, planner
+markers, and sources in both markdown and JSON without changing default output.
+
+```bash
+out="$(env -u S2_API_KEY biomcp search article -g BRAF --debug-plan --limit 3)"
+echo "$out" | mustmatch like "## Debug plan"
+echo "$out" | mustmatch like "\"surface\": \"search_article\""
+echo "$out" | mustmatch like "\"planner=federated\""
+
+json_out="$(env -u S2_API_KEY biomcp --json search article -g BRAF --debug-plan --limit 3)"
+echo "$json_out" | mustmatch like "\"debug_plan\": {"
+echo "$json_out" | mustmatch like "\"surface\": \"search_article\""
+echo "$json_out" | mustmatch like "\"leg\": \"article\""
+echo "$json_out" | mustmatch like "\"sources\": ["
+```
+
 ## Semantic Scholar TLDR Section
 
 When `S2_API_KEY` is present, `get article ... tldr` isolates the Semantic

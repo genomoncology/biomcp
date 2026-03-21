@@ -207,6 +207,7 @@ fn list_article() -> String {
 - `search article --include-retracted`
 - `search article --sort <date|citations|relevance>`
 - `search article --source <all|pubtator|europepmc>`
+- `search article --debug-plan` - include executed planner/routing metadata in markdown or JSON
 - `search article ... --limit <N> --offset <N>`
 
 ## Notes
@@ -483,6 +484,7 @@ fn list_search_all() -> String {
 - `--since <YYYY|YYYY-MM|YYYY-MM-DD>` - applies to date-capable sections
 - `--limit <N>` - rows per section (default: 3)
 - `--counts-only` - section counts without row tables
+- `--debug-plan` - include executed leg/routing metadata in markdown or JSON
 - `--json` - machine-readable sections + links contract
 
 ## Notes

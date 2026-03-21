@@ -32,6 +32,20 @@ echo "$out" | mustmatch like "DrugBank ID: DB09037"
 echo "$out" | mustmatch like "## Targets"
 ```
 
+## Get Drug Help Surfaces Supported Sections
+
+The inline help should agree with `biomcp list drug` and the implementation for
+supported typed sections, including the already-working approval and CIViC
+paths.
+
+```bash
+out="$(biomcp get drug --help)"
+echo "$out" | mustmatch like "approvals"
+echo "$out" | mustmatch like "civic"
+echo "$out" | mustmatch like "label"
+echo "$out" | mustmatch like "biomcp get drug pembrolizumab approvals"
+```
+
 ## Compact Approval Fields
 
 Drug JSON should expose additive approval aliases and a compact summary so approval questions do not require parsing the base card prose.
