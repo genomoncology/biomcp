@@ -3,6 +3,7 @@
 ## 0.8.17 — 2026-03-20
 
 - `search article` now adds an optional Semantic Scholar search leg when `S2_API_KEY` is set, merges duplicates across PMID/PMCID/DOI, and exposes directness-first ranking metadata in markdown and JSON output.
+- Added `biomcp article batch <id>...` for compact multi-article fetches with parallel PubTator/Europe PMC resolution plus optional batched Semantic Scholar TLDR and citation enrichment.
 
 ## 0.8.16 — 2026-03-17
 

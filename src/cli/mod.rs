@@ -1366,6 +1366,20 @@ See also: biomcp list article")]
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },
+    /// Fetch compact summary cards for multiple known article IDs
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp article batch 22663011 24200969
+  biomcp article batch 22663011 10.1056/NEJMoa1203421 --json
+
+Returns compact multi-article summary cards for anchor selection.
+S2_API_KEY adds optional TLDR and citation metadata when available.
+See also: biomcp list article")]
+    Batch {
+        /// PMIDs, PMCIDs, or DOIs
+        #[arg(required = true, num_args = 1..)]
+        ids: Vec<String>,
+    },
     /// Traverse citing papers with Semantic Scholar contexts and intents
     #[command(after_help = "\
 EXAMPLES:
@@ -3981,6 +3995,14 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                             annotations.as_ref(),
                             Some(limit),
                         )?)
+                    }
+                }
+                ArticleCommand::Batch { ids } => {
+                    let results = crate::entities::article::get_batch_compact(&ids).await?;
+                    if cli.json {
+                        Ok(crate::render::json::to_pretty(&results)?)
+                    } else {
+                        Ok(crate::render::markdown::article_batch_markdown(&results)?)
                     }
                 }
                 ArticleCommand::Citations { id, limit } => {
@@ -7395,6 +7417,30 @@ mod tests {
             } => {
                 assert_eq!(id, "22663011");
                 assert_eq!(limit, 3);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn article_batch_parses_multiple_ids() {
+        let cli = Cli::try_parse_from([
+            "biomcp",
+            "article",
+            "batch",
+            "22663011",
+            "10.1056/NEJMoa1203421",
+        ])
+        .expect("article batch should parse");
+
+        match cli.command {
+            Commands::Article {
+                cmd: ArticleCommand::Batch { ids },
+            } => {
+                assert_eq!(
+                    ids,
+                    vec!["22663011".to_string(), "10.1056/NEJMoa1203421".to_string()]
+                );
             }
             other => panic!("unexpected command: {other:?}"),
         }

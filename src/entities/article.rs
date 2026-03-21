@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
+use futures::future::try_join_all;
 use serde::{Deserialize, Serialize};
 
 use crate::entities::SearchPage;
@@ -99,6 +100,42 @@ pub struct ArticleAnnotations {
 pub struct AnnotationCount {
     pub text: String,
     pub count: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleBatchItem {
+    pub requested_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pmid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pmcid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub doi: Option<String>,
+    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub journal: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub year: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entity_summary: Option<ArticleBatchEntitySummary>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tldr: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub citation_count: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub influential_citation_count: Option<u64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleBatchEntitySummary {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub genes: Vec<AnnotationCount>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub diseases: Vec<AnnotationCount>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub chemicals: Vec<AnnotationCount>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mutations: Vec<AnnotationCount>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -312,6 +349,7 @@ pub const ARTICLE_SECTION_NAMES: &[&str] = &[
 ];
 
 const MAX_SEARCH_LIMIT: usize = 50;
+pub const ARTICLE_BATCH_MAX_IDS: usize = 20;
 const EUROPE_PMC_PAGE_SIZE: usize = 25;
 const PUBTATOR_PAGE_SIZE: usize = 25;
 const MAX_PAGE_FETCHES: usize = 50;
@@ -1517,6 +1555,215 @@ async fn resolve_article_from_pmid(
     }
 }
 
+async fn get_article_base_with_clients(
+    id: &str,
+    pubtator: &PubTatorClient,
+    europe: &EuropePmcClient,
+) -> Result<Article, BioMcpError> {
+    let id = id.trim();
+    if id.is_empty() {
+        return Err(BioMcpError::InvalidArgument(
+            "ID is required. Example: biomcp get article 22663011".into(),
+        ));
+    }
+    if id.len() > 512 {
+        return Err(BioMcpError::InvalidArgument("ID is too long.".into()));
+    }
+
+    match parse_article_id(id) {
+        ArticleIdType::Pmid(pmid) => {
+            resolve_article_from_pmid(pmid, id, id, pubtator, europe, None).await
+        }
+        ArticleIdType::Doi(doi) => {
+            let search = europe.search_by_doi(&doi).await?;
+            if search.hit_count.unwrap_or(0) == 0 {
+                return Err(article_not_found(&doi, id));
+            }
+            let hit = first_europepmc_hit(search).ok_or_else(|| article_not_found(&doi, id))?;
+
+            if let Some(pmid) = hit.pmid.as_deref().and_then(parse_pmid) {
+                resolve_article_from_pmid(pmid, &doi, id, pubtator, europe, Some(&hit)).await
+            } else {
+                Ok(transform::article::from_europepmc_result(&hit))
+            }
+        }
+        ArticleIdType::Pmc(pmcid) => {
+            let search = europe.search_by_pmcid(&pmcid).await?;
+            if search.hit_count.unwrap_or(0) == 0 {
+                return Err(article_not_found(&pmcid, id));
+            }
+            let hit = first_europepmc_hit(search).ok_or_else(|| article_not_found(&pmcid, id))?;
+
+            if let Some(pmid) = hit.pmid.as_deref().and_then(parse_pmid) {
+                resolve_article_from_pmid(pmid, &pmcid, id, pubtator, europe, Some(&hit)).await
+            } else {
+                Ok(transform::article::from_europepmc_result(&hit))
+            }
+        }
+        ArticleIdType::Invalid => Err(BioMcpError::InvalidArgument(INVALID_ARTICLE_ID_MSG.into())),
+    }
+}
+
+async fn get_article_base(id: &str) -> Result<Article, BioMcpError> {
+    let pubtator = PubTatorClient::new()?;
+    let europe = EuropePmcClient::new()?;
+    get_article_base_with_clients(id, &pubtator, &europe).await
+}
+
+fn trimmed_opt(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+}
+
+fn article_batch_title(article: &Article, requested_id: &str) -> String {
+    let title = article.title.trim();
+    if !title.is_empty() {
+        return title.to_string();
+    }
+    article
+        .pmid
+        .as_deref()
+        .or(article.pmcid.as_deref())
+        .or(article.doi.as_deref())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(requested_id)
+        .to_string()
+}
+
+fn article_batch_entity_summary(
+    annotations: &ArticleAnnotations,
+) -> Option<ArticleBatchEntitySummary> {
+    fn top_three(rows: &[AnnotationCount]) -> Vec<AnnotationCount> {
+        rows.iter().take(3).cloned().collect()
+    }
+
+    let summary = ArticleBatchEntitySummary {
+        genes: top_three(&annotations.genes),
+        diseases: top_three(&annotations.diseases),
+        chemicals: top_three(&annotations.chemicals),
+        mutations: top_three(&annotations.mutations),
+    };
+
+    if summary.genes.is_empty()
+        && summary.diseases.is_empty()
+        && summary.chemicals.is_empty()
+        && summary.mutations.is_empty()
+    {
+        None
+    } else {
+        Some(summary)
+    }
+}
+
+fn article_batch_year(article: &Article) -> Option<u32> {
+    let normalized = parse_row_date(article.date.as_deref())?;
+    normalized.get(..4)?.parse::<u32>().ok()
+}
+
+fn article_batch_semantic_scholar_lookup_id(item: &ArticleBatchItem) -> Option<String> {
+    item.pmid
+        .as_deref()
+        .map(|pmid| format!("PMID:{pmid}"))
+        .or_else(|| item.doi.as_deref().map(|doi| format!("DOI:{doi}")))
+}
+
+fn article_batch_item_from_article(requested_id: &str, article: &Article) -> ArticleBatchItem {
+    let requested_id = requested_id.trim();
+    ArticleBatchItem {
+        requested_id: requested_id.to_string(),
+        pmid: trimmed_opt(article.pmid.as_deref()),
+        pmcid: trimmed_opt(article.pmcid.as_deref()),
+        doi: trimmed_opt(article.doi.as_deref()),
+        title: article_batch_title(article, requested_id),
+        journal: trimmed_opt(article.journal.as_deref()),
+        year: article_batch_year(article),
+        entity_summary: article
+            .annotations
+            .as_ref()
+            .and_then(article_batch_entity_summary),
+        tldr: None,
+        citation_count: None,
+        influential_citation_count: None,
+    }
+}
+
+fn merge_semantic_scholar_compact_rows(
+    items: &mut [ArticleBatchItem],
+    item_positions: &[usize],
+    rows: Vec<Option<SemanticScholarPaper>>,
+) {
+    for (idx, paper) in item_positions.iter().zip(rows.into_iter()) {
+        let Some(paper) = paper else {
+            continue;
+        };
+        let item = &mut items[*idx];
+        item.tldr = paper
+            .tldr
+            .as_ref()
+            .and_then(|value| value.text.as_deref())
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string);
+        item.citation_count = paper.citation_count;
+        item.influential_citation_count = paper.influential_citation_count;
+    }
+}
+
+async fn enrich_article_batch_with_semantic_scholar(
+    items: &mut [ArticleBatchItem],
+) -> Result<(), BioMcpError> {
+    let client = SemanticScholarClient::new()?;
+    if !client.is_configured() {
+        return Ok(());
+    }
+
+    let mut lookup_ids = Vec::new();
+    let mut item_positions = Vec::new();
+    for (idx, item) in items.iter().enumerate() {
+        if let Some(lookup_id) = article_batch_semantic_scholar_lookup_id(item) {
+            item_positions.push(idx);
+            lookup_ids.push(lookup_id);
+        }
+    }
+    if lookup_ids.is_empty() {
+        return Ok(());
+    }
+
+    match client.paper_batch_compact(&lookup_ids).await {
+        Ok(rows) => merge_semantic_scholar_compact_rows(items, &item_positions, rows),
+        Err(err) => warn!(?err, "Semantic Scholar batch enrichment failed"),
+    }
+
+    Ok(())
+}
+
+pub async fn get_batch_compact(ids: &[String]) -> Result<Vec<ArticleBatchItem>, BioMcpError> {
+    if ids.len() > ARTICLE_BATCH_MAX_IDS {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "Article batch is limited to {ARTICLE_BATCH_MAX_IDS} IDs"
+        )));
+    }
+
+    let pubtator = PubTatorClient::new()?;
+    let europe = EuropePmcClient::new()?;
+    let articles = try_join_all(
+        ids.iter()
+            .map(|id| get_article_base_with_clients(id, &pubtator, &europe)),
+    )
+    .await?;
+
+    let mut items = ids
+        .iter()
+        .zip(articles.iter())
+        .map(|(requested_id, article)| article_batch_item_from_article(requested_id, article))
+        .collect::<Vec<_>>();
+    enrich_article_batch_with_semantic_scholar(&mut items).await?;
+    Ok(items)
+}
+
 async fn enrich_article_with_semantic_scholar(article: &mut Article) -> Result<(), BioMcpError> {
     let client = SemanticScholarClient::new()?;
     if !client.is_configured() {
@@ -2024,56 +2271,11 @@ pub async fn search_page(
 
 pub async fn get(id: &str, sections: &[String]) -> Result<Article, BioMcpError> {
     let id = id.trim();
-    if id.is_empty() {
-        return Err(BioMcpError::InvalidArgument(
-            "ID is required. Example: biomcp get article 22663011".into(),
-        ));
-    }
-    if id.len() > 512 {
-        return Err(BioMcpError::InvalidArgument("ID is too long.".into()));
-    }
-
     let section_flags = parse_sections(sections)?;
     let full_text = section_flags.include_fulltext;
     let section_only = is_section_only_request(sections, section_flags.include_all);
-
-    let pubtator = PubTatorClient::new()?;
     let europe = EuropePmcClient::new()?;
-
-    let mut article = match parse_article_id(id) {
-        ArticleIdType::Pmid(pmid) => {
-            resolve_article_from_pmid(pmid, id, id, &pubtator, &europe, None).await?
-        }
-        ArticleIdType::Doi(doi) => {
-            let search = europe.search_by_doi(&doi).await?;
-            if search.hit_count.unwrap_or(0) == 0 {
-                return Err(article_not_found(&doi, id));
-            }
-            let hit = first_europepmc_hit(search).ok_or_else(|| article_not_found(&doi, id))?;
-
-            if let Some(pmid) = hit.pmid.as_deref().and_then(parse_pmid) {
-                resolve_article_from_pmid(pmid, &doi, id, &pubtator, &europe, Some(&hit)).await?
-            } else {
-                transform::article::from_europepmc_result(&hit)
-            }
-        }
-        ArticleIdType::Pmc(pmcid) => {
-            let search = europe.search_by_pmcid(&pmcid).await?;
-            if search.hit_count.unwrap_or(0) == 0 {
-                return Err(article_not_found(&pmcid, id));
-            }
-            let hit = first_europepmc_hit(search).ok_or_else(|| article_not_found(&pmcid, id))?;
-
-            if let Some(pmid) = hit.pmid.as_deref().and_then(parse_pmid) {
-                resolve_article_from_pmid(pmid, &pmcid, id, &pubtator, &europe, Some(&hit)).await?
-            } else {
-                transform::article::from_europepmc_result(&hit)
-            }
-        }
-        ArticleIdType::Invalid => {
-            return Err(BioMcpError::InvalidArgument(INVALID_ARTICLE_ID_MSG.into()));
-        }
-    };
+    let mut article = get_article_base(id).await?;
 
     enrich_article_with_semantic_scholar(&mut article).await?;
 
@@ -3045,6 +3247,176 @@ mod tests {
             None,
             Some("2024-12-31"),
         ));
+    }
+
+    #[test]
+    fn article_batch_item_projection_keeps_requested_id_year_and_top_entities() {
+        let article = Article {
+            pmid: Some("22663011".to_string()),
+            pmcid: Some("PMC9984800".to_string()),
+            doi: Some("10.1056/NEJMoa1203421".to_string()),
+            title: " Improved survival with vemurafenib ".to_string(),
+            authors: Vec::new(),
+            journal: Some("NEJM".to_string()),
+            date: Some("2012-06-07".to_string()),
+            citation_count: Some(77),
+            publication_type: None,
+            open_access: None,
+            abstract_text: None,
+            full_text_path: None,
+            full_text_note: None,
+            annotations: Some(ArticleAnnotations {
+                genes: vec![
+                    AnnotationCount {
+                        text: "BRAF".to_string(),
+                        count: 4,
+                    },
+                    AnnotationCount {
+                        text: "NRAS".to_string(),
+                        count: 3,
+                    },
+                    AnnotationCount {
+                        text: "MAP2K1".to_string(),
+                        count: 2,
+                    },
+                    AnnotationCount {
+                        text: "PTEN".to_string(),
+                        count: 1,
+                    },
+                ],
+                diseases: vec![AnnotationCount {
+                    text: "melanoma".to_string(),
+                    count: 2,
+                }],
+                chemicals: vec![AnnotationCount {
+                    text: "vemurafenib".to_string(),
+                    count: 2,
+                }],
+                mutations: vec![AnnotationCount {
+                    text: "V600E".to_string(),
+                    count: 3,
+                }],
+            }),
+            semantic_scholar: Some(ArticleSemanticScholar {
+                paper_id: Some("paper-1".to_string()),
+                tldr: Some("BRAF inhibitor benefit in melanoma.".to_string()),
+                citation_count: Some(120),
+                influential_citation_count: Some(18),
+                reference_count: None,
+                is_open_access: None,
+                open_access_pdf: None,
+            }),
+            pubtator_fallback: false,
+        };
+
+        let item = article_batch_item_from_article(" 10.1056/NEJMoa1203421 ", &article);
+        assert_eq!(item.requested_id, "10.1056/NEJMoa1203421");
+        assert_eq!(item.pmid.as_deref(), Some("22663011"));
+        assert_eq!(item.pmcid.as_deref(), Some("PMC9984800"));
+        assert_eq!(item.doi.as_deref(), Some("10.1056/NEJMoa1203421"));
+        assert_eq!(item.title, "Improved survival with vemurafenib");
+        assert_eq!(item.journal.as_deref(), Some("NEJM"));
+        assert_eq!(item.year, Some(2012));
+        assert_eq!(item.tldr, None);
+        assert_eq!(item.citation_count, None);
+        assert_eq!(item.influential_citation_count, None);
+
+        let entity_summary = item.entity_summary.expect("entity summary");
+        assert_eq!(entity_summary.genes.len(), 3);
+        assert_eq!(
+            entity_summary
+                .genes
+                .iter()
+                .map(|row| row.text.as_str())
+                .collect::<Vec<_>>(),
+            vec!["BRAF", "NRAS", "MAP2K1"]
+        );
+        assert_eq!(entity_summary.diseases[0].text, "melanoma");
+        assert_eq!(entity_summary.chemicals[0].text, "vemurafenib");
+        assert_eq!(entity_summary.mutations[0].text, "V600E");
+    }
+
+    #[tokio::test]
+    async fn article_batch_rejects_more_than_max_ids_before_network() {
+        let ids = (0..ARTICLE_BATCH_MAX_IDS + 1)
+            .map(|idx| format!("{}", 22000000 + idx))
+            .collect::<Vec<_>>();
+
+        let err = get_batch_compact(&ids)
+            .await
+            .expect_err("batch over the max should fail");
+        assert_eq!(
+            err.to_string(),
+            format!("Invalid argument: Article batch is limited to {ARTICLE_BATCH_MAX_IDS} IDs")
+        );
+    }
+
+    #[test]
+    fn batch_semantic_scholar_merge_fills_fields_and_skips_none_rows_and_pmcid_only() {
+        use crate::sources::semantic_scholar::{SemanticScholarPaper, SemanticScholarTldr};
+
+        fn blank_item(requested_id: &str) -> ArticleBatchItem {
+            ArticleBatchItem {
+                requested_id: requested_id.to_string(),
+                pmid: None,
+                pmcid: None,
+                doi: None,
+                title: String::new(),
+                journal: None,
+                year: None,
+                entity_summary: None,
+                tldr: None,
+                citation_count: None,
+                influential_citation_count: None,
+            }
+        }
+
+        let mut items = vec![
+            ArticleBatchItem {
+                pmid: Some("22663011".to_string()),
+                ..blank_item("22663011")
+            },
+            // PMCID-only: not in the S2 lookup list (no PMID or DOI)
+            ArticleBatchItem {
+                pmcid: Some("PMC9984800".to_string()),
+                ..blank_item("PMC9984800")
+            },
+            // Second PMID lookup — S2 returns None (paper not found)
+            ArticleBatchItem {
+                pmid: Some("00000000".to_string()),
+                ..blank_item("00000000")
+            },
+        ];
+
+        // positions 0 and 2 have PMIDs; position 1 is PMCID-only and not looked up
+        let item_positions = vec![0usize, 2usize];
+        let rows: Vec<Option<SemanticScholarPaper>> = vec![
+            Some(SemanticScholarPaper {
+                tldr: Some(SemanticScholarTldr {
+                    text: Some("  Compact summary  ".to_string()),
+                    model: None,
+                }),
+                citation_count: Some(120),
+                influential_citation_count: Some(18),
+                ..Default::default()
+            }),
+            None, // S2 returned no match for position 2
+        ];
+
+        merge_semantic_scholar_compact_rows(&mut items, &item_positions, rows);
+
+        // Item 0: enriched
+        assert_eq!(items[0].tldr.as_deref(), Some("Compact summary")); // whitespace trimmed
+        assert_eq!(items[0].citation_count, Some(120));
+        assert_eq!(items[0].influential_citation_count, Some(18));
+
+        // Item 1: PMCID-only, not in lookup, untouched
+        assert_eq!(items[1].tldr, None);
+        assert_eq!(items[1].citation_count, None);
+
+        // Item 2: None row, fields stay unset
+        assert_eq!(items[2].tldr, None);
+        assert_eq!(items[2].citation_count, None);
     }
 
     #[test]
