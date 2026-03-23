@@ -1,9 +1,62 @@
 # Changelog
 
-## 0.8.17 — 2026-03-20
+## 0.8.17 — 2026-03-23
 
-- `search article` now adds an optional Semantic Scholar search leg when `S2_API_KEY` is set, merges duplicates across PMID/PMCID/DOI, and exposes directness-first ranking metadata in markdown and JSON output.
-- Added `biomcp article batch <id>...` for compact multi-article fetches with parallel PubTator/Europe PMC resolution plus optional batched Semantic Scholar TLDR and citation enrichment.
+### New sources
+
+- Added WikiPathways as a third pathway source alongside Reactome and KEGG,
+  with source-aware section handling plus operator proof coverage in
+  `biomcp health` and `scripts/contract-smoke.sh`. (025)
+- Added an optional Semantic Scholar search leg to `search article` when
+  `S2_API_KEY` is set, merging PubTator3, Europe PMC, and Semantic Scholar
+  results with identifier-aware deduplication and directness-first ranking.
+  (034)
+
+### New commands
+
+- Added `biomcp discover <query>` as the free-text concept-resolution
+  entrypoint, using OLS4 as the required backbone with optional UMLS
+  crosswalks and MedlinePlus disease/symptom context. (028)
+- Added `biomcp article batch <id>...` for compact multi-article summary
+  cards with parallel article fetch and optional batched Semantic Scholar
+  enrichment; the command is limited to 20 IDs. (037)
+
+### Improvements
+
+- Restored pathway progressive disclosure and exact-title-first ranking, so
+  default pathway cards stay concise and exact pathway-title matches rise to
+  the top across sources. (017)
+- Expanded operator proof surfaces and refreshed source-aware architecture docs
+  so the shipped source inventory, API-key handling, proof expectations, and
+  section-availability rules are explicit and consistent. (018, 019, 030)
+- Improved protein complexes terminal layout and normalized pathway CLI usage
+  errors and remediation. (020, 021)
+- Added source labels and missing evidence URLs across entity detail outputs in
+  Markdown and JSON for stronger traceability. (022, 025)
+- Added paper/reproducibility and community-packaging artifacts, including
+  `paper/`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `.zenodo.json`. (023)
+- `get gene` and `get drug` misses now return discovery-backed canonical
+  suggestions with structured `_meta.alias_resolution` /
+  `_meta.next_commands` guidance instead of dead-end errors. (029)
+- Help, `list`, and docs now surface working typed paths, and `search all` /
+  `search article` can emit `--debug-plan` routing metadata in Markdown or
+  JSON when requested. (032)
+- Typed variant retrieval now accepts common shorthand forms, emits
+  variant-scoped recovery guidance on misses, and accepts long-form protein
+  notation such as `AKT2 p.Pro50Thr`. (033, 039)
+- `search all` cross-routing now stays inside controlled typed fallback rules,
+  reducing noisy drill-downs and duplicate follow-up commands. (035)
+- Typed retrievals now expose compact answer-bearing summaries for approvals,
+  population frequencies, and disease/variant evidence without removing the
+  detailed sections. (036)
+
+### Fixes
+
+- Fixed the DisGeNET template crash on sparse or null payloads such as
+  `biomcp get gene KYNU disgenet`. (031)
+- Fixed default article retraction filtering so only confirmed retractions are
+  excluded; PubTator3 and Semantic Scholar rows with unknown retraction status
+  remain visible. (038)
 
 ## 0.8.16 — 2026-03-17
 

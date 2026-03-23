@@ -164,10 +164,10 @@ def test_latest_changelog_documents_mcp_tool_rename() -> None:
     assert "`biomcp`" in latest_release_block
 
 
-def test_release_overview_mentions_v0_8_16_current_version() -> None:
+def test_release_overview_mentions_v0_8_17_current_version() -> None:
     overview = _read("design/technical/overview.md")
 
-    assert "**Current version:** 0.8.16 (as of 2026-03-17)" in overview
+    assert "**Current version:** 0.8.17 (as of 2026-03-23)" in overview
 
 
 def test_gene_guide_includes_new_sections_and_positional_search() -> None:
@@ -196,7 +196,7 @@ def test_data_sources_reference_covers_new_gene_and_article_sources() -> None:
     data_sources = _read("docs/reference/data-sources.md")
 
     assert (
-        "UniProt, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen, gnomAD GraphQL API"
+        "UniProt, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, OpenTargets, ClinGen, gnomAD GraphQL API"
         in data_sources
     )
     assert "https://gtexportal.org/api/v2" in data_sources
@@ -206,7 +206,10 @@ def test_data_sources_reference_covers_new_gene_and_article_sources() -> None:
     assert "https://gnomad.broadinstitute.org/api" in data_sources
     assert "gnomAD v4 GRCh38 gene constraint" in data_sources
     assert "HPA protein tissue expression and subcellular localization" in data_sources
-    assert "| Article search & metadata | PubTator3 + Europe PMC |" in data_sources
+    assert (
+        "| Article search & metadata | PubTator3 + Europe PMC + optional Semantic Scholar |"
+        in data_sources
+    )
     assert "| Article enrichment and graph helpers | Semantic Scholar |" in data_sources
     assert "PubTator3 + Europe PMC for federated search" in data_sources
     assert "1 request / second" in data_sources
