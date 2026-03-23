@@ -11,6 +11,11 @@
   `S2_API_KEY` is set, merging PubTator3, Europe PMC, and Semantic Scholar
   results with identifier-aware deduplication and directness-first ranking.
   (034)
+- Added KEGG as a pathway source alongside Reactome and WikiPathways.
+- Added gnomAD constraint metrics for variant-interpretation context.
+- Added Human Protein Atlas tissue expression to gene output.
+- Added ComplexPortal-backed protein complex data.
+- Added DisGeNET gene-disease association scores.
 
 ### New commands
 
@@ -49,9 +54,21 @@
 - Typed retrievals now expose compact answer-bearing summaries for approvals,
   population frequencies, and disease/variant evidence without removing the
   detailed sections. (036)
+- Deepened OpenTargets integration with tractability and
+  genetic-association sections.
+- Added JATS-aware PMC full-text extraction for article detail views.
+- MCP chart responses can now return SVG inline as a base64 image payload.
+- Polished Kuva chart output with human-readable labels and KM curve
+  improvements.
+- Suppressed retry-middleware warnings from stderr.
+- Pathway output now keeps section availability truthful and gives better
+  guidance when a source lacks a section.
 
 ### Fixes
 
+- Fixed drug interaction output so supported drugs no longer return empty
+  interaction sections.
+- Fixed g:Profiler enrichment timeouts.
 - Fixed the DisGeNET template crash on sparse or null payloads such as
   `biomcp get gene KYNU disgenet`. (031)
 - Fixed default article retraction filtering so only confirmed retractions are
@@ -68,6 +85,32 @@
   chart discovery, chart flags, and updated drug interaction guidance.
 - Updated the Kuva chart blog post with checked-in SVG outputs for all nine
   worked examples plus placeholder references for terminal screenshots.
+- Added Semantic Scholar article enrichment and helpers for TLDR, citations,
+  references, and recommendations.
+- Added Kuva-backed study chart rendering plus chart discovery/docs for SVG
+  study outputs.
+- Trial search now accepts fractional ages such as `0.5 years`.
+- Generated `_meta.next_commands` now pass a parser-level validity gate, and
+  article JSON guidance is cleaner and more truthful.
+- Fixed federated article search offset and sort semantics with correctness
+  coverage.
+- Breaking MCP runtime change: renamed the MCP execution tool from `shell` to
+  `biomcp`; update MCP clients and demos to call `biomcp` after `tools/list`.
+- Added `CITATION.cff` and citation pointers in the README and public docs.
+- Fixed Semantic Scholar references to use cited papers instead of referenced
+  papers.
+- Fixed article search timeouts on `--exclude-retracted`.
+- Fixed article retraction filtering and unary `NOT` parsing.
+- Stabilized CTGov trial pagination and age-filtered totals: improved cursor
+  behavior, aligned count/search params, clarified trial-filter guidance, and
+  exposed approximate age-only counts when exact totals are too expensive.
+- Expanded release-quality gates with contracts CI, version-sync checks, a
+  PR-gated spec suite, stable/smoke lane splitting, and protein entity spec
+  coverage.
+- Updated lockfiles for the `quinn-proto` and `PyJWT` vulnerability
+  advisories.
+- Refined the Streamable HTTP demo into a tested end-to-end BRAF/melanoma
+  workflow with a focused README and Python 3.11 compatibility.
 
 ## 0.8.15 — 2026-03-11
 
@@ -78,8 +121,6 @@
 - Refreshed the public discovery docs so `search all` is taught as the unified
   cross-entity entry point in the README and docs index. This is the docs
   alignment from PR #190.
-- Breaking MCP runtime change: renamed the MCP execution tool from `shell` to
-  `biomcp`; update MCP clients and demos to call `biomcp` after `tools/list`.
 
 ## 0.8.14 — 2026-03-10
 
@@ -87,6 +128,12 @@
 - Added a runnable PEP 723 demo client at `demo/streamable_http_client.py` for `/mcp`, including a `tools/list` flow and `biomcp version` tool call.
 - Surfaced the canonical remote HTTP routes more prominently across public docs: `/mcp`, `/health`, `/readyz`, and `/`.
 - Kept `serve-sse` migration guidance visible while shipping the Streamable HTTP release/docs/demo verification package together.
+- Reranked disease search results so exact-match canonical names surface first.
+- `search article` now rejects unsupported identifiers with explicit contract guidance instead of falling through ambiguously.
+- Defaulted article search sorting to relevance across CLI entry points.
+- Normalized search aliases, identifiers, and trial phase semantics across entity searches.
+- Broadened trial mutation matching across title, summary, keyword, and eligibility fields.
+- Removed stale skill-discovery UX and refreshed `list` / help output to match the shipped CLI surface.
 
 ## 0.8.13 — 2026-03-09
 
@@ -116,6 +163,8 @@
 - Unified article search: fan-out across PubTator3 and Europe PMC in parallel with PMID deduplication, source-grouped rendering, and `--source <all|pubtator|europepmc>`.
 - Added infinite cache mode via `BIOMCP_CACHE_MODE=infinite` for offline/demo workflows.
 - Consolidated CI into a single job; streamlined release pipeline.
+- Added reusable presentations infrastructure with an intro deck, branded theme assets, and slide templates for BioMCP talks.
+- Hardened PyPI release packaging for arm64 and portable version syncing in the release workflow.
 
 ## 0.8.10 — 2026-03-04
 

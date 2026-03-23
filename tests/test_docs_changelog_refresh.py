@@ -20,17 +20,23 @@ def _markdown_section_block(text: str, heading: str) -> str:
 
 def test_changelog_has_backfilled_releases_and_release_header() -> None:
     changelog = _read("CHANGELOG.md")
-    latest_release_block = _markdown_section_block(changelog, "## 0.8.15 — 2026-03-11")
+    latest_release_block = _markdown_section_block(changelog, "## 0.8.17 — 2026-03-23")
 
     assert "## [Unreleased]" not in changelog
-    assert "## 0.8.15 — 2026-03-11" in changelog
+    assert "## 0.8.17 — 2026-03-23" in changelog
     assert "## 0.9.0" not in changelog
-    assert "planning-docs CI path regression" in latest_release_block
-    assert "repo-local planning fixtures" in latest_release_block
-    assert "public discovery docs" in latest_release_block
-    assert "`search all`" in latest_release_block
+    assert "Added KEGG as a pathway source alongside Reactome and WikiPathways." in (
+        latest_release_block
+    )
+    assert "Added gnomAD constraint metrics for variant-interpretation context." in (
+        latest_release_block
+    )
+    assert "Fixed drug interaction output" in latest_release_block
+    assert "Fixed g:Profiler enrichment timeouts." in latest_release_block
 
     expected_releases = [
+        ("0.8.17", "2026-03-23"),
+        ("0.8.16", "2026-03-17"),
         ("0.8.15", "2026-03-11"),
         ("0.8.14", "2026-03-10"),
         ("0.8.13", "2026-03-09"),
@@ -157,11 +163,40 @@ def test_release_overview_describes_streamable_http_workflow_demo() -> None:
 
 def test_latest_changelog_documents_mcp_tool_rename() -> None:
     changelog = _read("CHANGELOG.md")
-    latest_release_block = _markdown_section_block(changelog, "## 0.8.15 — 2026-03-11")
+    v0_8_16_block = _markdown_section_block(changelog, "## 0.8.16 — 2026-03-17")
+    v0_8_15_block = _markdown_section_block(changelog, "## 0.8.15 — 2026-03-11")
 
-    assert "MCP execution tool" in latest_release_block
-    assert '`shell`' in latest_release_block
-    assert "`biomcp`" in latest_release_block
+    assert "MCP execution tool" in v0_8_16_block
+    assert '`shell`' in v0_8_16_block
+    assert "`biomcp`" in v0_8_16_block
+    assert "MCP execution tool" not in v0_8_15_block
+
+
+def test_changelog_audit_backfills_rust_release_gaps() -> None:
+    changelog = _read("CHANGELOG.md")
+    v0_8_11_block = _markdown_section_block(changelog, "## 0.8.11 — 2026-03-06")
+    v0_8_14_block = _markdown_section_block(changelog, "## 0.8.14 — 2026-03-10")
+    v0_8_16_block = _markdown_section_block(changelog, "## 0.8.16 — 2026-03-17")
+    v0_8_17_block = _markdown_section_block(changelog, "## 0.8.17 — 2026-03-23")
+
+    assert "Added reusable presentations infrastructure with an intro deck" in (
+        v0_8_11_block
+    )
+    assert "Hardened PyPI release packaging for arm64" in v0_8_11_block
+
+    assert "Reranked disease search results" in v0_8_14_block
+    assert "search article` now rejects unsupported identifiers" in v0_8_14_block
+    assert "Defaulted article search sorting to relevance" in v0_8_14_block
+    assert "Removed stale skill-discovery UX" in v0_8_14_block
+
+    assert "Added Semantic Scholar article enrichment and helpers" in v0_8_16_block
+    assert "Trial search now accepts fractional ages" in v0_8_16_block
+    assert "Added `CITATION.cff`" in v0_8_16_block
+    assert "Expanded release-quality gates" in v0_8_16_block
+
+    assert "Added Human Protein Atlas tissue expression" in v0_8_17_block
+    assert "Deepened OpenTargets integration" in v0_8_17_block
+    assert "MCP chart responses can now return SVG inline" in v0_8_17_block
 
 
 def test_release_overview_mentions_v0_8_17_current_version() -> None:
