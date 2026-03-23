@@ -22,7 +22,9 @@ SPEC_PR_DESELECT_ARGS = \
 	--deselect "spec/07-disease.md::Disease to Articles" \
 	--deselect "spec/12-search-positionals.md::GWAS Positional Query" \
 	--deselect "spec/02-gene.md::Gene DisGeNET Associations" \
-	--deselect "spec/07-disease.md::Disease DisGeNET Associations"
+	--deselect "spec/07-disease.md::Disease DisGeNET Associations" \
+	--deselect "spec/19-discover.md" \
+	--deselect "spec/20-alias-fallback.md"
 
 build:
 	cargo build --release

@@ -5,7 +5,7 @@ use anyhow::Context;
 use crate::entities::discover::DiscoverResult;
 use crate::error::BioMcpError;
 
-const OLS4_TIMEOUT: Duration = Duration::from_millis(1000);
+const OLS4_TIMEOUT: Duration = Duration::from_millis(4000);
 const UMLS_TIMEOUT: Duration = Duration::from_millis(2500);
 const MEDLINEPLUS_TIMEOUT: Duration = Duration::from_millis(800);
 

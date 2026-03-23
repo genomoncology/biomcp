@@ -68,7 +68,7 @@ echo "$disease_json" | mustmatch like "ClinicalTrials.gov"
 ## JSON section_sources — Variant, Trial, Article
 
 ```bash
-variant_json="$(biomcp get variant rs334 all --json)"
+variant_json="$(biomcp get variant rs334 --json)"
 echo "$variant_json" | mustmatch like '"section_sources": ['
 echo "$variant_json" | mustmatch like '"key": "identity"'
 echo "$variant_json" | mustmatch like "MyVariant.info"

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import base64
+import json
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
@@ -179,9 +182,57 @@ async def test_charted_study_call_rejects_output_file_in_mcp_mode(
     assert "MCP chart responses do not support --output" in result.content[0].text
 
 
+class _Ols4StubHandler(BaseHTTPRequestHandler):
+    """Minimal OLS4 stub returning a single HGNC hit for any query."""
+
+    _RESPONSE = json.dumps({
+        "response": {
+            "numFound": 1,
+            "start": 0,
+            "docs": [
+                {
+                    "iri": "http://identifiers.org/hgnc/1100",
+                    "ontology_name": "hgnc",
+                    "ontology_prefix": "HGNC",
+                    "short_form": "HGNC_1100",
+                    "obo_id": "HGNC:1100",
+                    "label": "BRCA1",
+                    "description": ["BRCA1 DNA repair associated"],
+                    "type": "class",
+                    "is_defining_ontology": True,
+                }
+            ],
+        }
+    }).encode()
+
+    def do_GET(self) -> None:  # noqa: N802
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(self._RESPONSE)
+
+    def log_message(self, *_args: object) -> None:
+        pass
+
+
+@pytest.fixture()
+def ols4_stub() -> str:
+    """Start a local OLS4 stub and return its base URL."""
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _Ols4StubHandler)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://127.0.0.1:{port}"
+    server.shutdown()
+
+
 @pytest.mark.asyncio
-async def test_discover_command_is_allowed_via_mcp(mcp_session_factory) -> None:
-    async with mcp_session_factory() as (session, _initialize_result):
+async def test_discover_command_is_allowed_via_mcp(
+    mcp_session_factory, ols4_stub
+) -> None:
+    async with mcp_session_factory(
+        extra_env={"BIOMCP_OLS4_BASE": ols4_stub, "UMLS_API_KEY": ""}
+    ) as (session, _initialize_result):
         result = await session.call_tool(
             "biomcp",
             arguments={"command": "biomcp discover BRCA1"},

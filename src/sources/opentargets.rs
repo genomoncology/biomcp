@@ -385,14 +385,9 @@ query TargetClinicalContext($ensemblId: String!, $size: Int!) {
         }
       }
     }
-    knownDrugs(size: $size) {
+    drugAndClinicalCandidates {
       rows {
-        phase
         drug {
-          id
-          name
-        }
-        disease {
           id
           name
         }
@@ -456,8 +451,8 @@ query TargetClinicalContext($ensemblId: String!, $size: Int!) {
 
         let mut drugs: Vec<String> = Vec::new();
         let mut drug_seen: std::collections::HashSet<String> = std::collections::HashSet::new();
-        if let Some(known_drugs) = target.known_drugs {
-            for row in known_drugs.rows {
+        if let Some(drug_candidates) = target.drug_and_clinical_candidates {
+            for row in drug_candidates.rows {
                 let Some(name) = row
                     .drug
                     .and_then(|d| d.name)
@@ -476,7 +471,10 @@ query TargetClinicalContext($ensemblId: String!, $size: Int!) {
                 }
             }
         } else {
-            warn_missing_field("TargetClinicalContext", "data.target.knownDrugs");
+            warn_missing_field(
+                "TargetClinicalContext",
+                "data.target.drugAndClinicalCandidates",
+            );
         }
 
         Ok(OpenTargetsTargetClinicalContext { diseases, drugs })
@@ -1053,7 +1051,7 @@ struct TargetDruggabilityData {
 #[serde(rename_all = "camelCase")]
 struct TargetClinicalNode {
     associated_diseases: Option<TargetAssociatedDiseases>,
-    known_drugs: Option<TargetKnownDrugs>,
+    drug_and_clinical_candidates: Option<TargetDrugAndClinicalCandidates>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1078,19 +1076,14 @@ struct TargetDiseaseNode {
 }
 
 #[derive(Debug, Deserialize)]
-struct TargetKnownDrugs {
+struct TargetDrugAndClinicalCandidates {
     #[serde(default)]
-    rows: Vec<TargetKnownDrugRow>,
+    rows: Vec<TargetDrugCandidateRow>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct TargetKnownDrugRow {
-    #[allow(dead_code)]
-    phase: Option<f64>,
+struct TargetDrugCandidateRow {
     drug: Option<TargetDrugNode>,
-    #[allow(dead_code)]
-    disease: Option<TargetDiseaseNode>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1728,10 +1721,10 @@ mod tests {
                                 {"score": 0.7, "disease": {"id": "EFO_2", "name": "Colorectal cancer"}}
                             ]
                         },
-                        "knownDrugs": {
+                        "drugAndClinicalCandidates": {
                             "rows": [
-                                {"phase": 4, "drug": {"id": "CHEMBL1", "name": "Dabrafenib"}, "disease": {"id": "EFO_1", "name": "Melanoma"}},
-                                {"phase": 4, "drug": {"id": "CHEMBL2", "name": "Vemurafenib"}, "disease": {"id": "EFO_1", "name": "Melanoma"}}
+                                {"drug": {"id": "CHEMBL1", "name": "Dabrafenib"}},
+                                {"drug": {"id": "CHEMBL2", "name": "Vemurafenib"}}
                             ]
                         }
                     }
@@ -1747,7 +1740,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn target_clinical_context_degrades_when_known_drugs_missing() {
+    async fn target_clinical_context_degrades_when_drug_candidates_missing() {
         let server = MockServer::start().await;
 
         Mock::given(method("POST"))
