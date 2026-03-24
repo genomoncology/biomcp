@@ -172,6 +172,37 @@ biomcp study query --study msk_impact_2017 --gene TP53 --type mutations \
 
 The `wong`, `okabe-ito`, `deuteranopia`, `protanopia`, and `tritanopia` palettes are designed for colorblind accessibility.
 
+## Terminal charts: the underrated output
+
+Most charting tools treat the terminal as an afterthought — if they support it at all. Kuva treats it as a first-class target. When you add `--chart` without `-o`, the chart renders right where you ran the command.
+
+This matters more than it sounds:
+
+**You never leave your flow.** You're querying mutation data, you add `--chart bar`, and the bar chart appears inline. No window switching. No file opening. You see the shape of the data and immediately run the next command.
+
+**SSH works.** If you're running BioMCP on a remote server over SSH, terminal charts just work. No X11 forwarding, no port tunneling, no "download the PNG and open it locally."
+
+**AI agents can read them.** A coding agent running BioMCP in a terminal session can see the chart output and reason about it — no vision model needed for the data tables, and the chart adds visual confirmation.
+
+Kuva renders terminal charts using Unicode block characters for bar charts and Braille characters for continuous curves. The survival curve uses Braille dots to draw smooth step functions directly in your terminal — two overlapping Kaplan-Meier curves rendered in colored Unicode:
+
+```bash
+biomcp study survival --study msk_impact_2017 --gene TP53 \
+  --chart survival --terminal
+```
+
+Here's what a bar chart looks like rendered directly in the terminal:
+
+![Terminal bar chart](images/kuva-terminal-bar.png)
+
+And a Kaplan-Meier survival curve using Braille characters — two overlapping step functions with a legend, axes, and gridlines, all in Unicode:
+
+![Terminal survival chart](images/kuva-terminal-survival.png)
+
+The fidelity is surprisingly good. You can see the separation between TP53-mutant and wildtype curves, the crossover points, and the censoring pattern — all without generating a file.
+
+Terminal charts are the default when `--chart` is specified without `-o`. Think of them as the "quick look" and SVG as the "save for later."
+
 ## About Kuva
 
 [Kuva](https://github.com/Psy-Fer/kuva) is an open-source Rust charting library with 29 plot types, SVG/PNG/PDF output, and a CLI binary. BioMCP links Kuva 0.1.4 directly as a Rust library — no subprocess calls, no runtime dependencies.
