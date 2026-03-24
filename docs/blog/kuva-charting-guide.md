@@ -2,6 +2,8 @@
 
 *You already have the data. Why should you need R and 40 lines of ggplot2 just to see it?*
 
+![Agent Charting Superpowers](images/kuva-charting-slide.png)
+
 You've downloaded a cBioPortal study. You've queried mutation frequencies, run survival analysis, compared expression across groups. BioMCP gave you clean tables. But now you want to *see* it — a survival curve, a distribution, a co-occurrence pattern — and suddenly you're exporting CSVs, opening Jupyter, importing matplotlib, debugging axis labels.
 
 That's the gap BioMCP's charting closes. Add `--chart` to any study command you're already running. The chart renders to your terminal, to SVG, or to PNG. Same command. One extra flag. No plotting libraries to install because the charting engine — [Kuva](https://github.com/Psy-Fer/kuva), an open-source Rust library — is compiled into the BioMCP binary.
