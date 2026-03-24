@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://biomcp.org/blog/cbioportal-study-analytics/">
       
       
-        <link rel="prev" href="../../reference/drug-approvals-and-ae-summary/">
+        <link rel="prev" href="../kuva-charting-guide/">
       
       
         <link rel="next" href="../biomcp-kuva-charts/">
@@ -367,7 +367,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../kuva-charting-guide/" class="md-tabs__link">
           
   
   
@@ -2241,6 +2241,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2304,6 +2332,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kuva-charting-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Every Chart BioMCP Can Make
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -2804,7 +2860,7 @@
 </ol>
 <p>All of this runs locally in Rust. A survival analysis across 10,945 samples completes in milliseconds.</p>
 <h2 id="charting-with-kuva">Charting with Kuva<a class="headerlink" href="#charting-with-kuva" title="Permanent link">&para;</a></h2>
-<p>BioMCP's charts are powered by <a href="https://github.com/biomcp-org/kuva">Kuva</a>, an open-source Rust charting library built for this use case. Kuva renders to both terminal (Unicode block characters) and SVG.</p>
+<p>BioMCP's charts are powered by <a href="https://github.com/Psy-Fer/kuva">Kuva</a>, an open-source Rust charting library built for this use case. Kuva renders to both terminal (Unicode block characters) and SVG.</p>
 <p>Why a custom charting library instead of calling out to Python or R:</p>
 <ul>
 <li><strong>No runtime dependencies.</strong> BioMCP is a single binary. Adding a Python or R dependency would break that property.</li>
