@@ -1,0 +1,188 @@
+# Every Chart BioMCP Can Make
+
+*Eight chart types, two output formats, twelve accessible palettes. All from one `--chart` flag.*
+
+BioMCP uses [Kuva](https://github.com/Psy-Fer/kuva), an open-source Rust charting library, to render charts directly from study analytics commands. No Python. No R. No external dependencies. Charts render to your terminal or to SVG and PNG files.
+
+This post shows every chart type BioMCP supports, when to use each one, and why SVG is the best output format for AI workflows.
+
+## The eight chart types
+
+Every chart is generated with a single `--chart` flag added to an existing study command. The chart type is validated against the data shape — invalid combinations fail with a clear error message.
+
+### 1. Bar chart
+
+Best for: categorical counts. Mutation classes, CNA types, co-occurrence buckets.
+
+```bash
+biomcp study query --study msk_impact_2017 --gene TP53 --type mutations \
+  --chart bar -o tp53-mutation-bar.svg
+```
+
+![TP53 mutation classes](images/kuva-tp53-mutation-bar.svg)
+
+TP53 in MSK-IMPACT: 3,157 missense mutations dominate, followed by 683 nonsense and 517 frameshift deletions. The bar chart makes the relative proportions immediately obvious.
+
+### 2. Pie chart
+
+Best for: proportional breakdowns where you want to see parts of a whole.
+
+```bash
+biomcp study co-occurrence --study msk_impact_2017 --genes TP53,KRAS \
+  --chart pie -o tp53-kras-pie.svg
+```
+
+![TP53/KRAS co-occurrence](images/kuva-tp53-kras-cooccurrence-pie.svg)
+
+The four contingency buckets: both mutated, TP53 only, KRAS only, neither. The "neither" slice dominates — most samples don't carry mutations in either gene.
+
+### 3. Histogram
+
+Best for: continuous distributions. Expression values, scores.
+
+```bash
+biomcp study query --study brca_tcga_pan_can_atlas_2018 --gene ERBB2 \
+  --type expression --chart histogram -o erbb2-histogram.svg
+```
+
+![ERBB2 expression histogram](images/kuva-erbb2-expression-histogram.svg)
+
+ERBB2 expression in TCGA breast cancer. The bimodal distribution is the signature of HER2-positive breast cancer — the right-hand bump represents the ~15-20% of breast cancers with HER2 amplification.
+
+### 4. Density plot
+
+Best for: smooth continuous distributions. Same data as histogram but easier to compare across groups.
+
+```bash
+biomcp study query --study brca_tcga_pan_can_atlas_2018 --gene ERBB2 \
+  --type expression --chart density -o erbb2-density.svg
+```
+
+![ERBB2 expression density](images/kuva-erbb2-expression-density.svg)
+
+The kernel density estimate smooths the same ERBB2 expression data into a continuous curve. The bimodal peaks are clearer here than in the histogram.
+
+### 5. Box plot
+
+Best for: comparing distributions between groups. Medians, quartiles, outliers at a glance.
+
+```bash
+biomcp study compare --study brca_tcga_pan_can_atlas_2018 \
+  --gene TP53 --type expression --target ERBB2 \
+  --chart box -o erbb2-by-tp53-box.svg
+```
+
+![ERBB2 expression by TP53 status](images/kuva-erbb2-by-tp53-box.svg)
+
+ERBB2 expression stratified by TP53 mutation status. The box plot shows medians, interquartile ranges, and outliers without visual clutter.
+
+### 6. Violin plot
+
+Best for: comparing full distribution shapes between groups. More informative than box plots when distributions are multimodal.
+
+```bash
+biomcp study compare --study brca_tcga_pan_can_atlas_2018 \
+  --gene TP53 --type expression --target ERBB2 \
+  --chart violin -o erbb2-by-tp53-violin.svg
+```
+
+![ERBB2 expression violin](images/kuva-erbb2-by-tp53-violin.svg)
+
+Same comparison as the box plot, but the violin shape reveals the full distribution. The bimodal ERBB2 pattern is visible in both TP53-mutant and wildtype groups.
+
+### 7. Ridgeline plot
+
+Best for: stacked density comparisons. Cleaner than overlapping violins when you have more than two groups.
+
+```bash
+biomcp study compare --study brca_tcga_pan_can_atlas_2018 \
+  --gene TP53 --type expression --target ERBB2 \
+  --chart ridgeline -o erbb2-by-tp53-ridgeline.svg
+```
+
+![ERBB2 expression ridgeline](images/kuva-erbb2-by-tp53-ridgeline.svg)
+
+Ridgelines stack the density curves vertically with overlap, making it easy to compare group shapes side by side.
+
+### 8. Kaplan-Meier survival curve
+
+Best for: time-to-event comparisons between mutation-stratified groups.
+
+```bash
+biomcp study survival --study msk_impact_2017 --gene TP53 \
+  --chart survival -o tp53-survival.svg
+```
+
+![TP53 survival curve](images/kuva-tp53-survival-km.svg)
+
+TP53-mutant patients in MSK-IMPACT have worse overall survival (median 21.0 vs 32.1 months, p = 9.40e-29). The Kaplan-Meier curve shows clear separation from the start.
+
+## Which chart type for which command
+
+Not every chart type works with every command. BioMCP validates this for you.
+
+| Command | Valid Chart Types |
+|---------|------------------|
+| `study query --type mutations` | `bar`, `pie` |
+| `study query --type cna` | `bar`, `pie` |
+| `study query --type expression` | `histogram`, `density` |
+| `study co-occurrence` | `pie`, `bar` |
+| `study compare --type expression` | `box`, `violin`, `ridgeline` |
+| `study compare --type mutations` | `bar` |
+| `study survival` | `bar`, `survival` |
+
+If you ask for a violin chart from a mutation query, BioMCP tells you what's valid instead of producing garbage.
+
+## Output formats: SVG vs PNG vs terminal
+
+| Format | Flag | Size | AI readability | Best for |
+|--------|------|------|---------------|----------|
+| Terminal | `--terminal` | 0 bytes | ~90% accuracy | Quick exploration |
+| SVG | `-o file.svg` | 2-45 KB | 100% accuracy | Sharing, docs, AI workflows |
+| PNG | `-o file.png` | 100-500 KB | ~97% accuracy | Presentations, social media |
+
+### Why SVG is the best format for AI agents
+
+SVG files are structured XML. An AI agent can parse SVG element attributes to recover exact numeric values:
+
+```xml
+<rect x="59" y="88.1" width="68.57" height="405.9" fill="#1f77b4"/>
+```
+
+From `height="405.9"` and the axis scale, the agent can recover the exact count: 3,157 missense mutations. No vision model needed. No OCR errors.
+
+SVG is also dramatically smaller than PNG — the TP53 mutation bar chart is 4.9 KB as SVG versus ~175 KB as PNG. That's **36x smaller** with higher information fidelity.
+
+## Styling
+
+All charts support themes and accessible color palettes:
+
+```bash
+biomcp study query --study msk_impact_2017 --gene TP53 --type mutations \
+  --chart bar --theme dark --palette wong
+```
+
+| Option | Values |
+|--------|--------|
+| `--theme` | `light`, `dark`, `solarized`, `minimal` |
+| `--palette` | `category10`, `wong`, `okabe-ito`, `tol-bright`, `tol-muted`, `tol-light`, `ibm`, `deuteranopia`, `protanopia`, `tritanopia`, `pastel`, `bold` |
+| `--title` | Any custom title string |
+
+The `wong`, `okabe-ito`, `deuteranopia`, `protanopia`, and `tritanopia` palettes are designed for colorblind accessibility.
+
+## About Kuva
+
+[Kuva](https://github.com/Psy-Fer/kuva) is an open-source Rust charting library with 29 plot types, SVG/PNG/PDF output, and a CLI binary. BioMCP links Kuva 0.1.4 directly as a Rust library — no subprocess calls, no runtime dependencies.
+
+BioMCP uses 8 of Kuva's 29 chart types. The chart rendering is wired into the existing `study` commands rather than creating a separate pipeline, so every study command that produces data can also produce a chart.
+
+## Try it
+
+```bash
+uv tool install biomcp-cli
+biomcp study download msk_impact_2017
+biomcp study query --study msk_impact_2017 --gene TP53 --type mutations \
+  --chart bar --terminal
+```
+
+Full chart reference: [Chart Documentation](../charts/index.md).

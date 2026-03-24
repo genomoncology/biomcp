@@ -120,7 +120,7 @@ All of this runs locally in Rust. A survival analysis across 10,945 samples comp
 
 ## Charting with Kuva
 
-BioMCP's charts are powered by [Kuva](https://github.com/biomcp-org/kuva), an open-source Rust charting library built for this use case. Kuva renders to both terminal (Unicode block characters) and SVG.
+BioMCP's charts are powered by [Kuva](https://github.com/Psy-Fer/kuva), an open-source Rust charting library built for this use case. Kuva renders to both terminal (Unicode block characters) and SVG.
 
 Why a custom charting library instead of calling out to Python or R:
 
