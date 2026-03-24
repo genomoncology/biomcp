@@ -1,14 +1,16 @@
 # Every Chart BioMCP Can Make
 
-*Eight chart types, two output formats, twelve accessible palettes. All from one `--chart` flag.*
+*You already have the data. Why should you need R and 40 lines of ggplot2 just to see it?*
 
-BioMCP uses [Kuva](https://github.com/Psy-Fer/kuva), an open-source Rust charting library, to render charts directly from study analytics commands. No Python. No R. No external dependencies. Charts render to your terminal or to SVG and PNG files.
+You've downloaded a cBioPortal study. You've queried mutation frequencies, run survival analysis, compared expression across groups. BioMCP gave you clean tables. But now you want to *see* it — a survival curve, a distribution, a co-occurrence pattern — and suddenly you're exporting CSVs, opening Jupyter, importing matplotlib, debugging axis labels.
 
-This post shows every chart type BioMCP supports, when to use each one, and why SVG is the best output format for AI workflows.
+That's the gap BioMCP's charting closes. Add `--chart` to any study command you're already running. The chart renders to your terminal, to SVG, or to PNG. Same command. One extra flag. No plotting libraries to install because the charting engine — [Kuva](https://github.com/Psy-Fer/kuva), an open-source Rust library — is compiled into the BioMCP binary.
+
+Here's every chart type BioMCP supports, what it's good for, and why SVG turns out to be surprisingly useful for AI agents.
 
 ## The eight chart types
 
-Every chart is generated with a single `--chart` flag added to an existing study command. The chart type is validated against the data shape — invalid combinations fail with a clear error message.
+Add `--chart <type>` to a study command. BioMCP validates the chart type against the data shape — if you ask for a violin plot from a mutation query, it tells you what's valid instead of producing garbage.
 
 ### 1. Bar chart
 
