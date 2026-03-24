@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -367,7 +367,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/biomcp-kuva-charts/" class="md-tabs__link">
+        <a href="../../blog/cbioportal-study-analytics/" class="md-tabs__link">
           
   
   
@@ -903,6 +903,34 @@
     
   
     CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discover
   
 
     
@@ -1973,6 +2001,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../source-licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mcp-server/" class="md-nav__link">
         
   
@@ -2059,6 +2115,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#process-exit-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process exit codes
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#error-catalog" class="md-nav__link">
@@ -2347,6 +2414,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/cbioportal-study-analytics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cBioPortal Study Analytics in BioMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
         
   
@@ -2484,6 +2579,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#process-exit-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process exit codes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#error-catalog" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2550,6 +2656,19 @@
 <h1 id="error-codes">Error Codes<a class="headerlink" href="#error-codes" title="Permanent link">&para;</a></h1>
 <p>BioMCP exposes structured internal error variants through human-readable CLI messages.
 This reference maps each <code>BioMcpError</code> variant to likely causes and practical recovery steps.</p>
+<h2 id="process-exit-codes">Process exit codes<a class="headerlink" href="#process-exit-codes" title="Permanent link">&para;</a></h2>
+<p>BioMCP uses process exit codes to distinguish parser failures from command
+execution failures:</p>
+<ul>
+<li>exit <code>2</code>: <code>clap</code> rejected the command before BioMCP command execution started.
+  Example: <code>biomcp search pathway --badflag</code></li>
+<li>exit <code>1</code>: the command parsed, then BioMCP returned
+  <code>BioMcpError::InvalidArgument</code> for invalid or inconsistent usage.
+  Examples: <code>biomcp search pathway</code>, <code>biomcp get pathway hsa05200 events</code></li>
+<li>exit <code>1</code>: alias fallback guidance for <code>get gene</code> / <code>get drug</code> still counts as a
+  not-found miss even when BioMCP can suggest a canonical retry command.
+  Example: <code>biomcp get gene ERBB1</code></li>
+</ul>
 <h2 id="error-catalog">Error catalog<a class="headerlink" href="#error-catalog" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2659,6 +2778,10 @@ This reference maps each <code>BioMcpError</code> variant to likely causes and p
 <li>Identifier syntax (<code>rs...</code>, <code>NCT...</code>, <code>PMID</code>, <code>MONDO:...</code>)</li>
 <li>Search by keyword or symbol</li>
 <li>Retry with a broader query</li>
+<li>If BioMCP prints <code>Did you mean: ...</code>, re-run the suggested canonical <code>get</code>
+   command. In JSON mode, the same guidance is printed to stdout under
+   <code>_meta.alias_resolution</code> and <code>_meta.next_commands</code> while the process still
+   exits <code>1</code>.</li>
 </ol>
 <p>Examples:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>

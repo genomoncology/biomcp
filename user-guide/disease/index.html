@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -367,7 +367,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/biomcp-kuva-charts/" class="md-tabs__link">
+        <a href="../../blog/cbioportal-study-analytics/" class="md-tabs__link">
           
   
   
@@ -908,6 +908,34 @@
     
   
     CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discover
   
 
     
@@ -2108,6 +2136,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/source-licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/mcp-server/" class="md-nav__link">
         
   
@@ -2391,6 +2447,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/cbioportal-study-analytics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cBioPortal Study Analytics in BioMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
         
   
@@ -2649,16 +2733,21 @@
 <p>By MONDO identifier:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105
 </code></pre></div>
+<p>The base disease card includes concise OpenTargets gene-score summaries when OpenTargets
+returns ranked associated targets.</p>
 <h2 id="disease-sections">Disease sections<a class="headerlink" href="#disease-sections" title="Permanent link">&para;</a></h2>
-<p>Genes (Monarch-backed associations with relationship/source when available):</p>
+<p>Genes (Monarch-backed associations with relationship/source when available, augmented with OpenTargets scores when present):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>genes
 </code></pre></div>
 <p>Phenotypes (HPO phenotypes with qualifiers):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>phenotypes
 </code></pre></div>
-<p>Variants (Monarch disease-associated variants):</p>
+<p>Variants (CIViC disease-associated variants):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>variants
 </code></pre></div>
+<p>When the variants section is loaded, JSON also exposes <code>top_variant</code> as the
+highest-ranked CIViC-backed association, and markdown shows the same compact
+anchor above the full variants table.</p>
 <p>Models (Monarch model-organism evidence):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>models
 </code></pre></div>
@@ -2695,6 +2784,8 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>all
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span>
 </code></pre></div>
+<p><code>biomcp --json get disease MONDO:0005105</code> now includes <code>top_gene_scores[]</code> with
+overall OpenTargets scores and any available GWAS, rare-variant, or somatic subtype scores.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Prefer MONDO IDs in automation workflows.</li>

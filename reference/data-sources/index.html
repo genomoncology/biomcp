@@ -18,14 +18,14 @@
         <link rel="prev" href="../quick-reference/">
       
       
-        <link rel="next" href="../mcp-server/">
+        <link rel="next" href="../source-licensing/">
       
       
         
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -367,7 +367,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/biomcp-kuva-charts/" class="md-tabs__link">
+        <a href="../../blog/cbioportal-study-analytics/" class="md-tabs__link">
           
   
   
@@ -903,6 +903,34 @@
     
   
     CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discover
   
 
     
@@ -2130,6 +2158,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../source-licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../mcp-server/" class="md-nav__link">
         
   
@@ -2413,6 +2469,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/cbioportal-study-analytics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cBioPortal Study Analytics in BioMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
         
   
@@ -2682,7 +2766,8 @@
 <h1 id="data-sources">Data Sources<a class="headerlink" href="#data-sources" title="Permanent link">&para;</a></h1>
 <p>BioMCP unifies multiple biomedical data providers behind one CLI grammar.
 This reference explains source provenance, authentication requirements, base endpoints,
-and operational caveats so users can reason about result quality and troubleshooting.</p>
+and operational caveats so users can reason about result quality and troubleshooting.
+Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider terms, reuse constraints, and indirect-only provenance rows.</p>
 <h2 id="source-matrix">Source matrix<a class="headerlink" href="#source-matrix" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2704,10 +2789,17 @@ and operational caveats so users can reason about result quality and troubleshoo
 </tr>
 <tr>
 <td>Gene sections</td>
-<td>UniProt, QuickGO, STRING, GTEx, DGIdb, ClinGen</td>
-<td><code>https://rest.uniprot.org</code>, <code>https://www.ebi.ac.uk/QuickGO/services</code>, <code>https://string-db.org/api</code>, <code>https://gtexportal.org/api/v2</code>, <code>https://dgidb.org/api/graphql</code>, <code>https://search.clinicalgenome.org</code></td>
+<td>UniProt, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, OpenTargets, ClinGen, gnomAD GraphQL API</td>
+<td><code>https://rest.uniprot.org</code>, <code>https://www.ebi.ac.uk/QuickGO/services</code>, <code>https://string-db.org/api</code>, <code>https://gtexportal.org/api/v2</code>, <code>https://www.proteinatlas.org</code>, <code>https://dgidb.org/api/graphql</code>, <code>https://api.platform.opentargets.org/api/v4/graphql</code>, <code>https://search.clinicalgenome.org</code>, <code>https://gnomad.broadinstitute.org/api</code></td>
 <td>No</td>
-<td>Protein summary, GO terms, interactions, tissue expression, druggability, gene-disease validity</td>
+<td>Protein summary, GO terms, interactions, GTEx RNA tissue expression, HPA protein tissue expression and subcellular localization, combined DGIdb/OpenTargets druggability, gene-disease validity, and gnomAD v4 GRCh38 gene constraint</td>
+</tr>
+<tr>
+<td>Gene <code>disgenet</code> section</td>
+<td>DisGeNET REST API</td>
+<td><code>https://api.disgenet.com/api/v1</code></td>
+<td>Yes (<code>DISGENET_API_KEY</code>)</td>
+<td>Ranked scored gene-disease associations with PMIDs, clinical-trial counts, evidence index, and evidence level</td>
 </tr>
 <tr>
 <td>Variant</td>
@@ -2767,17 +2859,17 @@ and operational caveats so users can reason about result quality and troubleshoo
 </tr>
 <tr>
 <td>Article search &amp; metadata</td>
-<td>PubTator3 + Europe PMC</td>
-<td><code>https://www.ncbi.nlm.nih.gov/research/pubtator3-api</code>, <code>https://www.ebi.ac.uk/europepmc/webservices/rest</code></td>
-<td>No</td>
-<td>Federated search with PMID dedup and source-grouped output</td>
+<td>PubTator3 + Europe PMC + optional Semantic Scholar</td>
+<td><code>https://www.ncbi.nlm.nih.gov/research/pubtator3-api</code>, <code>https://www.ebi.ac.uk/europepmc/webservices/rest</code>, <code>https://api.semanticscholar.org</code></td>
+<td>Semantic Scholar requires <code>S2_API_KEY</code></td>
+<td>Federated search with identifier-aware merge and directness-first relevance ranking</td>
 </tr>
 <tr>
 <td>Article enrichment and graph helpers</td>
 <td>Semantic Scholar</td>
 <td><code>https://api.semanticscholar.org</code></td>
 <td>Optional (<code>S2_API_KEY</code>)</td>
-<td>TLDR, influential citations, citation/reference graph, recommendations</td>
+<td>Search-leg metadata, TLDR, influential citations, citation/reference graph, recommendations</td>
 </tr>
 <tr>
 <td>Article annotations</td>
@@ -2815,11 +2907,39 @@ and operational caveats so users can reason about result quality and troubleshoo
 <td>MONDO-oriented disease normalization</td>
 </tr>
 <tr>
+<td>Discover structured concepts</td>
+<td>OLS4</td>
+<td><code>https://www.ebi.ac.uk/ols4</code></td>
+<td>No</td>
+<td>Free-text ontology search for <code>biomcp discover</code>; OLS4 is the required backbone</td>
+</tr>
+<tr>
+<td>Discover clinical crosswalks</td>
+<td>UMLS REST API</td>
+<td><code>https://uts-ws.nlm.nih.gov/rest</code></td>
+<td>Optional (<code>UMLS_API_KEY</code>)</td>
+<td>Adds ICD-10, SNOMED CT, RxNorm, OMIM, and related cross-vocabulary IDs to discover results</td>
+</tr>
+<tr>
+<td>Discover plain-language topics</td>
+<td>MedlinePlus Search</td>
+<td><code>https://wsearch.nlm.nih.gov/ws/query</code></td>
+<td>No</td>
+<td>Best-effort disease/symptom context for <code>biomcp discover</code>; suppressed for gene/drug/pathway flows</td>
+</tr>
+<tr>
+<td>Phenotype term resolution</td>
+<td>HPO JAX API</td>
+<td><code>https://ontology.jax.org/api/hp</code></td>
+<td>No</td>
+<td>Direct HPO term lookup and normalization used by phenotype workflows</td>
+</tr>
+<tr>
 <td>Disease genes/pathways/prevalence</td>
 <td>OpenTargets GraphQL + Reactome</td>
 <td><code>https://api.platform.opentargets.org/api/v4/graphql</code>, <code>https://reactome.org/ContentService</code></td>
 <td>No</td>
-<td>Baseline disease context</td>
+<td>Baseline disease context with ranked associated targets and OpenTargets score summaries</td>
 </tr>
 <tr>
 <td>Disease <code>genes</code> and <code>phenotypes</code> sections</td>
@@ -2841,6 +2961,13 @@ and operational caveats so users can reason about result quality and troubleshoo
 <td><code>https://api-v3.monarchinitiative.org</code></td>
 <td>No</td>
 <td>Model-organism evidence with relationship and provenance</td>
+</tr>
+<tr>
+<td>Disease <code>disgenet</code> section</td>
+<td>DisGeNET REST API</td>
+<td><code>https://api.disgenet.com/api/v1</code></td>
+<td>Yes (<code>DISGENET_API_KEY</code>)</td>
+<td>Ranked scored disease-gene associations; disease lookup uses UMLS-backed DisGeNET identifiers</td>
 </tr>
 <tr>
 <td>Phenotype search (<code>search phenotype</code>)</td>
@@ -2865,24 +2992,24 @@ and operational caveats so users can reason about result quality and troubleshoo
 </tr>
 <tr>
 <td>Pathway</td>
-<td>Reactome + g:Profiler</td>
-<td><code>https://reactome.org/ContentService</code>, <code>https://biit.cs.ut.ee/gprofiler/api</code></td>
+<td>Reactome + KEGG + WikiPathways + g:Profiler</td>
+<td><code>https://reactome.org/ContentService</code>, <code>https://rest.kegg.jp</code>, <code>https://webservice.wikipathways.org</code>, <code>https://biit.cs.ut.ee/gprofiler/api</code></td>
 <td>No</td>
-<td>Pathway search, events, participants, enrichment; top-level <code>biomcp enrich</code> uses <strong>g:Profiler</strong></td>
+<td>Pathway search and detail use Reactome + KEGG + WikiPathways; <code>genes</code> are available across all three sources, while <code>events</code> and pathway <code>enrichment</code> remain Reactome-only; top-level <code>biomcp enrich</code> uses <strong>g:Profiler</strong></td>
 </tr>
 <tr>
 <td>Protein</td>
-<td>UniProt + InterPro + STRING</td>
-<td><code>https://rest.uniprot.org</code>, <code>https://www.ebi.ac.uk/interpro/api</code>, <code>https://string-db.org/api</code></td>
+<td>UniProt + InterPro + STRING + ComplexPortal</td>
+<td><code>https://rest.uniprot.org</code>, <code>https://www.ebi.ac.uk/interpro/api</code>, <code>https://string-db.org/api</code>, <code>https://www.ebi.ac.uk/intact/complex-ws</code></td>
 <td>No</td>
-<td>Protein cards, domains, interactions, structures</td>
+<td>Protein cards, domains, interactions, structures, and human protein complex membership; structure IDs are surfaced from UniProt cross-references to PDB and AlphaFold DB</td>
 </tr>
 <tr>
-<td>Adverse events and recalls</td>
+<td>Drug/device safety, labels, shortages, and approvals</td>
 <td>OpenFDA</td>
 <td><code>https://api.fda.gov</code></td>
 <td>Optional (<code>OPENFDA_API_KEY</code>)</td>
-<td>FAERS, recalls, and MAUDE device events</td>
+<td>FAERS, MAUDE, recalls, drug labels, shortages, and Drugs@FDA-derived approvals</td>
 </tr>
 <tr>
 <td>Gene enrichment sections</td>
@@ -2928,7 +3055,7 @@ and operational caveats so users can reason about result quality and troubleshoo
 <tr>
 <td>Semantic Scholar</td>
 <td><code>S2_API_KEY</code></td>
-<td>Running <code>article citations|references|recommendations</code>; enriching <code>get article</code> with TLDR and influence data</td>
+<td>Adding the optional <code>search article</code> Semantic Scholar leg; running <code>article citations|references|recommendations</code>; enriching <code>get article</code> with TLDR and influence data</td>
 </tr>
 <tr>
 <td>NCI CTS API</td>
@@ -2941,9 +3068,24 @@ and operational caveats so users can reason about result quality and troubleshoo
 <td>Running <code>variant oncokb &lt;id&gt;</code></td>
 </tr>
 <tr>
+<td>DisGeNET</td>
+<td><code>DISGENET_API_KEY</code></td>
+<td>Running <code>get gene &lt;symbol&gt; disgenet</code> or <code>get disease &lt;name_or_id&gt; disgenet</code></td>
+</tr>
+<tr>
+<td>NCBI E-utilities</td>
+<td><code>NCBI_API_KEY</code></td>
+<td>Optional; improves PubTator3, PMC OA, and NCBI ID Converter quota headroom</td>
+</tr>
+<tr>
 <td>OpenFDA</td>
 <td><code>OPENFDA_API_KEY</code></td>
 <td>Optional; improves quota headroom</td>
+</tr>
+<tr>
+<td>UMLS</td>
+<td><code>UMLS_API_KEY</code></td>
+<td>Optional clinical crosswalk enrichment for <code>biomcp discover &lt;query&gt;</code></td>
 </tr>
 </tbody>
 </table>
@@ -2997,12 +3139,22 @@ and practical ceilings observed in command behavior.</p>
 <tr>
 <td>Article search</td>
 <td><code>--limit</code> defaults to 10</td>
-<td>Use <code>--since</code> and entity filters to constrain results</td>
+<td>Use <code>--since</code> and typed entity filters to constrain results; <code>sort=relevance</code> is local directness-first reranking</td>
+</tr>
+<tr>
+<td>KEGG pathway search/detail</td>
+<td>Rate-limited to 1 request / 334ms</td>
+<td>Matches KEGG's published 3 requests / second guidance</td>
 </tr>
 <tr>
 <td>Semantic Scholar article helpers</td>
 <td>1 request / second, process-local</td>
 <td>Use explicit helper commands and batch normalization for multi-paper recommendation inputs</td>
+</tr>
+<tr>
+<td>DisGeNET <code>disgenet</code> sections</td>
+<td>Server-enforced; trial accounts may return first-page-only results and <code>429</code> with <code>X-Rate-Limit-Retry-After-Seconds</code></td>
+<td>Keep requests explicit, avoid fan-out loops, and retry after the server-provided cooldown</td>
 </tr>
 </tbody>
 </table>
@@ -3035,10 +3187,10 @@ and practical ceilings observed in command behavior.</p>
 <h2 id="article-pipeline-behavior">Article pipeline behavior<a class="headerlink" href="#article-pipeline-behavior" title="Permanent link">&para;</a></h2>
 <p>Article workflows compose multiple APIs for different tasks:</p>
 <ol>
-<li>PubTator3 + Europe PMC for federated search (parallel fan-out, PMID dedup, PubTator-priority merge for duplicate PMIDs)</li>
+<li>PubTator3 + Europe PMC for federated search, with optional Semantic Scholar search when <code>S2_API_KEY</code> is set (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, local directness-first relevance ranking)</li>
 <li>Europe PMC for bibliographic metadata</li>
 <li>PubTator3 for entity annotations</li>
-<li>Semantic Scholar for optional TLDR, citation graph, influential citation counts, and recommendations</li>
+<li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, and recommendations</li>
 <li>NCBI ID converter + PMC OA for full-text resolution where available</li>
 </ol>
 <p>This means metadata, annotations, and fulltext may have different availability for the same PMID.</p>
@@ -3062,7 +3214,9 @@ Users should always be able to trace:</p>
 <h2 id="operations-checklist">Operations checklist<a class="headerlink" href="#operations-checklist" title="Permanent link">&para;</a></h2>
 <p>When debugging source discrepancies:</p>
 <ol>
-<li>Run <code>biomcp health --apis-only</code></li>
+<li>Run <code>biomcp health --apis-only</code> to inspect per-source connectivity plus any excluded key-gated sources</li>
+<li>Treat <code>biomcp health</code> as an inspection surface: it does not currently exit non-zero on partial upstream failures</li>
+<li>Run <code>./scripts/contract-smoke.sh --fast</code> for representative live probes, or <code>./scripts/contract-smoke.sh</code> for the fuller contract set</li>
 <li>Retry with <code>--no-cache</code></li>
 <li>Confirm required API keys are set for optional sources</li>
 <li>Switch source when applicable (<code>--source ctgov</code> vs <code>--source nci</code>)</li>

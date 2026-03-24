@@ -12,13 +12,9 @@
         <meta name="author" content="Ian Maurer">
       
       
-        <link rel="canonical" href="https://biomcp.org/how-to/predict-effects/">
+        <link rel="canonical" href="https://biomcp.org/charts/survival/">
       
       
-        <link rel="prev" href="../find-trials/">
-      
-      
-        <link rel="next" href="../reproduce-papers/">
       
       
         
@@ -29,7 +25,7 @@
     
     
       
-        <title>Predict Effects - BioMCP</title>
+        <title>Survival Chart - BioMCP</title>
       
     
     
@@ -82,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#how-to-predict-effects" class="md-skip">
+        <a href="#survival-chart" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Predict Effects
+              Survival Chart
             
           </span>
         </div>
@@ -301,13 +297,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../annotate-variants/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../how-to/annotate-variants/" class="md-tabs__link">
           
   
   
@@ -327,7 +321,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../charts/" class="md-tabs__link">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -1291,31 +1285,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -1333,7 +1322,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1351,7 +1340,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../annotate-variants/" class="md-nav__link">
+      <a href="../../how-to/annotate-variants/" class="md-nav__link">
         
   
   
@@ -1379,7 +1368,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cross-entity-pivots/" class="md-nav__link">
+      <a href="../../how-to/cross-entity-pivots/" class="md-nav__link">
         
   
   
@@ -1407,7 +1396,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../find-articles/" class="md-nav__link">
+      <a href="../../how-to/find-articles/" class="md-nav__link">
         
   
   
@@ -1435,7 +1424,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../find-trials/" class="md-nav__link">
+      <a href="../../how-to/find-trials/" class="md-nav__link">
         
   
   
@@ -1460,37 +1449,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Predict Effects
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../how-to/predict-effects/" class="md-nav__link">
         
   
   
@@ -1506,81 +1468,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Requirements
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#alternate-input" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Alternate input
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validation-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Validation behavior
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#practical-guidance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Practical guidance
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1593,7 +1480,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reproduce-papers/" class="md-nav__link">
+      <a href="../../how-to/reproduce-papers/" class="md-nav__link">
         
   
   
@@ -1621,7 +1508,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../search-all-workflow/" class="md-nav__link">
+      <a href="../../how-to/search-all-workflow/" class="md-nav__link">
         
   
   
@@ -1649,7 +1536,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../skill-validation/" class="md-nav__link">
+      <a href="../../how-to/skill-validation/" class="md-nav__link">
         
   
   
@@ -1677,7 +1564,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guide-workflows/" class="md-nav__link">
+      <a href="../../how-to/guide-workflows/" class="md-nav__link">
         
   
   
@@ -1764,7 +1651,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../charts/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -1792,7 +1679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../charts/bar/" class="md-nav__link">
+      <a href="../bar/" class="md-nav__link">
         
   
   
@@ -1820,7 +1707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../charts/pie/" class="md-nav__link">
+      <a href="../pie/" class="md-nav__link">
         
   
   
@@ -1848,7 +1735,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../charts/histogram/" class="md-nav__link">
+      <a href="../histogram/" class="md-nav__link">
         
   
   
@@ -1876,7 +1763,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../charts/density/" class="md-nav__link">
+      <a href="../density/" class="md-nav__link">
         
   
   
@@ -1904,7 +1791,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../charts/box/" class="md-nav__link">
+      <a href="../box/" class="md-nav__link">
         
   
   
@@ -1932,7 +1819,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../charts/violin/" class="md-nav__link">
+      <a href="../violin/" class="md-nav__link">
         
   
   
@@ -1960,7 +1847,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../charts/ridgeline/" class="md-nav__link">
+      <a href="../ridgeline/" class="md-nav__link">
         
   
   
@@ -2579,10 +2466,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#requirements" class="md-nav__link">
+  <a href="#supported-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Requirements
+        Supported Commands
       
     </span>
   </a>
@@ -2590,10 +2477,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
+  <a href="#output-modes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Example
+        Output Modes
       
     </span>
   </a>
@@ -2601,32 +2488,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#alternate-input" class="md-nav__link">
+  <a href="#examples" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Alternate input
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validation-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Validation behavior
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#practical-guidance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Practical guidance
+        Examples
       
     </span>
   </a>
@@ -2653,28 +2518,27 @@
   
 
 
-<h1 id="how-to-predict-effects">How To: Predict Effects<a class="headerlink" href="#how-to-predict-effects" title="Permanent link">&para;</a></h1>
-<p>BioMCP can request functional-impact predictions through the variant <code>predict</code> section.</p>
-<h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
+<h1 id="survival-chart">Survival Chart<a class="headerlink" href="#survival-chart" title="Permanent link">&para;</a></h1>
+<p>Survival charts render Kaplan-Meier step curves for mutation-defined study cohorts.</p>
+<h2 id="supported-commands">Supported Commands<a class="headerlink" href="#supported-commands" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Set <code>ALPHAGENOME_API_KEY</code>.</li>
-<li>Prefer a resolvable genomic variant identifier.</li>
+<li><code>study survival --chart survival</code></li>
 </ul>
-<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="w"> </span>predict
-</code></pre></div>
-<h2 id="alternate-input">Alternate input<a class="headerlink" href="#alternate-input" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predict
-</code></pre></div>
-<h2 id="validation-behavior">Validation behavior<a class="headerlink" href="#validation-behavior" title="Permanent link">&para;</a></h2>
-<p>BioMCP validates identifiers and dates before expensive network work.
-If a variant cannot be resolved to a supported prediction path, an explicit error or warning is returned.</p>
-<h2 id="practical-guidance">Practical guidance<a class="headerlink" href="#practical-guidance" title="Permanent link">&para;</a></h2>
+<h2 id="output-modes">Output Modes<a class="headerlink" href="#output-modes" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Use prediction output as one signal, not a final interpretation.</li>
-<li>Pair predictions with variant annotations and literature context.</li>
+<li><code>--terminal</code> for an in-terminal step plot</li>
+<li><code>-o file.svg</code> for SVG output</li>
+<li><code>-o file.png</code> for PNG output when BioMCP is built with <code>--features charts-png</code></li>
 </ul>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Terminal Kaplan-Meier plot</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>study<span class="w"> </span>survival<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>--chart<span class="w"> </span>survival<span class="w"> </span>--terminal
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># SVG Kaplan-Meier plot</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>biomcp<span class="w"> </span>study<span class="w"> </span>survival<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>--endpoint<span class="w"> </span>os<span class="w"> </span>--chart<span class="w"> </span>survival<span class="w"> </span>-o<span class="w"> </span>tp53-km.svg
+</code></pre></div>
 
 
 

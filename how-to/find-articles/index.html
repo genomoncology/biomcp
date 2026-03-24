@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -367,7 +367,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/biomcp-kuva-charts/" class="md-tabs__link">
+        <a href="../../blog/cbioportal-study-analytics/" class="md-tabs__link">
           
   
   
@@ -903,6 +903,34 @@
     
   
     CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discover
   
 
     
@@ -1487,6 +1515,39 @@
     <span class="md-ellipsis">
       
         Pull the full text section
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch-several-shortlisted-papers-at-once" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fetch several shortlisted papers at once
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspect-the-ranking-rationale-in-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect the ranking rationale in JSON
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspect-the-executed-search-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect the executed search plan
       
     </span>
   </a>
@@ -2086,6 +2147,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/source-licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/mcp-server/" class="md-nav__link">
         
   
@@ -2369,6 +2458,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/cbioportal-study-analytics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cBioPortal Study Analytics in BioMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
         
   
@@ -2561,6 +2678,39 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#fetch-several-shortlisted-papers-at-once" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fetch several shortlisted papers at once
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspect-the-ranking-rationale-in-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect the ranking rationale in JSON
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inspect-the-executed-search-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect the executed search plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#follow-up-pattern" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2596,6 +2746,9 @@
 <h2 id="broad-start">Broad start<a class="headerlink" href="#broad-start" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
+<p><code>search article</code> always works without credentials. When <code>S2_API_KEY</code> is set,
+BioMCP adds an optional Semantic Scholar search leg and keeps <code>sort=relevance</code>
+directness-first instead of citation-first.</p>
 <h2 id="add-disease-context">Add disease context<a class="headerlink" href="#add-disease-context" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
@@ -2608,10 +2761,32 @@
 <h2 id="pull-the-full-text-section">Pull the full text section<a class="headerlink" href="#pull-the-full-text-section" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
 </code></pre></div>
+<h2 id="fetch-several-shortlisted-papers-at-once">Fetch several shortlisted papers at once<a class="headerlink" href="#fetch-several-shortlisted-papers-at-once" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span><span class="w"> </span><span class="m">39073865</span>
+</code></pre></div>
+<p>Use <code>article batch</code> after search when you already know the candidate PMIDs or
+DOIs and want compact title/journal/year/entity cards before opening one paper
+in full detail. The helper preserves input order and still works when
+<code>S2_API_KEY</code> is unset.</p>
+<h2 id="inspect-the-ranking-rationale-in-json">Inspect the ranking rationale in JSON<a class="headerlink" href="#inspect-the-ranking-rationale-in-json" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>env<span class="w"> </span>-u<span class="w"> </span>S2_API_KEY<span class="w"> </span>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+</code></pre></div>
+<p>Look for <code>semantic_scholar_enabled</code>, row-level <code>matched_sources</code>, and
+<code>ranking</code> metadata to see why a paper ranked where it did.</p>
+<h2 id="inspect-the-executed-search-plan">Inspect the executed search plan<a class="headerlink" href="#inspect-the-executed-search-plan" title="Permanent link">&para;</a></h2>
+<p>Markdown:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>env<span class="w"> </span>-u<span class="w"> </span>S2_API_KEY<span class="w"> </span>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--debug-plan<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+</code></pre></div>
+<p>JSON / MCP-friendly text output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>env<span class="w"> </span>-u<span class="w"> </span>S2_API_KEY<span class="w"> </span>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--debug-plan<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+</code></pre></div>
+<p><code>--debug-plan</code> adds a top-level <code>debug_plan</code> payload in JSON and prepends the
+same payload as a fenced JSON block in markdown. Request JSON+plan for MCP
+callers with <code>--json --debug-plan</code>.</p>
 <h2 id="follow-up-pattern">Follow-up pattern<a class="headerlink" href="#follow-up-pattern" title="Permanent link">&para;</a></h2>
 <p>After identifying key papers, pivot to trials or variants:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 
 

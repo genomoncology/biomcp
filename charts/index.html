@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -367,7 +367,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../blog/biomcp-kuva-charts/" class="md-tabs__link">
+        <a href="../blog/cbioportal-study-analytics/" class="md-tabs__link">
           
   
   
@@ -903,6 +903,34 @@
     
   
     CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discover
   
 
     
@@ -2086,6 +2114,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/source-licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/mcp-server/" class="md-nav__link">
         
   
@@ -2369,6 +2425,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../blog/cbioportal-study-analytics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cBioPortal Study Analytics in BioMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../blog/biomcp-kuva-charts/" class="md-nav__link">
         
   
@@ -2602,10 +2686,14 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>biomcp<span class="w"> </span>study<span class="w"> </span>co-occurrence<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--genes<span class="w"> </span>TP53,KRAS<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>--chart<span class="w"> </span>pie<span class="w"> </span>-o<span class="w"> </span>tp53-kras.svg
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Terminal violin plot of ERBB2 expression by TP53 status</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>expression<span class="w"> </span>--target<span class="w"> </span>ERBB2<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span>--chart<span class="w"> </span>violin<span class="w"> </span>--terminal
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># SVG Kaplan-Meier curve by TP53 mutation status</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>biomcp<span class="w"> </span>study<span class="w"> </span>survival<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span>--chart<span class="w"> </span>survival<span class="w"> </span>-o<span class="w"> </span>tp53-km.svg
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># Terminal violin plot of ERBB2 expression by TP53 status</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>expression<span class="w"> </span>--target<span class="w"> </span>ERBB2<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span>--chart<span class="w"> </span>violin<span class="w"> </span>--terminal
 </code></pre></div>
 <h2 id="chart-types-by-command">Chart Types by Command<a class="headerlink" href="#chart-types-by-command" title="Permanent link">&para;</a></h2>
 <table>
@@ -2642,7 +2730,7 @@
 </tr>
 <tr>
 <td><code>study survival</code></td>
-<td><code>bar</code></td>
+<td><code>bar</code>, <code>survival</code></td>
 </tr>
 </tbody>
 </table>
@@ -2713,6 +2801,7 @@
 <li><a href="box/"><code>biomcp chart box</code></a> — Box plot</li>
 <li><a href="violin/"><code>biomcp chart violin</code></a> — Violin plot</li>
 <li><a href="ridgeline/"><code>biomcp chart ridgeline</code></a> — Ridgeline plot</li>
+<li><a href="survival/"><code>biomcp chart survival</code></a> — Kaplan-Meier survival curve</li>
 </ul>
 
 

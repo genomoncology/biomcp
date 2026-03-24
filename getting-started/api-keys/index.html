@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -367,7 +367,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/biomcp-kuva-charts/" class="md-tabs__link">
+        <a href="../../blog/cbioportal-study-analytics/" class="md-tabs__link">
           
   
   
@@ -758,15 +758,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-enrichment-keys" class="md-nav__link">
+  <a href="#additional-api-keys" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Optional enrichment keys
+        Additional API keys
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Optional enrichment keys">
+    <nav class="md-nav" aria-label="Additional API keys">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -785,6 +785,28 @@
     <span class="md-ellipsis">
       
         NCI_API_KEY
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disgenet_api_key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DISGENET_API_KEY
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#umls_api_key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UMLS_API_KEY
       
     </span>
   </a>
@@ -1066,6 +1088,34 @@
     
   
     CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discover
   
 
     
@@ -2131,6 +2181,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/source-licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/mcp-server/" class="md-nav__link">
         
   
@@ -2414,6 +2492,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/cbioportal-study-analytics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cBioPortal Study Analytics in BioMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
         
   
@@ -2579,15 +2685,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-enrichment-keys" class="md-nav__link">
+  <a href="#additional-api-keys" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Optional enrichment keys
+        Additional API keys
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Optional enrichment keys">
+    <nav class="md-nav" aria-label="Additional API keys">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2606,6 +2712,28 @@
     <span class="md-ellipsis">
       
         NCI_API_KEY
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disgenet_api_key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DISGENET_API_KEY
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#umls_api_key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UMLS_API_KEY
       
     </span>
   </a>
@@ -2683,42 +2811,63 @@
 
 <h1 id="api-keys">API Keys<a class="headerlink" href="#api-keys" title="Permanent link">&para;</a></h1>
 <p>Most BioMCP workflows run without credentials.
-Some enrichment and higher-rate access paths improve with API keys.</p>
+Some enrichment and higher-rate access paths improve with API keys. For provider terms, redistribution caveats, and which sources are only indirect provenance, see the <a href="../../reference/source-licensing/">source-licensing reference</a>.</p>
 <h2 id="required-for-prediction-section">Required for prediction section<a class="headerlink" href="#required-for-prediction-section" title="Permanent link">&para;</a></h2>
 <h3 id="alphagenome_api_key"><code>ALPHAGENOME_API_KEY</code><a class="headerlink" href="#alphagenome_api_key" title="Permanent link">&para;</a></h3>
 <p>Used by variant prediction lookups:</p>
+<p>Provider access: <a href="https://deepmind.google/science/alphagenome/">https://deepmind.google/science/alphagenome/</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="w"> </span>predict
 </code></pre></div>
-<h2 id="optional-enrichment-keys">Optional enrichment keys<a class="headerlink" href="#optional-enrichment-keys" title="Permanent link">&para;</a></h2>
+<h2 id="additional-api-keys">Additional API keys<a class="headerlink" href="#additional-api-keys" title="Permanent link">&para;</a></h2>
 <h3 id="oncokb_token"><code>ONCOKB_TOKEN</code><a class="headerlink" href="#oncokb_token" title="Permanent link">&para;</a></h3>
 <p>Used for production OncoKB enrichment.
 If omitted, BioMCP uses the public/demo path when possible.</p>
+<p>Register at: <a href="https://www.oncokb.org/account/register">https://www.oncokb.org/account/register</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ONCOKB_TOKEN</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
 </code></pre></div>
 <h3 id="nci_api_key"><code>NCI_API_KEY</code><a class="headerlink" href="#nci_api_key" title="Permanent link">&para;</a></h3>
 <p>Used for NCI CTS trial calls.</p>
+<p>Request access at: <a href="https://clinicaltrialsapi.cancer.gov/">https://clinicaltrialsapi.cancer.gov/</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci
 </code></pre></div>
+<h3 id="disgenet_api_key"><code>DISGENET_API_KEY</code><a class="headerlink" href="#disgenet_api_key" title="Permanent link">&para;</a></h3>
+<p>Required for DisGeNET scored association sections on genes and diseases.</p>
+<p>Register at: <a href="https://www.disgenet.com/">https://www.disgenet.com/</a></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DISGENET_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>TP53<span class="w"> </span>disgenet
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;breast cancer&quot;</span><span class="w"> </span>disgenet
+</code></pre></div>
+<h3 id="umls_api_key"><code>UMLS_API_KEY</code><a class="headerlink" href="#umls_api_key" title="Permanent link">&para;</a></h3>
+<p>Adds optional clinical crosswalk enrichment to <code>biomcp discover</code>.</p>
+<p>Register at: <a href="https://uts.nlm.nih.gov/uts/signup-login">https://uts.nlm.nih.gov/uts/signup-login</a></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">UMLS_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;cystic fibrosis&quot;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>discover<span class="w"> </span>diabetes
+</code></pre></div>
 <h3 id="ncbi_api_key"><code>NCBI_API_KEY</code><a class="headerlink" href="#ncbi_api_key" title="Permanent link">&para;</a></h3>
 <p>Improves rate limits for PubTator, PMC OA, and NCBI ID converter (3 → 10 req/sec).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCBI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<p>Create one in My NCBI: <a href="https://www.ncbi.nlm.nih.gov/account/settings/">https://www.ncbi.nlm.nih.gov/account/settings/</a></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCBI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h3 id="s2_api_key"><code>S2_API_KEY</code><a class="headerlink" href="#s2_api_key" title="Permanent link">&para;</a></h3>
-<p>Unlocks optional Semantic Scholar article enrichment and navigation. Use it for
-<code>get article ... tldr</code>, <code>article citations</code>, <code>article references</code>, and
-<code>article recommendations</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">S2_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<p>Unlocks the optional Semantic Scholar article search leg plus article
+enrichment and navigation. Use it for directness-first <code>search article</code>
+results with merged Semantic Scholar metadata, <code>get article ... tldr</code>,
+<code>article citations</code>, <code>article references</code>, and <code>article recommendations</code>.</p>
+<p>Request a key at: <a href="https://www.semanticscholar.org/product/api">https://www.semanticscholar.org/product/api</a></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">S2_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <h3 id="openfda_api_key"><code>OPENFDA_API_KEY</code><a class="headerlink" href="#openfda_api_key" title="Permanent link">&para;</a></h3>
 <p>Improves OpenFDA rate limits for drug safety lookups.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<p>Request a key at: <a href="https://open.fda.gov/apis/authentication/">https://open.fda.gov/apis/authentication/</a></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="key-management-guidance">Key management guidance<a class="headerlink" href="#key-management-guidance" title="Permanent link">&para;</a></h2>
 <ul>
@@ -2726,8 +2875,10 @@ If omitted, BioMCP uses the public/demo path when possible.</p>
 <li>Do not commit secrets into source control.</li>
 <li>Set keys in the same environment used by your MCP client.</li>
 <li>Rotate keys when sharing machines or CI runners.</li>
-<li><code>S2_API_KEY</code> is optional; when absent, <code>search article</code> and ordinary <code>get article</code> still work.</li>
+<li><code>S2_API_KEY</code> is optional for <code>search article</code> and plain <code>get article</code>. Without it, article search still works and stays explicit about Semantic Scholar being disabled. With it, article search can add the Semantic Scholar search leg and supporting citation metadata. The specific helper commands (<code>tldr</code>, <code>citations</code>, <code>references</code>, <code>recommendations</code>) still require the key.</li>
+<li><code>UMLS_API_KEY</code> is optional; when absent, <code>discover</code> still works with OLS4-only results.</li>
 </ul>
+<p>See also: <a href="../../reference/source-licensing/">Source Licensing and Terms</a></p>
 
 
 

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -365,7 +365,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="blog/biomcp-kuva-charts/" class="md-tabs__link">
+        <a href="blog/cbioportal-study-analytics/" class="md-tabs__link">
           
   
   
@@ -685,6 +685,17 @@
     <span class="md-ellipsis">
       
         API keys
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-sources-and-licensing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Sources and Licensing
       
     </span>
   </a>
@@ -1163,6 +1174,34 @@
     
   
     CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discover
   
 
     
@@ -2228,6 +2267,34 @@
   
   
     <li class="md-nav__item">
+      <a href="reference/source-licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="reference/mcp-server/" class="md-nav__link">
         
   
@@ -2503,6 +2570,34 @@
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="blog/cbioportal-study-analytics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cBioPortal Study Analytics in BioMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -2808,6 +2903,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#data-sources-and-licensing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Sources and Licensing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#skills" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2920,26 +3026,30 @@ stdio:</p>
 <code>getting-started/remote-http.md</code> in the docs tree, and
 <code>demo/streamable_http_client.py</code> for a runnable client example.</p>
 <h3 id="from-source">From source<a class="headerlink" href="#from-source" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cargo<span class="w"> </span>build<span class="w"> </span>--release<span class="w"> </span>--locked
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>make<span class="w"> </span>install
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.local/bin/biomcp&quot;</span><span class="w"> </span>--version
 </code></pre></div>
 <h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>list<span class="w"> </span>gene
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w">  </span><span class="c1"># unified cross-entity discovery</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w"> </span>druggability
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;chest pain&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>list<span class="w"> </span>gene
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w">  </span><span class="c1"># unified cross-entity discovery</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w"> </span>hpa
 </code></pre></div>
 <h2 id="command-grammar">Command grammar<a class="headerlink" href="#command-grammar" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>search &lt;entity&gt; [filters]    → discovery
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>get &lt;entity&gt; &lt;id&gt; [sections] → focused detail
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>&lt;entity&gt; &lt;helper&gt; &lt;id&gt;       → cross-entity pivots
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>enrich &lt;GENE1,GENE2,...&gt;     → gene-set enrichment
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>batch &lt;entity&gt; &lt;id1,id2,...&gt; → parallel gets
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>search all [slot filters]    → counts-first cross-entity orientation
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>discover &lt;query&gt;            → concept resolution before entity selection
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>get &lt;entity&gt; &lt;id&gt; [sections] → focused detail
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>&lt;entity&gt; &lt;helper&gt; &lt;id&gt;       → cross-entity pivots
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>enrich &lt;GENE1,GENE2,...&gt;     → gene-set enrichment
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>batch &lt;entity&gt; &lt;id1,id2,...&gt; → parallel gets
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>search all [slot filters]    → counts-first cross-entity orientation
 </code></pre></div>
 <h2 id="feature-highlights">Feature highlights<a class="headerlink" href="#feature-highlights" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Federated article search:</strong> PubTator3 and Europe PMC run together for <code>search article</code>, then deduplicate by PMID.</li>
+<li><strong>Free-text discovery:</strong> <code>biomcp discover</code> resolves aliases, brands, symptoms, and pathways before you commit to a typed entity command.</li>
 <li><strong>Cross-entity pivots:</strong> move directly from a known entity into trials, articles, drugs, pathways, structures, or article graph helpers.</li>
 <li><strong>Study analytics + charts:</strong> <code>study</code> commands support local cohort analytics plus native terminal, SVG, and PNG chart output.</li>
 <li><strong>Citation graph helpers:</strong> <code>article citations</code>, <code>article references</code>, and <code>article recommendations</code> add literature navigation from a known paper when <code>S2_API_KEY</code> is configured.</li>
@@ -2957,8 +3067,8 @@ stdio:</p>
 <tbody>
 <tr>
 <td>gene</td>
-<td>MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, DGIdb, ClinGen</td>
-<td><code>biomcp get gene BRAF pathways</code></td>
+<td>MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen</td>
+<td><code>biomcp get gene BRAF pathways hpa</code></td>
 </tr>
 <tr>
 <td>variant</td>
@@ -2987,13 +3097,13 @@ stdio:</p>
 </tr>
 <tr>
 <td>pathway</td>
-<td>Reactome, g:Profiler, Enrichr-backed enrichment sections</td>
-<td><code>biomcp get pathway R-HSA-5673001 genes</code></td>
+<td>Reactome, KEGG, g:Profiler, Enrichr-backed enrichment sections</td>
+<td><code>biomcp get pathway hsa05200 genes</code></td>
 </tr>
 <tr>
 <td>protein</td>
-<td>UniProt, InterPro, STRING, PDB, AlphaFold</td>
-<td><code>biomcp get protein P15056 domains</code></td>
+<td>UniProt, InterPro, STRING, ComplexPortal, PDB, AlphaFold</td>
+<td><code>biomcp get protein P15056 complexes</code></td>
 </tr>
 <tr>
 <td>adverse-event</td>
@@ -3032,13 +3142,14 @@ use a helper versus a fresh search.</p>
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
 <a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
 <a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>hsa05200
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <h2 id="gene-set-enrichment">Gene-set enrichment<a class="headerlink" href="#gene-set-enrichment" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
@@ -3052,8 +3163,13 @@ other entity pages still describe <strong>Enrichr</strong> where that is the sou
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">     </span><span class="c1"># OpenFDA rate limits</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">         </span><span class="c1"># NCI CTS trial search (--source nci)</span>
 <a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ONCOKB_TOKEN</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># OncoKB variant helper</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w"> </span><span class="c1"># AlphaGenome variant effect prediction</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">UMLS_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># discover crosswalk enrichment</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ALPHAGENOME_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w"> </span><span class="c1"># AlphaGenome variant effect prediction</span>
 </code></pre></div>
+<h2 id="data-sources-and-licensing">Data Sources and Licensing<a class="headerlink" href="#data-sources-and-licensing" title="Permanent link">&para;</a></h2>
+<p>BioMCP is MIT-licensed. It performs on-demand queries against upstream providers instead of vendoring or mirroring their datasets, but upstream terms govern reuse of retrieved results.</p>
+<p>Some providers are fully open, some BioMCP features require registration or API keys, and some queryable sources still impose notable reuse limits. The two biggest cautions are KEGG, which distinguishes academic and non-academic use, and COSMIC, which BioMCP keeps indirect-only because its licensing model is incompatible with a direct open integration.</p>
+<p>Use <a href="reference/source-licensing/">Source Licensing and Terms</a> for the per-source breakdown and <a href="getting-started/api-keys/">API Keys</a> for setup steps and registration links.</p>
 <h2 id="skills">Skills<a class="headerlink" href="#skills" title="Permanent link">&para;</a></h2>
 <p>BioMCP ships an embedded guide for agent workflows rather than a built-in
 catalog. Read it with <code>biomcp skill</code>, install it with
@@ -3072,6 +3188,8 @@ commands cover local query, cohort, survival, compare, and co-occurrence workflo
 <li><a href="getting-started/installation/">Installation</a></li>
 <li><a href="getting-started/first-query/">First Query</a></li>
 <li><a href="how-to/search-all-workflow/">Search All Workflow</a></li>
+<li><a href="user-guide/discover/">Discover</a></li>
+<li><a href="reference/source-licensing/">Source Licensing and Terms</a></li>
 <li><a href="reference/data-sources/">Data Sources</a></li>
 <li><a href="reference/quick-reference/">Quick Reference</a></li>
 <li><a href="troubleshooting/">Troubleshooting</a></li>

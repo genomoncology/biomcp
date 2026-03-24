@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -367,7 +367,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/biomcp-kuva-charts/" class="md-tabs__link">
+        <a href="../../blog/cbioportal-study-analytics/" class="md-tabs__link">
           
   
   
@@ -908,6 +908,34 @@
     
   
     CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discover
   
 
     
@@ -2130,6 +2158,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/source-licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/mcp-server/" class="md-nav__link">
         
   
@@ -2413,6 +2469,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/cbioportal-study-analytics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cBioPortal Study Analytics in BioMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
         
   
@@ -2687,14 +2771,19 @@ and optional predictive and population-genetics sections.</p>
 <ul>
 <li>rsID: <code>rs113488022</code></li>
 <li>HGVS genomic: <code>chr7:g.140453136A&gt;T</code></li>
-<li>gene-protein form: <code>BRAF V600E</code></li>
+<li>gene-protein form: <code>BRAF V600E</code>, <code>BRAF p.Val600Glu</code></li>
 </ul>
+<p>These exact formats are accepted by <code>biomcp get variant</code> and the exact-ID
+helper commands.</p>
 <h2 id="get-a-variant-record">Get a variant record<a class="headerlink" href="#get-a-variant-record" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF p.Val600Glu&quot;</span>
 </code></pre></div>
 <p>The default output favors concise, clinically relevant context first.</p>
+<p>Shorthand such as <code>PTPN22 620W</code> or <code>R620W</code> is not treated as an exact variant
+ID. Use <code>biomcp search variant</code> for those inputs.</p>
 <h2 id="request-variant-sections">Request variant sections<a class="headerlink" href="#request-variant-sections" title="Permanent link">&para;</a></h2>
 <p>Prediction section:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predict
@@ -2702,15 +2791,23 @@ and optional predictive and population-genetics sections.</p>
 <p>ClinVar-focused section:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>clinvar
 </code></pre></div>
+<p>ClinVar JSON also exposes <code>top_disease</code> when condition aggregation is available,
+reusing the highest-ranked ClinVar condition row already shown in the section.</p>
 <p>Population section:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="w"> </span>population
 </code></pre></div>
+<p>Population JSON exposes additive compact frequency fields:
+<code>allele_frequency_raw</code> and <code>allele_frequency_percent</code>. Markdown keeps the raw
+gnomAD AF line and appends the compact percent inline.</p>
 <p>CIViC section:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>civic
 </code></pre></div>
 <p>GWAS section (trait associations from GWAS Catalog):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
 </code></pre></div>
+<p>GWAS JSON exposes <code>supporting_pmids</code> as an ordered, deduplicated array. <code>null</code>
+means the GWAS section was not loaded; <code>[]</code> means the section loaded but no
+PMIDs were available.</p>
 <p>Predictions (aggregated prediction scores):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predictions
 </code></pre></div>
@@ -2737,19 +2834,29 @@ and optional predictive and population-genetics sections.</p>
 <h2 id="search-variants">Search variants<a class="headerlink" href="#search-variants" title="Permanent link">&para;</a></h2>
 <p>By gene and protein change:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--hgvsp<span class="w"> </span>V600E<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--hgvsp<span class="w"> </span>p.Val600Glu<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>BRAF<span class="w"> </span>p.Val600Glu<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
+<p>By residue alias shorthand:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;PTPN22 620W&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>By protein shorthand when gene context is already supplied:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>PTPN22<span class="w"> </span>R620W<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>Standalone protein shorthand like <code>R620W</code> returns variant-specific recovery
+guidance instead of falling back to gene or condition discovery.</p>
 <p>By significance:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRCA1<span class="w"> </span>--significance<span class="w"> </span>pathogenic<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRCA1<span class="w"> </span>--significance<span class="w"> </span>pathogenic<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>With population and score filters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRCA1<span class="w"> </span>--max-frequency<span class="w"> </span><span class="m">0</span>.01<span class="w"> </span>--min-cadd<span class="w"> </span><span class="m">20</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRCA1<span class="w"> </span>--max-frequency<span class="w"> </span><span class="m">0</span>.01<span class="w"> </span>--min-cadd<span class="w"> </span><span class="m">20</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="search-gwas-associations">Search GWAS associations<a class="headerlink" href="#search-gwas-associations" title="Permanent link">&para;</a></h2>
 <p>By gene:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>TCF7L2<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>TCF7L2<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>By trait:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>Trait search uses GWAS Catalog trait endpoints first, then study-association fallback paths when needed.</p>
 <h2 id="optional-enrichment">Optional enrichment<a class="headerlink" href="#optional-enrichment" title="Permanent link">&para;</a></h2>
@@ -2759,9 +2866,9 @@ OncoKB is accessed explicitly via <code>biomcp variant oncokb "&lt;gene&gt; &lt;
 <p>Prediction sections may require <code>ALPHAGENOME_API_KEY</code> depending on source path.
 Unsupported inputs are surfaced with explicit validation messages.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span>
 </code></pre></div>
 <h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>
 <ul>

@@ -1,0 +1,5085 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Single-binary CLI and MCP server for querying biomedical databases">
+      
+      
+        <meta name="author" content="Ian Maurer">
+      
+      
+        <link rel="canonical" href="https://biomcp.org/reference/source-licensing/">
+      
+      
+        <link rel="prev" href="../data-sources/">
+      
+      
+        <link rel="next" href="../mcp-server/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Source Licensing - BioMCP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#source-licensing-and-terms" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="BioMCP" class="md-header__button md-logo" aria-label="BioMCP" data-md-component="logo">
+      
+  <img src="../../assets/icon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            BioMCP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Source Licensing
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/genomoncology/biomcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    genomoncology/biomcp
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../concepts/what-is-biomcp/" class="md-tabs__link">
+          
+  
+  
+  Concepts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../user-guide/cli-reference/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../how-to/annotate-variants/" class="md-tabs__link">
+          
+  
+  
+  How-To
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../charts/" class="md-tabs__link">
+          
+  
+  
+  Study Charts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../quick-reference/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../blog/cbioportal-study-analytics/" class="md-tabs__link">
+          
+  
+  
+  Blog
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../policies/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Policies
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../troubleshooting/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="BioMCP" class="md-nav__button md-logo" aria-label="BioMCP" data-md-component="logo">
+      
+  <img src="../../assets/icon.png" alt="logo">
+
+    </a>
+    BioMCP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/genomoncology/biomcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    genomoncology/biomcp
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/first-query/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First Query
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/claude-desktop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Desktop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/remote-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote HTTP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/api-keys/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Keys
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/skills/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skills
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/what-is-biomcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    What is BioMCP?
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/progressive-disclosure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Progressive Disclosure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/cli-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/discover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Discover
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/gene/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gene
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/variant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Variant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/article/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Article
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/trial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/drug/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Drug
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/disease/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disease
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/pathway/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pathway
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/protein/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protein
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/adverse-event/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adverse Event
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/pgx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PGx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/gwas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GWAS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/phenotype/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phenotype
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-To
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-To
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/annotate-variants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotate Variants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/cross-entity-pivots/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cross-Entity Pivots
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/find-articles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Find Articles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/find-trials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Find Trials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/predict-effects/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Predict Effects
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/reproduce-papers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reproduce Papers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/search-all-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Search All Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/skill-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skill Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/guide-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Study Charts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Study Charts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/bar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/pie/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/histogram/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Histogram
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/density/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Density
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/box/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Box
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/violin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Violin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/ridgeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ridgeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Sources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Licensing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-1-baseline-use-without-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1 - Baseline use without credentials
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 1 - Baseline use without credentials">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chembl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ChEMBL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#civic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CIViC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clingen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinGen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinicaltrialsgov" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinicalTrials.gov
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complexportal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ComplexPortal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cpic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPIC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dgidb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DGIdb
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enrichr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enrichr
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#europe-pmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Europe PMC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gprofiler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        g:Profiler
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gtex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GTEx
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gwas-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GWAS Catalog
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hpo-jax-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HPO JAX API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        InterPro
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#medlineplus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MedlinePlus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monarch-initiative" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monarch Initiative
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mycheminfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MyChem.info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mydiseaseinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MyDisease.info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mygeneinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MyGene.info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#myvariantinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MyVariant.info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ncbi-id-converter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NCBI ID Converter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ols4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OLS4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#openfda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenFDA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opentargets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenTargets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pmc-oa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PMC OA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pubtator3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PubTator3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quickgo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QuickGO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reactome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reactome
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STRING
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uniprot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UniProt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wikipathways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WikiPathways
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-2-credential-account-or-license-required-for-the-biomcp-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 2 - Credential, account, or license required for the BioMCP feature
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 2 - Credential, account, or license required for the BioMCP feature">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#alphagenome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AlphaGenome
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disgenet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DisGeNET
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nci-cts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NCI CTS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oncokb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OncoKB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#semantic-scholar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic Scholar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#umls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UMLS
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-3-open-or-queryable-but-with-notable-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 3 - Open or queryable, but with notable terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 3 - Open or queryable, but with notable terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cbioportal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cBioPortal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gnomad" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gnomAD
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#human-protein-atlas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Human Protein Atlas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kegg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        KEGG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pharmgkb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PharmGKB
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#indirect-only-providers-surfaced-through-aggregators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Indirect-only providers surfaced through aggregators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Indirect-only providers surfaced through aggregators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#alphafold-db" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AlphaFold DB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancer-genome-interpreter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cancer Genome Interpreter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinvar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinVar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cosmic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        COSMIC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disease-ontology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disease Ontology
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drugbank" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DrugBank
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drugsfda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drugs@FDA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mondo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MONDO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDB
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../error-codes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Error Codes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-versioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../article-keyword-search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Article Keyword Search
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../civic-sections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CIViC Sections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../drug-approvals-and-ae-summary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Drug Approvals & AE Summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blog
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Blog
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/cbioportal-study-analytics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    cBioPortal Study Analytics in BioMCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native Study Charts in BioMCP with Kuva
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/we-deleted-35-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    We Deleted 35 Tools and Our Agent Got Better
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../policies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Policies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to read this page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-1-baseline-use-without-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 1 - Baseline use without credentials
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 1 - Baseline use without credentials">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chembl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ChEMBL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#civic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CIViC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clingen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinGen
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinicaltrialsgov" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinicalTrials.gov
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complexportal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ComplexPortal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cpic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPIC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dgidb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DGIdb
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enrichr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enrichr
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#europe-pmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Europe PMC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gprofiler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        g:Profiler
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gtex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GTEx
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gwas-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GWAS Catalog
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hpo-jax-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HPO JAX API
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interpro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        InterPro
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#medlineplus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MedlinePlus
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monarch-initiative" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monarch Initiative
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mycheminfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MyChem.info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mydiseaseinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MyDisease.info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mygeneinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MyGene.info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#myvariantinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MyVariant.info
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ncbi-id-converter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NCBI ID Converter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ols4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OLS4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#openfda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenFDA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#opentargets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OpenTargets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pmc-oa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PMC OA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pubtator3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PubTator3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quickgo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QuickGO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reactome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reactome
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STRING
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uniprot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UniProt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wikipathways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WikiPathways
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-2-credential-account-or-license-required-for-the-biomcp-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 2 - Credential, account, or license required for the BioMCP feature
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 2 - Credential, account, or license required for the BioMCP feature">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#alphagenome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AlphaGenome
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disgenet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DisGeNET
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nci-cts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NCI CTS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oncokb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OncoKB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#semantic-scholar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic Scholar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#umls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UMLS
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tier-3-open-or-queryable-but-with-notable-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tier 3 - Open or queryable, but with notable terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tier 3 - Open or queryable, but with notable terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cbioportal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cBioPortal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gnomad" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gnomAD
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#human-protein-atlas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Human Protein Atlas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kegg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        KEGG
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pharmgkb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PharmGKB
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#indirect-only-providers-surfaced-through-aggregators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Indirect-only providers surfaced through aggregators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Indirect-only providers surfaced through aggregators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#alphafold-db" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AlphaFold DB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cancer-genome-interpreter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cancer Genome Interpreter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clinvar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ClinVar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cosmic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        COSMIC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disease-ontology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disease Ontology
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drugbank" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DrugBank
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drugsfda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drugs@FDA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mondo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MONDO
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pdb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDB
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="source-licensing-and-terms">Source Licensing and Terms<a class="headerlink" href="#source-licensing-and-terms" title="Permanent link">&para;</a></h1>
+<p>BioMCP itself is MIT-licensed, but the data providers it queries are not all licensed the same way.</p>
+<p>Three distinctions matter:</p>
+<ul>
+<li>BioMCP does not vendor, mirror, or ship upstream datasets in the repository.</li>
+<li>BioMCP performs on-demand read-only queries against upstream services.</li>
+<li>Returned records, downloaded full text, saved output, and downstream reuse can still be governed by upstream provider terms.</li>
+</ul>
+<p>Use this page for provider terms, licensing, redistribution, and account requirements. Use <a href="../../getting-started/api-keys/">API Keys</a> for setup steps and <a href="../data-sources/">Data Sources</a> for runtime behavior, endpoints, rate limits, and operational caveats.</p>
+<p>The canonical machine-readable inventory for this page lives in <a href="../sources.json"><code>sources.json</code></a>.</p>
+<h2 id="how-to-read-this-page">How to read this page<a class="headerlink" href="#how-to-read-this-page" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>tier</code>
+  Tier <code>1</code> means baseline BioMCP usage works without credentials.
+  Tier <code>2</code> means the BioMCP feature needs provider credentials, registration, or a provider-controlled account path.
+  Tier <code>3</code> means BioMCP can query the provider, but notable reuse, redistribution, attribution, or policy caveats need explicit attention.</li>
+<li><code>integration_mode</code>
+  <code>direct_api</code> means BioMCP calls the provider directly.
+  <code>indirect_only</code> means BioMCP only surfaces that provider as provenance through another API payload.</li>
+<li><code>bioMcp_auth</code>
+  <code>none</code> means BioMCP does not need a key for that provider.
+  <code>optional_env</code> means an environment variable improves quota or access quality but is not required for baseline use.
+  <code>required_env</code> means the feature requires a configured environment variable.
+  <code>not_applicable</code> means there is no standalone BioMCP auth path because the provider is indirect-only.</li>
+</ul>
+<h2 id="summary-table">Summary table<a class="headerlink" href="#summary-table" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Tier</th>
+<th>Mode</th>
+<th>BioMCP auth</th>
+<th>License / terms summary</th>
+<th>Redistribution summary</th>
+<th>Terms URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AlphaGenome</td>
+<td>2</td>
+<td>direct_api</td>
+<td>required_env</td>
+<td>custom provider terms; access is gated by Google/DeepMind service controls</td>
+<td>do not assume open redistribution rights for returned prediction outputs</td>
+<td><a href="https://deepmind.google/science/alphagenome/">https://deepmind.google/science/alphagenome/</a></td>
+</tr>
+<tr>
+<td>cBioPortal</td>
+<td>3</td>
+<td>direct_api</td>
+<td>none</td>
+<td>public API with study-specific downstream terms</td>
+<td>reuse depends on the specific study or consortium behind each dataset</td>
+<td><a href="https://www.cbioportal.org/">https://www.cbioportal.org/</a></td>
+</tr>
+<tr>
+<td>ChEMBL</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>EMBL-EBI open data service; ChEMBL is published for broad reuse</td>
+<td>reuse is generally allowed under the provider's open-data terms with attribution where required</td>
+<td><a href="https://www.ebi.ac.uk/chembl/">https://www.ebi.ac.uk/chembl/</a></td>
+</tr>
+<tr>
+<td>CIViC</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>open community knowledgebase; CIViC content is published for unrestricted reuse</td>
+<td>reuse is broadly permitted; attribution remains best practice</td>
+<td><a href="https://civicdb.org/home">https://civicdb.org/home</a></td>
+</tr>
+<tr>
+<td>ClinGen</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>public ClinGen curation resources with publication and attribution expectations</td>
+<td>generally queryable and reusable, but users should preserve attribution and source context</td>
+<td><a href="https://clinicalgenome.org/">https://clinicalgenome.org/</a></td>
+</tr>
+<tr>
+<td>ClinicalTrials.gov</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>U.S. government public information service</td>
+<td>records are broadly reusable; preserve identifiers and avoid implying NLM endorsement</td>
+<td><a href="https://clinicaltrials.gov/data-api/about-api">https://clinicaltrials.gov/data-api/about-api</a></td>
+</tr>
+<tr>
+<td>ComplexPortal</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>EMBL-EBI open data service</td>
+<td>reuse follows EMBL-EBI resource terms and any embedded third-party source obligations</td>
+<td><a href="https://www.ebi.ac.uk/complexportal/">https://www.ebi.ac.uk/complexportal/</a></td>
+</tr>
+<tr>
+<td>CPIC</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>CPIC content is published under CC0 with trademark and attribution guidance</td>
+<td>content reuse is broadly allowed, but the CPIC mark/logo has separate restrictions</td>
+<td><a href="https://cpicpgx.org/license/">https://cpicpgx.org/license/</a></td>
+</tr>
+<tr>
+<td>DGIdb</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>open interaction service; aggregated claims may still reflect upstream source terms</td>
+<td>treat DGIdb as an aggregation layer and preserve source attribution for underlying claim providers</td>
+<td><a href="https://www.dgidb.org/about">https://www.dgidb.org/about</a></td>
+</tr>
+<tr>
+<td>DisGeNET</td>
+<td>2</td>
+<td>direct_api</td>
+<td>required_env</td>
+<td>custom provider terms for API and downloads</td>
+<td>do not assume unrestricted redistribution; use according to the provider account terms</td>
+<td><a href="https://www.disgenet.com/">https://www.disgenet.com/</a></td>
+</tr>
+<tr>
+<td>Enrichr</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>open web/API service with citation expectations for Enrichr and its libraries</td>
+<td>reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries</td>
+<td><a href="https://maayanlab.cloud/Enrichr/">https://maayanlab.cloud/Enrichr/</a></td>
+</tr>
+<tr>
+<td>Europe PMC</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>open literature metadata service; article and full-text licenses vary by record</td>
+<td>metadata is broadly reusable, but full text and PDFs remain governed by article-level licenses</td>
+<td><a href="https://europepmc.org/RestfulWebService">https://europepmc.org/RestfulWebService</a></td>
+</tr>
+<tr>
+<td>gnomAD</td>
+<td>3</td>
+<td>direct_api</td>
+<td>none</td>
+<td>Broad Institute data policies with attribution and service-specific conditions</td>
+<td>querying is open, but users should review the gnomAD policies before bulk reuse or republishing</td>
+<td><a href="https://gnomad.broadinstitute.org/policies">https://gnomad.broadinstitute.org/policies</a></td>
+</tr>
+<tr>
+<td>g:Profiler</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>open enrichment service with provider citation expectations</td>
+<td>results are queryable and reusable, but cite g:Profiler and any underlying databases you depend on</td>
+<td><a href="https://biit.cs.ut.ee/gprofiler/help.cgi">https://biit.cs.ut.ee/gprofiler/help.cgi</a></td>
+</tr>
+<tr>
+<td>GTEx</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>NIH-hosted public-access expression resource</td>
+<td>public summary/expression views are broadly reusable; controlled-access data remains outside BioMCP's scope</td>
+<td><a href="https://gtexportal.org/home/documentationPage">https://gtexportal.org/home/documentationPage</a></td>
+</tr>
+<tr>
+<td>GWAS Catalog</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>EMBL-EBI resource terms; summary statistics may carry separate licenses</td>
+<td>query results are generally reusable, but dataset-level summary statistics can have separate downstream terms</td>
+<td><a href="https://www.ebi.ac.uk/gwas/docs/about">https://www.ebi.ac.uk/gwas/docs/about</a></td>
+</tr>
+<tr>
+<td>Human Protein Atlas</td>
+<td>3</td>
+<td>direct_api</td>
+<td>none</td>
+<td>CC BY-SA 4.0 for copyrightable parts of the database</td>
+<td>reuse is allowed with attribution and ShareAlike; third-party components may impose extra conditions</td>
+<td><a href="https://www.proteinatlas.org/about/licence">https://www.proteinatlas.org/about/licence</a></td>
+</tr>
+<tr>
+<td>HPO JAX API</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>open HPO data with attribution and integrity requirements</td>
+<td>reuse is allowed, but users should preserve attribution, version context, and source integrity</td>
+<td><a href="https://human-phenotype-ontology.github.io/license.html">https://human-phenotype-ontology.github.io/license.html</a></td>
+</tr>
+<tr>
+<td>InterPro</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>EMBL-EBI open data resource</td>
+<td>reuse follows InterPro/EMBL-EBI resource terms and any embedded member-database obligations</td>
+<td><a href="https://www.ebi.ac.uk/interpro/">https://www.ebi.ac.uk/interpro/</a></td>
+</tr>
+<tr>
+<td>KEGG</td>
+<td>3</td>
+<td>direct_api</td>
+<td>none</td>
+<td>custom KEGG terms; academic users may freely use the website, non-academic use requires a commercial license</td>
+<td>do not assume commercial redistribution rights; query access does not grant a redistribution license</td>
+<td><a href="https://www.kegg.jp/kegg/legal.html">https://www.kegg.jp/kegg/legal.html</a></td>
+</tr>
+<tr>
+<td>MedlinePlus</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>NLM public-information service with trademark and endorsement guidance</td>
+<td>content is widely reusable, but preserve attribution and avoid implying MedlinePlus/NLM endorsement</td>
+<td><a href="https://medlineplus.gov/about/using/">https://medlineplus.gov/about/using/</a></td>
+</tr>
+<tr>
+<td>Monarch Initiative</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>open integrated knowledge graph; underlying source licenses still matter</td>
+<td>results can be queried openly, but downstream reuse should respect the original sources folded into Monarch</td>
+<td><a href="https://monarchinitiative.org/">https://monarchinitiative.org/</a></td>
+</tr>
+<tr>
+<td>MyChem.info</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>BioThings aggregation service; upstream source terms continue to apply</td>
+<td>do not assume aggregator responses are relicensed; preserve source provenance for downstream reuse</td>
+<td><a href="https://docs.mychem.info/en/latest/">https://docs.mychem.info/en/latest/</a></td>
+</tr>
+<tr>
+<td>MyDisease.info</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>BioThings aggregation service; source ontologies and datasets keep their own terms</td>
+<td>treat payloads as aggregated source data rather than a new umbrella license</td>
+<td><a href="https://docs.mydisease.info/en/latest/">https://docs.mydisease.info/en/latest/</a></td>
+</tr>
+<tr>
+<td>MyGene.info</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>BioThings aggregation service; source-specific terms remain attached to underlying records</td>
+<td>reuse should preserve provenance back to NCBI Gene, UniProt, and other upstream sources</td>
+<td><a href="https://docs.mygene.info/en/latest/">https://docs.mygene.info/en/latest/</a></td>
+</tr>
+<tr>
+<td>MyVariant.info</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>BioThings aggregation service; indirect providers retain their own terms</td>
+<td>ClinVar, COSMIC, Cancer Genome Interpreter, and gnomAD-related fields should be treated according to their original providers' terms</td>
+<td><a href="https://docs.myvariant.info/en/latest/">https://docs.myvariant.info/en/latest/</a></td>
+</tr>
+<tr>
+<td>NCBI ID Converter</td>
+<td>1</td>
+<td>direct_api</td>
+<td>optional_env</td>
+<td>NLM public-domain utility service</td>
+<td>utility results are broadly reusable; keep article-level identifiers and downstream article licenses distinct</td>
+<td><a href="https://pmc.ncbi.nlm.nih.gov/tools/idconv/">https://pmc.ncbi.nlm.nih.gov/tools/idconv/</a></td>
+</tr>
+<tr>
+<td>NCI CTS</td>
+<td>2</td>
+<td>direct_api</td>
+<td>required_env</td>
+<td>custom provider API terms for the NCI Clinical Trials Search API</td>
+<td>query output is usable for search and review, but downstream reuse should follow NCI API terms and record provenance</td>
+<td><a href="https://clinicaltrialsapi.cancer.gov/">https://clinicaltrialsapi.cancer.gov/</a></td>
+</tr>
+<tr>
+<td>OLS4</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>EMBL-EBI ontology browser; each ontology keeps its own license</td>
+<td>ontology metadata is queryable, but downstream reuse depends on the specific ontology surfaced</td>
+<td><a href="https://www.ebi.ac.uk/ols4/">https://www.ebi.ac.uk/ols4/</a></td>
+</tr>
+<tr>
+<td>OncoKB</td>
+<td>2</td>
+<td>direct_api</td>
+<td>required_env</td>
+<td>custom provider terms; academic research access is no-fee but licensed, commercial/clinical use requires a paid license</td>
+<td>do not assume open redistribution rights for OncoKB data or proprietary treatment descriptions</td>
+<td><a href="https://faq.oncokb.org/licensing">https://faq.oncokb.org/licensing</a></td>
+</tr>
+<tr>
+<td>OpenFDA</td>
+<td>1</td>
+<td>direct_api</td>
+<td>optional_env</td>
+<td>FDA-origin public data and API terms</td>
+<td>data is broadly reusable, but avoid implying FDA endorsement and preserve source context</td>
+<td><a href="https://open.fda.gov/apis/authentication/">https://open.fda.gov/apis/authentication/</a></td>
+</tr>
+<tr>
+<td>OpenTargets</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>Open Targets data is CC0; platform code is Apache 2.0</td>
+<td>platform data is dedicated to the public domain, but linked evidence still carries source provenance</td>
+<td><a href="https://platform-docs.opentargets.org/licence">https://platform-docs.opentargets.org/licence</a></td>
+</tr>
+<tr>
+<td>PharmGKB</td>
+<td>3</td>
+<td>direct_api</td>
+<td>none</td>
+<td>ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy</td>
+<td>reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints</td>
+<td><a href="https://api.pharmgkb.org/">https://api.pharmgkb.org/</a></td>
+</tr>
+<tr>
+<td>PMC OA</td>
+<td>1</td>
+<td>direct_api</td>
+<td>optional_env</td>
+<td>open-access subset only; article licenses vary within PMC OA</td>
+<td>full text is reusable only according to each article's specific PMC Open Access license</td>
+<td><a href="https://pmc.ncbi.nlm.nih.gov/tools/openftlist/">https://pmc.ncbi.nlm.nih.gov/tools/openftlist/</a></td>
+</tr>
+<tr>
+<td>PubTator3</td>
+<td>1</td>
+<td>direct_api</td>
+<td>optional_env</td>
+<td>NCBI/NLM public-domain annotation service</td>
+<td>results are broadly reusable, but preserve PMID/source provenance and article-level rights separately</td>
+<td><a href="https://www.ncbi.nlm.nih.gov/research/pubtator3/api">https://www.ncbi.nlm.nih.gov/research/pubtator3/api</a></td>
+</tr>
+<tr>
+<td>QuickGO</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>GO/EMBL-EBI open data service</td>
+<td>query results are generally reusable; preserve GO/EMBL-EBI attribution where expected</td>
+<td><a href="https://www.ebi.ac.uk/QuickGO/">https://www.ebi.ac.uk/QuickGO/</a></td>
+</tr>
+<tr>
+<td>Reactome</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>Reactome pathway content is CC BY 4.0, with some data exports additionally placed under CC0</td>
+<td>reuse is allowed with attribution; preserve pathway/source provenance in downstream materials</td>
+<td><a href="https://reactome.org/license">https://reactome.org/license</a></td>
+</tr>
+<tr>
+<td>Semantic Scholar</td>
+<td>2</td>
+<td>direct_api</td>
+<td>required_env</td>
+<td>custom API license agreement</td>
+<td>the API license restricts repackaging, resale, and broad commercial redistribution without expanded licensing</td>
+<td><a href="https://www.semanticscholar.org/product/api/license">https://www.semanticscholar.org/product/api/license</a></td>
+</tr>
+<tr>
+<td>STRING</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>CC BY 4.0</td>
+<td>reuse is allowed with attribution to STRING and the original publication/resource</td>
+<td><a href="https://string-db.org/cgi/access?footer_active_subpage=licensing">https://string-db.org/cgi/access?footer_active_subpage=licensing</a></td>
+</tr>
+<tr>
+<td>UMLS</td>
+<td>2</td>
+<td>direct_api</td>
+<td>required_env</td>
+<td>custom UMLS Metathesaurus license and terminology-specific appendices</td>
+<td>do not assume unrestricted redistribution; some embedded vocabularies add their own restrictions or affiliate licenses</td>
+<td><a href="https://www.nlm.nih.gov/databases/umls.html">https://www.nlm.nih.gov/databases/umls.html</a></td>
+</tr>
+<tr>
+<td>UniProt</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>CC BY 4.0</td>
+<td>reuse is allowed with attribution; linked cross-references can have their own terms</td>
+<td><a href="https://www.uniprot.org/help/license">https://www.uniprot.org/help/license</a></td>
+</tr>
+<tr>
+<td>WikiPathways</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>CC0</td>
+<td>pathway content is dedicated to the public domain; attribution is still good scholarly practice</td>
+<td><a href="https://classic.wikipathways.org/index.php/WikiPathways:License_Terms">https://classic.wikipathways.org/index.php/WikiPathways:License_Terms</a></td>
+</tr>
+<tr>
+<td>AlphaFold DB</td>
+<td>1</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>AlphaFold DB structural predictions are published for broad open use</td>
+<td>reuse is generally open, but preserve model/source provenance and article citations</td>
+<td><a href="https://alphafold.ebi.ac.uk/faq">https://alphafold.ebi.ac.uk/faq</a></td>
+</tr>
+<tr>
+<td>Cancer Genome Interpreter</td>
+<td>3</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>custom tool terms</td>
+<td>do not assume commercial reuse rights; the official terms restrict some external and commercial use</td>
+<td><a href="https://www.cancergenomeinterpreter.org/conditions">https://www.cancergenomeinterpreter.org/conditions</a></td>
+</tr>
+<tr>
+<td>ClinVar</td>
+<td>1</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>NCBI public-domain submission archive</td>
+<td>records are broadly reusable, but preserve accession/provenance and submitter context</td>
+<td><a href="https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/">https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/</a></td>
+</tr>
+<tr>
+<td>COSMIC</td>
+<td>3</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>custom COSMIC licensing with commercial restrictions</td>
+<td>direct redistribution and direct integration remain intentionally unsupported without a separate COSMIC license</td>
+<td><a href="https://www.sanger.ac.uk/legal/cosmic-licensing/">https://www.sanger.ac.uk/legal/cosmic-licensing/</a></td>
+</tr>
+<tr>
+<td>Disease Ontology</td>
+<td>1</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>open disease ontology project</td>
+<td>reuse is generally open; preserve ontology version and source references</td>
+<td><a href="https://disease-ontology.org/">https://disease-ontology.org/</a></td>
+</tr>
+<tr>
+<td>DrugBank</td>
+<td>3</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>custom DrugBank terms of use and licensing</td>
+<td>use or redistribution of DrugBank content requires a DrugBank license; do not assume open downstream rights</td>
+<td><a href="https://trust.drugbank.com/drugbank-trust-center/drugbank-terms-of-service">https://trust.drugbank.com/drugbank-trust-center/drugbank-terms-of-service</a></td>
+</tr>
+<tr>
+<td>Drugs@FDA</td>
+<td>1</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>FDA-origin public information</td>
+<td>approval records are broadly reusable; avoid implying FDA endorsement</td>
+<td><a href="https://open.fda.gov/apis/drug/drugsfda/">https://open.fda.gov/apis/drug/drugsfda/</a></td>
+</tr>
+<tr>
+<td>MONDO</td>
+<td>1</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>CC BY 4.0</td>
+<td>reuse is allowed with attribution and ontology version tracking</td>
+<td><a href="https://mondo.monarchinitiative.org/pages/download/">https://mondo.monarchinitiative.org/pages/download/</a></td>
+</tr>
+<tr>
+<td>PDB</td>
+<td>1</td>
+<td>indirect_only</td>
+<td>not_applicable</td>
+<td>PDB archive data is CC0 1.0</td>
+<td>data is broadly reusable; attribution to original structure authors is encouraged</td>
+<td><a href="https://www.rcsb.org/pages/usage-policy">https://www.rcsb.org/pages/usage-policy</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="tier-1-baseline-use-without-credentials">Tier 1 - Baseline use without credentials<a class="headerlink" href="#tier-1-baseline-use-without-credentials" title="Permanent link">&para;</a></h2>
+<h3 id="chembl">ChEMBL<a class="headerlink" href="#chembl" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get drug &lt;name&gt; targets; get drug &lt;name&gt; indications</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: EMBL-EBI open data service; ChEMBL is published for broad reuse</li>
+<li>Redistribution / reuse summary: reuse is generally allowed under the provider's open-data terms with attribution where required</li>
+<li>Official terms URL: <a href="https://www.ebi.ac.uk/chembl/">https://www.ebi.ac.uk/chembl/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP only queries live ChEMBL endpoints and does not ship ChEMBL data in the repository.</li>
+</ul>
+<h3 id="civic">CIViC<a class="headerlink" href="#civic" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; civic; get disease &lt;id&gt; variants</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: open community knowledgebase; CIViC content is published for unrestricted reuse</li>
+<li>Redistribution / reuse summary: reuse is broadly permitted; attribution remains best practice</li>
+<li>Official terms URL: <a href="https://civicdb.org/home">https://civicdb.org/home</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: CIViC is treated here as an open-access evidence source surfaced directly by BioMCP.</li>
+</ul>
+<h3 id="clingen">ClinGen<a class="headerlink" href="#clingen" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; clingen</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: public web/API access</li>
+<li>License / terms summary: public ClinGen curation resources with publication and attribution expectations</li>
+<li>Redistribution / reuse summary: generally queryable and reusable, but users should preserve attribution and source context</li>
+<li>Official terms URL: <a href="https://clinicalgenome.org/">https://clinicalgenome.org/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: Open Targets currently lists ClinGen under CC0 for its own ingestion, but BioMCP links to ClinGen's official project site because that is the provider surface users encounter directly.</li>
+</ul>
+<h3 id="clinicaltrialsgov">ClinicalTrials.gov<a class="headerlink" href="#clinicaltrialsgov" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search trial; get trial &lt;nct_id&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: U.S. government public information service</li>
+<li>Redistribution / reuse summary: records are broadly reusable; preserve identifiers and avoid implying NLM endorsement</li>
+<li>Official terms URL: <a href="https://clinicaltrials.gov/data-api/about-api">https://clinicaltrials.gov/data-api/about-api</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP uses the public v2 API as the baseline trial backend.</li>
+</ul>
+<h3 id="complexportal">ComplexPortal<a class="headerlink" href="#complexportal" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get protein &lt;id&gt; complexes</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: EMBL-EBI open data service</li>
+<li>Redistribution / reuse summary: reuse follows EMBL-EBI resource terms and any embedded third-party source obligations</li>
+<li>Official terms URL: <a href="https://www.ebi.ac.uk/complexportal/">https://www.ebi.ac.uk/complexportal/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP calls the IntAct Complex Portal web service. Complex membership data is queried on demand only.</li>
+</ul>
+<h3 id="cpic">CPIC<a class="headerlink" href="#cpic" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search pgx; get pgx &lt;gene_or_drug&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: CPIC content is published under CC0 with trademark and attribution guidance</li>
+<li>Redistribution / reuse summary: content reuse is broadly allowed, but the CPIC mark/logo has separate restrictions</li>
+<li>Official terms URL: <a href="https://cpicpgx.org/license/">https://cpicpgx.org/license/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: CPIC announced in March 2026 that content is moving to ClinPGx, but current CPIC URLs continue to resolve.</li>
+</ul>
+<h3 id="dgidb">DGIdb<a class="headerlink" href="#dgidb" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; interactions; get drug &lt;name&gt; interactions</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: open interaction service; aggregated claims may still reflect upstream source terms</li>
+<li>Redistribution / reuse summary: treat DGIdb as an aggregation layer and preserve source attribution for underlying claim providers</li>
+<li>Official terms URL: <a href="https://www.dgidb.org/about">https://www.dgidb.org/about</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: DGIdb itself is open to query, but it aggregates claims from many external drug-gene sources.</li>
+</ul>
+<h3 id="enrichr">Enrichr<a class="headerlink" href="#enrichr" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; ontology</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: open web/API service with citation expectations for Enrichr and its libraries</li>
+<li>Redistribution / reuse summary: reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries</li>
+<li>Official terms URL: <a href="https://maayanlab.cloud/Enrichr/">https://maayanlab.cloud/Enrichr/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: Gene enrichment sections inside BioMCP use Enrichr; top-level <code>biomcp enrich</code> uses g:Profiler instead.</li>
+</ul>
+<h3 id="europe-pmc">Europe PMC<a class="headerlink" href="#europe-pmc" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search article; get article &lt;pmid&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: open literature metadata service; article and full-text licenses vary by record</li>
+<li>Redistribution / reuse summary: metadata is broadly reusable, but full text and PDFs remain governed by article-level licenses</li>
+<li>Official terms URL: <a href="https://europepmc.org/RestfulWebService">https://europepmc.org/RestfulWebService</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP uses Europe PMC for search and bibliographic metadata. Open-access reuse depends on the publication license attached to each record.</li>
+</ul>
+<h3 id="gprofiler">g:Profiler<a class="headerlink" href="#gprofiler" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>enrich &lt;GENE1,GENE2,...&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: open enrichment service with provider citation expectations</li>
+<li>Redistribution / reuse summary: results are queryable and reusable, but cite g:Profiler and any underlying databases you depend on</li>
+<li>Official terms URL: <a href="https://biit.cs.ut.ee/gprofiler/help.cgi">https://biit.cs.ut.ee/gprofiler/help.cgi</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP uses g:Profiler only for top-level gene-set enrichment.</li>
+</ul>
+<h3 id="gtex">GTEx<a class="headerlink" href="#gtex" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; expression</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public portal/API for public-access expression data</li>
+<li>License / terms summary: NIH-hosted public-access expression resource</li>
+<li>Redistribution / reuse summary: public summary/expression views are broadly reusable; controlled-access data remains outside BioMCP's scope</li>
+<li>Official terms URL: <a href="https://gtexportal.org/home/documentationPage">https://gtexportal.org/home/documentationPage</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP only queries public GTEx expression endpoints, not controlled-access donor-level data.</li>
+</ul>
+<h3 id="gwas-catalog">GWAS Catalog<a class="headerlink" href="#gwas-catalog" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search gwas; get variant &lt;id&gt; gwas</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: EMBL-EBI resource terms; summary statistics may carry separate licenses</li>
+<li>Redistribution / reuse summary: query results are generally reusable, but dataset-level summary statistics can have separate downstream terms</li>
+<li>Official terms URL: <a href="https://www.ebi.ac.uk/gwas/docs/about">https://www.ebi.ac.uk/gwas/docs/about</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: Open Targets reports GWAS Catalog summary statistics under CC0 while the service remains under EMBL-EBI terms.</li>
+</ul>
+<h3 id="hpo-jax-api">HPO JAX API<a class="headerlink" href="#hpo-jax-api" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search phenotype; discover phenotype term resolution</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public ontology API</li>
+<li>License / terms summary: open HPO data with attribution and integrity requirements</li>
+<li>Redistribution / reuse summary: reuse is allowed, but users should preserve attribution, version context, and source integrity</li>
+<li>Official terms URL: <a href="https://human-phenotype-ontology.github.io/license.html">https://human-phenotype-ontology.github.io/license.html</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: The HPO project's own license page is more specific than generic JAX site text and is the clearest official usage statement currently exposed.</li>
+</ul>
+<h3 id="interpro">InterPro<a class="headerlink" href="#interpro" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get protein &lt;id&gt; domains</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: EMBL-EBI open data resource</li>
+<li>Redistribution / reuse summary: reuse follows InterPro/EMBL-EBI resource terms and any embedded member-database obligations</li>
+<li>Official terms URL: <a href="https://www.ebi.ac.uk/interpro/">https://www.ebi.ac.uk/interpro/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: InterPro aggregates signatures from multiple member databases; downstream interpretation should keep that provenance.</li>
+</ul>
+<h3 id="medlineplus">MedlinePlus<a class="headerlink" href="#medlineplus" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>discover plain-language topics</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public search API</li>
+<li>License / terms summary: NLM public-information service with trademark and endorsement guidance</li>
+<li>Redistribution / reuse summary: content is widely reusable, but preserve attribution and avoid implying MedlinePlus/NLM endorsement</li>
+<li>Official terms URL: <a href="https://medlineplus.gov/about/using/">https://medlineplus.gov/about/using/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP uses MedlinePlus only for best-effort plain-language discover context.</li>
+</ul>
+<h3 id="monarch-initiative">Monarch Initiative<a class="headerlink" href="#monarch-initiative" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get disease &lt;id&gt; genes; get disease &lt;id&gt; models; search phenotype</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: open integrated knowledge graph; underlying source licenses still matter</li>
+<li>Redistribution / reuse summary: results can be queried openly, but downstream reuse should respect the original sources folded into Monarch</li>
+<li>Official terms URL: <a href="https://monarchinitiative.org/">https://monarchinitiative.org/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP uses Monarch as an aggregator for disease, phenotype, and model-organism relationships rather than as the legal source of every embedded assertion.</li>
+</ul>
+<h3 id="mycheminfo">MyChem.info<a class="headerlink" href="#mycheminfo" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search drug; get drug &lt;name&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: BioThings aggregation service; upstream source terms continue to apply</li>
+<li>Redistribution / reuse summary: do not assume aggregator responses are relicensed; preserve source provenance for downstream reuse</li>
+<li>Official terms URL: <a href="https://docs.mychem.info/en/latest/">https://docs.mychem.info/en/latest/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: DrugBank and other upstream providers appear in MyChem payloads with their own terms.</li>
+</ul>
+<h3 id="mydiseaseinfo">MyDisease.info<a class="headerlink" href="#mydiseaseinfo" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search disease; get disease &lt;id&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: BioThings aggregation service; source ontologies and datasets keep their own terms</li>
+<li>Redistribution / reuse summary: treat payloads as aggregated source data rather than a new umbrella license</li>
+<li>Official terms URL: <a href="https://docs.mydisease.info/en/latest/">https://docs.mydisease.info/en/latest/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: Disease Ontology and MONDO appear through MyDisease.info as indirect provenance sources.</li>
+</ul>
+<h3 id="mygeneinfo">MyGene.info<a class="headerlink" href="#mygeneinfo" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search gene; get gene &lt;symbol&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: BioThings aggregation service; source-specific terms remain attached to underlying records</li>
+<li>Redistribution / reuse summary: reuse should preserve provenance back to NCBI Gene, UniProt, and other upstream sources</li>
+<li>Official terms URL: <a href="https://docs.mygene.info/en/latest/">https://docs.mygene.info/en/latest/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP uses MyGene.info mainly as an identity/normalization layer rather than as the legal origin of all gene data.</li>
+</ul>
+<h3 id="myvariantinfo">MyVariant.info<a class="headerlink" href="#myvariantinfo" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search variant; get variant &lt;id&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: BioThings aggregation service; indirect providers retain their own terms</li>
+<li>Redistribution / reuse summary: ClinVar, COSMIC, Cancer Genome Interpreter, and gnomAD-related fields should be treated according to their original providers' terms</li>
+<li>Official terms URL: <a href="https://docs.myvariant.info/en/latest/">https://docs.myvariant.info/en/latest/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP intentionally documents several indirect-only provenance rows that arrive through MyVariant.info payloads.</li>
+</ul>
+<h3 id="ncbi-id-converter">NCBI ID Converter<a class="headerlink" href="#ncbi-id-converter" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get article &lt;id&gt; fulltext</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>optional_env</code> via <code>NCBI_API_KEY</code></li>
+<li>Provider access / registration: open public utility; optional My NCBI API key improves throughput</li>
+<li>License / terms summary: NLM public-domain utility service</li>
+<li>Redistribution / reuse summary: utility results are broadly reusable; keep article-level identifiers and downstream article licenses distinct</li>
+<li>Official terms URL: <a href="https://pmc.ncbi.nlm.nih.gov/tools/idconv/">https://pmc.ncbi.nlm.nih.gov/tools/idconv/</a></li>
+<li>API key / account URL: <a href="https://www.ncbi.nlm.nih.gov/account/settings/">https://www.ncbi.nlm.nih.gov/account/settings/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: NCBI API keys increase throughput but are not required for baseline BioMCP usage.</li>
+</ul>
+<h3 id="ols4">OLS4<a class="headerlink" href="#ols4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>discover &lt;query&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public ontology service</li>
+<li>License / terms summary: EMBL-EBI ontology browser; each ontology keeps its own license</li>
+<li>Redistribution / reuse summary: ontology metadata is queryable, but downstream reuse depends on the specific ontology surfaced</li>
+<li>Official terms URL: <a href="https://www.ebi.ac.uk/ols4/">https://www.ebi.ac.uk/ols4/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: OLS4 is BioMCP's required backbone for discover. It is an ontology index, not a single-license data source.</li>
+</ul>
+<h3 id="openfda">OpenFDA<a class="headerlink" href="#openfda" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search adverse-event; get drug &lt;name&gt; label; get drug &lt;name&gt; approvals</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>optional_env</code> via <code>OPENFDA_API_KEY</code></li>
+<li>Provider access / registration: open public API; optional key increases quota headroom</li>
+<li>License / terms summary: FDA-origin public data and API terms</li>
+<li>Redistribution / reuse summary: data is broadly reusable, but avoid implying FDA endorsement and preserve source context</li>
+<li>Official terms URL: <a href="https://open.fda.gov/apis/authentication/">https://open.fda.gov/apis/authentication/</a></li>
+<li>API key / account URL: <a href="https://open.fda.gov/apis/authentication/">https://open.fda.gov/apis/authentication/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: The authentication page says API keys are required while also publishing no-key quotas. BioMCP documents the real runtime behavior: baseline use works without a key, with higher quotas when one is configured.</li>
+</ul>
+<h3 id="opentargets">OpenTargets<a class="headerlink" href="#opentargets" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; diseases; get drug &lt;name&gt; targets; get disease &lt;id&gt; genes</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public GraphQL API</li>
+<li>License / terms summary: Open Targets data is CC0; platform code is Apache 2.0</li>
+<li>Redistribution / reuse summary: platform data is dedicated to the public domain, but linked evidence still carries source provenance</li>
+<li>Official terms URL: <a href="https://platform-docs.opentargets.org/licence">https://platform-docs.opentargets.org/licence</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: The licence page also lists the licensing status of major upstream datasets consumed by Open Targets.</li>
+</ul>
+<h3 id="pmc-oa">PMC OA<a class="headerlink" href="#pmc-oa" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get article &lt;id&gt; fulltext</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>optional_env</code> via <code>NCBI_API_KEY</code></li>
+<li>Provider access / registration: open public utility for the PMC Open Access subset</li>
+<li>License / terms summary: open-access subset only; article licenses vary within PMC OA</li>
+<li>Redistribution / reuse summary: full text is reusable only according to each article's specific PMC Open Access license</li>
+<li>Official terms URL: <a href="https://pmc.ncbi.nlm.nih.gov/tools/openftlist/">https://pmc.ncbi.nlm.nih.gov/tools/openftlist/</a></li>
+<li>API key / account URL: <a href="https://www.ncbi.nlm.nih.gov/account/settings/">https://www.ncbi.nlm.nih.gov/account/settings/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP queries PMC OA on demand and does not ship the article corpus. Returned full text is still governed by article-level licenses.</li>
+</ul>
+<h3 id="pubtator3">PubTator3<a class="headerlink" href="#pubtator3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search article; get article &lt;pmid&gt; annotations</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>optional_env</code> via <code>NCBI_API_KEY</code></li>
+<li>Provider access / registration: open public API; optional My NCBI API key improves throughput</li>
+<li>License / terms summary: NCBI/NLM public-domain annotation service</li>
+<li>Redistribution / reuse summary: results are broadly reusable, but preserve PMID/source provenance and article-level rights separately</li>
+<li>Official terms URL: <a href="https://www.ncbi.nlm.nih.gov/research/pubtator3/api">https://www.ncbi.nlm.nih.gov/research/pubtator3/api</a></li>
+<li>API key / account URL: <a href="https://www.ncbi.nlm.nih.gov/account/settings/">https://www.ncbi.nlm.nih.gov/account/settings/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP uses PubTator3 for article search fan-out and article annotation. <code>NCBI_API_KEY</code> is optional quota uplift only.</li>
+</ul>
+<h3 id="quickgo">QuickGO<a class="headerlink" href="#quickgo" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; go</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: GO/EMBL-EBI open data service</li>
+<li>Redistribution / reuse summary: query results are generally reusable; preserve GO/EMBL-EBI attribution where expected</li>
+<li>Official terms URL: <a href="https://www.ebi.ac.uk/QuickGO/">https://www.ebi.ac.uk/QuickGO/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: QuickGO exposes GO data and annotations; some embedded evidence sources can carry their own provenance requirements.</li>
+</ul>
+<h3 id="reactome">Reactome<a class="headerlink" href="#reactome" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search pathway; get pathway &lt;id&gt;; get gene &lt;symbol&gt; pathways</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: Reactome pathway content is CC BY 4.0, with some data exports additionally placed under CC0</li>
+<li>Redistribution / reuse summary: reuse is allowed with attribution; preserve pathway/source provenance in downstream materials</li>
+<li>Official terms URL: <a href="https://reactome.org/license">https://reactome.org/license</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: Reactome announced in 2017 that some annotation files moved to CC0 while core site/code materials remained under CC BY 4.0.</li>
+</ul>
+<h3 id="string">STRING<a class="headerlink" href="#string" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; interactions; get protein &lt;id&gt; interactions</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: CC BY 4.0</li>
+<li>Redistribution / reuse summary: reuse is allowed with attribution to STRING and the original publication/resource</li>
+<li>Official terms URL: <a href="https://string-db.org/cgi/access?footer_active_subpage=licensing">https://string-db.org/cgi/access?footer_active_subpage=licensing</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP queries STRING network endpoints on demand and does not package STRING interaction datasets.</li>
+</ul>
+<h3 id="uniprot">UniProt<a class="headerlink" href="#uniprot" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get protein &lt;id&gt;; get gene &lt;symbol&gt; protein</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: CC BY 4.0</li>
+<li>Redistribution / reuse summary: reuse is allowed with attribution; linked cross-references can have their own terms</li>
+<li>Official terms URL: <a href="https://www.uniprot.org/help/license">https://www.uniprot.org/help/license</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP also surfaces UniProt cross-references to PDB and AlphaFold DB rather than mirroring those datasets directly.</li>
+</ul>
+<h3 id="wikipathways">WikiPathways<a class="headerlink" href="#wikipathways" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search pathway; get pathway &lt;id&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: CC0</li>
+<li>Redistribution / reuse summary: pathway content is dedicated to the public domain; attribution is still good scholarly practice</li>
+<li>Official terms URL: <a href="https://classic.wikipathways.org/index.php/WikiPathways:License_Terms">https://classic.wikipathways.org/index.php/WikiPathways:License_Terms</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: The current license statement is still hosted on the WikiPathways classic site.</li>
+</ul>
+<h2 id="tier-2-credential-account-or-license-required-for-the-biomcp-feature">Tier 2 - Credential, account, or license required for the BioMCP feature<a class="headerlink" href="#tier-2-credential-account-or-license-required-for-the-biomcp-feature" title="Permanent link">&para;</a></h2>
+<h3 id="alphagenome">AlphaGenome<a class="headerlink" href="#alphagenome" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get variant &lt;id&gt; predict</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>required_env</code> via <code>ALPHAGENOME_API_KEY</code></li>
+<li>Provider access / registration: provider-controlled access to the AlphaGenome service</li>
+<li>License / terms summary: custom provider terms; access is gated by Google/DeepMind service controls</li>
+<li>Redistribution / reuse summary: do not assume open redistribution rights for returned prediction outputs</li>
+<li>Official terms URL: <a href="https://deepmind.google/science/alphagenome/">https://deepmind.google/science/alphagenome/</a></li>
+<li>API key / account URL: <a href="https://deepmind.google/science/alphagenome/">https://deepmind.google/science/alphagenome/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP calls the hosted gRPC endpoint directly. The public product page is the closest official access reference currently exposed.</li>
+</ul>
+<h3 id="disgenet">DisGeNET<a class="headerlink" href="#disgenet" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; disgenet; get disease &lt;id&gt; disgenet</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>required_env</code> via <code>DISGENET_API_KEY</code></li>
+<li>Provider access / registration: account registration and API key required</li>
+<li>License / terms summary: custom provider terms for API and downloads</li>
+<li>Redistribution / reuse summary: do not assume unrestricted redistribution; use according to the provider account terms</li>
+<li>Official terms URL: <a href="https://www.disgenet.com/">https://www.disgenet.com/</a></li>
+<li>API key / account URL: <a href="https://www.disgenet.com/">https://www.disgenet.com/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: DisGeNET's public site advertises free and commercial plans. BioMCP documents the API as key-gated and treats it as provider-controlled.</li>
+</ul>
+<h3 id="nci-cts">NCI CTS<a class="headerlink" href="#nci-cts" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search trial --source nci; get trial &lt;nct_id&gt; --source nci</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>required_env</code> via <code>NCI_API_KEY</code></li>
+<li>Provider access / registration: API key required</li>
+<li>License / terms summary: custom provider API terms for the NCI Clinical Trials Search API</li>
+<li>Redistribution / reuse summary: query output is usable for search and review, but downstream reuse should follow NCI API terms and record provenance</li>
+<li>Official terms URL: <a href="https://clinicaltrialsapi.cancer.gov/">https://clinicaltrialsapi.cancer.gov/</a></li>
+<li>API key / account URL: <a href="https://clinicaltrialsapi.cancer.gov/">https://clinicaltrialsapi.cancer.gov/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP treats NCI CTS as an alternate oncology-focused trial backend, not the default public trial source.</li>
+</ul>
+<h3 id="oncokb">OncoKB<a class="headerlink" href="#oncokb" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>variant oncokb &lt;id&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>required_env</code> via <code>ONCOKB_TOKEN</code></li>
+<li>Provider access / registration: registration and provider-controlled API access</li>
+<li>License / terms summary: custom provider terms; academic research access is no-fee but licensed, commercial/clinical use requires a paid license</li>
+<li>Redistribution / reuse summary: do not assume open redistribution rights for OncoKB data or proprietary treatment descriptions</li>
+<li>Official terms URL: <a href="https://faq.oncokb.org/licensing">https://faq.oncokb.org/licensing</a></li>
+<li>API key / account URL: <a href="https://www.oncokb.org/account/register">https://www.oncokb.org/account/register</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: The FAQ states that programmatic access for academic use still requires registration and provider approval.</li>
+</ul>
+<h3 id="semantic-scholar">Semantic Scholar<a class="headerlink" href="#semantic-scholar" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search article; get article &lt;id&gt; tldr; article citations &lt;id&gt;; article references &lt;id&gt;; article recommendations &lt;id&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>required_env</code> via <code>S2_API_KEY</code></li>
+<li>Provider access / registration: API key required for BioMCP's Semantic Scholar search/helper path and governed by the API license agreement</li>
+<li>License / terms summary: custom API license agreement</li>
+<li>Redistribution / reuse summary: the API license restricts repackaging, resale, and broad commercial redistribution without expanded licensing</li>
+<li>Official terms URL: <a href="https://www.semanticscholar.org/product/api/license">https://www.semanticscholar.org/product/api/license</a></li>
+<li>API key / account URL: <a href="https://www.semanticscholar.org/product/api">https://www.semanticscholar.org/product/api</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: The overview page says many endpoints are publicly reachable without auth, but BioMCP's article search leg and helper commands deliberately require <code>S2_API_KEY</code> to stay within the supported quota path.</li>
+</ul>
+<h3 id="umls">UMLS<a class="headerlink" href="#umls" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>discover &lt;query&gt; crosswalk enrichment</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>required_env</code> via <code>UMLS_API_KEY</code></li>
+<li>Provider access / registration: UTS account plus acceptance of the UMLS Metathesaurus license</li>
+<li>License / terms summary: custom UMLS Metathesaurus license and terminology-specific appendices</li>
+<li>Redistribution / reuse summary: do not assume unrestricted redistribution; some embedded vocabularies add their own restrictions or affiliate licenses</li>
+<li>Official terms URL: <a href="https://www.nlm.nih.gov/databases/umls.html">https://www.nlm.nih.gov/databases/umls.html</a></li>
+<li>API key / account URL: <a href="https://uts.nlm.nih.gov/uts/signup-login">https://uts.nlm.nih.gov/uts/signup-login</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: The UMLS landing page explicitly states that you must accept the license and create a UTS account for access.</li>
+</ul>
+<h2 id="tier-3-open-or-queryable-but-with-notable-terms">Tier 3 - Open or queryable, but with notable terms<a class="headerlink" href="#tier-3-open-or-queryable-but-with-notable-terms" title="Permanent link">&para;</a></h2>
+<h3 id="cbioportal">cBioPortal<a class="headerlink" href="#cbioportal" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get variant &lt;id&gt; cohort; study download; study query</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: public API access for open studies</li>
+<li>License / terms summary: public API with study-specific downstream terms</li>
+<li>Redistribution / reuse summary: reuse depends on the specific study or consortium behind each dataset</li>
+<li>Official terms URL: <a href="https://www.cbioportal.org/">https://www.cbioportal.org/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP uses the public API. TCGA-derived studies are broadly open, while some cohorts such as AACR Project GENIE carry additional access or reuse conditions.</li>
+</ul>
+<h3 id="gnomad">gnomAD<a class="headerlink" href="#gnomad" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; constraint; get variant &lt;id&gt; population</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public browser/API</li>
+<li>License / terms summary: Broad Institute data policies with attribution and service-specific conditions</li>
+<li>Redistribution / reuse summary: querying is open, but users should review the gnomAD policies before bulk reuse or republishing</li>
+<li>Official terms URL: <a href="https://gnomad.broadinstitute.org/policies">https://gnomad.broadinstitute.org/policies</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: Open Targets currently reports gnomAD as CC0 for its own ingestion pipeline. BioMCP links to gnomAD's own policy page for user-facing guidance.</li>
+</ul>
+<h3 id="human-protein-atlas">Human Protein Atlas<a class="headerlink" href="#human-protein-atlas" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get gene &lt;symbol&gt; hpa</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public XML and web resources</li>
+<li>License / terms summary: CC BY-SA 4.0 for copyrightable parts of the database</li>
+<li>Redistribution / reuse summary: reuse is allowed with attribution and ShareAlike; third-party components may impose extra conditions</li>
+<li>Official terms URL: <a href="https://www.proteinatlas.org/about/licence">https://www.proteinatlas.org/about/licence</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: The licence page also requires clear citation for images and specific gene/data pages.</li>
+</ul>
+<h3 id="kegg">KEGG<a class="headerlink" href="#kegg" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search pathway; get pathway &lt;id&gt;</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open website/API for academic use; commercial use requires a license</li>
+<li>License / terms summary: custom KEGG terms; academic users may freely use the website, non-academic use requires a commercial license</li>
+<li>Redistribution / reuse summary: do not assume commercial redistribution rights; query access does not grant a redistribution license</li>
+<li>Official terms URL: <a href="https://www.kegg.jp/kegg/legal.html">https://www.kegg.jp/kegg/legal.html</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: KEGG's official legal page was updated on October 1, 2024 and explicitly distinguishes academic from non-academic use.</li>
+</ul>
+<h3 id="pharmgkb">PharmGKB<a class="headerlink" href="#pharmgkb" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get pgx &lt;gene_or_drug&gt; annotations</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: open public API</li>
+<li>License / terms summary: ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy</li>
+<li>Redistribution / reuse summary: reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints</li>
+<li>Official terms URL: <a href="https://api.pharmgkb.org/">https://api.pharmgkb.org/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: PharmGKB has been transitioning to ClinPGx-branded API documentation. BioMCP keeps the public <code>PharmGKB</code> source label because that is the domain vocabulary users recognize.</li>
+</ul>
+<h2 id="indirect-only-providers-surfaced-through-aggregators">Indirect-only providers surfaced through aggregators<a class="headerlink" href="#indirect-only-providers-surfaced-through-aggregators" title="Permanent link">&para;</a></h2>
+<h3 id="alphafold-db">AlphaFold DB<a class="headerlink" href="#alphafold-db" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get protein &lt;id&gt; structures</code></li>
+<li>Integration mode: <code>indirect_only</code></li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: surfaced through UniProt cross-references; no standalone BioMCP client</li>
+<li>License / terms summary: AlphaFold DB structural predictions are published for broad open use</li>
+<li>Redistribution / reuse summary: reuse is generally open, but preserve model/source provenance and article citations</li>
+<li>Official terms URL: <a href="https://alphafold.ebi.ac.uk/faq">https://alphafold.ebi.ac.uk/faq</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP does not call AlphaFold DB directly. Structure links appear through UniProt cross-references.</li>
+</ul>
+<h3 id="cancer-genome-interpreter">Cancer Genome Interpreter<a class="headerlink" href="#cancer-genome-interpreter" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get variant &lt;id&gt;</code></li>
+<li>Integration mode: <code>indirect_only</code></li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: surfaced indirectly through MyVariant.info payloads</li>
+<li>License / terms summary: custom tool terms</li>
+<li>Redistribution / reuse summary: do not assume commercial reuse rights; the official terms restrict some external and commercial use</li>
+<li>Official terms URL: <a href="https://www.cancergenomeinterpreter.org/conditions">https://www.cancergenomeinterpreter.org/conditions</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: There is no standalone CGI source client in BioMCP; provenance appears only when MyVariant includes CGI fields.</li>
+</ul>
+<h3 id="clinvar">ClinVar<a class="headerlink" href="#clinvar" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get variant &lt;id&gt; clinvar</code></li>
+<li>Integration mode: <code>indirect_only</code></li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: surfaced indirectly through MyVariant.info payloads</li>
+<li>License / terms summary: NCBI public-domain submission archive</li>
+<li>Redistribution / reuse summary: records are broadly reusable, but preserve accession/provenance and submitter context</li>
+<li>Official terms URL: <a href="https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/">https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP does not call ClinVar directly; ClinVar assertions arrive through MyVariant.info.</li>
+</ul>
+<h3 id="cosmic">COSMIC<a class="headerlink" href="#cosmic" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get variant &lt;id&gt; cosmic</code></li>
+<li>Integration mode: <code>indirect_only</code></li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: surfaced indirectly through cached MyVariant.info fields; no standalone BioMCP COSMIC client</li>
+<li>License / terms summary: custom COSMIC licensing with commercial restrictions</li>
+<li>Redistribution / reuse summary: direct redistribution and direct integration remain intentionally unsupported without a separate COSMIC license</li>
+<li>Official terms URL: <a href="https://www.sanger.ac.uk/legal/cosmic-licensing/">https://www.sanger.ac.uk/legal/cosmic-licensing/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: This is the most important indirect-only caution row. BioMCP intentionally does not support direct COSMIC querying because of licensing risk.</li>
+</ul>
+<h3 id="disease-ontology">Disease Ontology<a class="headerlink" href="#disease-ontology" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search disease; get disease &lt;id&gt;</code></li>
+<li>Integration mode: <code>indirect_only</code></li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: surfaced indirectly through MyDisease.info</li>
+<li>License / terms summary: open disease ontology project</li>
+<li>Redistribution / reuse summary: reuse is generally open; preserve ontology version and source references</li>
+<li>Official terms URL: <a href="https://disease-ontology.org/">https://disease-ontology.org/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP does not maintain a standalone Disease Ontology client.</li>
+</ul>
+<h3 id="drugbank">DrugBank<a class="headerlink" href="#drugbank" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get drug &lt;name&gt; interactions; get drug &lt;name&gt; label</code></li>
+<li>Integration mode: <code>indirect_only</code></li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: surfaced indirectly through MyChem.info payloads</li>
+<li>License / terms summary: custom DrugBank terms of use and licensing</li>
+<li>Redistribution / reuse summary: use or redistribution of DrugBank content requires a DrugBank license; do not assume open downstream rights</li>
+<li>Official terms URL: <a href="https://trust.drugbank.com/drugbank-trust-center/drugbank-terms-of-service">https://trust.drugbank.com/drugbank-trust-center/drugbank-terms-of-service</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: DrugBank does not have a standalone BioMCP source client. It appears as provenance carried through MyChem.info.</li>
+</ul>
+<h3 id="drugsfda">Drugs@FDA<a class="headerlink" href="#drugsfda" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get drug &lt;name&gt; approvals</code></li>
+<li>Integration mode: <code>indirect_only</code></li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: surfaced through OpenFDA-derived approval fields</li>
+<li>License / terms summary: FDA-origin public information</li>
+<li>Redistribution / reuse summary: approval records are broadly reusable; avoid implying FDA endorsement</li>
+<li>Official terms URL: <a href="https://open.fda.gov/apis/drug/drugsfda/">https://open.fda.gov/apis/drug/drugsfda/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP documents Drugs@FDA as an indirect provenance label because approval fields arrive through OpenFDA, not a dedicated Drugs@FDA client.</li>
+</ul>
+<h3 id="mondo">MONDO<a class="headerlink" href="#mondo" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search disease; discover &lt;query&gt;</code></li>
+<li>Integration mode: <code>indirect_only</code></li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: surfaced indirectly through MyDisease.info payloads</li>
+<li>License / terms summary: CC BY 4.0</li>
+<li>Redistribution / reuse summary: reuse is allowed with attribution and ontology version tracking</li>
+<li>Official terms URL: <a href="https://mondo.monarchinitiative.org/pages/download/">https://mondo.monarchinitiative.org/pages/download/</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP uses MONDO identifiers through MyDisease.info and other aggregators rather than calling MONDO directly.</li>
+</ul>
+<h3 id="pdb">PDB<a class="headerlink" href="#pdb" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>get protein &lt;id&gt; structures</code></li>
+<li>Integration mode: <code>indirect_only</code></li>
+<li>BioMCP auth: <code>not_applicable</code></li>
+<li>Provider access / registration: surfaced through UniProt cross-references; no standalone BioMCP PDB client</li>
+<li>License / terms summary: PDB archive data is CC0 1.0</li>
+<li>Redistribution / reuse summary: data is broadly reusable; attribution to original structure authors is encouraged</li>
+<li>Official terms URL: <a href="https://www.rcsb.org/pages/usage-policy">https://www.rcsb.org/pages/usage-policy</a></li>
+<li>Reviewed on: <code>2026-03-20</code></li>
+<li>Notes: BioMCP currently exposes PDB identifiers from UniProt rather than querying RCSB PDB directly.</li>
+</ul>
+<h2 id="source-notes">Source notes<a class="headerlink" href="#source-notes" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>PubMed</code> is an umbrella label in BioMCP output. In practice, article search and annotation use <code>PubTator3</code>, <code>Europe PMC</code>, <code>PMC OA</code>, and <code>NCBI ID Converter</code>. This page maps those aliases back to the actual provider rows instead of creating duplicate inventory entries.</li>
+<li><code>OpenFDA FAERS</code>, <code>OpenFDA label</code>, <code>OpenFDA shortage</code>, and <code>Drugs@FDA</code> are user-facing provenance labels that resolve back to the <code>OpenFDA</code> direct row plus the <code>Drugs@FDA</code> indirect row.</li>
+<li><code>AlphaFold DB</code> and <code>PDB</code> are indirect-only because BioMCP currently surfaces those structure IDs via <code>UniProt</code> cross-references rather than maintaining standalone source clients.</li>
+<li><code>COSMIC</code> is indirect-only provenance through <code>MyVariant.info</code>. Direct COSMIC integration is not part of BioMCP's supported source surface because the provider's licensing model creates unacceptable redistribution and deployment risk for an MIT-licensed open tool.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Maintained by <a href="https://genomoncology.com">GenomOncology</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/genomoncology/biomcp" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.instant", "navigation.tracking", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
