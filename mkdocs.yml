@@ -66,6 +66,7 @@ nav:
       - CIViC Sections: reference/civic-sections.md
       - Drug Approvals & AE Summary: reference/drug-approvals-and-ae-summary.md
   - Blog:
+      - "cBioPortal Study Analytics in BioMCP": blog/cbioportal-study-analytics.md
       - "Native Study Charts in BioMCP with Kuva": blog/biomcp-kuva-charts.md
       - "We Deleted 35 Tools and Our Agent Got Better": blog/we-deleted-35-tools.md
   - Policies: policies.md
