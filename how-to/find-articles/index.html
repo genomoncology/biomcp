@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -391,7 +391,7 @@
   
     
   
-  Policies
+  Privacy Policy
 
       </a>
     </li>
@@ -2259,6 +2259,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/bioasq-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BioASQ Benchmark
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/faq/" class="md-nav__link">
         
   
@@ -2584,7 +2612,7 @@
   <span class="md-ellipsis">
     
   
-    Policies
+    Privacy Policy
   
 
     
@@ -2774,9 +2802,11 @@
 <h2 id="broad-start">Broad start<a class="headerlink" href="#broad-start" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
-<p><code>search article</code> always works without credentials. When <code>S2_API_KEY</code> is set,
-BioMCP adds an optional Semantic Scholar search leg and keeps <code>sort=relevance</code>
-directness-first instead of citation-first.</p>
+<p><code>search article</code> always works without credentials. BioMCP keeps
+<code>sort=relevance</code> directness-first instead of citation-first, and the
+Semantic Scholar leg is eligible whenever the filter set is compatible.
+<code>S2_API_KEY</code> upgrades those Semantic Scholar requests to authenticated quota;
+without it, BioMCP uses the shared pool.</p>
 <h2 id="add-disease-context">Add disease context<a class="headerlink" href="#add-disease-context" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>

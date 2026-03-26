@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -391,7 +391,7 @@
   
     
   
-  Policies
+  Privacy Policy
 
       </a>
     </li>
@@ -2293,6 +2293,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/bioasq-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BioASQ Benchmark
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/faq/" class="md-nav__link">
         
   
@@ -2618,7 +2646,7 @@
   <span class="md-ellipsis">
     
   
-    Policies
+    Privacy Policy
   
 
     
@@ -2882,10 +2910,11 @@ If omitted, BioMCP uses the public/demo path when possible.</p>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h3 id="s2_api_key"><code>S2_API_KEY</code><a class="headerlink" href="#s2_api_key" title="Permanent link">&para;</a></h3>
-<p>Unlocks the optional Semantic Scholar article search leg plus article
-enrichment and navigation. Use it for directness-first <code>search article</code>
-results with merged Semantic Scholar metadata, <code>get article ... tldr</code>,
-<code>article citations</code>, <code>article references</code>, and <code>article recommendations</code>.</p>
+<p>Enables authenticated Semantic Scholar article requests. Use it for a dedicated
+provider quota at 1 req/sec across the optional article search leg, <code>get article</code>
+enrichment, <code>get article ... tldr</code>, <code>article citations</code>, <code>article references</code>,
+and <code>article recommendations</code>. Without the key, those paths still work through
+the shared unauthenticated pool at 1 req/2sec.</p>
 <p>Request a key at: <a href="https://www.semanticscholar.org/product/api">https://www.semanticscholar.org/product/api</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">S2_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
@@ -2903,7 +2932,7 @@ results with merged Semantic Scholar metadata, <code>get article ... tldr</code>
 <li>Do not commit secrets into source control.</li>
 <li>Set keys in the same environment used by your MCP client.</li>
 <li>Rotate keys when sharing machines or CI runners.</li>
-<li><code>S2_API_KEY</code> is optional for <code>search article</code> and plain <code>get article</code>. Without it, article search still works and stays explicit about Semantic Scholar being disabled. With it, article search can add the Semantic Scholar search leg and supporting citation metadata. The specific helper commands (<code>tldr</code>, <code>citations</code>, <code>references</code>, <code>recommendations</code>) still require the key.</li>
+<li><code>S2_API_KEY</code> is optional. Without it, article search/get/helper paths still work through the shared Semantic Scholar pool at 1 req/2sec. With it, BioMCP sends <code>x-api-key</code> and uses the authenticated quota at 1 req/sec for the same article search/get/helper paths.</li>
 <li><code>UMLS_API_KEY</code> is optional; when absent, <code>discover</code> still works with OLS4-only results.</li>
 </ul>
 <p>See also: <a href="../../reference/source-licensing/">Source Licensing and Terms</a></p>

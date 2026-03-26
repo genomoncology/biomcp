@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -391,7 +391,7 @@
   
     
   
-  Policies
+  Privacy Policy
 
       </a>
     </li>
@@ -2276,6 +2276,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/bioasq-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BioASQ Benchmark
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/faq/" class="md-nav__link">
         
   
@@ -2601,7 +2629,7 @@
   <span class="md-ellipsis">
     
   
-    Policies
+    Privacy Policy
   
 
     
@@ -2827,9 +2855,10 @@
 </code></pre></div>
 <h3 id="multi-source-federation">Multi-source federation<a class="headerlink" href="#multi-source-federation" title="Permanent link">&para;</a></h3>
 <p>Article search fans out to PubTator3 and Europe PMC in parallel by default.
-When <code>S2_API_KEY</code> is set, BioMCP also adds a Semantic Scholar search leg for
-the same typed query and merges duplicates across PMID, PMCID, and DOI where
-possible.
+When the filter set is compatible, BioMCP also adds a Semantic Scholar search
+leg for the same typed query and merges duplicates across PMID, PMCID, and DOI
+where possible. <code>S2_API_KEY</code> upgrades that leg to authenticated requests at
+1 req/sec; without it, BioMCP uses the shared unauthenticated pool at 1 req/2sec.
 Search results are still deduplicated by PMID when BioMCP can resolve one.</p>
 <p>Default <code>--sort relevance</code> is directness-first: title coverage ranks ahead of
 title+abstract coverage, then study/review cues, then citation support.
@@ -2851,11 +2880,11 @@ participate in the search, and JSON search rows keep the tri-state contract:
 indexed by PubMed or Europe PMC and cannot be resolved.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
-<p>When <code>S2_API_KEY</code> is set, default article output also includes an optional
-Semantic Scholar section with TLDR text, influence counts, and open-access PDF
-metadata when that paper resolves in Semantic Scholar. <code>search article</code> also
-uses the key to add the Semantic Scholar search leg when compatible, but
-<code>--source</code> still stays <code>all|pubtator|europepmc</code> in v1.</p>
+<p>Default article output can include an optional Semantic Scholar section with
+TLDR text, influence counts, and open-access PDF metadata when that paper
+resolves in Semantic Scholar. <code>S2_API_KEY</code> makes those requests authenticated;
+without it, BioMCP uses the shared pool. <code>--source</code> still stays
+<code>all|pubtator|europepmc</code> in v1.</p>
 <h2 id="request-specific-sections">Request specific sections<a class="headerlink" href="#request-specific-sections" title="Permanent link">&para;</a></h2>
 <p>Full text section:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
@@ -2876,15 +2905,14 @@ full text is available.</p>
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
 </code></pre></div>
 <p><code>article batch</code> works without <code>S2_API_KEY</code> and echoes the original
-<code>requested_id</code> together with resolved PMID/PMCID/DOI fields. When the key is
-present, the batch helper adds optional TLDR and citation metadata with one
-Semantic Scholar batch request.</p>
-<p>The Semantic Scholar graph helpers still require <code>S2_API_KEY</code>. Without the
-key, ordinary <code>get article</code> and <code>article batch</code> still work, but the explicit
-graph/recommendation helpers return an API-key-required error. Citations
-usually work broadly; references and recommendations can be sparse or empty
-for paywalled papers because of publisher elision in the Semantic Scholar
-graph.</p>
+<code>requested_id</code> together with resolved PMID/PMCID/DOI fields. When Semantic
+Scholar data is available, the batch helper can add optional TLDR and citation
+metadata. <code>S2_API_KEY</code> makes that enrichment authenticated and more reliable.</p>
+<p>The Semantic Scholar graph helpers also work without <code>S2_API_KEY</code>, but they use
+the shared pool and can fail fast on HTTP 429 with guidance to set the key for
+a dedicated rate limit. Citations usually work broadly; references and
+recommendations can be sparse or empty for paywalled papers because of
+publisher elision in the Semantic Scholar graph.</p>
 <h2 id="caching-behavior">Caching behavior<a class="headerlink" href="#caching-behavior" title="Permanent link">&para;</a></h2>
 <p>Downloaded content is stored in the BioMCP cache directory.
 This avoids repeated large payload downloads during iterative workflows.</p>

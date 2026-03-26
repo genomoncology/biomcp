@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -391,7 +391,7 @@
   
     
   
-  Policies
+  Privacy Policy
 
       </a>
     </li>
@@ -1154,6 +1154,17 @@
     <span class="md-ellipsis">
       
         Request drug sections
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ema-local-data-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EMA local data setup
       
     </span>
   </a>
@@ -2237,6 +2248,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/bioasq-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BioASQ Benchmark
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/faq/" class="md-nav__link">
         
   
@@ -2562,7 +2601,7 @@
   <span class="md-ellipsis">
     
   
-    Policies
+    Privacy Policy
   
 
     
@@ -2662,6 +2701,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ema-local-data-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EMA local data setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cross-entity-helpers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2726,59 +2776,101 @@
 
 
 <h1 id="drug">Drug<a class="headerlink" href="#drug" title="Permanent link">&para;</a></h1>
-<p>Use drug commands for medication lookup, target-oriented search, and safety context.</p>
+<p>Use drug commands for medication lookup, target-oriented search, and U.S./EU regulatory context.</p>
 <h2 id="search-drugs">Search drugs<a class="headerlink" href="#search-drugs" title="Permanent link">&para;</a></h2>
 <p>Text query:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;kinase inhibitor&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>EU or comparison search:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--region<span class="w"> </span>eu<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--region<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Target-oriented search:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--target<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--target<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Indication-oriented search:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--indication<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--indication<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p><code>search drug --interactions &lt;drug&gt;</code> is currently unavailable because the public data sources BioMCP uses do not expose partner-indexed interaction rows.</p>
+<p>Omitting <code>--region</code> on a plain name/alias search checks both U.S. and EU data.
+If you omit <code>--region</code> while using structured filters such as <code>--target</code> or
+<code>--indication</code>, BioMCP stays on the U.S. MyChem path. Explicit <code>--region eu</code>
+or <code>--region all</code> with structured filters still errors.</p>
 <h2 id="get-a-drug-record">Get a drug record<a class="headerlink" href="#get-a-drug-record" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
 </code></pre></div>
 <p>Default output provides concise identity and mechanism context. Approval-bearing
 JSON now includes additive <code>approval_date_raw</code>, <code>approval_date_display</code>, and
 <code>approval_summary</code> fields, while markdown renders the human-friendly display
 date in the base card.</p>
 <h2 id="request-drug-sections">Request drug sections<a class="headerlink" href="#request-drug-sections" title="Permanent link">&para;</a></h2>
-<p>Supported sections: <code>label</code>, <code>shortage</code>, <code>targets</code>, <code>indications</code>,
-<code>interactions</code>, <code>civic</code>, <code>approvals</code>, <code>all</code>.</p>
+<p>Supported sections: <code>label</code>, <code>regulatory</code>, <code>safety</code>, <code>shortage</code>, <code>targets</code>,
+<code>indications</code>, <code>interactions</code>, <code>civic</code>, <code>approvals</code>, <code>all</code>.</p>
 <p>FDA label section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>vemurafenib<span class="w"> </span>label
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>vemurafenib<span class="w"> </span>label
 </code></pre></div>
 <p>Shortage section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>carboplatin<span class="w"> </span>shortage
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>carboplatin<span class="w"> </span>shortage
+</code></pre></div>
+<p>Regional regulatory and safety sections:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>eu
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>all
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Ozempic<span class="w"> </span>safety<span class="w"> </span>--region<span class="w"> </span>eu
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Ozempic<span class="w"> </span>shortage<span class="w"> </span>--region<span class="w"> </span>eu
 </code></pre></div>
 <p>Targets and indications sections:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>targets
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>indications
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>targets
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>indications
 </code></pre></div>
 <p>Interactions (OpenFDA label text when public interaction details are available; otherwise a truthful fallback):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>warfarin<span class="w"> </span>interactions
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>warfarin<span class="w"> </span>interactions
 </code></pre></div>
 <p>CIViC evidence and Drugs@FDA approvals:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>vemurafenib<span class="w"> </span>civic
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>dabrafenib<span class="w"> </span>approvals
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>vemurafenib<span class="w"> </span>civic
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>dabrafenib<span class="w"> </span>approvals
 </code></pre></div>
+<p><code>approvals</code> remains a legacy U.S.-only section. Use <code>regulatory</code> for the region-aware regulatory view.</p>
+<h2 id="ema-local-data-setup">EMA local data setup<a class="headerlink" href="#ema-local-data-setup" title="Permanent link">&para;</a></h2>
+<p>EU regional commands read the EMA human-medicines JSON batch from <code>BIOMCP_EMA_DIR</code> first, then the platform data directory (<code>~/.local/share/biomcp/ema</code> on typical Linux systems).</p>
+<p>Download the current batch from:</p>
+<ul>
+<li><a href="https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format">https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format</a></li>
+</ul>
+<p>Expected files:</p>
+<ul>
+<li><code>medicines.json</code></li>
+<li><code>post_authorisation.json</code></li>
+<li><code>referrals.json</code></li>
+<li><code>psusas.json</code></li>
+<li><code>dhpcs.json</code></li>
+<li><code>shortages.json</code></li>
+</ul>
+<p>Confirm local EMA readiness with full health output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>health
+</code></pre></div>
+<p>EMA row meanings:</p>
+<ul>
+<li><code>configured</code>: <code>BIOMCP_EMA_DIR</code> is set and complete</li>
+<li><code>available (default path)</code>: the default platform data directory contains a complete EMA batch</li>
+<li><code>not configured</code>: no EMA batch is installed at the default path yet</li>
+<li><code>error (missing: ...)</code>: the EMA directory exists but is missing one or more required files</li>
+</ul>
 <h2 id="cross-entity-helpers">Cross-entity helpers<a class="headerlink" href="#cross-entity-helpers" title="Permanent link">&para;</a></h2>
 <p>Trial pivot:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Safety pivot:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
 </code></pre></div>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Start with base <code>get</code> before requesting heavy sections.</li>
 <li>Use target filters to narrow crowded drug classes.</li>
+<li>Use <code>regulatory</code>, <code>safety</code>, or <code>shortage</code> with <code>--region eu|all</code> when you need EMA context.</li>
 <li>Pair drug lookups with trial filters for protocol matching workflows.</li>
 </ul>
 <h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>

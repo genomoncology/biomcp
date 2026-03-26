@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -391,7 +391,7 @@
   
     
   
-  Policies
+  Privacy Policy
 
       </a>
     </li>
@@ -2270,6 +2270,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../bioasq-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BioASQ Benchmark
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../faq/" class="md-nav__link">
         
   
@@ -2595,7 +2623,7 @@
   <span class="md-ellipsis">
     
   
-    Policies
+    Privacy Policy
   
 
     
@@ -2889,7 +2917,7 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>Article search &amp; metadata</td>
 <td>PubTator3 + Europe PMC + optional Semantic Scholar</td>
 <td><code>https://www.ncbi.nlm.nih.gov/research/pubtator3-api</code>, <code>https://www.ebi.ac.uk/europepmc/webservices/rest</code>, <code>https://api.semanticscholar.org</code></td>
-<td>Semantic Scholar requires <code>S2_API_KEY</code></td>
+<td>Optional (<code>S2_API_KEY</code>)</td>
 <td>Federated search with identifier-aware merge and directness-first relevance ranking</td>
 </tr>
 <tr>
@@ -2918,7 +2946,14 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>MyChem.info</td>
 <td><code>https://mychem.info/v1</code></td>
 <td>No</td>
-<td>Drug metadata, targets, synonyms</td>
+<td>Drug metadata, targets, synonyms, and default U.S. search/get normalization</td>
+</tr>
+<tr>
+<td>Drug EU regional context</td>
+<td>EMA website JSON batch (local human-medicines download)</td>
+<td><code>https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format</code></td>
+<td>No</td>
+<td>Supports <code>search/get drug --region eu|all</code> for regulatory, safety, and shortage; reads <code>BIOMCP_EMA_DIR</code> or the platform data directory</td>
 </tr>
 <tr>
 <td>Drug section enrichments</td>
@@ -3083,7 +3118,7 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <tr>
 <td>Semantic Scholar</td>
 <td><code>S2_API_KEY</code></td>
-<td>Adding the optional <code>search article</code> Semantic Scholar leg; running <code>article citations|references|recommendations</code>; enriching <code>get article</code> with TLDR and influence data</td>
+<td>Optional authenticated requests for <code>search article</code>, <code>get article</code>, <code>article batch</code>, TLDR, and citation/reference/recommendation helpers</td>
 </tr>
 <tr>
 <td>NCI CTS API</td>
@@ -3176,8 +3211,8 @@ and practical ceilings observed in command behavior.</p>
 </tr>
 <tr>
 <td>Semantic Scholar article helpers</td>
-<td>1 request / second, process-local</td>
-<td>Use explicit helper commands and batch normalization for multi-paper recommendation inputs</td>
+<td>1 request / second with <code>S2_API_KEY</code>; 1 request / 2 seconds on the shared pool without it</td>
+<td>Explicit helper commands fail fast on shared-pool <code>429</code> responses; set <code>S2_API_KEY</code> for dedicated quota and retry behavior</td>
 </tr>
 <tr>
 <td>DisGeNET <code>disgenet</code> sections</td>
@@ -3215,7 +3250,7 @@ and practical ceilings observed in command behavior.</p>
 <h2 id="article-pipeline-behavior">Article pipeline behavior<a class="headerlink" href="#article-pipeline-behavior" title="Permanent link">&para;</a></h2>
 <p>Article workflows compose multiple APIs for different tasks:</p>
 <ol>
-<li>PubTator3 + Europe PMC for federated search, with optional Semantic Scholar search when <code>S2_API_KEY</code> is set (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, local directness-first relevance ranking)</li>
+<li>PubTator3 + Europe PMC for federated search, with an optional Semantic Scholar leg when the filter set is compatible (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, local directness-first relevance ranking)</li>
 <li>Europe PMC for bibliographic metadata</li>
 <li>PubTator3 for entity annotations</li>
 <li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, and recommendations</li>
@@ -3242,7 +3277,8 @@ Users should always be able to trace:</p>
 <h2 id="operations-checklist">Operations checklist<a class="headerlink" href="#operations-checklist" title="Permanent link">&para;</a></h2>
 <p>When debugging source discrepancies:</p>
 <ol>
-<li>Run <code>biomcp health --apis-only</code> to inspect per-source connectivity plus any excluded key-gated sources</li>
+<li>Run <code>biomcp health --apis-only</code> to inspect upstream/API connectivity plus any excluded key-gated sources</li>
+<li>Run <code>biomcp health</code> to inspect local readiness rows such as EMA local data and cache dir</li>
 <li>Treat <code>biomcp health</code> as an inspection surface: it does not currently exit non-zero on partial upstream failures</li>
 <li>Run <code>./scripts/contract-smoke.sh --fast</code> for representative live probes, or <code>./scripts/contract-smoke.sh</code> for the fuller contract set</li>
 <li>Retry with <code>--no-cache</code></li>

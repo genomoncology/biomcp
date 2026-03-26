@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -389,7 +389,7 @@
   
     
   
-  Policies
+  Privacy Policy
 
       </a>
     </li>
@@ -2379,6 +2379,34 @@
   
   
     <li class="md-nav__item">
+      <a href="reference/bioasq-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BioASQ Benchmark
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="reference/faq/" class="md-nav__link">
         
   
@@ -2704,7 +2732,7 @@
   <span class="md-ellipsis">
     
   
-    Policies
+    Privacy Policy
   
 
     
@@ -3080,7 +3108,7 @@ stdio:</p>
 <li><strong>Free-text discovery:</strong> <code>biomcp discover</code> resolves aliases, brands, symptoms, and pathways before you commit to a typed entity command.</li>
 <li><strong>Cross-entity pivots:</strong> move directly from a known entity into trials, articles, drugs, pathways, structures, or article graph helpers.</li>
 <li><strong>Study analytics + charts:</strong> <code>study</code> commands support local cohort analytics plus native terminal, SVG, and PNG chart output.</li>
-<li><strong>Citation graph helpers:</strong> <code>article citations</code>, <code>article references</code>, and <code>article recommendations</code> add literature navigation from a known paper when <code>S2_API_KEY</code> is configured.</li>
+<li><strong>Citation graph helpers:</strong> <code>article citations</code>, <code>article references</code>, and <code>article recommendations</code> add literature navigation from a known paper with optional Semantic Scholar auth.</li>
 <li><strong>Gene-set enrichment and batch retrieval:</strong> <code>biomcp enrich</code> uses g:Profiler, and <code>biomcp batch</code> runs up to 10 focused <code>get</code> calls with shared JSON metadata.</li>
 </ul>
 <h2 id="entities-and-sources">Entities and sources<a class="headerlink" href="#entities-and-sources" title="Permanent link">&para;</a></h2>
@@ -3105,7 +3133,7 @@ stdio:</p>
 </tr>
 <tr>
 <td>article</td>
-<td>PubMed, PubTator3, Europe PMC, PMC OA, NCBI ID Converter, Semantic Scholar (optional with <code>S2_API_KEY</code>)</td>
+<td>PubMed, PubTator3, Europe PMC, PMC OA, NCBI ID Converter, Semantic Scholar (optional auth; <code>S2_API_KEY</code> recommended)</td>
 <td><code>biomcp search article -g BRAF --limit 5</code></td>
 </tr>
 <tr>
@@ -3115,8 +3143,8 @@ stdio:</p>
 </tr>
 <tr>
 <td>drug</td>
-<td>MyChem.info, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA, CIViC</td>
-<td><code>biomcp get drug pembrolizumab targets</code></td>
+<td>MyChem.info, EMA local batch, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA, CIViC</td>
+<td><code>biomcp get drug Keytruda regulatory --region eu</code></td>
 </tr>
 <tr>
 <td>disease</td>
@@ -3187,7 +3215,7 @@ other entity pages still describe <strong>Enrichr</strong> where that is the sou
 <h2 id="api-keys">API keys<a class="headerlink" href="#api-keys" title="Permanent link">&para;</a></h2>
 <p>Most commands work without credentials. Optional keys improve rate limits:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCBI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># PubTator, PMC OA, NCBI ID converter</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">S2_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">          </span><span class="c1"># Semantic Scholar TLDR, citations, references, recommendations</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">S2_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">          </span><span class="c1"># Optional Semantic Scholar auth; dedicated quota at 1 req/sec</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">     </span><span class="c1"># OpenFDA rate limits</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">         </span><span class="c1"># NCI CTS trial search (--source nci)</span>
 <a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ONCOKB_TOKEN</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># OncoKB variant helper</span>
@@ -3216,6 +3244,7 @@ commands cover local query, cohort, survival, compare, and co-occurrence workflo
 <li><a href="getting-started/installation/">Installation</a></li>
 <li><a href="getting-started/first-query/">First Query</a></li>
 <li><a href="how-to/search-all-workflow/">Search All Workflow</a></li>
+<li><a href="reference/bioasq-benchmark/">BioASQ Benchmark</a></li>
 <li><a href="user-guide/discover/">Discover</a></li>
 <li><a href="reference/source-licensing/">Source Licensing and Terms</a></li>
 <li><a href="reference/data-sources/">Data Sources</a></li>

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -387,7 +387,7 @@
   
     
   
-  Policies
+  Privacy Policy
 
       </a>
     </li>
@@ -2106,6 +2106,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/bioasq-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BioASQ Benchmark
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/faq/" class="md-nav__link">
         
   
@@ -2431,7 +2459,7 @@
   <span class="md-ellipsis">
     
   
-    Policies
+    Privacy Policy
   
 
     
@@ -2642,6 +2670,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#13-eu-drug-data-not-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13) EU drug data not available
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2808,6 +2847,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#13-eu-drug-data-not-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13) EU drug data not available
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2931,6 +2981,30 @@ re-run the installer:</p>
 <li>Whether <code>--no-cache</code> changes behavior</li>
 <li>Source-specific API key state (set or unset)</li>
 </ul>
+<h2 id="13-eu-drug-data-not-available">13) EU drug data not available<a class="headerlink" href="#13-eu-drug-data-not-available" title="Permanent link">&para;</a></h2>
+<p>EU drug regulatory, safety, and shortage sections depend on the local EMA human-medicines JSON batch. Check local readiness with full health output, not the API-only inventory view:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>health
+</code></pre></div>
+<p>Interpret the EMA row like this:</p>
+<ul>
+<li><code>configured</code>: <code>BIOMCP_EMA_DIR</code> is set and all required EMA JSON files are present</li>
+<li><code>available (default path)</code>: BioMCP found a complete EMA batch in the default platform data directory</li>
+<li><code>not configured</code>: no EMA batch was found at the default path, so EU drug features are currently unavailable but the install is not considered broken</li>
+<li><code>error (missing: ...)</code>: BioMCP found a partial EMA batch; install the missing files or point <code>BIOMCP_EMA_DIR</code> at a complete batch</li>
+</ul>
+<p>Expected EMA files:</p>
+<ul>
+<li><code>medicines.json</code></li>
+<li><code>post_authorisation.json</code></li>
+<li><code>referrals.json</code></li>
+<li><code>psusas.json</code></li>
+<li><code>dhpcs.json</code></li>
+<li><code>shortages.json</code></li>
+</ul>
+<p>If you need to override the default path:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_EMA_DIR</span><span class="o">=</span><span class="s2">&quot;/path/to/ema-human&quot;</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>biomcp<span class="w"> </span>health
+</code></pre></div>
 
 
 

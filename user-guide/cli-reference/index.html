@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -391,7 +391,7 @@
   
     
   
-  Policies
+  Privacy Policy
 
       </a>
     </li>
@@ -2596,6 +2596,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/bioasq-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BioASQ Benchmark
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/faq/" class="md-nav__link">
         
   
@@ -2921,7 +2949,7 @@
   <span class="md-ellipsis">
     
   
-    Policies
+    Privacy Policy
   
 
     
@@ -3483,14 +3511,16 @@ under <code>_meta.section_sources</code>.</p>
 <a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>biomcp mcp
 <a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>biomcp serve
 <a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>biomcp serve-http [--host 127.0.0.1] [--port 8080]
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>biomcp serve-sse                  # removed compatibility command; use serve-http
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>biomcp update [--check]
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>biomcp uninstall
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>biomcp version
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>biomcp update [--check]
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>biomcp uninstall
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>biomcp version
 </code></pre></div>
 <p>Numeric and slug skill lookups remain compatibility behavior, but they are not
 part of the recommended command synopsis because current builds do not ship a
 browsable embedded catalog.</p>
+<p><code>biomcp health --apis-only</code> is the upstream inventory smoke test. Full
+<code>biomcp health</code> also reports local readiness rows such as EMA local data and
+cache dir status.</p>
 <h2 id="search-command-families">Search command families<a class="headerlink" href="#search-command-families" title="Permanent link">&para;</a></h2>
 <h2 id="discover">Discover<a class="headerlink" href="#discover" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>discover<span class="w"> </span>ERBB1
@@ -3537,6 +3567,8 @@ standard <code>_meta.next_commands</code> and <code>_meta.section_sources</code>
 </code></pre></div>
 <h3 id="drug">Drug<a class="headerlink" href="#drug" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;kinase inhibitor&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--region<span class="w"> </span>eu<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h3 id="pathway">Pathway<a class="headerlink" href="#pathway" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;MAPK signaling&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
@@ -3576,12 +3608,11 @@ standard <code>_meta.next_commands</code> and <code>_meta.section_sources</code>
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
 <a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span>
 </code></pre></div>
-<p><code>S2_API_KEY</code> is optional. It unlocks <code>get article ... tldr</code> plus the explicit
-<code>article citations|references|recommendations</code> helpers. <code>search article</code>
-remains PubTator3 + Europe PMC, and can add an optional Semantic Scholar leg
-when the key is present and the filter set is compatible. <code>article batch</code>
-stays available without the key and adds optional TLDR/citation metadata when
-Semantic Scholar is configured.</p>
+<p><code>S2_API_KEY</code> is optional. With it, BioMCP sends authenticated Semantic Scholar
+requests at 1 req/sec for <code>search article</code>, <code>get article</code>, <code>get article ... tldr</code>,
+<code>article batch</code>, and the explicit <code>article citations|references|recommendations</code>
+helpers. Without it, those same paths use the shared unauthenticated pool at
+1 req/2sec.</p>
 <h3 id="trial_1">Trial<a class="headerlink" href="#trial_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
@@ -3593,8 +3624,16 @@ Semantic Scholar is configured.</p>
 </code></pre></div>
 <h3 id="drug_1">Drug<a class="headerlink" href="#drug_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>carboplatin<span class="w"> </span>shortage
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>eu
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Ozempic<span class="w"> </span>safety<span class="w"> </span>--region<span class="w"> </span>eu
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>carboplatin<span class="w"> </span>shortage
 </code></pre></div>
+<p>Omitting <code>--region</code> on a plain name/alias <code>search drug</code> checks both U.S. and EU
+data. If you omit <code>--region</code> while using structured filters such as <code>--target</code>
+or <code>--indication</code>, BioMCP stays on the U.S. MyChem path. Explicit <code>--region eu</code>
+or <code>--region all</code> with structured filters still errors. For <code>get drug</code>, use
+<code>--region</code> only with <code>regulatory</code>, <code>safety</code>, <code>shortage</code>, or <code>all</code>; <code>approvals</code>
+stays U.S.-only.</p>
 <h3 id="pathway_1">Pathway<a class="headerlink" href="#pathway_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pathway<span class="w"> </span>R-HSA-5673001
 <a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pathway<span class="w"> </span>R-HSA-5673001<span class="w"> </span>genes
@@ -3628,7 +3667,7 @@ Semantic Scholar is configured.</p>
 <li><code>biomcp serve-http</code> runs the MCP Streamable HTTP server.</li>
 <li>Streamable HTTP clients connect to <code>/mcp</code>.</li>
 <li>Probe routes: <code>/health</code>, <code>/readyz</code>, and <code>/</code>.</li>
-<li><code>biomcp serve-sse</code> remains visible only as a removed compatibility command that points back to <code>biomcp serve-http</code>.</li>
+<li><code>biomcp serve-sse</code> remains available only as a hidden compatibility command that points users back to <code>biomcp serve-http</code>.</li>
 </ul>
 <p>See also: <code>docs/reference/mcp-server.md</code>.</p>
 <h2 id="helper-command-families">Helper command families<a class="headerlink" href="#helper-command-families" title="Permanent link">&para;</a></h2>

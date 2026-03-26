@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
@@ -391,7 +391,7 @@
   
     
   
-  Policies
+  Privacy Policy
 
       </a>
     </li>
@@ -2172,6 +2172,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EMA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#enrichr" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2822,6 +2833,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../bioasq-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    BioASQ Benchmark
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../faq/" class="md-nav__link">
         
   
@@ -3147,7 +3186,7 @@
   <span class="md-ellipsis">
     
   
-    Policies
+    Privacy Policy
   
 
     
@@ -3318,6 +3357,17 @@
     <span class="md-ellipsis">
       
         DGIdb
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EMA
       
     </span>
   </a>
@@ -4025,6 +4075,15 @@
 <td><a href="https://www.disgenet.com/">https://www.disgenet.com/</a></td>
 </tr>
 <tr>
+<td>EMA</td>
+<td>1</td>
+<td>direct_api</td>
+<td>none</td>
+<td>EMA website material may be reused with source attribution; third-party content can carry separate rights</td>
+<td>EMA-published website data is generally reusable with attribution, but embedded third-party materials may need separate permission</td>
+<td><a href="https://www.ema.europa.eu/en/about-us/about-website/legal-notice">https://www.ema.europa.eu/en/about-us/about-website/legal-notice</a></td>
+</tr>
+<tr>
 <td>Enrichr</td>
 <td>1</td>
 <td>direct_api</td>
@@ -4271,7 +4330,7 @@
 <td>Semantic Scholar</td>
 <td>2</td>
 <td>direct_api</td>
-<td>required_env</td>
+<td>optional_env</td>
 <td>custom API license agreement</td>
 <td>the API license restricts repackaging, resale, and broad commercial redistribution without expanded licensing</td>
 <td><a href="https://www.semanticscholar.org/product/api/license">https://www.semanticscholar.org/product/api/license</a></td>
@@ -4479,6 +4538,18 @@
 <li>Official terms URL: <a href="https://www.dgidb.org/about">https://www.dgidb.org/about</a></li>
 <li>Reviewed on: <code>2026-03-20</code></li>
 <li>Notes: DGIdb itself is open to query, but it aggregates claims from many external drug-gene sources.</li>
+</ul>
+<h3 id="ema">EMA<a class="headerlink" href="#ema" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BioMCP surfaces: <code>search drug --region eu|all; get drug &lt;name&gt; regulatory|safety|shortage --region eu|all</code></li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>none</code></li>
+<li>Provider access / registration: manual download of the EMA website JSON batch or set <code>BIOMCP_EMA_DIR</code></li>
+<li>License / terms summary: EMA website material may be reused with source attribution; third-party content can carry separate rights</li>
+<li>Redistribution / reuse summary: EMA-published website data is generally reusable with attribution, but embedded third-party materials may need separate permission</li>
+<li>Official terms URL: <a href="https://www.ema.europa.eu/en/about-us/about-website/legal-notice">https://www.ema.europa.eu/en/about-us/about-website/legal-notice</a></li>
+<li>Reviewed on: <code>2026-03-24</code></li>
+<li>Notes: BioMCP reads the downloaded human-medicines JSON batch from <code>BIOMCP_EMA_DIR</code> or the default data directory and does not query a live EMA API. The download landing page is <a href="https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format">https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format</a>.</li>
 </ul>
 <h3 id="enrichr">Enrichr<a class="headerlink" href="#enrichr" title="Permanent link">&para;</a></h3>
 <ul>
@@ -4829,14 +4900,14 @@
 <ul>
 <li>BioMCP surfaces: <code>search article; get article &lt;id&gt; tldr; article citations &lt;id&gt;; article references &lt;id&gt;; article recommendations &lt;id&gt;</code></li>
 <li>Integration mode: <code>direct_api</code></li>
-<li>BioMCP auth: <code>required_env</code> via <code>S2_API_KEY</code></li>
-<li>Provider access / registration: API key required for BioMCP's Semantic Scholar search/helper path and governed by the API license agreement</li>
+<li>BioMCP auth: <code>optional_env</code> via <code>S2_API_KEY</code></li>
+<li>Provider access / registration: unauthenticated access is available on the shared pool; authenticated access uses the provider-issued API key and remains governed by the API license agreement</li>
 <li>License / terms summary: custom API license agreement</li>
 <li>Redistribution / reuse summary: the API license restricts repackaging, resale, and broad commercial redistribution without expanded licensing</li>
 <li>Official terms URL: <a href="https://www.semanticscholar.org/product/api/license">https://www.semanticscholar.org/product/api/license</a></li>
 <li>API key / account URL: <a href="https://www.semanticscholar.org/product/api">https://www.semanticscholar.org/product/api</a></li>
 <li>Reviewed on: <code>2026-03-20</code></li>
-<li>Notes: The overview page says many endpoints are publicly reachable without auth, but BioMCP's article search leg and helper commands deliberately require <code>S2_API_KEY</code> to stay within the supported quota path.</li>
+<li>Notes: BioMCP can call Semantic Scholar without <code>S2_API_KEY</code>, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability.</li>
 </ul>
 <h3 id="umls">UMLS<a class="headerlink" href="#umls" title="Permanent link">&para;</a></h3>
 <ul>
