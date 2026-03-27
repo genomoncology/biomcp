@@ -183,13 +183,13 @@
     ],
     "bioMcp_auth": "none",
     "env_var": null,
-    "provider_access": "manual download of the EMA website JSON batch or set BIOMCP_EMA_DIR",
+    "provider_access": "on-demand local download by BioMCP on first EMA use, or manual preseed via BIOMCP_EMA_DIR",
     "license_summary": "EMA website material may be reused with source attribution; third-party content can carry separate rights",
     "redistribution_summary": "EMA-published website data is generally reusable with attribution, but embedded third-party materials may need separate permission",
     "terms_url": "https://www.ema.europa.eu/en/about-us/about-website/legal-notice",
     "key_url": null,
     "reviewed_on": "2026-03-24",
-    "notes": "BioMCP reads the downloaded human-medicines JSON batch from BIOMCP_EMA_DIR or the default data directory; it does not query a live EMA API."
+    "notes": "BioMCP auto-downloads the EMA human-medicines JSON batch into BIOMCP_EMA_DIR or the default data directory on first use, refreshes stale files, and supports explicit refresh via biomcp ema sync."
   },
   {
     "id": "enrichr",
