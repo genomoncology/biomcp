@@ -3715,6 +3715,7 @@
 
 
 <h1 id="generate-charts-easily-from-study-data">Generate Charts Easily from Study Data<a class="headerlink" href="#generate-charts-easily-from-study-data" title="Permanent link">&para;</a></h1>
+<p><img alt="Generate Charts Easily from Study Data" src="../images/slide-06-charting.png" /></p>
 <p>You downloaded a cBioPortal study. Now you want to see what's in it — survival differences, mutation patterns, expression distributions, co-mutation relationships. Normally that means opening R, writing ggplot code, managing dependencies, and iterating in a notebook.</p>
 <p>BioMCP ships 12 chart types compiled directly into the binary. No Python, no R, no subprocess calls, no package installs. One command produces a chart as a PNG, SVG, or directly in the terminal.</p>
 <p>The charting engine is <a href="https://github.com/Psy-Fer/kuva">Kuva</a>, an open-source Rust library linked at compile time. It's part of the binary — not a dependency you install.</p>
@@ -3731,14 +3732,14 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$ biomcp study query --study brca_tcga_pan_can_atlas_2018 \
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    --gene TP53 --type mutations --chart pie -o tp53-pie.png
 </code></pre></div>
-<p><img alt="Pie chart" src="../images/pie-light.png" /></p>
+<p><img alt="Pie chart" src="../images/pie.png" /></p>
 <p>Missense 61.3%, frameshift deletion 13%, nonsense 12.4%.</p>
 <h3 id="histogram">Histogram<a class="headerlink" href="#histogram" title="Permanent link">&para;</a></h3>
 <p>Expression distribution for a single gene. Reveals bimodal patterns, outliers, and subgroups.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>$ biomcp study query --study brca_tcga_pan_can_atlas_2018 \
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    --gene ERBB2 --type expression --chart histogram -o erbb2-histogram.png
 </code></pre></div>
-<p><img alt="Histogram" src="../images/histogram-light.png" /></p>
+<p><img alt="Histogram" src="../images/histogram.png" /></p>
 <p>The right-hand bump is the HER2-amplified subgroup — roughly 15-20% of breast cancers.</p>
 <h3 id="density">Density<a class="headerlink" href="#density" title="Permanent link">&para;</a></h3>
 <p>Smoothed kernel density estimate of the same expression data. Cleaner view of the distribution shape.</p>
@@ -3752,7 +3753,7 @@
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    --gene TP53 --target ERBB2 --type expression \
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    --chart box -o erbb2-by-tp53-box.png
 </code></pre></div>
-<p><img alt="Box plot" src="../images/box-light.png" /></p>
+<p><img alt="Box plot" src="../images/box.png" /></p>
 <p>ERBB2 expression stratified by TP53 mutation status.</p>
 <h3 id="violin">Violin<a class="headerlink" href="#violin" title="Permanent link">&para;</a></h3>
 <p>Same grouped comparison, but showing the full distribution shape instead of just quartiles.</p>
@@ -3760,7 +3761,7 @@
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    --gene TP53 --target ERBB2 --type expression \
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    --chart violin -o erbb2-by-tp53-violin.png
 </code></pre></div>
-<p><img alt="Violin plot" src="../images/violin-light.png" /></p>
+<p><img alt="Violin plot" src="../images/violin.png" /></p>
 <p>The bimodal HER2 pattern is visible in both groups.</p>
 <h3 id="ridgeline">Ridgeline<a class="headerlink" href="#ridgeline" title="Permanent link">&para;</a></h3>
 <p>Overlapping density curves stacked vertically. Best for comparing two distributions at a glance.</p>
@@ -3768,7 +3769,7 @@
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    --gene TP53 --target ERBB2 --type expression \
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    --chart ridgeline -o erbb2-by-tp53-ridgeline.png
 </code></pre></div>
-<p><img alt="Ridgeline plot" src="../images/ridgeline-light.png" /></p>
+<p><img alt="Ridgeline plot" src="../images/ridgeline.png" /></p>
 <p>TP53-mutant (blue) vs wildtype (orange). The wildtype group has a wider right tail.</p>
 <h3 id="survival-kaplan-meier">Survival (Kaplan-Meier)<a class="headerlink" href="#survival-kaplan-meier" title="Permanent link">&para;</a></h3>
 <p>Time-to-event curves split by mutation status. The chart most clinicians look at first.</p>
