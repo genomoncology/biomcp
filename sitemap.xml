@@ -2,242 +2,338 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://biomcp.org/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/policies/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/troubleshooting/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
-         <loc>https://biomcp.org/blog/biomcp-kuva-charts/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <loc>https://biomcp.org/blog/biomcp-charts/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/blog/biomcp-pubmed-articles/</loc>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/blog/cbioportal-study-analytics/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
-         <loc>https://biomcp.org/blog/kuva-charting-guide/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <loc>https://biomcp.org/blog/skillbench-biomcp-skills/</loc>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/blog/we-deleted-35-tools/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/charts/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/charts/bar/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/charts/box/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/charts/density/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/charts/heatmap/</loc>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/charts/histogram/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/charts/pie/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/charts/ridgeline/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/charts/scatter/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/charts/stacked-bar/</loc>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/charts/survival/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/charts/violin/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/charts/waterfall/</loc>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/concepts/progressive-disclosure/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/concepts/what-is-biomcp/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/getting-started/api-keys/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/getting-started/claude-desktop/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/getting-started/first-query/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/getting-started/installation/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/getting-started/remote-http/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/getting-started/skills/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/how-to/annotate-variants/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/how-to/cross-entity-pivots/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/how-to/find-articles/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/how-to/find-trials/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/how-to/guide-workflows/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/how-to/predict-effects/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/how-to/reproduce-papers/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/how-to/search-all-workflow/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/how-to/skill-validation/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/article-keyword-search/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/benchmarks/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/bioasq-benchmark/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/civic-sections/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/data-sources/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/dependencies/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/drug-approvals-and-ae-summary/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/error-codes/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/faq/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/mcp-server/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/quick-reference/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/source-licensing/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/reference/source-versioning/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/cbioportal/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/chembl/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/civic/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/clinicaltrials-gov/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/clinvar/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/ema/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/gnomad/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/human-protein-atlas/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/kegg/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/monarch-initiative/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/oncokb/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/openfda/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/opentargets/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/pharmgkb/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/pubmed/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/reactome/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/semantic-scholar/</loc>
+         <lastmod>2026-04-06</lastmod>
+    </url>
+    <url>
+         <loc>https://biomcp.org/sources/uniprot/</loc>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/adverse-event/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/article/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/cli-reference/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/discover/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/disease/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/drug/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/gene/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/gwas/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/pathway/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/pgx/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/phenotype/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/protein/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/trial/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
     <url>
          <loc>https://biomcp.org/user-guide/variant/</loc>
-         <lastmod>2026-03-26</lastmod>
+         <lastmod>2026-04-06</lastmod>
     </url>
 </urlset>

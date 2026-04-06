@@ -48,7 +48,7 @@
     "terms_url": "https://www.ebi.ac.uk/chembl/",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP only queries live ChEMBL endpoints and does not ship ChEMBL data in the repository."
+    "notes": "BioMCP only queries live ChEMBL endpoints and does not ship ChEMBL data in the repository. Drug target output keeps ChEMBL in the generic target/mechanism section while CIViC variant labels are rendered separately when present."
   },
   {
     "id": "civic",
@@ -56,7 +56,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["get gene <symbol> civic", "get disease <id> variants"],
+    "bioMcp_surfaces": ["get gene <symbol> civic", "get drug <name> targets", "get drug <name> civic", "get disease <id> variants"],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public API",
@@ -65,7 +65,7 @@
     "terms_url": "https://civicdb.org/home",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "CIViC is treated here as an open-access evidence source surfaced directly by BioMCP."
+    "notes": "CIViC is treated here as an open-access evidence source surfaced directly by BioMCP. Drug target output may add a separate CIViC variant-target annotation line without merging those labels into the generic targets section."
   },
   {
     "id": "clingen",
@@ -183,13 +183,13 @@
     ],
     "bioMcp_auth": "none",
     "env_var": null,
-    "provider_access": "manual download of the EMA website JSON batch or set BIOMCP_EMA_DIR",
+    "provider_access": "on-demand local download by BioMCP on first EMA use, or manual preseed via BIOMCP_EMA_DIR",
     "license_summary": "EMA website material may be reused with source attribution; third-party content can carry separate rights",
     "redistribution_summary": "EMA-published website data is generally reusable with attribution, but embedded third-party materials may need separate permission",
     "terms_url": "https://www.ema.europa.eu/en/about-us/about-website/legal-notice",
     "key_url": null,
     "reviewed_on": "2026-03-24",
-    "notes": "BioMCP reads the downloaded human-medicines JSON batch from BIOMCP_EMA_DIR or the default data directory; it does not query a live EMA API."
+    "notes": "BioMCP auto-downloads the EMA human-medicines JSON batch into BIOMCP_EMA_DIR or the default data directory on first use, refreshes stale files, and supports explicit refresh via biomcp ema sync."
   },
   {
     "id": "enrichr",
@@ -563,7 +563,7 @@
     "terms_url": "https://platform-docs.opentargets.org/licence",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "The licence page also lists the licensing status of major upstream datasets consumed by Open Targets."
+    "notes": "The licence page also lists the licensing status of major upstream datasets consumed by Open Targets. Drug target output keeps Open Targets in the generic target section while CIViC variant annotations, when present, are labeled separately."
   },
   {
     "id": "pharmgkb",
