@@ -6,37 +6,37 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, CIViC, OncoKB, cBioPortal, EMA, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative.">
+        <meta name="description" content="Single-binary CLI and MCP server for querying biomedical databases">
       
       
         <meta name="author" content="Ian Maurer">
       
       
-        <link rel="canonical" href="https://biomcp.org/sources/">
+        <link rel="canonical" href="https://biomcp.org/blog/kras-g12c-treatment-landscape/">
       
       
-        <link rel="prev" href="../user-guide/phenotype/">
+        <link rel="prev" href="../../reference/dependencies/">
       
       
-        <link rel="next" href="pubmed/">
+        <link rel="next" href="../biomcp-charts/">
       
       
         
       
       
-      <link rel="icon" href="../assets/favicon.ico">
+      <link rel="icon" href="../../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
-        <title>Biomedical Data Sources for AI Agents | BioMCP - BioMCP</title>
+        <title>KRAS G12C Treatment Landscape in 7 Commands - BioMCP</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -55,9 +55,9 @@
       
     
     
-      <link rel="stylesheet" href="../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#biomedical-data-sources-for-ai-agents" class="md-skip">
+        <a href="#kras-g12c-treatment-landscape-in-7-commands" class="md-skip">
           Skip to content
         </a>
       
@@ -98,9 +98,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="BioMCP" class="md-header__button md-logo" aria-label="BioMCP" data-md-component="logo">
+    <a href="../.." title="BioMCP" class="md-header__button md-logo" aria-label="BioMCP" data-md-component="logo">
       
-  <img src="../assets/icon.png" alt="logo">
+  <img src="../../assets/icon.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -117,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Biomedical Data Sources for AI Agents | BioMCP
+              KRAS G12C Treatment Landscape in 7 Commands
             
           </span>
         </div>
@@ -224,7 +224,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -245,7 +245,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../getting-started/installation/" class="md-tabs__link">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
           
   
   
@@ -265,7 +265,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../concepts/what-is-biomcp/" class="md-tabs__link">
+        <a href="../../concepts/what-is-biomcp/" class="md-tabs__link">
           
   
   
@@ -285,11 +285,91 @@
     
     
       <li class="md-tabs__item">
-        <a href="../user-guide/cli-reference/" class="md-tabs__link">
+        <a href="../../user-guide/cli-reference/" class="md-tabs__link">
           
   
   
   User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../sources/" class="md-tabs__link">
+          
+  
+  
+  Sources
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../how-to/annotate-variants/" class="md-tabs__link">
+          
+  
+  
+  How-To
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../charts/" class="md-tabs__link">
+          
+  
+  
+  Study Charts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/quick-reference/" class="md-tabs__link">
+          
+  
+  
+  Reference
 
         </a>
       </li>
@@ -311,86 +391,6 @@
           
   
   
-  Sources
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../how-to/annotate-variants/" class="md-tabs__link">
-          
-  
-  
-  How-To
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../charts/" class="md-tabs__link">
-          
-  
-  
-  Study Charts
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../reference/quick-reference/" class="md-tabs__link">
-          
-  
-  
-  Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
-          
-  
-  
   Blog
 
         </a>
@@ -405,7 +405,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../policies/" class="md-tabs__link">
+      <a href="../../policies/" class="md-tabs__link">
         
   
   
@@ -424,7 +424,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../troubleshooting/" class="md-tabs__link">
+      <a href="../../troubleshooting/" class="md-tabs__link">
         
   
   
@@ -465,9 +465,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="BioMCP" class="md-nav__button md-logo" aria-label="BioMCP" data-md-component="logo">
+    <a href="../.." title="BioMCP" class="md-nav__button md-logo" aria-label="BioMCP" data-md-component="logo">
       
-  <img src="../assets/icon.png" alt="logo">
+  <img src="../../assets/icon.png" alt="logo">
 
     </a>
     BioMCP
@@ -494,7 +494,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -573,7 +573,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/installation/" class="md-nav__link">
+      <a href="../../getting-started/installation/" class="md-nav__link">
         
   
   
@@ -601,7 +601,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/first-query/" class="md-nav__link">
+      <a href="../../getting-started/first-query/" class="md-nav__link">
         
   
   
@@ -629,7 +629,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/claude-desktop/" class="md-nav__link">
+      <a href="../../getting-started/claude-desktop/" class="md-nav__link">
         
   
   
@@ -657,7 +657,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/remote-http/" class="md-nav__link">
+      <a href="../../getting-started/remote-http/" class="md-nav__link">
         
   
   
@@ -685,7 +685,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/api-keys/" class="md-nav__link">
+      <a href="../../getting-started/api-keys/" class="md-nav__link">
         
   
   
@@ -713,7 +713,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/skills/" class="md-nav__link">
+      <a href="../../getting-started/skills/" class="md-nav__link">
         
   
   
@@ -800,7 +800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/what-is-biomcp/" class="md-nav__link">
+      <a href="../../concepts/what-is-biomcp/" class="md-nav__link">
         
   
   
@@ -828,7 +828,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/progressive-disclosure/" class="md-nav__link">
+      <a href="../../concepts/progressive-disclosure/" class="md-nav__link">
         
   
   
@@ -915,7 +915,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/cli-reference/" class="md-nav__link">
+      <a href="../../user-guide/cli-reference/" class="md-nav__link">
         
   
   
@@ -943,7 +943,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/discover/" class="md-nav__link">
+      <a href="../../user-guide/discover/" class="md-nav__link">
         
   
   
@@ -971,7 +971,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/gene/" class="md-nav__link">
+      <a href="../../user-guide/gene/" class="md-nav__link">
         
   
   
@@ -999,7 +999,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/variant/" class="md-nav__link">
+      <a href="../../user-guide/variant/" class="md-nav__link">
         
   
   
@@ -1027,7 +1027,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/article/" class="md-nav__link">
+      <a href="../../user-guide/article/" class="md-nav__link">
         
   
   
@@ -1055,7 +1055,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/trial/" class="md-nav__link">
+      <a href="../../user-guide/trial/" class="md-nav__link">
         
   
   
@@ -1083,7 +1083,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/drug/" class="md-nav__link">
+      <a href="../../user-guide/drug/" class="md-nav__link">
         
   
   
@@ -1111,7 +1111,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/disease/" class="md-nav__link">
+      <a href="../../user-guide/disease/" class="md-nav__link">
         
   
   
@@ -1139,7 +1139,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/pathway/" class="md-nav__link">
+      <a href="../../user-guide/pathway/" class="md-nav__link">
         
   
   
@@ -1167,7 +1167,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/protein/" class="md-nav__link">
+      <a href="../../user-guide/protein/" class="md-nav__link">
         
   
   
@@ -1195,7 +1195,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/adverse-event/" class="md-nav__link">
+      <a href="../../user-guide/adverse-event/" class="md-nav__link">
         
   
   
@@ -1223,7 +1223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/pgx/" class="md-nav__link">
+      <a href="../../user-guide/pgx/" class="md-nav__link">
         
   
   
@@ -1251,7 +1251,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/gwas/" class="md-nav__link">
+      <a href="../../user-guide/gwas/" class="md-nav__link">
         
   
   
@@ -1279,7 +1279,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/phenotype/" class="md-nav__link">
+      <a href="../../user-guide/phenotype/" class="md-nav__link">
         
   
   
@@ -1311,31 +1311,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -1353,7 +1348,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1368,37 +1363,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Overview
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../sources/" class="md-nav__link">
         
   
   
@@ -1414,59 +1382,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#source-guides" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Source guides
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reference-and-setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reference and setup
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related-docs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Related docs
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1479,7 +1394,7 @@
   
   
     <li class="md-nav__item">
-      <a href="pubmed/" class="md-nav__link">
+      <a href="../../sources/pubmed/" class="md-nav__link">
         
   
   
@@ -1507,7 +1422,7 @@
   
   
     <li class="md-nav__item">
-      <a href="clinicaltrials-gov/" class="md-nav__link">
+      <a href="../../sources/clinicaltrials-gov/" class="md-nav__link">
         
   
   
@@ -1535,7 +1450,7 @@
   
   
     <li class="md-nav__item">
-      <a href="clinvar/" class="md-nav__link">
+      <a href="../../sources/clinvar/" class="md-nav__link">
         
   
   
@@ -1563,7 +1478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="openfda/" class="md-nav__link">
+      <a href="../../sources/openfda/" class="md-nav__link">
         
   
   
@@ -1591,7 +1506,7 @@
   
   
     <li class="md-nav__item">
-      <a href="uniprot/" class="md-nav__link">
+      <a href="../../sources/uniprot/" class="md-nav__link">
         
   
   
@@ -1619,7 +1534,7 @@
   
   
     <li class="md-nav__item">
-      <a href="gnomad/" class="md-nav__link">
+      <a href="../../sources/gnomad/" class="md-nav__link">
         
   
   
@@ -1647,7 +1562,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reactome/" class="md-nav__link">
+      <a href="../../sources/reactome/" class="md-nav__link">
         
   
   
@@ -1675,7 +1590,7 @@
   
   
     <li class="md-nav__item">
-      <a href="semantic-scholar/" class="md-nav__link">
+      <a href="../../sources/semantic-scholar/" class="md-nav__link">
         
   
   
@@ -1703,7 +1618,7 @@
   
   
     <li class="md-nav__item">
-      <a href="chembl/" class="md-nav__link">
+      <a href="../../sources/chembl/" class="md-nav__link">
         
   
   
@@ -1731,7 +1646,7 @@
   
   
     <li class="md-nav__item">
-      <a href="opentargets/" class="md-nav__link">
+      <a href="../../sources/opentargets/" class="md-nav__link">
         
   
   
@@ -1759,7 +1674,7 @@
   
   
     <li class="md-nav__item">
-      <a href="civic/" class="md-nav__link">
+      <a href="../../sources/civic/" class="md-nav__link">
         
   
   
@@ -1787,7 +1702,7 @@
   
   
     <li class="md-nav__item">
-      <a href="oncokb/" class="md-nav__link">
+      <a href="../../sources/oncokb/" class="md-nav__link">
         
   
   
@@ -1815,7 +1730,7 @@
   
   
     <li class="md-nav__item">
-      <a href="cbioportal/" class="md-nav__link">
+      <a href="../../sources/cbioportal/" class="md-nav__link">
         
   
   
@@ -1843,7 +1758,7 @@
   
   
     <li class="md-nav__item">
-      <a href="ema/" class="md-nav__link">
+      <a href="../../sources/ema/" class="md-nav__link">
         
   
   
@@ -1871,7 +1786,7 @@
   
   
     <li class="md-nav__item">
-      <a href="kegg/" class="md-nav__link">
+      <a href="../../sources/kegg/" class="md-nav__link">
         
   
   
@@ -1899,7 +1814,7 @@
   
   
     <li class="md-nav__item">
-      <a href="pharmgkb/" class="md-nav__link">
+      <a href="../../sources/pharmgkb/" class="md-nav__link">
         
   
   
@@ -1927,7 +1842,7 @@
   
   
     <li class="md-nav__item">
-      <a href="human-protein-atlas/" class="md-nav__link">
+      <a href="../../sources/human-protein-atlas/" class="md-nav__link">
         
   
   
@@ -1955,7 +1870,7 @@
   
   
     <li class="md-nav__item">
-      <a href="monarch-initiative/" class="md-nav__link">
+      <a href="../../sources/monarch-initiative/" class="md-nav__link">
         
   
   
@@ -2042,7 +1957,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/annotate-variants/" class="md-nav__link">
+      <a href="../../how-to/annotate-variants/" class="md-nav__link">
         
   
   
@@ -2070,7 +1985,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/cross-entity-pivots/" class="md-nav__link">
+      <a href="../../how-to/cross-entity-pivots/" class="md-nav__link">
         
   
   
@@ -2098,7 +2013,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/find-articles/" class="md-nav__link">
+      <a href="../../how-to/find-articles/" class="md-nav__link">
         
   
   
@@ -2126,7 +2041,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/find-trials/" class="md-nav__link">
+      <a href="../../how-to/find-trials/" class="md-nav__link">
         
   
   
@@ -2154,7 +2069,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/predict-effects/" class="md-nav__link">
+      <a href="../../how-to/predict-effects/" class="md-nav__link">
         
   
   
@@ -2182,7 +2097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/reproduce-papers/" class="md-nav__link">
+      <a href="../../how-to/reproduce-papers/" class="md-nav__link">
         
   
   
@@ -2210,7 +2125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/search-all-workflow/" class="md-nav__link">
+      <a href="../../how-to/search-all-workflow/" class="md-nav__link">
         
   
   
@@ -2238,7 +2153,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/skill-validation/" class="md-nav__link">
+      <a href="../../how-to/skill-validation/" class="md-nav__link">
         
   
   
@@ -2266,7 +2181,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/guide-workflows/" class="md-nav__link">
+      <a href="../../how-to/guide-workflows/" class="md-nav__link">
         
   
   
@@ -2353,7 +2268,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/" class="md-nav__link">
+      <a href="../../charts/" class="md-nav__link">
         
   
   
@@ -2381,7 +2296,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/bar/" class="md-nav__link">
+      <a href="../../charts/bar/" class="md-nav__link">
         
   
   
@@ -2409,7 +2324,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/stacked-bar/" class="md-nav__link">
+      <a href="../../charts/stacked-bar/" class="md-nav__link">
         
   
   
@@ -2437,7 +2352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/pie/" class="md-nav__link">
+      <a href="../../charts/pie/" class="md-nav__link">
         
   
   
@@ -2465,7 +2380,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/heatmap/" class="md-nav__link">
+      <a href="../../charts/heatmap/" class="md-nav__link">
         
   
   
@@ -2493,7 +2408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/histogram/" class="md-nav__link">
+      <a href="../../charts/histogram/" class="md-nav__link">
         
   
   
@@ -2521,7 +2436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/density/" class="md-nav__link">
+      <a href="../../charts/density/" class="md-nav__link">
         
   
   
@@ -2549,7 +2464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/box/" class="md-nav__link">
+      <a href="../../charts/box/" class="md-nav__link">
         
   
   
@@ -2577,7 +2492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/violin/" class="md-nav__link">
+      <a href="../../charts/violin/" class="md-nav__link">
         
   
   
@@ -2605,7 +2520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/ridgeline/" class="md-nav__link">
+      <a href="../../charts/ridgeline/" class="md-nav__link">
         
   
   
@@ -2633,7 +2548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/survival/" class="md-nav__link">
+      <a href="../../charts/survival/" class="md-nav__link">
         
   
   
@@ -2720,7 +2635,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/quick-reference/" class="md-nav__link">
+      <a href="../../reference/quick-reference/" class="md-nav__link">
         
   
   
@@ -2748,7 +2663,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/data-sources/" class="md-nav__link">
+      <a href="../../reference/data-sources/" class="md-nav__link">
         
   
   
@@ -2776,7 +2691,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/source-licensing/" class="md-nav__link">
+      <a href="../../reference/source-licensing/" class="md-nav__link">
         
   
   
@@ -2804,7 +2719,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/mcp-server/" class="md-nav__link">
+      <a href="../../reference/mcp-server/" class="md-nav__link">
         
   
   
@@ -2832,7 +2747,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/error-codes/" class="md-nav__link">
+      <a href="../../reference/error-codes/" class="md-nav__link">
         
   
   
@@ -2860,7 +2775,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/benchmarks/" class="md-nav__link">
+      <a href="../../reference/benchmarks/" class="md-nav__link">
         
   
   
@@ -2888,7 +2803,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/bioasq-benchmark/" class="md-nav__link">
+      <a href="../../reference/bioasq-benchmark/" class="md-nav__link">
         
   
   
@@ -2916,7 +2831,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/faq/" class="md-nav__link">
+      <a href="../../reference/faq/" class="md-nav__link">
         
   
   
@@ -2944,7 +2859,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/source-versioning/" class="md-nav__link">
+      <a href="../../reference/source-versioning/" class="md-nav__link">
         
   
   
@@ -2972,7 +2887,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/article-keyword-search/" class="md-nav__link">
+      <a href="../../reference/article-keyword-search/" class="md-nav__link">
         
   
   
@@ -3000,7 +2915,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/civic-sections/" class="md-nav__link">
+      <a href="../../reference/civic-sections/" class="md-nav__link">
         
   
   
@@ -3028,7 +2943,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/drug-approvals-and-ae-summary/" class="md-nav__link">
+      <a href="../../reference/drug-approvals-and-ae-summary/" class="md-nav__link">
         
   
   
@@ -3056,7 +2971,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/dependencies/" class="md-nav__link">
+      <a href="../../reference/dependencies/" class="md-nav__link">
         
   
   
@@ -3088,26 +3003,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
             
   
   
@@ -3125,7 +3045,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -3140,10 +3060,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    KRAS G12C Treatment Landscape in 7 Commands
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -3159,6 +3106,147 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-think-about-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to Think About It
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-orient-across-all-entity-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Orient Across All Entity Types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-pull-variant-annotations-and-evidence-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Pull Variant Annotations and Evidence Records
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-map-drugs-with-structured-target-annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Map Drugs with Structured Target Annotations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-review-the-lead-drug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Review the Lead Drug
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-check-real-world-adverse-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Check Real-World Adverse Events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-6-find-recruiting-trials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 6: Find Recruiting Trials
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-7-latest-research-on-resistance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 7: Latest Research on Resistance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-just-happened" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Just Happened
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#try-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Try It
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3171,7 +3259,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/biomcp-charts/" class="md-nav__link">
+      <a href="../biomcp-charts/" class="md-nav__link">
         
   
   
@@ -3199,7 +3287,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/biomcp-pubmed-articles/" class="md-nav__link">
+      <a href="../biomcp-pubmed-articles/" class="md-nav__link">
         
   
   
@@ -3227,7 +3315,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/skillbench-biomcp-skills/" class="md-nav__link">
+      <a href="../skillbench-biomcp-skills/" class="md-nav__link">
         
   
   
@@ -3255,7 +3343,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/cbioportal-study-analytics/" class="md-nav__link">
+      <a href="../cbioportal-study-analytics/" class="md-nav__link">
         
   
   
@@ -3283,7 +3371,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/we-deleted-35-tools/" class="md-nav__link">
+      <a href="../we-deleted-35-tools/" class="md-nav__link">
         
   
   
@@ -3318,7 +3406,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../policies/" class="md-nav__link">
+      <a href="../../policies/" class="md-nav__link">
         
   
   
@@ -3345,7 +3433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../troubleshooting/" class="md-nav__link">
+      <a href="../../troubleshooting/" class="md-nav__link">
         
   
   
@@ -3392,10 +3480,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#source-guides" class="md-nav__link">
+  <a href="#the-problem" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Source guides
+        The Problem
       
     </span>
   </a>
@@ -3403,10 +3491,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reference-and-setup" class="md-nav__link">
+  <a href="#how-to-think-about-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reference and setup
+        How to Think About It
       
     </span>
   </a>
@@ -3414,10 +3502,98 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#related-docs" class="md-nav__link">
+  <a href="#step-1-orient-across-all-entity-types" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Related docs
+        Step 1: Orient Across All Entity Types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-pull-variant-annotations-and-evidence-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Pull Variant Annotations and Evidence Records
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-map-drugs-with-structured-target-annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Map Drugs with Structured Target Annotations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-4-review-the-lead-drug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Review the Lead Drug
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-5-check-real-world-adverse-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Check Real-World Adverse Events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-6-find-recruiting-trials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 6: Find Recruiting Trials
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-7-latest-research-on-resistance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 7: Latest Research on Resistance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-just-happened" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Just Happened
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#try-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Try It
       
     </span>
   </a>
@@ -3444,134 +3620,243 @@
   
 
 
-<h1 id="biomedical-data-sources-for-ai-agents">Biomedical Data Sources for AI Agents<a class="headerlink" href="#biomedical-data-sources-for-ai-agents" title="Permanent link">&para;</a></h1>
-<p>BioMCP's <a href="../user-guide/cli-reference/">User Guide</a> is organized around entities such as genes, variants, articles, trials, and drugs. This Sources section flips the lens: it shows what each upstream database is good at, what BioMCP exposes from it, and where the boundary sits when a workflow is mixed-source.</p>
-<p>Use these pages when you already know the provider you trust, the keyword you are targeting, or the provenance you need to explain to a reviewer, teammate, or downstream agent.</p>
-<h2 id="source-guides">Source guides<a class="headerlink" href="#source-guides" title="Permanent link">&para;</a></h2>
+<h1 id="kras-g12c-treatment-landscape-in-7-commands">KRAS G12C Treatment Landscape in 7 Commands<a class="headerlink" href="#kras-g12c-treatment-landscape-in-7-commands" title="Permanent link">&para;</a></h1>
+<p><em>How an AI agent uses BioMCP to assemble a working treatment picture for a KRAS G12C NSCLC patient — drugs, safety, trials, and resistance — in under two minutes.</em></p>
+<p><strong>TL;DR:</strong> A clinician has a patient with KRAS G12C non-small cell lung cancer. An AI agent chains 7 BioMCP commands across 10+ data sources to surface drugs targeting KRAS, review FDA regulatory and safety data, find recruiting trials, and retrieve the latest resistance research. Counts shown below are example outputs from a live run and will change as upstream databases update.</p>
+<p><img alt="KRAS G12C Treatment Landscape" src="../images/kras-g12c-treatment-landscape.gif" /></p>
+<hr />
+<h2 id="the-problem">The Problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h2>
+<p>Your patient has KRAS G12C-mutated non-small cell lung cancer. You need answers:</p>
+<ul>
+<li>What drugs target this mutation?</li>
+<li>Which are FDA-approved? What's the safety profile?</li>
+<li>What does the post-market adverse event reporting look like?</li>
+<li>What clinical trials are recruiting?</li>
+<li>What does the latest research say about resistance?</li>
+</ul>
+<p>Each answer lives in a different database: CIViC for curated variant evidence, Drugs@FDA for regulatory status, OpenFDA FAERS for post-market adverse event reporting, ClinicalTrials.gov for recruiting studies, PubMed for recent publications. Assembling the picture manually means a dozen browser tabs and an afternoon of copy-paste.</p>
+<p>An AI agent with access to BioMCP does it in seven calls.</p>
+<hr />
+<h2 id="how-to-think-about-it">How to Think About It<a class="headerlink" href="#how-to-think-about-it" title="Permanent link">&para;</a></h2>
+<p>A clinician building a treatment landscape works through a natural cascade:</p>
+<ol>
+<li><strong>Orient.</strong> What data exists? How big is the landscape?</li>
+<li><strong>Check variant annotations.</strong> What do knowledgebases say about this specific variant?</li>
+<li><strong>Map the drugs.</strong> What targets KRAS in the structured drug-target databases?</li>
+<li><strong>Review the lead drug.</strong> Regulatory status, mechanism, approval history.</li>
+<li><strong>Check safety reporting.</strong> What does the FDA adverse event reporting system show?</li>
+<li><strong>Find trials.</strong> What options exist beyond approved therapies?</li>
+<li><strong>Track resistance.</strong> What's the cutting-edge research on why these drugs stop working?</li>
+</ol>
+<p>Each step maps to a BioMCP command.</p>
+<hr />
+<h2 id="step-1-orient-across-all-entity-types">Step 1: Orient Across All Entity Types<a class="headerlink" href="#step-1-orient-across-all-entity-types" title="Permanent link">&para;</a></h2>
+<p>Start broad. BioMCP's <code>search all</code> gives a counts-first overview across every entity type — genes, variants, drugs, trials, articles, pathways, and more — in a single call.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>$<span class="w"> </span>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>KRAS<span class="w"> </span>--disease<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span><span class="w"> </span>--counts-only
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Search All: gene=KRAS disease=non-small cell lung cancer
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>## Genes (1)
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>## Variants (1741)
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>## Diseases (1)
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>## Drugs (1)
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>## Trials (84)
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>## Articles (42)
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>## Pathways (0)
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>## PGx (0)
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>## GWAS (0)
+</code></pre></div>
+<p><strong>1,741 known variants</strong> in KRAS. <strong>84 trials</strong> mentioning both KRAS and NSCLC. <strong>42 articles</strong> at the intersection. The landscape is large — the agent now knows to focus on the G12C variant specifically rather than KRAS broadly.</p>
+<hr />
+<h2 id="step-2-pull-variant-annotations-and-evidence-records">Step 2: Pull Variant Annotations and Evidence Records<a class="headerlink" href="#step-2-pull-variant-annotations-and-evidence-records" title="Permanent link">&para;</a></h2>
+<p>Now the agent pulls variant annotations and evidence records from CIViC (Clinical Interpretation of Variants in Cancer) and ClinVar. These are curated knowledgebase entries — some historical, some disease-specific — not a direct therapeutic recommendation.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>$<span class="w"> </span>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;KRAS G12C&quot;</span><span class="w"> </span>civic<span class="w"> </span>clinvar
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># KRAS p.G12C - civic, clinvar
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>## ClinVar
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>Top disease (ClinVar): Endometrial carcinoma (1 report)
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>Conditions (8 reports):
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>- Endometrial carcinoma (1 report)
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>- Gallbladder cancer (1 report)
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>- Lung adenocarcinoma (1 report)
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>- Non-small cell lung carcinoma (NSCLC) (1 report)
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>- RASopathy (1 report)
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>...
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>## CIViC
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>### Cached Evidence (MyVariant)
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>| Evidence | Type | Level | Disease | Therapies |
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>|---|---|---|---|---|
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>| EID227 | DIAGNOSTIC | B | Lung Cancer | - |
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>| EID1217 | PROGNOSTIC | B | Lung Non-small Cell Carcinoma | - |
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>| EID1216 | PREDICTIVE | B | Colorectal Cancer | Gefitinib, Erlotinib |
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>...
+</code></pre></div>
+<p>CIViC provides diagnostic, prognostic, and predictive evidence records across multiple cancer types. Note that the therapies shown here (gefitinib, erlotinib) are from CIViC's historical evidence in colorectal cancer — not the current G12C-targeted therapy story. The current FDA-approved G12C therapies (sotorasib, adagrasib) appear in the next step. ClinVar shows 8 condition associations spanning NSCLC, lung adenocarcinoma, and other cancer types. The variant is well-characterized across multiple knowledgebases.</p>
+<hr />
+<h2 id="step-3-map-drugs-with-structured-target-annotations">Step 3: Map Drugs with Structured Target Annotations<a class="headerlink" href="#step-3-map-drugs-with-structured-target-annotations" title="Permanent link">&para;</a></h2>
+<p>What drugs have KRAS listed as a target in the drug-target interaction databases (DGIdb, OpenTargets)?</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$<span class="w"> </span>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>KRAS
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># Drugs: target=KRAS
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>Found 5 drugs
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>| Name | Mechanism | Target |
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>|---|---|---|
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>| garsorasib | small-molecule | KRAS |
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>| sotorasib | Inhibitor of GTPase KRas | KRAS |
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>| fulzerasib | small-molecule | KRAS |
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>| adagrasib | Inhibitor of GTPase KRas | KRAS |
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>| lonafarnib | Inhibitor of Protein farnesyltransferase | KRAS |
+</code></pre></div>
+<p>Five drugs from the sources queried. <strong>Sotorasib</strong> (Lumakras, Amgen) and <strong>adagrasib</strong> (Krazati, Mirati) are the two U.S.-approved G12C-specific covalent inhibitors. Garsorasib and fulzerasib are investigational. Lonafarnib is a farnesyltransferase inhibitor with a different mechanism.</p>
+<p>Note: the broader KRAS G12C pipeline includes additional agents in advanced development (divarasib, olomorasib, glecirasib) that don't appear in this gene-to-drug pivot. Structured target annotations vary across upstream drug-target sources and can lag clinical development. BioMCP can look these agents up individually (<code>biomcp get drug divarasib</code>), and the trial search in Step 6 surfaces them through their clinical programs.</p>
+<p>The agent picks sotorasib as the lead approved drug for a deeper look.</p>
+<hr />
+<h2 id="step-4-review-the-lead-drug">Step 4: Review the Lead Drug<a class="headerlink" href="#step-4-review-the-lead-drug" title="Permanent link">&para;</a></h2>
+<p>What's sotorasib's regulatory history, and what safety data can BioMCP pull?</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>$<span class="w"> </span>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>sotorasib<span class="w"> </span>regulatory<span class="w"> </span>safety
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a># sotorasib - regulatory, safety
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>## Regulatory (US - Drugs@FDA)
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>### NDA214665
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>- Sponsor: AMGEN INC
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>- Brands: LUMAKRAS
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>- Generic Names: SOTORASIB
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>| Submission Type | Number | Status | Date |
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>|---|---|---|---|
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>| SUPPL | 9 | AP | 2025-01-16 |
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>| SUPPL | 12 | AP | 2024-09-30 |
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>| ORIG | 1 | AP | 2021-05-28 |
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>## Safety (US - OpenFDA)
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>...
+</code></pre></div>
+<p>FDA-approved since May 2021 under NDA214665. Multiple supplemental approvals through January 2025 indicate an expanding label. The agent can now check what the real-world safety data looks like.</p>
+<hr />
+<h2 id="step-5-check-real-world-adverse-events">Step 5: Check Real-World Adverse Events<a class="headerlink" href="#step-5-check-real-world-adverse-events" title="Permanent link">&para;</a></h2>
+<p>BioMCP queries the FDA Adverse Event Reporting System (FAERS) directly.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>$<span class="w"> </span>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>sotorasib<span class="w"> </span>--serious
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a># Adverse Events: drug=sotorasib, serious=true
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Found 10 reports
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>## Summary
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>- Total reports (OpenFDA): 2465
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>- Returned reports: 10
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>| Reaction | Count | Percent |
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>|---|---|---|
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>| Dehydration | 3 | 30.0% |
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>| Oedema peripheral | 2 | 20.0% |
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>| Acute kidney injury | 1 | 10.0% |
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>| Acute respiratory distress syndrome | 1 | 10.0% |
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>| Drug-induced liver injury | 1 | 10.0% |
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>| Hepatic failure | 1 | 10.0% |
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>...
+</code></pre></div>
+<p>OpenFDA FAERS shows <strong>2,465 serious reports</strong> mentioning sotorasib in this query. FAERS is a spontaneous reporting system — these counts do not establish incidence or causality, and the percentages reflect only the 10 sampled reports, not the full corpus. These reports are hypothesis-generating: useful for surfacing events worth reviewing alongside the prescribing information, which lists diarrhea, musculoskeletal pain, nausea, fatigue, hepatotoxicity, and cough as the most common adverse reactions for single-agent NSCLC use.</p>
+<hr />
+<h2 id="step-6-find-recruiting-trials">Step 6: Find Recruiting Trials<a class="headerlink" href="#step-6-find-recruiting-trials" title="Permanent link">&para;</a></h2>
+<p>What trials are recruiting for KRAS G12C NSCLC right now?</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>$<span class="w"> </span>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;NSCLC&quot;</span><span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;KRAS G12C&quot;</span><span class="w"> </span>-s<span class="w"> </span>recruiting<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a># Trial Search Results
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>Results: 5 of 62
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>Query: condition=NSCLC, status=recruiting, mutation=KRAS G12C
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>| NCT ID | Title | Status | Phase | Conditions |
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>|---|---|---|---|---|
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>| NCT06582771 | A Study of Sotorasib in P... | RECRUITING | 2 | Non Small Lung Cancer |
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>| NCT07012031 | Sotorasib in Combination... | RECRUITING | 1/2 | Locally Advanced Lung Non-Small Cell Carcinoma... |
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>| NCT06119581 | A Study of First-Line Olo... | RECRUITING | 3 | Carcinoma, Non-Small-Cell Lung, Neoplasm Metastasis |
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>| NCT06172478 | A Study of HER3-DXd in Su... | RECRUITING | 2 | Advanced Solid Tumor, Melanoma, Head and Neck... |
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>| NCT04302025 | A Study of Multiple Thera... | RECRUITING | 2 | Non-small Cell Lung Cancer |
+</code></pre></div>
+<p><strong>62 recruiting trials</strong> for KRAS G12C NSCLC. The landscape includes sotorasib combinations, new G12C inhibitors, and ADC (antibody-drug conjugate) approaches. A clinician could use <code>biomcp get trial NCT06582771 eligibility</code> to check specific patient eligibility.</p>
+<hr />
+<h2 id="step-7-latest-research-on-resistance">Step 7: Latest Research on Resistance<a class="headerlink" href="#step-7-latest-research-on-resistance" title="Permanent link">&para;</a></h2>
+<p>Acquired resistance is the clinical challenge driving the trial landscape. What does the latest research say?</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>$<span class="w"> </span>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>KRAS<span class="w"> </span>--keyword<span class="w"> </span><span class="s2">&quot;G12C resistance&quot;</span><span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a># Articles: gene=KRAS, keyword=G12C resistance
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>Found 5 articles
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>| PMID | Title | Source(s) | Date |
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>|---|---|---|---|
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>...
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>Showing 1-5 of N results.
+</code></pre></div>
+<p>The latest publications cover resistance mechanisms (secondary KRAS mutations, bypass pathway activation), combination strategies designed to overcome resistance, and emerging approaches beyond covalent inhibitors.</p>
+<hr />
+<h2 id="what-just-happened">What Just Happened<a class="headerlink" href="#what-just-happened" title="Permanent link">&para;</a></h2>
+<p>An AI agent assembled a working treatment landscape in 7 commands:</p>
 <table>
 <thead>
 <tr>
-<th>Source</th>
-<th>Best when you want</th>
-<th>Guide</th>
+<th>Step</th>
+<th>Command</th>
+<th>What It Surfaced</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>PubMed</td>
-<td>Article search, PubTator annotations, and PMC full-text handoff</td>
-<td><a href="pubmed/">PubMed</a></td>
+<td>1</td>
+<td><code>biomcp search all</code></td>
+<td>Orientation: variants, trials, articles across entity types</td>
 </tr>
 <tr>
-<td>ClinicalTrials.gov</td>
-<td>Recruiting-study search, eligibility text, and site details</td>
-<td><a href="clinicaltrials-gov/">ClinicalTrials.gov</a></td>
+<td>2</td>
+<td><code>biomcp get variant</code></td>
+<td>CIViC + ClinVar variant annotations and evidence records</td>
 </tr>
 <tr>
-<td>ClinVar</td>
-<td>Clinical significance and review-status context for variants</td>
-<td><a href="clinvar/">ClinVar</a></td>
+<td>3</td>
+<td><code>biomcp gene drugs</code></td>
+<td>5 drugs with structured KRAS target annotations</td>
 </tr>
 <tr>
-<td>OpenFDA</td>
-<td>FAERS, recalls, device events, labels, and U.S. approval context</td>
-<td><a href="openfda/">OpenFDA</a></td>
+<td>4</td>
+<td><code>biomcp get drug</code></td>
+<td>Sotorasib FDA approval history and regulatory status</td>
 </tr>
 <tr>
-<td>UniProt</td>
-<td>Canonical protein cards and structure-linked context</td>
-<td><a href="uniprot/">UniProt</a></td>
+<td>5</td>
+<td><code>biomcp search adverse-event</code></td>
+<td>FAERS spontaneous reports (hypothesis-generating)</td>
 </tr>
 <tr>
-<td>gnomAD</td>
-<td>Population frequency and gene constraint context</td>
-<td><a href="gnomad/">gnomAD</a></td>
+<td>6</td>
+<td><code>biomcp search trial</code></td>
+<td>Recruiting trials for KRAS G12C NSCLC</td>
 </tr>
 <tr>
-<td>Reactome</td>
-<td>Pathway records, pathway genes, and contained events</td>
-<td><a href="reactome/">Reactome</a></td>
-</tr>
-<tr>
-<td>Semantic Scholar</td>
-<td>TLDRs, citation graphs, references, and recommendations</td>
-<td><a href="semantic-scholar/">Semantic Scholar</a></td>
-</tr>
-<tr>
-<td>ChEMBL</td>
-<td>Drug-target activity, mechanism context, and indication enrichment</td>
-<td><a href="chembl/">ChEMBL</a></td>
-</tr>
-<tr>
-<td>OpenTargets</td>
-<td>Target-disease scores, druggability, and disease-gene evidence</td>
-<td><a href="opentargets/">OpenTargets</a></td>
-</tr>
-<tr>
-<td>CIViC</td>
-<td>Clinical variant evidence, therapy context, and disease-associated variants</td>
-<td><a href="civic/">CIViC</a></td>
-</tr>
-<tr>
-<td>OncoKB</td>
-<td>Oncology actionability tiers and treatment implications for actionable variants</td>
-<td><a href="oncokb/">OncoKB</a></td>
-</tr>
-<tr>
-<td>cBioPortal</td>
-<td>Cancer cohort frequencies and local study analytics workflows</td>
-<td><a href="cbioportal/">cBioPortal</a></td>
-</tr>
-<tr>
-<td>EMA</td>
-<td>EU regulatory, safety, and shortage context for medicines</td>
-<td><a href="ema/">EMA</a></td>
-</tr>
-<tr>
-<td>KEGG</td>
-<td>KEGG pathway IDs, summary cards, and pathway genes</td>
-<td><a href="kegg/">KEGG</a></td>
-</tr>
-<tr>
-<td>PharmGKB / CPIC</td>
-<td>Pharmacogenomic recommendations, frequencies, and clinical annotations</td>
-<td><a href="pharmgkb/">PharmGKB / CPIC</a></td>
-</tr>
-<tr>
-<td>Human Protein Atlas</td>
-<td>Tissue expression, localization, and cancer-expression context</td>
-<td><a href="human-protein-atlas/">Human Protein Atlas</a></td>
-</tr>
-<tr>
-<td>Monarch Initiative</td>
-<td>Phenotype-to-disease matching, disease genes, and model evidence</td>
-<td><a href="monarch-initiative/">Monarch Initiative</a></td>
+<td>7</td>
+<td><code>biomcp search article</code></td>
+<td>Latest resistance research</td>
 </tr>
 </tbody>
 </table>
-<h2 id="reference-and-setup">Reference and setup<a class="headerlink" href="#reference-and-setup" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../reference/data-sources/">Data Sources</a> explains runtime behavior, endpoints, auth mode, and operational caveats.</li>
-<li><a href="../reference/source-licensing/">Source Licensing and Terms</a> explains direct vs indirect provenance, redistribution limits, and provider terms.</li>
-<li><a href="../getting-started/api-keys/">API Keys</a> shows the optional or required environment variables that upgrade selected source paths.</li>
-</ul>
-<h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../user-guide/cli-reference/">CLI Reference</a></li>
-<li><a href="../user-guide/article/">Article</a></li>
-<li><a href="../user-guide/trial/">Trial</a></li>
-<li><a href="../user-guide/variant/">Variant</a></li>
-<li><a href="../user-guide/drug/">Drug</a></li>
-</ul>
+<p>Seven entity types queried. Ten-plus data sources: CIViC, ClinVar, OpenTargets, DGIdb, Drugs@FDA, OpenFDA FAERS, ClinicalTrials.gov, PubTator3, Europe PMC, and more. Each command took seconds. Not a substitute for clinical judgment — but a fast way to assemble the evidence landscape that informs it.</p>
+<hr />
+<h2 id="try-it">Try It<a class="headerlink" href="#try-it" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+</code></pre></div>
+<p>Then start with your own mutation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w"> </span>--counts-only
+</code></pre></div>
+<p>Documentation: <a href="https://biomcp.org">biomcp.org</a> | Code: <a href="https://github.com/genomoncology/biomcp">github.com/genomoncology/biomcp</a></p>
 
 
 
 
 
 
-
-  
-  
 
 
 
@@ -3641,10 +3926,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.instant", "navigation.tracking", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.instant", "navigation.tracking", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

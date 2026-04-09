@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/biomcp-charts/" class="md-tabs__link">
+        <a href="../../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
           
   
   
@@ -2821,6 +2821,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#nci-cts-trial-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NCI CTS trial notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#clinical-significance-values-variant-search" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3264,6 +3275,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    KRAS G12C Treatment Landscape in 7 Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/biomcp-charts/" class="md-nav__link">
         
   
@@ -3599,6 +3638,17 @@
     <span class="md-ellipsis">
       
         Trial phase values
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nci-cts-trial-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NCI CTS trial notes
       
     </span>
   </a>
@@ -4003,6 +4053,20 @@ Coordinates below are common starting points for regional searches.</p>
 </tr>
 </tbody>
 </table>
+<h2 id="nci-cts-trial-notes">NCI CTS trial notes<a class="headerlink" href="#nci-cts-trial-notes" title="Permanent link">&para;</a></h2>
+<p><code>search trial --source nci</code> keeps the shared BioMCP flags but translates them
+to NCI CTS semantics:</p>
+<ul>
+<li><code>--condition</code> remains the entry point. BioMCP prefers
+  <code>diseases.nci_thesaurus_concept_id=&lt;C-code&gt;</code> when grounding succeeds and
+  falls back to CTS <code>keyword=&lt;text&gt;</code> when it does not. There is no separate
+  NCI keyword flag.</li>
+<li><code>--status</code> accepts one normalized value at a time and maps it to CTS
+  recruitment or lifecycle filters instead of sending raw CTGov status values.</li>
+<li><code>--phase 1/2</code> becomes CTS <code>I_II</code>; <code>early_phase1</code> is unsupported on NCI.</li>
+<li><code>--lat/--lon/--distance</code> becomes <code>sites.org_coordinates_lat</code>,
+  <code>sites.org_coordinates_lon</code>, and <code>sites.org_coordinates_dist=&lt;N&gt;mi</code>.</li>
+</ul>
 <h2 id="clinical-significance-values-variant-search">Clinical significance values (variant search)<a class="headerlink" href="#clinical-significance-values-variant-search" title="Permanent link">&para;</a></h2>
 <p>Use these with <code>biomcp search variant --significance &lt;value&gt;</code>.</p>
 <table>

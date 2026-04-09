@@ -6,37 +6,33 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, CIViC, OncoKB, cBioPortal, EMA, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative.">
+        <meta name="description" content="Single-binary CLI and MCP server for querying biomedical databases">
       
       
         <meta name="author" content="Ian Maurer">
       
       
-        <link rel="canonical" href="https://biomcp.org/sources/">
+        <link rel="canonical" href="https://biomcp.org/blog/biomcp-kuva-charts/">
       
       
-        <link rel="prev" href="../user-guide/phenotype/">
-      
-      
-        <link rel="next" href="pubmed/">
       
       
         
       
       
-      <link rel="icon" href="../assets/favicon.ico">
+      <link rel="icon" href="../../assets/favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
     
     
       
-        <title>Biomedical Data Sources for AI Agents | BioMCP - BioMCP</title>
+        <title>Kuva Charting Examples - BioMCP</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -55,9 +51,9 @@
       
     
     
-      <link rel="stylesheet" href="../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -82,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#biomedical-data-sources-for-ai-agents" class="md-skip">
+        <a href="#kuva-charting-examples" class="md-skip">
           Skip to content
         </a>
       
@@ -98,9 +94,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="BioMCP" class="md-header__button md-logo" aria-label="BioMCP" data-md-component="logo">
+    <a href="../.." title="BioMCP" class="md-header__button md-logo" aria-label="BioMCP" data-md-component="logo">
       
-  <img src="../assets/icon.png" alt="logo">
+  <img src="../../assets/icon.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -117,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Biomedical Data Sources for AI Agents | BioMCP
+              Kuva Charting Examples
             
           </span>
         </div>
@@ -224,7 +220,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -245,7 +241,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../getting-started/installation/" class="md-tabs__link">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
           
   
   
@@ -265,7 +261,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../concepts/what-is-biomcp/" class="md-tabs__link">
+        <a href="../../concepts/what-is-biomcp/" class="md-tabs__link">
           
   
   
@@ -285,7 +281,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../user-guide/cli-reference/" class="md-tabs__link">
+        <a href="../../user-guide/cli-reference/" class="md-tabs__link">
           
   
   
@@ -301,13 +297,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../sources/" class="md-tabs__link">
           
   
   
@@ -327,7 +321,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../how-to/annotate-variants/" class="md-tabs__link">
+        <a href="../../how-to/annotate-variants/" class="md-tabs__link">
           
   
   
@@ -347,7 +341,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../charts/" class="md-tabs__link">
+        <a href="../../charts/" class="md-tabs__link">
           
   
   
@@ -367,7 +361,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../reference/quick-reference/" class="md-tabs__link">
+        <a href="../../reference/quick-reference/" class="md-tabs__link">
           
   
   
@@ -387,7 +381,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../kras-g12c-treatment-landscape/" class="md-tabs__link">
           
   
   
@@ -405,7 +399,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../policies/" class="md-tabs__link">
+      <a href="../../policies/" class="md-tabs__link">
         
   
   
@@ -424,7 +418,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../troubleshooting/" class="md-tabs__link">
+      <a href="../../troubleshooting/" class="md-tabs__link">
         
   
   
@@ -465,9 +459,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="BioMCP" class="md-nav__button md-logo" aria-label="BioMCP" data-md-component="logo">
+    <a href="../.." title="BioMCP" class="md-nav__button md-logo" aria-label="BioMCP" data-md-component="logo">
       
-  <img src="../assets/icon.png" alt="logo">
+  <img src="../../assets/icon.png" alt="logo">
 
     </a>
     BioMCP
@@ -494,7 +488,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -573,7 +567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/installation/" class="md-nav__link">
+      <a href="../../getting-started/installation/" class="md-nav__link">
         
   
   
@@ -601,7 +595,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/first-query/" class="md-nav__link">
+      <a href="../../getting-started/first-query/" class="md-nav__link">
         
   
   
@@ -629,7 +623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/claude-desktop/" class="md-nav__link">
+      <a href="../../getting-started/claude-desktop/" class="md-nav__link">
         
   
   
@@ -657,7 +651,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/remote-http/" class="md-nav__link">
+      <a href="../../getting-started/remote-http/" class="md-nav__link">
         
   
   
@@ -685,7 +679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/api-keys/" class="md-nav__link">
+      <a href="../../getting-started/api-keys/" class="md-nav__link">
         
   
   
@@ -713,7 +707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/skills/" class="md-nav__link">
+      <a href="../../getting-started/skills/" class="md-nav__link">
         
   
   
@@ -800,7 +794,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/what-is-biomcp/" class="md-nav__link">
+      <a href="../../concepts/what-is-biomcp/" class="md-nav__link">
         
   
   
@@ -828,7 +822,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concepts/progressive-disclosure/" class="md-nav__link">
+      <a href="../../concepts/progressive-disclosure/" class="md-nav__link">
         
   
   
@@ -915,7 +909,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/cli-reference/" class="md-nav__link">
+      <a href="../../user-guide/cli-reference/" class="md-nav__link">
         
   
   
@@ -943,7 +937,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/discover/" class="md-nav__link">
+      <a href="../../user-guide/discover/" class="md-nav__link">
         
   
   
@@ -971,7 +965,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/gene/" class="md-nav__link">
+      <a href="../../user-guide/gene/" class="md-nav__link">
         
   
   
@@ -999,7 +993,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/variant/" class="md-nav__link">
+      <a href="../../user-guide/variant/" class="md-nav__link">
         
   
   
@@ -1027,7 +1021,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/article/" class="md-nav__link">
+      <a href="../../user-guide/article/" class="md-nav__link">
         
   
   
@@ -1055,7 +1049,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/trial/" class="md-nav__link">
+      <a href="../../user-guide/trial/" class="md-nav__link">
         
   
   
@@ -1083,7 +1077,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/drug/" class="md-nav__link">
+      <a href="../../user-guide/drug/" class="md-nav__link">
         
   
   
@@ -1111,7 +1105,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/disease/" class="md-nav__link">
+      <a href="../../user-guide/disease/" class="md-nav__link">
         
   
   
@@ -1139,7 +1133,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/pathway/" class="md-nav__link">
+      <a href="../../user-guide/pathway/" class="md-nav__link">
         
   
   
@@ -1167,7 +1161,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/protein/" class="md-nav__link">
+      <a href="../../user-guide/protein/" class="md-nav__link">
         
   
   
@@ -1195,7 +1189,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/adverse-event/" class="md-nav__link">
+      <a href="../../user-guide/adverse-event/" class="md-nav__link">
         
   
   
@@ -1223,7 +1217,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/pgx/" class="md-nav__link">
+      <a href="../../user-guide/pgx/" class="md-nav__link">
         
   
   
@@ -1251,7 +1245,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/gwas/" class="md-nav__link">
+      <a href="../../user-guide/gwas/" class="md-nav__link">
         
   
   
@@ -1279,7 +1273,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/phenotype/" class="md-nav__link">
+      <a href="../../user-guide/phenotype/" class="md-nav__link">
         
   
   
@@ -1311,31 +1305,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -1353,7 +1342,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1368,37 +1357,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Overview
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../sources/" class="md-nav__link">
         
   
   
@@ -1414,59 +1376,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#source-guides" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Source guides
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reference-and-setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reference and setup
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related-docs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Related docs
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1479,7 +1388,7 @@
   
   
     <li class="md-nav__item">
-      <a href="pubmed/" class="md-nav__link">
+      <a href="../../sources/pubmed/" class="md-nav__link">
         
   
   
@@ -1507,7 +1416,7 @@
   
   
     <li class="md-nav__item">
-      <a href="clinicaltrials-gov/" class="md-nav__link">
+      <a href="../../sources/clinicaltrials-gov/" class="md-nav__link">
         
   
   
@@ -1535,7 +1444,7 @@
   
   
     <li class="md-nav__item">
-      <a href="clinvar/" class="md-nav__link">
+      <a href="../../sources/clinvar/" class="md-nav__link">
         
   
   
@@ -1563,7 +1472,7 @@
   
   
     <li class="md-nav__item">
-      <a href="openfda/" class="md-nav__link">
+      <a href="../../sources/openfda/" class="md-nav__link">
         
   
   
@@ -1591,7 +1500,7 @@
   
   
     <li class="md-nav__item">
-      <a href="uniprot/" class="md-nav__link">
+      <a href="../../sources/uniprot/" class="md-nav__link">
         
   
   
@@ -1619,7 +1528,7 @@
   
   
     <li class="md-nav__item">
-      <a href="gnomad/" class="md-nav__link">
+      <a href="../../sources/gnomad/" class="md-nav__link">
         
   
   
@@ -1647,7 +1556,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reactome/" class="md-nav__link">
+      <a href="../../sources/reactome/" class="md-nav__link">
         
   
   
@@ -1675,7 +1584,7 @@
   
   
     <li class="md-nav__item">
-      <a href="semantic-scholar/" class="md-nav__link">
+      <a href="../../sources/semantic-scholar/" class="md-nav__link">
         
   
   
@@ -1703,7 +1612,7 @@
   
   
     <li class="md-nav__item">
-      <a href="chembl/" class="md-nav__link">
+      <a href="../../sources/chembl/" class="md-nav__link">
         
   
   
@@ -1731,7 +1640,7 @@
   
   
     <li class="md-nav__item">
-      <a href="opentargets/" class="md-nav__link">
+      <a href="../../sources/opentargets/" class="md-nav__link">
         
   
   
@@ -1759,7 +1668,7 @@
   
   
     <li class="md-nav__item">
-      <a href="civic/" class="md-nav__link">
+      <a href="../../sources/civic/" class="md-nav__link">
         
   
   
@@ -1787,7 +1696,7 @@
   
   
     <li class="md-nav__item">
-      <a href="oncokb/" class="md-nav__link">
+      <a href="../../sources/oncokb/" class="md-nav__link">
         
   
   
@@ -1815,7 +1724,7 @@
   
   
     <li class="md-nav__item">
-      <a href="cbioportal/" class="md-nav__link">
+      <a href="../../sources/cbioportal/" class="md-nav__link">
         
   
   
@@ -1843,7 +1752,7 @@
   
   
     <li class="md-nav__item">
-      <a href="ema/" class="md-nav__link">
+      <a href="../../sources/ema/" class="md-nav__link">
         
   
   
@@ -1871,7 +1780,7 @@
   
   
     <li class="md-nav__item">
-      <a href="kegg/" class="md-nav__link">
+      <a href="../../sources/kegg/" class="md-nav__link">
         
   
   
@@ -1899,7 +1808,7 @@
   
   
     <li class="md-nav__item">
-      <a href="pharmgkb/" class="md-nav__link">
+      <a href="../../sources/pharmgkb/" class="md-nav__link">
         
   
   
@@ -1927,7 +1836,7 @@
   
   
     <li class="md-nav__item">
-      <a href="human-protein-atlas/" class="md-nav__link">
+      <a href="../../sources/human-protein-atlas/" class="md-nav__link">
         
   
   
@@ -1955,7 +1864,7 @@
   
   
     <li class="md-nav__item">
-      <a href="monarch-initiative/" class="md-nav__link">
+      <a href="../../sources/monarch-initiative/" class="md-nav__link">
         
   
   
@@ -2042,7 +1951,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/annotate-variants/" class="md-nav__link">
+      <a href="../../how-to/annotate-variants/" class="md-nav__link">
         
   
   
@@ -2070,7 +1979,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/cross-entity-pivots/" class="md-nav__link">
+      <a href="../../how-to/cross-entity-pivots/" class="md-nav__link">
         
   
   
@@ -2098,7 +2007,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/find-articles/" class="md-nav__link">
+      <a href="../../how-to/find-articles/" class="md-nav__link">
         
   
   
@@ -2126,7 +2035,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/find-trials/" class="md-nav__link">
+      <a href="../../how-to/find-trials/" class="md-nav__link">
         
   
   
@@ -2154,7 +2063,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/predict-effects/" class="md-nav__link">
+      <a href="../../how-to/predict-effects/" class="md-nav__link">
         
   
   
@@ -2182,7 +2091,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/reproduce-papers/" class="md-nav__link">
+      <a href="../../how-to/reproduce-papers/" class="md-nav__link">
         
   
   
@@ -2210,7 +2119,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/search-all-workflow/" class="md-nav__link">
+      <a href="../../how-to/search-all-workflow/" class="md-nav__link">
         
   
   
@@ -2238,7 +2147,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/skill-validation/" class="md-nav__link">
+      <a href="../../how-to/skill-validation/" class="md-nav__link">
         
   
   
@@ -2266,7 +2175,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../how-to/guide-workflows/" class="md-nav__link">
+      <a href="../../how-to/guide-workflows/" class="md-nav__link">
         
   
   
@@ -2353,7 +2262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/" class="md-nav__link">
+      <a href="../../charts/" class="md-nav__link">
         
   
   
@@ -2381,7 +2290,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/bar/" class="md-nav__link">
+      <a href="../../charts/bar/" class="md-nav__link">
         
   
   
@@ -2409,7 +2318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/stacked-bar/" class="md-nav__link">
+      <a href="../../charts/stacked-bar/" class="md-nav__link">
         
   
   
@@ -2437,7 +2346,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/pie/" class="md-nav__link">
+      <a href="../../charts/pie/" class="md-nav__link">
         
   
   
@@ -2465,7 +2374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/heatmap/" class="md-nav__link">
+      <a href="../../charts/heatmap/" class="md-nav__link">
         
   
   
@@ -2493,7 +2402,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/histogram/" class="md-nav__link">
+      <a href="../../charts/histogram/" class="md-nav__link">
         
   
   
@@ -2521,7 +2430,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/density/" class="md-nav__link">
+      <a href="../../charts/density/" class="md-nav__link">
         
   
   
@@ -2549,7 +2458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/box/" class="md-nav__link">
+      <a href="../../charts/box/" class="md-nav__link">
         
   
   
@@ -2577,7 +2486,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/violin/" class="md-nav__link">
+      <a href="../../charts/violin/" class="md-nav__link">
         
   
   
@@ -2605,7 +2514,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/ridgeline/" class="md-nav__link">
+      <a href="../../charts/ridgeline/" class="md-nav__link">
         
   
   
@@ -2633,7 +2542,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../charts/survival/" class="md-nav__link">
+      <a href="../../charts/survival/" class="md-nav__link">
         
   
   
@@ -2720,7 +2629,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/quick-reference/" class="md-nav__link">
+      <a href="../../reference/quick-reference/" class="md-nav__link">
         
   
   
@@ -2748,7 +2657,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/data-sources/" class="md-nav__link">
+      <a href="../../reference/data-sources/" class="md-nav__link">
         
   
   
@@ -2776,7 +2685,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/source-licensing/" class="md-nav__link">
+      <a href="../../reference/source-licensing/" class="md-nav__link">
         
   
   
@@ -2804,7 +2713,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/mcp-server/" class="md-nav__link">
+      <a href="../../reference/mcp-server/" class="md-nav__link">
         
   
   
@@ -2832,7 +2741,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/error-codes/" class="md-nav__link">
+      <a href="../../reference/error-codes/" class="md-nav__link">
         
   
   
@@ -2860,7 +2769,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/benchmarks/" class="md-nav__link">
+      <a href="../../reference/benchmarks/" class="md-nav__link">
         
   
   
@@ -2888,7 +2797,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/bioasq-benchmark/" class="md-nav__link">
+      <a href="../../reference/bioasq-benchmark/" class="md-nav__link">
         
   
   
@@ -2916,7 +2825,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/faq/" class="md-nav__link">
+      <a href="../../reference/faq/" class="md-nav__link">
         
   
   
@@ -2944,7 +2853,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/source-versioning/" class="md-nav__link">
+      <a href="../../reference/source-versioning/" class="md-nav__link">
         
   
   
@@ -2972,7 +2881,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/article-keyword-search/" class="md-nav__link">
+      <a href="../../reference/article-keyword-search/" class="md-nav__link">
         
   
   
@@ -3000,7 +2909,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/civic-sections/" class="md-nav__link">
+      <a href="../../reference/civic-sections/" class="md-nav__link">
         
   
   
@@ -3028,7 +2937,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/drug-approvals-and-ae-summary/" class="md-nav__link">
+      <a href="../../reference/drug-approvals-and-ae-summary/" class="md-nav__link">
         
   
   
@@ -3056,7 +2965,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/dependencies/" class="md-nav__link">
+      <a href="../../reference/dependencies/" class="md-nav__link">
         
   
   
@@ -3143,7 +3052,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
+      <a href="../kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
   
@@ -3171,7 +3080,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/biomcp-charts/" class="md-nav__link">
+      <a href="../biomcp-charts/" class="md-nav__link">
         
   
   
@@ -3199,7 +3108,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/biomcp-pubmed-articles/" class="md-nav__link">
+      <a href="../biomcp-pubmed-articles/" class="md-nav__link">
         
   
   
@@ -3227,7 +3136,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/skillbench-biomcp-skills/" class="md-nav__link">
+      <a href="../skillbench-biomcp-skills/" class="md-nav__link">
         
   
   
@@ -3255,7 +3164,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/cbioportal-study-analytics/" class="md-nav__link">
+      <a href="../cbioportal-study-analytics/" class="md-nav__link">
         
   
   
@@ -3283,7 +3192,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../blog/we-deleted-35-tools/" class="md-nav__link">
+      <a href="../we-deleted-35-tools/" class="md-nav__link">
         
   
   
@@ -3318,7 +3227,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../policies/" class="md-nav__link">
+      <a href="../../policies/" class="md-nav__link">
         
   
   
@@ -3345,7 +3254,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../troubleshooting/" class="md-nav__link">
+      <a href="../../troubleshooting/" class="md-nav__link">
         
   
   
@@ -3385,47 +3294,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#source-guides" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Source guides
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reference-and-setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reference and setup
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related-docs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Related docs
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -3444,134 +3312,23 @@
   
 
 
-<h1 id="biomedical-data-sources-for-ai-agents">Biomedical Data Sources for AI Agents<a class="headerlink" href="#biomedical-data-sources-for-ai-agents" title="Permanent link">&para;</a></h1>
-<p>BioMCP's <a href="../user-guide/cli-reference/">User Guide</a> is organized around entities such as genes, variants, articles, trials, and drugs. This Sources section flips the lens: it shows what each upstream database is good at, what BioMCP exposes from it, and where the boundary sits when a workflow is mixed-source.</p>
-<p>Use these pages when you already know the provider you trust, the keyword you are targeting, or the provenance you need to explain to a reviewer, teammate, or downstream agent.</p>
-<h2 id="source-guides">Source guides<a class="headerlink" href="#source-guides" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Source</th>
-<th>Best when you want</th>
-<th>Guide</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>PubMed</td>
-<td>Article search, PubTator annotations, and PMC full-text handoff</td>
-<td><a href="pubmed/">PubMed</a></td>
-</tr>
-<tr>
-<td>ClinicalTrials.gov</td>
-<td>Recruiting-study search, eligibility text, and site details</td>
-<td><a href="clinicaltrials-gov/">ClinicalTrials.gov</a></td>
-</tr>
-<tr>
-<td>ClinVar</td>
-<td>Clinical significance and review-status context for variants</td>
-<td><a href="clinvar/">ClinVar</a></td>
-</tr>
-<tr>
-<td>OpenFDA</td>
-<td>FAERS, recalls, device events, labels, and U.S. approval context</td>
-<td><a href="openfda/">OpenFDA</a></td>
-</tr>
-<tr>
-<td>UniProt</td>
-<td>Canonical protein cards and structure-linked context</td>
-<td><a href="uniprot/">UniProt</a></td>
-</tr>
-<tr>
-<td>gnomAD</td>
-<td>Population frequency and gene constraint context</td>
-<td><a href="gnomad/">gnomAD</a></td>
-</tr>
-<tr>
-<td>Reactome</td>
-<td>Pathway records, pathway genes, and contained events</td>
-<td><a href="reactome/">Reactome</a></td>
-</tr>
-<tr>
-<td>Semantic Scholar</td>
-<td>TLDRs, citation graphs, references, and recommendations</td>
-<td><a href="semantic-scholar/">Semantic Scholar</a></td>
-</tr>
-<tr>
-<td>ChEMBL</td>
-<td>Drug-target activity, mechanism context, and indication enrichment</td>
-<td><a href="chembl/">ChEMBL</a></td>
-</tr>
-<tr>
-<td>OpenTargets</td>
-<td>Target-disease scores, druggability, and disease-gene evidence</td>
-<td><a href="opentargets/">OpenTargets</a></td>
-</tr>
-<tr>
-<td>CIViC</td>
-<td>Clinical variant evidence, therapy context, and disease-associated variants</td>
-<td><a href="civic/">CIViC</a></td>
-</tr>
-<tr>
-<td>OncoKB</td>
-<td>Oncology actionability tiers and treatment implications for actionable variants</td>
-<td><a href="oncokb/">OncoKB</a></td>
-</tr>
-<tr>
-<td>cBioPortal</td>
-<td>Cancer cohort frequencies and local study analytics workflows</td>
-<td><a href="cbioportal/">cBioPortal</a></td>
-</tr>
-<tr>
-<td>EMA</td>
-<td>EU regulatory, safety, and shortage context for medicines</td>
-<td><a href="ema/">EMA</a></td>
-</tr>
-<tr>
-<td>KEGG</td>
-<td>KEGG pathway IDs, summary cards, and pathway genes</td>
-<td><a href="kegg/">KEGG</a></td>
-</tr>
-<tr>
-<td>PharmGKB / CPIC</td>
-<td>Pharmacogenomic recommendations, frequencies, and clinical annotations</td>
-<td><a href="pharmgkb/">PharmGKB / CPIC</a></td>
-</tr>
-<tr>
-<td>Human Protein Atlas</td>
-<td>Tissue expression, localization, and cancer-expression context</td>
-<td><a href="human-protein-atlas/">Human Protein Atlas</a></td>
-</tr>
-<tr>
-<td>Monarch Initiative</td>
-<td>Phenotype-to-disease matching, disease genes, and model evidence</td>
-<td><a href="monarch-initiative/">Monarch Initiative</a></td>
-</tr>
-</tbody>
-</table>
-<h2 id="reference-and-setup">Reference and setup<a class="headerlink" href="#reference-and-setup" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../reference/data-sources/">Data Sources</a> explains runtime behavior, endpoints, auth mode, and operational caveats.</li>
-<li><a href="../reference/source-licensing/">Source Licensing and Terms</a> explains direct vs indirect provenance, redistribution limits, and provider terms.</li>
-<li><a href="../getting-started/api-keys/">API Keys</a> shows the optional or required environment variables that upgrade selected source paths.</li>
-</ul>
-<h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../user-guide/cli-reference/">CLI Reference</a></li>
-<li><a href="../user-guide/article/">Article</a></li>
-<li><a href="../user-guide/trial/">Trial</a></li>
-<li><a href="../user-guide/variant/">Variant</a></li>
-<li><a href="../user-guide/drug/">Drug</a></li>
-</ul>
+<h1 id="kuva-charting-examples">Kuva Charting Examples<a class="headerlink" href="#kuva-charting-examples" title="Permanent link">&para;</a></h1>
+<p>This compatibility note preserves the original charting article path while the
+maintained walkthrough lives in <a href="../biomcp-charts/">Generate Charts Easily from Study
+Data</a>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--chart<span class="w"> </span>bar<span class="w"> </span>--theme<span class="w"> </span>dark<span class="w"> </span>--palette<span class="w"> </span>wong<span class="w"> </span>-o<span class="w"> </span>docs/blog/images/tp53-mutation-bar.svg
+</code></pre></div>
+<p>Reference placeholders preserved for the legacy contract:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>![<span class="nt">TP53 mutation classes as a bar chart</span>](<span class="na">images/tp53-mutation-bar.svg</span>)
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>![<span class="nt">Terminal screenshot placeholder: mutation-bar-terminal.png</span>](<span class="na">images/mutation-bar-terminal.png</span>)
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>![<span class="nt">Terminal screenshot placeholder: ridgeline-terminal.png</span>](<span class="na">images/ridgeline-terminal.png</span>)
+</code></pre></div>
 
 
 
 
 
 
-
-  
-  
 
 
 
@@ -3641,10 +3398,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.instant", "navigation.tracking", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.instant", "navigation.tracking", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

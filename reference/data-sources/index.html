@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/biomcp-charts/" class="md-tabs__link">
+        <a href="../../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
           
   
   
@@ -3220,6 +3220,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    KRAS G12C Treatment Landscape in 7 Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/biomcp-charts/" class="md-nav__link">
         
   
@@ -3666,10 +3694,10 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 </tr>
 <tr>
 <td>Article search &amp; metadata</td>
-<td>PubTator3 + Europe PMC + optional Semantic Scholar</td>
-<td><code>https://www.ncbi.nlm.nih.gov/research/pubtator3-api</code>, <code>https://www.ebi.ac.uk/europepmc/webservices/rest</code>, <code>https://api.semanticscholar.org</code></td>
+<td>PubTator3 + Europe PMC + PubMed + LitSense2 + optional Semantic Scholar</td>
+<td><code>https://www.ncbi.nlm.nih.gov/research/pubtator3-api</code>, <code>https://www.ebi.ac.uk/europepmc/webservices/rest</code>, <code>https://eutils.ncbi.nlm.nih.gov/entrez/eutils</code>, <code>https://www.ncbi.nlm.nih.gov/research/litsense2-api/api</code>, <code>https://api.semanticscholar.org</code></td>
 <td>Optional (<code>S2_API_KEY</code>)</td>
-<td>Federated search with identifier-aware merge and directness-first relevance ranking</td>
+<td>Federated search with identifier-aware merge plus lexical, semantic, or weighted hybrid relevance ranking</td>
 </tr>
 <tr>
 <td>Article enrichment and graph helpers</td>
@@ -3955,7 +3983,7 @@ and practical ceilings observed in command behavior.</p>
 <tr>
 <td>Article search</td>
 <td><code>--limit</code> defaults to 10</td>
-<td>Use <code>--since</code> and typed entity filters to constrain results; <code>sort=relevance</code> is local directness-first reranking</td>
+<td>Use <code>--since</code> and typed entity filters to constrain results; <code>sort=relevance</code> defaults to hybrid for keyword queries and lexical for entity-only queries</td>
 </tr>
 <tr>
 <td>KEGG pathway search/detail</td>
@@ -4003,7 +4031,7 @@ and practical ceilings observed in command behavior.</p>
 <h2 id="article-pipeline-behavior">Article pipeline behavior<a class="headerlink" href="#article-pipeline-behavior" title="Permanent link">&para;</a></h2>
 <p>Article workflows compose multiple APIs for different tasks:</p>
 <ol>
-<li>PubTator3 + Europe PMC for federated search, with an optional Semantic Scholar leg when the filter set is compatible (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, local directness-first relevance ranking)</li>
+<li>PubTator3 + Europe PMC + PubMed for federated search, with LitSense2 added for keyword-bearing queries and an optional Semantic Scholar leg when the filter set is compatible (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, local lexical/semantic/hybrid relevance ranking)</li>
 <li>Europe PMC for bibliographic metadata</li>
 <li>PubTator3 for entity annotations</li>
 <li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, and recommendations</li>

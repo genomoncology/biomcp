@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/biomcp-charts/" class="md-tabs__link">
+        <a href="../../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
           
   
   
@@ -3220,6 +3220,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    KRAS G12C Treatment Landscape in 7 Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/biomcp-charts/" class="md-nav__link">
         
   
@@ -3598,32 +3626,61 @@
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--line-of-therapy<span class="w"> </span>2L<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="search-trials-nci-source">Search trials (NCI source)<a class="headerlink" href="#search-trials-nci-source" title="Permanent link">&para;</a></h2>
-<p>Use NCI CTS when needed:</p>
+<p>Use NCI CTS when you want the shared BioMCP trial CLI to target the NCI trial
+catalog instead of ClinicalTrials.gov.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>For higher limits/reliability, set <code>NCI_API_KEY</code>.</p>
+<p><code>--condition</code> remains the NCI entry point. BioMCP first tries to ground the
+condition through MyDisease and, when the best match has an NCI Thesaurus
+cross-reference, sends <code>diseases.nci_thesaurus_concept_id=&lt;C-code&gt;</code>. When no
+grounded NCI ID is available, BioMCP falls back to CTS <code>keyword=&lt;text&gt;</code>.
+There is no separate NCI keyword flag in this ticket.</p>
+<p>NCI status handling is source-specific. Use one normalized status at a time:</p>
+<ul>
+<li><code>recruiting</code> maps to CTS <code>sites.recruitment_status=ACTIVE</code></li>
+<li><code>not yet recruiting</code>, <code>enrolling by invitation</code>, <code>active, not recruiting</code>,
+  <code>completed</code>, <code>suspended</code>, <code>terminated</code>, and <code>withdrawn</code> map to the closest
+  documented CTS lifecycle or site-status value</li>
+<li>comma-separated status lists are rejected for <code>--source nci</code></li>
+</ul>
+<p>NCI phase handling is also source-specific:</p>
+<ul>
+<li><code>1</code>, <code>2</code>, <code>3</code>, and <code>4</code> map to CTS <code>I</code>, <code>II</code>, <code>III</code>, and <code>IV</code></li>
+<li><code>1/2</code> maps to CTS <code>I_II</code></li>
+<li><code>NA</code> stays <code>NA</code></li>
+<li><code>early_phase1</code> is rejected for <code>--source nci</code></li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--phase<span class="w"> </span><span class="m">1</span>/2<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>NCI geographic filtering is direct CTS filtering rather than CTGov's
+geo-verify mode. When <code>--lat</code>, <code>--lon</code>, and <code>--distance</code> are all present,
+BioMCP sends <code>sites.org_coordinates_lat</code>, <code>sites.org_coordinates_lon</code>, and
+<code>sites.org_coordinates_dist=&lt;N&gt;mi</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w"> </span>--lat<span class="w"> </span><span class="m">42</span>.36<span class="w"> </span>--lon<span class="w"> </span>-71.06<span class="w"> </span>--distance<span class="w"> </span><span class="m">50</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>For higher limits and reliable authenticated access, set <code>NCI_API_KEY</code>.</p>
 <h2 id="get-a-trial-by-nct-id">Get a trial by NCT ID<a class="headerlink" href="#get-a-trial-by-nct-id" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
 </code></pre></div>
 <p>The default response summarizes title, status, condition context, and source metadata.</p>
 <h2 id="request-trial-sections">Request trial sections<a class="headerlink" href="#request-trial-sections" title="Permanent link">&para;</a></h2>
 <p>Eligibility:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
 </code></pre></div>
 <p>Locations:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>locations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>locations
 </code></pre></div>
 <p>Outcomes:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>outcomes
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>outcomes
 </code></pre></div>
 <p>Arms/interventions:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>arms
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>arms
 </code></pre></div>
 <p>References:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>references
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>references
 </code></pre></div>
 <p>All sections where supported:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>all
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>all
 </code></pre></div>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <p>There is no direct <code>trial &lt;helper&gt;</code> family. Use inbound pivots such as
@@ -3634,7 +3691,7 @@ entity is already known.</p>
 <p>Large text blocks (for example, eligibility text) are cached in the BioMCP download area.
 This keeps repeated lookups responsive.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
 </code></pre></div>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
