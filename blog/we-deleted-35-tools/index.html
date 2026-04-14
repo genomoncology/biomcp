@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1674,6 +1674,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/civic/" class="md-nav__link">
         
   
@@ -1766,6 +1794,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3063,6 +3119,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3782,9 +3866,11 @@
 <h3 id="4-built-for-speed">4. Built for speed<a class="headerlink" href="#4-built-for-speed" title="Permanent link">&para;</a></h3>
 <p>The rewrite to Rust wasn't about language preference. Agent sessions are interactive — the human is watching. A 2-second API call feels instantaneous. A 10-second one feels broken.</p>
 <p>A single Rust binary with async parallel API fan-out means a <code>search all</code> that hits 8 APIs completes in the time of the slowest single call, not the sum. No runtime, no virtual environment, no dependency conflicts — install and first query in under 60 seconds:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># or install the binary directly:</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># or:</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># or:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>pip<span class="w"> </span>install<span class="w"> </span>biomcp-cli
 </code></pre></div>
 <p>Claude Desktop config is three lines of JSON. Faster than any ad-hoc Python or TypeScript script an agent could write against these same APIs.</p>
 <p><em>The general principle: Every dependency is a support ticket. Every configuration step is a user who gives up. If the agent's human can't get your tool running in 60 seconds, they'll use something else.</em></p>
@@ -3873,10 +3959,12 @@
 <hr />
 <h2 id="try-it">Try it<a class="headerlink" href="#try-it" title="Permanent link">&para;</a></h2>
 <p>Install BioMCP and run your first query in under a minute:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># or:</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># or:</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>pip<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
 </code></pre></div>
 <p>Or connect it to Claude Desktop:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>

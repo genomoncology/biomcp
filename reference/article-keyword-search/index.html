@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1674,6 +1674,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/civic/" class="md-nav__link">
         
   
@@ -1766,6 +1794,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3176,6 +3232,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3530,7 +3614,13 @@ gene, disease, or drug anchor.</p>
 into compatible federated searches and makes the default relevance mode
 <code>hybrid</code>.
 That semantic-aware path uses the LitSense2-derived semantic signal; rows
-without LitSense2 provenance contribute <code>semantic=0</code>.</p>
+without LitSense2 provenance contribute <code>semantic=0</code>.
+BioMCP caps each federated source's contribution after deduplication and before
+ranking. Default: 40% of <code>--limit</code> on federated pools with at least three
+surviving primary sources. Rows count against their primary source after
+deduplication. Use <code>--max-per-source &lt;N&gt;</code> to override that cap, use
+<code>--max-per-source 0</code> for the default cap explicitly, and set it equal to
+<code>--limit</code> to disable capping.</p>
 <h2 id="when-keyword-should-be-combined-with-typed-filters">When <code>--keyword</code> should be combined with typed filters<a class="headerlink" href="#when-keyword-should-be-combined-with-typed-filters" title="Permanent link">&para;</a></h2>
 <p>If the gene, disease, or drug is already known, keep that anchor in a typed
 flag and use <code>-k</code> for mechanisms, phenotypes, outcomes, datasets, and other

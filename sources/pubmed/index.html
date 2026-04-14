@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1781,6 +1781,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../civic/" class="md-nav__link">
         
   
@@ -1873,6 +1901,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3165,6 +3221,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3489,13 +3573,12 @@
 
 
 <h1 id="pubmed">PubMed<a class="headerlink" href="#pubmed" title="Permanent link">&para;</a></h1>
-<p>PubMed is the starting point for most biomedical literature work because it gives researchers a shared identifier system, durable abstracts, and the fastest path from a gene, disease, or drug question to the papers that matter. If you want an MCP-friendly literature workflow that still speaks the language of PMIDs, this is the page to start with.</p>
+<p>"PubMed" is an umbrella label for BioMCP's PMID-centric literature workflow, so it is the starting point for most biomedical literature work: researchers get a shared identifier system, durable abstracts, and the fastest path from a gene, disease, or drug question to the papers that matter. If you want an MCP-friendly literature workflow that still speaks the language of PMIDs, this is the page to start with.</p>
 <p>In BioMCP, PubMed is both a direct article-search source and part of the
 default compatible article federation. <code>search article --source pubmed</code> uses
 BioMCP's PubMed ESearch/ESummary loop directly, while the default <code>--source
 all</code> route combines PubTator3, Europe PMC, and PubMed when the selected
-filters are PubMed-compatible. Full-text resolution still uses PMC OA plus the
-NCBI ID Converter. Semantic Scholar TLDR, citation, reference, and
+filters are PubMed-compatible. Full-text resolution uses Europe PMC, NCBI E-utilities, PMC OA, and the NCBI ID Converter. Semantic Scholar TLDR, citation, reference, and
 recommendation helpers belong on the <a href="../semantic-scholar/">Semantic Scholar</a>
 page because they come from a different provider surface.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
@@ -3525,8 +3608,8 @@ page because they come from a different provider surface.</p>
 </tr>
 <tr>
 <td><code>get article &lt;id&gt; fulltext</code></td>
-<td>Open-access full-text handoff with saved Markdown path</td>
-<td>Uses PMC OA plus NCBI ID Converter</td>
+<td>Open-access full-text handoff with saved Markdown path and rendered references when available</td>
+<td>Uses Europe PMC, NCBI E-utilities, PMC OA, and NCBI ID Converter fallbacks</td>
 </tr>
 <tr>
 <td><code>article entities &lt;pmid&gt;</code></td>
@@ -3539,21 +3622,18 @@ page because they come from a different provider surface.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <p>Returns an article table with PMID and title columns for a fast literature scan.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--source<span class="w"> </span>pubmed<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-</code></pre></div>
-<p>Queries PubMed directly while preserving the standard article table contract.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <p>Returns an article card with PMID, journal, and summary metadata.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
 </code></pre></div>
 <p>Returns a PubTator annotation section with entity groups and counts.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <p>Returns an entity-grouped follow-up view with separate genes, diseases, and drugs sections.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">27083046</span><span class="w"> </span>fulltext
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">27083046</span><span class="w"> </span>fulltext
 </code></pre></div>
-<p>Returns a full-text section when PMC OA is available and prints a <code>Saved to:</code> cache path.</p>
+<p>Returns a full-text section when Europe PMC, NCBI E-utilities, or PMC OA can supply PMC XML, prints a <code>Saved to:</code> cache path, and includes rendered references when JATS bibliography data is available.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>Optional <code>NCBI_API_KEY</code> for higher NCBI throughput. Set it through the <a href="../../getting-started/api-keys/">API Keys</a> guide and create one in <a href="https://www.ncbi.nlm.nih.gov/account/settings/">My NCBI</a>.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>

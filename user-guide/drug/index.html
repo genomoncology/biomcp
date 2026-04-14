@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1192,6 +1192,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#who-prequalification-local-data-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WHO Prequalification local data setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#helper-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1814,6 +1825,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/civic/" class="md-nav__link">
         
   
@@ -1906,6 +1945,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3198,6 +3265,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3491,6 +3586,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#who-prequalification-local-data-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WHO Prequalification local data setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#helper-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3555,27 +3661,30 @@
 
 
 <h1 id="drug">Drug<a class="headerlink" href="#drug" title="Permanent link">&para;</a></h1>
-<p>Use drug commands for medication lookup, target-oriented search, and U.S./EU regulatory context.</p>
+<p>Use drug commands for medication lookup, target-oriented search, and U.S./EU/WHO regulatory context.</p>
 <h2 id="search-drugs">Search drugs<a class="headerlink" href="#search-drugs" title="Permanent link">&para;</a></h2>
 <p>Text query:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;kinase inhibitor&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>EU or comparison search:</p>
+<p>Regional or comparison search:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--region<span class="w"> </span>eu<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--region<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>trastuzumab<span class="w"> </span>--region<span class="w"> </span>who<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--region<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Target-oriented search:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--target<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Indication-oriented search:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--indication<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--indication<span class="w"> </span>malaria<span class="w"> </span>--region<span class="w"> </span>who<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p><code>search drug --interactions &lt;drug&gt;</code> is currently unavailable because the public data sources BioMCP uses do not expose partner-indexed interaction rows.</p>
-<p>Omitting <code>--region</code> on a plain name/alias search checks both U.S. and EU data.
+<p>Omitting <code>--region</code> on a plain name/alias search checks U.S., EU, and WHO data.
 If you omit <code>--region</code> while using structured filters such as <code>--target</code> or
-<code>--indication</code>, BioMCP stays on the U.S. MyChem path. Explicit <code>--region eu</code>
-or <code>--region all</code> with structured filters still errors.</p>
+<code>--indication</code>, BioMCP stays on the U.S. MyChem path. Explicit <code>--region who</code>
+filters structured U.S. hits through WHO Prequalification. Explicit <code>--region
+eu</code> or <code>--region all</code> with structured filters still errors.</p>
 <h2 id="get-a-drug-record">Get a drug record<a class="headerlink" href="#get-a-drug-record" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
 </code></pre></div>
@@ -3596,10 +3705,12 @@ profile such as <code>EGFRvIII</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>carboplatin<span class="w"> </span>shortage
 </code></pre></div>
 <p>Regional regulatory and safety sections:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>eu
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>all
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Ozempic<span class="w"> </span>safety<span class="w"> </span>--region<span class="w"> </span>eu
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Ozempic<span class="w"> </span>shortage<span class="w"> </span>--region<span class="w"> </span>eu
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>trastuzumab<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>who
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>eu
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>trastuzumab<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>all
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>all
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Ozempic<span class="w"> </span>safety<span class="w"> </span>--region<span class="w"> </span>eu
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Ozempic<span class="w"> </span>shortage<span class="w"> </span>--region<span class="w"> </span>eu
 </code></pre></div>
 <p>Targets and indications sections:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>targets
@@ -3644,24 +3755,54 @@ these files in the target directory:</p>
 <p>EMA row meanings:</p>
 <ul>
 <li><code>configured</code>: <code>BIOMCP_EMA_DIR</code> is set and complete</li>
+<li><code>configured (stale)</code>: <code>BIOMCP_EMA_DIR</code> is set and complete, but one or more EMA files are older than the 72-hour refresh window</li>
 <li><code>available (default path)</code>: the default platform data directory contains a complete EMA batch</li>
+<li><code>available (default path, stale)</code>: the default platform data directory contains a complete EMA batch, but one or more EMA files are older than the 72-hour refresh window</li>
 <li><code>not configured</code>: no EMA batch is installed at the default path yet</li>
 <li><code>error (missing: ...)</code>: the EMA directory exists but is missing one or more required files</li>
 </ul>
+<h2 id="who-prequalification-local-data-setup">WHO Prequalification local data setup<a class="headerlink" href="#who-prequalification-local-data-setup" title="Permanent link">&para;</a></h2>
+<p>WHO regional regulatory commands read the WHO Prequalification CSV from
+<code>BIOMCP_WHO_DIR</code> first, then the platform data directory
+(<code>~/.local/share/biomcp/who-pq</code> on typical Linux systems). On first use,
+BioMCP auto-downloads the finished-pharmaceutical-products CSV into that root
+and refreshes stale files after 72 hours. Use <code>biomcp who sync</code> to force a
+refresh at any time.</p>
+<p>Manual preseed still works. If you need an offline or pre-populated root,
+place this file in the target directory:</p>
+<ul>
+<li><code>who_pq.csv</code></li>
+</ul>
+<p>Confirm local WHO readiness with full health output:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>health
+</code></pre></div>
+<p>Force-refresh WHO local data manually:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>who<span class="w"> </span>sync
+</code></pre></div>
+<p>WHO row meanings:</p>
+<ul>
+<li><code>configured</code>: <code>BIOMCP_WHO_DIR</code> is set and complete</li>
+<li><code>configured (stale)</code>: <code>BIOMCP_WHO_DIR</code> is set and complete, but <code>who_pq.csv</code> is older than the 72-hour refresh window</li>
+<li><code>available (default path)</code>: the default platform data directory contains a complete WHO CSV</li>
+<li><code>available (default path, stale)</code>: the default platform data directory contains a complete WHO CSV, but <code>who_pq.csv</code> is older than the 72-hour refresh window</li>
+<li><code>not configured</code>: no WHO CSV is installed at the default path yet</li>
+<li><code>error (missing: ...)</code>: the WHO directory exists but is missing the required file</li>
+</ul>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <p>Trial pivot:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Safety pivot:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
 </code></pre></div>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Start with base <code>get</code> before requesting heavy sections.</li>
 <li>Use target filters to narrow crowded drug classes.</li>
+<li>Use <code>regulatory</code> with <code>--region who|all</code> when you need WHO Prequalification context.</li>
 <li>Use <code>regulatory</code>, <code>safety</code>, or <code>shortage</code> with <code>--region eu|all</code> when you need EMA context.</li>
 <li>Pair drug lookups with trial filters for protocol matching workflows.</li>
 </ul>

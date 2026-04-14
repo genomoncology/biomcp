@@ -192,6 +192,27 @@
     "notes": "BioMCP auto-downloads the EMA human-medicines JSON batch into BIOMCP_EMA_DIR or the default data directory on first use, refreshes stale files, and supports explicit refresh via biomcp ema sync."
   },
   {
+    "id": "who-prequalification",
+    "name": "WHO Prequalification",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "search drug --region who|all",
+      "search drug --indication <disease> --region who",
+      "get drug <name> regulatory --region who|all"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "on-demand local download by BioMCP on first WHO use, or manual preseed via BIOMCP_WHO_DIR",
+    "license_summary": "WHO content generally requires attribution; commercial reuse may require permission and third-party materials can carry separate rights",
+    "redistribution_summary": "preserve WHO attribution, review commercial-use conditions, and check third-party material rights before republishing",
+    "terms_url": "https://www.who.int/about/policies/publishing/copyright",
+    "key_url": null,
+    "reviewed_on": "2026-04-10",
+    "notes": "BioMCP auto-downloads the WHO finished-pharmaceutical-products CSV into BIOMCP_WHO_DIR or the default data directory on first use, refreshes stale files, and supports explicit refresh via biomcp who sync."
+  },
+  {
     "id": "enrichr",
     "name": "Enrichr",
     "tier": 1,
@@ -379,6 +400,23 @@
     "notes": "BioMCP uses MedlinePlus only for best-effort plain-language discover context."
   },
   {
+    "id": "litsense2",
+    "name": "LitSense2",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["search article -k <query>"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public API",
+    "license_summary": "NCBI/NLM public-domain literature service",
+    "redistribution_summary": "query results are broadly reusable, but preserve article-level provenance and record rights separately",
+    "terms_url": "https://www.ncbi.nlm.nih.gov/research/litsense2-api/",
+    "key_url": null,
+    "reviewed_on": "2026-04-10",
+    "notes": "LitSense2 is only used for keyword-bearing article search paths and contributes semantic-signal metadata rather than acting as the sole article backend."
+  },
+  {
     "id": "monarch-initiative",
     "name": "Monarch Initiative",
     "tier": 1,
@@ -464,6 +502,23 @@
     "notes": "BioMCP intentionally documents several indirect-only provenance rows that arrive through MyVariant.info payloads."
   },
   {
+    "id": "ncbi-e-utilities",
+    "name": "NCBI E-utilities",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["get article <id> fulltext"],
+    "bioMcp_auth": "optional_env",
+    "env_var": "NCBI_API_KEY",
+    "provider_access": "open public E-utilities endpoint; optional My NCBI API key improves throughput",
+    "license_summary": "NLM public-domain utility service",
+    "redistribution_summary": "utility responses are broadly reusable; article-level full text still follows the returned record's license context",
+    "terms_url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
+    "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
+    "reviewed_on": "2026-04-10",
+    "notes": "BioMCP uses PMC `efetch` as a full-text fallback when Europe PMC does not serve the article. `NCBI_API_KEY` raises the baseline NCBI E-utilities budget but is not required."
+  },
+  {
     "id": "ncbi-id-converter",
     "name": "NCBI ID Converter",
     "tier": 1,
@@ -496,6 +551,23 @@
     "key_url": "https://clinicaltrialsapi.cancer.gov/",
     "reviewed_on": "2026-03-20",
     "notes": "BioMCP treats NCI CTS as an alternate oncology-focused trial backend, not the default public trial source."
+  },
+  {
+    "id": "nih-reporter",
+    "name": "NIH Reporter",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["get disease <name_or_id> funding", "get gene <symbol> funding"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public API",
+    "license_summary": "NIH-operated public funding-reporting service",
+    "redistribution_summary": "project and grant metadata are broadly reusable; preserve NIH Reporter attribution, fiscal-year context, and grant identifiers",
+    "terms_url": "https://www.nih.gov/web-policies-notices",
+    "key_url": null,
+    "reviewed_on": "2026-04-11",
+    "notes": "BioMCP uses the public NIH Reporter v2 projects search API for exact-phrase title/abstract funding lookups over the most recent 5 NIH fiscal years. Funding stays opt-in rather than being included in all."
   },
   {
     "id": "ols4",
@@ -617,6 +689,23 @@
     "notes": "BioMCP uses PubTator3 for article search fan-out and article annotation. `NCBI_API_KEY` is optional quota uplift only."
   },
   {
+    "id": "pubmed",
+    "name": "PubMed",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["search article", "get article <id>"],
+    "bioMcp_auth": "optional_env",
+    "env_var": "NCBI_API_KEY",
+    "provider_access": "open public search/metadata service; optional My NCBI API key improves throughput",
+    "license_summary": "NLM public-domain search and metadata service",
+    "redistribution_summary": "search results are broadly reusable, but article-level abstracts, full text, and downstream reuse still depend on the returned record context",
+    "terms_url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
+    "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
+    "reviewed_on": "2026-04-10",
+    "notes": "BioMCP uses PubMed as a first-class article search source while keeping separate rows for PubTator3 annotations, PMC OA full text, and other NCBI article helpers."
+  },
+  {
     "id": "quickgo",
     "name": "QuickGO",
     "tier": 1,
@@ -666,6 +755,23 @@
     "key_url": "https://www.semanticscholar.org/product/api",
     "reviewed_on": "2026-03-20",
     "notes": "BioMCP can call Semantic Scholar without `S2_API_KEY`, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability."
+  },
+  {
+    "id": "seer-explorer",
+    "name": "SEER Explorer",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["get disease <id> survival"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public website endpoints; no BioMCP account or key path",
+    "license_summary": "U.S. government cancer-statistics website and public explorer",
+    "redistribution_summary": "summary survival statistics are broadly reusable, but users should preserve SEER/NCI attribution and understand the explorer endpoints are undocumented UI routes",
+    "terms_url": "https://seer.cancer.gov/about/using-website.html",
+    "key_url": null,
+    "reviewed_on": "2026-04-10",
+    "notes": "BioMCP uses the public SEER Explorer site catalog and explorer endpoints for cancer survival summaries. The shipped contract treats malformed or mismatched explorer payloads as temporary unavailability rather than trustworthy data."
   },
   {
     "id": "string",

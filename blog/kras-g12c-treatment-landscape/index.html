@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://biomcp.org/blog/kras-g12c-treatment-landscape/">
       
       
-        <link rel="prev" href="../../reference/dependencies/">
+        <link rel="prev" href="../daraxonrasib-six-commands/">
       
       
         <link rel="next" href="../biomcp-charts/">
@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1674,6 +1674,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/civic/" class="md-nav__link">
         
   
@@ -1766,6 +1794,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3060,6 +3116,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -3236,7 +3320,7 @@
   <a href="#try-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Try It
+        Try it
       
     </span>
   </a>
@@ -3593,7 +3677,7 @@
   <a href="#try-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Try It
+        Try it
       
     </span>
   </a>
@@ -3844,8 +3928,10 @@
 </table>
 <p>Seven entity types queried. Ten-plus data sources: CIViC, ClinVar, OpenTargets, DGIdb, Drugs@FDA, OpenFDA FAERS, ClinicalTrials.gov, PubTator3, Europe PMC, and more. Each command took seconds. Not a substitute for clinical judgment — but a fast way to assemble the evidence landscape that informs it.</p>
 <hr />
-<h2 id="try-it">Try It<a class="headerlink" href="#try-it" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+<h2 id="try-it">Try it<a class="headerlink" href="#try-it" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1"># or: uv tool install biomcp-cli</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># or: pip install biomcp-cli</span>
 </code></pre></div>
 <p>Then start with your own mutation:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w"> </span>--counts-only

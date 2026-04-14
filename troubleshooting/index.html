@@ -383,7 +383,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../blog/daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1672,6 +1672,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../sources/civic/" class="md-nav__link">
         
   
@@ -1764,6 +1792,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3056,6 +3112,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../blog/daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3460,6 +3544,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#14-who-drug-data-not-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14) WHO drug data not available
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3637,6 +3732,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#14-who-drug-data-not-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14) WHO drug data not available
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3773,15 +3879,18 @@ re-run the installer:</p>
 </ul>
 <h2 id="13-eu-drug-data-not-available">13) EU drug data not available<a class="headerlink" href="#13-eu-drug-data-not-available" title="Permanent link">&para;</a></h2>
 <p>EU drug regulatory, safety, and shortage sections depend on the local EMA
-human-medicines JSON batch. BioMCP auto-downloads that data on first use,
-but full <code>biomcp health</code> is still the right readiness view when you need to
-debug the local EMA state:</p>
+human-medicines JSON batch. BioMCP auto-downloads that data on first use for
+<code>--region eu|all</code> drug workflows and for the default plain-name
+U.S.+EU+WHO drug search, but full <code>biomcp health</code> is still the right
+readiness view when you need to debug the local EMA state:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>health
 </code></pre></div>
 <p>Interpret the EMA row like this:</p>
 <ul>
 <li><code>configured</code>: <code>BIOMCP_EMA_DIR</code> is set and all required EMA JSON files are present</li>
+<li><code>configured (stale)</code>: <code>BIOMCP_EMA_DIR</code> is set and the EMA batch is present, but older than the 72-hour refresh window</li>
 <li><code>available (default path)</code>: BioMCP found a complete EMA batch in the default platform data directory</li>
+<li><code>available (default path, stale)</code>: the default-path EMA batch is complete but older than the 72-hour refresh window</li>
 <li><code>not configured</code>: no EMA batch was found at the default path, so EU drug features are currently unavailable but the install is not considered broken</li>
 <li><code>error (missing: ...)</code>: BioMCP found a partial EMA batch; install the missing files or point <code>BIOMCP_EMA_DIR</code> at a complete batch</li>
 </ul>
@@ -3801,6 +3910,34 @@ complete EMA root must contain:</p>
 <li><code>psusas.json</code></li>
 <li><code>dhpcs.json</code></li>
 <li><code>shortages.json</code></li>
+</ul>
+<h2 id="14-who-drug-data-not-available">14) WHO drug data not available<a class="headerlink" href="#14-who-drug-data-not-available" title="Permanent link">&para;</a></h2>
+<p>WHO regional regulatory search/get flows depend on the local WHO
+finished-pharmaceutical-products CSV. BioMCP auto-downloads that CSV on first
+use for <code>--region who|all</code> drug workflows and for the default plain-name
+U.S.+EU+WHO drug search:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>health
+</code></pre></div>
+<p>Interpret the WHO row like this:</p>
+<ul>
+<li><code>configured</code>: <code>BIOMCP_WHO_DIR</code> is set and <code>who_pq.csv</code> is present</li>
+<li><code>configured (stale)</code>: <code>BIOMCP_WHO_DIR</code> is set and the WHO CSV is present, but older than the 72-hour refresh window</li>
+<li><code>available (default path)</code>: BioMCP found <code>who_pq.csv</code> in the default platform data directory</li>
+<li><code>available (default path, stale)</code>: the default-path WHO CSV is present but older than the 72-hour refresh window</li>
+<li><code>not configured</code>: no WHO CSV was found at the default path, so WHO regional drug features are currently unavailable but the install is not considered broken</li>
+<li><code>error (missing: ...)</code>: BioMCP found a partial WHO root or unreadable file; install the CSV or point <code>BIOMCP_WHO_DIR</code> at a complete root</li>
+</ul>
+<p>If a refresh fails, retry explicitly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>who<span class="w"> </span>sync
+</code></pre></div>
+<p>If you need to override the default path:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_WHO_DIR</span><span class="o">=</span><span class="s2">&quot;/path/to/who-pq&quot;</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>biomcp<span class="w"> </span>health
+</code></pre></div>
+<p>Manual preseed remains supported for offline or controlled environments. A
+complete WHO root must contain:</p>
+<ul>
+<li><code>who_pq.csv</code></li>
 </ul>
 
 

@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1674,6 +1674,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/civic/" class="md-nav__link">
         
   
@@ -1766,6 +1794,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3220,6 +3276,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3697,7 +3781,7 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>PubTator3 + Europe PMC + PubMed + LitSense2 + optional Semantic Scholar</td>
 <td><code>https://www.ncbi.nlm.nih.gov/research/pubtator3-api</code>, <code>https://www.ebi.ac.uk/europepmc/webservices/rest</code>, <code>https://eutils.ncbi.nlm.nih.gov/entrez/eutils</code>, <code>https://www.ncbi.nlm.nih.gov/research/litsense2-api/api</code>, <code>https://api.semanticscholar.org</code></td>
 <td>Optional (<code>S2_API_KEY</code>)</td>
-<td>Federated search with identifier-aware merge plus lexical, semantic, or weighted hybrid relevance ranking</td>
+<td>Federated search with identifier-aware merge, per-source capping after deduplication and before ranking, plus lexical, semantic, or weighted hybrid relevance ranking</td>
 </tr>
 <tr>
 <td>Article enrichment and graph helpers</td>
@@ -3733,6 +3817,13 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td><code>https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format</code></td>
 <td>No</td>
 <td>Supports <code>search/get drug --region eu|all</code> for regulatory, safety, and shortage; auto-downloads into <code>BIOMCP_EMA_DIR</code> or the platform data directory on first use and <code>biomcp ema sync</code> force-refreshes the local files</td>
+</tr>
+<tr>
+<td>Drug WHO regional context</td>
+<td>WHO finished-pharmaceutical-products CSV (local download)</td>
+<td><code>https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&amp;_format=csv</code></td>
+<td>No</td>
+<td>Supports <code>search/get drug --region who|all</code> for regulatory plus WHO-filtered structured <code>search drug --region who</code>; auto-downloads into <code>BIOMCP_WHO_DIR</code> or the platform data directory on first use and <code>biomcp who sync</code> force-refreshes the local file</td>
 </tr>
 <tr>
 <td>Drug section enrichments</td>
@@ -3784,6 +3875,13 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>Baseline disease context with ranked associated targets; disease <code>genes</code> can promote OpenTargets rows directly into the disease-gene table and attach OT score summaries</td>
 </tr>
 <tr>
+<td>Disease <code>survival</code> section</td>
+<td>SEER Explorer</td>
+<td><code>https://seer.cancer.gov/statistics-network/explorer/source/content_writers</code></td>
+<td>No</td>
+<td>Opt-in disease survival section with live site-catalog resolution and all-ages / all-races 5-year relative survival by sex; undocumented UI endpoints are validated and degrade to stable notes on mapping or availability failures</td>
+</tr>
+<tr>
 <td>Disease <code>genes</code> and <code>phenotypes</code> sections</td>
 <td>Monarch Initiative API v3</td>
 <td><code>https://api-v3.monarchinitiative.org</code></td>
@@ -3810,6 +3908,13 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td><code>https://api.disgenet.com/api/v1</code></td>
 <td>Yes (<code>DISGENET_API_KEY</code>)</td>
 <td>Ranked scored disease-gene associations; disease lookup uses UMLS-backed DisGeNET identifiers</td>
+</tr>
+<tr>
+<td>Gene/Disease <code>funding</code> section</td>
+<td>NIH Reporter v2 API</td>
+<td><code>https://api.reporter.nih.gov/v2</code></td>
+<td>No</td>
+<td>Exact-phrase title/abstract funding lookup over the most recent 5 NIH fiscal years; returns top unique grants after de-duplicating project-year records</td>
 </tr>
 <tr>
 <td>Phenotype search (<code>search phenotype</code>)</td>
@@ -3919,7 +4024,7 @@ machine without creating or migrating cache directories.</p>
 <tr>
 <td>NCBI E-utilities</td>
 <td><code>NCBI_API_KEY</code></td>
-<td>Optional; improves PubTator3, PMC OA, and NCBI ID Converter quota headroom</td>
+<td>Optional; improves PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom</td>
 </tr>
 <tr>
 <td>OpenFDA</td>
@@ -3991,6 +4096,11 @@ and practical ceilings observed in command behavior.</p>
 <td>Matches KEGG's published 3 requests / second guidance</td>
 </tr>
 <tr>
+<td>NIH Reporter funding sections</td>
+<td>Rate-limited to 1 request / second</td>
+<td>Use explicit gene symbols or disease phrases/identifiers; BioMCP queries the most recent 5 NIH fiscal years, keeps free-text disease lookups as-entered, falls back to the resolved canonical disease name for identifier lookups, and de-duplicates project-year rows before ranking grants</td>
+</tr>
+<tr>
 <td>Semantic Scholar article helpers</td>
 <td>1 request / second with <code>S2_API_KEY</code>; 1 request / 2 seconds on the shared pool without it</td>
 <td>Explicit helper commands fail fast on shared-pool <code>429</code> responses; set <code>S2_API_KEY</code> for dedicated quota and retry behavior</td>
@@ -4031,7 +4141,7 @@ and practical ceilings observed in command behavior.</p>
 <h2 id="article-pipeline-behavior">Article pipeline behavior<a class="headerlink" href="#article-pipeline-behavior" title="Permanent link">&para;</a></h2>
 <p>Article workflows compose multiple APIs for different tasks:</p>
 <ol>
-<li>PubTator3 + Europe PMC + PubMed for federated search, with LitSense2 added for keyword-bearing queries and an optional Semantic Scholar leg when the filter set is compatible (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, local lexical/semantic/hybrid relevance ranking)</li>
+<li>PubTator3 + Europe PMC + PubMed for federated search, with LitSense2 added for keyword-bearing queries and an optional Semantic Scholar leg when the filter set is compatible (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, per-source capping after deduplication and before ranking, local lexical/semantic/hybrid relevance ranking)</li>
 <li>Europe PMC for bibliographic metadata</li>
 <li>PubTator3 for entity annotations</li>
 <li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, and recommendations</li>
@@ -4060,7 +4170,7 @@ Users should always be able to trace:</p>
 <p>When debugging source discrepancies:</p>
 <ol>
 <li>Run <code>biomcp health --apis-only</code> to inspect upstream/API connectivity plus any excluded key-gated sources</li>
-<li>Run <code>biomcp health</code> to inspect local readiness rows such as EMA local data and cache dir</li>
+<li>Run <code>biomcp health</code> to inspect local readiness rows such as EMA local data, WHO Prequalification local data, and cache dir</li>
 <li>Treat <code>biomcp health</code> as an inspection surface: it does not currently exit non-zero on partial upstream failures</li>
 <li>Run <code>./scripts/contract-smoke.sh --fast</code> for representative live probes, or <code>./scripts/contract-smoke.sh</code> for the fuller contract set</li>
 <li>Retry with <code>--no-cache</code></li>

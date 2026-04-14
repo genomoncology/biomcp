@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1803,6 +1803,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/civic/" class="md-nav__link">
         
   
@@ -1895,6 +1923,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3187,6 +3243,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3533,19 +3617,30 @@
 
 
 <h1 id="phenotype">Phenotype<a class="headerlink" href="#phenotype" title="Permanent link">&para;</a></h1>
-<p>Use phenotype commands to search HPO terms and phenotype-gene associations from the Monarch Initiative.</p>
+<p>Use phenotype commands to rank disease matches from HPO IDs or symptom phrases
+via the Monarch Initiative similarity search.</p>
 <h2 id="search-phenotypes">Search phenotypes<a class="headerlink" href="#search-phenotypes" title="Permanent link">&para;</a></h2>
-<p>By HPO identifiers (space-separated):</p>
+<p>By HPO identifiers (space- or comma-separated):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250,HP:0001263&quot;</span>
 </code></pre></div>
-<p>By name or keyword:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span>seizure
+<p>By one symptom phrase:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;developmental delay&quot;</span>
+</code></pre></div>
+<p>By multiple symptom phrases (comma-separated):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;seizure, developmental delay&quot;</span>
 </code></pre></div>
 <p>Multiple terms with limit:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>
 </code></pre></div>
-<p>The positional <code>terms</code> argument accepts HPO IDs or keywords, space-separated or
-comma-separated. Use <code>--limit</code> and <code>--offset</code> when you need bounded paging.</p>
+<p>The positional <code>terms</code> argument accepts:</p>
+<ul>
+<li>canonical HPO IDs, space- or comma-separated</li>
+<li>one symptom phrase</li>
+<li>multiple symptom phrases separated by commas</li>
+</ul>
+<p>Free-text symptom phrases are resolved to HPO IDs before the Monarch similarity
+search runs. Use <code>--limit</code> and <code>--offset</code> when you need bounded paging.</p>
 <h2 id="get-records">Get records<a class="headerlink" href="#get-records" title="Permanent link">&para;</a></h2>
 <p>Phenotype is search-only. There is no <code>get phenotype</code> subcommand.</p>
 <h2 id="request-sections">Request sections<a class="headerlink" href="#request-sections" title="Permanent link">&para;</a></h2>
@@ -3553,16 +3648,22 @@ comma-separated. Use <code>--limit</code> and <code>--offset</code> when you nee
 or <code>get disease &lt;id&gt; phenotypes</code> when you want a normalized disease follow-up.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <p>Phenotype is search-only. Start with <code>search phenotype</code> for HPO term sets or
-keyword discovery, then switch to disease commands once you have the right
-normalized concept.</p>
+symptom phrases, then switch to disease commands once you have the right
+normalized concept. If you want to inspect candidate HPO terms first, run
+<code>biomcp discover "&lt;symptom text&gt;"</code> and use the suggested <code>HP:</code> IDs.
+Markdown phenotype search results now add a <code>See also:</code> block that reuses the
+top-ranked disease match, for example <code>biomcp get disease "Dravet syndrome"
+genes phenotypes</code>. <code>biomcp --json search phenotype ...</code> remains a generic
+search response and does not add entity-style <code>_meta.next_commands</code>.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250&quot;</span>
 </code></pre></div>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Use HPO IDs for precise lookups when you know the exact term.</li>
-<li>Use plain-text keywords for exploratory searches across phenotype names.</li>
+<li>Use commas to separate multiple symptom phrases in one search.</li>
 <li>Combine multiple HPO IDs in a single query to retrieve a phenotype set.</li>
+<li>Prefer 2-5 high-confidence HPO IDs when you already know them.</li>
 </ul>
 <h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>
 <ul>

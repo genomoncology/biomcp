@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1674,6 +1674,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/civic/" class="md-nav__link">
         
   
@@ -1766,6 +1794,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3063,6 +3119,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3756,8 +3840,10 @@ are available — when they're not, BioMCP tells you and suggests alternatives
 </code></pre></div>
 <p>Check your configuration with <code>biomcp health --apis-only</code> — it shows which APIs are authenticated and which are using shared pools.</p>
 <h2 id="try-it">Try it<a class="headerlink" href="#try-it" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1"># or: uv tool install biomcp-cli</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="c1"># or: pip install biomcp-cli</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install
 </code></pre></div>
 <p>Then start with a paper you know:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>--gene<span class="w"> </span>&lt;your-gene&gt;<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>

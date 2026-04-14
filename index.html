@@ -385,7 +385,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="blog/daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -564,10 +564,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#pypi-tool-install" class="md-nav__link">
+  <a href="#binary-install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        PyPI tool install
+        Binary install
       
     </span>
   </a>
@@ -575,10 +575,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#binary-install" class="md-nav__link">
+  <a href="#pypi-tool-install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Binary install
+        PyPI tool install
       
     </span>
   </a>
@@ -1945,6 +1945,34 @@
   
   
     <li class="md-nav__item">
+      <a href="sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="sources/civic/" class="md-nav__link">
         
   
@@ -2037,6 +2065,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3329,6 +3385,34 @@
   
   
     <li class="md-nav__item">
+      <a href="blog/daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="blog/kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3590,10 +3674,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#pypi-tool-install" class="md-nav__link">
+  <a href="#binary-install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        PyPI tool install
+        Binary install
       
     </span>
   </a>
@@ -3601,10 +3685,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#binary-install" class="md-nav__link">
+  <a href="#pypi-tool-install" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Binary install
+        PyPI tool install
       
     </span>
   </a>
@@ -3831,16 +3915,16 @@ agents. Search, drill into detail, pivot to the next entity, and keep the
 output compact enough to stay useful. When public APIs are not enough, the same
 binary also runs local study analytics on downloaded cBioPortal datasets.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<h3 id="binary-install">Binary install<a class="headerlink" href="#binary-install" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+</code></pre></div>
 <h3 id="pypi-tool-install">PyPI tool install<a class="headerlink" href="#pypi-tool-install" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># or, inside an active Python environment:</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># pip install biomcp-cli</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># or, inside an active Python environment:</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># pip install biomcp-cli</span>
 </code></pre></div>
 <p>Install the <code>biomcp-cli</code> package, then use <code>biomcp</code> for the commands shown
 throughout the docs.</p>
-<h3 id="binary-install">Binary install<a class="headerlink" href="#binary-install" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
-</code></pre></div>
 <h3 id="install-skills">Install skills<a class="headerlink" href="#install-skills" title="Permanent link">&para;</a></h3>
 <p>Install guided investigation workflows into your agent directory:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude<span class="w"> </span>--force
@@ -3918,8 +4002,8 @@ stdio:</p>
 <tbody>
 <tr>
 <td>gene</td>
-<td>MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen</td>
-<td><code>biomcp get gene BRAF pathways hpa</code></td>
+<td>MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen, NIH Reporter</td>
+<td><code>biomcp get gene ERBB2 funding</code></td>
 </tr>
 <tr>
 <td>variant</td>
@@ -3938,13 +4022,13 @@ stdio:</p>
 </tr>
 <tr>
 <td>drug</td>
-<td>MyChem.info, EMA local batch, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA, CIViC</td>
-<td><code>biomcp get drug Keytruda regulatory --region eu</code></td>
+<td>MyChem.info, EMA local batch, WHO Prequalification local CSV, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA, CIViC</td>
+<td><code>biomcp get drug trastuzumab regulatory --region who</code></td>
 </tr>
 <tr>
 <td>disease</td>
-<td>MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC</td>
-<td><code>biomcp get disease "Lynch syndrome" genes</code></td>
+<td>MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC, SEER Explorer, NIH Reporter</td>
+<td><code>biomcp get disease "chronic myeloid leukemia" funding</code></td>
 </tr>
 <tr>
 <td>pathway</td>
@@ -4009,7 +4093,7 @@ use a helper versus a fresh search.</p>
 other entity pages still describe <strong>Enrichr</strong> where that is the source.</p>
 <h2 id="api-keys">API keys<a class="headerlink" href="#api-keys" title="Permanent link">&para;</a></h2>
 <p>Most commands work without credentials. Optional keys improve rate limits:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCBI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># PubTator, PMC OA, NCBI ID converter</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCBI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">        </span><span class="c1"># PubTator, PubMed/efetch, PMC OA, NCBI ID converter</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">S2_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">          </span><span class="c1"># Optional Semantic Scholar auth; dedicated quota at 1 req/sec</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENFDA_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">     </span><span class="c1"># OpenFDA rate limits</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NCI_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="w">         </span><span class="c1"># NCI CTS trial search (--source nci)</span>

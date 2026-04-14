@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/kras-g12c-treatment-landscape/" class="md-tabs__link">
+        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
           
   
   
@@ -1781,6 +1781,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/seer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SEER Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/civic/" class="md-nav__link">
         
   
@@ -1873,6 +1901,34 @@
     
   
     EMA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-prequalification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalification
   
 
     
@@ -3165,6 +3221,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/kras-g12c-treatment-landscape/" class="md-nav__link">
         
   
@@ -3501,17 +3585,25 @@ already trust.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>discover<span class="w"> </span>ERBB1
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>discover<span class="w"> </span>Keytruda
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;chest pain&quot;</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>discover<span class="w"> </span>diabetes
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;developmental delay&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>discover<span class="w"> </span>diabetes
 </code></pre></div>
 <h2 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Queries OLS4 for structured ontology-backed matches.</li>
 <li>Adds optional UMLS crosswalks when <code>UMLS_API_KEY</code> is set.</li>
 <li>Adds MedlinePlus plain-language context for disease and symptom queries.</li>
+<li>Suggests <code>biomcp search phenotype "HP:..."</code> first when symptom concepts
+  resolve to HPO-backed IDs.</li>
 <li>Returns suggested BioMCP follow-up commands without auto-executing them.</li>
 </ul>
 <h2 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h2>
 <p>Markdown groups concepts by type and shows suggested commands.</p>
+<p>For symptom-first queries such as <code>biomcp discover "developmental delay"</code>,
+discover can surface <code>HP:</code> identifiers directly in the concept list and suggest
+<code>biomcp search phenotype "HP:..."</code> as the next command. Disease-specific
+queries like <code>biomcp discover "symptoms of Marfan syndrome"</code> still route to
+<code>biomcp get disease ... phenotypes</code>.</p>
 <p>JSON preserves the same concepts and adds:</p>
 <ul>
 <li><code>_meta.next_commands</code></li>
@@ -3524,7 +3616,7 @@ already trust.</p>
 <li>OLS4 is required; if it fails, <code>discover</code> fails.</li>
 <li>UMLS is optional. Without <code>UMLS_API_KEY</code>, discover still works and reports
   that clinical crosswalk enrichment is unavailable.</li>
-<li>MedlinePlus is best-effort and only shown for disease or symptom flows.</li>
+<li>MedlinePlus is supplemental and only shown for disease or symptom flows.</li>
 <li>Queries are sent to third-party biomedical APIs. Do not send PHI or other
   patient-identifying text.</li>
 </ul>
