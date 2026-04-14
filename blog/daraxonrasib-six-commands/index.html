@@ -3915,16 +3915,18 @@
 <p>Every cell in the "returns" column comes from a real command run on April 14, 2026. The raw captures are in <code>drafts/daraxonrasib-research/captures/</code> in this repository.</p>
 <hr />
 <h2 id="try-it-yourself">Try it yourself<a class="headerlink" href="#try-it-yourself" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Install BioMCP if you haven&#39;t already</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>pip<span class="w"> </span>install<span class="w"> </span>biomcp-python
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># Then run the six commands:</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>daraxonrasib
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">40056080</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-i<span class="w"> </span>RMC-6236
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT06625320<span class="w"> </span>eligibility
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>sotorasib
-<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;KRAS G12D&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Install BioMCP if you haven&#39;t already:</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="c1"># or: uv tool install biomcp-cli</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># or: pip install biomcp-cli</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="c1"># Then run the six commands:</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>daraxonrasib
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">40056080</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-i<span class="w"> </span>RMC-6236
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT06625320<span class="w"> </span>eligibility
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>sotorasib
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;KRAS G12D&quot;</span>
 </code></pre></div>
 <p>Six commands. Six real answers. Zero API keys. One CLI.</p>
 <hr />
