@@ -537,6 +537,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     )
     assert "`make check` is the required local ticket gate" in technical
     assert "that means `lint`, `test`, and `check-quality-ratchet`" in technical
+    assert "`cargo deny check licenses` plus `cargo deny check advisories`" in technical
     assert "`version-sync` (`bash scripts/check-version-sync.sh`)" in technical
     assert "`climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`)" in technical
     assert (
@@ -702,8 +703,9 @@ def test_technical_overview_repaired_gate_and_health_copy_match_contract() -> No
     )
     assert (
         "`make check` is the required local ticket gate. In the current `Makefile`, "
-        "that means `lint`, `test`, and `check-quality-ratchet`, and the `lint` "
-        "stage rejects deprecated install strings in `README.md` and `docs/`."
+        "that means `lint`, `test`, and `check-quality-ratchet`; the `lint` stage "
+        "runs `cargo deny check licenses` plus `cargo deny check advisories`, and "
+        "still rejects deprecated install strings in `README.md` and `docs/`."
         in technical_ws
     )
     assert (
@@ -1479,6 +1481,7 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     runbook = _read_repo("RUN.md")
     contributing = _read_repo("CONTRIBUTING.md")
     technical = _read_repo("architecture/technical/overview.md")
+    runbook_prerequisites = _normalize_ws(_markdown_section(runbook, "Prerequisites"))
     runbook_premerge = _normalize_ws(_markdown_section(runbook, "Pre-Merge Checks"))
     contributing_hook = _normalize_ws(
         _markdown_section(contributing, "Local Pre-Commit Hook", level=3)
@@ -1494,9 +1497,15 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "`scripts/pre-commit-reject-march-artifacts.sh`" in runbook_premerge
     assert "`cargo fmt --check`" in runbook_premerge
     assert "`cargo clippy --lib --tests -- -D warnings`" in runbook_premerge
+    assert (
+        "`cargo-deny` for the repo-local license and advisory policy checks in "
+        "`make check`" in runbook_prerequisites
+    )
     assert "does not run" in runbook_premerge
     assert "`cargo nextest run`" in runbook_premerge
     assert "`make check`" in runbook_premerge
+    assert "`cargo deny check licenses`" in runbook_premerge
+    assert "`cargo deny check advisories`" in runbook_premerge
     assert "`make spec-pr`" in runbook_premerge
     assert "`make test-contracts`" in runbook_premerge
     assert "git commit --no-verify" in runbook_premerge

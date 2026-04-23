@@ -292,10 +292,12 @@ BioMCP has six distinct verification and operator-inspection surfaces.
 ### 1. CI and Repo Gates
 
 - `make check` is the required local ticket gate. In the current `Makefile`,
-  that means `lint`, `test`, and `check-quality-ratchet`, and the `lint`
-  stage rejects deprecated install strings in `README.md` and `docs/`.
+  that means `lint`, `test`, and `check-quality-ratchet`; the `lint` stage runs
+  `cargo deny check licenses` plus `cargo deny check advisories`, and still
+  rejects deprecated install strings in `README.md` and `docs/`.
 - Repo-local `test` now maps to `cargo nextest run`; the CI `check` job still
-  uses `cargo test` directly.
+  uses the raw `cargo fmt --check`, `cargo clippy -- -D warnings`, and
+  `cargo test` sequence directly.
 - CI in `.github/workflows/ci.yml` runs the broader repo baseline in parallel:
   `check`, `version-sync`, `climb-hygiene`, `contracts`, and `spec-stable`.
 - Docs-site validation and Python contract tests do not run under `make check`;
