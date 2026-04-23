@@ -9,12 +9,22 @@ import subprocess
 import sys
 from pathlib import Path
 
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from spec_smoke_args import (  # noqa: E402
+    canonical_section_id,
+    parse_make_variable_values,
+    resolve_smoke_targets,
+    target_spec_path,
+)
+
 MUSTMATCH_JSON_RE = re.compile(r"(?:^|\|\s*)mustmatch\s+json\b")
 SHORT_LIKE_RE = re.compile(r'(?:^|\|\s*)mustmatch\s+like\s+("([^"]*)"|\'([^\']*)\')')
 MUSTMATCH_PIPE_RE = re.compile(r"\|\s*mustmatch\b")
 MUSTMATCH_LINT_SKIP = "<!-- mustmatch-lint: skip -->"
 SMOKE_LANE_MARKER = "<!-- smoke-lane -->"
-PYTEST_ITEM_SUFFIX_RE = re.compile(r" \(line \d+\) \[[^\]]+\]$")
 LIVE_NETWORK_COMMAND_RES = [
     re.compile(
         r'(?:\bbiomcp|"\$bin"|\$bin|"\$\{bin\}"|\$\{bin\})\s+'
@@ -64,10 +74,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def write_json(path: Path, payload: dict[str, object]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
-def run_json_command(command: list[str], *, allowed_exit_codes: set[int]) -> dict[str, object]:
+def run_json_command(
+    command: list[str], *, allowed_exit_codes: set[int]
+) -> dict[str, object]:
     proc = subprocess.run(command, capture_output=True, text=True, check=False)
     if proc.returncode not in allowed_exit_codes:
         return {
@@ -95,7 +109,9 @@ def run_json_command(command: list[str], *, allowed_exit_codes: set[int]) -> dic
     return payload
 
 
-def make_repo_compatibility_findings(spec_path: Path, *, min_like_len: int = 10) -> list[dict[str, object]]:
+def make_repo_compatibility_findings(
+    spec_path: Path, *, min_like_len: int = 10
+) -> list[dict[str, object]]:
     findings: list[dict[str, object]] = []
     text = spec_path.read_text(encoding="utf-8")
 
@@ -166,7 +182,12 @@ def make_missing_bash_mustmatch_findings(spec_path: Path) -> list[dict[str, obje
                 inside_bash = False
                 skipped_bash = False
                 continue
-            if current_section is not None and inside_bash and not skipped_bash and MUSTMATCH_PIPE_RE.search(line):
+            if (
+                current_section is not None
+                and inside_bash
+                and not skipped_bash
+                and MUSTMATCH_PIPE_RE.search(line)
+            ):
                 current_section["has_mustmatch"] = True
             continue
 
@@ -264,7 +285,9 @@ def lint_specs(spec_paths: list[Path], spec_glob: str) -> dict[str, object]:
             errors = payload.get("errors", [])
             if isinstance(errors, list) and errors:
                 lint_errors.extend(
-                    f"{spec_path}: {error}" for error in errors if isinstance(error, str)
+                    f"{spec_path}: {error}"
+                    for error in errors
+                    if isinstance(error, str)
                 )
             else:
                 lint_errors.append(f"{spec_path}: lint command failed")
@@ -310,25 +333,7 @@ def parse_deselected_ids(makefile_path: Path) -> set[str]:
 
 
 def parse_quoted_make_variable_ids(makefile_path: Path, variable_name: str) -> set[str]:
-    assignment_re = re.compile(rf"^{re.escape(variable_name)}\s*[:+?]?=")
-    lines = read_text_or_empty(makefile_path).splitlines()
-    for index, line in enumerate(lines):
-        match = assignment_re.match(line)
-        if match is None:
-            continue
-        value_lines = [line[match.end() :]]
-        while value_lines[-1].rstrip().endswith("\\") and index + 1 < len(lines):
-            index += 1
-            value_lines.append(lines[index])
-        return set(re.findall(r'"([^"]+)"', "\n".join(value_lines)))
-    return set()
-
-
-def canonical_section_id(node_id: str) -> str:
-    path, separator, item_name = node_id.partition("::")
-    if not separator:
-        return node_id
-    return f"{path}{separator}{PYTEST_ITEM_SUFFIX_RE.sub('', item_name)}"
+    return set(parse_make_variable_values(makefile_path, variable_name))
 
 
 def markdown_section(text: str, heading: str) -> str:
@@ -414,7 +419,9 @@ def iter_spec_sections(
                     "path": str(spec_path),
                     "line": current_line,
                     "section": current_heading,
-                    "node_id": node_id_for_section(spec_path, root_dir, current_heading),
+                    "node_id": node_id_for_section(
+                        spec_path, root_dir, current_heading
+                    ),
                     "text": f"## {current_heading}",
                     "body": body,
                     "marked": SMOKE_LANE_MARKER in body,
@@ -478,7 +485,7 @@ def check_smoke_lane_sync(spec_paths: list[Path], root_dir: Path) -> dict[str, o
     deselected_ids = {
         canonical_section_id(node_id) for node_id in parse_deselected_ids(makefile_path)
     }
-    smoke_target_ids = parse_quoted_make_variable_ids(makefile_path, "SPEC_SMOKE_ARGS")
+    smoke_target_ids = parse_make_variable_values(makefile_path, "SPEC_SMOKE_ARGS")
     smoke_target_section_ids = {
         canonical_section_id(node_id) for node_id in smoke_target_ids
     }
@@ -595,14 +602,66 @@ def check_smoke_lane_sync(spec_paths: list[Path], root_dir: Path) -> dict[str, o
                 }
             )
 
+    scanned_smoke_targets = [
+        smoke_target_id
+        for smoke_target_id in smoke_target_ids
+        if _smoke_target_is_in_scanned_scope(smoke_target_id, scanned_relative_paths)
+    ]
+    collectable_smoke_target_count = 0
+    if scanned_smoke_targets:
+        resolution = resolve_smoke_targets(root_dir, scanned_smoke_targets)
+        if resolution.collection.failure is not None:
+            failure = resolution.collection.failure
+            return {
+                "status": "error",
+                "finding_count": len(findings),
+                "files_checked": len(spec_paths),
+                "marked_count": sum(1 for section in sections if section["marked"]),
+                "smoke_target_count": len(smoke_target_ids),
+                "collectable_smoke_target_count": 0,
+                "findings": findings,
+                "errors": failure.errors,
+                "collection_command": failure.command,
+                "exit_code": failure.exit_code,
+                "stdout": failure.stdout,
+                "stderr": failure.stderr,
+                "target_files": failure.target_files,
+            }
+
+        collectable_smoke_target_count = len(resolution.resolved)
+        for error in resolution.errors:
+            section = scanned_sections.get(error.node_id)
+            finding: dict[str, object] = {
+                "line": section["line"] if section is not None else 0,
+                "rule": error.rule,
+                "section": error.section,
+                "node_id": error.node_id,
+                "smoke_target": error.smoke_target,
+                "message": error.message,
+                "text": section["text"] if section is not None else "",
+            }
+            if error.candidates:
+                finding["candidates"] = error.candidates
+            findings.append(finding)
+
     return {
         "status": "fail" if findings else "pass",
         "finding_count": len(findings),
         "files_checked": len(spec_paths),
         "marked_count": sum(1 for section in sections if section["marked"]),
         "smoke_target_count": len(smoke_target_ids),
+        "collectable_smoke_target_count": collectable_smoke_target_count,
         "findings": findings,
     }
+
+
+def _smoke_target_is_in_scanned_scope(
+    smoke_target_id: str, scanned_relative_paths: set[str]
+) -> bool:
+    spec_path = target_spec_path(smoke_target_id)
+    if spec_path is None:
+        return True
+    return spec_path in scanned_relative_paths
 
 
 def main() -> int:

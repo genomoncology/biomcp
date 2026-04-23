@@ -174,45 +174,38 @@ def test_functional_overview_repaired_source_rows_match_current_contract() -> No
     assert (
         "| article | PubMed, PubTator3, Europe PMC, LitSense2 (keyword-gated), "
         "PMC OA, NCBI ID Converter, Semantic Scholar (optional auth; `S2_API_KEY` "
-        "recommended) | `biomcp search article -g BRAF --limit 5` |"
-        in functional
+        "recommended) | `biomcp search article -g BRAF --limit 5` |" in functional
     )
     assert (
         "| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human "
         "Protein Atlas, DGIdb, ClinGen, gnomAD, CIViC, NIH Reporter, GTR-backed "
-        "diagnostics pivot | `biomcp get gene ERBB2 funding` |"
-        in functional
+        "diagnostics pivot | `biomcp get gene ERBB2 funding` |" in functional
     )
     assert (
         "| diagnostic | NCBI Genetic Testing Registry local bulk exports, WHO IVD "
         "local CSV, optional OpenFDA device 510(k)/PMA overlay | "
-        "`biomcp search diagnostic --gene BRCA1 --limit 5` |"
-        in functional
+        "`biomcp search diagnostic --gene BRCA1 --limit 5` |" in functional
     )
     assert (
         "| drug | MyChem.info, EMA local batch, WHO Prequalification local CSV, "
         "ChEMBL, OpenTargets, Drugs@FDA, OpenFDA labels/shortages/approvals/"
         "FAERS/MAUDE/recalls, CIViC | `biomcp get drug trastuzumab regulatory "
-        "--region who` |"
-        in functional
+        "--region who` |" in functional
     )
     assert (
         "| disease | MyDisease.info, Monarch Initiative, MONDO, OpenTargets, "
         "Reactome, CIViC, SEER Explorer, NIH Reporter, MedlinePlus "
         "`clinical_features`, GTR/WHO IVD diagnostics pivot | `biomcp get "
-        "disease \"chronic myeloid leukemia\" funding` |"
-        in functional
+        'disease "chronic myeloid leukemia" funding` |' in functional
     )
     assert (
         "| adverse-event | OpenFDA FAERS/MAUDE/recalls, CDC WONDER VAERS "
         "aggregate vaccine search | `biomcp search adverse-event -d "
-        "pembrolizumab` |"
-        in functional
+        "pembrolizumab` |" in functional
     )
     assert (
         "| pathway | Reactome, KEGG, WikiPathways, g:Profiler, Enrichr-backed "
-        "enrichment sections | `biomcp get pathway hsa05200 genes` |"
-        in functional
+        "enrichment sections | `biomcp get pathway hsa05200 genes` |" in functional
     )
 
 
@@ -359,7 +352,9 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     article_validation_section = _normalize_ws(
         _markdown_section(technical, "Article Federation and Front-Door Validation")
     )
-    release_pipeline_section = _normalize_ws(_markdown_section(technical, "Release Pipeline"))
+    release_pipeline_section = _normalize_ws(
+        _markdown_section(technical, "Release Pipeline")
+    )
 
     assert "## Article Federation and Front-Door Validation" in technical
     assert (
@@ -382,12 +377,16 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "`--source` remains `all|pubtator|europepmc|pubmed|litsense2` in v1"
         in article_validation_section
     )
-    assert "Article filters remain raw as the shared contract" in article_validation_section
+    assert (
+        "Article filters remain raw as the shared contract"
+        in article_validation_section
+    )
     assert "PubMed ESearch cleans bounded question-format filler words" in (
         article_validation_section
     )
-    assert "PubTator3, Europe PMC, LitSense2, and Semantic Scholar receive their existing query inputs" in (
-        article_validation_section
+    assert (
+        "PubTator3, Europe PMC, LitSense2, and Semantic Scholar receive their existing query inputs"
+        in (article_validation_section)
     )
     assert (
         "deduplicate across PMID, PMCID, and DOI where possible, then re-rank locally"
@@ -399,8 +398,14 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         in data_sources
     )
     assert "Optional (`NCBI_API_KEY`, `S2_API_KEY`)" in data_sources
-    assert "NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs" in data_sources_ws
-    assert "Semantic Scholar supplies `openAccessPdf` metadata for the explicit `--pdf` fallback" in data_sources_ws
+    assert (
+        "NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs"
+        in data_sources_ws
+    )
+    assert (
+        "Semantic Scholar supplies `openAccessPdf` metadata for the explicit `--pdf` fallback"
+        in data_sources_ws
+    )
     assert (
         "`search article` rejects missing filters, invalid date values, inverted date ranges, "
         "and unsupported `--type` values before backend calls"
@@ -417,19 +422,14 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     )
     assert (
         "Keyword-bearing article queries default to `hybrid`, while entity-only article "
-        "queries default to `lexical`"
-        in technical_ws
+        "queries default to `lexical`" in technical_ws
     )
     assert (
         "`semantic` sorts the LitSense2-derived semantic signal descending and falls "
-        "back to the lexical comparator"
-        in technical_ws
+        "back to the lexical comparator" in technical_ws
     )
     assert "with `semantic=0` when LitSense2 did not match" in technical_ws
-    assert (
-        "0.4*semantic + 0.3*lexical + 0.2*citations + 0.1*position"
-        in technical_ws
-    )
+    assert "0.4*semantic + 0.3*lexical + 0.2*citations + 0.1*position" in technical_ws
     assert (
         "Semantic Scholar article helpers are explicitly limited to 1 request/sec per process and are not part of article search fan-out"
         not in technical
@@ -444,7 +444,10 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         in article_guide_ws
     )
     assert "LitSense2-derived semantic signal" in article_guide_ws
-    assert "Rows without LitSense2 provenance contribute `ranking.semantic_score = 0`" in article_guide_ws
+    assert (
+        "Rows without LitSense2 provenance contribute `ranking.semantic_score = 0`"
+        in article_guide_ws
+    )
     assert "PubMed ESearch cleans bounded filler words" in article_guide_ws
     assert "## Query formulation" in article_guide
     assert (
@@ -458,9 +461,18 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "MeSH/title/abstract" not in find_articles_ws
     assert "LitSense2-derived semantic signal" in find_articles_ws
     assert "semantic=0" in find_articles_ws
-    assert "Direct PubMed search and the compatible federated PubMed leg apply the same question-format cleanup" in find_articles_ws
-    assert "Do not guess `-g`, `-d`, or `--drug` when the question is trying to identify the entity itself." in find_articles_ws
-    assert 'biomcp search article -k "TCGA mutation analysis dataset" --type review --limit 5' in find_articles_ws
+    assert (
+        "Direct PubMed search and the compatible federated PubMed leg apply the same question-format cleanup"
+        in find_articles_ws
+    )
+    assert (
+        "Do not guess `-g`, `-d`, or `--drug` when the question is trying to identify the entity itself."
+        in find_articles_ws
+    )
+    assert (
+        'biomcp search article -k "TCGA mutation analysis dataset" --type review --limit 5'
+        in find_articles_ws
+    )
     assert "MeSH/title/abstract" not in article_keyword_reference_ws
     assert (
         "On the default `--source all` route, adding `-k/--keyword` also brings LitSense2 into compatible federated searches and makes the default relevance mode `hybrid`."
@@ -469,8 +481,14 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "LitSense2-derived semantic signal" in article_keyword_reference_ws
     assert "semantic=0" in article_keyword_reference_ws
     assert "PubMed-specific behavior" in article_keyword_reference_ws
-    assert "PubTator3, Europe PMC, LitSense2, and Semantic Scholar keep their existing query behavior" in article_keyword_reference_ws
-    assert "do not guess a disease or drug name just to fill `-d` or `--drug`" in article_keyword_reference_ws
+    assert (
+        "PubTator3, Europe PMC, LitSense2, and Semantic Scholar keep their existing query behavior"
+        in article_keyword_reference_ws
+    )
+    assert (
+        "do not guess a disease or drug name just to fill `-d` or `--drug`"
+        in article_keyword_reference_ws
+    )
     assert "Turn a literature question into article filters" in cli_list_reference_ws
     assert (
         "known gene/disease/drug anchors go in `-g/-d/--drug`; free-text concepts go in `-k`"
@@ -481,8 +499,9 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     )
     assert "LitSense2-derived semantic signal" in cli_list_reference_ws
     assert "semantic=0" in cli_list_reference_ws
-    assert "PubTator3 + Europe PMC + PubMed + LitSense2 + optional Semantic Scholar" in (
-        data_sources_ws
+    assert (
+        "PubTator3 + Europe PMC + PubMed + LitSense2 + optional Semantic Scholar"
+        in (data_sources_ws)
     )
     assert (
         "PubTator3 + Europe PMC + PubMed for federated search, with LitSense2 added for "
@@ -497,12 +516,18 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "pub(crate) fn semantic_scholar_search_enabled(" in article_planner
     assert "--source pubtator does not support --type." in article_planner
     assert "--source pubtator does not support --open-access." in article_planner
-    assert "Unsupported identifier format for Semantic Scholar article helpers:" in article_graph
+    assert (
+        "Unsupported identifier format for Semantic Scholar article helpers:"
+        in article_graph
+    )
     assert (
         "Unsupported identifier format. BioMCP resolves PMID (digits only"
         in article_mod
     )
-    assert "invalid_article_type_is_clean_usage_error_before_pubtator_route" in article_usage
+    assert (
+        "invalid_article_type_is_clean_usage_error_before_pubtator_route"
+        in article_usage
+    )
     assert "missing_article_filters_is_clean_usage_error" in article_usage
 
     assert "CI (`.github/workflows/ci.yml`) runs five parallel jobs" in technical
@@ -515,12 +540,14 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "`version-sync` (`bash scripts/check-version-sync.sh`)" in technical
     assert "`climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`)" in technical
     assert (
-        '`contracts` (`cargo build --release --locked`, `uv sync --extra dev`, '
+        "`contracts` (`cargo build --release --locked`, `uv sync --extra dev`, "
         '`uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, '
-        '`uv run mkdocs build --strict`)'
+        "`uv run mkdocs build --strict`)" in technical_ws
+    )
+    assert (
+        "`spec-stable` (`cargo build --release --locked`, then `make spec-pr`)"
         in technical_ws
     )
-    assert "`spec-stable` (`cargo build --release --locked`, then `make spec-pr`)" in technical_ws
     assert (
         "PR CI runs `make spec-pr` via the `spec-stable` job in `.github/workflows/ci.yml`"
         in technical_ws
@@ -529,17 +556,20 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "Volatile live-network headings run separately in `.github/workflows/spec-smoke.yml`"
         in technical_ws
     )
-    assert "Contract smoke checks run in `.github/workflows/contracts.yml`" in technical_ws
-    assert "The semver tag is the canonical release/version authority." in release_pipeline_section
     assert (
-        "PR CI enforces version parity before release via the `version-sync` job and "
-        "`scripts/check-version-sync.sh`"
+        "Contract smoke checks run in `.github/workflows/contracts.yml`" in technical_ws
+    )
+    assert (
+        "The semver tag is the canonical release/version authority."
         in release_pipeline_section
     )
     assert (
+        "PR CI enforces version parity before release via the `version-sync` job and "
+        "`scripts/check-version-sync.sh`" in release_pipeline_section
+    )
+    assert (
         "The release workflow builds binaries, publishes PyPI wheels, and deploys docs "
-        "from the tagged source"
-        in release_pipeline_section
+        "from the tagged source" in release_pipeline_section
     )
     assert (
         "`install.sh` resolves the latest release with platform assets, not the latest merge to `main`"
@@ -547,10 +577,12 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     )
     assert (
         "The existing `### Post-tag public proof` block is the live verification step for "
-        "tag-to-binary and tag-to-docs parity"
-        in release_pipeline_section
+        "tag-to-binary and tag-to-docs parity" in release_pipeline_section
     )
-    assert f'tag="${{BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. {example_tag}}}"' in technical
+    assert (
+        f'tag="${{BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. {example_tag}}}"'
+        in technical
+    )
     assert 'version="${tag#v}"' in technical
     assert "`workflow_dispatch` can replay a specified tag" in release_pipeline_section
     assert "Release validation runs the Rust checks again" in technical
@@ -559,7 +591,10 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "tag:" in release_workflow
     assert "deploy-docs:" in release_workflow
     assert "uv run mkdocs gh-deploy --force" in release_workflow
-    assert 'DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"' in install_script
+    assert (
+        'DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"'
+        in install_script
+    )
     assert "Resolved latest release with assets" in install_script
     assert "Streamable HTTP" in technical
     assert "`/mcp`" in technical
@@ -575,13 +610,15 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "read-only `skill` lookup/list/render behavior" in technical_ws
     assert (
         "Operator-local or mutating commands such as `cache`, `update`, `serve`, "
-        "`serve-http`, and `skill install` stay blocked over MCP."
-        in technical_ws
+        "`serve-http`, and `skill install` stay blocked over MCP." in technical_ws
     )
 
     assert "`search all` Contract" in ux
     assert "biomcp suggest <question>" in ux
-    assert 'biomcp suggest "<question>"   → select a worked-example playbook and two starter commands' in ux
+    assert (
+        'biomcp suggest "<question>"   → select a worked-example playbook and two starter commands'
+        in ux
+    )
     assert "biomcp discover <query>" in ux
     assert "## See Also and Next Commands" in ux
     assert "`_meta.next_commands`" in ux
@@ -599,21 +636,38 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "biomcp skill                  → show the embedded BioMCP agent guide" in ux
     assert "biomcp skill render           → print the canonical agent prompt" in ux
     assert "biomcp skill list             → list embedded worked examples" in ux
-    assert "biomcp cache path             → print the managed HTTP cache path (plain text; ignores `--json`)" in ux
-    assert "biomcp cache stats            → show HTTP cache statistics (JSON supported)" in ux
-    assert "biomcp cache clean            → remove orphan blobs and optionally age- or size-evict the HTTP cache (JSON supported)" in ux
-    assert "biomcp cache clear [--yes]    → destructively wipe the managed HTTP cache tree (JSON success; TTY or `--yes` required)" in ux
+    assert (
+        "biomcp cache path             → print the managed HTTP cache path (plain text; ignores `--json`)"
+        in ux
+    )
+    assert (
+        "biomcp cache stats            → show HTTP cache statistics (JSON supported)"
+        in ux
+    )
+    assert (
+        "biomcp cache clean            → remove orphan blobs and optionally age- or size-evict the HTTP cache (JSON supported)"
+        in ux
+    )
+    assert (
+        "biomcp cache clear [--yes]    → destructively wipe the managed HTTP cache tree (JSON success; TTY or `--yes` required)"
+        in ux
+    )
     assert "Overview: `biomcp skill`" in ux
     assert "Render: `biomcp skill render`" in ux
     assert "List: `biomcp skill list`" in ux
     assert "Open: `biomcp skill 01` or `biomcp skill article-follow-up`" in ux
     assert "biomcp://skill/<slug>" in ux
-    assert "biomcp serve-http            → run the MCP Streamable HTTP server at `/mcp`" in ux
-    assert "biomcp serve-sse             → removed compatibility command; use `biomcp serve-http`" not in ux
+    assert (
+        "biomcp serve-http            → run the MCP Streamable HTTP server at `/mcp`"
+        in ux
+    )
+    assert (
+        "biomcp serve-sse             → removed compatibility command; use `biomcp serve-http`"
+        not in ux
+    )
     assert (
         "Compatibility note: `biomcp serve-sse` remains available only as a hidden "
-        "compatibility command that points users to `biomcp serve-http`."
-        in ux
+        "compatibility command that points users to `biomcp serve-http`." in ux
     )
     assert (
         "JSON is the default script contract for query commands, with a documented "
@@ -622,8 +676,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "success, while `cache clear` still refuses non-TTY destructive runs "
         "unless `--yes` is present. The cache family remains CLI-only because "
         "revealing workstation-local filesystem paths over MCP would cross the "
-        "runtime security boundary."
-        in ux_ws
+        "runtime security boundary." in ux_ws
     )
     assert "`src/render/markdown/related.rs`" in ux
     assert "`src/render/markdown.rs`" not in ux
@@ -632,11 +685,10 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "13 remote entity commands" not in ux
     assert "all 13 remote entity commands" not in ux
     assert "entity command surface" in ux_ws
-    assert "biomcp get disease \"uterine leiomyoma\" clinical_features" in ux
+    assert 'biomcp get disease "uterine leiomyoma" clinical_features' in ux
     assert (
         "Opt-in sections such as `clinical_features`, `diagnostics`, `disgenet`, "
-        "and `funding` still require explicit naming."
-        in ux_ws
+        "and `funding` still require explicit naming." in ux_ws
     )
 
 
@@ -644,7 +696,10 @@ def test_technical_overview_repaired_gate_and_health_copy_match_contract() -> No
     technical = _read_repo("architecture/technical/overview.md")
     technical_ws = _normalize_ws(technical)
 
-    assert "BioMCP is a single Rust binary (`biomcp`) with three operating modes:" in technical
+    assert (
+        "BioMCP is a single Rust binary (`biomcp`) with three operating modes:"
+        in technical
+    )
     assert (
         "`make check` is the required local ticket gate. In the current `Makefile`, "
         "that means `lint`, `test`, and `check-quality-ratchet`, and the `lint` "
@@ -669,7 +724,10 @@ def test_chart_rendering_architecture_doc_matches_repo_contract() -> None:
     assert "`src/cli/chart.rs`" in chart_section
     assert "`docs/charts/`" in chart_section
     assert "`RustEmbed`" in chart_section
-    assert "`biomcp chart` documents the chart surface, but does not render charts" in chart_section
+    assert (
+        "`biomcp chart` documents the chart surface, but does not render charts"
+        in chart_section
+    )
     assert "`ChartArgs`" in chart_section
     assert "`src/cli/types.rs`" in chart_section
     assert "`src/render/chart.rs`" in chart_section
@@ -677,21 +735,32 @@ def test_chart_rendering_architecture_doc_matches_repo_contract() -> None:
     assert "`study co-occurrence`" in chart_section
     assert "`study compare`" in chart_section
     assert "`study survival`" in chart_section
-    assert "`bar`, `stacked-bar`, `pie`, `waterfall`, `heatmap`, `histogram`, `density`, `box`, `violin`, `ridgeline`, `scatter`, and `survival`" in chart_section
+    assert (
+        "`bar`, `stacked-bar`, `pie`, `waterfall`, `heatmap`, `histogram`, `density`, `box`, `violin`, `ridgeline`, `scatter`, and `survival`"
+        in chart_section
+    )
     assert "terminal" in chart_section
     assert "SVG file" in chart_section
     assert "PNG file behind the `charts-png` feature" in chart_section
     assert "MCP inline SVG" in chart_section
     assert "`--cols` and `--rows` size terminal output" in chart_section
-    assert "`--width` and `--height` size SVG, PNG, and MCP inline SVG output" in chart_section
+    assert (
+        "`--width` and `--height` size SVG, PNG, and MCP inline SVG output"
+        in chart_section
+    )
     assert "`--scale` is PNG-only" in chart_section
-    assert "`--title`, `--theme`, and `--palette` style rendered charts" in chart_section
+    assert (
+        "`--title`, `--theme`, and `--palette` style rendered charts" in chart_section
+    )
     assert "Heatmaps reject `--palette`" in chart_section
     assert "`rewrite_mcp_chart_args()`" in chart_section
     assert "text pass plus an SVG pass" in chart_section
     assert "`--terminal` is stripped" in chart_section
     assert "`--output` / `-o` are rejected" in chart_section
-    assert "`--cols` / `--rows` and `--scale` are rejected for the SVG pass" in chart_section
+    assert (
+        "`--cols` / `--rows` and `--scale` are rejected for the SVG pass"
+        in chart_section
+    )
     assert "`docs/charts/index.md`" in chart_section
     assert "user-facing chart reference and examples" in chart_section
 
@@ -716,13 +785,17 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
         _markdown_section(source_integration, "Section-First Entity Integration")
     )
     local_runtime_section = _normalize_ws(
-        _markdown_section(source_integration, "Local Runtime Sources and File-Backed Assets")
+        _markdown_section(
+            source_integration, "Local Runtime Sources and File-Backed Assets"
+        )
     )
     modifier_section = _normalize_ws(
         _markdown_section(source_integration, "Entity-Specific Command Modifiers")
     )
     source_aware_section = _normalize_ws(
-        _markdown_section(source_integration, "Source-Aware Section Capability Contract")
+        _markdown_section(
+            source_integration, "Source-Aware Section Capability Contract"
+        )
     )
     source_addition_section = _normalize_ws(
         _markdown_section(source_integration, "Source Addition Checklist")
@@ -747,12 +820,30 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`docs/user-guide/cli-reference.md`" in section_first_section
     assert "default `get` output stays concise" in section_first_section
     assert "## Local Runtime Sources and File-Backed Assets" in source_integration
-    assert "EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runtime sources." in local_runtime_section
-    assert "`BIOMCP_EMA_DIR` first, then the platform data directory" in local_runtime_section
-    assert "`BIOMCP_WHO_DIR` first, then the platform data directory" in local_runtime_section
-    assert "`BIOMCP_CVX_DIR` first, then the platform data directory" in local_runtime_section
-    assert "`BIOMCP_GTR_DIR` first, then the platform data directory" in local_runtime_section
-    assert "`BIOMCP_WHO_IVD_DIR` first, then the platform data directory" in local_runtime_section
+    assert (
+        "EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runtime sources."
+        in local_runtime_section
+    )
+    assert (
+        "`BIOMCP_EMA_DIR` first, then the platform data directory"
+        in local_runtime_section
+    )
+    assert (
+        "`BIOMCP_WHO_DIR` first, then the platform data directory"
+        in local_runtime_section
+    )
+    assert (
+        "`BIOMCP_CVX_DIR` first, then the platform data directory"
+        in local_runtime_section
+    )
+    assert (
+        "`BIOMCP_GTR_DIR` first, then the platform data directory"
+        in local_runtime_section
+    )
+    assert (
+        "`BIOMCP_WHO_IVD_DIR` first, then the platform data directory"
+        in local_runtime_section
+    )
     assert (
         "`biomcp health` includes the EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD local-data readiness rows"
         in local_runtime_section
@@ -771,13 +862,14 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert (
         "`configured`, `configured (stale)`, `available (default path)`, "
         "`available (default path, stale)`, `not configured`, and "
-        "`error (missing: ...)`"
-        in local_runtime_section
+        "`error (missing: ...)`" in local_runtime_section
     )
     assert "`docs/user-guide/drug.md`" in local_runtime_section
     assert "`docs/user-guide/diagnostic.md`" in local_runtime_section
     assert "30-day refresh window" in local_runtime_section
-    assert "BioASQ is the canonical file-backed non-runtime asset" in local_runtime_section
+    assert (
+        "BioASQ is the canonical file-backed non-runtime asset" in local_runtime_section
+    )
     assert (
         "do not join the runtime source inventory, `biomcp health`, or the source-readiness checklist"
         in local_runtime_section
@@ -804,12 +896,19 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "error (missing:" in health
     assert "BioASQ" not in health
     assert "# BioASQ Benchmark" in bioasq_reference
-    assert "offline benchmark input, not as a live runtime source" in bioasq_reference_ws
+    assert (
+        "offline benchmark input, not as a live runtime source" in bioasq_reference_ws
+    )
     assert (REPO_ROOT / "benchmarks" / "bioasq").is_dir()
     assert "## Entity-Specific Command Modifiers" in source_integration
-    assert "The base grammar remains `get <entity> <id> [section...]`." in modifier_section
+    assert (
+        "The base grammar remains `get <entity> <id> [section...]`." in modifier_section
+    )
     assert "Entity-specific modifiers are named options" in modifier_section
-    assert "The canonical example is `get drug <name> ... --region <us|eu|who|all>`." in modifier_section
+    assert (
+        "The canonical example is `get drug <name> ... --region <us|eu|who|all>`."
+        in modifier_section
+    )
     assert "`src/cli/commands.rs`" in modifier_section
     assert "`src/cli/drug/mod.rs`" in modifier_section
     assert "`src/cli/mod.rs`" not in modifier_section
@@ -818,7 +917,10 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`docs/user-guide/cli-reference.md`" in modifier_section
     assert "`docs/user-guide/drug.md`" in modifier_section
     assert "`spec/05-drug.md`" in modifier_section
-    assert "Runtime validation belongs in the owning entity or CLI path" in modifier_section
+    assert (
+        "Runtime validation belongs in the owning entity or CLI path"
+        in modifier_section
+    )
     assert (
         "`--region` only changes the data plane for `regulatory`, `safety`, `shortage`, or `all`"
         in modifier_section
@@ -828,24 +930,35 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
         in modifier_section
     )
     assert "`approvals` remains U.S.-only" in modifier_section
-    assert "invalid flag/section combinations fail fast before data fetches" in modifier_section
+    assert (
+        "invalid flag/section combinations fail fast before data fetches"
+        in modifier_section
+    )
     assert "biomcp get drug trastuzumab regulatory --region who" in cli_commands
     assert "biomcp get drug trastuzumab regulatory --region who" in cli_reference_guide
     assert "biomcp cvx sync" in cli_reference_guide
-    assert "Data region for regional sections (regulatory, safety, shortage, or all)" in cli_drug_mod
+    assert (
+        "Data region for regional sections (regulatory, safety, shortage, or all)"
+        in cli_drug_mod
+    )
     assert "get drug <name> regulatory [--region <us|eu|who|all>]" in cli_list
     assert "get drug <name> safety [--region <us|eu|all>]" in cli_list
     assert "get drug <name> shortage [--region <us|eu|all>]" in cli_list
     assert "get drug <name> approvals" in cli_list
     assert "get drug <name> regulatory [--region <us|eu|who|all>]" in cli_list_reference
-    assert "get drug <name> safety|shortage [--region <us|eu|all>]" in cli_list_reference
+    assert (
+        "get drug <name> safety|shortage [--region <us|eu|all>]" in cli_list_reference
+    )
     assert (
         "For `get drug`, use `--region` only with `regulatory`, `safety`, `shortage`, or `all`"
         in cli_reference_guide_ws
     )
     assert "get drug <name> regulatory [--region <us|eu|who|all>]" in drug_spec
     assert "--region is not supported with approvals." in drug_get
-    assert "--region can only be used with regulatory, safety, shortage, or all." in drug_get
+    assert (
+        "--region can only be used with regulatory, safety, shortage, or all."
+        in drug_get
+    )
     assert "## Provenance and Rendering" in source_integration
     assert "`source_label`" in source_integration
     assert "source-specific notes" in source_integration
@@ -860,7 +973,10 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`docs/reference/data-sources.md`" in source_integration
     assert "Do not log secrets" in source_integration
     assert "## Graceful Degradation and Timeouts" in source_integration
-    assert "Optional enrichments must not take down the whole command" in source_integration
+    assert (
+        "Optional enrichments must not take down the whole command"
+        in source_integration
+    )
     assert "truthful about missing or unavailable data" in source_integration
     assert "## Rate Limits and Operational Constraints" in source_integration
     assert "`biomcp serve-http`" in source_integration
@@ -969,7 +1085,7 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
 
 def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     makefile = _read_repo("Makefile")
-    ticket_270_smoke_section_ids = [
+    targeted_smoke_section_ids = [
         "spec/06-article.md::Getting Article Details",
         "spec/06-article.md::Article Batch",
         "spec/06-article.md::Article Query Echo Surfaces Explicit Max-Per-Source Overrides",
@@ -980,18 +1096,6 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         "spec/09-search-all.md::Distinct Disease And Keyword Stay Separate",
         "spec/17-cross-entity-pivots.md::Gene to Articles",
         "spec/17-cross-entity-pivots.md::Variant pivots",
-    ]
-    ticket_270_smoke_item_ids = [
-        "spec/06-article.md::Getting Article Details (line 486) [bash]",
-        "spec/06-article.md::Article Batch (line 646) [bash]",
-        "spec/06-article.md::Article Query Echo Surfaces Explicit Max-Per-Source Overrides (line 334) [bash]",
-        "spec/06-article.md::Article Search Gene Keyword Pivot (line 52) [bash]",
-        "spec/06-article.md::Article Search Drug Keyword Pivot (line 87) [bash]",
-        "spec/06-article.md::Article Search Discover Keyword Pivot (line 108) [bash]",
-        "spec/09-search-all.md::Debug Plan (line 97) [bash]",
-        "spec/09-search-all.md::Distinct Disease And Keyword Stay Separate (line 142) [bash]",
-        "spec/17-cross-entity-pivots.md::Gene to Articles (line 134) [bash]",
-        "spec/17-cross-entity-pivots.md::Variant pivots (line 22) [bash]",
     ]
 
     assert (
@@ -1007,9 +1111,13 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         "Smoke lane: `search article`, `gene articles`, `variant articles`," in makefile
     )
     assert (
-        "To move a heading into the smoke lane, add its stable section ID"
-        in makefile
+        "To move a heading into the smoke lane, add its stable section ID" in makefile
     )
+    assert "SPEC_PR_DESELECT_ARGS stores PR-lane deselects." in makefile
+    assert "SPEC_SMOKE_ARGS stores" in makefile
+    assert "stable targeted smoke section IDs" in makefile
+    assert "resolves to current" in makefile
+    assert "mustmatch pytest item IDs at runtime" in makefile
     assert "SPEC_PR_DESELECT_ARGS = \\" in makefile
     for node_id in [
         "spec/02-gene.md::Gene to Articles",
@@ -1018,7 +1126,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         "spec/06-article.md::Searching by Keyword",
         "spec/06-article.md::Sort Behavior",
         "spec/07-disease.md::Disease to Articles",
-        *ticket_270_smoke_section_ids,
+        *targeted_smoke_section_ids,
     ]:
         assert f'--deselect "{node_id}"' in makefile
     spec_smoke_match = re.search(
@@ -1031,8 +1139,10 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         re.findall(
             r'^\t"([^"]+)"(?: \\)?$', spec_smoke_match.group(1), flags=re.MULTILINE
         )
-        == ticket_270_smoke_item_ids
+        == targeted_smoke_section_ids
     )
+    assert " (line " not in spec_smoke_match.group(1)
+    assert " [bash]" not in spec_smoke_match.group(1)
     assert (
         "SPEC_SERIAL_FILES = spec/05-drug.md spec/13-study.md "
         "spec/21-cross-entity-see-also.md"
@@ -1040,7 +1150,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "SPEC_XDIST_ARGS = -n auto --dist loadfile" in makefile
     assert re.search(r"^test:\n\tcargo nextest run$", makefile, flags=re.MULTILINE)
     assert re.search(
-        r'^install:\n'
+        r"^install:\n"
         r'\tmkdir -p "\$\(HOME\)/\.local/bin"\n'
         r"\tcargo build --release --locked\n"
         r'\tinstall -m 755 target/release/biomcp "\$\(HOME\)/\.local/bin/biomcp"$',
@@ -1068,13 +1178,17 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     spec_smoke_target = re.search(
         r"^spec-smoke:\n"
         r"\tXDG_CACHE_HOME=\"\$\(CURDIR\)/\.cache\" PATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" RUST_LOG=error \\\n"
-        r"\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" pytest \$\(SPEC_SMOKE_ARGS\) --mustmatch-lang bash --mustmatch-timeout 120 -v'$",
+        r"\t\tuv run --extra dev bash -lc 'set -euo pipefail; export PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\"; export BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\"; resolved_args=\"\$\$\(python tools/spec_smoke_args\.py --root-dir \"\$\(CURDIR\)\" --makefile \"\$\(CURDIR\)/Makefile\" --makefile-variable SPEC_SMOKE_ARGS\)\"; if \[\[ -z \"\$\$resolved_args\" \]\]; then echo \"SPEC_SMOKE_ARGS resolved to no pytest targets\" >&2; exit 1; fi; mapfile -t spec_smoke_args <<< \"\$\$resolved_args\"; pytest \"\$\${spec_smoke_args\[@\]}\" --mustmatch-lang bash --mustmatch-timeout 120 -v'$",
         makefile,
         flags=re.MULTILINE,
     )
     assert spec_smoke_target is not None
     assert "$(SPEC_XDIST_ARGS)" not in spec_smoke_target.group(0)
     assert "-n auto" not in spec_smoke_target.group(0)
+    assert "$(SPEC_SMOKE_ARGS)" not in spec_smoke_target.group(0)
+    assert "tools/spec_smoke_args.py" in spec_smoke_target.group(0)
+    assert "mapfile -t spec_smoke_args" in spec_smoke_target.group(0)
+    assert "eval" not in spec_smoke_target.group(0)
     assert re.search(
         r"^test-contracts:\n"
         r"\tcargo build --release --locked\n"
@@ -1102,8 +1216,9 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "cargo install cargo-nextest --locked" in contributing
     assert "`make test` uses `cargo nextest run`." in contributing_ws
     assert "`make spec` and `make spec-pr` use `pytest-xdist`" in contributing_ws
+    assert "`make spec-smoke` resolves the ten stable targeted smoke" in contributing_ws
     assert (
-        "`make spec-smoke` runs the ticket-270 smoke headings serially"
+        "section IDs in `SPEC_SMOKE_ARGS` to current mustmatch pytest item IDs"
         in contributing_ws
     )
     assert (
@@ -1115,7 +1230,7 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "/usr/bin/time -p" in contributing
     assert "warm-cache steady-state" in contributing_ws
     assert "| Command | Before | After |" in contributing
-    assert "T" "BD" not in contributing
+    assert "".join(("T", "BD")) not in contributing
     for command in (
         "make test",
         "make spec-pr",
@@ -1134,7 +1249,11 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`make spec-smoke`" in runbook_ws
     assert "`pytest-xdist`" in runbook_ws
     assert "`-n auto --dist loadfile`" in runbook_ws
-    assert "ticket-270 volatile headings serially" in runbook_ws
+    assert "ten stable smoke section IDs in `SPEC_SMOKE_ARGS`" in runbook_ws
+    assert (
+        "resolves those IDs to current mustmatch pytest item IDs at runtime"
+        in runbook_ws
+    )
     assert (
         "`spec/05-drug.md`, `spec/13-study.md`, and `spec/21-cross-entity-see-also.md`"
         in runbook_ws
@@ -1145,6 +1264,8 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`pytest-xdist` with `-n auto --dist loadfile`" in technical_spec_section
     assert "`make spec-smoke`" in technical_spec_section
     assert "serial targeted local rerun" in technical_spec_section
+    assert "ten stable smoke section IDs in `SPEC_SMOKE_ARGS`" in technical_spec_section
+    assert "resolves stable targeted smoke section IDs" in technical_spec_section
     assert (
         "`spec/05-drug.md`, `spec/13-study.md`, and `spec/21-cross-entity-see-also.md`"
         in technical_spec_section
@@ -1228,8 +1349,14 @@ def test_spec_lane_timing_report_is_documented_and_aligned_with_makefile() -> No
 
     assert "spec/README-timings.md" in runbook_spec_section
     assert "`make spec-smoke`" in runbook_spec_section
+    assert (
+        "stable targeted smoke section IDs in `SPEC_SMOKE_ARGS`" in runbook_spec_section
+    )
+    assert "resolve to collectable mustmatch pytest items" in runbook_spec_section
     assert "spec/README-timings.md" in technical_spec_section
     assert "`make spec-smoke`" in technical_spec_section
+    assert "stable targeted smoke section IDs" in technical_spec_section
+    assert "resolve to collectable mustmatch pytest items" in technical_spec_section
     assert any(
         row[0] == "`spec/18-source-labels.md`"
         and row[1] == "`Article Fulltext Resolver Order`"
@@ -1268,12 +1395,22 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "# BioMCP Staging and Demo Contract" in staging_demo
     assert "./target/release/biomcp" in staging_demo
     assert "shared merged-main target" in staging_demo
-    assert "BIOMCP_BIN=./target/release/biomcp ./scripts/genegpt-demo.sh" in staging_demo
-    assert "BIOMCP_BIN=./target/release/biomcp ./scripts/geneagent-demo.sh" in staging_demo
+    assert (
+        "BIOMCP_BIN=./target/release/biomcp ./scripts/genegpt-demo.sh" in staging_demo
+    )
+    assert (
+        "BIOMCP_BIN=./target/release/biomcp ./scripts/geneagent-demo.sh" in staging_demo
+    )
     assert "./scripts/contract-smoke.sh --fast" in staging_demo
-    assert 'uv run pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"' in staging_demo
+    assert (
+        'uv run pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"'
+        in staging_demo
+    )
     assert "ONCOKB_TOKEN" in staging_demo
-    assert "./target/release/biomcp serve-http --host 127.0.0.1 --port 8080" in staging_demo
+    assert (
+        "./target/release/biomcp serve-http --host 127.0.0.1 --port 8080"
+        in staging_demo
+    )
     assert "POST/GET /mcp" in staging_demo
     assert "GET /health" in staging_demo
     assert "GET /readyz" in staging_demo
@@ -1286,7 +1423,10 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "cargo build --release --locked" in runbook
     assert "./target/release/biomcp serve" in runbook
     assert "./target/release/biomcp serve-http --host 127.0.0.1 --port 8080" in runbook
-    assert 'uv run pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"' in runbook
+    assert (
+        'uv run pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"'
+        in runbook
+    )
     assert "curl http://127.0.0.1:8080/health" in runbook
     assert "curl http://127.0.0.1:8080/readyz" in runbook
     assert "curl http://127.0.0.1:8080/" in runbook
@@ -1297,9 +1437,9 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "S2_API_KEY" in runbook
     assert "./target/release/biomcp article citations 22663011 --limit 3" in runbook
     assert (
-        '`make test-contracts` runs `cargo build --release --locked`, '
+        "`make test-contracts` runs `cargo build --release --locked`, "
         '`uv sync --extra dev`, `pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, '
-        'and `mkdocs build --strict` - the same steps that PR CI `contracts` requires.'
+        "and `mkdocs build --strict` - the same steps that PR CI `contracts` requires."
         in runbook
     )
     assert "docs/user-guide/cli-reference.md" in runbook
@@ -1332,7 +1472,7 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
         assert 'BIN="${BIOMCP_BIN:-' in demo_script
         assert "$ROOT/target/release/biomcp" in demo_script
         assert "target/debug/biomcp" not in demo_script
-        assert 'command -v biomcp >/dev/null 2>&1' in demo_script
+        assert "command -v biomcp >/dev/null 2>&1" in demo_script
 
 
 def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
@@ -1343,7 +1483,9 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     contributing_hook = _normalize_ws(
         _markdown_section(contributing, "Local Pre-Commit Hook", level=3)
     )
-    ci_gate_section = _normalize_ws(_markdown_section(technical, "1. CI and Repo Gates", level=3))
+    ci_gate_section = _normalize_ws(
+        _markdown_section(technical, "1. CI and Repo Gates", level=3)
+    )
     march_profiles = _normalize_ws(
         _markdown_section(technical, "March Validation Profiles", level=4)
     )
@@ -1374,7 +1516,10 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "staged deletions" in contributing_hook
 
     assert ".march/validation-profiles.toml" in ci_gate_section
-    assert "`01-design` and `02-design-review` without a validation profile" in ci_gate_section
+    assert (
+        "`01-design` and `02-design-review` without a validation profile"
+        in ci_gate_section
+    )
     assert ".march/validation-profiles.toml" in march_profiles
     assert ".march/code-review-log.md" in march_profiles
     assert ".march/verify-log.md" not in march_profiles

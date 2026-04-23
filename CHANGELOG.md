@@ -46,6 +46,13 @@
   workflow landing bullets so `make test-contracts` accepts the current README
   and docs homepage feature counts. (286)
 
+### Fixes
+
+- Repaired the targeted `SPEC_SMOKE_ARGS` lane so it stores stable smoke
+  section IDs and resolves them to current mustmatch pytest item IDs at runtime;
+  the quality ratchet now checks collectability before stale line-qualified
+  selectors can reach `make spec-smoke`. (288)
+
 ## 0.8.21 — 2026-04-16
 
 ### New features
