@@ -605,7 +605,7 @@ def check_smoke_lane_sync(spec_paths: list[Path], root_dir: Path) -> dict[str, o
     scanned_smoke_targets = [
         smoke_target_id
         for smoke_target_id in smoke_target_ids
-        if target_spec_path(smoke_target_id) in scanned_relative_paths
+        if _smoke_target_is_in_scanned_scope(smoke_target_id, scanned_relative_paths)
     ]
     collectable_smoke_target_count = 0
     if scanned_smoke_targets:
@@ -653,6 +653,15 @@ def check_smoke_lane_sync(spec_paths: list[Path], root_dir: Path) -> dict[str, o
         "collectable_smoke_target_count": collectable_smoke_target_count,
         "findings": findings,
     }
+
+
+def _smoke_target_is_in_scanned_scope(
+    smoke_target_id: str, scanned_relative_paths: set[str]
+) -> bool:
+    spec_path = target_spec_path(smoke_target_id)
+    if spec_path is None:
+        return True
+    return spec_path in scanned_relative_paths
 
 
 def main() -> int:

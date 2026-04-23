@@ -496,6 +496,48 @@ def test_spec_smoke_args_cli_resolves_makefile_stable_targets(tmp_path: Path) ->
     assert spec_path.exists()
 
 
+def test_spec_smoke_args_cli_accepts_current_line_qualified_target(
+    tmp_path: Path,
+) -> None:
+    node_id = "spec/example.md::Smoke Section"
+    spec_path = _write_smoke_lane_fixture(
+        tmp_path,
+        makefile=f'SPEC_SMOKE_ARGS = \\\n\t"{node_id}"\n',
+        readme="# Spec Lane Audit\n",
+        spec_body=(
+            "# Smoke Fixture\n\n"
+            "## Smoke Section\n"
+            "<!-- smoke-lane -->\n\n"
+            "```bash\n"
+            "echo 'local section' | mustmatch like 'local section'\n"
+            "```\n"
+        ),
+    )
+    stable_result = _run_python_script(
+        SPEC_SMOKE_ARGS_SCRIPT,
+        "--root-dir",
+        str(tmp_path),
+        node_id,
+    )
+    assert stable_result.returncode == 0, stable_result.stderr
+
+    exact_target = stable_result.stdout.strip()
+    assert exact_target.startswith(f"{node_id} (line ")
+    assert exact_target.endswith(") [bash]")
+
+    exact_result = _run_python_script(
+        SPEC_SMOKE_ARGS_SCRIPT,
+        "--root-dir",
+        str(tmp_path),
+        exact_target,
+    )
+
+    assert exact_result.returncode == 0, exact_result.stderr
+    assert exact_result.stderr == ""
+    assert exact_result.stdout == f"{exact_target}\n"
+    assert spec_path.exists()
+
+
 def test_smoke_lane_sync_passes_when_marker_makefile_and_readme_align(
     tmp_path: Path,
 ) -> None:
@@ -809,6 +851,45 @@ def test_smoke_lane_sync_reports_collect_only_failure(tmp_path: Path) -> None:
     assert "fixture collect-only failure" in payload["stderr"]
     assert payload["target_files"] == ["spec/example.md"]
     assert "pytest" in payload["collection_command"]
+
+
+def test_smoke_lane_sync_reports_invalid_smoke_target(tmp_path: Path) -> None:
+    ratchet = _load_ratchet_module()
+    invalid_target = "not-a-node"
+    spec_path = _write_smoke_lane_fixture(
+        tmp_path,
+        makefile=(
+            f'SPEC_PR_DESELECT_ARGS =\n\nSPEC_SMOKE_ARGS = \\\n\t"{invalid_target}"\n'
+        ),
+        readme=(
+            "# Spec Lane Audit\n\n"
+            "## spec-pr Timing Audit\n\n"
+            "| File | Heading | First-pass Time | First-pass Result | Warm-pass Time | Warm-pass Result | Category | Disposition | Rationale |\n"
+            "|---|---|---|---|---|---|---|---|---|\n\n"
+            "## Smoke-Only Headings (SPEC_PR_DESELECT_ARGS)\n\n"
+            "| Node ID | Reason |\n"
+            "|---|---|\n"
+        ),
+        spec_body=(
+            "# Smoke Fixture\n\n"
+            "## Local Section\n\n"
+            "```bash\n"
+            "echo 'local section' | mustmatch like 'local section'\n"
+            "```\n"
+        ),
+    )
+
+    payload = ratchet.check_smoke_lane_sync([spec_path], tmp_path)
+
+    assert payload["status"] == "fail"
+    findings = payload["findings"]
+    assert len(findings) == 1
+    finding = findings[0]
+    assert finding["rule"] == "smoke-target-invalid"
+    assert finding["smoke_target"] == invalid_target
+    assert finding["node_id"] == invalid_target
+    assert finding["section"] == invalid_target
+    assert "not a section-qualified pytest target" in finding["message"]
 
 
 def test_smoke_lane_sync_reports_marker_missing_readme_inventory(
