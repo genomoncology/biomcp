@@ -101,6 +101,10 @@ make install
 "$HOME/.local/bin/biomcp" --version
 ```
 
+For repo-local verification, `make check` now includes the release-critical
+Python/docs contract lane (`make test-contracts`), and `make release-gate` is
+the full release-readiness command (`make check` plus `make spec-pr`).
+
 ## Quick start
 
 First useful query in under 30 seconds:

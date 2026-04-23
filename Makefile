@@ -1,4 +1,4 @@
-.PHONY: build test lint check check-quality-ratchet run clean spec spec-pr spec-smoke validate-skills test-contracts release-gate install
+.PHONY: build test lint check check-quality-ratchet release-gate run clean spec spec-pr spec-smoke validate-skills test-contracts install
 
 # Volatile live-network spec headings. These headings fan out across article
 # search backends or have repeated timeout history in GitHub Actions, so they
@@ -88,15 +88,12 @@ test-contracts:
 	uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"
 	uv run mkdocs build --strict
 
-release-gate:
-	$(MAKE) check
-	$(MAKE) spec-pr
-	$(MAKE) test-contracts
-
 lint:
 	./bin/lint
 
-check: lint test check-quality-ratchet
+check: lint test test-contracts check-quality-ratchet
+
+release-gate: check spec-pr
 
 check-quality-ratchet:
 	@bash tools/check-quality-ratchet.sh
