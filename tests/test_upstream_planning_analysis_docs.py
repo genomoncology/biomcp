@@ -1481,6 +1481,7 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     runbook = _read_repo("RUN.md")
     contributing = _read_repo("CONTRIBUTING.md")
     technical = _read_repo("architecture/technical/overview.md")
+    runbook_prerequisites = _normalize_ws(_markdown_section(runbook, "Prerequisites"))
     runbook_premerge = _normalize_ws(_markdown_section(runbook, "Pre-Merge Checks"))
     contributing_hook = _normalize_ws(
         _markdown_section(contributing, "Local Pre-Commit Hook", level=3)
@@ -1496,6 +1497,10 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "`scripts/pre-commit-reject-march-artifacts.sh`" in runbook_premerge
     assert "`cargo fmt --check`" in runbook_premerge
     assert "`cargo clippy --lib --tests -- -D warnings`" in runbook_premerge
+    assert (
+        "`cargo-deny` for the repo-local license and advisory policy checks in "
+        "`make check`" in runbook_prerequisites
+    )
     assert "does not run" in runbook_premerge
     assert "`cargo nextest run`" in runbook_premerge
     assert "`make check`" in runbook_premerge
