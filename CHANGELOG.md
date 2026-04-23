@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.22 — 2026-04-21
+## 0.8.22 — 2026-04-23
 
 ### New features
 
@@ -35,6 +35,12 @@
   clinical summaries, reviewed HPO phenotype mapping, source-native evidence
   URLs, and unsupported-disease empty states via
   `get disease <name> clinical_features`. (252, 253)
+- Added offline routing via `biomcp suggest <question>` so worked-example
+  prompts can resolve to structured `_meta.workflow` guidance without requiring
+  a live tool call. (279)
+- Added workflow-ladder sidecars and schema-backed `_meta.ladder[]` payloads
+  so routed workflows can carry explicit ladder steps across the CLI/MCP
+  contract. (282)
 
 ### Docs
 
@@ -42,16 +48,39 @@
   gene-disease association, gene localization/protein-function, drug regulatory
   date, and variant clinical-significance workflows, steering agents to
   structured-data shortcuts before article search. (240)
+- Refreshed architecture, source-integration, and current-state docs so the
+  shipped architecture and CLI guidance match the post-decomposition repo
+  surface. (272, 273, 274, 275)
+- Repaired backtick quoting in the mustmatch study/spec contract, published
+  BioASQ benchmark guidance, and made the canonical `SKILL.md` render/install
+  contract explicit for agents and operators. (276, 280, 281)
 - Aligned the public landing-copy contract with the shipped `suggest` and
   workflow landing bullets so `make test-contracts` accepts the current README
   and docs homepage feature counts. (286)
 
 ### Fixes
 
+- Added compact diagnostic rows and capped disease diagnostic pivots so
+  gene/disease diagnostic follow-ups stay scannable and bounded. (266, 267)
+- Replaced the stale GTR sample with a live-valid GTR example and added
+  zero-result recovery for the local diagnostic surface. (268, 269)
+- Tightened entity-aware article follow-ups with a same-session loop-breaker
+  for overlapping suggestions and PubMed ESearch cleanup for bounded
+  question-format filler words. (277, 278, 283)
 - Repaired the targeted `SPEC_SMOKE_ARGS` lane so it stores stable smoke
   section IDs and resolves them to current mustmatch pytest item IDs at runtime;
   the quality ratchet now checks collectability before stale line-qualified
   selectors can reach `make spec-smoke`. (288)
+
+### Internal
+
+- Completed release/docs contract cleanup for the `0.8.22` line so the latest
+  release notes, ticket inventory, and release metadata stay aligned. (264, 265)
+- Reworked `SPEC_SMOKE_ARGS` handling around stable smoke inventory and current
+  mustmatch pytest item IDs, and cleaned up `.march` artifact handling for
+  repo submission paths. (270, 271)
+- Recorded the neural-reranking spike as a no-go for `0.8.22`: no runtime wiring
+  shipped, and the spike remains deferred from the release surface. (284)
 
 ## 0.8.21 — 2026-04-16
 

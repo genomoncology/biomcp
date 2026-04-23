@@ -5,15 +5,82 @@ from pathlib import Path
 import tomllib
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_RELEASE_TICKETS = {
+    "0.8.22": {
+        232,
+        233,
+        235,
+        236,
+        237,
+        238,
+        239,
+        240,
+        242,
+        252,
+        253,
+        *range(264, 285),
+        286,
+        288,
+    }
+}
+EXPECTED_RELEASE_MARKERS = {
+    "0.8.22": {
+        "fixes": [
+            "compact diagnostic rows",
+            "capped disease diagnostic pivots",
+            "live-valid GTR example",
+            "zero-result recovery",
+            "entity-aware article follow-ups",
+            "same-session",
+            "PubMed ESearch",
+        ],
+        "new_features": [
+            "`biomcp suggest <question>`",
+            "_meta.workflow",
+            "_meta.ladder[]",
+            "workflow-ladder sidecars",
+        ],
+        "docs": [
+            "architecture",
+            "source-integration",
+            "backtick quoting",
+            "BioASQ benchmark",
+            "canonical `SKILL.md`",
+        ],
+        "internal": [
+            "release/docs contract cleanup",
+            "SPEC_SMOKE_ARGS",
+            "mustmatch pytest item IDs",
+            ".march",
+            "no-go",
+            "no runtime wiring",
+        ],
+    }
+}
 
 
 def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
 
 
-def _current_release_tag_example() -> str:
+def _citation_scalar(field_name: str) -> str:
+    citation = _read("CITATION.cff")
+    match = re.search(rf"^{re.escape(field_name)}:\s*(.+)$", citation, re.MULTILINE)
+    assert match is not None, f"missing {field_name} in CITATION.cff"
+    return match.group(1).strip().strip('"')
+
+
+def _current_release_version() -> str:
     cargo = tomllib.loads(_read("Cargo.toml"))
-    return f"v{cargo['package']['version']}"
+    return cargo["package"]["version"]
+
+
+def _current_release_heading() -> str:
+    return f"## {_current_release_version()} — {_citation_scalar('date-released')}"
+
+
+def _current_release_tag_example() -> str:
+    return f"v{_current_release_version()}"
 
 
 def _markdown_section_block(text: str, heading: str) -> str:
@@ -46,7 +113,13 @@ def _ticket_references(text: str) -> set[int]:
 
 def test_changelog_has_backfilled_releases_and_release_header() -> None:
     changelog = _read("CHANGELOG.md")
-    latest_release_block = _markdown_section_block(changelog, "## 0.8.22 — 2026-04-21")
+    current_release_version = _current_release_version()
+    current_release_heading = _current_release_heading()
+
+    assert current_release_version in EXPECTED_RELEASE_TICKETS
+    assert current_release_version in EXPECTED_RELEASE_MARKERS
+
+    latest_release_block = _markdown_section_block(changelog, current_release_heading)
     previous_release_block = _markdown_section_block(
         changelog, "## 0.8.21 — 2026-04-16"
     )
@@ -54,16 +127,19 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         latest_release_block, "### New features"
     )
     latest_docs_block = _markdown_subsection_block(latest_release_block, "### Docs")
+    latest_fixes_block = _markdown_subsection_block(latest_release_block, "### Fixes")
+    assert "### Internal" in latest_release_block
+    latest_internal_block = _markdown_subsection_block(
+        latest_release_block, "### Internal"
+    )
     previous_new_features_block = _markdown_subsection_block(
         previous_release_block, "### New features"
     )
 
     assert "## [Unreleased]" not in changelog
-    assert "## 0.8.22 — 2026-04-21" in changelog
+    assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
-    assert changelog.index("## 0.8.22 — 2026-04-21") < changelog.index(
-        "## 0.8.21 — 2026-04-16"
-    )
+    assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
     assert "## 0.8.20 — 2026-03-30" in changelog
     assert "## 0.8.19 — 2026-03-26" in changelog
     assert "## 0.8.18 — 2026-03-25" in changelog
@@ -116,21 +192,17 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     assert "SPEC_SMOKE_ARGS" in latest_release_block
     assert "current mustmatch pytest item IDs" in latest_release_block
     assert "quality ratchet" in latest_release_block
-    assert _ticket_references(latest_release_block) == {
-        232,
-        233,
-        235,
-        236,
-        237,
-        238,
-        239,
-        240,
-        242,
-        252,
-        253,
-        286,
-        288,
-    }
+    assert _ticket_references(latest_release_block) == EXPECTED_RELEASE_TICKETS[
+        current_release_version
+    ]
+    for marker in EXPECTED_RELEASE_MARKERS[current_release_version]["fixes"]:
+        assert marker in latest_fixes_block
+    for marker in EXPECTED_RELEASE_MARKERS[current_release_version]["new_features"]:
+        assert marker in latest_new_features_block
+    for marker in EXPECTED_RELEASE_MARKERS[current_release_version]["docs"]:
+        assert marker in latest_docs_block
+    for marker in EXPECTED_RELEASE_MARKERS[current_release_version]["internal"]:
+        assert marker in latest_internal_block
     assert "pending separate merge" not in latest_release_block
 
     expected_releases = [
