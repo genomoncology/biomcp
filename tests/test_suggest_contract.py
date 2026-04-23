@@ -55,6 +55,44 @@ def test_suggest_json_routes_ticket_examples() -> None:
     assert regional["first_commands"][0] == "biomcp get drug imatinib regulatory --region us"
 
 
+def test_suggest_resistance_to_drug_prefers_drug_anchor() -> None:
+    out = _run_text("suggest", "What is the mechanism of resistance to imatinib?")
+    assert "matched_skill: `mechanism-pathway`" in out
+    assert "biomcp search drug imatinib --limit 5" in out
+    assert "biomcp get drug imatinib targets regulatory" in out
+
+    response = _run_json("suggest", "What is the mechanism of resistance to imatinib?")
+    assert set(response) == {"matched_skill", "summary", "first_commands", "full_skill"}
+    assert response["matched_skill"] == "mechanism-pathway"
+    assert response["first_commands"] == [
+        "biomcp search drug imatinib --limit 5",
+        "biomcp get drug imatinib targets regulatory",
+    ]
+    assert response["full_skill"] == "biomcp skill mechanism-pathway"
+
+
+def test_suggest_resistance_against_and_develop_phrasings_use_drug_anchor() -> None:
+    against = _run_json("suggest", "What is the mechanism of resistance against imatinib?")
+    assert against["matched_skill"] == "mechanism-pathway"
+    assert against["first_commands"] == [
+        "biomcp search drug imatinib --limit 5",
+        "biomcp get drug imatinib targets regulatory",
+    ]
+
+    develop = _run_json("suggest", "How does imatinib resistance develop?")
+    assert develop["matched_skill"] == "mechanism-pathway"
+    assert develop["first_commands"] == [
+        "biomcp search drug imatinib --limit 5",
+        "biomcp get drug imatinib targets regulatory",
+    ]
+
+
+def test_suggest_quotes_shell_sensitive_anchor_on_resistance_to_drug() -> None:
+    out = _run_text("suggest", "What is the mechanism of resistance to imatinib; rm -rf /?")
+    assert 'biomcp search drug "imatinib; rm -rf /" --limit 5' in out
+    assert 'biomcp get drug "imatinib; rm -rf /" targets regulatory' in out
+
+
 def test_suggest_more_question_shapes_and_no_match() -> None:
     cases = {
         "What pharmacogenes affect warfarin dosing?": "pharmacogene-cumulative",

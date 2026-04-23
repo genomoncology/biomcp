@@ -1237,8 +1237,10 @@ fn mechanism_topic_re() -> &'static Regex {
 fn mechanism_resistance_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"(?i)\bexplains?\s+(.+?)\s+resistance\b|\b([A-Za-z0-9][A-Za-z0-9 -]{1,80}?)\s+resistance\b|\bresistance\s+(?:to|against)\s+(.+?)(?:\?|$)")
-            .expect("valid mechanism resistance regex")
+        Regex::new(
+            r"(?i)\bexplains?\s+(.+?)\s+resistance\b|(?:.+?\s+)?resistance\s+(?:to|against)\s+(.+?)(?:\?|$)|\b([A-Za-z0-9][A-Za-z0-9 -]{1,80}?)\s+resistance\b",
+        )
+        .expect("valid mechanism resistance regex")
     })
 }
 
@@ -1532,6 +1534,66 @@ mod tests {
         let response = suggest_question("What drugs treat lung cancer; rm -rf /?");
         assert_eq!(response.matched_skill.as_deref(), Some("treatment-lookup"));
         assert!(response.first_commands[0].contains("\"lung cancer; rm -rf /\""));
+        parse_cmd(&response.first_commands[0]);
+    }
+
+    #[test]
+    fn mechanism_resistance_to_drug_prefers_drug_anchor() {
+        let response = suggest_question("What is the mechanism of resistance to imatinib?");
+        assert_eq!(response.matched_skill.as_deref(), Some("mechanism-pathway"));
+        assert_eq!(
+            response.first_commands,
+            vec![
+                concat!("biomcp search drug ", "imatinib --limit 5").to_string(),
+                concat!("biomcp get drug ", "imatinib targets regulatory").to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn mechanism_resistance_against_prefers_drug_anchor() {
+        let response = suggest_question("What is the mechanism of resistance against imatinib?");
+        assert_eq!(response.matched_skill.as_deref(), Some("mechanism-pathway"));
+        assert_eq!(
+            response.first_commands,
+            vec![
+                concat!("biomcp search drug ", "imatinib --limit 5").to_string(),
+                concat!("biomcp get drug ", "imatinib targets regulatory").to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn mechanism_drug_branch_handles_imatinib_resistance_develop() {
+        let response = suggest_question("How does imatinib resistance develop?");
+        assert_eq!(response.matched_skill.as_deref(), Some("mechanism-pathway"));
+        assert_eq!(
+            response.first_commands,
+            vec![
+                concat!("biomcp search drug ", "imatinib --limit 5").to_string(),
+                concat!("biomcp get drug ", "imatinib targets regulatory").to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn mechanism_resistance_to_drug_quotes_shell_sensitive_anchor() {
+        let response =
+            suggest_question("What is the mechanism of resistance to imatinib; rm -rf /?");
+        assert_eq!(response.matched_skill.as_deref(), Some("mechanism-pathway"));
+        assert_eq!(
+            response.first_commands,
+            vec![
+                format!(
+                    "biomcp search drug {} --limit 5",
+                    quote("imatinib; rm -rf /")
+                ),
+                format!(
+                    "biomcp get drug {} targets regulatory",
+                    quote("imatinib; rm -rf /")
+                ),
+            ]
+        );
         parse_cmd(&response.first_commands[0]);
     }
 

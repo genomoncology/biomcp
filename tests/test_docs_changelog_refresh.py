@@ -21,6 +21,7 @@ EXPECTED_RELEASE_TICKETS = {
         *range(264, 285),
         286,
         288,
+        291,
     }
 }
 EXPECTED_RELEASE_MARKERS = {
@@ -33,6 +34,7 @@ EXPECTED_RELEASE_MARKERS = {
             "entity-aware article follow-ups",
             "same-session",
             "PubMed ESearch",
+            "resistance-to-drug mechanism questions",
         ],
         "new_features": [
             "`biomcp suggest <question>`",
