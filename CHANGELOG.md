@@ -60,6 +60,8 @@
 
 ### Fixes
 
+- Fixed `suggest` so resistance-to-drug mechanism questions anchor starter
+  commands on the drug instead of filler text. (291)
 - Patched `rustls-webpki` to the safe release line and made `make check` enforce
   the cargo-deny advisory gate alongside the existing license gate.
 - Added compact diagnostic rows and capped disease diagnostic pivots so

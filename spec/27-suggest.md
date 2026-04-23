@@ -52,6 +52,24 @@ echo "$json_out" | jq -e '.first_commands[1] == "biomcp get variant rs113488022 
 echo "$json_out" | mustmatch like '"matched_skill": "variant-pathogenicity"'
 ```
 
+## Resistance-to-Drug Mechanism Routing
+
+Mechanism questions phrased as `resistance to <drug>` or `resistance against
+<drug>` should still route to the `mechanism-pathway` playbook. The starter
+commands must anchor on the drug, not on filler text from the surrounding
+question.
+
+This keeps natural-language resistance questions on the same two-command
+mechanism workflow that already serves direct `<drug> resistance` phrasing.
+
+```bash
+bin="$(git rev-parse --show-toplevel)/target/release/biomcp"
+out="$("$bin" suggest "What is the mechanism of resistance to imatinib?")"
+echo "$out" | mustmatch like 'matched_skill: `mechanism-pathway`'
+echo "$out" | mustmatch like 'biomcp search drug imatinib --limit 5'
+echo "$out" | mustmatch like 'biomcp get drug imatinib targets regulatory'
+```
+
 ## Shell Quoting
 
 User-derived anchors are rendered as command strings, not executed by
@@ -63,6 +81,10 @@ bin="$(git rev-parse --show-toplevel)/target/release/biomcp"
 out="$("$bin" suggest "What drugs treat lung cancer; rm -rf /?")"
 echo "$out" | mustmatch like 'biomcp search drug --indication "lung cancer; rm -rf /" --limit 5'
 echo "$out" | mustmatch like 'biomcp search article -d "lung cancer; rm -rf /" --type review --limit 5'
+
+resistance_out="$("$bin" suggest "What is the mechanism of resistance to imatinib; rm -rf /?")"
+echo "$resistance_out" | mustmatch like 'biomcp search drug "imatinib; rm -rf /" --limit 5'
+echo "$resistance_out" | mustmatch like 'biomcp get drug "imatinib; rm -rf /" targets regulatory'
 ```
 
 ## More Shipped Question Shapes
