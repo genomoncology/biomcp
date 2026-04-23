@@ -7,7 +7,7 @@ abstract: >-
   databases with one command grammar, compact markdown output, and local study
   analytics.
 version: 0.8.22
-date-released: 2026-04-21
+date-released: 2026-04-23
 license: MIT
 repository-code: https://github.com/genomoncology/biomcp
 url: https://biomcp.org
