@@ -42,6 +42,9 @@
   gene-disease association, gene localization/protein-function, drug regulatory
   date, and variant clinical-significance workflows, steering agents to
   structured-data shortcuts before article search. (240)
+- Aligned the public landing-copy contract with the shipped `suggest` and
+  workflow landing bullets so `make test-contracts` accepts the current README
+  and docs homepage feature counts. (286)
 
 ## 0.8.21 — 2026-04-16
 

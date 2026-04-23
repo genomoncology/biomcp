@@ -58,7 +58,7 @@ def test_readme_landing_copy_matches_public_contract() -> None:
     assert _paragraph_count(hero) == 1
     assert "plus local study analytics" in description
     assert "First useful query in under 30 seconds:" in quick_start
-    assert len(re.findall(r"(?m)^- \*\*[^*]+:\*\* .+", features)) == 5
+    assert len(re.findall(r"(?m)^- \*\*[^*]+:\*\* .+", features)) == 6
 
     for block in [hero, description, features, quick_start]:
         _assert_clean_marketing_block(block)
@@ -77,7 +77,7 @@ def test_docs_index_landing_copy_matches_public_contract() -> None:
 
     assert 1 <= _paragraph_count(intro) <= 2
     assert "Install to first result in under 30 seconds:" in quick_start
-    assert len(re.findall(r"(?m)^- \*\*[^*]+:\*\* .+", features)) == 6
+    assert len(re.findall(r"(?m)^- \*\*[^*]+:\*\* .+", features)) == 7
 
     for block in [intro, quick_start, features]:
         _assert_clean_marketing_block(block)

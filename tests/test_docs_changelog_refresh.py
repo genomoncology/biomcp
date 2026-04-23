@@ -109,6 +109,8 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     assert "MedlinePlus" in latest_release_block
     assert "BioASQ-oriented how-to routing rows" in latest_docs_block
     assert "skills/SKILL.md" in latest_docs_block
+    assert "public landing-copy contract" in latest_docs_block
+    assert "workflow landing bullets" in latest_docs_block
     assert _ticket_references(latest_release_block) == {
         232,
         233,
@@ -121,6 +123,7 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         242,
         252,
         253,
+        286,
     }
     assert "pending separate merge" not in latest_release_block
 
