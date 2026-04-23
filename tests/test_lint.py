@@ -123,7 +123,9 @@ def test_lint_requires_cargo_deny_for_rust_repos(tmp_path: Path) -> None:
     assert "[FAIL] Rust license lint (cargo-deny missing)" in result.stdout
 
 
-def test_lint_runs_cargo_deny_license_check_when_present(tmp_path: Path) -> None:
+def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
+    tmp_path: Path,
+) -> None:
     repo_root = _copy_lint_fixture(tmp_path)
     _track_files(
         repo_root,
@@ -140,7 +142,7 @@ def test_lint_runs_cargo_deny_license_check_when_present(tmp_path: Path) -> None
     )
     _write_executable(
         tool_dir / "cargo-deny",
-        "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" > \"$CARGO_DENY_LOG\"\n",
+        "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> \"$CARGO_DENY_LOG\"\n",
     )
 
     result = _run_lint(
@@ -152,8 +154,43 @@ def test_lint_runs_cargo_deny_license_check_when_present(tmp_path: Path) -> None
     )
 
     assert result.returncode == 0
-    assert log_file.read_text(encoding="utf-8") == "check licenses\n"
+    assert log_file.read_text(encoding="utf-8") == "check licenses\ncheck advisories\n"
     assert "[PASS] Rust license lint (cargo deny check licenses)" in result.stdout
+    assert "[PASS] Rust advisory lint (cargo deny check advisories)" in result.stdout
+
+
+def test_lint_fails_when_cargo_deny_advisory_check_fails(tmp_path: Path) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(
+        repo_root,
+        {
+            "Cargo.toml": '[package]\nname = "fixture"\nversion = "0.1.0"\nedition = "2024"\n'
+        },
+    )
+    tool_dir = tmp_path / "tools"
+    tool_dir.mkdir()
+    log_file = tmp_path / "cargo-deny.log"
+    _write_executable(
+        tool_dir / "cargo",
+        "#!/usr/bin/env bash\nif [ \"$1\" = \"deny\" ]; then\n  shift\n  exec cargo-deny \"$@\"\nfi\nexit 0\n",
+    )
+    _write_executable(
+        tool_dir / "cargo-deny",
+        "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> \"$CARGO_DENY_LOG\"\nif [ \"$*\" = \"check advisories\" ]; then\n  exit 1\nfi\n",
+    )
+
+    result = _run_lint(
+        repo_root,
+        env={
+            "CARGO_DENY_LOG": str(log_file),
+            "PATH": f"{tool_dir}:/usr/bin:/bin",
+        },
+    )
+
+    assert result.returncode == 1
+    assert log_file.read_text(encoding="utf-8") == "check licenses\ncheck advisories\n"
+    assert "[PASS] Rust license lint (cargo deny check licenses)" in result.stdout
+    assert "[FAIL] Rust advisory lint (cargo deny check advisories)" in result.stdout
 
 
 def test_repo_ruff_excludes_architecture_experiments_probe() -> None:

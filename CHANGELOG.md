@@ -60,6 +60,8 @@
 
 ### Fixes
 
+- Patched `rustls-webpki` to the safe release line and made `make check` enforce
+  the cargo-deny advisory gate alongside the existing license gate.
 - Added compact diagnostic rows and capped disease diagnostic pivots so
   gene/disease diagnostic follow-ups stay scannable and bounded. (266, 267)
 - Replaced the stale GTR sample with a live-valid GTR example and added
