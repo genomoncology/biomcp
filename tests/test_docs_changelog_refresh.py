@@ -47,7 +47,9 @@ def _ticket_references(text: str) -> set[int]:
 def test_changelog_has_backfilled_releases_and_release_header() -> None:
     changelog = _read("CHANGELOG.md")
     latest_release_block = _markdown_section_block(changelog, "## 0.8.22 — 2026-04-21")
-    previous_release_block = _markdown_section_block(changelog, "## 0.8.21 — 2026-04-16")
+    previous_release_block = _markdown_section_block(
+        changelog, "## 0.8.21 — 2026-04-16"
+    )
     latest_new_features_block = _markdown_subsection_block(
         latest_release_block, "### New features"
     )
@@ -111,6 +113,9 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     assert "skills/SKILL.md" in latest_docs_block
     assert "public landing-copy contract" in latest_docs_block
     assert "workflow landing bullets" in latest_docs_block
+    assert "SPEC_SMOKE_ARGS" in latest_release_block
+    assert "current mustmatch pytest item IDs" in latest_release_block
+    assert "quality ratchet" in latest_release_block
     assert _ticket_references(latest_release_block) == {
         232,
         233,
@@ -124,6 +129,7 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         252,
         253,
         286,
+        288,
     }
     assert "pending separate merge" not in latest_release_block
 
@@ -188,9 +194,14 @@ def test_remote_http_docs_are_promoted_for_newcomers() -> None:
     assert "three-step BRAF V600E melanoma" in remote_http
     assert "workflow over the remote MCP `biomcp` tool" in remote_http
     assert "prints `Command: ...` before each BioMCP step" in remote_http
-    assert "biomcp search all --gene BRAF --disease melanoma --counts-only" in remote_http
+    assert (
+        "biomcp search all --gene BRAF --disease melanoma --counts-only" in remote_http
+    )
     assert 'biomcp get variant "BRAF V600E" clinvar' in remote_http
-    assert 'biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 5' in remote_http
+    assert (
+        'biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 5'
+        in remote_http
+    )
     assert "examples/streamable-http/README.md" in remote_http
     assert "--scenario braf-melanoma" not in remote_http
     assert "Available tools:" not in remote_http
@@ -200,10 +211,18 @@ def test_remote_http_docs_are_promoted_for_newcomers() -> None:
     assert "how to start the server" in demo_readme.lower()
     assert "how to run the client" in demo_readme.lower()
     assert "what output to expect" in demo_readme.lower()
-    assert "uv run --quiet --script examples/streamable-http/streamable_http_client.py" in demo_readme
-    assert "./target/release/biomcp serve-http --host 127.0.0.1 --port 8080" in demo_readme
+    assert (
+        "uv run --quiet --script examples/streamable-http/streamable_http_client.py"
+        in demo_readme
+    )
+    assert (
+        "./target/release/biomcp serve-http --host 127.0.0.1 --port 8080" in demo_readme
+    )
     assert "http://127.0.0.1:8080/mcp" in demo_readme
-    assert "Command: biomcp search all --gene BRAF --disease melanoma --counts-only" in demo_readme
+    assert (
+        "Command: biomcp search all --gene BRAF --disease melanoma --counts-only"
+        in demo_readme
+    )
     assert 'Command: biomcp get variant "BRAF V600E" clinvar' in demo_readme
     assert (
         'Command: biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 5'
@@ -237,7 +256,10 @@ def test_diagnostic_docs_and_count_language_are_current() -> None:
         assert "GTR-backed diagnostics pivot" in text
         assert "MedlinePlus `clinical_features`" in text
         assert "GTR/WHO IVD diagnostics pivot" in text
-        assert "OpenFDA FAERS/MAUDE/recalls plus CDC WONDER VAERS aggregate vaccine search" in text
+        assert (
+            "OpenFDA FAERS/MAUDE/recalls plus CDC WONDER VAERS aggregate vaccine search"
+            in text
+        )
         assert "public entity surface" in text
 
     assert "biomcp gtr sync" in cli_reference
@@ -246,8 +268,11 @@ def test_diagnostic_docs_and_count_language_are_current() -> None:
     assert "WHO IVD local data" in cli_reference
     assert "matches complete disease words or phrases at boundaries" in cli_reference
     assert "Disease diagnostic cards are capped at" in cli_reference
-    assert "biomcp get disease \"uterine leiomyoma\" clinical_features" in cli_reference
-    assert "`clinical_features`, `diagnostics`, `disgenet`, and `funding` stay opt-in" in cli_reference
+    assert 'biomcp get disease "uterine leiomyoma" clinical_features' in cli_reference
+    assert (
+        "`clinical_features`, `diagnostics`, `disgenet`, and `funding` stay opt-in"
+        in cli_reference
+    )
     assert "13 remote entity commands" not in cli_reference
     assert "all 13 remote entity commands" not in cli_reference
     assert "12 remote entity commands" not in cli_reference
@@ -265,7 +290,7 @@ def test_diagnostic_docs_and_count_language_are_current() -> None:
 
     assert "biomcp gtr sync" in ux_reference
     assert "biomcp who-ivd sync" in ux_reference
-    assert "biomcp get disease \"uterine leiomyoma\" clinical_features" in ux_reference
+    assert 'biomcp get disease "uterine leiomyoma" clinical_features' in ux_reference
     assert "all 13 remote entity commands" not in ux_reference
     assert "13 remote entity commands" not in ux_reference
     assert "all 12 entity types" not in ux_reference
@@ -276,7 +301,10 @@ def test_diagnostic_docs_and_count_language_are_current() -> None:
 
     assert diagnostic_guide.startswith("# Diagnostic")
     assert "biomcp search diagnostic --gene BRCA1 --limit 5" in diagnostic_guide
-    assert "biomcp search diagnostic --disease HIV --source who-ivd --limit 5" in diagnostic_guide
+    assert (
+        "biomcp search diagnostic --disease HIV --source who-ivd --limit 5"
+        in diagnostic_guide
+    )
     assert "`--disease` is a bounded disease phrase filter" in diagnostic_guide
     assert "must contain at least three" in diagnostic_guide
     assert "alphanumeric characters" in diagnostic_guide
@@ -356,7 +384,9 @@ def test_diagnostic_docs_and_count_language_are_current() -> None:
         "biomcp search diagnostic --disease tuberculosis --source all --limit 50"
         in disease_guide
     )
-    assert "It is capped at 10 rows and prints a `See also:` command" in cross_entity_guide
+    assert (
+        "It is capped at 10 rows and prints a `See also:` command" in cross_entity_guide
+    )
 
 
 def test_streamable_http_demo_script_is_runnable_repo_artifact() -> None:
@@ -366,19 +396,31 @@ def test_streamable_http_demo_script_is_runnable_repo_artifact() -> None:
     assert '# requires-python = ">=3.11"' in demo_script
     assert '"mcp>=' in demo_script
     assert "biomcp serve-http --host 127.0.0.1 --port 8080" in demo_script
-    assert "uv run --script examples/streamable-http/streamable_http_client.py" in demo_script
+    assert (
+        "uv run --script examples/streamable-http/streamable_http_client.py"
+        in demo_script
+    )
     assert 'DEFAULT_BASE_URL = "http://127.0.0.1:8080"' in demo_script
-    assert 'mcp_url = f"{base_url.rstrip(\'/\')}/mcp"' in demo_script
+    assert "mcp_url = f\"{base_url.rstrip('/')}/mcp\"" in demo_script
     assert "def resolve_base_url(argv: list[str]) -> str:" in demo_script
     assert "resolve_base_url(sys.argv)" in demo_script
-    assert "Usage: examples/streamable-http/streamable_http_client.py [base_url]" in demo_script
+    assert (
+        "Usage: examples/streamable-http/streamable_http_client.py [base_url]"
+        in demo_script
+    )
     assert "terminate_on_close=False" in demo_script
     assert '"biomcp"' in demo_script
-    assert 'shell' not in demo_script
+    assert "shell" not in demo_script
     assert 'SCENARIO = "braf-melanoma"' not in demo_script
-    assert '"biomcp search all --gene BRAF --disease melanoma --counts-only"' in demo_script
+    assert (
+        '"biomcp search all --gene BRAF --disease melanoma --counts-only"'
+        in demo_script
+    )
     assert 'biomcp get variant "BRAF V600E" clinvar' in demo_script
-    assert 'biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 5' in demo_script
+    assert (
+        'biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 5'
+        in demo_script
+    )
     assert 'print(f"Command: {command}")' in demo_script
     assert "argparse" not in demo_script
     assert "check_health" not in demo_script
@@ -398,7 +440,9 @@ def test_release_overview_describes_streamable_http_workflow_demo() -> None:
     assert "Command:" in overview
     assert "biomcp search all --gene BRAF --disease melanoma --counts-only" in overview
     assert 'biomcp get variant "BRAF V600E" clinvar' in overview
-    assert 'biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 5' in overview
+    assert (
+        'biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 5' in overview
+    )
 
 
 def test_latest_changelog_documents_mcp_tool_rename() -> None:
@@ -407,7 +451,7 @@ def test_latest_changelog_documents_mcp_tool_rename() -> None:
     v0_8_15_block = _markdown_section_block(changelog, "## 0.8.15 — 2026-03-11")
 
     assert "MCP execution tool" in v0_8_16_block
-    assert '`shell`' in v0_8_16_block
+    assert "`shell`" in v0_8_16_block
     assert "`biomcp`" in v0_8_16_block
     assert "MCP execution tool" not in v0_8_15_block
 
@@ -439,7 +483,9 @@ def test_changelog_audit_backfills_rust_release_gaps() -> None:
     assert "MCP chart responses can now return SVG inline" in v0_8_17_block
 
 
-def test_release_overview_uses_manifest_reference_for_current_version_and_release_files() -> None:
+def test_release_overview_uses_manifest_reference_for_current_version_and_release_files() -> (
+    None
+):
     overview = _read("architecture/technical/overview.md")
     example_tag = _current_release_tag_example()
 
@@ -456,7 +502,10 @@ def test_release_overview_uses_manifest_reference_for_current_version_and_releas
     ]:
         assert required_file in overview
 
-    assert f'tag="${{BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. {example_tag}}}"' in overview
+    assert (
+        f'tag="${{BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. {example_tag}}}"'
+        in overview
+    )
     assert 'version="${tag#v}"' in overview
     assert 'BIOMCP_VERSION="$tag" bash install.sh' in overview
     assert "https://biomcp.org/reference/bioasq-benchmark/" in overview
@@ -469,7 +518,10 @@ def test_release_overview_post_tag_public_proof_requires_all_markers() -> None:
     post_tag_block = _markdown_section_block(overview, "### Post-tag public proof")
     example_tag = _current_release_tag_example()
 
-    assert f'tag="${{BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. {example_tag}}}"' in post_tag_block
+    assert (
+        f'tag="${{BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. {example_tag}}}"'
+        in post_tag_block
+    )
     assert 'version="${tag#v}"' in post_tag_block
     assert 'BIOMCP_VERSION="$tag" bash install.sh' in post_tag_block
     assert 'bioasq_page="$(mktemp)"' in post_tag_block
@@ -578,7 +630,9 @@ def test_public_docs_surface_local_study_analytics() -> None:
     assert "plus local study analytics" in readme
     assert "## Local study analytics" in readme
     assert "13 remote entity commands" not in readme
-    assert "public entity surface handles API-backed, local-runtime, and hybrid" in readme
+    assert (
+        "public entity surface handles API-backed, local-runtime, and hybrid" in readme
+    )
     assert "study download" in readme
 
     assert "## Study commands" in quick_reference
@@ -592,7 +646,9 @@ def test_public_docs_surface_local_study_analytics() -> None:
     assert "local cBioPortal analytics family for downloaded" in cli_reference
     assert "cBioPortal-style datasets" in cli_reference
     assert "13 remote entity commands" not in cli_reference
-    assert "Unlike the public entity surface, `study` operates on files" in cli_reference
+    assert (
+        "Unlike the public entity surface, `study` operates on files" in cli_reference
+    )
     assert "data_mutations.txt" in cli_reference
     assert "data_clinical_patient.txt" in cli_reference
     for command in study_commands:

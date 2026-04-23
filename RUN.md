@@ -113,8 +113,9 @@ PR-blocking spec lane; it runs `pytest-xdist` with `-n auto --dist loadfile`
 for the parallel-safe bulk, then runs `spec/05-drug.md`, `spec/13-study.md`,
 and `spec/21-cross-entity-see-also.md` serially because those files share
 repo-global local-data fixtures. Use `make spec-smoke` as a targeted local
-rerun for the eight ticket-270 volatile headings; it is serial, uses a 120s
-mustmatch timeout, and is not a required PR gate. Use `make test-contracts` for
+rerun for the ten stable smoke section IDs in `SPEC_SMOKE_ARGS`; it resolves
+those IDs to current mustmatch pytest item IDs at runtime, runs serially with a
+120s mustmatch timeout, and is not a required PR gate. Use `make test-contracts` for
 the Python/docs contract lane. Repo-root Ruff still runs through `bin/lint`, but
 `pyproject.toml` excludes `architecture/experiments/**` so scratch experiment
 scripts do not block the production Python lint gate. Use `git commit
@@ -158,12 +159,13 @@ make spec-smoke
 for the parallel-safe bulk, then run
 `spec/05-drug.md`, `spec/13-study.md`, and `spec/21-cross-entity-see-also.md`
 serially because those files share repo-global local-data fixtures. `make
-spec-smoke` runs the ticket-270 volatile headings serially with the longer 120s
-mustmatch timeout.
+spec-smoke` resolves the ten stable targeted smoke section IDs in
+`SPEC_SMOKE_ARGS` to current mustmatch pytest item IDs, then runs them serially
+with the longer 120s mustmatch timeout.
 Use `spec/README-timings.md` as the current per-heading audit and the source of
 truth for which headings stay smoke-only via `SPEC_PR_DESELECT_ARGS`; the
-ratchet also checks that `SPEC_SMOKE_ARGS` maps the ticket-270 headings to
-executable mustmatch pytest items.
+ratchet also checks that scanned `SPEC_SMOKE_ARGS` entries resolve to
+collectable mustmatch pytest items.
 
 When running repo-local checks through `uv run`, make sure `target/release` is
 ahead of `.venv/bin` on `PATH` or refresh the editable install with

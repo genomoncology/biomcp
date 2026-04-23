@@ -8,8 +8,11 @@
 # within the current CI timeout budget.
 # Smoke lane: `search article`, `gene articles`, `variant articles`,
 # `disease articles`, or any new heading with repeated provider-latency timeouts.
-# To move a heading into the smoke lane, add its stable section ID to
-# SPEC_PR_DESELECT_ARGS and its executable mustmatch item ID to SPEC_SMOKE_ARGS.
+# SPEC_PR_DESELECT_ARGS stores PR-lane deselects. SPEC_SMOKE_ARGS stores
+# stable targeted smoke section IDs that `spec-smoke` resolves to current
+# mustmatch pytest item IDs at runtime.
+# To move a heading into the smoke lane, add its stable section ID to both
+# variables.
 SPEC_PR_DESELECT_ARGS = \
 	--deselect "spec/02-gene.md::Gene to Articles" \
 	--deselect "spec/03-variant.md::Variant to Articles" \
@@ -59,16 +62,16 @@ SPEC_PR_DESELECT_ARGS = \
 	--deselect "spec/26-workflow-ladders.md::Mechanism Pathway"
 
 SPEC_SMOKE_ARGS = \
-	"spec/06-article.md::Getting Article Details (line 486) [bash]" \
-	"spec/06-article.md::Article Batch (line 646) [bash]" \
-	"spec/06-article.md::Article Query Echo Surfaces Explicit Max-Per-Source Overrides (line 334) [bash]" \
-	"spec/06-article.md::Article Search Gene Keyword Pivot (line 52) [bash]" \
-	"spec/06-article.md::Article Search Drug Keyword Pivot (line 87) [bash]" \
-	"spec/06-article.md::Article Search Discover Keyword Pivot (line 108) [bash]" \
-	"spec/09-search-all.md::Debug Plan (line 97) [bash]" \
-	"spec/09-search-all.md::Distinct Disease And Keyword Stay Separate (line 142) [bash]" \
-	"spec/17-cross-entity-pivots.md::Gene to Articles (line 134) [bash]" \
-	"spec/17-cross-entity-pivots.md::Variant pivots (line 22) [bash]"
+	"spec/06-article.md::Getting Article Details" \
+	"spec/06-article.md::Article Batch" \
+	"spec/06-article.md::Article Query Echo Surfaces Explicit Max-Per-Source Overrides" \
+	"spec/06-article.md::Article Search Gene Keyword Pivot" \
+	"spec/06-article.md::Article Search Drug Keyword Pivot" \
+	"spec/06-article.md::Article Search Discover Keyword Pivot" \
+	"spec/09-search-all.md::Debug Plan" \
+	"spec/09-search-all.md::Distinct Disease And Keyword Stay Separate" \
+	"spec/17-cross-entity-pivots.md::Gene to Articles" \
+	"spec/17-cross-entity-pivots.md::Variant pivots"
 
 SPEC_SERIAL_FILES = spec/05-drug.md spec/13-study.md spec/21-cross-entity-see-also.md
 SPEC_XDIST_ARGS = -n auto --dist loadfile
@@ -118,7 +121,7 @@ spec-pr:
 
 spec-smoke:
 	XDG_CACHE_HOME="$(CURDIR)/.cache" PATH="$(CURDIR)/target/release:$(PATH)" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" RUST_LOG=error \
-		uv run --extra dev sh -c 'PATH="$(CURDIR)/target/release:$$PATH" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" pytest $(SPEC_SMOKE_ARGS) --mustmatch-lang bash --mustmatch-timeout 120 -v'
+		uv run --extra dev bash -lc 'set -euo pipefail; export PATH="$(CURDIR)/target/release:$$PATH"; export BIOMCP_BIN="$(CURDIR)/target/release/biomcp"; resolved_args="$$(python tools/spec_smoke_args.py --root-dir "$(CURDIR)" --makefile "$(CURDIR)/Makefile" --makefile-variable SPEC_SMOKE_ARGS)"; if [[ -z "$$resolved_args" ]]; then echo "SPEC_SMOKE_ARGS resolved to no pytest targets" >&2; exit 1; fi; mapfile -t spec_smoke_args <<< "$$resolved_args"; pytest "$${spec_smoke_args[@]}" --mustmatch-lang bash --mustmatch-timeout 120 -v'
 
 validate-skills:
 	XDG_CACHE_HOME="$(CURDIR)/.cache" PATH="$(CURDIR)/target/release:$(PATH)" \

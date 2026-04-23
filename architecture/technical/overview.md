@@ -346,18 +346,19 @@ headings run in the separate `Spec smoke (volatile live-network)` workflow
 instead.
 
 Run locally with `make spec`. Use `make spec-smoke` as the serial targeted
-local rerun for the eight ticket-270 volatile live-network headings.
+local rerun for the ten stable smoke section IDs in `SPEC_SMOKE_ARGS`.
 
 Repo-local `make spec` and `make spec-pr` use `pytest-xdist` with
 `-n auto --dist loadfile` for the parallel-safe bulk, then run
 `spec/05-drug.md`, `spec/13-study.md`, and `spec/21-cross-entity-see-also.md`
 serially because those files share repo-global local-data fixtures. `make
-spec-smoke` does not use xdist; it runs the targeted smoke node IDs serially
+spec-smoke` does not use xdist; it resolves stable targeted smoke section IDs
+to current mustmatch pytest item IDs at runtime, then runs those items serially
 with a 120s mustmatch timeout.
 Use `spec/README-timings.md` as the current audit record for the PR lane and as
 the smoke-only section inventory for `SPEC_PR_DESELECT_ARGS`; the ratchet
-checks that `SPEC_SMOKE_ARGS` maps those ticket-270 sections to executable
-mustmatch pytest items.
+checks that scanned `SPEC_SMOKE_ARGS` entries resolve to collectable mustmatch
+pytest items.
 
 Important: `uv run` may execute a stale `.venv/bin/biomcp`. Either refresh
 with `uv pip install -e .` or ensure `target/release` is ahead of `.venv/bin`

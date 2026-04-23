@@ -5,11 +5,11 @@
 | Lane | Make target | Run when | Timeout | Scope |
 |---|---|---|---|---|
 | `spec-pr` | `make spec-pr` | every PR and repo-local pre-merge verification | `60s` per heading | Stable PR-blocking live specs after `SPEC_PR_DESELECT_ARGS` exclusions |
-| `spec-smoke` | `make spec-smoke` | targeted local smoke rerun for ticket-270 volatile headings plus repaired article keyword pivots | `120s` per heading | Exactly the ten live-network headings represented by `SPEC_SMOKE_ARGS` |
+| `spec-smoke` | `make spec-smoke` | targeted local smoke rerun for volatile live-network headings | `120s` per heading | Exactly the ten stable smoke section IDs represented by `SPEC_SMOKE_ARGS`, resolved to current mustmatch pytest item IDs at runtime |
 | `spec` | `make spec` | scheduled full smoke workflow and manual full smoke reruns | `120s` per heading | Full live spec suite, including every smoke-only heading |
 | `test-contracts` | `make test-contracts` | PR contracts lane and local docs/Python validation | n/a | Rust release build plus Python/docs contract checks |
 
-`spec-pr` is the fast blocking lane, `spec-smoke` is the serial local rerun for the ten live-network headings in `SPEC_SMOKE_ARGS`, `spec` remains the full live suite used by the existing scheduled smoke workflow, and `test-contracts` covers the Python/docs contract surface. Use this file as the current audit and smoke-only inventory for `SPEC_PR_DESELECT_ARGS`.
+`spec-pr` is the fast blocking lane, `spec-smoke` is the serial local rerun for the ten stable smoke section IDs in `SPEC_SMOKE_ARGS`, `spec` remains the full live suite used by the existing scheduled smoke workflow, and `test-contracts` covers the Python/docs contract surface. The `spec-smoke` target resolves those stable section IDs to current mustmatch pytest item IDs immediately before execution so line-number churn cannot make the smoke lane uncollectable. Use this file as the current audit and smoke-only inventory for `SPEC_PR_DESELECT_ARGS`.
 
 ## Bash Mustmatch Lint Rule
 
