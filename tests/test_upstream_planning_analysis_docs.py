@@ -1236,6 +1236,10 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`spec/entity/gene.md`" in technical_spec_section
     assert "`spec/entity/variant.md`" in technical_spec_section
     assert "`spec/entity/article.md`" in technical_spec_section
+    assert "`spec/entity/trial.md`" in technical_spec_section
+    assert "`spec/entity/drug.md`" in technical_spec_section
+    assert "`spec/entity/disease.md`" in technical_spec_section
+    assert "`spec/entity/protein.md`" in technical_spec_section
     assert "`tools/biomcp-ci`" in technical_spec_section
     assert "`make spec-smoke`" not in technical_spec_section
 
@@ -1284,6 +1288,10 @@ def test_spec_lane_timing_report_is_documented_and_aligned_with_makefile() -> No
         "`spec/entity/gene.md`",
         "`spec/entity/variant.md`",
         "`spec/entity/article.md`",
+        "`spec/entity/trial.md`",
+        "`spec/entity/drug.md`",
+        "`spec/entity/disease.md`",
+        "`spec/entity/protein.md`",
         "`spec/surface/`",
     ]
 
