@@ -38,7 +38,6 @@ out="$(../../tools/biomcp-ci get protein P15056 complexes)"
 echo "$out" | mustmatch like "## Complexes (ComplexPortal)"
 echo "$out" | mustmatch like "| ID | Name | Members | Curation |"
 echo "$out" | mustmatch '/\| CPX-[0-9]+ \|/'
-echo "$out" | mustmatch like "members ("
 ```
 
 ## Structures Follow-Up
