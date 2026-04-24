@@ -270,10 +270,10 @@ from the current output.
   next executable step; degrade by omission, not by emitting dead commands.
 - This guidance is data-driven. `related_*()` helpers only emit commands when
   the supporting data or capability exists for the current record and runtime.
-- Proof lives in `spec/11-evidence-urls.md`,
-  `spec/21-cross-entity-see-also.md`, `spec/26-workflow-ladders.md`, the
-  sidecar contract tests in `tests/test_skill_prompt_contract.py`, and the
-  parser-level `next_commands_validity` tests in `src/cli/tests/`.
+- Representative proof lives in `spec/entity/gene.md`,
+  `spec/entity/variant.md`, and `spec/entity/article.md`, plus the sidecar
+  contract tests in `tests/test_skill_prompt_contract.py` and the parser-level
+  `next_commands_validity` tests in `src/cli/tests/`.
 
 ## Skills Quick Reference
 

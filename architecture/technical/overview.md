@@ -16,8 +16,8 @@ BioMCP is a single Rust binary (`biomcp`) with three operating modes:
   `cohort`, `survival`, `compare`, `co-occurrence`) are allowed.
   Operator-local or mutating commands such as `cache`, `update`, `serve`,
   `serve-http`, and `skill install` stay blocked over MCP.
-  See `src/mcp/shell.rs` and `spec/15-mcp-runtime.md` for the canonical
-  boundary.
+  See `src/mcp/shell.rs`, `tests/test_mcp_contract.py`, and
+  `tests/test_skill_prompt_contract.py` for the canonical boundary.
 - **HTTP mode:** `biomcp serve-http --host 0.0.0.0 --port 8080` starts the
   Streamable HTTP server. Remote MCP traffic uses `/mcp`, and lightweight
   probes live at `/health`, `/readyz`, and `/`. This is the canonical scaling

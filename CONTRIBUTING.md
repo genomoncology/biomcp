@@ -74,12 +74,13 @@ deletions so cleanup commits can remove old March artifacts from tracking.
 Measured on beelink on 2026-04-23 with `/usr/bin/time -p` using warm-cache
 steady-state runs. Each command was run once untimed to warm build artifacts and
 the repo-owned spec cache under `.cache/biomcp-specs/`, then once with timing
-enabled. `make release-gate` is a thin wrapper over `make check` and
-`make spec-pr`, so its warm timing is the observed sum of those warmed
+enabled. The `make spec-pr` row was refreshed on 2026-04-24 after the spec-v2
+canary cutover. `make release-gate` is a thin wrapper over `make check` and
+`make spec-pr`, so its warm timing tracks the current sum of those warmed
 component lanes.
 
 | Command | Observed warm-cache | Notes |
 |---|---|---|
 | `make check` | `344.11s` | now includes `make test-contracts` |
-| `make spec-pr` | `121.03s` | stable PR-blocking canary lane |
-| `make release-gate` | `465.14s` | `make check` followed by `make spec-pr` |
+| `make spec-pr` | `56.16s` | stable PR-blocking canary lane (refreshed 2026-04-24) |
+| `make release-gate` | `400.27s` | current warm sum of `make check` and refreshed `make spec-pr` |

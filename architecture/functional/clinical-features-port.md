@@ -90,12 +90,9 @@ the disease clinical-feature fixtures.
 
 ## Verification
 
-The shipped behavior is covered by the disease executable specs and focused
-unit tests:
+The shipped behavior is covered by focused rendering and source tests while the
+bootstrap spec-v2 canaries stay limited to gene, variant, and article:
 
-- `spec/07-disease.md` proves the explicit opt-in behavior, the exclusion from
-  `all`, configured-disease MedlinePlus rows, JSON provenance, and unsupported
-  empty state.
 - Disease rendering and provenance tests cover the MedlinePlus section heading,
   evidence URLs, and `_meta.section_sources`.
 - The MedlinePlus source tests cover bounded request parsing and invalid input

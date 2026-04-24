@@ -33,8 +33,8 @@ def _write_executable(path: Path, contents: str) -> None:
     path.chmod(0o755)
 
 
-def _make_capture_bin(tmp_path: Path) -> Path:
-    capture_bin = tmp_path / "capture-bin"
+def _make_capture_bin(tmp_path: Path, name: str = "capture-bin") -> Path:
+    capture_bin = tmp_path / name
     payload = ", ".join(f'"{key}": os.environ.get("{key}")' for key in CAPTURED_KEYS)
     _write_executable(
         capture_bin,
@@ -123,10 +123,35 @@ def test_biomcp_ci_wrapper_preserves_explicit_cache_mode(tmp_path: Path) -> None
     assert payload["env"]["BIOMCP_CACHE_MODE"] == "off"
 
 
+def test_biomcp_ci_wrapper_defaults_to_biomcp_on_path(tmp_path: Path) -> None:
+    path_bin = tmp_path / "path-bin"
+    path_bin.mkdir()
+    _make_capture_bin(path_bin, name="biomcp")
+
+    wrapper_env = os.environ.copy()
+    wrapper_env.update({key: f"sentinel-{key.lower()}" for key in AUTH_KEYS})
+    wrapper_env.pop("BIOMCP_BIN", None)
+    wrapper_env["PATH"] = f"{path_bin}:{wrapper_env['PATH']}"
+
+    result = subprocess.run(
+        ["bash", str(WRAPPER_SCRIPT), "version"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=wrapper_env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["argv"] == ["version"]
+
+
 def test_biomcp_ci_wrapper_avoids_pwd_dependent_shell_tricks() -> None:
     content = WRAPPER_SCRIPT.read_text(encoding="utf-8")
 
     assert 'REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"' in content
+    assert 'exec "${BIOMCP_BIN:-biomcp}" "$@"' in content
     assert "eval" not in content
     assert "git rev-parse" not in content
     assert "$PWD" not in content

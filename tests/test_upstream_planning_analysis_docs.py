@@ -322,9 +322,29 @@ def test_article_fulltext_architecture_doc_is_current_state() -> None:
         "`templates/article.md.j2`",
         "`src/render/provenance.rs`",
         "`src/utils/download.rs`",
-        "`spec/18-source-labels.md::Article Fulltext Resolver Order`",
+        "`spec/entity/article.md`",
     ):
         assert phrase in article_ws
+
+
+def test_live_docs_do_not_reference_deleted_numbered_specs() -> None:
+    deleted_spec_ref = re.compile(r"spec/\d{2}-[a-z0-9-]+\.md")
+    live_docs = (
+        "architecture/technical/overview.md",
+        "architecture/technical/article-fulltext-markdown.md",
+        "architecture/functional/article-fulltext.md",
+        "architecture/functional/diagnostic.md",
+        "architecture/functional/clinical-features-port.md",
+        "architecture/ux/cli-reference.md",
+    )
+
+    stale_refs: list[str] = []
+    for path in live_docs:
+        matches = sorted(set(deleted_spec_ref.findall(_read_repo(path))))
+        if matches:
+            stale_refs.append(f"{path}: {', '.join(matches)}")
+
+    assert not stale_refs, "\n".join(stale_refs)
 
 
 def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> None:

@@ -5,9 +5,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CACHE_ROOT="${REPO_ROOT}/.cache/biomcp-specs"
 XDG_CACHE_ROOT="${CACHE_ROOT}/xdg-cache"
 XDG_CONFIG_ROOT="${CACHE_ROOT}/config"
-BIOMCP_BIN="${BIOMCP_BIN:-${REPO_ROOT}/target/release/biomcp}"
-
-mkdir -p "$CACHE_ROOT" "$XDG_CACHE_ROOT" "$XDG_CONFIG_ROOT"
+ mkdir -p "$CACHE_ROOT" "$XDG_CACHE_ROOT" "$XDG_CONFIG_ROOT"
 
 export BIOMCP_CACHE_DIR="$CACHE_ROOT"
 export XDG_CACHE_HOME="$XDG_CACHE_ROOT"
@@ -27,4 +25,4 @@ if [[ "${BIOMCP_SPEC_CACHE_HIT:-}" == "1" && -z "${BIOMCP_CACHE_MODE:-}" ]]; the
   export BIOMCP_CACHE_MODE=infinite
 fi
 
-exec "$BIOMCP_BIN" "$@"
+exec "${BIOMCP_BIN:-biomcp}" "$@"

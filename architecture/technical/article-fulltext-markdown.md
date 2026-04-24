@@ -41,8 +41,9 @@ implementation or add a second JATS crate.
   canonical JATS/XML-to-Markdown contract.
 - Continue using `tokio::task::spawn_blocking` from the article fulltext path
   when rendering large XML payloads.
-- Keep the existing `transform/article/jats/tests.rs` and `spec/06-article.md`
-  JATS assertions as the baseline regression contract.
+- Keep the existing `transform/article/jats/tests.rs` as the baseline JATS
+  regression contract, and keep the active saved-artifact/fulltext canary in
+  `spec/entity/article.md`.
 
 This preserves the reference rendering and `xref` handling that production
 already does better than the spike.
@@ -255,8 +256,8 @@ Surfaces that should **not** change:
 The target migration should keep explicit regression families for each extractor:
 
 - **JATS:** existing production unit tests in `src/transform/article/jats/tests.rs`
-  plus the saved-markdown specs in `spec/06-article.md` for PMID `27083046` and
-  `25268582`.
+  plus the active article canary in `spec/entity/article.md` for the user-visible
+  saved-artifact/fulltext contract.
 - **HTML:** commit a focused copy of the spike's PMC article page fixture
   (`pmc_article_page.html`) plus the two non-production extractor-quality
   fixtures (`biorxiv_preprint_page.html`, `nih_news_release.html`) under
@@ -350,8 +351,8 @@ Proof:
 - PMCID-backed articles without usable XML can still produce saved Markdown from
   the PMC HTML page.
 - the non-production HTML fixtures stay green as converter-quality guards.
-- `make check` passes, and the updated `spec/06-article.md` keeps the user-facing
-  `Saved to:` contract stable.
+- `make check` passes, and the updated `spec/entity/article.md` keeps the
+  user-facing `Saved to:` contract stable.
 
 ## Open Decisions Captured
 
