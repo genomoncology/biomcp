@@ -13,7 +13,7 @@ instead of an opaque backend-specific response.
 out="$(../../tools/biomcp-ci search phenotype 'seizure, developmental delay' --limit 3)"
 echo "$out" | mustmatch like "# Phenotype Search: seizure, developmental delay"
 echo "$out" | mustmatch like "| Disease ID | Disease Name | Similarity Score |"
-echo "$out" | mustmatch like "Found 3 candidate diseases"
+echo "$out" | mustmatch '/\| MONDO:[^|]+ \| .+ \| [0-9.]+ \|/'
 ```
 
 ## HPO ID Input

@@ -61,3 +61,16 @@ echo "$out" | mustmatch like "## Conditions"
 echo "$out" | mustmatch like 'biomcp get diagnostic "ITPW02232- TC40" regulatory'
 echo "$out" | mustmatch like "WHO Prequalified IVD"
 ```
+
+## Regulatory Overlay Stays Opt-In
+
+The FDA device overlay should only appear when requested, so `all` stays
+source-native instead of silently pulling in extra sections.
+
+```bash
+id="$(../../tools/biomcp-ci search diagnostic --gene BRCA1 --limit 1 | awk -F'|' '/^\|GTR/{print $2; exit}')"
+all_out="$(../../tools/biomcp-ci get diagnostic "$id" all)"
+reg_out="$(../../tools/biomcp-ci get diagnostic "$id" regulatory)"
+echo "$all_out" | mustmatch not like "## Regulatory (FDA Device)"
+echo "$reg_out" | mustmatch like "## Regulatory (FDA Device)"
+```

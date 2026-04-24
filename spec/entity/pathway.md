@@ -34,8 +34,9 @@ stay visible at the top of the small result set.
 
 ```bash
 out="$(../../tools/biomcp-ci search pathway 'MAPK signaling pathway' --limit 3)"
+first_row="$(printf '%s\n' "$out" | awk '/^\| Source \| ID \| Name \|/{getline; getline; print; exit}')"
 echo "$out" | mustmatch like "| Source | ID | Name |"
-echo "$out" | mustmatch like "| KEGG | hsa04010 | MAPK signaling pathway |"
+echo "$first_row" | mustmatch like "| KEGG | hsa04010 | MAPK signaling pathway |"
 ```
 
 ## Concise KEGG Default
