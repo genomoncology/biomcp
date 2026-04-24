@@ -677,6 +677,7 @@ fn trial_search_query_summary_includes_geo_filters() {
             distance: Some(50),
             ..Default::default()
         },
+        None,
         0,
         None,
     );
@@ -699,6 +700,7 @@ fn trial_search_query_summary_includes_nci_source_marker() {
             source: crate::entities::trial::TrialSource::NciCts,
             ..Default::default()
         },
+        None,
         0,
         None,
     );
@@ -715,6 +717,7 @@ fn trial_search_query_summary_includes_alias_opt_out_marker() {
             no_alias_expand: true,
             ..Default::default()
         },
+        Some("daraxonrasib"),
         0,
         None,
     );
@@ -731,6 +734,7 @@ fn trial_search_query_summary_omits_alias_opt_out_marker_when_not_applicable() {
             no_alias_expand: true,
             ..Default::default()
         },
+        None,
         0,
         None,
     );
@@ -741,12 +745,29 @@ fn trial_search_query_summary_omits_alias_opt_out_marker_when_not_applicable() {
             source: crate::entities::trial::TrialSource::NciCts,
             ..Default::default()
         },
+        Some("daraxonrasib"),
         0,
         None,
     );
 
     assert!(!no_intervention.contains("alias_expand=off"));
     assert!(!nci.contains("alias_expand=off"));
+}
+
+#[test]
+fn trial_search_query_summary_can_show_canonical_intervention() {
+    let summary = trial_search_query_summary(
+        &crate::entities::trial::TrialSearchFilters {
+            intervention: Some("Keytruda".into()),
+            ..Default::default()
+        },
+        Some("pembrolizumab"),
+        0,
+        None,
+    );
+
+    assert!(summary.contains("intervention=pembrolizumab"));
+    assert!(!summary.contains("intervention=Keytruda"));
 }
 
 #[test]

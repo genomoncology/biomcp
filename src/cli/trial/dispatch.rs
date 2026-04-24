@@ -124,7 +124,33 @@ pub(in crate::cli) async fn handle_search(
         .into());
     }
 
-    let query = trial_search_query_summary(&filters, args.offset, args.next_page.as_deref());
+    let query_intervention = match filters
+        .intervention
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(intervention)
+            if matches!(
+                trial_source,
+                crate::entities::trial::TrialSource::ClinicalTrialsGov
+            ) && !filters.no_alias_expand =>
+        {
+            match crate::entities::drug::resolve_trial_canonical_name(intervention).await {
+                Ok(canonical) if !canonical.trim().is_empty() => Some(canonical),
+                Err(_) => Some(intervention.to_string()),
+                _ => Some(intervention.to_string()),
+            }
+        }
+        Some(intervention) => Some(intervention.to_string()),
+        None => None,
+    };
+    let query = trial_search_query_summary(
+        &filters,
+        query_intervention.as_deref(),
+        args.offset,
+        args.next_page.as_deref(),
+    );
     let text = if args.count_only {
         let count = crate::entities::trial::count_all(&filters).await?;
         if json {
@@ -315,6 +341,7 @@ pub(super) fn paginate_trial_locations(
 
 pub(super) fn trial_search_query_summary(
     filters: &crate::entities::trial::TrialSearchFilters,
+    query_intervention: Option<&str>,
     offset: usize,
     next_page: Option<&str>,
 ) -> String {
@@ -334,10 +361,7 @@ pub(super) fn trial_search_query_summary(
             .condition
             .as_deref()
             .map(|v| format!("condition={v}")),
-        filters
-            .intervention
-            .as_deref()
-            .map(|v| format!("intervention={v}")),
+        query_intervention.map(|v| format!("intervention={v}")),
         shows_alias_opt_out.then(|| "alias_expand=off".to_string()),
         filters.facility.as_deref().map(|v| format!("facility={v}")),
         filters.age.map(|v| format!("age={v}")),
