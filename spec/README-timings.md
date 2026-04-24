@@ -24,6 +24,12 @@ helper. The executable docs themselves call `tools/biomcp-ci`; `make spec` and
 | `spec/entity/drug.md` | drug canary for multi-region search, brand bridging, structured-indication truthfulness, and regulatory/target pivots |
 | `spec/entity/disease.md` | disease canary for MONDO grounding, synonym rescue, genes/diagnostics gating, funding, and executable pivots |
 | `spec/entity/protein.md` | protein canary for reviewed search defaults, UniProt identity, complexes/structures, and JSON follow-up contracts |
+| `spec/entity/pathway.md` | pathway canary for alias normalization, exact-title ranking, concise KEGG defaults, and source-aware section rejection |
+| `spec/entity/study.md` | study canary for local cBioPortal discovery, typed analytics validation, comparison summaries, and chart output |
+| `spec/entity/pgx.md` | pgx canary for gene/drug CPIC interaction search, opt-in recommendations, and population-frequency detail |
+| `spec/entity/phenotype.md` | phenotype canary for HPO/symptom inputs, similarity-ranked disease output, and typed disease follow-ups |
+| `spec/entity/diagnostic.md` | diagnostic canary for source-aware search, gene-first GTR guidance, compact discovery rows, and WHO detail paths |
+| `spec/entity/vaers.md` | vaers canary for vaccine-first CDC aggregation, aggregate-only reporting, and explicit source limitations/combined output |
 | `spec/surface/` | tracked scaffolding for later surface files; not an active behavior file in this bootstrap slice |
 
 ## Bash Mustmatch Lint Rule
