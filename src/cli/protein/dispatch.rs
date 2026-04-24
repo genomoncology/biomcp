@@ -9,12 +9,27 @@ pub(in crate::cli) async fn handle_get(
     let json_output = json || json_override;
     let protein = crate::entities::protein::get(&args.accession, &sections).await?;
     let text = if json_output {
-        crate::render::json::to_entity_json(
+        let evidence_urls = crate::render::markdown::protein_evidence_urls(&protein);
+        let next_commands = crate::render::markdown::related_protein(&protein, &sections);
+        let section_sources = crate::render::provenance::protein_section_sources(&protein);
+        let mut value = crate::render::json::to_entity_json_value(
             &protein,
-            crate::render::markdown::protein_evidence_urls(&protein),
-            crate::render::markdown::related_protein(&protein, &sections),
-            crate::render::provenance::protein_section_sources(&protein),
-        )?
+            evidence_urls,
+            next_commands,
+            section_sources,
+        )?;
+        let provenance_urls = value
+            .get("_meta")
+            .and_then(|meta| meta.get("evidence_urls"))
+            .cloned()
+            .unwrap_or_else(|| serde_json::Value::Array(Vec::new()));
+        if let Some(obj) = value.as_object_mut() {
+            obj.insert(
+                "_provenance".to_string(),
+                serde_json::json!({ "evidence_urls": provenance_urls }),
+            );
+        }
+        crate::render::json::to_pretty(&value)?
     } else {
         crate::render::markdown::protein_markdown(&protein, &sections)?
     };

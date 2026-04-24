@@ -367,10 +367,11 @@ the blocking timeout/profile.
 Repo-local `make spec` and `make spec-pr` use `pytest-xdist` with
 `-n auto --dist loadfile` over only `spec/entity/` and `spec/surface/`. The
 current active executable-spec corpus is `spec/entity/gene.md`,
-`spec/entity/variant.md`, and `spec/entity/article.md`, plus tracked
-`spec/surface/` scaffolding for later surface files. There is no separate
-`spec-smoke` target, no deselect inventory, and no serial numbered-file leg in
-the bootstrap v2 lane.
+`spec/entity/variant.md`, `spec/entity/article.md`, `spec/entity/trial.md`,
+`spec/entity/drug.md`, `spec/entity/disease.md`, and
+`spec/entity/protein.md`, plus tracked `spec/surface/` scaffolding for later
+surface files. There is no separate `spec-smoke` target, no deselect
+inventory, and no serial numbered-file leg in the bootstrap v2 lane.
 
 Use `spec/README-timings.md` as the current canary-lane audit/reference for the
 active files, wrapper/cache contract, and measured warm-cache expectations.

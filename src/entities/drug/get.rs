@@ -21,7 +21,7 @@ use super::metadata::{
     apply_openfda_metadata, fetch_shortage_entries, fetch_top_adverse_events,
     map_drugsfda_approvals,
 };
-use super::search::search_page;
+use super::search::{search_page, search_results_from_openfda_label_response};
 use super::targets::{enrich_indications, enrich_targets};
 use super::{
     DRUG_SECTION_ALL, DRUG_SECTION_APPROVALS, DRUG_SECTION_CIVIC, DRUG_SECTION_INDICATIONS,
@@ -191,9 +191,15 @@ struct ResolvedDrugBase {
     label_response: Option<serde_json::Value>,
 }
 
-static TRIAL_ALIAS_CACHE: OnceLock<Mutex<HashMap<String, Vec<String>>>> = OnceLock::new();
+#[derive(Clone)]
+struct TrialAliasResolution {
+    canonical_name: String,
+    aliases: Vec<String>,
+}
 
-fn trial_alias_cache() -> &'static Mutex<HashMap<String, Vec<String>>> {
+static TRIAL_ALIAS_CACHE: OnceLock<Mutex<HashMap<String, TrialAliasResolution>>> = OnceLock::new();
+
+fn trial_alias_cache() -> &'static Mutex<HashMap<String, TrialAliasResolution>> {
     TRIAL_ALIAS_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
@@ -260,7 +266,7 @@ fn build_trial_aliases(
     aliases
 }
 
-pub(crate) async fn resolve_trial_aliases(name: &str) -> Result<Vec<String>, BioMcpError> {
+async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResolution, BioMcpError> {
     let requested_name = name.trim();
     if requested_name.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -275,30 +281,53 @@ pub(crate) async fn resolve_trial_aliases(name: &str) -> Result<Vec<String>, Bio
         return Ok(cached.clone());
     }
 
-    let (aliases, cacheable) = match resolve_drug_base(requested_name, false, false).await {
+    let (resolution, cacheable) = match resolve_drug_base(requested_name, false, false).await {
         Ok(resolved) => (
-            build_trial_aliases(
-                requested_name,
-                Some(&resolved.drug.name),
-                &resolved.drug.brand_names,
-            ),
+            TrialAliasResolution {
+                canonical_name: resolved.drug.name.clone(),
+                aliases: build_trial_aliases(
+                    requested_name,
+                    Some(&resolved.drug.name),
+                    &resolved.drug.brand_names,
+                ),
+            },
             true,
         ),
-        Err(BioMcpError::NotFound { .. }) => (vec![requested_name.to_string()], true),
+        Err(BioMcpError::NotFound { .. }) => (
+            TrialAliasResolution {
+                canonical_name: requested_name.to_string(),
+                aliases: vec![requested_name.to_string()],
+            },
+            true,
+        ),
         Err(err) => {
             warn!(
                 drug = %requested_name,
                 "Drug alias lookup unavailable for trial search: {err}"
             );
-            (vec![requested_name.to_string()], false)
+            (
+                TrialAliasResolution {
+                    canonical_name: requested_name.to_string(),
+                    aliases: vec![requested_name.to_string()],
+                },
+                false,
+            )
         }
     };
 
     if cacheable && let Ok(mut cache) = trial_alias_cache().lock() {
-        cache.insert(cache_key, aliases.clone());
+        cache.insert(cache_key, resolution.clone());
     }
 
-    Ok(aliases)
+    Ok(resolution)
+}
+
+pub(crate) async fn resolve_trial_aliases(name: &str) -> Result<Vec<String>, BioMcpError> {
+    Ok(resolve_trial_alias_resolution(name).await?.aliases)
+}
+
+pub(crate) async fn resolve_trial_canonical_name(name: &str) -> Result<String, BioMcpError> {
+    Ok(resolve_trial_alias_resolution(name).await?.canonical_name)
 }
 
 async fn resolve_drug_base(
@@ -361,8 +390,26 @@ async fn resolve_drug_base(
         }
     }
 
-    let selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+    let mut selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
     let mut drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
+    let needs_canonical_fallback =
+        drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none();
+    if needs_canonical_fallback
+        && let Ok(client) = OpenFdaClient::new()
+        && let Ok(Some(label_response)) = client.label_search(name).await
+        && let Some(candidate) =
+            search_results_from_openfda_label_response(&label_response, name, 1)
+                .into_iter()
+                .next()
+        && !candidate.name.eq_ignore_ascii_case(name)
+        && let Ok(fallback_resp) = direct_drug_lookup(&candidate.name).await
+        && !fallback_resp.hits.is_empty()
+    {
+        lookup_name = candidate.name;
+        resp = fallback_resp;
+        selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+        drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
+    }
 
     let mut label_response_opt: Option<serde_json::Value> = None;
     if fetch_label_response {

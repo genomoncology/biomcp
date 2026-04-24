@@ -271,8 +271,10 @@ from the current output.
 - This guidance is data-driven. `related_*()` helpers only emit commands when
   the supporting data or capability exists for the current record and runtime.
 - Representative proof lives in `spec/entity/gene.md`,
-  `spec/entity/variant.md`, and `spec/entity/article.md`, plus the sidecar
-  contract tests in `tests/test_skill_prompt_contract.py` and the parser-level
+  `spec/entity/variant.md`, `spec/entity/article.md`, `spec/entity/trial.md`,
+  `spec/entity/drug.md`, `spec/entity/disease.md`, and
+  `spec/entity/protein.md`, plus the sidecar contract tests in
+  `tests/test_skill_prompt_contract.py` and the parser-level
   `next_commands_validity` tests in `src/cli/tests/`.
 
 ## Skills Quick Reference

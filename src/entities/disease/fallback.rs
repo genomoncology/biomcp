@@ -61,6 +61,11 @@ fn is_generic_disease_label(value: &str) -> bool {
 }
 
 fn contains_all_query_tokens(query_tokens: &[String], haystacks: &[String]) -> bool {
+    const GENERIC: &[&str] = &["disease", "disorder", "syndrome", "condition"];
+    let query_tokens = query_tokens
+        .iter()
+        .filter(|token| !GENERIC.iter().any(|generic| *token == generic))
+        .collect::<Vec<_>>();
     if query_tokens.is_empty() {
         return false;
     }

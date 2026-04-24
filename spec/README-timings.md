@@ -20,6 +20,10 @@ helper. The executable docs themselves call `tools/biomcp-ci`; `make spec` and
 | `spec/entity/gene.md` | gene search/get canary for identity, tissue-expression context, druggability, and funding/diagnostics pivots |
 | `spec/entity/variant.md` | variant canary for gene-scoped search, protein-filter normalization, residue aliases, and clinical/population context |
 | `spec/entity/article.md` | article canary for typed vs keyword search, source-aware result structure, annotations, and fulltext fallback |
+| `spec/entity/trial.md` | trial canary for condition/status search, alias normalization, age-count transparency, and eligibility/location detail |
+| `spec/entity/drug.md` | drug canary for multi-region search, brand bridging, structured-indication truthfulness, and regulatory/target pivots |
+| `spec/entity/disease.md` | disease canary for MONDO grounding, synonym rescue, genes/diagnostics gating, funding, and executable pivots |
+| `spec/entity/protein.md` | protein canary for reviewed search defaults, UniProt identity, complexes/structures, and JSON follow-up contracts |
 | `spec/surface/` | tracked scaffolding for later surface files; not an active behavior file in this bootstrap slice |
 
 ## Bash Mustmatch Lint Rule

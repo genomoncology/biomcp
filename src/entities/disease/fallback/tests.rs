@@ -89,6 +89,19 @@ fn fallback_rows_dedupe_by_resolved_disease_id() {
     assert_eq!(deduped[0].source_id.as_deref(), Some("MESH:D001139"));
 }
 
+#[test]
+fn contains_all_query_tokens_ignores_generic_suffix_terms() {
+    let query_tokens = normalize_disease_text("Arnold Chiari syndrome")
+        .split_whitespace()
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+
+    assert!(contains_all_query_tokens(
+        &query_tokens,
+        &["Arnold-Chiari malformation".to_string()]
+    ));
+}
+
 #[tokio::test]
 async fn fallback_search_page_swallows_discover_errors() {
     let candidates = rank_disease_fallback_candidates(

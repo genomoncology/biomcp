@@ -200,3 +200,21 @@ async fn resolve_trial_aliases_retries_after_transient_lookup_failure() {
         vec![requested.to_string(), "RMC-6236".to_string()]
     );
 }
+
+#[tokio::test]
+async fn resolve_trial_canonical_name_keeps_generic_requests_canonical() {
+    let _env_lock = crate::test_support::env_lock().lock().await;
+    let requested = "pembrolizumab";
+
+    let success = MockServer::start().await;
+    mount_trial_alias_lookup(&success, requested, requested, &["Keytruda"]).await;
+
+    let success_base = format!("{}/v1", success.uri());
+    let _success_env = set_env_var("BIOMCP_MYCHEM_BASE", Some(&success_base));
+    assert_eq!(
+        resolve_trial_canonical_name(requested)
+            .await
+            .expect("resolved canonical trial name"),
+        requested
+    );
+}

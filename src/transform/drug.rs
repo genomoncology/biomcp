@@ -415,7 +415,10 @@ pub fn select_hits_for_name<'a>(hits: &'a [MyChemHit], name: &str) -> Vec<&'a My
 }
 
 pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
-    let mut name = normalize_name(requested_name);
+    let mut name = hits
+        .iter()
+        .find_map(|hit| best_name_from_hit(hit))
+        .unwrap_or_else(|| normalize_name(requested_name));
     let mut drugbank_id: Option<String> = None;
     let mut chembl_id: Option<String> = None;
     let mut unii: Option<String> = None;
@@ -829,5 +832,21 @@ mod tests {
         let selected = select_hits_for_name(&hits, "keytruda");
         assert_eq!(selected.len(), 1);
         assert_eq!(selected[0].id, "brand-hit");
+    }
+
+    #[test]
+    fn merge_mychem_hits_prefers_canonical_name_from_brand_hit() {
+        let keytruda: MyChemHit = serde_json::from_value(serde_json::json!({
+            "_id": "brand-hit",
+            "_score": 10.0,
+            "openfda": {
+                "brand_name": "Keytruda",
+                "generic_name": "pembrolizumab"
+            }
+        }))
+        .expect("valid brand hit");
+
+        let drug = merge_mychem_hits(&[&keytruda], "keytruda");
+        assert_eq!(drug.name, "pembrolizumab");
     }
 }
