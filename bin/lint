@@ -93,6 +93,7 @@ check_tbd() {
 
   while IFS= read -r file; do
     is_tbd_target "$file" || continue
+    [ -f "$file" ] || continue
     local comment_re
     comment_re="$(comment_pattern_for "$file")"
 

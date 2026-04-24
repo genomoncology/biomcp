@@ -322,9 +322,29 @@ def test_article_fulltext_architecture_doc_is_current_state() -> None:
         "`templates/article.md.j2`",
         "`src/render/provenance.rs`",
         "`src/utils/download.rs`",
-        "`spec/18-source-labels.md::Article Fulltext Resolver Order`",
+        "`spec/entity/article.md`",
     ):
         assert phrase in article_ws
+
+
+def test_live_docs_do_not_reference_deleted_numbered_specs() -> None:
+    deleted_spec_ref = re.compile(r"spec/\d{2}-[a-z0-9-]+\.md")
+    live_docs = (
+        "architecture/technical/overview.md",
+        "architecture/technical/article-fulltext-markdown.md",
+        "architecture/functional/article-fulltext.md",
+        "architecture/functional/diagnostic.md",
+        "architecture/functional/clinical-features-port.md",
+        "architecture/ux/cli-reference.md",
+    )
+
+    stale_refs: list[str] = []
+    for path in live_docs:
+        matches = sorted(set(deleted_spec_ref.findall(_read_repo(path))))
+        if matches:
+            stale_refs.append(f"{path}: {', '.join(matches)}")
+
+    assert not stale_refs, "\n".join(stale_refs)
 
 
 def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> None:
@@ -549,17 +569,16 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "`uv run mkdocs build --strict`)" in technical_ws
     )
     assert (
-        "`spec-stable` (`cargo build --release --locked`, then `make spec-pr`)"
+        "`spec-stable` (release build, spec-cache metadata/restore, then `make spec-pr`)"
         in technical_ws
     )
     assert (
         "PR CI runs `make spec-pr` via the `spec-stable` job in `.github/workflows/ci.yml`"
         in technical_ws
     )
-    assert (
-        "Volatile live-network headings run separately in `.github/workflows/spec-smoke.yml`"
-        in technical_ws
-    )
+    assert "reads `Cargo.toml` via Python `tomllib`" in technical_ws
+    assert "exports `BIOMCP_SPEC_CACHE_HIT=1` only on cache hits" in technical_ws
+    assert ".github/workflows/spec-smoke.yml" not in technical_ws
     assert (
         "Contract smoke checks run in `.github/workflows/contracts.yml`" in technical_ws
     )
@@ -791,7 +810,6 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     drug_get = _read_repo("src/entities/drug/get.rs")
     ema_source = _read_repo("src/sources/ema.rs")
     health = _read_repo("src/cli/health.rs")
-    drug_spec = _read_repo("spec/05-drug.md")
     bioasq_reference_ws = _normalize_ws(bioasq_reference)
     cli_reference_guide_ws = _normalize_ws(cli_reference_guide)
     section_first_section = _normalize_ws(
@@ -929,7 +947,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`src/cli/list_reference.md`" in modifier_section
     assert "`docs/user-guide/cli-reference.md`" in modifier_section
     assert "`docs/user-guide/drug.md`" in modifier_section
-    assert "`spec/05-drug.md`" in modifier_section
+    assert "owning canary or surface spec" in modifier_section
     assert (
         "Runtime validation belongs in the owning entity or CLI path"
         in modifier_section
@@ -966,7 +984,6 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
         "For `get drug`, use `--region` only with `regulatory`, `safety`, `shortage`, or `all`"
         in cli_reference_guide_ws
     )
-    assert "get drug <name> regulatory [--region <us|eu|who|all>]" in drug_spec
     assert "--region is not supported with approvals." in drug_get
     assert (
         "--region can only be used with regulatory, safety, shortage, or all."
@@ -1012,7 +1029,7 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     ci = _read_repo(".github/workflows/ci.yml")
     release = _read_repo(".github/workflows/release.yml")
     contracts_smoke = _read_repo(".github/workflows/contracts.yml")
-    spec_smoke = _read_repo(".github/workflows/spec-smoke.yml")
+    spec_smoke = REPO_ROOT / ".github/workflows/spec-smoke.yml"
     expected_ci_contract_runs = [
         "cargo build --release --locked",
         "uv sync --extra dev",
@@ -1030,22 +1047,36 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     ci_version_sync = _workflow_job_block(ci, "version-sync")
     ci_climb_hygiene = _workflow_job_block(ci, "climb-hygiene")
     release_validate = _workflow_job_block(release, "validate")
-    smoke_spec = _workflow_job_block(spec_smoke, "spec-volatile-live")
 
     assert 'python-version: "3.12"' in ci_contracts
     assert 'python-version: "3.12"' in ci_spec
     assert 'python-version: "3.12"' in release_validate
-    assert 'python-version: "3.12"' in smoke_spec
+    assert not spec_smoke.exists()
     assert _workflow_run_steps(ci_contracts) == expected_ci_contract_runs
     assert "- uses: actions/checkout@v4" in ci_spec
     assert "uses: arduino/setup-protoc@v3" in ci_spec
     assert "uses: dtolnay/rust-toolchain@stable" in ci_spec
     assert "uses: actions/setup-python@v5" in ci_spec
     assert "uses: astral-sh/setup-uv@v4" in ci_spec
-    assert _workflow_run_steps(ci_spec) == [
+    ci_spec_runs = _workflow_run_steps(ci_spec)
+    assert ci_spec_runs[-2:] == [
         "cargo build --release --locked",
         "make spec-pr",
     ]
+    assert "id: spec-cache-meta" in ci_spec
+    assert "import tomllib" in ci_spec
+    assert "Cargo.toml" in ci_spec
+    assert "biomcp-version" in ci_spec
+    assert "spec-cache-schema-version" in ci_spec
+    assert "id: spec-cache" in ci_spec
+    assert "uses: actions/cache@v4" in ci_spec
+    assert "path: .cache/biomcp-specs/" in ci_spec
+    assert (
+        "spec-http-${{ runner.os }}-${{ steps.spec-cache-meta.outputs.biomcp-version }}"
+        "-${{ steps.spec-cache-meta.outputs.spec-cache-schema-version }}"
+    ) in ci_spec
+    assert "if: steps.spec-cache.outputs.cache-hit == 'true'" in ci_spec
+    assert "BIOMCP_SPEC_CACHE_HIT=1" in ci_spec
     assert _workflow_run_steps(release_validate)[-3:] == expected_release_contract_runs
     assert "- uses: actions/checkout@v4" in ci_version_sync
     assert _workflow_run_steps(ci_version_sync) == [
@@ -1082,85 +1113,22 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     assert "continue-on-error: true" in contracts_smoke
     assert "- run: bash scripts/contract-smoke.sh" in contracts_smoke
 
-    assert "name: Spec smoke (volatile live-network)" in spec_smoke
-    assert 'cron: "0 7 * * *"' in spec_smoke
-    assert "workflow_dispatch:" in spec_smoke
-    assert "- uses: actions/checkout@v4" in smoke_spec
-    assert "uses: arduino/setup-protoc@v3" in smoke_spec
-    assert "uses: dtolnay/rust-toolchain@stable" in smoke_spec
-    assert "uses: actions/setup-python@v5" in smoke_spec
-    assert "uses: astral-sh/setup-uv@v4" in smoke_spec
-    assert _workflow_run_steps(smoke_spec) == [
-        "cargo build --release --locked",
-        "make spec",
-    ]
-
 
 def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     makefile = _read_repo("Makefile")
-    targeted_smoke_section_ids = [
-        "spec/06-article.md::Getting Article Details",
-        "spec/06-article.md::Article Batch",
-        "spec/06-article.md::Article Query Echo Surfaces Explicit Max-Per-Source Overrides",
-        "spec/06-article.md::Article Search Gene Keyword Pivot",
-        "spec/06-article.md::Article Search Drug Keyword Pivot",
-        "spec/06-article.md::Article Search Discover Keyword Pivot",
-        "spec/09-search-all.md::Debug Plan",
-        "spec/09-search-all.md::Distinct Disease And Keyword Stay Separate",
-        "spec/17-cross-entity-pivots.md::Gene to Articles",
-        "spec/17-cross-entity-pivots.md::Variant pivots",
-    ]
-
     assert (
-        ".PHONY: build test lint check check-quality-ratchet release-gate run clean spec spec-pr spec-smoke validate-skills test-contracts install"
+        ".PHONY: build test lint check check-quality-ratchet release-gate run clean spec spec-pr validate-skills test-contracts install"
         in makefile
     )
-    assert "Volatile live-network spec headings." in makefile
-    assert (
-        "PR gate: repo-local checks plus live-backed headings that have been stable"
-        in makefile
-    )
-    assert (
-        "Smoke lane: `search article`, `gene articles`, `variant articles`," in makefile
-    )
-    assert (
-        "To move a heading into the smoke lane, add its stable section ID" in makefile
-    )
-    assert "SPEC_PR_DESELECT_ARGS stores PR-lane deselects." in makefile
-    assert "SPEC_SMOKE_ARGS stores" in makefile
-    assert "stable targeted smoke section IDs" in makefile
-    assert "resolves to current" in makefile
-    assert "mustmatch pytest item IDs at runtime" in makefile
-    assert "SPEC_PR_DESELECT_ARGS = \\" in makefile
-    for node_id in [
-        "spec/02-gene.md::Gene to Articles",
-        "spec/03-variant.md::Variant to Articles",
-        "spec/06-article.md::Searching by Gene",
-        "spec/06-article.md::Searching by Keyword",
-        "spec/06-article.md::Sort Behavior",
-        "spec/07-disease.md::Disease to Articles",
-        *targeted_smoke_section_ids,
-    ]:
-        assert f'--deselect "{node_id}"' in makefile
-    spec_smoke_match = re.search(
-        r"^SPEC_SMOKE_ARGS = \\\n(.*?)\n\nSPEC_SERIAL_FILES",
-        makefile,
-        flags=re.MULTILINE | re.DOTALL,
-    )
-    assert spec_smoke_match is not None
-    assert (
-        re.findall(
-            r'^\t"([^"]+)"(?: \\)?$', spec_smoke_match.group(1), flags=re.MULTILINE
-        )
-        == targeted_smoke_section_ids
-    )
-    assert " (line " not in spec_smoke_match.group(1)
-    assert " [bash]" not in spec_smoke_match.group(1)
-    assert (
-        "SPEC_SERIAL_FILES = spec/05-drug.md spec/13-study.md "
-        "spec/21-cross-entity-see-also.md"
-    ) in makefile
+    assert "SPEC_PR_DESELECT_ARGS" not in makefile
+    assert "SPEC_SMOKE_ARGS" not in makefile
+    assert "SPEC_SERIAL_FILES" not in makefile
+    assert "spec-smoke:" not in makefile
     assert "SPEC_XDIST_ARGS = -n auto --dist loadfile" in makefile
+    assert "XDG_CACHE_HOME" not in makefile
+    assert "XDG_CONFIG_HOME" not in makefile
+    assert "BIOMCP_CACHE_DIR" not in makefile
+    assert "RUST_LOG=error" not in makefile
     assert re.search(r"^test:\n\tcargo nextest run$", makefile, flags=re.MULTILINE)
     assert re.search(
         r"^check: lint test test-contracts check-quality-ratchet$",
@@ -1178,36 +1146,18 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     )
     assert re.search(
         r"^spec:\n"
-        r"\tXDG_CACHE_HOME=\"\$\(CURDIR\)/\.cache\" PATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" RUST_LOG=error \\\n"
-        r"\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" pytest spec/ --mustmatch-lang bash --mustmatch-timeout 120 -v \$\(SPEC_XDIST_ARGS\) --ignore spec/05-drug\.md --ignore spec/13-study\.md --ignore spec/21-cross-entity-see-also\.md'\n"
-        r"\tXDG_CACHE_HOME=\"\$\(CURDIR\)/\.cache\" PATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" RUST_LOG=error \\\n"
-        r"\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" pytest \$\(SPEC_SERIAL_FILES\) --mustmatch-lang bash --mustmatch-timeout 120 -v'$",
+        r"\tPATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" \\\n"
+        r"\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" pytest spec/entity/ spec/surface/ --mustmatch-lang bash --mustmatch-timeout 120 -v \$\(SPEC_XDIST_ARGS\)'$",
         makefile,
         flags=re.MULTILINE,
     )
     assert re.search(
         r"^spec-pr:\n"
-        r"\tXDG_CACHE_HOME=\"\$\(CURDIR\)/\.cache\" PATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" RUST_LOG=error \\\n"
-        r"\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" pytest spec/ --mustmatch-lang bash --mustmatch-timeout 180 -v \$\(SPEC_XDIST_ARGS\) \$\(SPEC_PR_DESELECT_ARGS\) --ignore spec/05-drug\.md --ignore spec/13-study\.md --ignore spec/21-cross-entity-see-also\.md'\n"
-        r"\tXDG_CACHE_HOME=\"\$\(CURDIR\)/\.cache\" PATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" RUST_LOG=error \\\n"
-        r"\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" pytest \$\(SPEC_SERIAL_FILES\) --mustmatch-lang bash --mustmatch-timeout 180 -v'$",
+        r"\tPATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" \\\n"
+        r"\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" pytest spec/entity/ spec/surface/ --mustmatch-lang bash --mustmatch-timeout 180 -v \$\(SPEC_XDIST_ARGS\)'$",
         makefile,
         flags=re.MULTILINE,
     )
-    spec_smoke_target = re.search(
-        r"^spec-smoke:\n"
-        r"\tXDG_CACHE_HOME=\"\$\(CURDIR\)/\.cache\" PATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" RUST_LOG=error \\\n"
-        r"\t\tuv run --extra dev bash -lc 'set -euo pipefail; export PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\"; export BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\"; resolved_args=\"\$\$\(python tools/spec_smoke_args\.py --root-dir \"\$\(CURDIR\)\" --makefile \"\$\(CURDIR\)/Makefile\" --makefile-variable SPEC_SMOKE_ARGS\)\"; if \[\[ -z \"\$\$resolved_args\" \]\]; then echo \"SPEC_SMOKE_ARGS resolved to no pytest targets\" >&2; exit 1; fi; mapfile -t spec_smoke_args <<< \"\$\$resolved_args\"; pytest \"\$\${spec_smoke_args\[@\]}\" --mustmatch-lang bash --mustmatch-timeout 120 -v'$",
-        makefile,
-        flags=re.MULTILINE,
-    )
-    assert spec_smoke_target is not None
-    assert "$(SPEC_XDIST_ARGS)" not in spec_smoke_target.group(0)
-    assert "-n auto" not in spec_smoke_target.group(0)
-    assert "$(SPEC_SMOKE_ARGS)" not in spec_smoke_target.group(0)
-    assert "tools/spec_smoke_args.py" in spec_smoke_target.group(0)
-    assert "mapfile -t spec_smoke_args" in spec_smoke_target.group(0)
-    assert "eval" not in spec_smoke_target.group(0)
     assert re.search(
         r"^test-contracts:\n"
         r"\tcargo build --release --locked\n"
@@ -1217,6 +1167,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         makefile,
         flags=re.MULTILINE,
     )
+    assert not (REPO_ROOT / "tools" / "spec_smoke_args.py").exists()
 
 
 def test_repo_local_parallel_test_contract_is_documented() -> None:
@@ -1238,16 +1189,14 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`make test` uses `cargo nextest run`." in contributing_ws
     assert "`make check` now runs `lint`, `test`, `test-contracts`, and `check-quality-ratchet`" in contributing_ws
     assert "`make release-gate` is the single release-readiness command" in contributing_ws
-    assert "`make spec` and `make spec-pr` use `pytest-xdist`" in contributing_ws
-    assert "`make spec-smoke` resolves the ten stable targeted smoke" in contributing_ws
     assert (
-        "section IDs in `SPEC_SMOKE_ARGS` to current mustmatch pytest item IDs"
+        "`make spec` and `make spec-pr` both run the active canary tree under `spec/entity/` and `spec/surface/`"
         in contributing_ws
     )
-    assert (
-        "`spec/05-drug.md`, `spec/13-study.md`, and `spec/21-cross-entity-see-also.md` stay serial"
-        in contributing_ws
-    )
+    assert "`tools/biomcp-ci`" in contributing_ws
+    assert "`.cache/biomcp-specs/`" in contributing_ws
+    assert "`BIOMCP_SPEC_CACHE_HIT=1`" in contributing_ws
+    assert "`make spec-smoke`" not in contributing_ws
     assert "beelink" in contributing
     assert "2026-04-23" in contributing
     assert "/usr/bin/time -p" in contributing
@@ -1267,20 +1216,15 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`make release-gate`" in runbook_ws
     assert "`cargo nextest run`" in runbook_ws
     assert "`make spec-pr`" in runbook_ws
-    assert "`make spec-smoke`" in runbook_ws
+    assert "`make spec`" in runbook_ws
     assert "`pytest-xdist`" in runbook_ws
     assert "single release-readiness signal" in runbook_ws
     assert "`make check` followed by `make spec-pr`" in runbook_ws
     assert "`-n auto --dist loadfile`" in runbook_ws
-    assert "ten stable smoke section IDs in `SPEC_SMOKE_ARGS`" in runbook_ws
-    assert (
-        "resolves those IDs to current mustmatch pytest item IDs at runtime"
-        in runbook_ws
-    )
-    assert (
-        "`spec/05-drug.md`, `spec/13-study.md`, and `spec/21-cross-entity-see-also.md`"
-        in runbook_ws
-    )
+    assert "`tools/biomcp-ci`" in runbook_ws
+    assert "`.cache/biomcp-specs/`" in runbook_ws
+    assert "`BIOMCP_SPEC_CACHE_HIT=1`" in runbook_ws
+    assert "`make spec-smoke`" not in runbook_ws
 
     assert "`make check` now includes the release-critical Python/docs contract lane" in readme_source
     assert "`make release-gate` is the full release-readiness command" in readme_source
@@ -1288,14 +1232,12 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`cargo test`" in technical_gate_section
     assert "`make release-gate`" in technical_gate_section
     assert "`pytest-xdist` with `-n auto --dist loadfile`" in technical_spec_section
-    assert "`make spec-smoke`" in technical_spec_section
-    assert "serial targeted local rerun" in technical_spec_section
-    assert "ten stable smoke section IDs in `SPEC_SMOKE_ARGS`" in technical_spec_section
-    assert "resolves stable targeted smoke section IDs" in technical_spec_section
-    assert (
-        "`spec/05-drug.md`, `spec/13-study.md`, and `spec/21-cross-entity-see-also.md`"
-        in technical_spec_section
-    )
+    assert "`spec/entity/` and `spec/surface/`" in technical_spec_section
+    assert "`spec/entity/gene.md`" in technical_spec_section
+    assert "`spec/entity/variant.md`" in technical_spec_section
+    assert "`spec/entity/article.md`" in technical_spec_section
+    assert "`tools/biomcp-ci`" in technical_spec_section
+    assert "`make spec-smoke`" not in technical_spec_section
 
 
 def test_spec_lane_timing_report_is_documented_and_aligned_with_makefile() -> None:
@@ -1304,94 +1246,56 @@ def test_spec_lane_timing_report_is_documented_and_aligned_with_makefile() -> No
     runbook = _read_repo("RUN.md")
     technical = _read_repo("architecture/technical/overview.md")
 
-    lane_split_section = _normalize_ws(_markdown_section(report, "Spec Lane Split"))
+    lane_contract_section = _normalize_ws(_markdown_section(report, "Canary Lane Contract"))
+    active_corpus_section = _markdown_section(report, "Active Corpus")
     audit_method_section = _normalize_ws(_markdown_section(report, "Audit Method"))
-    timing_audit_section = _markdown_section(report, "spec-pr Timing Audit")
-    smoke_only_section = _markdown_section(
-        report, "Smoke-Only Headings (SPEC_PR_DESELECT_ARGS)"
-    )
-    timing_audit_rows = _markdown_table_rows(timing_audit_section)
-    smoke_only_rows = _markdown_table_rows(smoke_only_section)
+    warm_timing_section = _normalize_ws(_markdown_section(report, "Warm Timing Record"))
+    active_corpus_rows = _markdown_table_rows(active_corpus_section)
     runbook_spec_section = _normalize_ws(_markdown_section(runbook, "Spec Suite"))
     technical_spec_section = _normalize_ws(
         _markdown_section(technical, "2. Spec Suite (`spec/`)", level=3)
     )
 
     for heading in (
-        "## Spec Lane Split",
+        "## Canary Lane Contract",
+        "## Active Corpus",
         "## Audit Method",
-        "## spec-pr Timing Audit",
-        "## Smoke-Only Headings (SPEC_PR_DESELECT_ARGS)",
+        "## Warm Timing Record",
     ):
         assert heading in report
 
     for marker in (
         "`make spec-pr`",
         "`make spec`",
-        "`make spec-smoke`",
         "`make test-contracts`",
+        "`tools/biomcp-ci`",
     ):
-        assert marker in lane_split_section
-    assert "First-pass" in audit_method_section
-    assert "Warm-pass" in audit_method_section
-    assert (
-        "| File | Heading | First-pass Time | First-pass Result | Warm-pass Time | Warm-pass Result | Category | Disposition | Rationale |"
-        in report
-    )
-    assert timing_audit_rows[0] == [
-        "File",
-        "Heading",
-        "First-pass Time",
-        "First-pass Result",
-        "Warm-pass Time",
-        "Warm-pass Result",
-        "Category",
-        "Disposition",
-        "Rationale",
+        assert marker in report
+    assert "`make spec-smoke`" not in report
+    assert "Smoke-Only Headings" not in report
+    assert "spec/entity/" in lane_contract_section
+    assert "spec/surface/" in lane_contract_section
+    assert ".cache/biomcp-specs/" in lane_contract_section
+    assert "`BIOMCP_SPEC_CACHE_HIT=1`" in lane_contract_section
+    assert "spec-http-${runner.os}-${biomcp-version}-${spec-cache-schema-version}" in audit_method_section
+    assert "`spec-only` validation-profile comment" in warm_timing_section
+    assert active_corpus_rows[0] == ["Path", "Purpose"]
+    assert [row[0] for row in active_corpus_rows[1:]] == [
+        "`spec/entity/gene.md`",
+        "`spec/entity/variant.md`",
+        "`spec/entity/article.md`",
+        "`spec/surface/`",
     ]
-    assert smoke_only_rows[0] == ["Node ID", "Reason"]
-
-    deselected_node_ids = re.findall(r'--deselect "([^"]+)"', makefile)
-    assert deselected_node_ids
-    reported_node_ids = [row[0].strip("`") for row in smoke_only_rows[1:]]
-    assert reported_node_ids
-    assert len(reported_node_ids) == len(set(reported_node_ids))
-    assert set(reported_node_ids) == set(deselected_node_ids)
-
-    for row in timing_audit_rows[1:]:
-        first_pass_time = row[2].strip("`")
-        first_pass_result = row[3]
-        warm_pass_time = row[4].strip("`")
-        warm_pass_result = row[5]
-        category = row[6]
-
-        if first_pass_result == "passed":
-            assert re.fullmatch(r"\d+\.\d+s", first_pass_time)
-        if warm_pass_result == "passed":
-            assert re.fullmatch(r"\d+\.\d+s", warm_pass_time)
-        if category == "gated":
-            assert first_pass_result == "skipped"
-            assert warm_pass_result == "skipped"
 
     assert "spec/README-timings.md" in runbook_spec_section
-    assert "`make spec-smoke`" in runbook_spec_section
-    assert (
-        "stable targeted smoke section IDs in `SPEC_SMOKE_ARGS`" in runbook_spec_section
-    )
-    assert "resolve to collectable mustmatch pytest items" in runbook_spec_section
+    assert "`tools/biomcp-ci`" in runbook_spec_section
+    assert "`make spec-smoke`" not in runbook_spec_section
     assert "spec/README-timings.md" in technical_spec_section
-    assert "`make spec-smoke`" in technical_spec_section
-    assert "stable targeted smoke section IDs" in technical_spec_section
-    assert "resolve to collectable mustmatch pytest items" in technical_spec_section
-    assert any(
-        row[0] == "`spec/18-source-labels.md`"
-        and row[1] == "`Article Fulltext Resolver Order`"
-        and row[7] == "keep in spec-pr"
-        for row in timing_audit_rows[1:]
-    )
-    assert "`spec/18-source-labels.md::Article Fulltext Resolver Order`" not in (
-        row[0] for row in smoke_only_rows[1:]
-    )
+    assert "`tools/biomcp-ci`" in technical_spec_section
+    assert "`make spec-smoke`" not in technical_spec_section
+    assert "SPEC_PR_DESELECT_ARGS" not in report
+    assert "SPEC_SMOKE_ARGS" not in report
+    assert "pytest spec/entity/ spec/surface/" in makefile
 
 
 def test_parallel_test_dependency_contract_is_declared() -> None:
@@ -1565,12 +1469,17 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
         "| `preflight` | `cargo check --all-targets` | `kickoff` |",
         "| `baseline` | `cargo check --all-targets` | declared, not assigned |",
         "| `focused` | `cargo test --lib && cargo clippy --lib --tests -- -D warnings` | `03-code`, `04-code-review` |",
+        "| `spec-only` | `make spec-pr` | declared for follow-on spec-v2 rewrite slices |",
         "| `full-blocking` | `make release-gate` | `05-verify` |",
         "| `full-contracts` | `make release-gate` | declared, not assigned |",
     ):
         assert row in ci_gate_section
     assert (
-        "`full-blocking` deliberately uses `make release-gate`, which expands to `make check` plus `make spec-pr`, not full `make spec`"
+        "`full-blocking` deliberately uses `make release-gate`, which expands to `make check` plus `make spec-pr`"
+        in ci_gate_section
+    )
+    assert (
+        "`spec-only` is declared for the follow-on spec-v2 rewrite slices"
         in ci_gate_section
     )
     assert (

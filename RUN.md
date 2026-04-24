@@ -113,14 +113,18 @@ Its `lint` phase runs both `cargo deny check licenses` and
 `cargo deny check advisories`, and its `test` phase shells out to
 `cargo nextest run`. Use `make release-gate` for the single release-readiness
 signal; it runs `make check` followed by `make spec-pr`. Use `make spec-pr` for
-the stable PR-blocking spec lane by itself; it runs `pytest-xdist` with
-`-n auto --dist loadfile` for the parallel-safe bulk, then runs
-`spec/05-drug.md`, `spec/13-study.md`, and
-`spec/21-cross-entity-see-also.md` serially because those files share
-repo-global local-data fixtures. Use `make spec-smoke` as a targeted local
-rerun for the ten stable smoke section IDs in `SPEC_SMOKE_ARGS`; it resolves
-those IDs to current mustmatch pytest item IDs at runtime, runs serially with a
-120s mustmatch timeout, and is not a required PR gate. Use `make test-contracts`
+the single PR-blocking executable-spec lane by itself; it runs the active
+canary tree under `spec/entity/` and `spec/surface/` with `pytest-xdist`
+(`-n auto --dist loadfile`) and the longer mustmatch timeout. `make spec` runs
+the same tree with the shorter local timeout for repo-local canary reruns.
+
+The executable docs do not hand-roll env setup inside bash blocks anymore.
+`tools/biomcp-ci` is the only spec runner seam: it resolves the repo root from
+its own path, points `BIOMCP_CACHE_DIR` and `XDG_*` under
+`.cache/biomcp-specs/`, defaults `RUST_LOG=error`, unsets optional auth keys,
+and only forces `BIOMCP_CACHE_MODE=infinite` when CI restored a warm cache and
+exported `BIOMCP_SPEC_CACHE_HIT=1`. Cold runs leave `BIOMCP_CACHE_MODE`
+untouched so the shared cache can refill naturally. Use `make test-contracts`
 to rerun just the Python/docs contract lane. Repo-root Ruff still runs through
 `bin/lint`, but `pyproject.toml` excludes `architecture/experiments/**` so
 scratch experiment scripts do not block the production Python lint gate. Use
@@ -157,20 +161,20 @@ See `docs/reference/mcp-server.md` for the documented MCP surface.
 
 ```bash
 make spec
-make spec-smoke
+make spec-pr
 ```
 
-`make spec` and `make spec-pr` use `pytest-xdist` with `-n auto --dist loadfile`
-for the parallel-safe bulk, then run
-`spec/05-drug.md`, `spec/13-study.md`, and `spec/21-cross-entity-see-also.md`
-serially because those files share repo-global local-data fixtures. `make
-spec-smoke` resolves the ten stable targeted smoke section IDs in
-`SPEC_SMOKE_ARGS` to current mustmatch pytest item IDs, then runs them serially
-with the longer 120s mustmatch timeout.
-Use `spec/README-timings.md` as the current per-heading audit and the source of
-truth for which headings stay smoke-only via `SPEC_PR_DESELECT_ARGS`; the
-ratchet also checks that scanned `SPEC_SMOKE_ARGS` entries resolve to
-collectable mustmatch pytest items.
+`make spec` and `make spec-pr` both run the active spec-v2 canary tree:
+`spec/entity/` plus tracked `spec/surface/` scaffolding for follow-on surface
+files. The current active canaries are `spec/entity/gene.md`,
+`spec/entity/variant.md`, and `spec/entity/article.md`. Every bash block in
+that tree should call `tools/biomcp-ci`, which owns release-binary resolution,
+repo-owned cache roots, optional-key stripping, and warm-cache replay on CI
+cache hits.
+
+Use `spec/README-timings.md` as the current canary-lane audit/reference for the
+active corpus, the wrapper/cache contract, and warm-cache expectations for the
+blocking lane.
 
 When running repo-local checks through `uv run`, make sure `target/release` is
 ahead of `.venv/bin` on `PATH` or refresh the editable install with

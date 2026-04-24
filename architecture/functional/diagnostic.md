@@ -133,8 +133,8 @@ tiebreak, and pagination. It is not a relevance-ranked best match,
 exact-disease boost, preferred-source result, or confidence-ranked row.
 
 Disease diagnostic cards remain summary-sized. The disease pivot has a 10-row
-cap, and `spec/07-disease.md` enforces the 40 KB ceiling for the rendered
-markdown card. When a single-source page reports a larger exact total, markdown
+cap, and the focused disease rendering tests enforce the 40 KB ceiling for the
+rendered markdown card. When a single-source page reports a larger exact total, markdown
 may say how many rows are shown out of that total. When a mixed GTR + WHO IVD
 page contributes rows, exact combined totals are unknown, so a full first page
 uses the "Showing first 10..." cap note rather than claiming "10 of N".
@@ -173,17 +173,9 @@ diagnostics card points to a broader
 `search diagnostic --disease ... --source all --limit 50` command without
 concatenating unescaped source text into a shell command.
 
-Executable proof is split across the existing specs and focused tests:
+Executable proof currently lives in focused tests while the bootstrap spec-v2
+canaries stay limited to gene, variant, and article:
 
-- `spec/07-disease.md` proves disease diagnostics rows, the 10-row cap, the
-  40 KB ceiling, cap notes, broader search follow-up, and opt-in exclusion from
-  `all`
-- `spec/17-cross-entity-pivots.md` proves disease-to-diagnostics is an opt-in
-  `get disease` section, not a helper command
-- `spec/21-cross-entity-see-also.md` proves default disease cards point to
-  broader diagnostic search without loading the diagnostics section
-- `spec/24-diagnostic.md` proves diagnostic search validation, mixed-source
-  pages, zero-result search recovery, compact rows, dedupe, and detail sections
 - `src/entities/diagnostic/search.rs::disease_phrase_matches_accepts_word_and_phrase_boundaries`,
   `src/entities/diagnostic/search.rs::disease_phrase_matches_rejects_partial_words_and_keeps_scanning`,
   `src/entities/diagnostic/search.rs::normalized_filters_reject_short_disease_filter`,

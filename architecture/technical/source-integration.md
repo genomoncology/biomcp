@@ -157,7 +157,8 @@ Implementers must keep every alignment surface in sync:
 - concise list/help output in `src/cli/list.rs` and `src/cli/list_reference.md`
 - user-facing docs in `docs/user-guide/cli-reference.md` and the owning entity
   guide such as `docs/user-guide/drug.md`
-- executable CLI contract coverage in `spec/05-drug.md`
+- executable CLI contract coverage in the owning canary or surface spec when
+  that command participates in the active tree
 
 Runtime validation belongs in the owning entity or CLI path, not only in
 docs/help text.

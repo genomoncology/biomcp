@@ -117,7 +117,8 @@ The current contract is covered by:
 - Rust article fulltext tests in `src/entities/article/detail/tests.rs`,
   `src/entities/article/fulltext.rs`, `src/render/provenance.rs`, and
   `src/render/markdown/article/tests.rs`.
-- Saved-artifact and PDF precondition specs in `spec/06-article.md`.
-- Source-label and provenance specs in `spec/18-source-labels.md`.
-- Resolver order proof in
-  `spec/18-source-labels.md::Article Fulltext Resolver Order`.
+- The bootstrap canary in `spec/entity/article.md` proves the saved-artifact
+  contract, the PMC HTML fallback path, the named `--pdf` opt-in, and the
+  keyless article-search degradation markers that stay in the blocking lane.
+- Resolver-order and provenance-label details stay pinned by the focused Rust
+  tests above until the follow-on v2 surface rewrites land.
