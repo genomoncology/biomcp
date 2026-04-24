@@ -308,6 +308,9 @@ fn normalize_pathway_query(query: &str) -> String {
     let normalized = query.trim().to_ascii_lowercase().replace(['-', '_'], " ");
 
     match normalized.as_str() {
+        "mitogen activated protein kinase signaling pathway" => {
+            "MAPK signaling pathway".to_string()
+        }
         "mitogen activated protein kinase" | "mapk pathway" | "mapk signaling" => {
             "MAPK".to_string()
         }
@@ -840,6 +843,10 @@ mod tests {
 
     #[test]
     fn normalize_pathway_query_maps_confirmed_mapk_aliases() {
+        assert_eq!(
+            normalize_pathway_query("mitogen activated protein kinase signaling pathway"),
+            "MAPK signaling pathway"
+        );
         assert_eq!(
             normalize_pathway_query("mitogen activated protein kinase"),
             "MAPK"
