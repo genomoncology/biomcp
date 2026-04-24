@@ -94,9 +94,8 @@ Owned routes:
 Run the heavier local ticket proofs explicitly:
 
 ```bash
-make check
-make release-gate
-make test-contracts
+make release-gate       # full release-readiness: check + spec-pr
+make test-contracts     # rerun just Python/docs contract lane
 ```
 
 The installed pre-commit hook is the fast local gate. It should run
