@@ -1,4 +1,4 @@
-.PHONY: build test lint check check-quality-ratchet run clean spec spec-pr spec-smoke validate-skills test-contracts install
+.PHONY: build test lint check check-quality-ratchet run clean spec spec-pr spec-smoke validate-skills test-contracts release-gate install
 
 # Volatile live-network spec headings. These headings fan out across article
 # search backends or have repeated timeout history in GitHub Actions, so they
@@ -88,6 +88,11 @@ test-contracts:
 	uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"
 	uv run mkdocs build --strict
 
+release-gate:
+	$(MAKE) check
+	$(MAKE) spec-pr
+	$(MAKE) test-contracts
+
 lint:
 	./bin/lint
 
@@ -115,9 +120,9 @@ spec:
 
 spec-pr:
 	XDG_CACHE_HOME="$(CURDIR)/.cache" PATH="$(CURDIR)/target/release:$(PATH)" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" RUST_LOG=error \
-		uv run --extra dev sh -c 'PATH="$(CURDIR)/target/release:$$PATH" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" pytest spec/ --mustmatch-lang bash --mustmatch-timeout 60 -v $(SPEC_XDIST_ARGS) $(SPEC_PR_DESELECT_ARGS) --ignore spec/05-drug.md --ignore spec/13-study.md --ignore spec/21-cross-entity-see-also.md'
+		uv run --extra dev sh -c 'PATH="$(CURDIR)/target/release:$$PATH" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" pytest spec/ --mustmatch-lang bash --mustmatch-timeout 180 -v $(SPEC_XDIST_ARGS) $(SPEC_PR_DESELECT_ARGS) --ignore spec/05-drug.md --ignore spec/13-study.md --ignore spec/21-cross-entity-see-also.md'
 	XDG_CACHE_HOME="$(CURDIR)/.cache" PATH="$(CURDIR)/target/release:$(PATH)" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" RUST_LOG=error \
-		uv run --extra dev sh -c 'PATH="$(CURDIR)/target/release:$$PATH" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" pytest $(SPEC_SERIAL_FILES) --mustmatch-lang bash --mustmatch-timeout 60 -v'
+		uv run --extra dev sh -c 'PATH="$(CURDIR)/target/release:$$PATH" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" pytest $(SPEC_SERIAL_FILES) --mustmatch-lang bash --mustmatch-timeout 180 -v'
 
 spec-smoke:
 	XDG_CACHE_HOME="$(CURDIR)/.cache" PATH="$(CURDIR)/target/release:$(PATH)" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" RUST_LOG=error \

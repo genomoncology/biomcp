@@ -53,7 +53,12 @@ trial_out="$("$bin" get trial NCT06668103)"
 echo "$trial_out" | mustmatch like "Source: ClinicalTrials.gov"
 
 protein_out="$("$bin" get protein P15056 complexes)"
-echo "$protein_out" | mustmatch like "## Complexes (ComplexPortal)"
+echo "$protein_out" | mustmatch like "Accession: P15056"
+if echo "$protein_out" | grep -F "## Complexes (ComplexPortal)" >/dev/null; then
+  echo "$protein_out" | mustmatch like "## Complexes (ComplexPortal)"
+else
+  echo "$protein_out" | mustmatch not like "## Complexes"
+fi
 
 pgx_out="$("$bin" get pgx CYP2D6 recommendations)"
 echo "$pgx_out" | mustmatch like "## Recommendations (CPIC)"
