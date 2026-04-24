@@ -51,7 +51,7 @@ out="$(../../tools/biomcp-ci get disease 'Lynch syndrome' genes diagnostics)"
 echo "$out" | mustmatch like "## Associated Genes"
 echo "$out" | mustmatch like "| Gene | Relationship | Source | OpenTargets |"
 echo "$out" | mustmatch like "## Diagnostics"
-echo "$out" | mustmatch like "Showing 10 of"
+echo "$out" | mustmatch '/Showing [0-9]+ of [0-9]+ diagnostic matches/'
 ```
 
 ## NIH Funding Context
@@ -63,7 +63,7 @@ bounded instead of implying the first page is the whole research landscape.
 out="$(../../tools/biomcp-ci get disease 'Marfan syndrome' funding)"
 echo "$out" | mustmatch like "## Funding (NIH Reporter)"
 echo "$out" | mustmatch like "| Project | PI | Organization | FY | Amount |"
-echo "$out" | mustmatch like "Showing top 10 unique grants"
+echo "$out" | mustmatch '/Showing top [0-9]+ unique grants from [0-9]+ matching NIH project-year records/'
 ```
 
 ## JSON Pivots

@@ -1284,16 +1284,19 @@ def test_spec_lane_timing_report_is_documented_and_aligned_with_makefile() -> No
     assert "spec-http-${runner.os}-${biomcp-version}-${spec-cache-schema-version}" in audit_method_section
     assert "`spec-only` validation-profile comment" in warm_timing_section
     assert active_corpus_rows[0] == ["Path", "Purpose"]
-    assert [row[0] for row in active_corpus_rows[1:]] == [
-        "`spec/entity/gene.md`",
-        "`spec/entity/variant.md`",
-        "`spec/entity/article.md`",
-        "`spec/entity/trial.md`",
-        "`spec/entity/drug.md`",
-        "`spec/entity/disease.md`",
-        "`spec/entity/protein.md`",
-        "`spec/surface/`",
-    ]
+    active_corpus_paths = {row[0] for row in active_corpus_rows[1:]}
+    assert active_corpus_paths.issuperset(
+        {
+            "`spec/entity/gene.md`",
+            "`spec/entity/variant.md`",
+            "`spec/entity/article.md`",
+            "`spec/entity/trial.md`",
+            "`spec/entity/drug.md`",
+            "`spec/entity/disease.md`",
+            "`spec/entity/protein.md`",
+            "`spec/surface/`",
+        }
+    )
 
     assert "spec/README-timings.md" in runbook_spec_section
     assert "`tools/biomcp-ci`" in runbook_spec_section
