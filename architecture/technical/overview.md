@@ -291,17 +291,21 @@ BioMCP has six distinct verification and operator-inspection surfaces.
 
 ### 1. CI and Repo Gates
 
-- `make check` is the required local ticket gate. In the current `Makefile`,
-  that means `lint`, `test`, and `check-quality-ratchet`; the `lint` stage runs
-  `cargo deny check licenses` plus `cargo deny check advisories`, and still
-  rejects deprecated install strings in `README.md` and `docs/`.
+- `make check` is the canonical local gate. In the current `Makefile`, that
+  means `lint`, `test`, `test-contracts`, and `check-quality-ratchet`; the
+  `lint` stage runs `cargo deny check licenses` plus `cargo deny check
+  advisories`, and still rejects deprecated install strings in `README.md` and
+  `docs/`.
 - Repo-local `test` now maps to `cargo nextest run`; the CI `check` job still
   uses the raw `cargo fmt --check`, `cargo clippy -- -D warnings`, and
   `cargo test` sequence directly.
 - CI in `.github/workflows/ci.yml` runs the broader repo baseline in parallel:
   `check`, `version-sync`, `climb-hygiene`, `contracts`, and `spec-stable`.
-- Docs-site validation and Python contract tests do not run under `make check`;
-  they live in `make test-contracts` and the CI `contracts` job.
+- Docs-site validation and Python contract tests now run under `make check`
+  through `make test-contracts`; CI still keeps that lane in the separate
+  `contracts` job for parallelism.
+- `make release-gate` is the single local release-blocking signal; it runs
+  `make check` and `make spec-pr`.
 - The grounding implementation surfaces for this split are `Makefile`,
   `.github/workflows/ci.yml`, and `.github/workflows/contracts.yml`.
 
@@ -325,13 +329,15 @@ rejects staged non-deletion `.march/*` paths outside the same allowlist.
 | `preflight` | `cargo check --all-targets` | `kickoff` |
 | `baseline` | `cargo check --all-targets` | declared, not assigned |
 | `focused` | `cargo test --lib && cargo clippy --lib --tests -- -D warnings` | `03-code`, `04-code-review` |
-| `full-blocking` | `make check && make spec-pr` | `05-verify` |
-| `full-contracts` | `make check && make spec-pr && make test-contracts` | declared, not assigned |
+| `full-blocking` | `make release-gate` | `05-verify` |
+| `full-contracts` | `make release-gate` | declared, not assigned |
 
-`full-blocking` deliberately uses `make check && make spec-pr`, not full
-`make spec`, because `SPEC_PR_DESELECT_ARGS` is the stable PR-blocking spec
-set. `full-contracts` is declared for tickets that need the contracts lane, but
-the shared build flow does not assign it today.
+`full-blocking` deliberately uses `make release-gate`, which expands to `make
+check` plus `make spec-pr`, not full `make spec`, because
+`SPEC_PR_DESELECT_ARGS` is the stable PR-blocking spec set. `full-contracts`
+remains a compatibility alias of the same command now that `make check`
+already runs `make test-contracts`; the shared build flow still does not assign
+it today.
 
 ### 2. Spec Suite (`spec/`)
 

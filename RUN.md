@@ -94,9 +94,8 @@ Owned routes:
 Run the heavier local ticket proofs explicitly:
 
 ```bash
-make check
-make spec-pr
-make test-contracts
+make release-gate       # full release-readiness: check + spec-pr
+make test-contracts     # rerun just Python/docs contract lane
 ```
 
 The installed pre-commit hook is the fast local gate. It should run
@@ -105,25 +104,29 @@ The installed pre-commit hook is the fast local gate. It should run
 non-deletion `.march/*` paths outside the exhaustive allowlist:
 `.march/code-review-log.md` and `.march/validation-profiles.toml`. The hook
 does not run `cargo nextest run`, `make check`, `make spec-pr`, or
-`make test-contracts`.
+`make release-gate`, or `make test-contracts`.
 
-Use `make check` for the full Rust lint/test/security/quality-ratchet lane; its
-`lint` phase runs both `cargo deny check licenses` and
+Use `make check` for the canonical local gate; it runs the full Rust
+lint/test/security/quality-ratchet lane and now includes `make test-contracts`,
+so landing-copy, Python, and strict-docs regressions fail the same local gate.
+Its `lint` phase runs both `cargo deny check licenses` and
 `cargo deny check advisories`, and its `test` phase shells out to
-`cargo nextest run`. Use `make spec-pr` for the stable PR-blocking spec lane;
-it runs `pytest-xdist` with `-n auto --dist loadfile` for the parallel-safe
-bulk, then runs `spec/05-drug.md`, `spec/13-study.md`, and
+`cargo nextest run`. Use `make release-gate` for the single release-readiness
+signal; it runs `make check` followed by `make spec-pr`. Use `make spec-pr` for
+the stable PR-blocking spec lane by itself; it runs `pytest-xdist` with
+`-n auto --dist loadfile` for the parallel-safe bulk, then runs
+`spec/05-drug.md`, `spec/13-study.md`, and
 `spec/21-cross-entity-see-also.md` serially because those files share
 repo-global local-data fixtures. Use `make spec-smoke` as a targeted local
 rerun for the ten stable smoke section IDs in `SPEC_SMOKE_ARGS`; it resolves
 those IDs to current mustmatch pytest item IDs at runtime, runs serially with a
 120s mustmatch timeout, and is not a required PR gate. Use `make test-contracts`
-for the Python/docs contract lane. Repo-root Ruff still runs through `bin/lint`,
-but `pyproject.toml` excludes `architecture/experiments/**` so scratch
-experiment scripts do not block the production Python lint gate. Use `git
-commit --no-verify` to skip the hook for a one-off commit.
+to rerun just the Python/docs contract lane. Repo-root Ruff still runs through
+`bin/lint`, but `pyproject.toml` excludes `architecture/experiments/**` so
+scratch experiment scripts do not block the production Python lint gate. Use
+`git commit --no-verify` to skip the hook for a one-off commit.
 
-`make test-contracts` runs `cargo build --release --locked`, `uv sync --extra dev`, `pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, and `mkdocs build --strict` - the same steps that PR CI `contracts` requires. Use this to catch docs-contract and Python regressions before pushing.
+`make test-contracts` runs `cargo build --release --locked`, `uv sync --extra dev`, `pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, and `mkdocs build --strict` - the same steps that PR CI `contracts` requires. `make check` now pulls that lane in transitively, while `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
 
 ## Smoke Checks
 

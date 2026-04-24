@@ -32,7 +32,11 @@ cargo install cargo-nextest --locked
 `spec/21-cross-entity-see-also.md` stay serial because they share repo-global
 local-data fixtures. `make spec-smoke` resolves the ten stable targeted smoke
 section IDs in `SPEC_SMOKE_ARGS` to current mustmatch pytest item IDs, then runs
-them serially with a 120s mustmatch timeout.
+them serially with a 120s mustmatch timeout. `make check` now runs `lint`,
+`test`, `test-contracts`, and `check-quality-ratchet`, so the canonical local
+gate already includes the Python/docs contract lane. `make release-gate` is the
+single release-readiness command; it runs `make check` and then `make spec-pr`.
+Use `make test-contracts` to rerun just the release-critical Python/docs lane.
 
 ### Local Pre-Commit Hook
 
@@ -66,16 +70,14 @@ deletions so cleanup commits can remove old March artifacts from tracking.
 
 ### Timing Method
 
-Measured on beelink on 2026-04-13 with `/usr/bin/time -p` using warm-cache
+Measured on beelink on 2026-04-23 with `/usr/bin/time -p` using warm-cache
 steady-state runs. Each command was run once untimed to warm build artifacts and
-the shared `.cache` directory, then once with timing enabled.
+the shared `.cache` directory, then once with timing enabled. `make release-gate`
+is a thin wrapper over `make check` and `make spec-pr`, so its warm timing is
+the observed sum of those warmed component lanes.
 
-| Command | Before | After |
+| Command | Observed warm-cache | Notes |
 |---|---|---|
-| `make test` | `54.48s` | `12.32s` |
-| `make spec-pr` | `356.22s` | `135.55s` |
-| `make check` | `55.15s` | `19.66s` |
-
-The first serial `make spec-pr` warm pass hit two 60s timeouts in
-`spec/18-source-labels.md`; the baseline above records the subsequent warmed
-steady-state rerun.
+| `make check` | `344.11s` | now includes `make test-contracts` |
+| `make spec-pr` | `121.03s` | stable PR-blocking spec lane |
+| `make release-gate` | `465.14s` | `make check` followed by `make spec-pr` |

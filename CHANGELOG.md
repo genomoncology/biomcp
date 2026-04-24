@@ -80,6 +80,9 @@
 
 - Completed release/docs contract cleanup for the `0.8.22` line so the latest
   release notes, ticket inventory, and release metadata stay aligned. (264, 265)
+- Made `make check` include the public Python/docs contract lane and added
+  `make release-gate` as the named local release-blocking command, so
+  release-readiness docs and validation profiles share one contract. (287)
 - Reworked `SPEC_SMOKE_ARGS` handling around stable smoke inventory and current
   mustmatch pytest item IDs, and cleaned up `.march` artifact handling for
   repo submission paths. (270, 271)

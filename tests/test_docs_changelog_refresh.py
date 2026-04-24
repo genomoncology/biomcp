@@ -20,6 +20,7 @@ EXPECTED_RELEASE_TICKETS = {
         253,
         *range(264, 285),
         286,
+        287,
         288,
         291,
     }
@@ -51,6 +52,8 @@ EXPECTED_RELEASE_MARKERS = {
         ],
         "internal": [
             "release/docs contract cleanup",
+            "public Python/docs contract lane",
+            "make release-gate",
             "SPEC_SMOKE_ARGS",
             "mustmatch pytest item IDs",
             ".march",
