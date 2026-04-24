@@ -26,17 +26,18 @@ Install `cargo-nextest` before running repo-local Rust verification:
 cargo install cargo-nextest --locked
 ```
 
-`make test` uses `cargo nextest run`. `make spec` and `make spec-pr` use
-`pytest-xdist` for the parallel-safe bulk with `-n auto --dist loadfile`, while
-`spec/05-drug.md`, `spec/13-study.md`, and
-`spec/21-cross-entity-see-also.md` stay serial because they share repo-global
-local-data fixtures. `make spec-smoke` resolves the ten stable targeted smoke
-section IDs in `SPEC_SMOKE_ARGS` to current mustmatch pytest item IDs, then runs
-them serially with a 120s mustmatch timeout. `make check` now runs `lint`,
-`test`, `test-contracts`, and `check-quality-ratchet`, so the canonical local
-gate already includes the Python/docs contract lane. `make release-gate` is the
-single release-readiness command; it runs `make check` and then `make spec-pr`.
-Use `make test-contracts` to rerun just the release-critical Python/docs lane.
+`make test` uses `cargo nextest run`. `make spec` and `make spec-pr` both run
+the active canary tree under `spec/entity/` and `spec/surface/` with
+`pytest-xdist` (`-n auto --dist loadfile`); there is no separate `spec-smoke`
+lane in the bootstrap spec-v2 contract. The executable docs themselves call
+`tools/biomcp-ci`, which owns release-binary resolution, the repo-owned
+`.cache/biomcp-specs/` cache/XDG roots, optional-key stripping, and warm-hit
+`BIOMCP_CACHE_MODE=infinite` replay when CI sets `BIOMCP_SPEC_CACHE_HIT=1`.
+`make check` now runs `lint`, `test`, `test-contracts`, and
+`check-quality-ratchet`, so the canonical local gate already includes the
+Python/docs contract lane. `make release-gate` is the single
+release-readiness command; it runs `make check` and then `make spec-pr`. Use
+`make test-contracts` to rerun just the release-critical Python/docs lane.
 
 ### Local Pre-Commit Hook
 
@@ -72,12 +73,13 @@ deletions so cleanup commits can remove old March artifacts from tracking.
 
 Measured on beelink on 2026-04-23 with `/usr/bin/time -p` using warm-cache
 steady-state runs. Each command was run once untimed to warm build artifacts and
-the shared `.cache` directory, then once with timing enabled. `make release-gate`
-is a thin wrapper over `make check` and `make spec-pr`, so its warm timing is
-the observed sum of those warmed component lanes.
+the repo-owned spec cache under `.cache/biomcp-specs/`, then once with timing
+enabled. `make release-gate` is a thin wrapper over `make check` and
+`make spec-pr`, so its warm timing is the observed sum of those warmed
+component lanes.
 
 | Command | Observed warm-cache | Notes |
 |---|---|---|
 | `make check` | `344.11s` | now includes `make test-contracts` |
-| `make spec-pr` | `121.03s` | stable PR-blocking spec lane |
+| `make spec-pr` | `121.03s` | stable PR-blocking canary lane |
 | `make release-gate` | `465.14s` | `make check` followed by `make spec-pr` |

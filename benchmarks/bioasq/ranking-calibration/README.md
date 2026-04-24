@@ -44,9 +44,9 @@ boundaries, and the public-lane versus official-lane runbook.
 
 ## Existing live JSON proof
 
-The existing structural ranking-metadata proof remains in the article specs, and
-the keyword-default hybrid contract is exercised through `spec/06-article.md`
-plus `spec/09-search-all.md`, including zero semantic score on rows without
+The existing structural ranking-metadata proof remains in the active article
+canary, and the keyword-default hybrid contract is exercised through
+`spec/entity/article.md`, including zero semantic score on rows without
 LitSense2 provenance. Live upstream result order still drifts, so the stable
 calibration surface for ranking-order proofs stays in these Rust fixtures plus
 the benchmark docs.

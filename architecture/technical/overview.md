@@ -244,11 +244,11 @@ rebuild path, not a second source of release truth.
      `contracts` (`cargo build --release --locked`, `uv sync --extra dev`,
      `uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`,
      `uv run mkdocs build --strict`), and `spec-stable`
-     (`cargo build --release --locked`, then `make spec-pr`).
-   - Volatile live-network headings run separately in `.github/workflows/spec-smoke.yml`,
-     which runs the full `make spec` suite on a schedule and by manual dispatch.
-     The local `make spec-smoke` target is a targeted operator rerun lane and
-     is not wired into CI in this ticket.
+     (release build, spec-cache metadata/restore, then `make spec-pr`).
+   - The bootstrap spec-v2 contract keeps one blocking canary lane instead of a
+     second smoke workflow. `spec-stable` restores `.cache/biomcp-specs/`,
+     exports `BIOMCP_SPEC_CACHE_HIT=1` only on cache hits, and relies on
+     `tools/biomcp-ci` to flip warm-cache replay on for the canary docs.
    - Release validation runs the Rust checks again, then
      `uv run pytest tests/ -v --mcp-cmd "biomcp serve"` and
      `uv run mkdocs build --strict`.
@@ -315,7 +315,9 @@ BioMCP has six distinct verification and operator-inspection surfaces.
 validation tiers. The shared build flow currently maps `kickoff` to
 `preflight`, leaves `01-design` and `02-design-review` without a validation
 profile, runs `focused` for `03-code` and `04-code-review`, and runs
-`full-blocking` for `05-verify`.
+`full-blocking` for `05-verify`. `spec-only` is declared for the follow-on
+spec-v2 rewrite slices that need the blocking canary lane directly without
+re-running the full release gate.
 
 The exhaustive tracked and staged `.march/*` allowlist is
 `.march/code-review-log.md` and `.march/validation-profiles.toml`.
@@ -329,15 +331,17 @@ rejects staged non-deletion `.march/*` paths outside the same allowlist.
 | `preflight` | `cargo check --all-targets` | `kickoff` |
 | `baseline` | `cargo check --all-targets` | declared, not assigned |
 | `focused` | `cargo test --lib && cargo clippy --lib --tests -- -D warnings` | `03-code`, `04-code-review` |
+| `spec-only` | `make spec-pr` | declared for follow-on spec-v2 rewrite slices |
 | `full-blocking` | `make release-gate` | `05-verify` |
 | `full-contracts` | `make release-gate` | declared, not assigned |
 
 `full-blocking` deliberately uses `make release-gate`, which expands to `make
-check` plus `make spec-pr`, not full `make spec`, because
-`SPEC_PR_DESELECT_ARGS` is the stable PR-blocking spec set. `full-contracts`
-remains a compatibility alias of the same command now that `make check`
-already runs `make test-contracts`; the shared build flow still does not assign
-it today.
+check` plus `make spec-pr`; the canary spec lane is one of the required release
+proofs, but it is no longer modeled as a PR-vs-smoke split. `spec-only`
+exists so follow-on spec-v2 rewrite slices can target the blocking canary lane
+directly. `full-contracts` remains a compatibility alias of the same command
+now that `make check` already runs `make test-contracts`; the shared build flow
+still does not assign it today.
 
 ### 2. Spec Suite (`spec/`)
 
@@ -347,26 +351,29 @@ exercises CLI output at the command level using stable structural markers
 values.
 
 PR CI runs `make spec-pr` via the `spec-stable` job in
-`.github/workflows/ci.yml`. That job builds the release binary first, then
-relies on the Makefile's `target/release`-first `PATH` handling so specs do
-not accidentally execute a stale `.venv/bin/biomcp`. Volatile live-network
-headings run in the separate `Spec smoke (volatile live-network)` workflow
-instead.
+`.github/workflows/ci.yml`. That job builds the release binary first, reads
+`Cargo.toml` via Python `tomllib` to emit a `biomcp-version` plus a
+workflow-local `spec-cache-schema-version`, restores `.cache/biomcp-specs/`
+with the key
+`spec-http-${runner.os}-${biomcp-version}-${spec-cache-schema-version}`, and
+exports `BIOMCP_SPEC_CACHE_HIT=1` only when the restore hit is warm. The bash
+blocks themselves then call `tools/biomcp-ci`, which keeps cache/XDG state
+under `.cache/biomcp-specs/`, defaults `RUST_LOG=error`, unsets optional auth
+keys, and flips `BIOMCP_CACHE_MODE=infinite` only for those warm CI replays.
 
-Run locally with `make spec`. Use `make spec-smoke` as the serial targeted
-local rerun for the ten stable smoke section IDs in `SPEC_SMOKE_ARGS`.
+Run locally with `make spec` for the shorter canary rerun or `make spec-pr` for
+the blocking timeout/profile.
 
 Repo-local `make spec` and `make spec-pr` use `pytest-xdist` with
-`-n auto --dist loadfile` for the parallel-safe bulk, then run
-`spec/05-drug.md`, `spec/13-study.md`, and `spec/21-cross-entity-see-also.md`
-serially because those files share repo-global local-data fixtures. `make
-spec-smoke` does not use xdist; it resolves stable targeted smoke section IDs
-to current mustmatch pytest item IDs at runtime, then runs those items serially
-with a 120s mustmatch timeout.
-Use `spec/README-timings.md` as the current audit record for the PR lane and as
-the smoke-only section inventory for `SPEC_PR_DESELECT_ARGS`; the ratchet
-checks that scanned `SPEC_SMOKE_ARGS` entries resolve to collectable mustmatch
-pytest items.
+`-n auto --dist loadfile` over only `spec/entity/` and `spec/surface/`. The
+current active executable-spec corpus is `spec/entity/gene.md`,
+`spec/entity/variant.md`, and `spec/entity/article.md`, plus tracked
+`spec/surface/` scaffolding for later surface files. There is no separate
+`spec-smoke` target, no deselect inventory, and no serial numbered-file leg in
+the bootstrap v2 lane.
+
+Use `spec/README-timings.md` as the current canary-lane audit/reference for the
+active files, wrapper/cache contract, and measured warm-cache expectations.
 
 Important: `uv run` may execute a stale `.venv/bin/biomcp`. Either refresh
 with `uv pip install -e .` or ensure `target/release` is ahead of `.venv/bin`

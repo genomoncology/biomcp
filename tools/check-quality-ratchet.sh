@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTPUT_DIR="${QUALITY_RATCHET_OUTPUT_DIR:-$ROOT_DIR/.march/reality-check}"
-SPEC_GLOB="${QUALITY_RATCHET_SPEC_GLOB:-$ROOT_DIR/spec/*.md}"
+SPEC_GLOB="${QUALITY_RATCHET_SPEC_GLOB:-$ROOT_DIR/spec/**/*.md}"
 CLI_FILE="${QUALITY_RATCHET_CLI_FILE:-$ROOT_DIR/src/cli/mod.rs}"
 SHELL_FILE="${QUALITY_RATCHET_SHELL_FILE:-$ROOT_DIR/src/mcp/shell.rs}"
 BUILD_FILE="${QUALITY_RATCHET_BUILD_FILE:-$ROOT_DIR/build.rs}"

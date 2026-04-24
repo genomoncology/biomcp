@@ -72,7 +72,7 @@ jobs:
       - run: uv run mkdocs build --strict
 
   # Stable PR-blocking executable spec gate. Volatile live-network headings
-  # are excluded here and covered by spec-smoke.yml.
+  # now run through the single cache-warmed canary wrapper and corpus.
   spec-stable:
     runs-on: ubuntu-latest
     steps:
@@ -97,6 +97,32 @@ jobs:
           python-version: "3.12"
 
       - uses: astral-sh/setup-uv@v4
+
+      - name: Compute spec cache metadata
+        id: spec-cache-meta
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          cargo = tomllib.loads(Path("Cargo.toml").read_text(encoding="utf-8"))
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"biomcp-version={cargo['package']['version']}\n")
+              handle.write("spec-cache-schema-version=1\n")
+          PY
+
+      - name: Restore spec cache
+        id: spec-cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/biomcp-specs/
+          key: >-
+            spec-http-${{ runner.os }}-${{ steps.spec-cache-meta.outputs.biomcp-version }}-${{ steps.spec-cache-meta.outputs.spec-cache-schema-version }}
+
+      - name: Mark warm cache hit
+        if: steps.spec-cache.outputs.cache-hit == 'true'
+        run: echo "BIOMCP_SPEC_CACHE_HIT=1" >> "$GITHUB_ENV"
 
       # Build the release binary first so make spec exercises target/release/biomcp,
       # not a stale editable install from .venv/bin.

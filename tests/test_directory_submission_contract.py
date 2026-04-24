@@ -201,7 +201,7 @@ def test_repo_cleanup_removes_local_artifacts_and_deleted_dirs_from_git() -> Non
 def test_specs_do_not_depend_on_bare_python_alias() -> None:
     bare_python_refs: list[str] = []
 
-    for path in sorted((REPO_ROOT / "spec").glob("*.md")):
+    for path in sorted((REPO_ROOT / "spec").rglob("*.md")):
         for line_no, line in enumerate(
             path.read_text(encoding="utf-8").splitlines(), start=1
         ):
@@ -213,7 +213,7 @@ def test_specs_do_not_depend_on_bare_python_alias() -> None:
     assert not bare_python_refs, "\n".join(bare_python_refs)
 
 
-def test_study_chart_dimensions_spec_runs_as_a_targeted_heading() -> None:
+def test_gene_canary_runs_as_a_targeted_heading() -> None:
     env = dict(os.environ)
     env["PATH"] = f"{REPO_ROOT / 'target' / 'release'}:{env['PATH']}"
     spec_root = REPO_ROOT / "spec"
@@ -224,13 +224,13 @@ def test_study_chart_dimensions_spec_runs_as_a_targeted_heading() -> None:
                 sys.executable,
                 "-m",
                 "pytest",
-                "spec/13-study.md",
+                "spec/entity/gene.md",
                 "--mustmatch-lang",
                 "bash",
                 "--mustmatch-timeout",
                 "60",
                 "-k",
-                "Custom and Terminal and Dimensions",
+                "Symbol and Based",
                 "-v",
             ],
             cwd=REPO_ROOT,

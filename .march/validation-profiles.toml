@@ -17,6 +17,10 @@ command = "cargo check --all-targets"
 [profile.focused]
 command = "cargo test --lib && cargo clippy --lib --tests -- -D warnings"
 
+# observed make spec-pr 56.16s warm (beelink 2026-04-24)
+[profile.spec-only]
+command = "make spec-pr"
+
 # observed make release-gate ~7m45s warm (`make check` ~5m44s + `make spec-pr` ~2m01s, beelink 2026-04-23)
 [profile.full-blocking]
 command = "make release-gate"

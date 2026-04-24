@@ -11,6 +11,7 @@ EXPECTED_COMMANDS = {
     "preflight": "cargo check --all-targets",
     "baseline": "cargo check --all-targets",
     "focused": "cargo test --lib && cargo clippy --lib --tests -- -D warnings",
+    "spec-only": "make spec-pr",
     "full-blocking": "make release-gate",
     "full-contracts": "make release-gate",
 }
