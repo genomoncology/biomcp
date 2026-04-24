@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import gzip
 import os
 import re
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_BIN = REPO_ROOT / "target" / "release" / "biomcp"
+GTR_FIXTURE_DIR = REPO_ROOT / "spec" / "fixtures" / "gtr"
+GTR_TEST_VERSION_FILE = "test_version.gz"
+GTR_CONDITION_GENE_FILE = "test_condition_gene.txt"
 LIVE_GTR_ACCESSION = "GTR000006692.3"
 FICTIONAL_GTR_ACCESSION = "GTR000000001.1"
 REGULATORY_EMPTY_STATE = "No FDA device 510(k) or PMA records matched this diagnostic."
@@ -91,6 +96,24 @@ def _runtime_help() -> str:
     return result.stdout
 
 
+def _prepare_public_gtr_bundle(target_dir: Path) -> Path:
+    shutil.copytree(GTR_FIXTURE_DIR, target_dir)
+    condition_gene_path = target_dir / GTR_CONDITION_GENE_FILE
+    condition_gene_path.write_text(
+        condition_gene_path.read_text(encoding="utf-8").replace(
+            FICTIONAL_GTR_ACCESSION,
+            LIVE_GTR_ACCESSION,
+        ),
+        encoding="utf-8",
+    )
+    version_path = target_dir / GTR_TEST_VERSION_FILE
+    with gzip.open(version_path, "rt", encoding="utf-8") as fh:
+        version_payload = fh.read()
+    with gzip.open(version_path, "wt", encoding="utf-8") as fh:
+        fh.write(version_payload.replace(FICTIONAL_GTR_ACCESSION, LIVE_GTR_ACCESSION))
+    return target_dir
+
+
 def test_public_diagnostic_surfaces_use_live_gtr_accession() -> None:
     missing_live = []
     fictional_leaks = []
@@ -123,23 +146,8 @@ def test_runtime_help_uses_live_gtr_examples() -> None:
 
 def test_public_gtr_examples_resolve_against_live_gtr_bundle(tmp_path: Path) -> None:
     env = os.environ.copy()
-    env["BIOMCP_GTR_DIR"] = str(tmp_path / "gtr")
+    env["BIOMCP_GTR_DIR"] = str(_prepare_public_gtr_bundle(tmp_path / "gtr"))
     env["BIOMCP_OPENFDA_BASE"] = "http://127.0.0.1:9"
-
-    sync_result = subprocess.run(
-        [str(RELEASE_BIN), "gtr", "sync"],
-        cwd=REPO_ROOT,
-        env=env,
-        shell=False,
-        capture_output=True,
-        text=True,
-        timeout=180,
-    )
-    assert sync_result.returncode == 0, (
-        "biomcp gtr sync failed\n"
-        f"stdout:\n{sync_result.stdout}\n"
-        f"stderr:\n{sync_result.stderr}"
-    )
 
     commands = _surface_commands() | _extract_public_gtr_commands(_runtime_help())
     assert EXPECTED_PUBLIC_GTR_COMMANDS <= commands

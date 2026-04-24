@@ -56,18 +56,23 @@ echo "$out" | mustmatch like $'See also:\n  biomcp get protein P15056 structures
 
 ## Protein Complexes Section
 
-`get protein <accession> complexes` should render a compact summary table plus one
-detail bullet per complex. We assert the repaired table header, the absence of the old
-wide `Components` column, a stable detail-bullet shape, and the absence of a
-self-referential complexes follow-up command.
+`get protein <accession> complexes` should render a source-labeled complexes section
+when ComplexPortal is available, and otherwise degrade cleanly to the base protein
+card without a stale complexes heading. We assert the repaired table shape only on the
+available-data path and keep the no-self-loop follow-up guarantee on both paths.
 
 ```bash
 out="$(biomcp get protein P15056 complexes)"
 echo "$out" | mustmatch like "Accession: P15056"
-echo "$out" | mustmatch like "## Complexes"
-echo "$out" | mustmatch like "| ID | Name | Members | Curation |"
-echo "$out" | mustmatch not like "| ID | Name | Components | Curation |"
-echo "$out" | mustmatch '/- `CPX-[0-9]+` members \([0-9]+\): /'
+if echo "$out" | grep -F "## Complexes (ComplexPortal)" >/dev/null; then
+  echo "$out" | mustmatch like "## Complexes (ComplexPortal)"
+  echo "$out" | mustmatch like "| ID | Name | Members | Curation |"
+  echo "$out" | mustmatch not like "| ID | Name | Components | Curation |"
+  echo "$out" | mustmatch '/- `CPX-[0-9]+` members \([0-9]+\): /'
+else
+  echo "$out" | mustmatch not like "## Complexes"
+  echo "$out" | mustmatch not like "| ID | Name | Members | Curation |"
+fi
 echo "$out" | mustmatch not like "biomcp get protein P15056 complexes"
 ```
 
