@@ -38,7 +38,7 @@ surface instead of dropping straight into broader disease search.
 
 ```bash
 json_out="$(../../tools/biomcp-ci --json discover "developmental delay")"
-echo "$json_out" | mustmatch like '"biomcp search phenotype \"HP:0001263\""'
+echo "$json_out" | mustmatch like "HP:0001263"
 echo "$json_out" | jq -e '._meta.next_commands[0] == "biomcp search phenotype \"HP:0001263\""' >/dev/null
 ```
 
@@ -74,6 +74,8 @@ Once `suggest` points to a playbook, the user still needs both the worked-exampl
 index and the canonical agent guide behind `skill render`.
 
 ```bash
+overview="$(../../tools/biomcp-ci skill)"
+echo "$overview" | mustmatch like 'biomcp suggest "<question>"'
 list="$(../../tools/biomcp-ci skill list)"
 echo "$list" | mustmatch like "# BioMCP Worked Examples"
 echo "$list" | mustmatch like "treatment-lookup"
