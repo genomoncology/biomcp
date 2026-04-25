@@ -7,6 +7,7 @@ use regex::Regex;
 use serde::Serialize;
 
 use crate::error::BioMcpError;
+use crate::sources::hpo::HpoClient;
 use crate::sources::medlineplus::MedlinePlusTopic;
 use crate::sources::ols4::OlsDoc;
 use crate::sources::umls::{UmlsConcept, UmlsXref};
@@ -290,13 +291,45 @@ pub(crate) async fn resolve_query(
         }
     };
 
-    let ols_docs = ols_docs.map_err(|err| match err {
+    let mut ols_docs = ols_docs.map_err(|err| match err {
         BioMcpError::Api { api, message } if api == "ols4" => BioMcpError::Api {
             api,
             message: format!("discover requires OLS4: {message}"),
         },
         other => other,
     })?;
+    if !is_disease_symptom_request(query)
+        && !ols_docs.iter().any(|doc| {
+            doc.obo_id
+                .as_deref()
+                .or(doc.short_form.as_deref())
+                .and_then(normalize_primary_id)
+                .is_some_and(|id| id.starts_with("HP:"))
+        })
+        && let Ok(hpo_client) = HpoClient::new()
+        && let Ok(Ok(ids)) =
+            tokio::time::timeout(OLS4_TIMEOUT, hpo_client.search_term_ids(query, 1)).await
+        && let Some(id) = ids.into_iter().next()
+        && let Ok(Ok(labels)) = tokio::time::timeout(
+            OLS4_TIMEOUT,
+            hpo_client.resolve_terms(std::slice::from_ref(&id), 1),
+        )
+        .await
+        && let Some(label) = labels.get(&id)
+    {
+        ols_docs.push(OlsDoc {
+            iri: format!("https://ontology.jax.org/api/hp/terms/{id}"),
+            ontology_name: "hp".to_string(),
+            ontology_prefix: "hp".to_string(),
+            short_form: Some(id.replace(':', "_")),
+            obo_id: Some(id.clone()),
+            label: label.clone(),
+            description: Vec::new(),
+            exact_synonyms: Vec::new(),
+            is_defining_ontology: true,
+            doc_type: Some("class".to_string()),
+        });
+    }
     let mut notes = Vec::new();
     if let Some(note) = umls_note
         && !note.trim().is_empty()
@@ -1972,6 +2005,33 @@ mod tests {
         );
         assert_eq!(commands.len(), 4);
         assert!(!commands[0].contains("HP:0002376"));
+    }
+
+    #[test]
+    fn hpo_backed_symptom_concepts_route_to_phenotype_search_first() {
+        let result = build_result(
+            "developmental delay",
+            &[
+                ols_doc(
+                    "mondo",
+                    "developmental delay with sleep apnea",
+                    "MONDO:0980728",
+                    &[],
+                ),
+                ols_doc("ncit", "Developmental Delay", "NCIT:C116942", &[]),
+                ols_doc("hp", "Global developmental delay", "HP:0001263", &[]),
+            ],
+            &[],
+            &[],
+            Vec::new(),
+        );
+
+        assert_eq!(result.intent, DiscoverIntent::SymptomSearch);
+        assert_eq!(result.concepts[0].primary_id.as_deref(), Some("HP:0001263"));
+        assert_eq!(
+            result.next_commands[0],
+            "biomcp search phenotype \"HP:0001263\""
+        );
     }
 
     #[test]
