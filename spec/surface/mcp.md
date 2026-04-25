@@ -11,10 +11,10 @@ contract here is that one remains the canonical stdio command and the other
 stays the Claude Desktop-friendly alias.
 
 ```bash
-mcp_help="$("$BIOMCP_BIN" mcp --help)"
+mcp_help="$(../../tools/biomcp-ci mcp --help)"
 echo "$mcp_help" | mustmatch like "Run MCP server over stdio"
 echo "$mcp_help" | mustmatch like "Usage: biomcp mcp"
-serve_help="$("$BIOMCP_BIN" serve --help)"
+serve_help="$(../../tools/biomcp-ci serve --help)"
 echo "$serve_help" | mustmatch like 'Alias for `mcp`'
 echo "$serve_help" | mustmatch like "Usage: biomcp serve"
 ```
