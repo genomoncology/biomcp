@@ -1240,6 +1240,9 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`spec/entity/drug.md`" in technical_spec_section
     assert "`spec/entity/disease.md`" in technical_spec_section
     assert "`spec/entity/protein.md`" in technical_spec_section
+    assert "`spec/surface/cli.md`" in technical_spec_section
+    assert "`spec/surface/mcp.md`" in technical_spec_section
+    assert "`spec/surface/discover.md`" in technical_spec_section
     assert "`tools/biomcp-ci`" in technical_spec_section
     assert "`make spec-smoke`" not in technical_spec_section
 
@@ -1277,6 +1280,7 @@ def test_spec_lane_timing_report_is_documented_and_aligned_with_makefile() -> No
         assert marker in report
     assert "`make spec-smoke`" not in report
     assert "Smoke-Only Headings" not in report
+    assert "tracked scaffolding" not in report
     assert "spec/entity/" in lane_contract_section
     assert "spec/surface/" in lane_contract_section
     assert ".cache/biomcp-specs/" in lane_contract_section
@@ -1294,7 +1298,9 @@ def test_spec_lane_timing_report_is_documented_and_aligned_with_makefile() -> No
             "`spec/entity/drug.md`",
             "`spec/entity/disease.md`",
             "`spec/entity/protein.md`",
-            "`spec/surface/`",
+            "`spec/surface/cli.md`",
+            "`spec/surface/mcp.md`",
+            "`spec/surface/discover.md`",
         }
     )
 
