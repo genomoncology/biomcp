@@ -327,11 +327,43 @@ def test_article_fulltext_architecture_doc_is_current_state() -> None:
         assert phrase in article_ws
 
 
+def test_superseded_article_fulltext_design_is_background_only() -> None:
+    background_path = (
+        REPO_ROOT
+        / "architecture"
+        / "background"
+        / "article-fulltext-design-history-2026-04-24.md"
+    )
+    background = background_path.read_text(encoding="utf-8")
+    background_ws = _normalize_ws(background)
+
+    assert not (
+        REPO_ROOT / "architecture" / "technical" / "article-fulltext-markdown.md"
+    ).exists()
+    assert background.startswith("# Superseded: Article Fulltext Design History")
+    for phrase in (
+        "Superseded on 2026-04-24.",
+        "`architecture/functional/article-fulltext.md`",
+        "ticket 274",
+        "`src/entities/article/fulltext.rs`",
+        "PMC HTML",
+        "`--pdf`",
+    ):
+        assert phrase in background_ws
+
+    for stale_phrase in (
+        "current implementation remains jats-only",
+        "ticket a",
+        "ticket b",
+        "build ticket",
+    ):
+        assert stale_phrase not in background.lower()
+
+
 def test_live_docs_do_not_reference_deleted_numbered_specs() -> None:
     deleted_spec_ref = re.compile(r"spec/\d{2}-[a-z0-9-]+\.md")
     live_docs = (
         "architecture/technical/overview.md",
-        "architecture/technical/article-fulltext-markdown.md",
         "architecture/functional/article-fulltext.md",
         "architecture/functional/diagnostic.md",
         "architecture/functional/clinical-features-port.md",
