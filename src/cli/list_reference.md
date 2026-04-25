@@ -35,6 +35,7 @@ New to BioMCP? Try:
 | What a gene does | `get gene <symbol>` |
 | Tissue expression or localization of a gene product | `get gene <symbol> hpa` or `get gene <symbol> protein` |
 | Drug safety or adverse events | `drug adverse-events <name>` or `get drug <name> safety` |
+| Which drugs or drug classes interact with a known drug | `drug interactions <name>` or `get drug <name> interactions` |
 | Review literature that synthesizes a topic | `search article -k "<query>" --type review --limit 5` |
 | Turn a literature question into article filters | `biomcp list article` (known gene/disease/drug anchors go in `-g/-d/--drug`; free-text concepts go in `-k`; PubMed ESearch cleans question-format terms provider-locally; exact whole-keyword entity labels or aliases can trigger typed follow-up suggestions on keyword-only result pages) |
 | Follow one article into related evidence | `article citations <id> --limit 5` or `article recommendations <id> --limit 5` |
@@ -103,6 +104,7 @@ New to BioMCP? Try:
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
 - `variant articles <id>`
 - `drug trials <name>`
+- `drug interactions <name>` - DDInter-backed structured drug-drug interactions; `--json` adds class summaries and exact helper follow-ups for `biomcp get drug <canonical> safety` plus `biomcp search article --drug <canonical> --limit 5`
 - `drug adverse-events <name>` - FAERS-first; FAERS 404 falls back to ClinicalTrials.gov trial-reported adverse events and `--json` adds `faers_not_found` plus optional `trial_adverse_events`, while FAERS 200+empty stays on FAERS
 - `disease trials <name>`
 - `disease articles <name>`
@@ -115,6 +117,7 @@ New to BioMCP? Try:
 - `gene pathways <symbol> --limit <N> --offset <N>`
 - `pathway drugs|articles|trials <id>`
 - `protein structures <accession> --limit <N> --offset <N>`
+- `search drug --interactions <drug>` remains unavailable from current public data sources; use `drug interactions <name>` when you already know the anchor drug
 - `study list`
 - `study download [--list] [<study_id>]`
 - `study top-mutated --study <id> [--limit <N>]`

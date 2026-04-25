@@ -7,7 +7,7 @@ use crate::entities::article::Article;
 use crate::entities::diagnostic::{Diagnostic, diagnostic_source_label};
 use crate::entities::discover::DiscoverResult;
 use crate::entities::disease::Disease;
-use crate::entities::drug::Drug;
+use crate::entities::drug::{Drug, DrugInteractionReport};
 use crate::entities::gene::Gene;
 use crate::entities::pathway::Pathway;
 use crate::entities::pgx::Pgx;
@@ -207,10 +207,7 @@ pub(crate) fn pathway_source_label(source: &str) -> String {
 }
 
 pub(crate) fn drug_interaction_sources(drug: &Drug) -> Vec<String> {
-    let mut sources = Vec::new();
-    if !drug.interactions.is_empty() {
-        sources.push("DrugBank".to_string());
-    }
+    let mut sources = vec!["DDInter".to_string()];
     if has_opt_text(&drug.interaction_text) {
         sources.push("OpenFDA label".to_string());
     }
@@ -218,12 +215,44 @@ pub(crate) fn drug_interaction_sources(drug: &Drug) -> Vec<String> {
 }
 
 pub(crate) fn drug_interaction_heading_label(drug: &Drug) -> String {
-    let sources = drug_interaction_sources(drug);
-    if sources.is_empty() {
+    if drug.interactions.is_empty()
+        && drug.pharm_classes.is_empty()
+        && !has_opt_text(&drug.interaction_text)
+    {
         "Interactions".to_string()
     } else {
-        format!("Interactions ({})", sources.join(" / "))
+        "Interactions (DDInter)".to_string()
     }
+}
+
+pub(crate) fn drug_interaction_note(drug: &Drug) -> Option<String> {
+    if !drug.interactions.is_empty() || !drug.pharm_classes.is_empty() {
+        Some(
+            "Structured rows come from the current DDInter download bundle. DDInter warns that missing rows do not prove no interaction exists."
+                .to_string(),
+        )
+    } else {
+        Some(
+            "The current DDInter download bundle has no matching rows for this drug. DDInter warns that missing rows do not prove no interaction exists."
+                .to_string(),
+        )
+    }
+}
+
+pub(crate) fn drug_interaction_report_section_sources(
+    report: &DrugInteractionReport,
+) -> Vec<SectionSource> {
+    let mut out = Vec::new();
+    let mut sources = vec!["DDInter"];
+    if report
+        .label_interaction_text
+        .as_deref()
+        .is_some_and(has_text)
+    {
+        sources.push("OpenFDA label");
+    }
+    push_section(&mut out, true, "interactions", "Interactions", sources);
+    out
 }
 
 pub(crate) fn gene_section_sources(gene: &Gene) -> Vec<SectionSource> {

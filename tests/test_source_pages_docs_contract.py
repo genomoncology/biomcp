@@ -125,6 +125,30 @@ SOURCE_PAGE_SPECS = {
             "biomcp get drug dabrafenib approvals",
         ],
     },
+    "ddinter.md": {
+        "title": "DDInter MCP Tool for Drug-Drug Interactions | BioMCP",
+        "description": "Use BioMCP to query DDInter-backed drug-drug interactions, severity levels, and class summaries through the local DDInter CSV bundle.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://ddinter.scbdd.com/download/",
+        "required_intro_phrases": [
+            "structured answer to a drug-drug interaction",
+            "local-runtime source",
+            "`BIOMCP_DDINTER_DIR`",
+            "`biomcp ddinter sync`",
+            "severity levels",
+        ],
+        "exposes": [
+            "drug interactions <name>",
+            "get drug <name> interactions",
+            "health",
+        ],
+        "example_commands": [
+            "biomcp drug interactions warfarin",
+            "biomcp drug interactions imatinib",
+            "biomcp get drug warfarin interactions",
+            "biomcp ddinter sync",
+        ],
+    },
     "vaers.md": {
         "title": "CDC WONDER VAERS MCP Tool for Vaccine Safety Signals | BioMCP",
         "description": "Use BioMCP to query CDC WONDER VAERS aggregate vaccine adverse-event summaries in BioMCP with reaction counts, seriousness breakdowns, and age distribution.",
@@ -625,6 +649,7 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - CIViC: sources/civic.md
       - OncoKB: sources/oncokb.md
       - cBioPortal: sources/cbioportal.md
+      - DDInter: sources/ddinter.md
       - EMA: sources/ema.md
       - WHO Prequalification: sources/who-prequalification.md
       - WHO Prequalified IVD: sources/who-ivd.md
@@ -720,7 +745,7 @@ def test_sources_overview_page_has_required_metadata_and_links() -> None:
     )
     assert (
         _front_matter_value(overview, "description")
-        == "Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, CDC WONDER VAERS, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, SEER Explorer, CIViC, OncoKB, cBioPortal, EMA, WHO Prequalification, WHO Prequalified IVD, CDC CVX/MVX, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative."
+        == "Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, CDC WONDER VAERS, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, SEER Explorer, CIViC, OncoKB, cBioPortal, DDInter, EMA, WHO Prequalification, WHO Prequalified IVD, CDC CVX/MVX, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative."
     )
 
     assert "# Biomedical Data Sources for AI Agents" in overview

@@ -510,6 +510,8 @@ const HEALTH_SOURCES: &[SourceDescriptor] = &[
 const EMA_LOCAL_DATA_AFFECTS: &str = "default plain-name drug search plus search/get drug --region eu|all and EU regulatory/safety/shortage sections";
 const CVX_LOCAL_DATA_AFFECTS: &str = "EMA vaccine identity bridge for plain-name drug search";
 const WHO_LOCAL_DATA_AFFECTS: &str = "default plain-name drug search plus search/get drug --region who|all and WHO regulatory sections";
+const DDINTER_LOCAL_DATA_AFFECTS: &str =
+    "drug interactions helper plus get drug interactions section";
 const GTR_LOCAL_DATA_AFFECTS: &str =
     "search/get diagnostic and local GTR-backed diagnostic routing";
 const WHO_IVD_LOCAL_DATA_AFFECTS: &str =
@@ -1015,6 +1017,24 @@ fn check_cvx_local_data() -> ProbeOutcome {
     cvx_local_data_outcome(&root, env_configured)
 }
 
+fn ddinter_local_data_outcome(root: &Path, env_configured: bool) -> ProbeOutcome {
+    local_data_outcome(
+        "DDInter local data",
+        root,
+        env_configured,
+        crate::sources::ddinter::DDINTER_REQUIRED_FILES,
+        crate::sources::ddinter::DDINTER_STALE_AFTER,
+        DDINTER_LOCAL_DATA_AFFECTS,
+        crate::sources::ddinter::ddinter_missing_files,
+    )
+}
+
+fn check_ddinter_local_data() -> ProbeOutcome {
+    let env_configured = configured_key("BIOMCP_DDINTER_DIR").is_some();
+    let root = crate::sources::ddinter::resolve_ddinter_root();
+    ddinter_local_data_outcome(&root, env_configured)
+}
+
 fn who_local_data_outcome(root: &Path, env_configured: bool) -> ProbeOutcome {
     local_data_outcome(
         "WHO Prequalification local data",
@@ -1384,6 +1404,7 @@ pub async fn check(apis_only: bool) -> Result<HealthReport, BioMcpError> {
     if !apis_only {
         outcomes.push(check_ema_local_data());
         outcomes.push(check_cvx_local_data());
+        outcomes.push(check_ddinter_local_data());
         outcomes.push(check_who_local_data());
         outcomes.push(check_gtr_local_data());
         outcomes.push(check_who_ivd_local_data());

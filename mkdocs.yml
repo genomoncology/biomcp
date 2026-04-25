@@ -51,6 +51,7 @@ nav:
       - CIViC: sources/civic.md
       - OncoKB: sources/oncokb.md
       - cBioPortal: sources/cbioportal.md
+      - DDInter: sources/ddinter.md
       - EMA: sources/ema.md
       - WHO Prequalification: sources/who-prequalification.md
       - WHO Prequalified IVD: sources/who-ivd.md

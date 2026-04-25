@@ -27,6 +27,7 @@ pub(crate) mod clinicaltrials;
 pub(crate) mod complexportal;
 pub(crate) mod cpic;
 pub(crate) mod cvx;
+pub(crate) mod ddinter;
 pub(crate) mod dgidb;
 pub(crate) mod disgenet;
 pub(crate) mod ema;

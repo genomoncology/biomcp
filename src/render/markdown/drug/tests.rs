@@ -39,7 +39,7 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
     };
 
     let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
-    assert!(markdown.contains("## Interactions"));
+    assert!(markdown.contains("## Interactions (DDInter)"));
     assert!(markdown.contains("DRUG INTERACTIONS"));
     assert!(!markdown.contains("No known drug-drug interactions found."));
 }
@@ -83,7 +83,10 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
     };
 
     let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
-    assert!(markdown.contains("Interaction details not available from public sources."));
+    assert!(
+        markdown
+            .contains("The current DDInter download bundle has no matching rows for this drug.")
+    );
     assert!(!markdown.contains("No known drug-drug interactions found."));
 }
 

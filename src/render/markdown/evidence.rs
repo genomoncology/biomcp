@@ -368,6 +368,43 @@ pub(super) fn drug_evidence_urls(drug: &Drug) -> Vec<(&'static str, String)> {
     urls
 }
 
+pub(super) fn drug_interaction_report_evidence_urls(
+    report: &crate::entities::drug::DrugInteractionReport,
+) -> Vec<(String, String)> {
+    let mut urls = Vec::new();
+    if let Some(drugbank_id) = report
+        .drugbank_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        urls.push((
+            "DrugBank".to_string(),
+            format!("https://go.drugbank.com/drugs/{drugbank_id}"),
+        ));
+    }
+    if let Some(chembl_id) = report
+        .chembl_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        urls.push((
+            "ChEMBL".to_string(),
+            format!("https://www.ebi.ac.uk/chembl/compound_report_card/{chembl_id}"),
+        ));
+    }
+    urls.push((
+        "DDInter download bundle".to_string(),
+        "https://ddinter.scbdd.com/download/".to_string(),
+    ));
+    urls.push((
+        "DDInter terms".to_string(),
+        "https://ddinter.scbdd.com/terms/".to_string(),
+    ));
+    urls
+}
+
 pub(super) fn pathway_evidence_urls(pathway: &Pathway) -> Vec<(&'static str, String)> {
     let id = pathway.id.trim();
     if id.is_empty() {

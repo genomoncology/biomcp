@@ -42,6 +42,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | ComplexPortal | 1 | direct_api | none | EMBL-EBI open data service | reuse follows EMBL-EBI resource terms and any embedded third-party source obligations | <https://www.ebi.ac.uk/complexportal/> |
 | CPIC | 1 | direct_api | none | CPIC content is published under CC0 with trademark and attribution guidance | content reuse is broadly allowed, but the CPIC mark/logo has separate restrictions | <https://cpicpgx.org/license/> |
 | DGIdb | 1 | direct_api | none | open interaction service; aggregated claims may still reflect upstream source terms | treat DGIdb as an aggregation layer and preserve source attribution for underlying claim providers | <https://www.dgidb.org/about> |
+| DDInter | 3 | direct_api | none | CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists | reuse requires attribution, non-commercial use, and ShareAlike treatment; do not turn missing rows into safety claims | <https://ddinter.scbdd.com/terms/> |
 | DisGeNET | 2 | direct_api | required_env | custom provider terms for API and downloads | do not assume unrestricted redistribution; use according to the provider account terms | <https://www.disgenet.com/> |
 | EMA | 1 | direct_api | none | EMA website material may be reused with source attribution; third-party content can carry separate rights | EMA-published website data is generally reusable with attribution, but embedded third-party materials may need separate permission | <https://www.ema.europa.eu/en/about-us/about-website/legal-notice> |
 | Enrichr | 1 | direct_api | none | open web/API service with citation expectations for Enrichr and its libraries | reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries | <https://maayanlab.cloud/Enrichr/> |
@@ -686,6 +687,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://www.cbioportal.org/>
 - Reviewed on: `2026-03-20`
 - Notes: BioMCP uses the public API. TCGA-derived studies are broadly open, while some cohorts such as AACR Project GENIE carry additional access or reuse conditions.
+
+### DDInter
+
+- BioMCP surfaces: `biomcp drug interactions <name>; get drug <name> interactions; biomcp health; biomcp ddinter sync`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: on-demand local download by BioMCP on first interaction use, or manual preseed via `BIOMCP_DDINTER_DIR`
+- License / terms summary: CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists
+- Redistribution / reuse summary: reuse requires attribution, non-commercial use, and ShareAlike treatment; do not turn missing rows into safety claims or assume commercial redistribution rights
+- Official terms URL: <https://ddinter.scbdd.com/terms/>
+- Reviewed on: `2026-04-25`
+- Notes: BioMCP auto-downloads `ddinter_downloads_code_A.csv`, `ddinter_downloads_code_B.csv`, `ddinter_downloads_code_D.csv`, `ddinter_downloads_code_H.csv`, `ddinter_downloads_code_L.csv`, `ddinter_downloads_code_P.csv`, `ddinter_downloads_code_R.csv`, and `ddinter_downloads_code_V.csv` into `BIOMCP_DDINTER_DIR` or the default data directory on first use, refreshes stale files after 72 hours, supports explicit refresh via `biomcp ddinter sync`, and phrases empties as current-bundle misses instead of clinical absence.
 
 ### gnomAD
 

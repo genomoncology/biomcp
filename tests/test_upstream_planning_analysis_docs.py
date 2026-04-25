@@ -187,10 +187,10 @@ def test_functional_overview_repaired_source_rows_match_current_contract() -> No
         "`biomcp search diagnostic --gene BRCA1 --limit 5` |" in functional
     )
     assert (
-        "| drug | MyChem.info, EMA local batch, WHO Prequalification local CSV, "
-        "ChEMBL, OpenTargets, Drugs@FDA, OpenFDA labels/shortages/approvals/"
-        "FAERS/MAUDE/recalls, CIViC | `biomcp get drug trastuzumab regulatory "
-        "--region who` |" in functional
+        "| drug | MyChem.info, DDInter local bundle, EMA local batch, WHO "
+        "Prequalification local CSV, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA "
+        "labels/shortages/approvals/FAERS/MAUDE/recalls, CIViC | "
+        "`biomcp drug interactions warfarin` |" in functional
     )
     assert (
         "| disease | MyDisease.info, Monarch Initiative, MONDO, OpenTargets, "
@@ -886,7 +886,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "default `get` output stays concise" in section_first_section
     assert "## Local Runtime Sources and File-Backed Assets" in source_integration
     assert (
-        "EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runtime sources."
+        "DDInter, EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runtime sources."
         in local_runtime_section
     )
     assert (
@@ -902,6 +902,10 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
         in local_runtime_section
     )
     assert (
+        "`BIOMCP_DDINTER_DIR` first, then the platform data directory"
+        in local_runtime_section
+    )
+    assert (
         "`BIOMCP_GTR_DIR` first, then the platform data directory"
         in local_runtime_section
     )
@@ -910,11 +914,12 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
         in local_runtime_section
     )
     assert (
-        "`biomcp health` includes the EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD local-data readiness rows"
+        "Full `biomcp health` includes the DDInter, EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD local-data readiness rows."
         in local_runtime_section
     )
     assert "`biomcp health --apis-only` excludes those rows" in local_runtime_section
     for expected_row in (
+        "| DDInter | `BIOMCP_DDINTER_DIR` | `ddinter_downloads_code_A.csv`, `ddinter_downloads_code_B.csv`, `ddinter_downloads_code_D.csv`, `ddinter_downloads_code_H.csv`, `ddinter_downloads_code_L.csv`, `ddinter_downloads_code_P.csv`, `ddinter_downloads_code_R.csv`, `ddinter_downloads_code_V.csv` | 72 hours | `biomcp ddinter sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |",
         "| EMA | `BIOMCP_EMA_DIR` | `medicines.json`, `post_authorisation.json`, `referrals.json`, `psusas.json`, `dhpcs.json`, `shortages.json` | 72 hours | `biomcp ema sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |",
         "| WHO Prequalification | `BIOMCP_WHO_DIR` | `who_pq.csv`, `who_api.csv`, `who_vaccines.csv` | 72 hours | `biomcp who sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |",
         "| CDC CVX/MVX | `BIOMCP_CVX_DIR` | `cvx.txt`, `TRADENAME.txt`, `mvx.txt` | 30 days | `biomcp cvx sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |",
@@ -932,6 +937,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`docs/user-guide/drug.md`" in local_runtime_section
     assert "`docs/user-guide/diagnostic.md`" in local_runtime_section
     assert "30-day refresh window" in local_runtime_section
+    assert "## DDInter local data setup" in drug_guide
     assert (
         "BioASQ is the canonical file-backed non-runtime asset" in local_runtime_section
     )

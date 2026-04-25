@@ -136,7 +136,9 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         indications: vec!["Cystic fibrosis".to_string()],
         interactions: vec![crate::entities::drug::DrugInteraction {
             drug: "rifampin".to_string(),
+            level: None,
             description: Some("May reduce ivacaftor exposure.".to_string()),
+            partner_classes: Vec::new(),
         }],
         interaction_text: None,
         pharm_classes: Vec::new(),
@@ -161,7 +163,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
     assert!(drug_markdown.contains("## Mechanisms (MyChem.info / ChEMBL)"));
     assert!(drug_markdown.contains("## Targets (ChEMBL / Open Targets)"));
     assert!(drug_markdown.contains("## Indications (Open Targets)"));
-    assert!(drug_markdown.contains("## Interactions (DrugBank)"));
+    assert!(drug_markdown.contains("## Interactions (DDInter)"));
     assert!(drug_markdown.contains("## Shortage (US - OpenFDA Drug Shortages)"));
     assert!(drug_markdown.contains("## Regulatory (US - Drugs@FDA)"));
 

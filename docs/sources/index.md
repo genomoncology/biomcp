@@ -1,6 +1,6 @@
 ---
 title: "Biomedical Data Sources for AI Agents | BioMCP"
-description: "Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, CDC WONDER VAERS, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, SEER Explorer, CIViC, OncoKB, cBioPortal, EMA, WHO Prequalification, WHO Prequalified IVD, CDC CVX/MVX, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative."
+description: "Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, CDC WONDER VAERS, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, SEER Explorer, CIViC, OncoKB, cBioPortal, DDInter, EMA, WHO Prequalification, WHO Prequalified IVD, CDC CVX/MVX, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative."
 ---
 
 # Biomedical Data Sources for AI Agents
@@ -28,6 +28,7 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | CIViC | Clinical variant evidence, therapy context, and disease-associated variants | [CIViC](civic.md) |
 | OncoKB | Oncology actionability tiers and treatment implications for actionable variants | [OncoKB](oncokb.md) |
 | cBioPortal | Cancer cohort frequencies and local study analytics workflows | [cBioPortal](cbioportal.md) |
+| DDInter | Structured drug-drug interactions, severity levels, and class-oriented partner review | [DDInter](ddinter.md) |
 | EMA | EU regulatory, safety, and shortage context for medicines | [EMA](ema.md) |
 | WHO Prequalification | WHO-backed medicine and vaccine prequalification search plus global access checks | [WHO Prequalification](who-prequalification.md) |
 | WHO Prequalified IVD | Infectious-disease diagnostic products, assay formats, and WHO product-card provenance | [WHO Prequalified IVD](who-ivd.md) |

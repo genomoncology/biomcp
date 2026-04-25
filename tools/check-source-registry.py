@@ -8,10 +8,11 @@ import sys
 from pathlib import Path
 
 HELPER_MODULES = {"cbioportal_download", "cbioportal_study", "rate_limit"}
-EXEMPT_MODULES = {"cvx", "ema", "gtr", "who_ivd", "who_pq"}
+EXEMPT_MODULES = {"cvx", "ddinter", "ema", "gtr", "who_ivd", "who_pq"}
 HEALTH_ALIASES = {
     "cbioportal": "cBioPortal",
     "clinicaltrials": "ClinicalTrials.gov",
+    "ddinter": "DDInter local data",
     "gprofiler": "g:Profiler",
     "gwas": "GWAS Catalog",
     "ncbi_efetch": "NCBI E-utilities",

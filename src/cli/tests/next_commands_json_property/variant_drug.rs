@@ -1,5 +1,5 @@
 use super::*;
-use crate::entities::drug::Drug;
+use crate::entities::drug::{Drug, DrugInteractionReport};
 use crate::entities::variant::Variant;
 
 #[test]
@@ -94,5 +94,38 @@ fn drug_json_next_commands_parse() {
         crate::render::markdown::drug_evidence_urls(&drug),
         crate::render::markdown::related_drug(&drug),
         crate::render::provenance::drug_section_sources(&drug),
+    );
+}
+
+#[test]
+fn drug_interaction_report_json_next_commands_include_helper_follow_ups() {
+    let report = DrugInteractionReport {
+        name: "warfarin".to_string(),
+        drugbank_id: Some("DB00682".to_string()),
+        chembl_id: Some("CHEMBL88".to_string()),
+        interactions: Vec::new(),
+        class_summaries: Vec::new(),
+        source_note: Some(
+            "Structured rows come from the current DDInter download bundle.".to_string(),
+        ),
+        label_interaction_text: None,
+    };
+
+    let json = crate::render::json::to_entity_json(
+        &report,
+        crate::render::markdown::drug_interaction_report_evidence_urls(&report),
+        crate::render::markdown::related_drug_interactions(&report.name),
+        crate::render::provenance::drug_interaction_report_section_sources(&report),
+    )
+    .expect("drug interaction report json");
+
+    assert_json_next_commands_parse("drug-interaction-report", &json);
+    let next_commands = collect_next_commands(&json);
+    assert_eq!(
+        next_commands,
+        vec![
+            "biomcp get drug warfarin safety".to_string(),
+            "biomcp search article --drug warfarin --limit 5".to_string(),
+        ]
     );
 }

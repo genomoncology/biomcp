@@ -114,16 +114,31 @@ Variant Targets (CIViC): {{ variant_targets | join(", ") }}
 {% if show_interactions_section -%}
 ## {{ drug_interactions_heading }}
 
-{% if interactions -%}
-| Interacting Drug | Description |
+{% if drug_interactions_note -%}
+{{ drug_interactions_note }}
+
+{% endif -%}
+{% if pharm_classes -%}
+## Interacting Drug Classes
+
+| Class | Coverage |
 |---|---|
-{% for row in interactions -%}
-| {{ row.drug }} | {{ row.description or "-" }} |
+{% for row in pharm_classes -%}
+| {{ row }} | DDInter-derived |
 {% endfor -%}
-{% elif interaction_text -%}
+{% endif -%}
+{% if interactions -%}
+| Interacting Drug | Level | Classes | Description |
+|---|---|---|---|
+{% for row in interactions -%}
+| {{ row.drug }} | {{ row.level or "-" }} | {% if row.partner_classes %}{{ row.partner_classes | join(", ") }}{% else %}-{% endif %} | {{ row.description or "-" }} |
+{% endfor -%}
+{% endif -%}
+{% if interaction_text -%}
+
+## Additive Label Text (OpenFDA)
+
 {{ interaction_text }}
-{% else -%}
-Interaction details not available from public sources.
 {% endif -%}
 {% endif -%}
 {% if sections_block %}{{ sections_block }}

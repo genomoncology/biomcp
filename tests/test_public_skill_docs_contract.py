@@ -112,6 +112,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "_meta.workflow" in cli_reference
     assert "_meta.ladder[]" in cli_reference
     assert "biomcp get drug aspirin --json" in cli_reference
+    assert "biomcp drug interactions warfarin" in cli_reference
     assert "single-entity resolver" in cli_reference
     assert 'biomcp search all --keyword "<query>"' in cli_reference
     assert "single-entity concept resolution before typed search/get" in quick_reference
@@ -163,7 +164,9 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp ema sync" in routing_rules
     assert "biomcp who sync" in routing_rules
     assert "biomcp cvx sync" in routing_rules
+    assert "biomcp ddinter sync" in routing_rules
     assert "CDC CVX/MVX" in routing_rules
+    assert "`biomcp drug interactions <name>`" in routing_rules
     assert 'biomcp search drug --indication "<disease>"' in skill_file
     assert 'biomcp discover "<free text>"' in skill_file
     assert "single-entity resolver" in routing_rules
@@ -222,6 +225,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "Never do more than 3 article searches for one question." in skill_file
     assert "ClinicalTrials.gov usually does not index nicknames" in skill_file
     assert "add `--drug <name>` to `search article`" in skill_file
+    assert "DDInter is the local drug-interaction bundle" in skill_file
     assert "_meta.workflow" in skill_file
     assert "_meta.ladder[]" in skill_file
     assert "`biomcp article batch <pmid1> <pmid2> ...` uses spaces between PMIDs." in skill_file

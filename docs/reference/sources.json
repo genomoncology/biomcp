@@ -153,6 +153,28 @@
     "notes": "DGIdb itself is open to query, but it aggregates claims from many external drug-gene sources."
   },
   {
+    "id": "ddinter",
+    "name": "DDInter",
+    "tier": 3,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "biomcp drug interactions <name>",
+      "get drug <name> interactions",
+      "biomcp health",
+      "biomcp ddinter sync"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public DDInter download bundle; BioMCP downloads and reads local copies on demand, or operators can preseed BIOMCP_DDINTER_DIR manually",
+    "license_summary": "CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists",
+    "redistribution_summary": "reuse requires attribution, non-commercial use, and ShareAlike treatment; do not turn missing rows into safety claims or assume commercial redistribution rights",
+    "terms_url": "https://ddinter.scbdd.com/terms/",
+    "key_url": null,
+    "reviewed_on": "2026-04-25",
+    "notes": "BioMCP requires ddinter_downloads_code_A.csv, ddinter_downloads_code_B.csv, ddinter_downloads_code_D.csv, ddinter_downloads_code_H.csv, ddinter_downloads_code_L.csv, ddinter_downloads_code_P.csv, ddinter_downloads_code_R.csv, and ddinter_downloads_code_V.csv; it auto-downloads them on first interaction use, refreshes stale files after 72 hours, supports explicit refresh via biomcp ddinter sync, and keeps empty results scoped to the current DDInter bundle."
+  },
+  {
     "id": "disgenet",
     "name": "DisGeNET",
     "tier": 2,

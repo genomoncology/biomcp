@@ -19,6 +19,21 @@ fn render_drug_trials_help() -> String {
     String::from_utf8(help).expect("help should be utf-8")
 }
 
+fn render_drug_interactions_help() -> String {
+    let mut command = Cli::command();
+    let drug = command
+        .find_subcommand_mut("drug")
+        .expect("drug subcommand should exist");
+    let interactions = drug
+        .find_subcommand_mut("interactions")
+        .expect("drug interactions subcommand should exist");
+    let mut help = Vec::new();
+    interactions
+        .write_long_help(&mut help)
+        .expect("drug interactions help should render");
+    String::from_utf8(help).expect("help should be utf-8")
+}
+
 #[test]
 fn get_drug_help_lists_region_flag_and_examples() {
     let mut command = Cli::command();
@@ -100,6 +115,9 @@ fn search_drug_help_mentions_default_all_and_structured_filter_note() {
     assert!(help.contains("vaccine"));
     assert!(help.contains("requires explicit --region who"));
     assert!(help.contains("Explicit --region eu|all with structured filters still errors."));
+    assert!(help.contains(
+        "Interaction lookups are not part of `search drug`; use `biomcp drug interactions <name>` instead."
+    ));
 }
 
 #[test]
@@ -232,6 +250,28 @@ fn drug_trials_help_mentions_alias_expansion_and_opt_out() {
     assert!(help.contains("Matched Intervention"));
     assert!(help.contains("matched_intervention_label"));
     assert!(help.contains("--no-alias-expand"));
+}
+
+#[test]
+fn drug_interactions_help_mentions_ddinter_bundle_and_truthful_empty_state() {
+    let help = render_drug_interactions_help();
+
+    assert!(help.contains("DDInter local download bundle"));
+    assert!(help.contains("BIOMCP_DDINTER_DIR"));
+    assert!(help.contains("biomcp ddinter sync"));
+    assert!(help.contains("no matching rows in the current DDInter download bundle"));
+}
+
+#[test]
+fn drug_interactions_parse_anchor_name() {
+    let cli = Cli::try_parse_from(["biomcp", "drug", "interactions", "warfarin"]).expect("parse");
+
+    match cli.command {
+        Commands::Drug {
+            cmd: DrugCommand::Interactions { name },
+        } => assert_eq!(name, "warfarin"),
+        other => panic!("unexpected command: {other:?}"),
+    }
 }
 
 #[test]
