@@ -39,7 +39,7 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
     };
 
     let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
-    assert!(markdown.contains("## Interactions"));
+    assert!(markdown.contains("## Interactions (DDInter)"));
     assert!(markdown.contains("DRUG INTERACTIONS"));
     assert!(!markdown.contains("No known drug-drug interactions found."));
 }
@@ -83,8 +83,61 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
     };
 
     let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
-    assert!(markdown.contains("Interaction details not available from public sources."));
+    assert!(
+        markdown
+            .contains("The current DDInter download bundle has no matching rows for this drug.")
+    );
     assert!(!markdown.contains("No known drug-drug interactions found."));
+}
+
+#[test]
+fn drug_markdown_renders_interaction_class_summaries_without_overloading_anchor_classes() {
+    let drug = Drug {
+        name: "warfarin".to_string(),
+        drugbank_id: Some("DB00682".to_string()),
+        chembl_id: None,
+        unii: None,
+        drug_type: None,
+        mechanism: None,
+        mechanisms: Vec::new(),
+        approval_date: None,
+        approval_date_raw: None,
+        approval_date_display: None,
+        approval_summary: None,
+        brand_names: Vec::new(),
+        route: None,
+        targets: Vec::new(),
+        variant_targets: Vec::new(),
+        target_family: None,
+        target_family_name: None,
+        indications: Vec::new(),
+        interactions: vec![crate::entities::drug::DrugInteraction {
+            drug: "aspirin".to_string(),
+            level: Some("Major".to_string()),
+            description: Some("May increase bleeding risk.".to_string()),
+            partner_classes: vec!["P2Y12 Receptor Antagonists".to_string()],
+        }],
+        interaction_text: None,
+        pharm_classes: vec!["Vitamin K antagonists".to_string()],
+        top_adverse_events: Vec::new(),
+        faers_query: None,
+        label: None,
+        label_set_id: None,
+        shortage: None,
+        approvals: None,
+        us_safety_warnings: None,
+        ema_regulatory: None,
+        ema_safety: None,
+        ema_shortage: None,
+        who_prequalification: None,
+        civic: None,
+    };
+
+    let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
+    assert!(markdown.contains("## Interacting Drug Classes"));
+    assert!(markdown.contains("| antiplatelets | 1 | Major |"));
+    assert!(!markdown.contains("Vitamin K antagonists"));
+    assert!(markdown.contains("May increase bleeding risk."));
 }
 
 #[test]

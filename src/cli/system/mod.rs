@@ -28,6 +28,12 @@ pub enum CvxCommand {
 }
 
 #[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DdinterCommand {
+    /// Force refresh the eight DDInter CSV files
+    Sync,
+}
+
+#[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GtrCommand {
     /// Force refresh the local NCBI GTR diagnostic bundle
     Sync,
@@ -106,8 +112,8 @@ pub struct VersionArgs {
 
 mod dispatch;
 pub(crate) use self::dispatch::{
-    handle_batch, handle_cvx, handle_ema, handle_enrich, handle_gtr, handle_uninstall,
-    handle_version, handle_who, handle_who_ivd,
+    handle_batch, handle_cvx, handle_ddinter, handle_ema, handle_enrich, handle_gtr,
+    handle_uninstall, handle_version, handle_who, handle_who_ivd,
 };
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
 use clap::{CommandFactory, Parser};
 
-use super::{CvxCommand, EmaCommand, GtrCommand, WhoCommand, WhoIvdCommand};
+use super::{CvxCommand, DdinterCommand, EmaCommand, GtrCommand, WhoCommand, WhoIvdCommand};
 use crate::cli::{Cli, Commands, execute};
 
 fn parse_built_cli<I, T>(args: I) -> Cli
@@ -9,6 +9,49 @@ where
     T: Into<std::ffi::OsString> + Clone,
 {
     crate::cli::try_parse_cli(args).expect("args should parse with canonical CLI")
+}
+
+#[test]
+fn ddinter_sync_parses_subcommand() {
+    let cli = parse_built_cli(["biomcp", "ddinter", "sync"]);
+    assert!(matches!(
+        cli.command,
+        Commands::Ddinter {
+            cmd: DdinterCommand::Sync
+        }
+    ));
+}
+
+#[test]
+fn ddinter_help_mentions_sync_example() {
+    let mut command = Cli::command();
+    let ddinter = command
+        .find_subcommand_mut("ddinter")
+        .expect("ddinter subcommand should exist");
+    let mut help = Vec::new();
+    ddinter
+        .write_long_help(&mut help)
+        .expect("ddinter help should render");
+    let help = String::from_utf8(help).expect("help should be utf-8");
+
+    assert!(help.contains("biomcp ddinter sync"));
+}
+
+#[test]
+fn ddinter_sync_help_describes_eight_csv_refresh() {
+    let mut command = Cli::command();
+    let ddinter = command
+        .find_subcommand_mut("ddinter")
+        .expect("ddinter subcommand should exist");
+    let sync = ddinter
+        .find_subcommand_mut("sync")
+        .expect("ddinter sync subcommand should exist");
+    let mut help = Vec::new();
+    sync.write_long_help(&mut help)
+        .expect("ddinter sync help should render");
+    let help = String::from_utf8(help).expect("help should be utf-8");
+
+    assert!(help.contains("eight DDInter CSV files"));
 }
 
 #[test]

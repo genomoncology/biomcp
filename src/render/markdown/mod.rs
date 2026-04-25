@@ -54,8 +54,8 @@ pub use self::disease::{
 };
 #[allow(unused_imports)]
 pub use self::drug::{
-    drug_markdown, drug_markdown_with_region, drug_search_markdown,
-    drug_search_markdown_with_footer, drug_search_markdown_with_region,
+    drug_interaction_report_markdown, drug_markdown, drug_markdown_with_region,
+    drug_search_markdown, drug_search_markdown_with_footer, drug_search_markdown_with_region,
 };
 #[allow(unused_imports)]
 pub use self::gene::{gene_markdown, gene_search_markdown, gene_search_markdown_with_footer};
@@ -108,8 +108,9 @@ use crate::entities::disease::{
     Disease, DiseaseAssociationScoreSummary, DiseaseSearchResult, PhenotypeSearchResult,
 };
 use crate::entities::drug::{
-    Drug, DrugApproval, DrugRegion, DrugSearchResult, EmaDrugSearchResult, EmaRegulatoryRow,
-    EmaSafetyInfo, EmaShortageEntry, WhoPrequalificationEntry, WhoPrequalificationSearchResult,
+    Drug, DrugApproval, DrugInteractionReport, DrugRegion, DrugSearchResult, EmaDrugSearchResult,
+    EmaRegulatoryRow, EmaSafetyInfo, EmaShortageEntry, WhoPrequalificationEntry,
+    WhoPrequalificationSearchResult,
 };
 use crate::entities::gene::{Gene, GeneSearchResult};
 use crate::entities::pathway::{Pathway, PathwaySearchResult};
@@ -165,6 +166,12 @@ pub(crate) fn disease_evidence_urls(disease: &Disease) -> Vec<(String, String)> 
 
 pub(crate) fn drug_evidence_urls(drug: &Drug) -> Vec<(&'static str, String)> {
     evidence::drug_evidence_urls(drug)
+}
+
+pub(crate) fn drug_interaction_report_evidence_urls(
+    report: &DrugInteractionReport,
+) -> Vec<(String, String)> {
+    evidence::drug_interaction_report_evidence_urls(report)
 }
 
 pub(crate) fn gene_evidence_urls(gene: &Gene) -> Vec<(&'static str, String)> {
@@ -238,6 +245,10 @@ pub(crate) fn related_disease(disease: &Disease) -> Vec<String> {
 
 pub(crate) fn related_drug(drug: &Drug) -> Vec<String> {
     related::related_drug(drug)
+}
+
+pub(crate) fn related_drug_interactions(name: &str) -> Vec<String> {
+    related::related_drug_interactions(name)
 }
 
 pub(crate) fn gene_next_commands(gene: &Gene, requested_sections: &[String]) -> Vec<String> {

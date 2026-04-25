@@ -186,6 +186,9 @@ fn pgx_search_json_next_commands_parse() {
 fn drug_next_commands_parse() {
     assert_parses("biomcp drug trials osimertinib");
     assert_parses("biomcp drug adverse-events osimertinib");
+    assert_parses("biomcp drug interactions osimertinib");
+    assert_parses("biomcp get drug osimertinib safety");
+    assert_parses("biomcp search article --drug osimertinib --limit 5");
     assert_parses("biomcp get gene EGFR");
 }
 

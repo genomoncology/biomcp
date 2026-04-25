@@ -11,6 +11,7 @@ BLOCKED_FAMILIES = {
     "cache",
     "chart",
     "cvx",
+    "ddinter",
     "ema",
     "gtr",
     "who-ivd",

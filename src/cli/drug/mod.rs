@@ -124,6 +124,22 @@ See also: biomcp list drug")]
         #[arg(long)]
         serious: bool,
     },
+    /// Review DDInter-backed drug-drug interactions for one anchor drug
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp drug interactions warfarin
+  biomcp drug interactions imatinib
+
+Note: This helper reads the DDInter local download bundle from `BIOMCP_DDINTER_DIR`
+or the default data directory. Use `biomcp ddinter sync` to force-refresh the
+eight DDInter CSV files. Empty results are reported as
+`no matching rows in the current DDInter download bundle` rather than as a claim
+of no interactions.
+See also: biomcp list drug")]
+    Interactions {
+        /// Drug name (e.g., warfarin)
+        name: String,
+    },
     #[command(external_subcommand)]
     External(Vec<String>),
 }

@@ -91,6 +91,14 @@ EXAMPLES:
         #[command(subcommand)]
         cmd: system::CvxCommand,
     },
+    /// DDInter local interaction data management
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp ddinter sync    # force refresh the eight DDInter CSV files")]
+    Ddinter {
+        #[command(subcommand)]
+        cmd: system::DdinterCommand,
+    },
     /// NCBI GTR local data management
     #[command(after_help = "\
 EXAMPLES:
@@ -374,7 +382,7 @@ EXAMPLES:
   biomcp search drug --indication malaria --region who --limit 5
   biomcp search drug -q \"kinase inhibitor\" --target EGFR --atc L01 --pharm-class kinase --limit 5
 
-Note: --interactions is currently unavailable from the public data sources BioMCP uses.
+Note: Interaction lookups are not part of `search drug`; use `biomcp drug interactions <name>` instead.
 Omitting --region on a plain name/alias search checks U.S., EU, and WHO data.
 If you omit --region while using structured filters such as --target or --indication, BioMCP stays on the U.S. MyChem path.
 Explicit --region who filters structured U.S. hits through WHO Prequalification.

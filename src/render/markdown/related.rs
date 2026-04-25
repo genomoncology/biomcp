@@ -1028,6 +1028,17 @@ pub(super) fn related_drug(drug: &Drug) -> Vec<String> {
     dedupe_markdown_commands(out)
 }
 
+pub(super) fn related_drug_interactions(name: &str) -> Vec<String> {
+    let name = quote_arg(name);
+    if name.is_empty() {
+        return Vec::new();
+    }
+    vec![
+        format!("biomcp get drug {name} safety"),
+        format!("biomcp search article --drug {name} --limit 5"),
+    ]
+}
+
 pub(super) fn related_adverse_event(event: &AdverseEvent) -> Vec<String> {
     let drug = quote_arg(&event.drug);
     if drug.is_empty() {

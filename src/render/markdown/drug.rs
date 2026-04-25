@@ -1,5 +1,7 @@
 //! Drug markdown renderers and drug-specific empty-state helpers.
 
+use std::fmt::Write as _;
+
 use super::drug_regulatory::{
     render_regulatory_block, render_safety_block, render_shortage_block, render_us_approvals_block,
 };
@@ -41,6 +43,7 @@ pub fn drug_markdown_with_region(
         section_only => section_only,
         section_header => section_header(&drug.name, requested_sections),
         drug_interactions_heading => crate::render::provenance::drug_interaction_heading_label(drug),
+        drug_interactions_note => crate::render::provenance::drug_interaction_note(drug),
         name => &drug.name,
         drugbank_id => &drug.drugbank_id,
         chembl_id => &drug.chembl_id,
@@ -61,7 +64,7 @@ pub fn drug_markdown_with_region(
         indications => &drug.indications,
         interactions => &drug.interactions,
         interaction_text => &drug.interaction_text,
-        pharm_classes => &drug.pharm_classes,
+        interaction_class_summaries => crate::entities::drug::interaction_class_summaries(&drug.interactions),
         label => &drug.label,
         raw_label => raw_label,
         civic => &drug.civic,
@@ -86,6 +89,71 @@ pub fn drug_markdown_with_region(
 
 pub fn drug_markdown(drug: &Drug, requested_sections: &[String]) -> Result<String, BioMcpError> {
     drug_markdown_with_region(drug, requested_sections, DrugRegion::Us, false)
+}
+
+pub fn drug_interaction_report_markdown(
+    report: &crate::entities::drug::DrugInteractionReport,
+) -> Result<String, BioMcpError> {
+    let mut out = String::new();
+    let _ = writeln!(out, "# {}\n", report.name);
+    if let Some(note) = report.source_note.as_deref() {
+        let _ = writeln!(out, "{note}\n");
+    }
+    if !report.class_summaries.is_empty() {
+        out.push_str("## Interacting Drug Classes\n\n");
+        out.push_str("| Class | Interactions | Highest Level |\n");
+        out.push_str("|---|---|---|\n");
+        for row in &report.class_summaries {
+            let _ = writeln!(
+                out,
+                "| {} | {} | {} |",
+                markdown_cell(&row.class_name),
+                row.interaction_count,
+                row.highest_level
+                    .as_deref()
+                    .map(markdown_cell)
+                    .unwrap_or_else(|| "-".to_string()),
+            );
+        }
+        out.push('\n');
+    }
+    if !report.interactions.is_empty() {
+        out.push_str("## Interacting Drugs\n\n");
+        out.push_str("| Interacting Drug | Level | Classes | Description |\n");
+        out.push_str("|---|---|---|---|\n");
+        for row in &report.interactions {
+            let _ = writeln!(
+                out,
+                "| {} | {} | {} | {} |",
+                markdown_cell(&row.drug),
+                row.level
+                    .as_deref()
+                    .map(markdown_cell)
+                    .unwrap_or_else(|| "-".to_string()),
+                if row.partner_classes.is_empty() {
+                    "-".to_string()
+                } else {
+                    markdown_cell(&row.partner_classes.join(", "))
+                },
+                row.description
+                    .as_deref()
+                    .map(markdown_cell)
+                    .unwrap_or_else(|| "-".to_string()),
+            );
+        }
+        out.push('\n');
+    }
+    if let Some(label_text) = report.label_interaction_text.as_deref() {
+        out.push_str("## Additive Label Text (OpenFDA)\n\n");
+        let _ = writeln!(out, "{label_text}\n");
+    }
+    out.push_str(&format_related_block(related_drug_interactions(
+        &report.name,
+    )));
+    Ok(append_evidence_urls(
+        out,
+        crate::render::markdown::drug_interaction_report_evidence_urls(report),
+    ))
 }
 
 pub fn drug_search_markdown(

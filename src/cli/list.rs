@@ -503,7 +503,7 @@ fn list_drug() -> String {
 - `get drug <name> shortage [--region <us|eu|all>]` - query current shortage status
 - `get drug <name> targets` - generic targets from ChEMBL/OpenTargets plus additive CIViC variant-target annotations when available
 - `get drug <name> indications` - enrich with OpenTargets indications
-- `get drug <name> interactions` - OpenFDA label interaction text when available; otherwise a truthful public-data fallback
+- `get drug <name> interactions` - DDInter-backed structured interaction rows plus class rollups; empty states stay scoped to the current DDInter download bundle
 - `get drug <name> civic` - CIViC therapy evidence/assertion summary
 - `get drug <name> approvals` - Drugs@FDA approval/application details (US-only legacy section)
 - `get drug <name> all [--region <us|eu|who|all>]` - include all sections
@@ -520,12 +520,13 @@ fn list_drug() -> String {
 - `search drug --mechanism <text>`
 - `search drug --atc <code>`
 - `search drug --pharm-class <class>`
-- `search drug --interactions <drug>` - unavailable from current public data sources
+- `search drug --interactions <drug>` - unavailable from current public data sources; use `drug interactions <name>` for structured DDI lookup
 - `search drug ... --limit <N> --offset <N>`
 
 ## Helpers
 
 - `drug trials <name> [--no-alias-expand]`
+- `drug interactions <name>` - DDInter-backed structured drug-drug interactions with partner rows, class summaries, and helper-specific JSON follow-ups
 - `drug adverse-events <name>` - checks FAERS first, distinguishes FAERS 404 from FAERS 200+empty results, and falls back to ClinicalTrials.gov trial-reported adverse events only on FAERS 404
 
 ## JSON Output
@@ -538,6 +539,7 @@ fn list_drug() -> String {
 - Structured indication searches with matching results can also include `_meta.workflow` and `_meta.ladder[]` for the `treatment-lookup` workflow.
 - Non-vaccine searches keep `biomcp get drug <name>` as the preferred follow-up; WHO vaccine-only results stay search-only and omit broken `get drug` guidance.
 - `biomcp list drug` is always included so agents can inspect the full filter surface.
+- `biomcp --json drug interactions <name>` returns the canonical anchor drug, interaction rows, class summaries, and helper-specific `_meta.next_commands` for `biomcp get drug <canonical> safety` plus `biomcp search article --drug <canonical> --limit 5`.
 - `biomcp --json drug adverse-events <name>` keeps the FAERS `summary` / `results` / `count` fields, adds `faers_not_found`, and includes `trial_adverse_events` only when the ClinicalTrials.gov fallback returns posted trial adverse-event terms.
 
 ## Notes
@@ -553,11 +555,12 @@ fn list_drug() -> String {
 - Omitting `--region` on `get drug <name> regulatory` is the one implicit combined-region get path; other no-flag `get drug` shapes stay on the default U.S. path.
 - WHO vaccine support in this ticket is search-only; `get drug <name> regulatory --region who|all` remains finished-pharma/API only.
 - `drug trials <name>` inherits CTGov intervention alias expansion, adds `Matched Intervention` / `matched_intervention_label` when an alternate alias matched first, and accepts `--no-alias-expand` for literal matching.
+- Drug interaction commands auto-download the DDInter CSV bundle into `BIOMCP_DDINTER_DIR` or the default data directory on first use; empty results stay scoped to the current DDInter bundle instead of claiming clinical safety.
 - `drug adverse-events <name>` explains when a drug is absent from FAERS versus present with no matching FAERS events; only the FAERS-404 branch queries ClinicalTrials.gov.
 - EU regional commands auto-download the EMA human-medicines JSON feeds into `BIOMCP_EMA_DIR` or the default data directory on first use.
 - Default/EU vaccine brand lookups and explicit WHO vaccine name/brand searches can also auto-download the CDC CVX/MVX bundle into `BIOMCP_CVX_DIR` or the default data directory on first use.
 - WHO regional commands auto-download the WHO finished-pharma, API, and vaccine CSV exports into `BIOMCP_WHO_DIR` or the default data directory on first use (`who_pq.csv`, `who_api.csv`, and `who_vaccines.csv`).
-- Run `biomcp ema sync`, `biomcp cvx sync`, `biomcp who sync`, `biomcp gtr sync`, or `biomcp who-ivd sync` to force-refresh the local runtime data.
+- Run `biomcp ddinter sync`, `biomcp ema sync`, `biomcp cvx sync`, `biomcp who sync`, `biomcp gtr sync`, or `biomcp who-ivd sync` to force-refresh the local runtime data.
 "#
     .to_string()
 }

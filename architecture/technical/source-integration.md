@@ -53,9 +53,10 @@ Not every file-backed dependency participates in the same runtime lifecycle.
 
 ### Local runtime sources
 
-EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runtime sources.
+DDInter, EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runtime sources.
 
 - Runtime resolution is owned by the source module, not hard-coded in docs.
+- DDInter resolves `BIOMCP_DDINTER_DIR` first, then the platform data directory.
 - EMA resolves `BIOMCP_EMA_DIR` first, then the platform data directory.
 - WHO resolves `BIOMCP_WHO_DIR` first, then the platform data directory.
 - CDC CVX/MVX resolves `BIOMCP_CVX_DIR` first, then the platform data directory.
@@ -64,7 +65,7 @@ EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runtime sourc
 - first-use auto-download prepares missing local runtime files for commands
   that need those sources, while the sync commands force-refresh the same
   local bundles for operator workflows.
-- Full `biomcp health` includes the EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD local-data readiness rows.
+- Full `biomcp health` includes the DDInter, EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD local-data readiness rows.
 - `biomcp health --apis-only` excludes those rows because local runtime data is
   not an upstream API.
 - The row status contract is `configured`, `configured (stale)`,
@@ -72,28 +73,29 @@ EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runtime sourc
   `not configured`, and `error (missing: ...)`.
 - The canonical provider terms live in `docs/reference/source-licensing.md`
   and the machine-readable source inventory in `docs/reference/sources.json`.
-- Operator-facing setup details live in `docs/user-guide/drug.md` for the drug
-  local data roots and `docs/user-guide/diagnostic.md` for GTR and WHO IVD.
+- Operator-facing setup details live in `docs/user-guide/drug.md` for DDInter
+  and the other drug local data roots, and `docs/user-guide/diagnostic.md` for
+  GTR and WHO IVD.
 - CDC CVX/MVX only augments the EMA plain-name vaccine identity path after
   MyChem misses; it is not a WHO alias source and pure `--region us` searches
   do not use the CVX root.
 
 | Source | Env root | Required files | Stale window | Sync command | Health/API-only | Terms |
 |---|---|---|---|---|---|---|
+| DDInter | `BIOMCP_DDINTER_DIR` | `ddinter_downloads_code_A.csv`, `ddinter_downloads_code_B.csv`, `ddinter_downloads_code_D.csv`, `ddinter_downloads_code_H.csv`, `ddinter_downloads_code_L.csv`, `ddinter_downloads_code_P.csv`, `ddinter_downloads_code_R.csv`, `ddinter_downloads_code_V.csv` | 72 hours | `biomcp ddinter sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |
 | EMA | `BIOMCP_EMA_DIR` | `medicines.json`, `post_authorisation.json`, `referrals.json`, `psusas.json`, `dhpcs.json`, `shortages.json` | 72 hours | `biomcp ema sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |
 | WHO Prequalification | `BIOMCP_WHO_DIR` | `who_pq.csv`, `who_api.csv`, `who_vaccines.csv` | 72 hours | `biomcp who sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |
 | CDC CVX/MVX | `BIOMCP_CVX_DIR` | `cvx.txt`, `TRADENAME.txt`, `mvx.txt` | 30 days | `biomcp cvx sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |
 | GTR | `BIOMCP_GTR_DIR` | `test_version.gz`, `test_condition_gene.txt` | 7 days | `biomcp gtr sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |
 | WHO IVD | `BIOMCP_WHO_IVD_DIR` | `who_ivd.csv` | 72 hours | `biomcp who-ivd sync` | full health row; omitted from `--apis-only` | `docs/reference/source-licensing.md` / `docs/reference/sources.json` |
 
-EMA and WHO Prequalification use a 72-hour stale window; CDC CVX/MVX uses a
-30-day refresh window; GTR uses a 7-day stale window; WHO IVD uses a 72-hour
-stale window.
+DDInter, EMA, WHO Prequalification, and WHO IVD use a 72-hour stale window;
+CDC CVX/MVX uses a 30-day refresh window; GTR uses a 7-day stale window.
 
 This keeps local runtime readiness grounded in `src/cli/health.rs` and
-`src/sources/ema.rs` / `src/sources/who_pq.rs` / `src/sources/cvx.rs` /
-`src/sources/gtr.rs` / `src/sources/who_ivd.rs` while leaving operator setup
-details in the user guide.
+`src/sources/ddinter.rs` / `src/sources/ema.rs` / `src/sources/who_pq.rs` /
+`src/sources/cvx.rs` / `src/sources/gtr.rs` / `src/sources/who_ivd.rs` while
+leaving operator setup details in the user guide.
 
 ### File-backed non-runtime assets
 

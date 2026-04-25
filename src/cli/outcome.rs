@@ -389,6 +389,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             Commands::Ema { cmd } => outcome_to_string(super::system::handle_ema(cmd).await?),
             Commands::Who { cmd } => outcome_to_string(super::system::handle_who(cmd).await?),
             Commands::Cvx { cmd } => outcome_to_string(super::system::handle_cvx(cmd).await?),
+            Commands::Ddinter { cmd } => {
+                outcome_to_string(super::system::handle_ddinter(cmd).await?)
+            }
             Commands::Gtr { cmd } => outcome_to_string(super::system::handle_gtr(cmd).await?),
             Commands::WhoIvd { cmd } => {
                 outcome_to_string(super::system::handle_who_ivd(cmd).await?)

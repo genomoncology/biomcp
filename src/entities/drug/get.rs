@@ -13,10 +13,7 @@ use crate::sources::openfda::OpenFdaClient;
 use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
 use crate::transform;
 
-use super::label::{
-    extract_inline_label, extract_interaction_text_from_label, extract_label_set_id,
-    extract_label_warnings_text,
-};
+use super::label::{extract_inline_label, extract_label_set_id, extract_label_warnings_text};
 use super::metadata::{
     apply_openfda_metadata, fetch_shortage_entries, fetch_top_adverse_events,
     map_drugsfda_approvals,
@@ -186,9 +183,9 @@ async fn add_approvals_section(drug: &mut Drug) {
     }
 }
 
-struct ResolvedDrugBase {
-    drug: Drug,
-    label_response: Option<serde_json::Value>,
+pub(super) struct ResolvedDrugBase {
+    pub(super) drug: Drug,
+    pub(super) label_response: Option<serde_json::Value>,
 }
 
 #[derive(Clone)]
@@ -330,7 +327,7 @@ pub(crate) async fn resolve_trial_canonical_name(name: &str) -> Result<String, B
     Ok(resolve_trial_alias_resolution(name).await?.canonical_name)
 }
 
-async fn resolve_drug_base(
+pub(super) async fn resolve_drug_base(
     name: &str,
     fetch_label_response: bool,
     label_required: bool,
@@ -442,11 +439,12 @@ async fn resolve_drug_base(
 }
 
 async fn populate_common_sections(
+    requested_name: &str,
     drug: &mut Drug,
     label_response: Option<&serde_json::Value>,
     section_flags: &DrugSections,
     raw_label: bool,
-) {
+) -> Result<(), BioMcpError> {
     let civic_context = if section_flags.include_targets || section_flags.include_civic {
         fetch_civic_therapy_context(&drug.name).await
     } else {
@@ -460,7 +458,13 @@ async fn populate_common_sections(
     };
 
     if section_flags.include_interactions {
-        drug.interaction_text = label_response.and_then(extract_interaction_text_from_label);
+        let report = super::interaction_report_from_base(
+            requested_name.to_string(),
+            drug.clone(),
+            label_response.cloned(),
+        )
+        .await?;
+        super::apply_interaction_report(drug, &report);
     } else {
         drug.interactions.clear();
         drug.interaction_text = None;
@@ -481,6 +485,7 @@ async fn populate_common_sections(
     } else {
         drug.civic = None;
     }
+    Ok(())
 }
 
 async fn populate_top_adverse_event_preview(drug: &mut Drug) {
@@ -635,32 +640,45 @@ fn validate_raw_usage(section_flags: &DrugSections, raw_label: bool) -> Result<(
     Ok(())
 }
 
-pub async fn get_with_region(
+pub fn get_with_region(
     name: &str,
     sections: &[String],
     region: DrugRegion,
     region_explicit: bool,
     raw_label: bool,
+) -> impl std::future::Future<Output = Result<Drug, BioMcpError>> + Send {
+    let name = name.to_string();
+    let sections = sections.to_vec();
+    async move { get_with_region_owned(name, sections, region, region_explicit, raw_label).await }
+}
+
+async fn get_with_region_owned(
+    name: String,
+    sections: Vec<String>,
+    region: DrugRegion,
+    region_explicit: bool,
+    raw_label: bool,
 ) -> Result<Drug, BioMcpError> {
-    let section_flags = parse_sections(sections)?;
+    let section_flags = parse_sections(&sections)?;
     validate_region_usage(&section_flags, region, region_explicit)?;
     validate_raw_usage(&section_flags, raw_label)?;
 
-    let section_only = is_section_only_requested(sections);
+    let section_only = is_section_only_requested(&sections);
     let fetch_label_response = !section_only
         || section_flags.include_label
         || section_flags.include_interactions
         || (region.includes_us() && section_flags.include_safety);
 
     let mut resolved =
-        resolve_drug_base(name, fetch_label_response, section_flags.include_label).await?;
+        resolve_drug_base(&name, fetch_label_response, section_flags.include_label).await?;
     populate_common_sections(
+        &name,
         &mut resolved.drug,
         resolved.label_response.as_ref(),
         &section_flags,
         raw_label,
     )
-    .await;
+    .await?;
 
     if region.includes_us() && (!section_only || section_flags.include_safety) {
         populate_top_adverse_event_preview(&mut resolved.drug).await;
@@ -683,7 +701,7 @@ pub async fn get_with_region(
     }
 
     if region.includes_eu() {
-        populate_ema_sections(&mut resolved.drug, name, &section_flags).await?;
+        populate_ema_sections(&mut resolved.drug, &name, &section_flags).await?;
     } else {
         resolved.drug.ema_regulatory = None;
         resolved.drug.ema_safety = None;
@@ -691,7 +709,7 @@ pub async fn get_with_region(
     }
 
     if region.includes_who() {
-        populate_who_sections(&mut resolved.drug, name, &section_flags).await?;
+        populate_who_sections(&mut resolved.drug, &name, &section_flags).await?;
     } else {
         resolved.drug.who_prequalification = None;
     }
@@ -699,8 +717,11 @@ pub async fn get_with_region(
     Ok(resolved.drug)
 }
 
-pub async fn get(name: &str, sections: &[String]) -> Result<Drug, BioMcpError> {
-    get_with_region(name, sections, DrugRegion::Us, false, false).await
+pub fn get(
+    name: &str,
+    sections: &[String],
+) -> impl std::future::Future<Output = Result<Drug, BioMcpError>> + Send {
+    get_with_region(name, sections, DrugRegion::Us, false, false)
 }
 
 #[cfg(test)]

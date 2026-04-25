@@ -1,6 +1,6 @@
 # Drug
 
-Use drug commands for medication lookup, target-oriented search, and U.S./EU/WHO regulatory context.
+Use drug commands for medication lookup, interaction review, target-oriented search, and U.S./EU/WHO regulatory context.
 
 ## Search drugs
 
@@ -35,7 +35,10 @@ biomcp search drug --indication melanoma --limit 5
 biomcp search drug --indication malaria --region who --limit 5
 ```
 
-`search drug --interactions <drug>` is currently unavailable because the public data sources BioMCP uses do not expose partner-indexed interaction rows.
+`search drug --interactions <drug>` is currently unavailable because the public
+data sources BioMCP uses do not expose partner-indexed interaction rows on the
+search surface. Use `biomcp drug interactions <name>` or `biomcp get drug
+<name> interactions` for the DDInter-backed interaction workflow instead.
 
 Omitting `--region` on a plain name/alias search checks U.S., EU, and WHO data.
 If you omit `--region` while using structured filters such as `--target` or
@@ -119,11 +122,16 @@ biomcp get drug pembrolizumab indications
 - Variant-specific target annotations may be added from CIViC.
 - Full CIViC evidence tables remain opt-in via `get drug <name> civic`.
 
-Interactions (OpenFDA label text when public interaction details are available; otherwise a truthful fallback):
+Interactions (DDInter-backed structured report with additive label text when available):
 
 ```bash
 biomcp get drug warfarin interactions
 ```
+
+This section now renders DDInter-backed partner rows, source-provided severity
+levels, and class rollups from the current local DDInter bundle. When the
+current bundle has no matching rows, BioMCP says that truthfully and does not
+claim the drug has no clinical interactions.
 
 CIViC evidence and Drugs@FDA approvals:
 
@@ -257,7 +265,66 @@ CDC row meanings:
 - `not configured`: no complete CDC CVX/MVX root is installed at the default path yet
 - `error (missing: ...)`: the CDC directory exists but is missing one or more required files
 
+## DDInter local data setup
+
+Drug interaction commands read DDInter local data from `BIOMCP_DDINTER_DIR`
+first, then the platform data directory (`~/.local/share/biomcp/ddinter` on
+typical Linux systems). On first use, BioMCP auto-downloads the eight public
+DDInter CSV files into that root and refreshes stale files after 72 hours. Use
+`biomcp ddinter sync` to force a refresh at any time. DDInter's own terms warn
+that absence from the database does not prove no interaction exists, so BioMCP
+keeps empty interaction results scoped to the current local bundle.
+
+Manual preseed still works. If you need an offline or pre-populated root, place
+these files in the target directory:
+
+- `ddinter_downloads_code_A.csv`
+- `ddinter_downloads_code_B.csv`
+- `ddinter_downloads_code_D.csv`
+- `ddinter_downloads_code_H.csv`
+- `ddinter_downloads_code_L.csv`
+- `ddinter_downloads_code_P.csv`
+- `ddinter_downloads_code_R.csv`
+- `ddinter_downloads_code_V.csv`
+
+Confirm local DDInter readiness with full health output:
+
+```bash
+biomcp health
+```
+
+Force-refresh DDInter local data manually:
+
+```bash
+biomcp ddinter sync
+```
+
+DDInter row meanings:
+
+- `configured`: `BIOMCP_DDINTER_DIR` is set and the full DDInter bundle is present
+- `configured (stale)`: `BIOMCP_DDINTER_DIR` is set and complete, but at least one DDInter file is older than the 72-hour refresh window
+- `available (default path)`: the default platform data directory contains a complete DDInter bundle
+- `available (default path, stale)`: the default platform data directory contains a complete DDInter bundle, but at least one file is older than the 72-hour refresh window
+- `not configured`: no complete DDInter root is installed at the default path yet
+- `error (missing: ...)`: the DDInter directory exists but is missing one or more required files
+
 ## Helper commands
+
+Interaction pivot:
+
+```bash
+biomcp drug interactions warfarin
+biomcp drug interactions imatinib
+biomcp --json drug interactions warfarin | jq '._meta.next_commands'
+```
+
+`drug interactions <name>` resolves the anchor drug first, reports DDInter-backed
+partner rows plus class summaries, and uses helper-specific next commands for
+`biomcp get drug <canonical> safety` and
+`biomcp search article --drug <canonical> --limit 5`. `get drug <name>
+interactions` renders the same interaction report inside the standard drug card.
+When the current DDInter download bundle has no matching rows, BioMCP says so
+without turning that source empty into a safety claim.
 
 Trial pivot:
 
@@ -282,6 +349,7 @@ biomcp drug adverse-events pembrolizumab --limit 5
 
 ```bash
 biomcp --json get drug pembrolizumab
+biomcp --json drug interactions warfarin | jq '._meta.next_commands'
 biomcp --json search drug Keytruda --region eu --limit 3 | jq '.regions.eu.results[0].ema_product_number'
 biomcp --json search drug Keytruda --region all --limit 3 | jq '.regions | keys'
 ```
@@ -295,10 +363,16 @@ single-region wrapper fields `pagination`, `count`, and `results`.
 - Use `regions.who.results` for WHO Prequalification rows.
 - Omitted `--region` on a plain name/alias search and explicit `--region all`
   include all three buckets under `regions`.
+- `biomcp --json drug interactions <name>` returns one canonical-anchor
+  interaction report with `interactions`, `class_summaries`, and the standard
+  `_meta.evidence_urls`, `_meta.section_sources`, and helper-specific
+  `_meta.next_commands`.
 
 ## Practical tips
 
 - Start with base `get` before requesting heavy sections.
+- Use `drug interactions <name>` when the question is explicitly about
+  interacting drugs or interaction classes for a known medication.
 - Use target filters to narrow crowded drug classes.
 - Use `regulatory` with `--region who|all` when you need WHO Prequalification context.
 - Use `regulatory`, `safety`, or `shortage` with `--region eu|all` when you need EMA context; `ema` is accepted as an input alias for `eu`.
@@ -309,4 +383,5 @@ single-region wrapper fields `pagination`, `count`, and `results`.
 
 - [Adverse event](adverse-event.md)
 - [Trial](trial.md)
+- [DDInter](../sources/ddinter.md)
 - [Data sources](../reference/data-sources.md)

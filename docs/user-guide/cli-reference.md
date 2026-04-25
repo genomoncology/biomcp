@@ -55,6 +55,7 @@ Examples:
 ```bash
 biomcp search drug --indication "myasthenia gravis" --limit 5 --json
 biomcp get drug warfarin --json
+biomcp drug interactions warfarin --json
 biomcp get drug aspirin --json
 ```
 
@@ -75,6 +76,7 @@ biomcp cache path
 biomcp cache stats
 biomcp cache clean [--max-age <duration>] [--max-size <size>] [--dry-run]
 biomcp cache clear [--yes]
+biomcp ddinter sync
 biomcp ema sync
 biomcp who sync
 biomcp cvx sync
@@ -509,6 +511,7 @@ See also: `docs/reference/mcp-server.md`.
 biomcp variant trials "BRAF V600E"
 biomcp variant articles "BRAF V600E"
 biomcp variant oncokb "BRAF V600E"
+biomcp drug interactions warfarin
 biomcp drug adverse-events pembrolizumab
 biomcp drug trials pembrolizumab
 biomcp disease trials melanoma

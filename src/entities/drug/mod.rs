@@ -1,6 +1,7 @@
 //! Drug entity models and workflows exposed through the stable drug facade.
 
 mod get;
+mod interactions;
 mod label;
 mod metadata;
 mod query;
@@ -11,6 +12,10 @@ mod test_support;
 
 pub use self::get::{get, get_with_region};
 pub(crate) use self::get::{resolve_trial_aliases, resolve_trial_canonical_name};
+pub(crate) use self::interactions::{
+    DrugInteractionReport, apply_interaction_report, interaction_class_summaries,
+    interaction_report, interaction_report_from_base,
+};
 pub use self::query::search_query_summary;
 #[allow(unused_imports)]
 pub use self::search::{
@@ -105,7 +110,11 @@ pub struct Drug {
 pub struct DrugInteraction {
     pub drug: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub level: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub partner_classes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

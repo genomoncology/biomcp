@@ -372,6 +372,21 @@ pub(crate) async fn handle_command(
                         }
                     }
                 }
+                DrugCommand::Interactions { name } => {
+                    let report = crate::entities::drug::interaction_report(name).await?;
+                    if json {
+                        crate::render::json::to_entity_json(
+                            &report,
+                            crate::render::markdown::drug_interaction_report_evidence_urls(&report),
+                            crate::render::markdown::related_drug_interactions(&report.name),
+                            crate::render::provenance::drug_interaction_report_section_sources(
+                                &report,
+                            ),
+                        )?
+                    } else {
+                        crate::render::markdown::drug_interaction_report_markdown(&report)?
+                    }
+                }
                 DrugCommand::External(_) => unreachable!("handled above"),
             };
 

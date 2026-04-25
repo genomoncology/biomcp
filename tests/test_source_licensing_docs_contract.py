@@ -17,6 +17,7 @@ DIRECT_SOURCE_MODULES = {
     "cpic": "CPIC",
     "cvx": "CDC CVX/MVX",
     "vaers": "CDC WONDER VAERS",
+    "ddinter": "DDInter",
     "dgidb": "DGIdb",
     "disgenet": "DisGeNET",
     "ema": "EMA",
