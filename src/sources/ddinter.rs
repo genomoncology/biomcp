@@ -134,16 +134,19 @@ struct DdinterCsvRow {
 impl DdinterClient {
     pub(crate) async fn ready(mode: DdinterSyncMode) -> Result<Self, BioMcpError> {
         let root = resolve_ddinter_root();
-        sync_ddinter_root(&root, mode).await?;
-        evict_cached_index(&root);
+        let refreshed = sync_ddinter_root(&root, mode).await?;
+        if refreshed {
+            evict_cached_index(&root);
+        }
         let index = cached_index_for_root(&root)?;
         Ok(Self { root, index })
     }
 
     pub(crate) async fn sync(mode: DdinterSyncMode) -> Result<(), BioMcpError> {
         let root = resolve_ddinter_root();
-        sync_ddinter_root(&root, mode).await?;
-        evict_cached_index(&root);
+        if sync_ddinter_root(&root, mode).await? {
+            evict_cached_index(&root);
+        }
         Ok(())
     }
 
@@ -292,10 +295,10 @@ fn write_stderr_line(line: &str) -> Result<(), BioMcpError> {
     Ok(())
 }
 
-async fn sync_ddinter_root(root: &Path, mode: DdinterSyncMode) -> Result<(), BioMcpError> {
+async fn sync_ddinter_root(root: &Path, mode: DdinterSyncMode) -> Result<bool, BioMcpError> {
     let plan = sync_plan(root, mode);
     if plan.is_empty() {
-        return Ok(());
+        return Ok(false);
     }
 
     tokio::fs::create_dir_all(root).await?;
@@ -305,6 +308,7 @@ async fn sync_ddinter_root(root: &Path, mode: DdinterSyncMode) -> Result<(), Bio
     ))?;
 
     let mut fatal_errors = Vec::new();
+    let mut refreshed_any = false;
     for (file_name, url) in plan {
         if let Err(err) = sync_export(root, file_name, url, mode).await {
             let path = root.join(file_name);
@@ -315,12 +319,14 @@ async fn sync_ddinter_root(root: &Path, mode: DdinterSyncMode) -> Result<(), Bio
                 continue;
             }
             fatal_errors.push(format!("{file_name}: {err}"));
+        } else {
+            refreshed_any = true;
         }
     }
 
     let missing = ddinter_missing_files(root, DDINTER_REQUIRED_FILES);
     if missing.is_empty() {
-        return Ok(());
+        return Ok(refreshed_any);
     }
 
     let detail = if fatal_errors.is_empty() {

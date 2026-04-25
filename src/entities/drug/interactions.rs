@@ -54,6 +54,7 @@ pub(crate) async fn interaction_report_from_base(
     anchor: Drug,
     label_response: Option<serde_json::Value>,
 ) -> Result<DrugInteractionReport, BioMcpError> {
+    let legacy_descriptions = interaction_description_map(&anchor);
     let anchor_name = anchor.name.clone();
     let brand_names = anchor.brand_names.clone();
     let drugbank_id = anchor.drugbank_id.clone();
@@ -73,9 +74,9 @@ pub(crate) async fn interaction_report_from_base(
             .cloned()
             .unwrap_or_default();
         out.push(DrugInteraction {
+            description: interaction_description(&legacy_descriptions, &interaction.drug),
             drug: interaction.drug,
             level: interaction.level,
-            description: None,
             partner_classes: classes,
         });
     }
@@ -103,12 +104,13 @@ pub(crate) async fn interaction_report_from_base(
 
 pub(crate) fn apply_interaction_report(drug: &mut Drug, report: &DrugInteractionReport) {
     drug.interactions = report.interactions.clone();
-    drug.pharm_classes = report
-        .class_summaries
-        .iter()
-        .map(|row| row.class_name.clone())
-        .collect();
     drug.interaction_text = report.label_interaction_text.clone();
+}
+
+pub(crate) fn interaction_class_summaries(
+    interactions: &[DrugInteraction],
+) -> Vec<DrugInteractionClassSummary> {
+    build_class_summaries(interactions)
 }
 
 fn aggregate_rows(
@@ -177,6 +179,30 @@ async fn enrich_partner_classes(
         .into_iter()
         .filter(|(_, classes)| !classes.is_empty())
         .collect()
+}
+
+fn interaction_description_map(anchor: &Drug) -> HashMap<String, String> {
+    anchor
+        .interactions
+        .iter()
+        .filter_map(|row| {
+            let description = row
+                .description
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())?;
+            let key = crate::sources::ddinter::normalize_name_key(&row.drug)?;
+            Some((key, description.to_string()))
+        })
+        .collect()
+}
+
+fn interaction_description(
+    descriptions: &HashMap<String, String>,
+    partner_name: &str,
+) -> Option<String> {
+    let key = crate::sources::ddinter::normalize_name_key(partner_name)?;
+    descriptions.get(&key).cloned()
 }
 
 fn build_class_summaries(interactions: &[DrugInteraction]) -> Vec<DrugInteractionClassSummary> {
@@ -373,5 +399,88 @@ mod tests {
         assert!(summaries.contains(&"antiplatelets".to_string()));
         assert!(summaries.contains(&"statins".to_string()));
         assert!(summaries.contains(&"CYP3A4".to_string()));
+    }
+
+    #[test]
+    fn apply_interaction_report_preserves_anchor_pharm_classes() {
+        let mut drug = Drug {
+            name: "warfarin".to_string(),
+            drugbank_id: None,
+            chembl_id: None,
+            unii: None,
+            drug_type: None,
+            mechanism: None,
+            mechanisms: Vec::new(),
+            approval_date: None,
+            approval_date_raw: None,
+            approval_date_display: None,
+            approval_summary: None,
+            brand_names: Vec::new(),
+            route: None,
+            targets: Vec::new(),
+            variant_targets: Vec::new(),
+            target_family: None,
+            target_family_name: None,
+            indications: Vec::new(),
+            interactions: Vec::new(),
+            interaction_text: None,
+            pharm_classes: vec!["Vitamin K antagonists".to_string()],
+            top_adverse_events: Vec::new(),
+            faers_query: None,
+            label: None,
+            label_set_id: None,
+            shortage: None,
+            approvals: None,
+            us_safety_warnings: None,
+            ema_regulatory: None,
+            ema_safety: None,
+            ema_shortage: None,
+            who_prequalification: None,
+            civic: None,
+        };
+        let report = DrugInteractionReport {
+            name: "warfarin".to_string(),
+            drugbank_id: None,
+            chembl_id: None,
+            interactions: vec![DrugInteraction {
+                drug: "aspirin".to_string(),
+                level: Some("Major".to_string()),
+                description: None,
+                partner_classes: vec!["antiplatelets".to_string()],
+            }],
+            class_summaries: vec![DrugInteractionClassSummary {
+                class_name: "antiplatelets".to_string(),
+                interaction_count: 1,
+                highest_level: Some("Major".to_string()),
+            }],
+            source_note: None,
+            label_interaction_text: Some("Additive label text".to_string()),
+        };
+
+        apply_interaction_report(&mut drug, &report);
+
+        assert_eq!(
+            drug.pharm_classes,
+            vec!["Vitamin K antagonists".to_string()]
+        );
+        assert_eq!(drug.interactions.len(), 1);
+        assert_eq!(
+            drug.interaction_text.as_deref(),
+            Some("Additive label text")
+        );
+    }
+
+    #[test]
+    fn interaction_description_uses_legacy_partner_narrative() {
+        let descriptions = HashMap::from([(
+            "aspirin".to_string(),
+            "May increase bleeding risk.".to_string(),
+        )]);
+
+        assert_eq!(
+            interaction_description(&descriptions, "Aspirin"),
+            Some("May increase bleeding risk.".to_string())
+        );
+        assert_eq!(interaction_description(&descriptions, "clopidogrel"), None);
     }
 }

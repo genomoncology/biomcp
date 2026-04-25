@@ -13,8 +13,8 @@ mod test_support;
 pub use self::get::{get, get_with_region};
 pub(crate) use self::get::{resolve_trial_aliases, resolve_trial_canonical_name};
 pub(crate) use self::interactions::{
-    DrugInteractionReport, apply_interaction_report, interaction_report,
-    interaction_report_from_base,
+    DrugInteractionReport, apply_interaction_report, interaction_class_summaries,
+    interaction_report, interaction_report_from_base,
 };
 pub use self::query::search_query_summary;
 #[allow(unused_imports)]

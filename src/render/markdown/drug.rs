@@ -64,7 +64,7 @@ pub fn drug_markdown_with_region(
         indications => &drug.indications,
         interactions => &drug.interactions,
         interaction_text => &drug.interaction_text,
-        pharm_classes => &drug.pharm_classes,
+        interaction_class_summaries => crate::entities::drug::interaction_class_summaries(&drug.interactions),
         label => &drug.label,
         raw_label => raw_label,
         civic => &drug.civic,

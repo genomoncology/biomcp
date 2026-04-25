@@ -1,32 +1,47 @@
-# Code Review Log — Ticket 302
+# Code Review Log
 
-## Phase 1 — Critique
+## Critique
 
-- Audited `.march/design-final.md` against the branch diff and confirmed the ticketed contract surfaces were updated before runtime changes: `spec/surface/discover.md`, `src/cli/commands.rs`, `src/cli/list.rs`, `src/cli/list_reference.md`, `docs/user-guide/discover.md`, `docs/user-guide/cli-reference.md`, `docs/reference/quick-reference.md`, `docs/index.md`, `skills/SKILL.md`, and `architecture/ux/cli-reference.md`.
-- Traced the proof matrix to concrete tests:
-  - relational redirect/noise suppression: `src/entities/discover.rs` relational warfarin + MEF2 tests and `spec/surface/discover.md`
-  - single-entity stability: `exact_gene_query_promotes_hgnc_result`, `single_entity_gene_alias_queries_stay_stable_after_general_filtering`, `single_entity_disease_queries_stay_stable_after_general_filtering`, plus the ERBB1 spec section
-  - supported routed flows: `developmental delay`, `chest pain`, `symptoms of Marfan syndrome`, `what drugs treat myasthenia gravis`, `BRAF melanoma`, and `CTCF cohesin` tests
-  - JSON redirect contract: `src/render/json.rs::to_discover_json_keeps_relational_redirect_commands_only_under_meta`
-- Checked the implementation for security, duplication, and general quality concerns. The new redirect command stays shell-safe by reusing the existing quoting path, and the discover-local relevance helpers remain appropriately local rather than duplicating the article query cleanup helpers.
-- Defect found: the deterministic relational unit fixtures did not include the weak HP symptom noise that live OLS can return ahead of the general concepts. That meant the unit proof would not catch a regression where `SymptomSearch` preempted the general relational redirect path; the executable spec exposed this gap.
+I reviewed the branch against `.march/design-final.md`, the full `main..HEAD` diff, and the ticket/spec/docs proof surface.
 
-## Phase 2 — Fix Plan
+### Design completeness audit
 
-1. Strengthen the relational discover unit fixtures so they include the same weak symptom contamination seen in live OLS output, keeping the general-intent redirect guard pinned by deterministic proof.
+- The helper grammar, DDInter local-runtime source lifecycle, health row, help/list/docs/source-map updates, and shared helper/section interaction backend were all present in the diff.
+- The proof-matrix test surfaces were present across the Rust CLI/render tests, the executable drug spec, and the Python docs/source contract tests.
+- Three defects remained in the implementation:
+  1. the shared DDInter report dropped the legacy DrugBank/MyChem interaction descriptions instead of carrying them forward as the design required;
+  2. applying the shared interaction report overwrote `Drug.pharm_classes`, which regressed the anchor-drug pharmacology field into an interaction-rollup field; and
+  3. the DDInter client evicted and rebuilt its in-process index on every `ready()` call, so the "load once per process" design goal was not actually met.
 
-## Phase 3 — Repair
+### Test-design traceability
 
-- Updated the warfarin and MEF2 relational unit tests in `src/entities/discover.rs` to include weak HP symptom hits that sort ahead of the general results in live OLS responses.
-- Re-ran the targeted discover unit/spec proof, the ticket-owned docs contract tests, and the repo focused validation tier.
-- Post-fix collateral scan found no dead code, unused imports, stale error messages, resource cleanup conflicts, or shadowed variables from the repair.
+- Helper grammar/help/list/docs coverage: `src/cli/drug/tests.rs`, `src/cli/tests/next_commands_validity.rs`, `src/cli/tests/next_commands_json_property/variant_drug.rs`, `tests/test_public_skill_docs_contract.py`, `tests/test_upstream_planning_analysis_docs.py`, and `spec/entity/drug.md`.
+- DDInter source lifecycle and docs coverage: `src/cli/system/tests.rs`, the health tests in `src/cli/health.rs`, `tests/test_source_pages_docs_contract.py`, `tests/test_source_licensing_docs_contract.py`, `tests/test_public_search_all_docs_contract.py`, and `tests/test_upstream_planning_analysis_docs.py`.
+- Structured render / empty-state / section-parity coverage: `src/render/markdown/drug/tests.rs`, the interaction tests in `src/entities/drug/interactions.rs`, and the executable spec in `spec/entity/drug.md`.
+- I added regression coverage for the defects found during review so the repaired behavior is now directly asserted.
+
+## Fix Plan
+
+1. Preserve the anchor drug's own `pharm_classes` and derive interaction class summaries from interaction rows at render time instead.
+2. Merge legacy DrugBank/MyChem interaction descriptions into the DDInter-backed rows when partner names normalize to the same drug.
+3. Only evict the DDInter index cache when a sync actually refreshed files, and keep interaction provenance off empty default drug cards while still attributing DrugBank when description text is present.
+
+## Repairs
+
+- Carried legacy DrugBank/MyChem interaction descriptions into the shared DDInter report.
+- Stopped `apply_interaction_report()` from mutating `Drug.pharm_classes`, added `interaction_class_summaries()` as the shared rollup helper, and updated the drug markdown template to render class summaries from interaction rows.
+- Tightened interaction provenance so default drug cards do not advertise an interactions section when none is present, while DDInter helper/source attribution now adds DrugBank when description text contributes.
+- Changed DDInter cache eviction to happen only after an actual refresh, which restores the intended one-load-per-process behavior for warm bundles.
+- Added regression tests in `src/entities/drug/interactions.rs`, `src/render/markdown/drug/tests.rs`, and `src/render/provenance.rs`.
 
 ## Residual Concerns
 
-- None.
+- None. No additional out-of-scope issues were filed from this review pass.
 
 ## Defect Register
 
 | # | Category | Lintable | Description |
 |---|----------|----------|-------------|
-| 1 | weak-assertion | no | Relational discover unit fixtures omitted weak symptom OLS noise, so they would not catch regressions where `SymptomSearch` preempted the general relational redirect. |
+| 1 | data-completeness | no | The shared DDInter report dropped legacy DrugBank/MyChem interaction descriptions, leaving the new description column empty even when prior data existed. |
+| 2 | collateral-damage | no | `apply_interaction_report()` overwrote the anchor drug's `pharm_classes`, which regressed the existing drug contract into interaction rollups. |
+| 3 | performance | no | `DdinterClient::ready()` evicted and rebuilt the DDInter index on every call, defeating the intended in-process cache. |

@@ -118,13 +118,13 @@ Variant Targets (CIViC): {{ variant_targets | join(", ") }}
 {{ drug_interactions_note }}
 
 {% endif -%}
-{% if pharm_classes -%}
+{% if interaction_class_summaries -%}
 ## Interacting Drug Classes
 
-| Class | Coverage |
-|---|---|
-{% for row in pharm_classes -%}
-| {{ row }} | DDInter-derived |
+| Class | Interactions | Highest Level |
+|---|---|---|
+{% for row in interaction_class_summaries -%}
+| {{ row.class_name }} | {{ row.interaction_count }} | {{ row.highest_level or "-" }} |
 {% endfor -%}
 {% endif -%}
 {% if interactions -%}

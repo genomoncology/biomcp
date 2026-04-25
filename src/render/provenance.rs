@@ -208,6 +208,13 @@ pub(crate) fn pathway_source_label(source: &str) -> String {
 
 pub(crate) fn drug_interaction_sources(drug: &Drug) -> Vec<String> {
     let mut sources = vec!["DDInter".to_string()];
+    if drug
+        .interactions
+        .iter()
+        .any(|row| row.description.as_deref().is_some_and(has_text))
+    {
+        sources.push("DrugBank".to_string());
+    }
     if has_opt_text(&drug.interaction_text) {
         sources.push("OpenFDA label".to_string());
     }
@@ -215,10 +222,7 @@ pub(crate) fn drug_interaction_sources(drug: &Drug) -> Vec<String> {
 }
 
 pub(crate) fn drug_interaction_heading_label(drug: &Drug) -> String {
-    if drug.interactions.is_empty()
-        && drug.pharm_classes.is_empty()
-        && !has_opt_text(&drug.interaction_text)
-    {
+    if drug.interactions.is_empty() && !has_opt_text(&drug.interaction_text) {
         "Interactions".to_string()
     } else {
         "Interactions (DDInter)".to_string()
@@ -226,7 +230,7 @@ pub(crate) fn drug_interaction_heading_label(drug: &Drug) -> String {
 }
 
 pub(crate) fn drug_interaction_note(drug: &Drug) -> Option<String> {
-    if !drug.interactions.is_empty() || !drug.pharm_classes.is_empty() {
+    if !drug.interactions.is_empty() {
         Some(
             "Structured rows come from the current DDInter download bundle. DDInter warns that missing rows do not prove no interaction exists."
                 .to_string(),
@@ -244,6 +248,13 @@ pub(crate) fn drug_interaction_report_section_sources(
 ) -> Vec<SectionSource> {
     let mut out = Vec::new();
     let mut sources = vec!["DDInter"];
+    if report
+        .interactions
+        .iter()
+        .any(|row| row.description.as_deref().is_some_and(has_text))
+    {
+        sources.push("DrugBank");
+    }
     if report
         .label_interaction_text
         .as_deref()
@@ -496,7 +507,7 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
     let interaction_sources = drug_interaction_sources(drug);
     push_section(
         &mut out,
-        !interaction_sources.is_empty(),
+        !drug.interactions.is_empty() || has_opt_text(&drug.interaction_text),
         "interactions",
         "Interactions",
         interaction_sources.iter().map(String::as_str),
@@ -1336,6 +1347,73 @@ mod tests {
         assert!(sources.iter().any(|source| {
             source.key == "regulatory" && source.sources == vec!["WHO Prequalification".to_string()]
         }));
+    }
+
+    #[test]
+    fn drug_section_sources_omit_interactions_when_no_interaction_data_is_present() {
+        let drug = Drug {
+            name: "pembrolizumab".to_string(),
+            drugbank_id: Some("DB09037".to_string()),
+            chembl_id: None,
+            unii: None,
+            drug_type: None,
+            mechanism: None,
+            mechanisms: Vec::new(),
+            approval_date: None,
+            approval_date_raw: None,
+            approval_date_display: None,
+            approval_summary: None,
+            brand_names: Vec::new(),
+            route: None,
+            targets: Vec::new(),
+            variant_targets: Vec::new(),
+            target_family: None,
+            target_family_name: None,
+            indications: Vec::new(),
+            interactions: Vec::new(),
+            interaction_text: None,
+            pharm_classes: vec!["PD-1 inhibitors".to_string()],
+            top_adverse_events: Vec::new(),
+            faers_query: None,
+            label: None,
+            label_set_id: None,
+            shortage: None,
+            approvals: None,
+            us_safety_warnings: None,
+            ema_regulatory: None,
+            ema_safety: None,
+            ema_shortage: None,
+            who_prequalification: None,
+            civic: None,
+        };
+
+        let sources = drug_section_sources(&drug);
+        assert!(!sources.iter().any(|source| source.key == "interactions"));
+    }
+
+    #[test]
+    fn drug_interaction_report_section_sources_include_drugbank_when_descriptions_present() {
+        let report = DrugInteractionReport {
+            name: "warfarin".to_string(),
+            drugbank_id: Some("DB00682".to_string()),
+            chembl_id: None,
+            interactions: vec![crate::entities::drug::DrugInteraction {
+                drug: "aspirin".to_string(),
+                level: Some("Major".to_string()),
+                description: Some("May increase bleeding risk.".to_string()),
+                partner_classes: vec!["antiplatelets".to_string()],
+            }],
+            class_summaries: Vec::new(),
+            source_note: None,
+            label_interaction_text: None,
+        };
+
+        let sources = drug_interaction_report_section_sources(&report);
+        assert_eq!(sources.len(), 1);
+        assert_eq!(
+            sources[0].sources,
+            vec!["DDInter".to_string(), "DrugBank".to_string()]
+        );
     }
 
     #[test]
