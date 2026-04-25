@@ -11,7 +11,7 @@ biomcp search <entity> [filters]      → discovery queries
 biomcp get <entity> <id> [sections]   → focused detail
 biomcp <entity> <helper> <id>         → cross-entity pivot
 biomcp suggest <question>             → offline question-to-playbook routing
-biomcp discover <query>               → free-text concept resolution into typed follow-up commands
+biomcp discover <query>               → single-entity free-text resolution into typed follow-up commands
 biomcp enrich <GENE1,GENE2,...>        → gene-set enrichment
 biomcp batch <entity> <id1,id2,...>    → parallel gets
 biomcp search all [slot filters]      → unified fan-out
@@ -38,6 +38,13 @@ biomcp serve-http            → run the MCP Streamable HTTP server at `/mcp`
 ```
 
 Compatibility note: `biomcp serve-sse` remains available only as a hidden compatibility command that points users to `biomcp serve-http`.
+
+`discover` is primarily the single-entity resolver in this command grammar.
+When relational or multi-entity free text only weakly matches a single concept,
+the UX contract is to redirect through `biomcp search all --keyword "<query>"`
+via discover `notes` and `_meta.next_commands` rather than surfacing noisy
+stopword-collocation residue. Existing symptom, treatment, gene+disease, and
+gene-plus-topic discover exceptions remain intact.
 
 ## Progressive Disclosure Pattern
 

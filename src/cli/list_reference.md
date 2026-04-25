@@ -16,7 +16,7 @@ New to BioMCP? Try:
 - `search diagnostic --gene BRCA1 --limit 5` - find genetic tests for a known gene
 - `search diagnostic --disease HIV --source who-ivd --limit 5` - find WHO infectious-disease diagnostics
 - `get variant "BRAF V600E"` - annotate a variant
-- `discover "chest pain"` - resolve free text before choosing an entity
+- `discover "chest pain"` - resolve a single-entity free-text phrase before choosing a typed command
 - `search trial -c melanoma` - find clinical trials
 - `search all --gene BRAF --disease melanoma` - cross-entity summary card
 
@@ -39,7 +39,7 @@ New to BioMCP? Try:
 | Turn a literature question into article filters | `biomcp list article` (known gene/disease/drug anchors go in `-g/-d/--drug`; free-text concepts go in `-k`; PubMed ESearch cleans question-format terms provider-locally; exact whole-keyword entity labels or aliases can trigger typed follow-up suggestions on keyword-only result pages) |
 | Follow one article into related evidence | `article citations <id> --limit 5` or `article recommendations <id> --limit 5` |
 | I know the entities but not the next pivot | `search all --gene BRAF --disease melanoma` |
-| I only have free text and need routing | `discover "<free text>"` (unambiguous gene-plus-topic queries can also surface `search article -g <symbol> -k <topic> --limit 5`) |
+| I only have a single-entity biomedical phrase and need routing | `discover "<free text>"` (supported routed exceptions still cover symptom-of-disease, HPO symptom, treatment, gene+disease, and unambiguous gene-plus-topic flows; relational or multi-entity questions may redirect to `search all --keyword "<query>"`) |
 | The same sections for several entities | `batch <entity> <id1,id2,...> --sections <s1,s2,...>` |
 | Enriched pathways or functions for a gene set | `enrich <GENE1,GENE2,...>` |
 
@@ -64,7 +64,7 @@ New to BioMCP? Try:
 
 - `search <entity> [query|filters]` - find entities
 - `suggest <question>` - route a biomedical question to one worked-example playbook and two starter commands
-- `discover <query>` - resolve free-text concepts into typed follow-up commands
+- `discover <query>` - resolve a single-entity free-text phrase into typed follow-up commands; relational questions may redirect to `search all --keyword`
 - `search all [slot filters]` - curated multi-entity orientation (`--gene/--variant/--disease/--drug/--keyword`)
 - `search trial [filters]` - trial search is filter-only
 - `get <entity> <id> [section...]` - fetch by identifier with optional sections

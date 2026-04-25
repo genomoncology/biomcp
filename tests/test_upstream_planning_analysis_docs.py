@@ -651,10 +651,12 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         in ux
     )
     assert "biomcp discover <query>" in ux
+    assert "single-entity free-text resolution into typed follow-up commands" in ux
     assert "## See Also and Next Commands" in ux
     assert "`_meta.next_commands`" in ux
     assert "`discover_try_line()`" in ux
     assert "degrade by omission, not by emitting dead commands" in ux
+    assert 'redirect through `biomcp search all --keyword "<query>"`' in ux
     assert (
         "runtime-generated per-record `next_commands` remain outside the static list contract"
         in ux_ws
