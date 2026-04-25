@@ -11,7 +11,8 @@ open the returned `biomcp skill <slug>` playbook for the full workflow.
 ## Routing rules
 
 - Start with the narrowest command that matches the question.
-- Use `biomcp discover "<free text>"` when you only have free text and need the CLI to pick the first typed command.
+- Use `biomcp discover "<free text>"` when you only have a single biomedical phrase and need the CLI to resolve the first typed command. `discover` is primarily a single-entity resolver; symptom-of-disease prompts, HPO symptom bridges, treatment prompts, gene+disease orientation, and unambiguous gene-plus-topic follow-ups remain supported exceptions.
+- Relational or multi-entity questions may redirect to `biomcp search all --keyword "<query>"` instead of surfacing weak collocation matches as if they were a resolved discover answer.
 - Use `biomcp search all --gene <gene> --disease "<disease>"` when you know the entities but not the next pivot.
 - Treatment questions: `biomcp search drug --indication "<disease>" --limit 5`
 - Diagnostic-test questions: use structured pivots first with `biomcp get gene <symbol> diagnostics` or `biomcp get disease "<disease>" diagnostics`; use `biomcp search diagnostic --gene <symbol> --limit 5` or `biomcp search diagnostic --disease "<disease>" --limit 5` when you need the full search surface.

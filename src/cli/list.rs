@@ -55,13 +55,16 @@ fn list_discover() -> String {
 
 ## Commands
 
-- `discover <query>` - resolve free-text biomedical text into typed concepts and suggested BioMCP follow-up commands
+- `discover <query>` - resolve a free-text biomedical phrase into a primary concept and suggested BioMCP follow-up commands
 - `--json discover <query>` - emit structured concepts plus discover-specific `_meta` metadata for agents
 
 ## When to use this surface
 
-- Use `discover` when you only have free text and need BioMCP to pick the next typed command.
+- Use `discover` when you only have free text and need BioMCP to resolve the first entity or alias before choosing the next typed command.
+- Discover is primarily a single-entity resolver for aliases, brands, symptoms, and close concept names.
 - Prefer the first suggested command when the query clearly implies treatment, symptoms, safety, trials, or gene+disease orientation.
+- Existing routed exceptions remain supported for symptom-of-disease prompts, HPO symptom bridging, treatment prompts, gene+disease orientation, and unambiguous gene-plus-topic follow-ups.
+- Relational or multi-entity questions may redirect to `biomcp search all --keyword "<query>"`.
 - Unambiguous gene-plus-topic queries can also surface `biomcp search article -g <symbol> -k <topic> --limit 5` when the remaining topic is meaningful.
 - If no biomedical entities resolve, discover suggests `biomcp search article -k <query> --type review --limit 5`.
 - If only low-confidence concepts resolve, discover adds a broader-results article-search hint.
@@ -1007,6 +1010,8 @@ mod tests {
         assert!(out.contains("search all --gene BRAF --disease melanoma"));
         assert!(out.contains("suggest \"What drugs treat melanoma?\""));
         assert!(out.contains("discover \"<free text>\""));
+        assert!(out.contains("single-entity biomedical phrase"));
+        assert!(out.contains("search all --keyword \"<query>\""));
         assert!(out.contains("article citations <id>"));
         assert!(out.contains("enrich <GENE1,GENE2,...>"));
         assert!(out.contains("Turn a literature question into article filters"));
@@ -1028,6 +1033,8 @@ mod tests {
         assert!(out.contains("# discover"));
         assert!(out.contains("discover <query>"));
         assert!(out.contains("--json discover <query>"));
+        assert!(out.contains("single-entity resolver"));
+        assert!(out.contains("search all --keyword \"<query>\""));
         assert!(out.contains("gene-plus-topic queries"));
         assert!(out.contains("biomcp search article -g <symbol> -k <topic> --limit 5"));
         assert!(out.contains("biomcp search article -k <query> --type review --limit 5"));
@@ -1084,6 +1091,17 @@ mod tests {
         ));
         assert!(out.contains(
             "If only low-confidence concepts resolve, discover adds a broader-results article-search hint."
+        ));
+    }
+
+    #[test]
+    fn list_discover_page_mentions_relational_redirect_and_supported_exceptions() {
+        let out = render(Some("discover")).expect("list discover should render");
+        assert!(out.contains(
+            "Existing routed exceptions remain supported for symptom-of-disease prompts, HPO symptom bridging, treatment prompts, gene+disease orientation, and unambiguous gene-plus-topic follow-ups."
+        ));
+        assert!(out.contains(
+            "Relational or multi-entity questions may redirect to `biomcp search all --keyword \"<query>\"`."
         ));
     }
 

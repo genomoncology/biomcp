@@ -218,8 +218,9 @@ fn discover_help_includes_when_to_use_guidance() {
     let help = String::from_utf8(help).expect("help should be utf-8");
 
     assert!(help.contains("When to use:"));
-    assert!(help.contains("only have free text"));
-    assert!(help.contains("pick the next typed command"));
+    assert!(help.contains("free-text biomedical phrase"));
+    assert!(help.contains("single-entity resolver"));
+    assert!(help.contains("search all --keyword \"<query>\""));
 }
 
 #[test]

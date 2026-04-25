@@ -31,7 +31,7 @@ platform-specific notes.
 ```text
 biomcp search <entity> [filters]       # discovery
 biomcp suggest <question>              # choose a worked-example playbook
-biomcp discover <query>                # concept resolution before typed search/get
+biomcp discover <query>                # single-entity concept resolution before typed search/get
 biomcp get <entity> <id> [section...]  # focused detail
 biomcp <entity> <helper> <id>          # cross-entity pivots
 biomcp enrich <GENE1,GENE2,...>        # gene-set enrichment
@@ -78,7 +78,7 @@ biomcp search diagnostic --disease tuberculosis --source all --limit 5
 biomcp search all --gene BRAF --disease melanoma
 biomcp search all --keyword resistance --counts-only
 biomcp suggest "What drugs treat melanoma?"
-biomcp discover "chest pain"
+biomcp discover "chest pain"           # relational or multi-entity questions may redirect to search all --keyword
 ```
 
 See also: [Search All Workflow](../how-to/search-all-workflow.md)

@@ -15,6 +15,31 @@ use crate::sources::umls::{UmlsConcept, UmlsXref};
 const OLS4_TIMEOUT: Duration = Duration::from_millis(4000);
 const UMLS_TIMEOUT: Duration = Duration::from_millis(2500);
 const MEDLINEPLUS_TIMEOUT: Duration = Duration::from_millis(800);
+const GENERAL_DISCOVER_MAX_SURVIVORS: usize = 5;
+const DISCOVER_GENERAL_STOPWORDS: &[&str] = &[
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "in", "into", "of", "on", "or", "the",
+    "to", "what", "which", "with",
+];
+const DISCOVER_GENERAL_RELATIONAL_TOKENS: &[&str] = &[
+    "associated",
+    "classes",
+    "drug",
+    "drugs",
+    "interact",
+    "interaction",
+    "located",
+    "regulated",
+    "genes",
+];
+const DISCOVER_GENERAL_RELATIONAL_PHRASES: &[&str] = &[
+    "associated with",
+    "interact with",
+    "interacts with",
+    "regulated by",
+    "regulated genes",
+    "located in",
+    "in the",
+];
 
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct DiscoverResult {
@@ -109,6 +134,13 @@ pub(crate) enum DiscoverConfidence {
 pub(crate) enum DiscoverMode {
     Command,
     AliasFallback,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct GeneralDiscoverScore {
+    overlap_count: usize,
+    protected_exact: bool,
+    strong_survivor: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -585,15 +617,37 @@ pub(crate) fn build_result(
     }
 
     concepts.sort_by(|left, right| compare_concepts(left, right, query));
-    let ambiguous = is_ambiguous(&concepts);
     let intent = detect_intent(query, &normalized_query, &concepts);
+    let relational_redirect = if intent == DiscoverIntent::General {
+        let filtered = filter_general_discover_concepts(query, &concepts);
+        let should_redirect = looks_relational_general_query(&normalized_query)
+            && (filtered.is_empty()
+                || !filtered.iter().any(|concept| {
+                    general_discover_relevance_score(query, concept).strong_survivor
+                }));
+        concepts = if should_redirect {
+            Vec::new()
+        } else {
+            filtered
+        };
+        should_redirect
+    } else {
+        false
+    };
+    let ambiguous = is_ambiguous(&concepts);
     let plain_language = select_plain_language(&concepts, medline_topics, intent);
-    let next_commands = generate_commands(query, &concepts, ambiguous, intent);
+    let next_commands = if relational_redirect {
+        vec![general_discover_redirect_command(query)]
+    } else {
+        generate_commands(query, &concepts, ambiguous, intent)
+    };
     let has_high_confidence = concepts
         .iter()
         .any(|concept| concept.confidence == DiscoverConfidence::CanonicalId);
 
-    if concepts.is_empty() {
+    if relational_redirect {
+        notes.push(general_discover_redirect_note(query));
+    } else if concepts.is_empty() {
         notes.push(empty_results_article_fallback_note(query));
     } else if !has_high_confidence {
         notes.push(broad_results_article_fallback_note(query));
@@ -914,6 +968,115 @@ fn normalize_query(value: &str) -> String {
         .join(" ")
 }
 
+fn discover_relevance_tokens(value: &str) -> Vec<String> {
+    normalize_query(value)
+        .split(|ch: char| !ch.is_ascii_alphanumeric())
+        .map(str::trim)
+        .filter(|token| !token.is_empty())
+        .map(ToString::to_string)
+        .collect()
+}
+
+fn discover_retained_query_tokens(query: &str) -> Vec<String> {
+    discover_relevance_tokens(query)
+        .into_iter()
+        .filter(|token| {
+            let token = token.as_str();
+            !DISCOVER_GENERAL_STOPWORDS.contains(&token)
+                && !DISCOVER_GENERAL_RELATIONAL_TOKENS.contains(&token)
+        })
+        .collect()
+}
+
+fn general_discover_relevance_score(
+    query: &str,
+    concept: &DiscoverConcept,
+) -> GeneralDiscoverScore {
+    general_discover_relevance_score_with_query_parts(
+        &discover_retained_query_tokens(query),
+        &normalize_query(query),
+        concept,
+    )
+}
+
+fn general_discover_relevance_score_with_query_parts(
+    retained_query_tokens: &[String],
+    normalized_query: &str,
+    concept: &DiscoverConcept,
+) -> GeneralDiscoverScore {
+    let query_token_set = retained_query_tokens
+        .iter()
+        .cloned()
+        .collect::<HashSet<_>>();
+    let overlap_count = std::iter::once(&concept.label)
+        .chain(concept.synonyms.iter())
+        .map(|surface| {
+            discover_relevance_tokens(surface)
+                .into_iter()
+                .collect::<HashSet<_>>()
+                .into_iter()
+                .filter(|token| query_token_set.contains(token))
+                .count()
+        })
+        .max()
+        .unwrap_or(0);
+    let protected_exact = normalize_query(&concept.label) == normalized_query
+        || concept
+            .synonyms
+            .iter()
+            .any(|synonym| normalize_query(synonym) == normalized_query);
+
+    GeneralDiscoverScore {
+        overlap_count,
+        protected_exact,
+        strong_survivor: protected_exact || overlap_count >= 2,
+    }
+}
+
+fn filter_general_discover_concepts(
+    query: &str,
+    concepts: &[DiscoverConcept],
+) -> Vec<DiscoverConcept> {
+    let retained_query_tokens = discover_retained_query_tokens(query);
+    if retained_query_tokens.len() <= 1 {
+        return concepts
+            .iter()
+            .take(GENERAL_DISCOVER_MAX_SURVIVORS)
+            .cloned()
+            .collect();
+    }
+
+    let normalized_query = normalize_query(query);
+    let mut scored = concepts
+        .iter()
+        .filter_map(|concept| {
+            let score = general_discover_relevance_score_with_query_parts(
+                &retained_query_tokens,
+                &normalized_query,
+                concept,
+            );
+            (score.protected_exact || score.overlap_count > 0).then_some((concept, score))
+        })
+        .collect::<Vec<_>>();
+    scored.sort_by(|(left_concept, left_score), (right_concept, right_score)| {
+        right_score
+            .strong_survivor
+            .cmp(&left_score.strong_survivor)
+            .then_with(|| right_score.overlap_count.cmp(&left_score.overlap_count))
+            .then_with(|| compare_concepts(left_concept, right_concept, query))
+    });
+
+    scored
+        .into_iter()
+        .take(GENERAL_DISCOVER_MAX_SURVIVORS)
+        .map(|(concept, _)| concept.clone())
+        .collect()
+}
+
+fn looks_relational_general_query(normalized_query: &str) -> bool {
+    contains_any_phrase(normalized_query, DISCOVER_GENERAL_RELATIONAL_PHRASES)
+}
+
 fn normalize_primary_id(value: &str) -> Option<String> {
     let value = value.trim();
     if value.is_empty() {
@@ -1162,8 +1325,9 @@ fn detect_intent(
             "clinical features",
         ],
     ) || matches!(
-        concepts.first().map(|concept| concept.primary_type),
-        Some(DiscoverType::Symptom)
+        concepts.first(),
+        Some(concept)
+            if concept.primary_type == DiscoverType::Symptom && concept.match_tier != MatchTier::Weak
     ) {
         return DiscoverIntent::SymptomSearch;
     }
@@ -1709,6 +1873,20 @@ fn broad_results_article_fallback_note(query: &str) -> String {
     format!(
         "For broader results: {}",
         broad_article_fallback_command(query)
+    )
+}
+
+fn general_discover_redirect_command(query: &str) -> String {
+    format!(
+        "biomcp search all --keyword {}",
+        quote_query_term(query.trim())
+    )
+}
+
+fn general_discover_redirect_note(query: &str) -> String {
+    format!(
+        "`discover` resolves single entities. For relational questions, try: {}",
+        general_discover_redirect_command(query)
     )
 }
 
@@ -2412,6 +2590,121 @@ mod tests {
         assert_eq!(
             result.next_commands[1],
             "biomcp search article -g CTCF -k cohesin --limit 5"
+        );
+    }
+
+    #[test]
+    fn relational_warfarin_query_redirects_instead_of_returning_collocation_noise() {
+        let query = "drug classes that interact with warfarin";
+        let result = build_result(
+            query,
+            &[
+                ols_doc("chebi", "warfarin", "CHEBI:10033", &[]),
+                ols_doc(
+                    "ncit",
+                    "Interact with Friends Less than I Would Because of Hearing Question",
+                    "NCIT:C183192",
+                    &["I interact with friends less than I would because of my hearing"],
+                ),
+                ols_doc(
+                    "mesh",
+                    "pindone, warfarin drug combination",
+                    "MESH:C013793",
+                    &[],
+                ),
+            ],
+            &[],
+            &[],
+            Vec::new(),
+        );
+
+        assert_eq!(result.intent, DiscoverIntent::General);
+        assert!(result.concepts.is_empty());
+        assert_eq!(
+            result.notes,
+            vec![format!(
+                "`discover` resolves single entities. For relational questions, try: biomcp search all --keyword \"{query}\""
+            )]
+        );
+        assert_eq!(
+            result.next_commands,
+            vec![format!("biomcp search all --keyword \"{query}\"")]
+        );
+    }
+
+    #[test]
+    fn relational_mef2_query_redirects_when_only_weak_general_hits_remain() {
+        let query = "genes regulated by MEF2 in the heart";
+        let result = build_result(
+            query,
+            &[
+                ols_doc(
+                    "wikipathways",
+                    "RalA downstream regulated genes",
+                    "WIKIPATHWAYS:WP2290",
+                    &[],
+                ),
+                ols_doc("mesh", "MEF2 Transcription Factors", "MESH:D064326", &[]),
+                ols_doc(
+                    "ncit",
+                    "Metastatic Carcinoma in the Heart",
+                    "NCIT:C214847",
+                    &[],
+                ),
+            ],
+            &[],
+            &[],
+            Vec::new(),
+        );
+
+        assert_eq!(result.intent, DiscoverIntent::General);
+        assert!(result.concepts.is_empty());
+        assert_eq!(
+            result.notes,
+            vec![format!(
+                "`discover` resolves single entities. For relational questions, try: biomcp search all --keyword \"{query}\""
+            )]
+        );
+        assert_eq!(
+            result.next_commands,
+            vec![format!("biomcp search all --keyword \"{query}\"")]
+        );
+    }
+
+    #[test]
+    fn single_entity_gene_alias_queries_stay_stable_after_general_filtering() {
+        let result = build_result(
+            "STING",
+            &[hgnc_doc("TMEM173", "HGNC:27962", &["STING"])],
+            &[],
+            &[],
+            Vec::new(),
+        );
+
+        assert_eq!(result.intent, DiscoverIntent::General);
+        assert_eq!(result.concepts[0].label, "TMEM173");
+        assert_eq!(result.next_commands[0], "biomcp get gene TMEM173");
+    }
+
+    #[test]
+    fn single_entity_disease_queries_stay_stable_after_general_filtering() {
+        let result = build_result(
+            "scarlet fever",
+            &[],
+            &[disease_umls(
+                "C0037267",
+                "Scarlet fever",
+                &[("MONDO", "0001234", "Scarlet fever")],
+            )],
+            &[],
+            Vec::new(),
+        );
+
+        assert_eq!(result.intent, DiscoverIntent::General);
+        assert_eq!(result.concepts[0].label, "Scarlet fever");
+        assert_eq!(
+            result.next_commands[0],
+            "biomcp get disease \"Scarlet fever\""
         );
     }
 

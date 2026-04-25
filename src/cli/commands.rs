@@ -177,16 +177,18 @@ EXAMPLES:
 
 See also: biomcp list suggest")]
     Suggest(system::SuggestArgs),
-    /// Resolve free-text biomedical text into typed concepts and suggested commands
+    /// Resolve free-text biomedical text into a typed concept and suggested commands
     #[command(after_help = "\
-When to use: use discover when you only have free text and need BioMCP to pick the next typed command.
-Unambiguous gene-plus-topic queries can also surface a gene-filtered article search when there is still a meaningful topic after the gene name.
+When to use: use discover when you only have a free-text biomedical phrase and need BioMCP to resolve the first entity or alias before choosing a typed command.
+Discover is primarily a single-entity resolver. Existing routed exceptions still cover symptom-of-disease prompts, HPO symptom bridging, treatment prompts, gene+disease orientation, and unambiguous gene-plus-topic follow-ups.
+Relational or multi-entity questions may redirect to `biomcp search all --keyword \"<query>\"` instead of surfacing weak collocation matches.
 When discover cannot resolve a canonical biomedical concept, it suggests article search instead of leaving an empty dead end.
 
 EXAMPLES:
   biomcp discover ERBB1
   biomcp discover Keytruda
   biomcp discover \"chest pain\"
+  biomcp discover \"drug classes that interact with warfarin\"
   biomcp discover \"CTCF cohesin\"
   biomcp --json discover diabetes
 

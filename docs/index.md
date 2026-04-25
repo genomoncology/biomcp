@@ -89,7 +89,7 @@ biomcp get gene BRAF pathways hpa
 ```text
 search <entity> [filters]    → discovery
 suggest <question>           → playbook routing for how-to questions
-discover <query>             → concept resolution before entity selection
+discover <query>             → single-entity concept resolution before entity selection
 get <entity> <id> [sections] → focused detail
 <entity> <helper> <id>       → cross-entity pivots
 enrich <GENE1,GENE2,...>     → gene-set enrichment
@@ -103,7 +103,9 @@ search all [slot filters]    → counts-first cross-entity orientation
   Europe PMC, deduplicates PMID/PMCID/DOI identifiers, and can add a Semantic
   Scholar leg when your filters support it.
 - **Resolve messy queries:** `biomcp discover` turns aliases, brands, symptoms,
-  and pathway names into the right entity before you commit to a typed command.
+  and close concept names into the right entity before you commit to a typed
+  command. Relational or multi-entity questions may redirect to
+  `biomcp search all --keyword "<query>"`.
 - **Choose the workflow:** `biomcp suggest "<question>"` returns the matching
   worked-example playbook and two starter commands.
 - **Pivot across entities:** move from a known gene, variant, drug, disease,

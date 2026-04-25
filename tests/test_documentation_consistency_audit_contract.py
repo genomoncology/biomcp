@@ -284,11 +284,14 @@ def test_entity_guides_keep_canonical_section_flow_and_note_missing_families() -
 
 def test_discover_guide_uses_direct_copy_and_related_guides() -> None:
     discover = _read("docs/user-guide/discover.md")
+    discover_ws = _normalize_whitespace(discover)
 
     assert (
         "Use `biomcp discover` to resolve free-text biomedical phrases into the "
         "right BioMCP follow-up commands."
-    ) in _normalize_whitespace(discover)
+    ) in discover_ws
+    assert "primarily a single-entity resolver" in discover_ws
+    assert 'biomcp search all --keyword "<query>"' in discover
     assert "## Related guides" in discover
 
 
@@ -299,6 +302,7 @@ def test_discover_and_phenotype_guides_cover_hpo_bridge_and_text_resolution() ->
     assert 'biomcp discover "developmental delay"' in discover
     assert 'biomcp search phenotype "HP:..."' in discover
     assert 'biomcp discover "symptoms of Marfan syndrome"' in discover
+    assert 'biomcp search all --keyword "<query>"' in discover
     assert 'biomcp search phenotype "seizure, developmental delay"' in phenotype
     assert "space- or comma-separated" in phenotype
     assert "one symptom phrase" in phenotype

@@ -112,6 +112,12 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "_meta.workflow" in cli_reference
     assert "_meta.ladder[]" in cli_reference
     assert "biomcp get drug aspirin --json" in cli_reference
+    assert "single-entity resolver" in cli_reference
+    assert 'biomcp search all --keyword "<query>"' in cli_reference
+    assert "single-entity concept resolution before typed search/get" in quick_reference
+    assert "single-entity concept resolution before entity selection" in docs_index
+    assert 'biomcp search all --keyword "<query>"' in docs_index
+    assert "search all --keyword" in quick_reference
 
     assert "one markdown resource per embedded skill use-case" in mcp_server
     assert "biomcp://help" in mcp_server
@@ -160,6 +166,8 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "CDC CVX/MVX" in routing_rules
     assert 'biomcp search drug --indication "<disease>"' in skill_file
     assert 'biomcp discover "<free text>"' in skill_file
+    assert "single-entity resolver" in routing_rules
+    assert 'biomcp search all --keyword "<query>"' in routing_rules
     assert "../docs/" not in skill_file
     assert ".md)" not in skill_file
     how_to_table = skill_file[

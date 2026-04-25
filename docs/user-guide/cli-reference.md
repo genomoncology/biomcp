@@ -162,11 +162,14 @@ biomcp --json discover diabetes
 ```
 
 Use `discover` when the user starts with free text rather than a known entity
-type. Markdown output groups resolved concepts by type and suggests concrete
-follow-up BioMCP commands. JSON adds `_meta.discovery_sources` alongside the
-standard `_meta.next_commands` and `_meta.section_sources` metadata.
-Symptom-first queries that resolve to HPO concepts can suggest
-`biomcp search phenotype "HP:..."` as the first follow-up.
+type. It is primarily a single-entity resolver, while keeping the existing
+symptom-of-disease, HPO symptom, treatment, gene+disease, and unambiguous
+gene-plus-topic routed flows. Relational or multi-entity questions may redirect
+to `biomcp search all --keyword "<query>"`. Markdown output groups resolved
+concepts by type and suggests concrete follow-up BioMCP commands. JSON adds
+`_meta.discovery_sources` alongside the standard `_meta.next_commands` and
+`_meta.section_sources` metadata. Symptom-first queries that resolve to HPO
+concepts can suggest `biomcp search phenotype "HP:..."` as the first follow-up.
 
 ### All (cross-entity)
 

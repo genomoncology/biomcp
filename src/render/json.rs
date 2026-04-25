@@ -1016,6 +1016,57 @@ mod tests {
     }
 
     #[test]
+    fn to_discover_json_keeps_relational_redirect_commands_only_under_meta() {
+        let query = "drug classes that interact with warfarin";
+        let redirect = format!("biomcp search all --keyword \"{query}\"");
+        let note = format!(
+            "`discover` resolves single entities. For relational questions, try: {redirect}"
+        );
+        let json = to_discover_json(&DiscoverResult {
+            query: query.to_string(),
+            normalized_query: query.to_string(),
+            concepts: Vec::new(),
+            plain_language: None,
+            next_commands: vec![redirect.clone()],
+            notes: vec![note.clone()],
+            ambiguous: false,
+            intent: DiscoverIntent::General,
+        })
+        .expect("discover json");
+
+        let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
+        let object = value.as_object().expect("top-level discover object");
+        let mut keys = object.keys().cloned().collect::<Vec<_>>();
+        keys.sort();
+        assert_eq!(
+            keys,
+            vec![
+                "_meta".to_string(),
+                "ambiguous".to_string(),
+                "concepts".to_string(),
+                "intent".to_string(),
+                "normalized_query".to_string(),
+                "notes".to_string(),
+                "query".to_string(),
+            ]
+        );
+        assert!(
+            value.get("next_commands").is_none(),
+            "discover JSON should expose redirect commands only in _meta"
+        );
+        assert!(
+            value.get("suggestions").is_none(),
+            "discover JSON should not introduce top-level suggestions"
+        );
+        assert_eq!(value["notes"][0], note);
+        assert_eq!(value["_meta"]["next_commands"][0], redirect);
+        assert_eq!(
+            value["_meta"]["suggestions"][0],
+            "biomcp search all --keyword \"drug classes that interact with warfarin\""
+        );
+    }
+
+    #[test]
     fn to_alias_suggestion_json_includes_alias_resolution_and_next_commands() {
         let json =
             to_alias_suggestion_json(&AliasFallbackDecision::Canonical(AliasCanonicalMatch {
