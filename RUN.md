@@ -165,11 +165,14 @@ make spec-pr
 ```
 
 `make spec` and `make spec-pr` both run the active spec-v2 canary tree:
-`spec/entity/` plus tracked `spec/surface/` scaffolding for follow-on surface
-files. The current active canaries are `spec/entity/gene.md`,
-`spec/entity/variant.md`, `spec/entity/article.md`, `spec/entity/trial.md`,
-`spec/entity/drug.md`, `spec/entity/disease.md`, and
-`spec/entity/protein.md`. Every bash block in that tree should call
+`spec/entity/` plus `spec/surface/`. The current active canaries are
+`spec/entity/gene.md`, `spec/entity/variant.md`, `spec/entity/article.md`,
+`spec/entity/trial.md`, `spec/entity/drug.md`, `spec/entity/disease.md`,
+`spec/entity/protein.md`, `spec/entity/pathway.md`, `spec/entity/study.md`,
+`spec/entity/pgx.md`, `spec/entity/phenotype.md`,
+`spec/entity/diagnostic.md`, `spec/entity/vaers.md`,
+`spec/surface/cli.md`, `spec/surface/mcp.md`, and
+`spec/surface/discover.md`. Every bash block in that tree should call
 `tools/biomcp-ci`, which owns release-binary resolution, repo-owned cache
 roots, optional-key stripping, and warm-cache replay on CI cache hits.
 

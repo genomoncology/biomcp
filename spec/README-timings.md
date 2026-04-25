@@ -4,7 +4,7 @@
 
 | Target | Run when | Timeout | Scope | Cache contract |
 |---|---|---|---|---|
-| `make spec-pr` | every PR and repo-local pre-merge verification | `180s` per heading | the active executable canaries under `spec/entity/` plus tracked `spec/surface/` scaffolding | CI restores `.cache/biomcp-specs/`; cache hits export `BIOMCP_SPEC_CACHE_HIT=1`, which makes `tools/biomcp-ci` replay the warm HTTP cache with `BIOMCP_CACHE_MODE=infinite` |
+| `make spec-pr` | every PR and repo-local pre-merge verification | `180s` per heading | the full active v2 corpus under `spec/entity/` and `spec/surface/` | CI restores `.cache/biomcp-specs/`; cache hits export `BIOMCP_SPEC_CACHE_HIT=1`, which makes `tools/biomcp-ci` replay the warm HTTP cache with `BIOMCP_CACHE_MODE=infinite` |
 | `make spec` | repo-local canary reruns and spec debugging | `120s` per heading | the same canary tree as `make spec-pr` | uses the same wrapper/cache root, but cold local runs leave `BIOMCP_CACHE_MODE` unset so the cache can refill |
 | `make test-contracts` | PR contracts lane and local docs/Python validation | n/a | Rust release build plus Python/docs contract checks | independent of the executable-spec wrapper |
 
@@ -30,7 +30,9 @@ helper. The executable docs themselves call `tools/biomcp-ci`; `make spec` and
 | `spec/entity/phenotype.md` | phenotype canary for HPO/symptom inputs, similarity-ranked disease output, and typed disease follow-ups |
 | `spec/entity/diagnostic.md` | diagnostic canary for source-aware search, gene-first GTR guidance, compact discovery rows, and WHO detail paths |
 | `spec/entity/vaers.md` | vaers canary for vaccine-first CDC aggregation, aggregate-only reporting, and explicit source limitations/combined output |
-| `spec/surface/` | tracked scaffolding for later surface files; not an active behavior file in this bootstrap slice |
+| `spec/surface/cli.md` | CLI surface canary for top-level help/list discovery, operator commands, cache-mode exceptions, and health/admin guidance |
+| `spec/surface/mcp.md` | MCP surface canary for stdio/HTTP entrypoints, probe routes, and streamable-HTTP tool execution |
+| `spec/surface/discover.md` | onboarding-surface canary for discover resolution, suggest routing, skill guidance, and fallback behavior |
 
 ## Bash Mustmatch Lint Rule
 
