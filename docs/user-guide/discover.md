@@ -16,11 +16,12 @@ matches as if they were a good discover answer.
 ## Examples
 
 ```bash
+biomcp discover BRCA1
+biomcp discover dabigatran
 biomcp discover ERBB1
 biomcp discover Keytruda
 biomcp discover "chest pain"
 biomcp discover "developmental delay"
-biomcp discover "drug classes that interact with warfarin"
 biomcp --json discover diabetes
 ```
 
