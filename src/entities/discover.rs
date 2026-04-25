@@ -2599,6 +2599,7 @@ mod tests {
         let result = build_result(
             query,
             &[
+                ols_doc("hp", "Adverse drug response", "HP:0020172", &[]),
                 ols_doc("chebi", "warfarin", "CHEBI:10033", &[]),
                 ols_doc(
                     "ncit",
@@ -2638,6 +2639,7 @@ mod tests {
         let result = build_result(
             query,
             &[
+                ols_doc("hp", "High myoinositol in brain by MRS", "HP:0025460", &[]),
                 ols_doc(
                     "wikipathways",
                     "RalA downstream regulated genes",
