@@ -291,6 +291,9 @@ def test_discover_guide_uses_direct_copy_and_related_guides() -> None:
         "right BioMCP follow-up commands."
     ) in discover_ws
     assert "primarily a single-entity resolver" in discover_ws
+    assert "biomcp discover BRCA1" in discover
+    assert "biomcp discover dabigatran" in discover
+    assert 'biomcp discover "drug classes that interact with warfarin"' not in discover
     assert 'biomcp search all --keyword "<query>"' in discover
     assert "## Related guides" in discover
 

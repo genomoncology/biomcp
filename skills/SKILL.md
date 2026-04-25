@@ -11,7 +11,7 @@ open the returned `biomcp skill <slug>` playbook for the full workflow.
 ## Routing rules
 
 - Start with the narrowest command that matches the question.
-- Use `biomcp discover "<free text>"` when you only have a single biomedical phrase and need the CLI to resolve the first typed command. `discover` is primarily a single-entity resolver; symptom-of-disease prompts, HPO symptom bridges, treatment prompts, gene+disease orientation, and unambiguous gene-plus-topic follow-ups remain supported exceptions.
+- Use `biomcp discover "<free text>"` when you only have a single biomedical phrase and need the CLI to resolve the first typed command. `discover` is a single-entity resolver and single-entity free-text lookup only: use it to resolve the canonical name, ID, or category of one thing. It is not a relational query tool and not a list-question seed. Examples: `biomcp discover BRCA1` and `biomcp discover dabigatran`. Symptom-of-disease prompts, HPO symptom bridges, treatment prompts, gene+disease orientation, and unambiguous gene-plus-topic follow-ups remain supported exceptions.
 - Relational or multi-entity questions may redirect to `biomcp search all --keyword "<query>"` instead of surfacing weak collocation matches as if they were a resolved discover answer.
 - Use `biomcp search all --gene <gene> --disease "<disease>"` when you know the entities but not the next pivot.
 - Treatment questions: `biomcp search drug --indication "<disease>" --limit 5`
@@ -90,6 +90,15 @@ sequence.
 | You need to review whether a workflow run is complete and trustworthy | Check command fidelity, evidence traceability, and reproducibility against the commands already run | Check command fidelity, evidence traceability, and reproducibility before signing off |
 
 ## Anti-patterns
+
+### Don't use `discover` for relational or list questions
+
+`discover` resolves one biomedical entity at a time. If the prompt asks for
+relationships, classes, or a list, pivot to article keyword search first
+instead of treating `discover` as a relational query tool.
+
+- `"drug classes that interact with warfarin"` -> use `biomcp search article -k "drug classes that interact with warfarin" --type review --limit 5`
+- `"genes regulated by MEF2 in the heart"` -> use `biomcp search article -k "genes regulated by MEF2 in the heart" --type review --limit 5`, then `biomcp get gene <symbol>` once the literature or question gives you the concrete gene you actually need
 
 ### Don't keyword-reformulate
 

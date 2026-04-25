@@ -103,7 +103,9 @@ echo "$json_out" | jq -e '.first_commands == [] and .full_skill == null' >/dev/n
 ## Skill Still Opens the Longer Guide
 
 Once `suggest` points to a playbook, the user still needs both the worked-example
-index and the canonical agent guide behind `skill render`.
+index and the canonical agent guide behind `skill render`. The rendered prompt
+should also carry the stricter discover framing and the relational-query
+counter-examples so installed `SKILL.md` matches the canonical prompt.
 
 ```bash
 overview="$(../../tools/biomcp-ci skill)"
@@ -114,4 +116,12 @@ echo "$list" | mustmatch like "treatment-lookup"
 render="$(../../tools/biomcp-ci skill render)"
 echo "$render" | mustmatch like "## Routing rules"
 echo "$render" | mustmatch like "## How-to reference"
+echo "$render" | mustmatch like "single-entity free-text lookup only"
+echo "$render" | mustmatch like "biomcp discover BRCA1"
+echo "$render" | mustmatch like "biomcp discover dabigatran"
+echo "$render" | mustmatch like "### Don't use \`discover\` for relational or list questions"
+echo "$render" | mustmatch like '"drug classes that interact with warfarin"'
+echo "$render" | mustmatch like 'biomcp search article -k "drug classes that interact with warfarin" --type review --limit 5'
+echo "$render" | mustmatch like '"genes regulated by MEF2 in the heart"'
+echo "$render" | mustmatch like "biomcp get gene <symbol>"
 ```

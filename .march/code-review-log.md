@@ -2,46 +2,35 @@
 
 ## Critique
 
-I reviewed the branch against `.march/design-final.md`, the full `main..HEAD` diff, and the ticket/spec/docs proof surface.
-
-### Design completeness audit
-
-- The helper grammar, DDInter local-runtime source lifecycle, health row, help/list/docs/source-map updates, and shared helper/section interaction backend were all present in the diff.
-- The proof-matrix test surfaces were present across the Rust CLI/render tests, the executable drug spec, and the Python docs/source contract tests.
-- Three defects remained in the implementation:
-  1. the shared DDInter report dropped the legacy DrugBank/MyChem interaction descriptions instead of carrying them forward as the design required;
-  2. applying the shared interaction report overwrote `Drug.pharm_classes`, which regressed the anchor-drug pharmacology field into an interaction-rollup field; and
-  3. the DDInter client evicted and rebuilt its in-process index on every `ready()` call, so the "load once per process" design goal was not actually met.
-
-### Test-design traceability
-
-- Helper grammar/help/list/docs coverage: `src/cli/drug/tests.rs`, `src/cli/tests/next_commands_validity.rs`, `src/cli/tests/next_commands_json_property/variant_drug.rs`, `tests/test_public_skill_docs_contract.py`, `tests/test_upstream_planning_analysis_docs.py`, and `spec/entity/drug.md`.
-- DDInter source lifecycle and docs coverage: `src/cli/system/tests.rs`, the health tests in `src/cli/health.rs`, `tests/test_source_pages_docs_contract.py`, `tests/test_source_licensing_docs_contract.py`, `tests/test_public_search_all_docs_contract.py`, and `tests/test_upstream_planning_analysis_docs.py`.
-- Structured render / empty-state / section-parity coverage: `src/render/markdown/drug/tests.rs`, the interaction tests in `src/entities/drug/interactions.rs`, and the executable spec in `spec/entity/drug.md`.
-- I added regression coverage for the defects found during review so the repaired behavior is now directly asserted.
+- Reviewed `.march/design-final.md`, `.march/design-draft.md`, `.march/code-log.md`, `.march/ticket.md`, the full `git diff main..HEAD`, and the single ticket commit `f74a61d0`.
+- Design completeness and proof traceability were otherwise intact: the branch updated the canonical prompt in `skills/SKILL.md`, tightened the direct prompt contract in `tests/test_public_skill_docs_contract.py`, and extended the rendered-surface executable spec in `spec/surface/discover.md`.
+- **Blocking defect found:** `docs/user-guide/discover.md` still listed `biomcp discover "drug classes that interact with warfarin"` as a normal example even though the new shipped prompt guidance treats that exact query as a discover anti-pattern and redirects the user toward article search instead. That left adjacent help/docs inconsistent for the same changed contract.
 
 ## Fix Plan
 
-1. Preserve the anchor drug's own `pharm_classes` and derive interaction class summaries from interaction rows at render time instead.
-2. Merge legacy DrugBank/MyChem interaction descriptions into the DDInter-backed rows when partner names normalize to the same drug.
-3. Only evict the DDInter index cache when a sync actually refreshed files, and keep interaction provenance off empty default drug cards while still attributing DrugBank when description text is present.
+1. Remove the stale relational-query example from `docs/user-guide/discover.md`.
+2. Replace it with explicit single-entity examples that match the new prompt framing (`BRCA1`, `dabigatran`).
+3. Add a discover-guide contract assertion so the general discover docs cannot drift back to advertising the warfarin relational query as a normal discover example.
 
-## Repairs
+## Repair
 
-- Carried legacy DrugBank/MyChem interaction descriptions into the shared DDInter report.
-- Stopped `apply_interaction_report()` from mutating `Drug.pharm_classes`, added `interaction_class_summaries()` as the shared rollup helper, and updated the drug markdown template to render class summaries from interaction rows.
-- Tightened interaction provenance so default drug cards do not advertise an interactions section when none is present, while DDInter helper/source attribution now adds DrugBank when description text contributes.
-- Changed DDInter cache eviction to happen only after an actual refresh, which restores the intended one-load-per-process behavior for warm bundles.
-- Added regression tests in `src/entities/drug/interactions.rs`, `src/render/markdown/drug/tests.rs`, and `src/render/provenance.rs`.
+- Updated `docs/user-guide/discover.md` to show `biomcp discover BRCA1` and `biomcp discover dabigatran` in the examples block and removed the stale warfarin relational-query example.
+- Updated `tests/test_documentation_consistency_audit_contract.py` to require those positive examples and to reject the stale `biomcp discover "drug classes that interact with warfarin"` example.
+- Re-checked the touched area for collateral damage after the fix; no dead branches, stale text, or other adjacent issues were introduced.
+- Re-ran the changed-surface and repo gates:
+  - `cargo test --lib`
+  - `cargo clippy --lib --tests -- -D warnings`
+  - `uv run pytest tests/test_public_skill_docs_contract.py tests/test_documentation_consistency_audit_contract.py -q`
+  - `PATH="$(pwd)/target/release:$PATH" BIOMCP_BIN="$(pwd)/target/release/biomcp" uv run --extra dev pytest spec/surface/discover.md --mustmatch-lang bash --mustmatch-timeout 180 -q`
+  - `make test-contracts`
+  - `make spec-pr`
 
 ## Residual Concerns
 
-- None. No additional out-of-scope issues were filed from this review pass.
+- None. No out-of-scope follow-up issue was needed from this review.
 
 ## Defect Register
 
 | # | Category | Lintable | Description |
 |---|----------|----------|-------------|
-| 1 | data-completeness | no | The shared DDInter report dropped legacy DrugBank/MyChem interaction descriptions, leaving the new description column empty even when prior data existed. |
-| 2 | collateral-damage | no | `apply_interaction_report()` overwrote the anchor drug's `pharm_classes`, which regressed the existing drug contract into interaction rollups. |
-| 3 | performance | no | `DdinterClient::ready()` evicted and rebuilt the DDInter index on every call, defeating the intended in-process cache. |
+| 1 | stale-doc | no | `docs/user-guide/discover.md` still advertised `biomcp discover "drug classes that interact with warfarin"` as a normal example after `skills/SKILL.md` reclassified that query as a discover anti-pattern. |
