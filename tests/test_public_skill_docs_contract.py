@@ -170,6 +170,12 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert 'biomcp search drug --indication "<disease>"' in skill_file
     assert 'biomcp discover "<free text>"' in skill_file
     assert "single-entity resolver" in routing_rules
+    assert "single-entity free-text lookup only" in routing_rules
+    assert "canonical name, ID, or category of one thing" in routing_rules
+    assert "not a relational query tool" in routing_rules
+    assert "not a list-question seed" in routing_rules
+    assert "biomcp discover BRCA1" in routing_rules
+    assert "biomcp discover dabigatran" in routing_rules
     assert 'biomcp search all --keyword "<query>"' in routing_rules
     assert "../docs/" not in skill_file
     assert ".md)" not in skill_file
@@ -237,6 +243,21 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "If you keep reformulating the same search with different keywords" in skill_file
     assert "_meta.next_commands" in skill_file
     assert "Run `biomcp skill list` for worked examples" in skill_file
+    anti_patterns = skill_file[
+        skill_file.index("## Anti-patterns") : skill_file.index("## Output and evidence rules")
+    ]
+    assert "### Don't use `discover` for relational or list questions" in anti_patterns
+    assert '"drug classes that interact with warfarin"' in anti_patterns
+    assert (
+        'biomcp search article -k "drug classes that interact with warfarin" --type review --limit 5'
+        in anti_patterns
+    )
+    assert '"genes regulated by MEF2 in the heart"' in anti_patterns
+    assert (
+        'biomcp search article -k "genes regulated by MEF2 in the heart" --type review --limit 5'
+        in anti_patterns
+    )
+    assert "biomcp get gene <symbol>" in anti_patterns
 
     assert "Use `article batch` as the default follow-up after `search article`" in article_guide
     assert "`--type` on `--source all` uses Europe PMC + PubMed" in article_guide
