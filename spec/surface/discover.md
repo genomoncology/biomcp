@@ -139,3 +139,18 @@ echo "$render" | mustmatch like 'biomcp search article -k "drug classes that int
 echo "$render" | mustmatch like '"genes regulated by MEF2 in the heart"'
 echo "$render" | mustmatch like "biomcp get gene <symbol>"
 ```
+
+## Skill Decomposition Keeps Catalog and Install Ownership Separate
+
+The behavior checks above protect the public skill output. The implementation
+also needs separate asset, catalog, and install ownership zones so MCP resource
+reads and filesystem installation do not collapse back into one over-cap module.
+
+```bash
+set +e
+structure_out="$(cd ../.. && cargo test --test skill_cli_structure -- --nocapture 2>&1)"
+structure_status=$?
+set -e
+echo "$structure_out" | mustmatch like "skill_split_files_exist_with_doc_headers"
+test "$structure_status" -eq 0
+```
