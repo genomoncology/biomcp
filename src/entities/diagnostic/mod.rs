@@ -707,6 +707,7 @@ mod tests {
     #[tokio::test]
     async fn get_regulatory_uses_alias_queries_and_dedupes_pma_supplements() {
         let (_lock, _root, _gtr_env) = install_gtr_fixture_root("diagnostic-get-regulatory").await;
+        // Isolate the shared OpenFDA HTTP cache for this mock-backed regulatory overlay test.
         let server = MockServer::start().await;
         let _openfda_env = set_env_var("BIOMCP_OPENFDA_BASE", Some(&server.uri()));
 

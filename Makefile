@@ -36,10 +36,12 @@ install:
 	install -m 755 target/release/biomcp "$(HOME)/.local/bin/biomcp"
 
 spec:
+# Keep the live ComplexPortal protein canary out of the shared xdist worker pool.
 	PATH="$(CURDIR)/target/release:$(PATH)" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" \
 		uv run --extra dev sh -c 'PATH="$(CURDIR)/target/release:$$PATH" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" pytest spec/entity/ spec/surface/ --mustmatch-lang bash --mustmatch-timeout 120 -v $(SPEC_XDIST_ARGS)'
 
 spec-pr:
+# Keep the live ComplexPortal protein canary out of the shared xdist worker pool.
 	PATH="$(CURDIR)/target/release:$(PATH)" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" \
 		uv run --extra dev sh -c 'PATH="$(CURDIR)/target/release:$$PATH" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" pytest spec/entity/ spec/surface/ --mustmatch-lang bash --mustmatch-timeout 180 -v $(SPEC_XDIST_ARGS)'
 

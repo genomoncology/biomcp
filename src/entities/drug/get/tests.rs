@@ -162,6 +162,7 @@ fn trial_alias_cache_key_normalizes_requested_name() {
 #[tokio::test]
 async fn resolve_trial_aliases_retries_after_transient_lookup_failure() {
     let _env_lock = crate::test_support::env_lock().lock().await;
+    // Isolate the shared MyChem HTTP cache while this test swaps BIOMCP_MYCHEM_BASE.
     let requested = "review-transient-alias-drug";
 
     let failing = MockServer::start().await;

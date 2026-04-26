@@ -2852,6 +2852,7 @@ mod tests {
 
     #[tokio::test]
     async fn dispatch_section_pathway_surfaces_sanitized_wikipathways_404_without_timeout() {
+        // Serialize the shared BIOMCP_* mock-base env mutation this warning-path test relies on.
         let _guard = env_lock_async().await;
         let reactome = MockServer::start().await;
         let kegg = MockServer::start().await;

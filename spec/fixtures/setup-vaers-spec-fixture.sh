@@ -187,6 +187,7 @@ done
 test -s "$ready_file"
 base_url="$(cat "$ready_file")"
 
+# Wait for the shared loopback VAERS/OpenFDA fixture base URL to answer before exporting it.
 printf 'export BIOMCP_VAERS_BASE=%q\n' "$base_url" >"$env_file"
 printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_CVX_DIR=%q\n' "$fixture_cvx_root" >>"$env_file"
