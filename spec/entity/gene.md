@@ -39,6 +39,24 @@ echo "$out" | mustmatch like "biomcp get gene BRAF pathways"
 echo "$out" | mustmatch like "biomcp get gene BRAF diagnostics"
 ```
 
+## All-Section Warm Budget
+
+The combined gene bundle should stay fast on a warm spec cache while still
+rendering deep content, not just the identity card.
+
+```bash
+../../tools/biomcp-ci get gene BRCA1 all >/dev/null
+start_ns="$(date +%s%N)"
+out="$(../../tools/biomcp-ci get gene BRCA1 all)"
+end_ns="$(date +%s%N)"
+elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
+if [ "$elapsed_ms" -ge 7000 ]; then
+  echo "expected warm biomcp get gene BRCA1 all under 7000ms, got ${elapsed_ms}ms" >&2
+  exit 1
+fi
+echo "$out" | mustmatch like "## ClinGen"
+```
+
 ## Tissue-Expression Context
 
 Human Protein Atlas data belongs in an opt-in deepen path. When live HPA data is
