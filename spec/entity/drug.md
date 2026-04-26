@@ -16,6 +16,7 @@ out="$(../../tools/biomcp-ci search drug trastuzumab --limit 3)"
 echo "$out" | mustmatch like "## US (MyChem.info / OpenFDA)"
 echo "$out" | mustmatch like "## EU (EMA)"
 echo "$out" | mustmatch like "## WHO (WHO Prequalification)"
+echo "$out" | mustmatch '/\|[^|]+\|Biotherapeutic Product\|[^|]+\|[^|]+\|[^|]+\|BT-ON[0-9]+\|/'
 ```
 
 ## Brand-Name Bridge
@@ -102,6 +103,7 @@ trial/adverse-event pivots that a clinician uses from the same card.
 out="$(../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu)"
 echo "$out" | mustmatch like "## Regulatory (EU - EMA)"
 echo "$out" | mustmatch like "## Targets (ChEMBL / Open Targets)"
+echo "$out" | mustmatch '/PDCD1\nMore:/'
 echo "$out" | mustmatch like "biomcp drug trials pembrolizumab"
 ```
 

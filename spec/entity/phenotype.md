@@ -34,5 +34,6 @@ open the top disease hit with genes and phenotypes in one step.
 
 ```bash
 out="$(../../tools/biomcp-ci search phenotype 'seizure, developmental delay' --limit 3)"
+echo "$out" | mustmatch '/See also:[\s\S]*biomcp get disease ".+" genes phenotypes/'
 echo "$out" | mustmatch '/biomcp get disease ".+" genes phenotypes/'
 ```
