@@ -14,6 +14,7 @@ When the query is a familiar alias rather than a canonical gene symbol,
 ```bash
 out="$(../../tools/biomcp-ci discover ERBB1)"
 echo "$out" | mustmatch like "# Discover: ERBB1"
+echo "$out" | mustmatch '/\*\*EGFR\*\* \(`HGNC:3236`\)/'
 echo "$out" | mustmatch like '`biomcp get gene EGFR`'
 ```
 

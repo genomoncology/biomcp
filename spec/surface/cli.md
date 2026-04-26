@@ -13,6 +13,7 @@ documented JSON exception for cache paths.
 out="$(../../tools/biomcp-ci --help)"
 echo "$out" | mustmatch like "leading public biomedical data sources"
 echo "$out" | mustmatch like "serve-http"
+echo "$out" | mustmatch '/suggest\s+Suggest .*biomedical question/'
 echo "$out" | mustmatch like "cache path, which stays plain text"
 ```
 
@@ -42,6 +43,7 @@ echo "$path" | mustmatch '/^\/.*\/\.cache\/biomcp-specs\/http$/'
 version="$(../../tools/biomcp-ci version --verbose)"
 echo "$version" | mustmatch '/^biomcp 0\.[0-9]+\.[0-9]+/'
 echo "$version" | mustmatch like "Executable:"
+echo "$version" | mustmatch '/Build: version=0\.[0-9]+\.[0-9]+, git=[0-9a-f]+, date=[-0-9:+TZ]+/'
 ```
 
 ## Health and Admin Help Stay Explicit
