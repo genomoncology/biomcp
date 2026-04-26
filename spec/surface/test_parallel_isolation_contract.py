@@ -55,7 +55,7 @@ def _has_base_url_probe(text: str) -> bool:
 
 def test_wikipathways_parallel_contract_serializes_shared_mock_env() -> None:
     context = _rust_function_block(
-        "src/cli/search_all.rs",
+        "src/cli/search_all/tests/dispatch.rs",
         "dispatch_section_pathway_surfaces_sanitized_wikipathways_404_without_timeout",
     )
     preamble = context.split(
