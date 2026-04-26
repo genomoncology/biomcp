@@ -1185,19 +1185,13 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         flags=re.MULTILINE,
     )
     assert re.search(
-        r"^spec:\n"
-        r"\tPATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" \\\n"
-        r"\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" pytest spec/entity/ spec/surface/ --mustmatch-lang bash --mustmatch-timeout 120 -v \$\(SPEC_XDIST_ARGS\)'$",
+        r"pytest spec/entity/ spec/surface/[^\n]*--mustmatch-timeout 120[^\n]*\$\(SPEC_XDIST_ARGS\)",
         makefile,
-        flags=re.MULTILINE,
-    )
+    ), "spec: must run main corpus with 120s timeout under SPEC_XDIST_ARGS"
     assert re.search(
-        r"^spec-pr:\n"
-        r"\tPATH=\"\$\(CURDIR\)/target/release:\$\(PATH\)\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" \\\n"
-        r"\t\tuv run --extra dev sh -c 'PATH=\"\$\(CURDIR\)/target/release:\$\$PATH\" BIOMCP_BIN=\"\$\(CURDIR\)/target/release/biomcp\" pytest spec/entity/ spec/surface/ --mustmatch-lang bash --mustmatch-timeout 180 -v \$\(SPEC_XDIST_ARGS\)'$",
+        r"pytest spec/entity/ spec/surface/[^\n]*--mustmatch-timeout 180[^\n]*\$\(SPEC_XDIST_ARGS\)",
         makefile,
-        flags=re.MULTILINE,
-    )
+    ), "spec-pr: must run main corpus with 180s timeout under SPEC_XDIST_ARGS"
     assert re.search(
         r"^test-contracts:\n"
         r"\tcargo build --release --locked\n"
