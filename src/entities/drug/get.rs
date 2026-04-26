@@ -188,6 +188,57 @@ pub(super) struct ResolvedDrugBase {
     pub(super) label_response: Option<serde_json::Value>,
 }
 
+enum SparseDrugDiscoverRescue {
+    Canonical(String),
+    AliasFallback,
+    None,
+}
+
+fn normalized_discover_drug_label(value: &str) -> String {
+    value.trim().trim_matches('.').to_ascii_lowercase()
+}
+
+async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
+    let Ok(result) = crate::entities::discover::resolve_query(
+        name,
+        crate::entities::discover::DiscoverMode::AliasFallback,
+    )
+    .await
+    else {
+        return SparseDrugDiscoverRescue::None;
+    };
+
+    let Some(top) = result.concepts.first() else {
+        return SparseDrugDiscoverRescue::None;
+    };
+
+    let has_drug_signal = result
+        .concepts
+        .iter()
+        .any(|concept| concept.primary_type == crate::entities::discover::DiscoverType::Drug);
+    if !has_drug_signal {
+        return SparseDrugDiscoverRescue::None;
+    }
+
+    if top.primary_type == crate::entities::discover::DiscoverType::Drug
+        && top.match_tier == crate::entities::discover::MatchTier::Exact
+        && top.confidence == crate::entities::discover::DiscoverConfidence::CanonicalId
+    {
+        let top_label = normalized_discover_drug_label(&top.label);
+        let competing_exact_drug = result.concepts.iter().any(|concept| {
+            concept.primary_type == crate::entities::discover::DiscoverType::Drug
+                && concept.match_tier == crate::entities::discover::MatchTier::Exact
+                && concept.confidence == crate::entities::discover::DiscoverConfidence::CanonicalId
+                && normalized_discover_drug_label(&concept.label) != top_label
+        });
+        if !top_label.is_empty() && !competing_exact_drug {
+            return SparseDrugDiscoverRescue::Canonical(top.label.clone());
+        }
+    }
+
+    SparseDrugDiscoverRescue::AliasFallback
+}
+
 #[derive(Clone)]
 struct TrialAliasResolution {
     canonical_name: String,
@@ -406,6 +457,23 @@ pub(super) async fn resolve_drug_base(
         resp = fallback_resp;
         selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
         drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
+    }
+
+    if drug.drugbank_id.is_none() && drug.chembl_id.is_none() && drug.unii.is_none() {
+        match discover_sparse_drug_rescue(name).await {
+            SparseDrugDiscoverRescue::Canonical(candidate) => {
+                if let Ok(fallback_resp) = direct_drug_lookup(&candidate).await
+                    && !fallback_resp.hits.is_empty()
+                {
+                    lookup_name = candidate;
+                    resp = fallback_resp;
+                    selected = transform::drug::select_hits_for_name(&resp.hits, &lookup_name);
+                    drug = transform::drug::merge_mychem_hits(&selected, &lookup_name);
+                }
+            }
+            SparseDrugDiscoverRescue::AliasFallback => return Err(original_not_found()),
+            SparseDrugDiscoverRescue::None => {}
+        }
     }
 
     let mut label_response_opt: Option<serde_json::Value> = None;

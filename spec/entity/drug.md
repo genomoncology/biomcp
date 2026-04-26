@@ -30,6 +30,26 @@ echo "$out" | mustmatch like "# pembrolizumab"
 echo "$out" | mustmatch like "biomcp drug trials pembrolizumab"
 ```
 
+## Research-Code Bridge
+
+Paper and sponsor codes should follow the same canonical identity bridge as
+brand names. When an operator starts from `MK-3475`, the base card should pivot
+back to `pembrolizumab` rather than bouncing through alias guidance or
+preserving the paper code as the primary identity.
+
+```bash
+out="$(../../tools/biomcp-ci get drug MK-3475)"
+echo "$out" | mustmatch like "# pembrolizumab"
+```
+
+Once the card canonicalizes, its next commands should keep the operator on the
+INN instead of switching back to the paper code.
+
+```bash
+out="$(../../tools/biomcp-ci get drug MK-3475)"
+echo "$out" | mustmatch like "biomcp drug trials pembrolizumab"
+```
+
 ## Structured Drug Interactions
 
 When the question is explicitly about drug-drug interactions, the helper should

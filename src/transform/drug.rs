@@ -111,6 +111,11 @@ fn hit_all_names(hit: &MyChemHit) -> Vec<String> {
     if let Some(v) = hit.drugbank.as_ref().and_then(|d| d.name.as_deref()) {
         out.push(normalize_name(v));
     }
+    if let Some(drugbank) = hit.drugbank.as_ref() {
+        for synonym in &drugbank.synonyms {
+            out.push(normalize_name(synonym));
+        }
+    }
     if let Some(v) = hit.chembl.as_ref().and_then(|c| c.pref_name.as_deref()) {
         out.push(normalize_name(v));
     }
