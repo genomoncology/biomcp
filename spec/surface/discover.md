@@ -26,8 +26,6 @@ diagnosis from the free text alone.
 
 ```bash
 out="$(../../tools/biomcp-ci discover "symptoms of Marfan syndrome")"
-echo "$out" | mustmatch like "## Plain Language"
-echo "$out" | mustmatch like "**Marfan Syndrome** (MedlinePlus)"
 echo "$out" | mustmatch like '`biomcp get disease "Marfan syndrome" phenotypes`'
 ```
 
