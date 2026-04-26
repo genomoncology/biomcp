@@ -15,12 +15,12 @@ open the returned `biomcp skill <slug>` playbook for the full workflow.
 - Relational or multi-entity questions may redirect to `biomcp search all --keyword "<query>"` instead of surfacing weak collocation matches as if they were a resolved discover answer.
 - Use `biomcp search all --gene <gene> --disease "<disease>"` when you know the entities but not the next pivot.
 - Treatment questions: `biomcp search drug --indication "<disease>" --limit 5`
-- Diagnostic-test questions: use structured pivots first with `biomcp get gene <symbol> diagnostics` or `biomcp get disease "<disease>" diagnostics`; use `biomcp search diagnostic --gene <symbol> --limit 5` or `biomcp search diagnostic --disease "<disease>" --limit 5` when you need the full search surface.
+- Diagnostic-test questions: use structured pivots first with `biomcp get gene <symbol> diagnostics` or `biomcp get disease "<disease>" diagnostics`; use `biomcp list diagnostic` for the full source/filter/section contract; use `biomcp search diagnostic --gene <symbol> --limit 5`, `biomcp search diagnostic --disease "<disease>" --source all --limit 5`, or `biomcp get diagnostic <id>` when you need the full search/detail surface.
 - Symptom or phenotype questions: `biomcp get disease <name_or_id> phenotypes`
 - Gene-function questions: `biomcp get gene <symbol>`
 - Drug-safety questions: `biomcp drug adverse-events <name>` and `biomcp get drug <name> safety`
 - Drug-interaction questions: `biomcp drug interactions <name>` and `biomcp get drug <name> interactions`
-- EMA and WHO regional drug data are local runtime files that auto-download on first use, DDInter is the local drug-interaction bundle, CDC CVX/MVX is the companion local vaccine-brand bridge for default/EU vaccine searches plus explicit WHO vaccine search, and GTR is the local diagnostic-test backbone; run `biomcp ddinter sync`, `biomcp ema sync`, `biomcp who sync`, `biomcp cvx sync`, or `biomcp gtr sync` to force-refresh before freshness-sensitive local-runtime lookups.
+- EMA and WHO regional drug data are local runtime files that auto-download on first use, DDInter is the local drug-interaction bundle, CDC CVX/MVX is the companion local vaccine-brand bridge for default/EU vaccine searches plus explicit WHO vaccine search, and GTR plus WHO IVD are local diagnostic-test backbones; run `biomcp ddinter sync`, `biomcp ema sync`, `biomcp who sync`, `biomcp cvx sync`, `biomcp gtr sync`, or `biomcp who-ivd sync` to force-refresh before freshness-sensitive local-runtime lookups.
 - Vaccine brand-name questions that miss on MyChem often need `biomcp search drug <brand> --region eu`, omitted `--region`, or explicit `biomcp search drug <brand> --region who --product-type vaccine`, which can bridge through CDC CVX/MVX into EMA or WHO vaccine matches.
 - Review-literature questions: `biomcp search article -k "<query>" --type review --limit 5`
 - Keyword-only article searches may return `_meta.suggestions[]` objects when the whole keyword exactly matches a gene, drug, or disease label/alias; use the suggested `get gene`, `get drug`, or `get disease` command when structured data may answer before more article paging.
@@ -47,6 +47,7 @@ open the returned `biomcp skill <slug>` playbook for the full workflow.
 - `get diagnostic ... genes`: joined gene names from the GTR detail bundle
 - `get diagnostic ... conditions`: joined disease or condition names from GTR
 - `get diagnostic ... methods`: source-native GTR testing methods
+- `get diagnostic ... regulatory`: opt-in FDA device 510(k) and PMA overlay for supported diagnostic records
 - `get drug ... label`: FDA label indications, warnings, and dosage
 - `get drug ... regulatory`: regulatory summary
 - `get drug ... safety`: safety context and warnings
@@ -58,7 +59,7 @@ open the returned `biomcp skill <slug>` playbook for the full workflow.
 
 - `gene articles <symbol>` and `search article -g <symbol>` are equivalent starting points for gene-filtered literature.
 - Use helpers when the pivot is obvious: `drug interactions`, `drug trials`, `disease trials`, `variant articles`, `article citations`.
-- Use sectioned diagnostic pivots for gene or disease contexts: `get gene <symbol> diagnostics` and `get disease <name_or_id> diagnostics`.
+- Use sectioned diagnostic pivots for gene or disease contexts: `get gene <symbol> diagnostics` and `get disease <name_or_id> diagnostics`. Use `biomcp list diagnostic` for source/filter/section details, and inspect returned IDs with `get diagnostic <id>` rather than inventing accessions or product codes.
 - Use `search article -d "<disease>" --type review --limit 5` when disease phenotypes or drug indications look sparse.
 - Use `article batch` as the default multi-article follow-up after `search article`; it replaces sequential `get article` calls and preserves Semantic Scholar enrichment when available.
 - Use `batch <entity> <id1,id2,...> --sections <s1,s2,...>` when you need the same card shape for several entities.
@@ -79,6 +80,7 @@ sequence.
 | Broad gene-in-disease orientation | `biomcp search all --gene <gene> --disease "<disease>"` | Follow the shipped counts-first workflow for gene, drug, trial, and article pivots |
 | Gene-disease association for a known gene | `biomcp get gene <symbol> diseases` | Check `get gene ... diseases` and `search variant --gene ...` for the full disease spectrum before searching articles |
 | Gene localization or protein-function question | `biomcp get gene <symbol> protein` and `biomcp get gene <symbol> hpa` | Pull `get gene ... protein` and `get gene ... hpa` first because UniProt and HPA usually answer localization or function directly |
+| Diagnostic-test inventory or detail question | `biomcp list diagnostic` and `biomcp get diagnostic GTR000006692.3` | Inspect the shipped diagnostic filters and sections first; use gene/disease diagnostic pivots or `search diagnostic` to get source-native IDs before `get diagnostic` detail |
 | You know the concept but not the first entity to inspect | `biomcp search all --keyword "<concept>"` | Use `search all` to choose the next typed command intentionally |
 | "Most common" or prevalence question about a disease | `biomcp discover "<disease>"` | Use `biomcp discover` to resolve the canonical disease entity, then inspect structured disease data before widening to article search |
 | You already know the anchor entity and want the built-in related view | Use the matching helper such as `biomcp gene articles <symbol>`, `biomcp drug interactions <name>`, `biomcp drug trials <name>`, or `biomcp disease trials "<disease>"` | Move from a known gene, disease, drug, or variant into trials, articles, drugs, pathways, or interaction review without rebuilding the query |

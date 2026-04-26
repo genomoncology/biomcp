@@ -23,6 +23,7 @@ PUBLIC_DIAGNOSTIC_EXAMPLE_SURFACES = (
     "docs/user-guide/diagnostic.md",
     "docs/user-guide/cli-reference.md",
     "architecture/ux/cli-reference.md",
+    "skills/SKILL.md",
     "src/cli/commands.rs",
     "src/cli/diagnostic/mod.rs",
     "src/entities/diagnostic/get.rs",
