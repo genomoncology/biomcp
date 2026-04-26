@@ -69,8 +69,8 @@ The quoted form below is the copy-paste contract, not presentation polish.
 set -e
 discover_disease_cmd="$(../../tools/biomcp-ci discover "Graves'" | grep 'biomcp search disease -q' | head -1 | tr -d '`' | sed 's/^- //')"
 discover_article_cmd="$(../../tools/biomcp-ci discover "Graves'" | grep 'biomcp search article -k' | head -1 | tr -d '`' | sed 's/^- //')"
-discover_disease_argv="$(uv run python -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$discover_disease_cmd")"
-discover_article_argv="$(uv run python -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$discover_article_cmd")"
+discover_disease_argv="$(uv run python3 -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$discover_disease_cmd")"
+discover_article_argv="$(uv run python3 -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$discover_article_cmd")"
 echo "$discover_disease_argv" | mustmatch like "Graves'"
 echo "$discover_article_argv" | mustmatch like "Graves'"
 ```
@@ -81,7 +81,7 @@ links, including parenthesized protein-complex-like terms.
 ```bash
 set -e
 paren_cmd="$(../../tools/biomcp-ci search all --keyword "AP-1(c-Jun/c-Fos)" --counts-only | grep 'type review' | head -1 | tr -d '`' | sed 's/^- //')"
-paren_argv="$(uv run python -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$paren_cmd")"
+paren_argv="$(uv run python3 -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$paren_cmd")"
 echo "$paren_argv" | mustmatch like "AP-1(c-Jun/c-Fos)"
 ```
 
@@ -91,7 +91,7 @@ Apostrophe-bearing counts-only follow-ups are the current broken surface in
 ```bash
 set -e
 apostrophe_cmd="$(../../tools/biomcp-ci search all --keyword "Graves'" --counts-only | grep 'type review' | head -1 | tr -d '`' | sed 's/^- //')"
-apostrophe_argv="$(uv run python -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$apostrophe_cmd")"
+apostrophe_argv="$(uv run python3 -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$apostrophe_cmd")"
 echo "$apostrophe_argv" | mustmatch like "Graves'"
 ```
 
