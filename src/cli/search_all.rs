@@ -7,6 +7,7 @@ use serde_json::{Value, json};
 
 use crate::cli::debug_plan::{DebugPlan, DebugPlanLeg};
 use crate::error::BioMcpError;
+use crate::render::markdown::shell_quote_arg as quote_arg;
 use crate::utils::date::validate_since;
 
 const MAX_SEARCH_ALL_LIMIT: usize = 50;
@@ -1680,20 +1681,6 @@ fn push_opt_owned(args: &mut Vec<String>, flag: &str, value: Option<String>) {
     push_opt(args, flag, Some(value.as_str()));
 }
 
-fn quote_arg(value: &str) -> String {
-    // Quote when the value contains whitespace, shell metacharacters,
-    // or characters that need escaping. Variant IDs like chr7:g.55223568G>C
-    // contain `>` which shells interpret as redirect.
-    if value
-        .chars()
-        .any(|ch| ch.is_whitespace() || ">|&;()$`!#\"\\".contains(ch))
-    {
-        format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
-    } else {
-        value.to_string()
-    }
-}
-
 fn value_str(row: &Value, key: &str) -> String {
     let Some(obj) = row.as_object() else {
         return "-".to_string();
@@ -2195,10 +2182,25 @@ mod tests {
     }
 
     #[test]
-    fn quote_arg_wraps_spaces_and_quotes() {
-        assert_eq!(quote_arg("BRAF"), "BRAF");
-        assert_eq!(quote_arg("BRAF V600E"), "\"BRAF V600E\"");
-        assert_eq!(quote_arg("BRAF \"V600E\""), "\"BRAF \\\"V600E\\\"\"");
+    fn canonical_article_command_quotes_apostrophe_keyword_for_shell_safety() {
+        let prepared = PreparedInput::new(&SearchAllInput {
+            gene: None,
+            variant: None,
+            disease: None,
+            drug: None,
+            keyword: Some("Graves'".to_string()),
+            since: None,
+            limit: 3,
+            counts_only: false,
+            debug_plan: false,
+        })
+        .expect("valid prepared input");
+
+        let command = canonical_search_command(SectionKind::Article, &prepared, 3);
+        assert_eq!(
+            command,
+            "biomcp search article --keyword \"Graves'\" --limit 3"
+        );
     }
 
     #[test]
