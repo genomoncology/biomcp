@@ -16,7 +16,7 @@ out="$(../../tools/biomcp-ci search drug trastuzumab --limit 3)"
 echo "$out" | mustmatch like "## US (MyChem.info / OpenFDA)"
 echo "$out" | mustmatch like "## EU (EMA)"
 echo "$out" | mustmatch like "## WHO (WHO Prequalification)"
-echo "$out" | mustmatch '/\|[^|]+\|Biotherapeutic Product\|[^|]+\|[^|]+\|[^|]+\|BT-ON[0-9]+\|/'
+echo "$out" | mustmatch '/\|Trastuzumab\|Biotherapeutic Product\|[^|]+\|[^|]+\|[^|]+\|BT-ON[0-9]+\|/'
 ```
 
 ## Brand-Name Bridge
