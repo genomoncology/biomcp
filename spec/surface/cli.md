@@ -122,6 +122,8 @@ echo "$structure_out" | mustmatch like "health_split_files_exist_with_doc_header
 test "$structure_status" -eq 0
 ```
 
+## List Command Reference Decomposition Stays Executable
+
 The list command reference should keep its documented decomposition ratchet
 executable in the spec lane so page builders cannot regress into one large
 catch-all module.
