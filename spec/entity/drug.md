@@ -34,8 +34,8 @@ echo "$out" | mustmatch like "biomcp drug trials pembrolizumab"
 
 Paper and sponsor codes should follow the same canonical identity bridge as
 brand names. When an operator starts from `MK-3475`, the base card should pivot
-back to `pembrolizumab` so the next commands stay on the INN rather than the
-paper code.
+back to `pembrolizumab` rather than bouncing through alias guidance or
+preserving the paper code as the primary identity.
 
 ```bash
 out="$(../../tools/biomcp-ci get drug MK-3475)"
