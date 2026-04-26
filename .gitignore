@@ -15,6 +15,7 @@ site/
 !.march/validation-profiles.toml
 .claude/
 .agents/
+/planning/
 paper/generated/
 benchmarks/bioasq/datasets/raw/
 benchmarks/bioasq/datasets/normalized/
