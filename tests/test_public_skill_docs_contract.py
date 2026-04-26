@@ -165,6 +165,9 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp who sync" in routing_rules
     assert "biomcp cvx sync" in routing_rules
     assert "biomcp ddinter sync" in routing_rules
+    assert "biomcp gtr sync" in routing_rules
+    assert "biomcp who-ivd sync" in routing_rules
+    assert "GTR plus WHO IVD are local diagnostic-test backbones" in routing_rules
     assert "CDC CVX/MVX" in routing_rules
     assert "`biomcp drug interactions <name>`" in routing_rules
     assert 'biomcp search drug --indication "<disease>"' in skill_file
@@ -179,6 +182,11 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert 'biomcp search all --keyword "<query>"' in routing_rules
     assert "../docs/" not in skill_file
     assert ".md)" not in skill_file
+    section_reference = skill_file[
+        skill_file.index("## Section reference") : skill_file.index("## Cross-entity pivot rules")
+    ]
+    assert "`get diagnostic ... regulatory`" in section_reference
+    assert "FDA device 510(k) and PMA" in section_reference
     how_to_table = skill_file[
         skill_file.index("## How-to reference") : skill_file.index("## Anti-patterns")
     ]
@@ -210,6 +218,14 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     ]
     for row in expected_bioasq_rows:
         assert row in how_to_table
+    assert (
+        "| Diagnostic-test inventory or detail question | "
+        "`biomcp list diagnostic` and `biomcp get diagnostic GTR000006692.3` | "
+        "Inspect the shipped diagnostic filters and sections first; use gene/disease "
+        "diagnostic pivots or `search diagnostic` to get source-native IDs before "
+        "`get diagnostic` detail |"
+        in how_to_table
+    )
     assert "../docs/" not in how_to_table
     assert ".md)" not in how_to_table
     assert (
