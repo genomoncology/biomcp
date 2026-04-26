@@ -303,8 +303,9 @@ product command.
 
 - Form: `tools/biomcp-ci <biomcp args...>`
 - Argument policy: pass `"$@"` through unchanged.
-- Binary resolution: use `BIOMCP_BIN` when set; otherwise execute `biomcp` from
-  `PATH`.
+- Binary resolution: use `BIOMCP_BIN` when set; otherwise resolve `biomcp` from
+  `PATH`, emit a one-line stderr warning that names the fallback binary path,
+  and execute it.
 
 ### Environment handling
 
