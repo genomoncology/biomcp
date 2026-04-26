@@ -25,4 +25,14 @@ if [[ "${BIOMCP_SPEC_CACHE_HIT:-}" == "1" && -z "${BIOMCP_CACHE_MODE:-}" ]]; the
   export BIOMCP_CACHE_MODE=infinite
 fi
 
-exec "${BIOMCP_BIN:-biomcp}" "$@"
+if [[ -n "${BIOMCP_BIN:-}" ]]; then
+  exec "${BIOMCP_BIN}" "$@"
+fi
+
+FALLBACK_BIN="$(command -v biomcp || true)"
+if [[ -n "$FALLBACK_BIN" ]]; then
+  printf 'warning: BIOMCP_BIN is unset; tools/biomcp-ci falling back to biomcp at %s\n' "$FALLBACK_BIN" >&2
+else
+  printf 'warning: BIOMCP_BIN is unset; tools/biomcp-ci falling back to biomcp on PATH, but no biomcp binary was found\n' >&2
+fi
+exec biomcp "$@"
