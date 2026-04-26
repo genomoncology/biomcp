@@ -108,3 +108,16 @@ whoivd="$(../../tools/biomcp-ci who-ivd sync --help)"
 echo "$whoivd" | mustmatch like "WHO Prequalified IVD diagnostic CSV export"
 echo "$whoivd" | mustmatch like "Usage: biomcp who-ivd sync"
 ```
+
+The health implementation should also keep its documented decomposition ratchet
+executable in the spec lane so the operator surface cannot regress into one
+large catch-all module.
+
+```bash
+set +e
+structure_out="$(cd ../.. && cargo test --test health_cli_structure -- --nocapture 2>&1)"
+structure_status=$?
+set -e
+echo "$structure_out" | mustmatch like "health_split_files_exist_with_doc_headers"
+test "$structure_status" -eq 0
+```

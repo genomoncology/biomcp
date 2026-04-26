@@ -92,7 +92,7 @@ DDInter, EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runt
 DDInter, EMA, WHO Prequalification, and WHO IVD use a 72-hour stale window;
 CDC CVX/MVX uses a 30-day refresh window; GTR uses a 7-day stale window.
 
-This keeps local runtime readiness grounded in `src/cli/health.rs` and
+This keeps local runtime readiness grounded in `src/cli/health/local.rs` and
 `src/sources/ddinter.rs` / `src/sources/ema.rs` / `src/sources/who_pq.rs` /
 `src/sources/cvx.rs` / `src/sources/gtr.rs` / `src/sources/who_ivd.rs` while
 leaving operator setup details in the user guide.
@@ -391,7 +391,7 @@ Minimum required proof surface:
 | Targeted Rust tests near `src/sources/`, `src/entities/`, or `src/render/` | All source additions and source-deepening work | Verify behavior and edge handling for the new integration contract |
 | `spec/` BDD update | Any user-visible CLI contract change | Cover stable user-visible behavior such as new sections, new flags, or changed output structure |
 | `scripts/contract-smoke.sh` | Stable public endpoints with deterministic probe shapes | Add or update live probes when operationally suitable; skip or reduce secret-gated or volatile sources explicitly |
-| `src/cli/health.rs` | Readiness-significant sources that operators should inspect directly | Include the source when it materially affects baseline availability; key-gated sources may appear as excluded when unconfigured |
+| `src/cli/health/catalog.rs` | Readiness-significant sources that operators should inspect directly | Include the source when it materially affects baseline availability; key-gated sources may appear as excluded when unconfigured |
 | `CHANGELOG.md` | User-visible source additions or major deepening | Record the shipped surface change |
 
 Every new source or source-deepening ticket should then evaluate the following
@@ -410,8 +410,8 @@ surfaces when applicable:
 - `docs/getting-started/api-keys.md` when credentials are added or changed
 - `docs/reference/source-versioning.md` when a new upstream endpoint or version
   pin is introduced
-- `src/cli/health.rs` when the source should participate in operator health
-  visibility
+- `src/cli/health/catalog.rs` when the source should participate in operator
+  health visibility
 - `scripts/contract-smoke.sh` when the upstream is suitable for live contract
   probes
 - `spec/` when the stable CLI contract changes in a user-visible, assertable

@@ -843,7 +843,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     cli_reference_guide = _read_repo("docs/user-guide/cli-reference.md")
     drug_get = _read_repo("src/entities/drug/get.rs")
     ema_source = _read_repo("src/sources/ema.rs")
-    health = _read_repo("src/cli/health.rs")
+    health = _read_repo("src/cli/health/local.rs")
     bioasq_reference_ws = _normalize_ws(bioasq_reference)
     cli_reference_guide_ws = _normalize_ws(cli_reference_guide)
     section_first_section = _normalize_ws(
@@ -1059,7 +1059,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`src/cli/drug/mod.rs`" in source_addition_section
     assert "`src/cli/mod.rs`" not in source_addition_section
     assert "`docs/reference/source-versioning.md`" in source_addition_section
-    assert "`src/cli/health.rs`" in source_addition_section
+    assert "`src/cli/health/catalog.rs`" in source_addition_section
     assert "`scripts/contract-smoke.sh`" in source_addition_section
     assert "`spec/`" in source_addition_section
     assert "`CHANGELOG.md`" in source_addition_section
