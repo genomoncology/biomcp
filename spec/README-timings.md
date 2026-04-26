@@ -9,9 +9,10 @@
 | `make test-contracts` | PR contracts lane and local docs/Python validation | n/a | Rust release build plus Python/docs contract checks | independent of the executable-spec wrapper |
 
 The bootstrap spec-v2 cutover keeps one active canary lane. There is no
-`spec-smoke` split, no numbered-file deselect inventory, and no serial rerun
-helper. The executable docs themselves call `tools/biomcp-ci`; `make spec` and
-`make spec-pr` only choose timeout and collection scope.
+`spec-smoke` split, and the only serial carve-out is `spec/entity/protein.md`,
+which leaves the main xdist pool and reruns in its own serialized leg. The
+executable docs themselves call `tools/biomcp-ci`; `make spec` and `make
+spec-pr` choose timeout plus that protein-specific partitioning.
 
 ## Active Corpus
 

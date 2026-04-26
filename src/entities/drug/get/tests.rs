@@ -1,7 +1,7 @@
 //! Get-module tests split from the legacy drug facade.
 
 use super::*;
-use crate::test_support::set_env_var;
+use crate::test_support::{TempDirGuard, set_env_var};
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -163,6 +163,9 @@ fn trial_alias_cache_key_normalizes_requested_name() {
 async fn resolve_trial_aliases_retries_after_transient_lookup_failure() {
     let _env_lock = crate::test_support::env_lock().lock().await;
     // Isolate the shared MyChem HTTP cache while this test swaps BIOMCP_MYCHEM_BASE.
+    let cache_root = TempDirGuard::new("trial-alias-retry");
+    let cache_root_string = cache_root.path().to_string_lossy().into_owned();
+    let _cache_dir = set_env_var("BIOMCP_CACHE_DIR", Some(&cache_root_string));
     let requested = "review-transient-alias-drug";
 
     let failing = MockServer::start().await;

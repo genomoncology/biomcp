@@ -188,6 +188,18 @@ test -s "$ready_file"
 base_url="$(cat "$ready_file")"
 
 # Wait for the shared loopback VAERS/OpenFDA fixture base URL to answer before exporting it.
+for _ in $(seq 1 50); do
+  if curl -fsS "$base_url/drug/event.json?limit=1" >/dev/null 2>&1; then
+    break
+  fi
+  if ! kill -0 "$server_pid" 2>/dev/null; then
+    cat "$server_log" >&2
+    exit 1
+  fi
+  sleep 0.1
+done
+curl -fsS "$base_url/drug/event.json?limit=1" >/dev/null 2>&1
+
 printf 'export BIOMCP_VAERS_BASE=%q\n' "$base_url" >"$env_file"
 printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_CVX_DIR=%q\n' "$fixture_cvx_root" >>"$env_file"

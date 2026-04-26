@@ -708,6 +708,9 @@ mod tests {
     async fn get_regulatory_uses_alias_queries_and_dedupes_pma_supplements() {
         let (_lock, _root, _gtr_env) = install_gtr_fixture_root("diagnostic-get-regulatory").await;
         // Isolate the shared OpenFDA HTTP cache for this mock-backed regulatory overlay test.
+        let cache_root = TempDirGuard::new("diagnostic-get-regulatory-cache");
+        let cache_root_string = cache_root.path().to_string_lossy().into_owned();
+        let _cache_dir = set_env_var("BIOMCP_CACHE_DIR", Some(&cache_root_string));
         let server = MockServer::start().await;
         let _openfda_env = set_env_var("BIOMCP_OPENFDA_BASE", Some(&server.uri()));
 
