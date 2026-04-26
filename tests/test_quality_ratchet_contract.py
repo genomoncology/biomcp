@@ -77,9 +77,9 @@ def _copy_mcp_fixture(tmp_path: Path) -> Path:
 def _copy_source_fixture(tmp_path: Path) -> Path:
     fixture_root = tmp_path / "source-fixture"
     shutil.copytree(REPO_ROOT / "src" / "sources", fixture_root / "src" / "sources")
-    target = fixture_root / "src" / "cli" / "health.rs"
+    target = fixture_root / "src" / "cli" / "health" / "catalog.rs"
     target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(REPO_ROOT / "src" / "cli" / "health.rs", target)
+    shutil.copy2(REPO_ROOT / "src" / "cli" / "health" / "catalog.rs", target)
     return fixture_root
 
 
@@ -293,7 +293,7 @@ def test_source_registry_audit_passes_for_repo() -> None:
 
 def test_source_registry_audit_reports_missing_health_entry(tmp_path: Path) -> None:
     fixture_root = _copy_source_fixture(tmp_path)
-    _remove_mygene_health_entry(fixture_root / "src/cli/health.rs")
+    _remove_mygene_health_entry(fixture_root / "src/cli/health/catalog.rs")
 
     result = _run_python_script(
         SOURCE_SCRIPT,
@@ -302,7 +302,7 @@ def test_source_registry_audit_reports_missing_health_entry(tmp_path: Path) -> N
         "--sources-mod",
         str(fixture_root / "src/sources/mod.rs"),
         "--health-file",
-        str(fixture_root / "src/cli/health.rs"),
+        str(fixture_root / "src/cli/health/catalog.rs"),
         "--json",
     )
 
@@ -314,7 +314,7 @@ def test_source_registry_audit_reports_missing_health_entry(tmp_path: Path) -> N
 
 def test_source_registry_audit_reports_orphan_health_entry(tmp_path: Path) -> None:
     fixture_root = _copy_source_fixture(tmp_path)
-    _append_orphan_health_entry(fixture_root / "src/cli/health.rs")
+    _append_orphan_health_entry(fixture_root / "src/cli/health/catalog.rs")
 
     result = _run_python_script(
         SOURCE_SCRIPT,
@@ -323,7 +323,7 @@ def test_source_registry_audit_reports_orphan_health_entry(tmp_path: Path) -> No
         "--sources-mod",
         str(fixture_root / "src/sources/mod.rs"),
         "--health-file",
-        str(fixture_root / "src/cli/health.rs"),
+        str(fixture_root / "src/cli/health/catalog.rs"),
         "--json",
     )
 

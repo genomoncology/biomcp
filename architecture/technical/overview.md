@@ -390,7 +390,7 @@ when running CLI specs.
 `biomcp health` is a curated operator inspection surface, not a full source
 inventory ledger.
 
-- The command is grounded in `src/cli/health.rs`.
+- The command is grounded in `src/cli/health/`, with the stable entry point in `src/cli/health/mod.rs`.
 - It shows per-source connectivity for readiness-significant sources.
 - Key-gated sources appear as `excluded` rows when the required environment
   variable is absent.

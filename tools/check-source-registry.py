@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--sources-dir", type=Path, default=Path("src/sources"))
     parser.add_argument("--sources-mod", type=Path, default=Path("src/sources/mod.rs"))
-    parser.add_argument("--health-file", type=Path, default=Path("src/cli/health.rs"))
+    parser.add_argument("--health-file", type=Path, default=Path("src/cli/health/catalog.rs"))
     parser.add_argument("--json", action="store_true")
     return parser.parse_args()
 
