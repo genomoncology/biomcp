@@ -76,15 +76,22 @@ echo "$discover_article_argv" | mustmatch like "Graves'"
 ```
 
 Cross-entity orientation needs the same contract in its counts-only follow-up
-links, including parenthesized protein-complex-like terms and apostrophes.
+links, including parenthesized protein-complex-like terms.
 
 ```bash
 set -e
 paren_cmd="$(../../tools/biomcp-ci search all --keyword "AP-1(c-Jun/c-Fos)" --counts-only | grep 'type review' | head -1 | tr -d '`' | sed 's/^- //')"
-apostrophe_cmd="$(../../tools/biomcp-ci search all --keyword "Graves'" --counts-only | grep 'type review' | head -1 | tr -d '`' | sed 's/^- //')"
 paren_argv="$(uv run python -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$paren_cmd")"
-apostrophe_argv="$(uv run python -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$apostrophe_cmd")"
 echo "$paren_argv" | mustmatch like "AP-1(c-Jun/c-Fos)"
+```
+
+Apostrophe-bearing counts-only follow-ups are the current broken surface in
+`search all` and must become copy-pasteable.
+
+```bash
+set -e
+apostrophe_cmd="$(../../tools/biomcp-ci search all --keyword "Graves'" --counts-only | grep 'type review' | head -1 | tr -d '`' | sed 's/^- //')"
+apostrophe_argv="$(uv run python -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$apostrophe_cmd")"
 echo "$apostrophe_argv" | mustmatch like "Graves'"
 ```
 
