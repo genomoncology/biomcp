@@ -99,6 +99,21 @@ echo "$json_out" | mustmatch like '"matched_skill": null'
 echo "$json_out" | jq -e '.first_commands == [] and .full_skill == null' >/dev/null
 ```
 
+## Suggest Decomposition Keeps the First-Move Router Review-Sized
+
+The behavior checks above protect the public playbook response. The router also
+needs its documented ownership zones so future route additions do not collapse
+back into one large catch-all module.
+
+```bash
+set +e
+structure_out="$(cd ../.. && cargo test --test suggest_cli_structure -- --nocapture 2>&1)"
+structure_status=$?
+set -e
+echo "$structure_out" | mustmatch like "suggest_split_files_exist_with_doc_headers"
+test "$structure_status" -eq 0
+```
+
 ## Skill Still Opens the Longer Guide
 
 Once `suggest` points to a playbook, the user still needs both the worked-example
