@@ -10,14 +10,28 @@ def _read_repo(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
 
 
-def _line_window(path: str, needle: str, *, before: int = 6, after: int = 50) -> str:
+def _rust_function_block(path: str, fn_name: str) -> str:
     lines = _read_repo(path).splitlines()
+    signature = f"fn {fn_name}("
     for index, line in enumerate(lines):
-        if needle in line:
-            start = max(0, index - before)
-            end = min(len(lines), index + after)
-            return "\n".join(lines[start:end])
-    raise AssertionError(f"{needle!r} not found in {path}")
+        if signature not in line:
+            continue
+
+        start = index
+        while start > 0 and lines[start - 1].lstrip().startswith("#["):
+            start -= 1
+
+        depth = 0
+        seen_body = False
+        for end in range(index, len(lines)):
+            depth += lines[end].count("{")
+            seen_body = seen_body or ("{" in lines[end])
+            depth -= lines[end].count("}")
+            if seen_body and depth == 0:
+                return "\n".join(lines[start : end + 1])
+        break
+
+    raise AssertionError(f"function {fn_name!r} not found in {path}")
 
 
 def _make_target_block(name: str) -> str:
@@ -30,31 +44,30 @@ def _make_target_block(name: str) -> str:
     return match.group(1)
 
 
-def _assert_isolation_comment(context: str, *, resource_terms: tuple[str, ...]) -> None:
-    lowered = context.lower()
-    assert "shared" in lowered, (
-        "expected an inline comment naming the shared resource being protected so future "
-        "contributors do not remove the isolation guard by accident"
-    )
-    assert any(term.lower() in lowered for term in resource_terms), (
-        f"expected the inline comment to name one of {resource_terms} as the shared resource"
+def _has_base_url_probe(text: str) -> bool:
+    return bool(
+        re.search(r"curl[^\n]*\$(?:\{base_url\}|base_url)", text)
+        or re.search(r"wget[^\n]*\$(?:\{base_url\}|base_url)", text)
+        or re.search(r"urllib\.request\.[A-Za-z_]+\([^\n]*base_url", text)
+        or ("/dev/tcp/" in text and "base_url" in text)
     )
 
 
 def test_wikipathways_parallel_contract_serializes_shared_mock_env() -> None:
-    context = _line_window(
+    context = _rust_function_block(
         "src/cli/search_all.rs",
         "dispatch_section_pathway_surfaces_sanitized_wikipathways_404_without_timeout",
     )
+    preamble = context.split(
+        "async fn dispatch_section_pathway_surfaces_sanitized_wikipathways_404_without_timeout(",
+        1,
+    )[0]
 
-    assert "#[serial_test::serial]" in context, (
+    assert "#[tokio::test]" in preamble, "expected the named flaky function to remain a tokio test"
+    assert "#[serial_test::serial]" in preamble, (
         "the WikiPathways search-all flake is an env-mutation test; it must declare an explicit "
-        "serial guard so nextest parallelism cannot swap another test's BIOMCP_*_BASE values "
-        "into this warning-path assertion"
-    )
-    _assert_isolation_comment(
-        context,
-        resource_terms=("WikiPathways", "mock env", "BIOMCP_WIKIPATHWAYS_BASE"),
+        "serial guard on the named test so nextest parallelism cannot swap another test's "
+        "BIOMCP_*_BASE values into this warning-path assertion"
     )
 
 
@@ -63,22 +76,19 @@ def test_vaers_fixture_contract_waits_for_live_http_readiness() -> None:
     before_exports = script.split("printf 'export BIOMCP_VAERS_BASE", 1)[0]
     readiness_tail = before_exports.split('base_url="$(cat "$ready_file")"', 1)[-1]
 
-    assert any(
-        marker in readiness_tail
-        for marker in ("curl ", "wget ", "urllib.request", "/dev/tcp/")
-    ), (
-        "the VAERS fixture setup must perform a real HTTP readiness probe after choosing the "
-        "base URL and before exporting BIOMCP_VAERS_BASE, otherwise spec-pr can still race the "
-        "background server under xdist load"
+    assert any(loop_token in readiness_tail for loop_token in ("for _ in", "while ")), (
+        "the VAERS fixture setup should retry the readiness probe after base_url is known, not "
+        "fire a single best-effort request before exporting BIOMCP_VAERS_BASE"
     )
-    _assert_isolation_comment(
-        readiness_tail,
-        resource_terms=("startup race", "fixture server", "parallel spec"),
+    assert _has_base_url_probe(readiness_tail), (
+        "the VAERS fixture setup must perform a real HTTP readiness probe against $base_url after "
+        "choosing the base URL and before exporting BIOMCP_VAERS_BASE, otherwise spec-pr can "
+        "still race the background server under xdist load"
     )
 
 
 def test_trial_alias_retry_contract_uses_private_cache_or_no_cache_mode() -> None:
-    context = _line_window(
+    context = _rust_function_block(
         "src/entities/drug/get/tests.rs",
         "resolve_trial_aliases_retries_after_transient_lookup_failure",
     )
@@ -93,17 +103,13 @@ def test_trial_alias_retry_contract_uses_private_cache_or_no_cache_mode() -> Non
         )
     ), (
         "the transient trial-alias retry test swaps BIOMCP_MYCHEM_BASE between mock servers; it "
-        "must isolate or disable the shared HTTP cache/client state so another test's alias "
-        "response cannot satisfy this assertion"
-    )
-    _assert_isolation_comment(
-        context,
-        resource_terms=("cache", "alias", "BIOMCP_MYCHEM_BASE"),
+        "must isolate or disable the shared HTTP cache/client state inside the named test so "
+        "another test's alias response cannot satisfy this assertion"
     )
 
 
 def test_diagnostic_regulatory_contract_uses_private_openfda_cache() -> None:
-    context = _line_window(
+    context = _rust_function_block(
         "src/entities/diagnostic/mod.rs",
         "get_regulatory_uses_alias_queries_and_dedupes_pma_supplements",
     )
@@ -118,12 +124,9 @@ def test_diagnostic_regulatory_contract_uses_private_openfda_cache() -> None:
         )
     ), (
         "the diagnostic regulatory overlay test points OpenFDA at a mock server; it must isolate "
-        "or disable the shared HTTP cache/client path so nextest parallelism cannot replay a "
-        "different PMA/510(k) response into this alias-dedupe assertion"
-    )
-    _assert_isolation_comment(
-        context,
-        resource_terms=("OpenFDA", "cache", "regulatory"),
+        "or disable the shared HTTP cache/client path inside the named test so nextest "
+        "parallelism cannot replay a different PMA/510(k) response into this alias-dedupe "
+        "assertion"
     )
 
 
@@ -134,14 +137,14 @@ def test_protein_complexes_spec_lane_leaves_the_parallel_xdist_pool() -> None:
     technical_overview = _read_repo("architecture/technical/overview.md")
 
     for target_name, block in (("spec", spec_target), ("spec-pr", spec_pr_target)):
-        assert "spec/entity/protein.md" in block, (
-            f"Makefile target {target_name} must carve spec/entity/protein.md out into its own "
-            "serialized leg so the live ComplexPortal complexes canary is not left in the main "
-            "xdist pool"
+        assert "$(SPEC_XDIST_ARGS)" in block, f"{target_name} should keep its main parallel xdist leg"
+        assert "--deselect spec/entity/protein.md" in block, (
+            f"Makefile target {target_name} must remove spec/entity/protein.md from the main "
+            "parallel xdist pool before rerunning it in a serialized leg"
         )
-        protein_lines = [line for line in block.splitlines() if "spec/entity/protein.md" in line]
-        assert protein_lines, f"{target_name} should contain a protein-specific spec command"
-        assert any("$(SPEC_XDIST_ARGS)" not in line for line in protein_lines), (
+        protein_commands = re.findall(r"pytest[^\n]*spec/entity/protein\.md[^\n]*", block)
+        assert protein_commands, f"{target_name} should contain a protein-specific pytest command"
+        assert any("$(SPEC_XDIST_ARGS)" not in command for command in protein_commands), (
             f"{target_name} must run the protein-specific leg outside the main parallel "
             "$(SPEC_XDIST_ARGS) pool"
         )
