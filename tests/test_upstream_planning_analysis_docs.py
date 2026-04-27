@@ -838,7 +838,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     bioasq_reference = _read_repo("docs/reference/bioasq-benchmark.md")
     cli_commands = _read_repo("src/cli/commands.rs")
     cli_drug_mod = _read_repo("src/cli/drug/mod.rs")
-    cli_list = _read_repo("src/cli/list.rs")
+    cli_list_clinical = _read_repo("src/cli/list/clinical.rs")
     cli_list_reference = _read_repo("src/cli/list_reference.md")
     cli_reference_guide = _read_repo("docs/user-guide/cli-reference.md")
     drug_get = _read_repo("src/entities/drug/get.rs")
@@ -881,7 +881,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`src/cli/commands.rs`" in section_first_section
     assert "`src/cli/drug/mod.rs`" in section_first_section
     assert "`src/cli/mod.rs`" not in section_first_section
-    assert "`src/cli/list.rs`" in section_first_section
+    assert "`src/cli/list/`" in section_first_section
     assert "`docs/user-guide/cli-reference.md`" in section_first_section
     assert "default `get` output stays concise" in section_first_section
     assert "## Local Runtime Sources and File-Backed Assets" in source_integration
@@ -983,7 +983,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`src/cli/commands.rs`" in modifier_section
     assert "`src/cli/drug/mod.rs`" in modifier_section
     assert "`src/cli/mod.rs`" not in modifier_section
-    assert "`src/cli/list.rs`" in modifier_section
+    assert "`src/cli/list/`" in modifier_section
     assert "`src/cli/list_reference.md`" in modifier_section
     assert "`docs/user-guide/cli-reference.md`" in modifier_section
     assert "`docs/user-guide/drug.md`" in modifier_section
@@ -1012,10 +1012,10 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
         "Data region for regional sections (regulatory, safety, shortage, or all)"
         in cli_drug_mod
     )
-    assert "get drug <name> regulatory [--region <us|eu|who|all>]" in cli_list
-    assert "get drug <name> safety [--region <us|eu|all>]" in cli_list
-    assert "get drug <name> shortage [--region <us|eu|all>]" in cli_list
-    assert "get drug <name> approvals" in cli_list
+    assert "get drug <name> regulatory [--region <us|eu|who|all>]" in cli_list_clinical
+    assert "get drug <name> safety [--region <us|eu|all>]" in cli_list_clinical
+    assert "get drug <name> shortage [--region <us|eu|all>]" in cli_list_clinical
+    assert "get drug <name> approvals" in cli_list_clinical
     assert "get drug <name> regulatory [--region <us|eu|who|all>]" in cli_list_reference
     assert (
         "get drug <name> safety|shortage [--region <us|eu|all>]" in cli_list_reference

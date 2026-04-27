@@ -124,7 +124,7 @@ BioMCP prefers entity-section integration over ad hoc command sprawl.
 - Keep the user-facing command grammar aligned with code changes by updating
   `src/cli/commands.rs` for top-level command families and `after_help`
   examples, the owning entity CLI module such as `src/cli/drug/mod.rs` for
-  entity-specific clap/help text, `src/cli/list.rs`, and
+  entity-specific clap/help text, `src/cli/list/`, and
   `docs/user-guide/cli-reference.md` when the public CLI surface changes.
 - The progressive-disclosure behavior described in
   `architecture/functional/overview.md` and `docs/concepts/progressive-disclosure.md`
@@ -156,7 +156,7 @@ Implementers must keep every alignment surface in sync:
   `src/cli/commands.rs`
 - entity-specific clap argument/help text in the owning CLI module, such as
   `src/cli/drug/mod.rs`
-- concise list/help output in `src/cli/list.rs` and `src/cli/list_reference.md`
+- concise list/help output in `src/cli/list/` and `src/cli/list_reference.md`
 - user-facing docs in `docs/user-guide/cli-reference.md` and the owning entity
   guide such as `docs/user-guide/drug.md`
 - executable CLI contract coverage in the owning canary or surface spec when
@@ -208,7 +208,7 @@ Downstream surfaces must stay in lockstep with the capability model:
 - top-level command/help examples in `src/cli/commands.rs` and entity-specific
   option/help text in the owning CLI module, such as `src/cli/drug/mod.rs`,
   must describe source-specific limits accurately
-- `src/cli/list.rs` must not advertise unsupported sections as universally
+- `src/cli/list/` must not advertise unsupported sections as universally
   valid
 - renderer follow-on commands and section suggestions must derive from the
   resolved source capability list
@@ -404,7 +404,7 @@ surfaces when applicable:
 - the owning CLI modules in `src/cli/`, including `src/cli/commands.rs` for
   top-level grammar/help and entity modules such as `src/cli/drug/mod.rs` for
   modifier-specific text
-- `src/cli/list.rs`
+- `src/cli/list/`
 - `docs/user-guide/cli-reference.md` when the public command surface changes
 - `docs/reference/data-sources.md`
 - `docs/getting-started/api-keys.md` when credentials are added or changed
