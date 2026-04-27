@@ -34,11 +34,16 @@ Complexes should stay readable as a bounded summary table plus compact member
 bullets, rather than dumping an unstructured raw payload.
 
 ```bash
+bash ../fixtures/setup-complexportal-spec-fixture.sh ../..
+. ../../.cache/spec-complexportal-env
+trap 'bash ../fixtures/cleanup-complexportal-spec-fixture.sh ../..' EXIT
 out="$(../../tools/biomcp-ci get protein P15056 complexes)"
 echo "$out" | mustmatch like "## Complexes (ComplexPortal)"
 echo "$out" | mustmatch like "| ID | Name | Members | Curation |"
 echo "$out" | mustmatch '/\| CPX-[0-9]+ \|/'
 echo "$out" | mustmatch '/- `CPX-[0-9]+` members \([0-9]+\): [^\n]+/'
+request_log="$(cat "$BIOMCP_COMPLEXPORTAL_FIXTURE_REQUEST_LOG")"
+echo "$request_log" | mustmatch like 'GET /search/P15056 number=25 filters=species_f:("Homo sapiens")'
 ```
 
 ## Structures Follow-Up

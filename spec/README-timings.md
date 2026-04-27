@@ -11,8 +11,10 @@
 The bootstrap spec-v2 cutover keeps one active canary lane. There is no
 `spec-smoke` split, and the only serial carve-out is `spec/entity/protein.md`,
 which leaves the main xdist pool and reruns in its own serialized leg. The
-executable docs themselves call `tools/biomcp-ci`; `make spec` and `make
-spec-pr` choose timeout plus that protein-specific partitioning.
+protein ComplexPortal section is fixture-backed rather than a live upstream
+canary; live ComplexPortal availability belongs to `biomcp health`/operator
+inspection. The executable docs themselves call `tools/biomcp-ci`; `make spec`
+and `make spec-pr` choose timeout plus that protein-specific partitioning.
 
 ## Active Corpus
 

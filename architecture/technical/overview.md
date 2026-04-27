@@ -368,9 +368,11 @@ the blocking timeout/profile.
 
 Repo-local `make spec` and `make spec-pr` use `pytest-xdist` with
 `-n auto --dist loadfile` over only `spec/entity/` and `spec/surface/`, except
-that `spec/entity/protein.md` leaves the shared worker pool and reruns in a
-serial leg because the live ComplexPortal canary is upstream-rate-limit
-sensitive. The current active executable-spec corpus is `spec/entity/gene.md`,
+that `spec/entity/protein.md` leaves the shared worker pool and reruns in an
+existing serial leg. Its ComplexPortal section is fixture-backed rather than a
+live upstream canary; live ComplexPortal availability belongs to `biomcp
+health`/operator inspection. The current active executable-spec corpus is
+`spec/entity/gene.md`,
 `spec/entity/variant.md`, `spec/entity/article.md`, `spec/entity/trial.md`,
 `spec/entity/drug.md`, `spec/entity/disease.md`, `spec/entity/protein.md`,
 `spec/entity/pathway.md`, `spec/entity/study.md`, `spec/entity/pgx.md`,
