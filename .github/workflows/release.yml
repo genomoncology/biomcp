@@ -46,9 +46,10 @@ jobs:
 
       - uses: astral-sh/setup-uv@v4
 
-      - run: uv sync --extra dev
-      - run: uv run pytest tests/ -v --mcp-cmd "biomcp serve"
-      - run: uv run mkdocs build --strict
+      - run: cargo build --release --locked
+      - run: uv sync --extra dev --no-install-project
+      - run: uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"
+      - run: uv run --no-sync mkdocs build --strict
 
   build:
     needs: validate
@@ -283,7 +284,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v4
 
-      - run: uv sync --extra dev
+      - run: uv sync --extra dev --no-install-project
 
       - name: Configure Git
         run: |
@@ -291,4 +292,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Deploy to GitHub Pages
-        run: uv run mkdocs gh-deploy --force
+        run: uv run --no-sync mkdocs gh-deploy --force

@@ -67,9 +67,9 @@ jobs:
       - uses: astral-sh/setup-uv@v4
 
       - run: cargo build --release --locked
-      - run: uv sync --extra dev
-      - run: uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"
-      - run: uv run mkdocs build --strict
+      - run: uv sync --extra dev --no-install-project
+      - run: uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"
+      - run: uv run --no-sync mkdocs build --strict
 
   # Stable PR-blocking executable spec gate. Volatile live-network headings
   # now run through the single cache-warmed canary wrapper and corpus.

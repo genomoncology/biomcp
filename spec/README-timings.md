@@ -14,7 +14,12 @@ which leaves the main xdist pool and reruns in its own serialized leg. The
 protein ComplexPortal section is fixture-backed rather than a live upstream
 canary; live ComplexPortal availability belongs to `biomcp health`/operator
 inspection. The executable docs themselves call `tools/biomcp-ci`; `make spec`
-and `make spec-pr` choose timeout plus that protein-specific partitioning.
+and `make spec-pr` choose timeout plus that protein-specific partitioning. The
+spec targets install Python dev dependencies with
+`uv sync --extra dev --no-install-project`, then invoke pytest with
+`uv run --no-sync ...` so uv does not install or rebuild the maturin-backed
+current project. The binary under test remains `target/release/biomcp` via
+`PATH` and `BIOMCP_BIN`.
 
 ## Active Corpus
 
@@ -57,6 +62,8 @@ comment immediately after the `##` heading.
 ## Audit Method
 
 - Measure in the current worktree after `cargo build --release --locked`.
+- Keep Python setup project-free: `uv sync --extra dev --no-install-project`,
+  then `uv run --no-sync ...` for pytest/spec commands.
 - Run `make spec-pr` cold once to populate `.cache/biomcp-specs/`, then rerun
   warm without clearing that cache root.
 - `tools/biomcp-ci` owns `BIOMCP_CACHE_DIR`, `XDG_CACHE_HOME`,
