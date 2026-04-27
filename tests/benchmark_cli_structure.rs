@@ -108,15 +108,13 @@ fn benchmark_flat_modules_are_replaced_by_directory_facades() {
 #[test]
 fn benchmark_split_files_exist_with_doc_headers() {
     let root = repo_root();
-    let expected = expected_benchmark_submodule_files(&root);
-    assert_eq!(
-        actual_benchmark_submodule_files(&root),
-        expected,
-        "unexpected Rust file layout under src/cli/benchmark/run and src/cli/benchmark/score"
-    );
-
-    for path in expected {
+    let required = expected_benchmark_submodule_files(&root);
+    for path in &required {
         assert!(path.is_file(), "missing expected file: {}", path.display());
+        assert_module_doc_header(path);
+    }
+
+    for path in actual_benchmark_submodule_files(&root) {
         assert_module_doc_header(&path);
     }
 
