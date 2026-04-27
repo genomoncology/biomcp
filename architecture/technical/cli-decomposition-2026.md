@@ -18,6 +18,14 @@ This document records:
 The enduring pattern is documented in
 `architecture/technical/cli-module-decomposition.md`.
 
+> **Note (ticket 329):** Benchmark CLI ownership is fixed by
+> `architecture/technical/benchmark-cli-ownership-decision.md` — the
+> `src/cli/benchmark/` tree is an internal regression harness, not a
+> public CLI surface. The benchmark sections below (especially the
+> "biomcp benchmark grammar remains unchanged" line in section 6 and
+> the proof-contract `benchmark` examples) are stale and will be
+> rewritten by ticket 332.
+
 ## Current problems
 
 Survey ticket 309 identified four root issues:
