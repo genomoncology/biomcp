@@ -81,3 +81,9 @@ comment immediately after the `##` heading.
 Warm `make spec-pr` measured `56.16s` on beelink on `2026-04-24` after one
 untimed warm-up run. That observed value is the one recorded in the
 `spec-only` validation-profile comment in `.march/validation-profiles.toml`.
+
+## Per-Section Warm Ceilings
+
+| Section | Lane | Ceiling | Why |
+|---|---|---|---|
+| `spec/entity/gene.md::All-Section Warm Budget` | main parallel xdist pool (single leg) | `12000ms` | Warm `biomcp get gene BRCA1 all` runs ~6s in isolation but spikes to ~10s under 16-worker xdist contention. The 12000ms ceiling is a parallelism-tolerant regression check, not a hard runtime SLA: the gene canary stays in the shared parallel pool rather than carving out a serialized partition, and the assertion still fails fast if the warm bundle regresses well past observed worst-case load. The runtime warm budget itself is unchanged. |
