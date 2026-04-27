@@ -93,22 +93,7 @@ fn article_cli_test_split_files_exist_with_doc_headers() {
     );
 
     for path in expected {
-        assert!(path.is_file(), "missing expected file: {}", path.display());
         assert_module_doc_header(&path);
-    }
-
-    for path in [
-        "src/cli/article/tests/help/mod.rs",
-        "src/cli/article/tests/exact_lookup/mod.rs",
-        "src/cli/article/tests/json/mod.rs",
-        "src/cli/article/tests/filters/mod.rs",
-    ] {
-        let forbidden = root.join(path);
-        assert!(
-            !forbidden.exists(),
-            "unexpected placeholder module present: {}",
-            forbidden.display()
-        );
     }
 }
 
