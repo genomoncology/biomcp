@@ -136,3 +136,17 @@ set -e
 echo "$list_structure_out" | mustmatch like "list_split_files_exist_with_doc_headers"
 test "$list_structure_status" -eq 0
 ```
+
+## Article CLI Test Ownership Stays Decomposed
+
+The article CLI tests should keep the same executable ownership ratchet: a split
+sidecar tree with named domains, module headers, and the CLI 700-line cap.
+
+```bash
+set +e
+structure_out="$(cd ../.. && cargo test --test article_cli_tests_structure -- --nocapture 2>&1)"
+structure_status=$?
+set -e
+echo "$structure_out" | mustmatch like "article_cli_test_split_files_exist_with_doc_headers"
+test "$structure_status" -eq 0
+```
