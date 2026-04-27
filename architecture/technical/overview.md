@@ -207,7 +207,9 @@ unlock additional data:
 | `S2_API_KEY` | Semantic Scholar article enrichment/navigation | Optional authenticated Semantic Scholar requests at 1 req/sec; shared-pool requests run at 1 req/2sec without the key |
 | `OPENFDA_API_KEY` | OpenFDA | Higher rate limits |
 | `NCI_API_KEY` | NCI CTS trial search (`--source nci`) | Required for NCI source |
-| `ONCOKB_TOKEN` | OncoKB production API | Full clinical data (demo available without) |
+| `DISGENET_API_KEY` | DisGeNET scored gene/disease associations | Required for `get gene <symbol> disgenet` and `get disease <name_or_id> disgenet`; DisGeNET sections are unavailable without the key |
+| `ONCOKB_TOKEN` | OncoKB production variant helper | Required for `variant oncokb <id>`; the helper is unavailable without the token |
+| `UMLS_API_KEY` | UMLS discover clinical crosswalk enrichment | Optional; `discover` still returns OLS4 results without the key but omits UMLS crosswalks |
 | `ALPHAGENOME_API_KEY` | AlphaGenome variant effect prediction | Required for AlphaGenome |
 
 For demo and offline workflows: `BIOMCP_CACHE_MODE=infinite` enables infinite

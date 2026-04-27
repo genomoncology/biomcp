@@ -170,6 +170,26 @@ def _normalize_whitespace(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def test_architecture_api_key_table_documents_credential_runtime_contracts() -> None:
+    overview = _read("architecture/technical/overview.md")
+    api_keys = _read("docs/getting-started/api-keys.md")
+
+    for row in (
+        "| `DISGENET_API_KEY` | DisGeNET scored gene/disease associations | Required for `get gene <symbol> disgenet` and `get disease <name_or_id> disgenet`; DisGeNET sections are unavailable without the key |",
+        "| `ONCOKB_TOKEN` | OncoKB production variant helper | Required for `variant oncokb <id>`; the helper is unavailable without the token |",
+        "| `UMLS_API_KEY` | UMLS discover clinical crosswalk enrichment | Optional; `discover` still returns OLS4 results without the key but omits UMLS crosswalks |",
+    ):
+        assert row in overview
+
+    normalized_api_keys = _normalize_whitespace(api_keys)
+    for phrase in (
+        "Without the token, that helper is unavailable and reports the required environment variable.",
+        "Without the key, those DisGeNET sections are unavailable and report the required environment variable.",
+        "Without the key, `discover` still runs with OLS4-only results and omits UMLS crosswalks.",
+    ):
+        assert phrase in normalized_api_keys
+
+
 def _assert_heading_order(text: str, headings: list[str]) -> None:
     positions = [text.index(heading) for heading in headings]
     assert positions == sorted(positions)
