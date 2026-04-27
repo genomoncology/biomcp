@@ -1,0 +1,1 @@
+//! Score render tests.

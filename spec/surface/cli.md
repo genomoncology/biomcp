@@ -150,3 +150,19 @@ set -e
 echo "$structure_out" | mustmatch like "article_cli_test_split_files_exist_with_doc_headers"
 test "$structure_status" -eq 0
 ```
+
+## Benchmark Run and Score Decomposition Stays Executable
+
+The benchmark command family should keep its documented decomposition ratchet
+executable in the spec lane so suite execution, regression analysis, command
+normalization, and score rendering cannot collapse back into flat over-cap
+modules.
+
+```bash
+set +e
+benchmark_structure_out="$(cd ../.. && cargo test --test benchmark_cli_structure -- --nocapture 2>&1)"
+benchmark_structure_status=$?
+set -e
+echo "$benchmark_structure_out" | mustmatch like "benchmark_split_files_exist_with_doc_headers"
+test "$benchmark_structure_status" -eq 0
+```
