@@ -87,12 +87,14 @@ fn canonical_prompt_body_matches_overview_and_normalizes_newlines() -> Result<()
 }
 
 #[test]
-fn validate_skills_target_uses_uv_dev_environment() {
+fn validate_skills_target_uses_project_free_uv_dev_environment() {
     let makefile = fs::read_to_string(repo_root().join("Makefile")).expect("read Makefile");
     let pyproject = fs::read_to_string(repo_root().join("pyproject.toml")).expect("read pyproject");
 
     assert!(makefile.contains("validate-skills:"));
-    assert!(makefile.contains("uv run --extra dev sh -c"));
+    assert!(makefile.contains("$(MAKE) sync-python-dev"));
+    assert!(makefile.contains("uv sync --extra dev --no-install-project"));
+    assert!(makefile.contains("uv run --no-sync sh -c"));
     assert!(makefile.contains("./scripts/validate-skills.sh"));
     assert!(makefile.contains("PATH=\"$(CURDIR)/target/release:$$PATH\""));
     assert!(pyproject.contains("\"jsonschema>="));

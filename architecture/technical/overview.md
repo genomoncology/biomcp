@@ -243,17 +243,19 @@ rebuild path, not a second source of release truth.
      (`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`),
      `version-sync` (`bash scripts/check-version-sync.sh`),
      `climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`),
-     `contracts` (`cargo build --release --locked`, `uv sync --extra dev`,
-     `uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`,
-     `uv run mkdocs build --strict`), and `spec-stable`
+     `contracts` (`cargo build --release --locked`,
+     `uv sync --extra dev --no-install-project`,
+     `uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`,
+     `uv run --no-sync mkdocs build --strict`), and `spec-stable`
      (release build, spec-cache metadata/restore, then `make spec-pr`).
    - The bootstrap spec-v2 contract keeps one blocking canary lane instead of a
      second smoke workflow. `spec-stable` restores `.cache/biomcp-specs/`,
      exports `BIOMCP_SPEC_CACHE_HIT=1` only on cache hits, and relies on
      `tools/biomcp-ci` to flip warm-cache replay on for the canary docs.
-   - Release validation runs the Rust checks again, then
-     `uv run pytest tests/ -v --mcp-cmd "biomcp serve"` and
-     `uv run mkdocs build --strict`.
+   - Release validation runs the Rust checks again, builds the release binary,
+     syncs Python dev dependencies with `uv sync --extra dev --no-install-project`,
+     then runs `uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`
+     and `uv run --no-sync mkdocs build --strict`.
    - Release build jobs package cross-platform binaries, publish PyPI wheels,
      and deploy docs.
 5. `install.sh` resolves the latest tagged release with downloadable assets
@@ -283,9 +285,9 @@ Expected markers:
 - live Drug docs show the WHO `--region` workflow and WHO local-data setup copy
   together with the local-data path marker
 
-Known issue: `uv sync --extra dev` may rewrite the editable root package
-version in `uv.lock` during a release cut. Verify whether the lockfile
-version bump should ship with the release commit.
+Python/docs/spec gate lanes intentionally use `uv sync --extra dev --no-install-project`
+followed by `uv run --no-sync ...`. They install Python tooling only and do not
+install or rebuild the maturin-backed current project before pytest or mkdocs.
 
 ## Verification Approach
 
@@ -385,9 +387,10 @@ single explicit serialized partition.
 Use `spec/README-timings.md` as the current canary-lane audit/reference for the
 active files, wrapper/cache contract, and measured warm-cache expectations.
 
-Important: `uv run` may execute a stale `.venv/bin/biomcp`. Either refresh
-with `uv pip install -e .` or ensure `target/release` is ahead of `.venv/bin`
-when running CLI specs.
+Important: repo-local Python/spec commands should use
+`uv sync --extra dev --no-install-project` followed by `uv run --no-sync ...`.
+Keep `target/release` ahead of `.venv/bin` and pass `BIOMCP_BIN` when running
+CLI specs manually so the release binary, not an editable install, is tested.
 
 ### 3. `biomcp health`
 

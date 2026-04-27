@@ -130,7 +130,7 @@ to rerun just the Python/docs contract lane. Repo-root Ruff still runs through
 scratch experiment scripts do not block the production Python lint gate. Use
 `git commit --no-verify` to skip the hook for a one-off commit.
 
-`make test-contracts` runs `cargo build --release --locked`, `uv sync --extra dev`, `pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, and `mkdocs build --strict` - the same steps that PR CI `contracts` requires. `make check` now pulls that lane in transitively, while `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
+`make test-contracts` runs `cargo build --release --locked`, `uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, and `uv run --no-sync mkdocs build --strict` - the same steps that PR CI `contracts` requires. The `--no-install-project`/`--no-sync` split is intentional: Python/docs/spec lanes install only Python dev tooling and exercise the already-built `target/release/biomcp` binary instead of rebuilding the maturin package into `.venv`. `make check` now pulls that lane in transitively, while `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
 
 ## Smoke Checks
 
@@ -148,8 +148,9 @@ Use `architecture/technical/staging-demo.md` for the promotion contract and
 ## MCP Contract Verification
 
 ```bash
-uv run pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"
-uv run pytest tests/test_mcp_http_surface.py tests/test_mcp_http_transport.py -v
+uv sync --extra dev --no-install-project
+uv run --no-sync pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"
+uv run --no-sync pytest tests/test_mcp_http_surface.py tests/test_mcp_http_transport.py -v
 curl http://127.0.0.1:8080/health
 curl http://127.0.0.1:8080/readyz
 curl http://127.0.0.1:8080/
@@ -180,6 +181,10 @@ Use `spec/README-timings.md` as the current canary-lane audit/reference for the
 active corpus, the wrapper/cache contract, and warm-cache expectations for the
 blocking lane.
 
-When running repo-local checks through `uv run`, make sure `target/release` is
-ahead of `.venv/bin` on `PATH` or refresh the editable install with
-`uv pip install -e .` so `uv run` does not pick a stale `.venv/bin/biomcp`.
+When running repo-local Python/docs/spec checks through `uv`, use
+`uv sync --extra dev --no-install-project` followed by `uv run --no-sync ...`.
+Keep `target/release` ahead of `.venv/bin` on `PATH` and pass
+`BIOMCP_BIN=./target/release/biomcp` when invoking executable specs manually.
+Do not use `uv run --extra dev ...` for Python-only gate lanes: that asks uv to
+install the maturin-backed current project and can redundantly rebuild the Rust
+CLI before pytest or mkdocs starts.

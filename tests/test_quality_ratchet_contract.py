@@ -371,7 +371,7 @@ def test_wrapper_is_thin_shell_around_committed_python_tool() -> None:
     assert "MUSTMATCH_JSON_RE" not in wrapper
     assert "SHORT_LIKE_RE" not in wrapper
     assert "FENCE_RE" not in wrapper
-    assert "uv run --extra dev python" in wrapper
+    assert "uv run --no-project python" in wrapper
     assert "tools/check-quality-ratchet.py" in wrapper
     assert "spec/**/*.md" in wrapper
     assert "tools/spec_smoke_args.py" not in wrapper

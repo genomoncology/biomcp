@@ -13,7 +13,7 @@ HEALTH_FILE="${QUALITY_RATCHET_HEALTH_FILE:-$ROOT_DIR/src/cli/health/catalog.rs}
 
 mkdir -p "$OUTPUT_DIR"
 
-exec uv run --extra dev python "$ROOT_DIR/tools/check-quality-ratchet.py" \
+exec uv run --no-project python "$ROOT_DIR/tools/check-quality-ratchet.py" \
   --root-dir "$ROOT_DIR" \
   --output-dir "$OUTPUT_DIR" \
   --spec-glob "$SPEC_GLOB" \

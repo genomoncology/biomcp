@@ -596,9 +596,9 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "`version-sync` (`bash scripts/check-version-sync.sh`)" in technical
     assert "`climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`)" in technical
     assert (
-        "`contracts` (`cargo build --release --locked`, `uv sync --extra dev`, "
-        '`uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, '
-        "`uv run mkdocs build --strict`)" in technical_ws
+        "`contracts` (`cargo build --release --locked`, `uv sync --extra dev --no-install-project`, "
+        '`uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, '
+        "`uv run --no-sync mkdocs build --strict`)" in technical_ws
     )
     assert (
         "`spec-stable` (release build, spec-cache metadata/restore, then `make spec-pr`)"
@@ -653,7 +653,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "inputs:" in release_workflow
     assert "tag:" in release_workflow
     assert "deploy-docs:" in release_workflow
-    assert "uv run mkdocs gh-deploy --force" in release_workflow
+    assert "uv run --no-sync mkdocs gh-deploy --force" in release_workflow
     assert (
         'DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"'
         in install_script
@@ -1072,14 +1072,15 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     spec_smoke = REPO_ROOT / ".github/workflows/spec-smoke.yml"
     expected_ci_contract_runs = [
         "cargo build --release --locked",
-        "uv sync --extra dev",
-        'uv run pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"',
-        "uv run mkdocs build --strict",
+        "uv sync --extra dev --no-install-project",
+        'uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"',
+        "uv run --no-sync mkdocs build --strict",
     ]
     expected_release_contract_runs = [
-        "uv sync --extra dev",
-        'uv run pytest tests/ -v --mcp-cmd "biomcp serve"',
-        "uv run mkdocs build --strict",
+        "cargo build --release --locked",
+        "uv sync --extra dev --no-install-project",
+        'uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"',
+        "uv run --no-sync mkdocs build --strict",
     ]
 
     ci_contracts = _workflow_job_block(ci, "contracts")
@@ -1117,7 +1118,7 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     ) in ci_spec
     assert "if: steps.spec-cache.outputs.cache-hit == 'true'" in ci_spec
     assert "BIOMCP_SPEC_CACHE_HIT=1" in ci_spec
-    assert _workflow_run_steps(release_validate)[-3:] == expected_release_contract_runs
+    assert _workflow_run_steps(release_validate)[-4:] == expected_release_contract_runs
     assert "- uses: actions/checkout@v4" in ci_version_sync
     assert _workflow_run_steps(ci_version_sync) == [
         "bash scripts/check-version-sync.sh"
@@ -1157,7 +1158,7 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
 def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     makefile = _read_repo("Makefile")
     assert (
-        ".PHONY: build test lint check check-quality-ratchet release-gate run clean spec spec-pr validate-skills test-contracts install"
+        ".PHONY: build test lint check check-quality-ratchet release-gate run clean spec spec-pr validate-skills test-contracts install sync-python-dev"
         in makefile
     )
     assert "SPEC_PR_DESELECT_ARGS" not in makefile
@@ -1193,11 +1194,17 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         makefile,
     ), "spec-pr: must run main corpus with 180s timeout under SPEC_XDIST_ARGS"
     assert re.search(
+        r"^sync-python-dev:\n"
+        r"\tuv sync --extra dev --no-install-project$",
+        makefile,
+        flags=re.MULTILINE,
+    )
+    assert re.search(
         r"^test-contracts:\n"
         r"\tcargo build --release --locked\n"
-        r"\tuv sync --extra dev\n"
-        r'\tuv run pytest tests/ -v --mcp-cmd "\./target/release/biomcp serve"\n'
-        r"\tuv run mkdocs build --strict$",
+        r"\t\$\(MAKE\) sync-python-dev\n"
+        r'\tuv run --no-sync pytest tests/ -v --mcp-cmd "\./target/release/biomcp serve"\n'
+        r"\tuv run --no-sync mkdocs build --strict$",
         makefile,
         flags=re.MULTILINE,
     )
@@ -1383,8 +1390,9 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
         "BIOMCP_BIN=./target/release/biomcp ./scripts/geneagent-demo.sh" in staging_demo
     )
     assert "./scripts/contract-smoke.sh --fast" in staging_demo
+    assert "uv sync --extra dev --no-install-project" in staging_demo
     assert (
-        'uv run pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"'
+        'uv run --no-sync pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"'
         in staging_demo
     )
     assert "ONCOKB_TOKEN" in staging_demo
@@ -1404,8 +1412,9 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "cargo build --release --locked" in runbook
     assert "./target/release/biomcp serve" in runbook
     assert "./target/release/biomcp serve-http --host 127.0.0.1 --port 8080" in runbook
+    assert "uv sync --extra dev --no-install-project" in runbook
     assert (
-        'uv run pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"'
+        'uv run --no-sync pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"'
         in runbook
     )
     assert "curl http://127.0.0.1:8080/health" in runbook
@@ -1419,8 +1428,8 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "./target/release/biomcp article citations 22663011 --limit 3" in runbook
     assert (
         "`make test-contracts` runs `cargo build --release --locked`, "
-        '`uv sync --extra dev`, `pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, '
-        "and `mkdocs build --strict` - the same steps that PR CI `contracts` requires."
+        '`uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, '
+        "and `uv run --no-sync mkdocs build --strict` - the same steps that PR CI `contracts` requires."
         in runbook
     )
     assert "docs/user-guide/cli-reference.md" in runbook

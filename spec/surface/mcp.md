@@ -77,7 +77,7 @@ port=39089
 ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" >/tmp/biomcp-mcp-boundary.log 2>&1 &
 pid=$!; trap 'kill "$pid" 2>/dev/null || true' EXIT
 for _ in $(seq 1 40); do curl -fsS "http://127.0.0.1:$port/health" >/dev/null && break; sleep 0.25; done
-out="$(uv run --extra dev python3 - "$port" <<'PY'
+out="$(uv run --no-sync python3 - "$port" <<'PY'
 import asyncio
 import sys
 from datetime import timedelta
