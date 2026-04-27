@@ -79,7 +79,7 @@ def line_number(contents: str, offset: int) -> int:
 
 def is_allowed_runtime_temp_scratch(relative_path: str, match: re.Match[str]) -> bool:
     return (
-        relative_path == "src/cli/benchmark/run.rs"
+        relative_path == "src/cli/benchmark/run/execute.rs"
         and "biomcp-benchmark-{}-{}" in match.group(0)
     )
 
