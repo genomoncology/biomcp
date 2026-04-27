@@ -20,7 +20,9 @@ biomcp get variant "chr7:g.140453136A>T" predict
 
 ### `ONCOKB_TOKEN`
 
-Used for the production `biomcp variant oncokb ...` helper.
+Used for the production `biomcp variant oncokb ...` helper. Without the
+token, that helper is unavailable and reports the required environment
+variable.
 BioMCP keeps `ONCOKB_TOKEN` because OncoKB itself calls the credential a
 token.
 
@@ -45,6 +47,8 @@ biomcp search trial -c melanoma --source nci
 ### `DISGENET_API_KEY`
 
 Required for DisGeNET scored association sections on genes and diseases.
+Without the key, those DisGeNET sections are unavailable and report the
+required environment variable.
 
 Register at: <https://www.disgenet.com/>
 
@@ -56,7 +60,8 @@ biomcp get disease "breast cancer" disgenet
 
 ### `UMLS_API_KEY`
 
-Adds optional clinical crosswalk enrichment to `biomcp discover`.
+Adds optional clinical crosswalk enrichment to `biomcp discover`. Without the
+key, `discover` still runs with OLS4-only results and omits UMLS crosswalks.
 
 Register at: <https://uts.nlm.nih.gov/uts/signup-login>
 
