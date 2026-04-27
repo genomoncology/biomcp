@@ -199,11 +199,10 @@ async fn run_contract_case(
     }
 
     let fail_fast_latency_ms = median_f64(&latencies);
-    let status = if saw_success_exit {
-        BenchmarkCaseStatus::Failed
-    } else if fail_fast_latency_ms
-        .map(|latency| latency > max_fail_fast_ms as f64)
-        .unwrap_or(true)
+    let status = if saw_success_exit
+        || fail_fast_latency_ms
+            .map(|latency| latency > max_fail_fast_ms as f64)
+            .unwrap_or(true)
     {
         BenchmarkCaseStatus::Failed
     } else {
@@ -350,9 +349,9 @@ fn reset_case_cache(path: &Path) -> anyhow::Result<()> {
 }
 
 fn now_rfc3339() -> anyhow::Result<String> {
-    Ok(OffsetDateTime::now_utc()
+    OffsetDateTime::now_utc()
         .format(&Rfc3339)
-        .context("failed to format benchmark timestamp")?)
+        .context("failed to format benchmark timestamp")
 }
 
 fn format_command(args: &[&str]) -> String {
@@ -377,7 +376,7 @@ fn median_f64(samples: &[f64]) -> Option<f64> {
     let mut sorted = samples.to_vec();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let mid = sorted.len() / 2;
-    if sorted.len() % 2 == 0 {
+    if sorted.len().is_multiple_of(2) {
         Some((sorted[mid - 1] + sorted[mid]) / 2.0)
     } else {
         Some(sorted[mid])
@@ -400,20 +399,6 @@ fn median_i32(samples: &[i32]) -> Option<i32> {
     let mut sorted = samples.to_vec();
     sorted.sort_unstable();
     Some(sorted[sorted.len() / 2])
-}
-
-fn fmt_opt_f64(value: Option<f64>) -> String {
-    value.map(format_float).unwrap_or_else(|| "n/a".to_string())
-}
-
-fn fmt_opt_u64(value: Option<u64>) -> String {
-    value
-        .map(|v| v.to_string())
-        .unwrap_or_else(|| "n/a".to_string())
-}
-
-fn format_float(value: f64) -> String {
-    format!("{value:.2}")
 }
 
 struct TempDirCleanup {

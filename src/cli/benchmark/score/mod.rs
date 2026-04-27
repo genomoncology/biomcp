@@ -6,12 +6,12 @@ use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 
 use anyhow::Context;
+use serde_json::Value;
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 
 use super::types::{
-    SESSION_SCORE_SCHEMA_VERSION, SessionCoverage, SessionErrorCategories, SessionScoreReport,
-    SessionTokenUsage,
+    SESSION_SCORE_SCHEMA_VERSION, SessionErrorCategories, SessionScoreReport, SessionTokenUsage,
 };
 
 mod normalize;
@@ -20,9 +20,9 @@ mod render;
 
 use normalize::{compute_coverage, normalize_command_shape};
 use parse::{
-    ErrorCategory, collapse_whitespace, collect_error_messages, collect_token_usage,
-    collect_tool_calls, extract_timestamp, is_biomcp_shell_tool, is_help_command,
-    is_skill_read_command,
+    ErrorCategory, classify_error, collapse_whitespace, collect_error_messages,
+    collect_token_usage, collect_tool_calls, extract_timestamp, is_biomcp_shell_tool,
+    is_help_command, is_skill_read_command,
 };
 use render::render_human_report;
 
@@ -162,9 +162,9 @@ fn score_session_file(opts: &ScoreSessionOptions) -> anyhow::Result<SessionScore
 }
 
 fn now_rfc3339() -> anyhow::Result<String> {
-    Ok(OffsetDateTime::now_utc()
+    OffsetDateTime::now_utc()
         .format(&Rfc3339)
-        .context("failed to format score timestamp")?)
+        .context("failed to format score timestamp")
 }
 
 #[cfg(test)]

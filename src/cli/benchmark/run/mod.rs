@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, anyhow};
 
-use super::types::{BenchmarkCaseStatus, BenchmarkRunReport, BenchmarkSummary};
+use super::types::{BenchmarkCaseStatus, BenchmarkMode, BenchmarkRunReport, BenchmarkSummary};
 
 mod execute;
 mod regression;
@@ -48,21 +48,11 @@ impl Default for RunOptions {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SaveBaselineOptions {
     pub quick: bool,
     pub iterations: Option<u32>,
     pub output: Option<PathBuf>,
-}
-
-impl Default for SaveBaselineOptions {
-    fn default() -> Self {
-        Self {
-            quick: false,
-            iterations: None,
-            output: None,
-        }
-    }
 }
 
 pub async fn run_benchmark(opts: RunOptions, json_output: bool) -> anyhow::Result<String> {
@@ -83,20 +73,20 @@ pub async fn run_benchmark(opts: RunOptions, json_output: bool) -> anyhow::Resul
         discover_latest_baseline_path()
     };
 
-    if let Some(path) = baseline_path {
-        if path.exists() {
-            let baseline = load_baseline(&path)?;
-            compare_against_baseline(
-                &mut report,
-                &baseline,
-                RegressionThresholds {
-                    latency_pct: opts.latency_threshold_pct,
-                    size_pct: opts.size_threshold_pct,
-                    max_fail_fast_ms: opts.max_fail_fast_ms,
-                },
-            );
-            report.baseline_path = Some(path.display().to_string());
-        }
+    if let Some(path) = baseline_path
+        && path.exists()
+    {
+        let baseline = load_baseline(&path)?;
+        compare_against_baseline(
+            &mut report,
+            &baseline,
+            RegressionThresholds {
+                latency_pct: opts.latency_threshold_pct,
+                size_pct: opts.size_threshold_pct,
+                max_fail_fast_ms: opts.max_fail_fast_ms,
+            },
+        );
+        report.baseline_path = Some(path.display().to_string());
     }
 
     report.summary = build_summary(&report);

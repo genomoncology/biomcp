@@ -196,7 +196,7 @@ fn compare_contract_case(
             metric: "fail_fast_latency_ms".to_string(),
             baseline_value: baseline
                 .fail_fast_latency_ms
-                .map(|value| format_float(value))
+                .map(format_float)
                 .unwrap_or_else(|| "n/a".to_string()),
             current_value: format_float(latency),
             delta_pct: None,

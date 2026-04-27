@@ -25,7 +25,7 @@ clap = { version = "4", features = ["derive"] }
 kuva = "0.1.4"
 
 # Async
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "fs", "signal", "io-util", "net"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "fs", "signal", "io-util", "net", "process"] }
 tokio-stream = "0.1"
 tokio-util = "0.7"
 futures = "0.3"

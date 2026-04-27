@@ -2,6 +2,9 @@
 
 mod adverse_event;
 mod article;
+#[cfg(test)]
+#[allow(dead_code)]
+mod benchmark;
 pub mod cache;
 pub mod chart;
 mod commands;

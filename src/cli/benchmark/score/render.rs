@@ -2,7 +2,7 @@
 
 use super::super::types::SessionScoreReport;
 
-fn render_human_report(report: &SessionScoreReport, brief: bool) -> String {
+pub(super) fn render_human_report(report: &SessionScoreReport, brief: bool) -> String {
     let mut out = String::new();
     out.push_str("# Session Score\n\n");
     out.push_str(&format!("- Session: {}\n", report.session_path));

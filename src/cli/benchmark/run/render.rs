@@ -4,7 +4,7 @@ use super::super::types::{
     BenchmarkCaseKind, BenchmarkCaseStatus, BenchmarkMode, BenchmarkRunReport,
 };
 
-fn render_human_report(report: &BenchmarkRunReport) -> String {
+pub(super) fn render_human_report(report: &BenchmarkRunReport) -> String {
     let mut out = String::new();
     out.push_str("# BioMCP Benchmark Report\n\n");
     out.push_str(&format!(
@@ -98,6 +98,16 @@ fn status_label(status: BenchmarkCaseStatus) -> &'static str {
         BenchmarkCaseStatus::Failed => "failed",
         BenchmarkCaseStatus::TransientFailure => "transient_failure",
     }
+}
+
+fn fmt_opt_f64(value: Option<f64>) -> String {
+    value.map(format_float).unwrap_or_else(|| "n/a".to_string())
+}
+
+fn fmt_opt_u64(value: Option<u64>) -> String {
+    value
+        .map(|v| v.to_string())
+        .unwrap_or_else(|| "n/a".to_string())
 }
 
 fn format_float(value: f64) -> String {

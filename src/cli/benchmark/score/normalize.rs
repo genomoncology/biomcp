@@ -105,9 +105,7 @@ pub(super) fn normalize_command_shape(command: &str) -> Option<String> {
             continue;
         }
 
-        if positional_index < 2 {
-            normalized.push(token.clone());
-        } else if is_section_like_token(token) {
+        if positional_index < 2 || is_section_like_token(token) {
             normalized.push(token.clone());
         } else {
             normalized.push("<arg>".to_string());
