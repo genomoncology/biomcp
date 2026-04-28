@@ -40,6 +40,7 @@ install:
 
 spec:
 # Keep the protein canary in its existing serialized spec partition.
+	cargo build --release --locked
 	$(MAKE) sync-python-dev
 	PATH="$(CURDIR)/target/release:$(PATH)" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" \
 		uv run --no-sync sh -c 'PATH="$(CURDIR)/target/release:$$PATH" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" pytest spec/entity/ spec/surface/ --mustmatch-lang bash --mustmatch-timeout 120 -v $(SPEC_XDIST_ARGS) --deselect spec/entity/protein.md'
@@ -48,6 +49,7 @@ spec:
 
 spec-pr:
 # Keep the protein canary in its existing serialized spec partition.
+	cargo build --release --locked
 	$(MAKE) sync-python-dev
 	PATH="$(CURDIR)/target/release:$(PATH)" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" \
 		uv run --no-sync sh -c 'PATH="$(CURDIR)/target/release:$$PATH" BIOMCP_BIN="$(CURDIR)/target/release/biomcp" pytest spec/entity/ spec/surface/ --mustmatch-lang bash --mustmatch-timeout 180 -v $(SPEC_XDIST_ARGS) --deselect spec/entity/protein.md'
