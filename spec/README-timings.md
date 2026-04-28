@@ -9,13 +9,17 @@
 | `make test-contracts` | PR contracts lane and local docs/Python validation | n/a | Rust release build plus Python/docs contract checks | independent of the executable-spec wrapper |
 
 The bootstrap spec-v2 cutover keeps one active canary lane. There is no
-`spec-smoke` split, and the only serial carve-out is `spec/entity/protein.md`,
-which leaves the main xdist pool and reruns in its own serialized leg. The
-protein ComplexPortal section is fixture-backed rather than a live upstream
-canary; live ComplexPortal availability belongs to `biomcp health`/operator
-inspection. The executable docs themselves call `tools/biomcp-ci`; `make spec`
-and `make spec-pr` choose timeout plus that protein-specific partitioning. The
-spec targets install Python dev dependencies with
+`spec-smoke` split. Upstream-heavy canaries leave the main xdist pool and rerun
+in a serialized leg: `spec/entity/protein.md` for the ComplexPortal canary plus
+`spec/entity/disease.md` and `spec/surface/discover.md` for OLS4-heavy
+disease/discover headings such as synonym rescue, alias routing, and symptom
+mapping. The protein ComplexPortal section is fixture-backed rather than a live
+upstream canary; live ComplexPortal availability belongs to `biomcp
+health`/operator inspection. FAQ #14 is absorbed by the serial OLS4
+parallel-isolation contract rather than by a new OLS4 fixture server. The
+executable docs themselves call `tools/biomcp-ci`; `make spec` and `make
+spec-pr` choose timeout plus that upstream-heavy partitioning. The spec targets
+install Python dev dependencies with
 `uv sync --extra dev --no-install-project`, then invoke pytest with
 `uv run --no-sync ...` so uv does not install or rebuild the maturin-backed
 current project. The binary under test remains `target/release/biomcp` via
