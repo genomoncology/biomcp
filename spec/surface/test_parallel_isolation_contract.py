@@ -69,6 +69,19 @@ def test_wikipathways_parallel_contract_serializes_shared_mock_env() -> None:
         "serial guard on the named test so nextest parallelism cannot swap another test's "
         "BIOMCP_*_BASE values into this warning-path assertion"
     )
+    assert any(
+        marker in context
+        for marker in (
+            "with_no_cache(",
+            "with_no_http_cache(",
+        )
+    ), (
+        "the WikiPathways search-all warning-path test routes Reactome and KEGG through the shared "
+        "HTTP cache/client; it must disable the persistent HTTP cache inside the named test (e.g. "
+        "via `crate::sources::with_no_cache(true, ...)`) so cache-disk contention from other "
+        "parallel tests cannot push the 12s section timeout and turn the assertion into a "
+        "'pathway search timed out' message that no longer mentions wikipathways"
+    )
 
 
 def test_vaers_fixture_contract_waits_for_live_http_readiness() -> None:

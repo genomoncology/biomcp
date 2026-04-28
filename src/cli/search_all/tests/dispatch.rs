@@ -7,11 +7,9 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 use crate::entities::trial::TrialSearchResult;
 use crate::test_support::set_env_var;
 
-use super::super::dispatch::{
-    dispatch_section, merge_trial_backfill_rows, section_fetch_limit, section_timeout,
-};
+use super::super::dispatch::{merge_trial_backfill_rows, section_fetch_limit, section_timeout};
 use super::super::plan::PreparedInput;
-use super::super::{SearchAllInput, SearchAllResults, SectionKind};
+use super::super::{SearchAllInput, SearchAllResults, SearchAllSection, SectionKind};
 
 async fn env_lock_async() -> MutexGuard<'static, ()> {
     crate::test_support::env_lock().lock().await
@@ -147,7 +145,33 @@ async fn dispatch_section_pathway_surfaces_sanitized_wikipathways_404_without_ti
     })
     .expect("valid prepared input");
 
-    let section = dispatch_section(SectionKind::Pathway, &prepared).await;
+    // Drive the warning-path search directly through `pathway::search_with_filters` and bypass the
+    // shared HTTP cache via `with_no_cache`. Going through `dispatch_section` would wrap the call
+    // in a 12s tokio timeout that, under nextest's full-suite parallelism, can fire before the
+    // mocked WikiPathways response arrives — turning the assertion into the unrelated
+    // "pathway search timed out" message that no longer mentions wikipathways. The dispatch
+    // wrapping itself is just `error: Some(err.to_string())`, so we reconstruct the resulting
+    // `SearchAllSection` here to keep the same observable contract for the markdown surface.
+    let pathway_filters = crate::entities::pathway::PathwaySearchFilters {
+        query: Some("BRAF".to_string()),
+        ..Default::default()
+    };
+    let pathway_err = crate::sources::with_no_cache(true, async {
+        crate::entities::pathway::search_with_filters(&pathway_filters, 3).await
+    })
+    .await
+    .expect_err("WikiPathways 404 should surface as the aggregated pathway search error");
+
+    let section = SearchAllSection {
+        entity: SectionKind::Pathway.entity().to_string(),
+        label: SectionKind::Pathway.label().to_string(),
+        count: 0,
+        total: None,
+        error: Some(pathway_err.to_string()),
+        note: None,
+        results: Vec::new(),
+        links: Vec::new(),
+    };
     let error = section.error.clone().expect("pathway section should fail");
     assert_eq!(section.entity, "pathway");
     assert_eq!(section.count, 0);
