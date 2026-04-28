@@ -5,6 +5,17 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+OLS4_HEAVY_SPEC_HEADINGS = {
+    "spec/entity/disease.md": (
+        "Synonym Rescue",
+    ),
+    "spec/surface/discover.md": (
+        "Alias-Like Free Text Still Resolves to Typed Follow-Ups",
+        "Disease-Specific Symptom Phrases Stay Clinically Modest",
+        "HPO-Backed Symptom Phrases Should Bridge into Phenotype Search",
+    ),
+}
+
 
 def _read_repo(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
@@ -42,6 +53,22 @@ def _make_target_block(name: str) -> str:
     )
     assert match is not None, f"missing Makefile target {name}"
     return match.group(1)
+
+
+def _markdown_h2_headings(path: str) -> set[str]:
+    return set(re.findall(r"^##\s+(.+?)\s*$", _read_repo(path), flags=re.MULTILINE))
+
+
+def _assert_make_target_serializes_spec_path(target_name: str, block: str, path: str) -> None:
+    assert "$(SPEC_XDIST_ARGS)" in block, f"{target_name} should keep its main parallel xdist leg"
+    assert f"--deselect {path}" in block, (
+        f"Makefile target {target_name} must remove {path} from the main parallel xdist pool "
+        "before rerunning it in a serialized or fixture-backed leg"
+    )
+    spec_commands = re.findall(r"pytest[^\n]*", block)
+    assert any(path in command and "$(SPEC_XDIST_ARGS)" not in command for command in spec_commands), (
+        f"{target_name} must run {path} outside the main $(SPEC_XDIST_ARGS) pool"
+    )
 
 
 def _has_base_url_probe(text: str) -> bool:
@@ -150,17 +177,7 @@ def test_protein_complexes_spec_lane_leaves_the_parallel_xdist_pool() -> None:
     technical_overview = _read_repo("architecture/technical/overview.md")
 
     for target_name, block in (("spec", spec_target), ("spec-pr", spec_pr_target)):
-        assert "$(SPEC_XDIST_ARGS)" in block, f"{target_name} should keep its main parallel xdist leg"
-        assert "--deselect spec/entity/protein.md" in block, (
-            f"Makefile target {target_name} must remove spec/entity/protein.md from the main "
-            "parallel xdist pool before rerunning it in a serialized leg"
-        )
-        protein_commands = re.findall(r"pytest[^\n]*spec/entity/protein\.md[^\n]*", block)
-        assert protein_commands, f"{target_name} should contain a protein-specific pytest command"
-        assert any("$(SPEC_XDIST_ARGS)" not in command for command in protein_commands), (
-            f"{target_name} must run the protein-specific leg outside the main parallel "
-            "$(SPEC_XDIST_ARGS) pool"
-        )
+        _assert_make_target_serializes_spec_path(target_name, block, "spec/entity/protein.md")
 
     assert re.search(r"protein.*serial", timings, flags=re.IGNORECASE | re.DOTALL), (
         "spec/README-timings.md must document that the protein complexes canary runs in a "
@@ -169,4 +186,29 @@ def test_protein_complexes_spec_lane_leaves_the_parallel_xdist_pool() -> None:
     assert re.search(r"protein.*serial", technical_overview, flags=re.IGNORECASE | re.DOTALL), (
         "architecture/technical/overview.md must describe the serialized protein carve-out so the "
         "repo architecture matches the actual spec lane"
+    )
+
+
+def test_ols4_disease_discover_spec_lane_leaves_the_parallel_xdist_pool() -> None:
+    spec_target = _make_target_block("spec")
+    spec_pr_target = _make_target_block("spec-pr")
+    timings = _read_repo("spec/README-timings.md")
+    technical_overview = _read_repo("architecture/technical/overview.md")
+
+    for path, expected_headings in OLS4_HEAVY_SPEC_HEADINGS.items():
+        headings = _markdown_h2_headings(path)
+        missing = set(expected_headings) - headings
+        assert not missing, f"{path} is missing OLS4-heavy heading contract entries: {sorted(missing)}"
+
+    for target_name, block in (("spec", spec_target), ("spec-pr", spec_pr_target)):
+        for path in OLS4_HEAVY_SPEC_HEADINGS:
+            _assert_make_target_serializes_spec_path(target_name, block, path)
+
+    assert re.search(r"OLS4.*serial", timings, flags=re.IGNORECASE | re.DOTALL), (
+        "spec/README-timings.md must document that OLS4-heavy disease/discover canaries run "
+        "in the serialized spec partition or are otherwise fixture-backed"
+    )
+    assert re.search(r"disease.*discover.*serial", technical_overview, flags=re.IGNORECASE | re.DOTALL), (
+        "architecture/technical/overview.md must describe the serialized OLS4 disease/discover "
+        "carve-out so the repo architecture matches the actual spec lane"
     )
