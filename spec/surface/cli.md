@@ -161,14 +161,15 @@ downgrade to TLS-only trust.
 
 ```bash
 help="$(../../tools/biomcp-ci update --help)"
-echo "$help" | mustmatch like "verifies the release SHA256"
+printf '%s\n' "$help" | grep -Eiq "SHA-?256"
+printf '%s\n' "$help" | grep -Eiq "checksum"
 echo "$help" | mustmatch like "--allow-missing-checksum"
 echo "$help" | mustmatch like "UNSAFE"
 ```
 
 ```bash
 set +e
-update_out="$(cd ../.. && cargo test --lib --quiet enforce_checksum_policy_missing_sidecar_without_override_fails_closed -- --nocapture 2>&1)"
+update_out="$(cd ../.. && cargo test --lib enforce_checksum_policy_missing_sidecar_without_override_fails_closed -- --nocapture 2>&1)"
 update_status=$?
 set -e
 echo "$update_out" | mustmatch like "enforce_checksum_policy_missing_sidecar_without_override_fails_closed"

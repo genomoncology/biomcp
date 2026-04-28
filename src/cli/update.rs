@@ -346,6 +346,20 @@ fn verify_archive_against_checksum(
     panic!("verify_archive_against_checksum: 331 build step has not implemented this yet");
 }
 
+#[allow(dead_code)]
+fn install_binary_after_checksum_policy<F>(
+    _status: ChecksumStatus,
+    _allow_missing: bool,
+    _asset_name: &str,
+    _new_binary: &[u8],
+    _replace_binary: F,
+) -> Result<Option<String>, BioMcpError>
+where
+    F: FnOnce(&[u8]) -> Result<(), BioMcpError>,
+{
+    panic!("install_binary_after_checksum_policy: 331 build step has not implemented this yet");
+}
+
 fn render_check_output(current: &str, latest_tag: &str, status_line: &str) -> String {
     format!("Current version: {current}\nLatest version: {latest_tag}\nStatus: {status_line}\n")
 }
@@ -434,6 +448,7 @@ mod tests {
     use super::*;
     use flate2::Compression;
     use flate2::write::GzEncoder;
+    use std::cell::Cell;
     use std::io::Write;
     use tar::{Builder, Header};
 
@@ -570,6 +585,30 @@ mod tests {
                 .expect("verified must succeed even with override flag set")
                 .is_none(),
             "verified path must not emit a warning even when the override is set"
+        );
+    }
+
+    #[test]
+    fn install_binary_after_checksum_policy_missing_sidecar_without_override_does_not_replace() {
+        let replace_called = Cell::new(false);
+
+        let err = install_binary_after_checksum_policy(
+            ChecksumStatus::MissingSidecar,
+            false,
+            "biomcp-linux-x86_64.tar.gz",
+            b"new-binary",
+            |bytes| {
+                replace_called.set(true);
+                assert_eq!(bytes, b"new-binary");
+                Ok(())
+            },
+        )
+        .expect_err("missing sidecar without override must fail before replacement");
+
+        assert!(matches!(err, BioMcpError::Api { .. }));
+        assert!(
+            !replace_called.get(),
+            "missing checksum sidecar must not reach binary replacement"
         );
     }
 

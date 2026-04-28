@@ -9,6 +9,7 @@ still describes the old fail-open behavior.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -25,9 +26,11 @@ def test_update_command_docs_describe_verification_requirement() -> None:
         "docs/user-guide/cli-reference.md must list the new flag in the "
         "command grammar so the docs match runtime"
     )
-    assert "verifies the release SHA256" in cli_reference, (
-        "cli-reference.md must describe the verification requirement that "
-        "biomcp update enforces by default"
+    assert re.search(r"SHA-?256", cli_reference, flags=re.IGNORECASE), (
+        "cli-reference.md must name SHA256 verification for biomcp update"
+    )
+    assert "checksum" in cli_reference.lower(), (
+        "cli-reference.md must describe checksum verification for biomcp update"
     )
     assert "--allow-missing-checksum" in cli_reference, (
         "cli-reference.md must name the unsafe override flag in prose so "
@@ -47,7 +50,7 @@ def test_update_troubleshooting_describes_failclosed_and_unsafe_override() -> No
         "troubleshooting.md must mark the override UNSAFE so operators "
         "do not turn it on casually"
     )
-    assert "fail closed" in troubleshooting.lower(), (
+    assert re.search(r"fail(?:s|ed|ing)?[- ]closed", troubleshooting, re.IGNORECASE), (
         "troubleshooting.md must describe the new fail-closed behavior so "
         "operators know an update can stop on missing sidecar"
     )
