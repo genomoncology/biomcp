@@ -154,6 +154,11 @@ biomcp search article -g BRAF --since 2024-02-30 --limit 1
 
 ## 10) Install/update ownership conflicts
 
+`biomcp update` fails closed when the release SHA256 checksum sidecar is missing
+or invalid, before replacing the current binary. If a legitimate release is
+missing its sidecar, `biomcp update --allow-missing-checksum` is an UNSAFE
+per-invocation override.
+
 If `biomcp update` cannot replace the current binary (e.g. permission issues),
 re-run the installer:
 

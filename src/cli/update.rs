@@ -291,20 +291,56 @@ fn sha256_hex(bytes: &[u8]) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-async fn verify_archive_checksum_if_available(
+async fn fetch_checksum_status(
     asset_url: &str,
     archive_bytes: &[u8],
-) -> Result<bool, BioMcpError> {
+) -> Result<ChecksumStatus, BioMcpError> {
     let checksum_url = format!("{asset_url}.sha256");
     let Some(checksum_bytes) = download_asset_optional(&checksum_url).await? else {
-        return Ok(false);
+        return Ok(ChecksumStatus::MissingSidecar);
     };
 
     let checksum_text = String::from_utf8_lossy(&checksum_bytes);
-    let expected =
-        parse_sha256_from_checksum_file(&checksum_text).ok_or_else(|| BioMcpError::Api {
+    verify_archive_against_checksum(&checksum_text, archive_bytes)?;
+    Ok(ChecksumStatus::Verified)
+}
+
+// ---- 331 fail-closed checksum policy ----
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+enum ChecksumStatus {
+    Verified,
+    MissingSidecar,
+}
+
+fn enforce_checksum_policy(
+    status: ChecksumStatus,
+    allow_missing: bool,
+    asset_name: &str,
+) -> Result<Option<String>, BioMcpError> {
+    match status {
+        ChecksumStatus::Verified => Ok(None),
+        ChecksumStatus::MissingSidecar if allow_missing => Ok(Some(format!(
+            "UNSAFE: checksum sidecar missing for {asset_name}; installing without release SHA256 checksum verification."
+        ))),
+        ChecksumStatus::MissingSidecar => Err(BioMcpError::Api {
             api: GITHUB_API_NAME.into(),
-            message: format!("Invalid checksum file format at {checksum_url}"),
+            message: format!(
+                "Release checksum verification failed for {asset_name}: SHA256 checksum sidecar is missing. Re-run with --allow-missing-checksum only if you accept installing an unverified release archive."
+            ),
+        }),
+    }
+}
+
+fn verify_archive_against_checksum(
+    checksum_text: &str,
+    archive_bytes: &[u8],
+) -> Result<(), BioMcpError> {
+    let expected =
+        parse_sha256_from_checksum_file(checksum_text).ok_or_else(|| BioMcpError::Api {
+            api: GITHUB_API_NAME.into(),
+            message: "Invalid checksum file format".into(),
         })?;
     let actual = sha256_hex(archive_bytes);
 
@@ -317,47 +353,22 @@ async fn verify_archive_checksum_if_available(
         });
     }
 
-    Ok(true)
+    Ok(())
 }
 
-// ---- 331 fail-closed checksum policy ----
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)]
-enum ChecksumStatus {
-    Verified,
-    MissingSidecar,
-}
-
-#[allow(dead_code)]
-fn enforce_checksum_policy(
-    _status: ChecksumStatus,
-    _allow_missing: bool,
-    _asset_name: &str,
-) -> Result<Option<String>, BioMcpError> {
-    panic!("enforce_checksum_policy: 331 build step has not implemented this yet");
-}
-
-#[allow(dead_code)]
-fn verify_archive_against_checksum(
-    _checksum_text: &str,
-    _archive_bytes: &[u8],
-) -> Result<(), BioMcpError> {
-    panic!("verify_archive_against_checksum: 331 build step has not implemented this yet");
-}
-
-#[allow(dead_code)]
 fn install_binary_after_checksum_policy<F>(
-    _status: ChecksumStatus,
-    _allow_missing: bool,
-    _asset_name: &str,
-    _new_binary: &[u8],
-    _replace_binary: F,
+    status: ChecksumStatus,
+    allow_missing: bool,
+    asset_name: &str,
+    new_binary: &[u8],
+    replace_binary: F,
 ) -> Result<Option<String>, BioMcpError>
 where
     F: FnOnce(&[u8]) -> Result<(), BioMcpError>,
 {
-    panic!("install_binary_after_checksum_policy: 331 build step has not implemented this yet");
+    let warning = enforce_checksum_policy(status, allow_missing, asset_name)?;
+    replace_binary(new_binary)?;
+    Ok(warning)
 }
 
 fn render_check_output(current: &str, latest_tag: &str, status_line: &str) -> String {
@@ -370,7 +381,7 @@ fn render_check_output(current: &str, latest_tag: &str, status_line: &str) -> St
 ///
 /// Returns an error if release metadata cannot be fetched, download verification
 /// fails, archive extraction fails, or the local binary cannot be replaced.
-pub async fn run(check_only: bool) -> Result<String, BioMcpError> {
+pub async fn run(check_only: bool, allow_missing_checksum: bool) -> Result<String, BioMcpError> {
     let current = env!("CARGO_PKG_VERSION").trim();
     let current_v = semver::Version::parse(current).ok();
 
@@ -408,18 +419,8 @@ pub async fn run(check_only: bool) -> Result<String, BioMcpError> {
         })?;
 
     let archive_bytes = download_asset(&asset.browser_download_url).await?;
-    let checksum_warning = if verify_archive_checksum_if_available(
-        &asset.browser_download_url,
-        &archive_bytes,
-    )
-    .await?
-    {
-        None
-    } else {
-        Some(format!(
-            "Warning: checksum file missing for {asset_name}; continuing without checksum verification."
-        ))
-    };
+    let checksum_status =
+        fetch_checksum_status(&asset.browser_download_url, &archive_bytes).await?;
     let bin_name = binary_name_for_platform();
 
     let new_binary = if asset_name.ends_with(".tar.gz") {
@@ -432,7 +433,13 @@ pub async fn run(check_only: bool) -> Result<String, BioMcpError> {
         )));
     };
 
-    replace_current_binary(&new_binary)?;
+    let checksum_warning = install_binary_after_checksum_policy(
+        checksum_status,
+        allow_missing_checksum,
+        asset_name,
+        &new_binary,
+        replace_current_binary,
+    )?;
 
     let mut output = String::new();
     if let Some(warning) = checksum_warning {
@@ -521,7 +528,7 @@ mod tests {
         ));
     }
 
-    // ---- 331 fail-closed checksum policy assertions (red until 331 build step) ----
+    // ---- 331 fail-closed checksum policy assertions ----
 
     #[test]
     fn enforce_checksum_policy_missing_sidecar_without_override_fails_closed() {

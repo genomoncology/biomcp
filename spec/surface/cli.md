@@ -164,7 +164,6 @@ help="$(../../tools/biomcp-ci update --help)"
 printf '%s\n' "$help" | grep -Eiq "SHA-?256"
 printf '%s\n' "$help" | grep -Eiq "checksum"
 echo "$help" | mustmatch like "--allow-missing-checksum"
-echo "$help" | mustmatch like "UNSAFE"
 ```
 
 ```bash

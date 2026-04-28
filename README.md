@@ -367,11 +367,12 @@ for the full `study` command family and dataset prerequisites.
 ## Ops
 
 ```bash
-biomcp version          # show version and build info
-biomcp health           # inspect API connectivity plus local DDInter/EMA/cache readiness
-biomcp update           # self-update to latest release
-biomcp update --check   # check for updates without installing
-biomcp uninstall        # remove biomcp from ~/.local/bin
+biomcp version                            # show version and build info
+biomcp health                             # inspect API connectivity plus local DDInter/EMA/cache readiness
+biomcp update                             # self-update with release SHA256 checksum verification
+biomcp update --check                     # check for updates without installing
+biomcp update --allow-missing-checksum    # UNSAFE: install when a release checksum sidecar is missing
+biomcp uninstall                          # remove biomcp from ~/.local/bin
 ```
 
 ## Support

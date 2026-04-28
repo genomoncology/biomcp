@@ -150,7 +150,10 @@ EXAMPLES:
         #[command(subcommand)]
         command: Option<chart::ChartCommand>,
     },
-    /// Update the biomcp binary from GitHub releases
+    /// Update the biomcp binary from GitHub releases with SHA256 checksum verification
+    #[command(
+        long_about = "Update the biomcp binary from GitHub releases.\n\nRelease archives require SHA256 checksum verification by default. If a legitimate release is missing its checksum sidecar, --allow-missing-checksum is an UNSAFE per-invocation escape hatch."
+    )]
     Update(system::UpdateArgs),
     /// Uninstall biomcp from the current location
     Uninstall,
