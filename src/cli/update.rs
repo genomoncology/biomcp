@@ -320,7 +320,7 @@ async fn verify_archive_checksum_if_available(
     Ok(true)
 }
 
-// ---- 331 fail-closed checksum policy (assertions landed; bodies arrive in the build step) ----
+// ---- 331 fail-closed checksum policy ----
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)]
