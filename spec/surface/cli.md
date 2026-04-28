@@ -175,18 +175,19 @@ echo "$update_out" | mustmatch like "enforce_checksum_policy_missing_sidecar_wit
 test "$update_status" -eq 0
 ```
 
-## Benchmark Run and Score Decomposition Stays Executable
+## Benchmark Internal Harness Ratchet Stays Executable
 
-The benchmark command family should keep its documented decomposition ratchet
-executable in the spec lane so suite execution, regression analysis, command
-normalization, and score rendering cannot collapse back into flat over-cap
-modules.
+The benchmark tree is an internal regression harness, not a public CLI command.
+Its documented decomposition and runtime-wiring ratchet should stay executable
+in the spec lane so suite execution, regression analysis, command normalization,
+score rendering, and the non-public CLI contract cannot drift.
 
 ```bash
 set +e
 benchmark_structure_out="$(cd ../.. && cargo test --test benchmark_cli_structure -- --nocapture 2>&1)"
 benchmark_structure_status=$?
 set -e
-echo "$benchmark_structure_out" | mustmatch like "benchmark_split_files_exist_with_doc_headers"
+echo "$benchmark_structure_out" | mustmatch like "benchmark_internal_harness_split_files_exist_with_doc_headers"
+echo "$benchmark_structure_out" | mustmatch like "benchmark_internal_harness_contract_pins_runtime_and_docs"
 test "$benchmark_structure_status" -eq 0
 ```
