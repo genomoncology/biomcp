@@ -1,3 +1,5 @@
+//! Internal regression harness for the BioMCP CLI benchmark suite.
+
 use std::path::PathBuf;
 
 use clap::Subcommand;
@@ -7,8 +9,8 @@ mod score;
 pub mod types;
 
 #[derive(Subcommand, Debug, Clone)]
-pub enum BenchmarkCommand {
-    /// Run benchmark suite and optionally compare against baseline
+pub enum InternalBenchmarkCommand {
+    /// [internal harness] Run benchmark suite and optionally compare against baseline
     Run {
         /// Run a smaller core benchmark subset
         #[arg(long)]
@@ -43,7 +45,7 @@ pub enum BenchmarkCommand {
         max_fail_fast_ms: u64,
     },
 
-    /// Run benchmark suite and persist as baseline JSON
+    /// [internal harness] Run benchmark suite and persist as baseline JSON
     SaveBaseline {
         /// Run a smaller core benchmark subset
         #[arg(long)]
@@ -58,7 +60,7 @@ pub enum BenchmarkCommand {
         output: Option<PathBuf>,
     },
 
-    /// Score a PI JSONL agent session for BioMCP usage and coverage
+    /// [internal harness] Score a PI JSONL agent session for BioMCP usage and coverage
     ScoreSession {
         /// Session JSONL path
         session: PathBuf,
@@ -73,9 +75,9 @@ pub enum BenchmarkCommand {
     },
 }
 
-pub async fn run(command: BenchmarkCommand, json_output: bool) -> anyhow::Result<String> {
+pub async fn run(command: InternalBenchmarkCommand, json_output: bool) -> anyhow::Result<String> {
     match command {
-        BenchmarkCommand::Run {
+        InternalBenchmarkCommand::Run {
             quick,
             iterations,
             baseline,
@@ -97,7 +99,7 @@ pub async fn run(command: BenchmarkCommand, json_output: bool) -> anyhow::Result
             };
             run::run_benchmark(opts, json_output).await
         }
-        BenchmarkCommand::SaveBaseline {
+        InternalBenchmarkCommand::SaveBaseline {
             quick,
             iterations,
             output,
@@ -109,7 +111,7 @@ pub async fn run(command: BenchmarkCommand, json_output: bool) -> anyhow::Result
             };
             run::save_baseline(opts, json_output).await
         }
-        BenchmarkCommand::ScoreSession {
+        InternalBenchmarkCommand::ScoreSession {
             session,
             expected,
             brief,
