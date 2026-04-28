@@ -332,9 +332,7 @@ pub(crate) async fn resolve_query(
     })?;
     if !is_disease_symptom_request(query)
         && !ols_docs.iter().any(|doc| {
-            doc.obo_id
-                .as_deref()
-                .or(doc.short_form.as_deref())
+            ols_doc_identifier(doc)
                 .and_then(normalize_primary_id)
                 .is_some_and(|id| id.starts_with("HP:"))
         })
@@ -750,11 +748,7 @@ fn source_breadth(concept: &DiscoverConcept) -> usize {
 
 fn concept_from_ols(doc: &OlsDoc, query: &str) -> DiscoverConcept {
     let label = doc.label.trim().to_string();
-    let primary_id = doc
-        .obo_id
-        .as_deref()
-        .or(doc.short_form.as_deref())
-        .and_then(normalize_primary_id);
+    let primary_id = ols_doc_identifier(doc).and_then(normalize_primary_id);
     let mut primary_type = infer_ols_type(doc, query);
     if primary_id
         .as_deref()
@@ -779,7 +773,9 @@ fn concept_from_ols(doc: &OlsDoc, query: &str) -> DiscoverConcept {
         xrefs,
         sources: vec![ConceptSource {
             source: "OLS4".to_string(),
-            id: doc.obo_id.clone().unwrap_or_else(|| doc.iri.clone()),
+            id: ols_doc_identifier(doc)
+                .map(str::to_string)
+                .unwrap_or_else(|| doc.iri.clone()),
             label,
             source_type: doc.ontology_prefix.to_ascii_uppercase(),
         }],
@@ -1077,30 +1073,72 @@ fn looks_relational_general_query(normalized_query: &str) -> bool {
     contains_any_phrase(normalized_query, DISCOVER_GENERAL_RELATIONAL_PHRASES)
 }
 
+fn ols_doc_identifier(doc: &OlsDoc) -> Option<&str> {
+    doc.obo_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|id| !id.is_empty())
+        .or_else(|| {
+            doc.short_form
+                .as_deref()
+                .map(str::trim)
+                .filter(|id| !id.is_empty())
+        })
+}
+
 fn normalize_primary_id(value: &str) -> Option<String> {
     let value = value.trim();
     if value.is_empty() {
         return None;
     }
-    let upper = value.to_ascii_uppercase();
-    if let Some(id) = upper.strip_prefix("HP_") {
-        return Some(format!("HP:{id}"));
+
+    if let Some((prefix, rest)) = value.split_once(':') {
+        let rest = rest.trim();
+        if rest.is_empty() {
+            return None;
+        }
+        let normalized_prefix = match prefix.trim().to_ascii_lowercase().as_str() {
+            "hgnc" => "HGNC",
+            "mesh" => "MESH",
+            "go" => "GO",
+            "doid" => "DOID",
+            "mondo" => "MONDO",
+            "hp" => "HP",
+            "ordo" => "ORDO",
+            "chebi" => "CHEBI",
+            "dron" => "DRON",
+            "ncit" => "NCIT",
+            "so" => "SO",
+            "wikipathways" => "WIKIPATHWAYS",
+            _ => return Some(value.to_string()),
+        };
+        return Some(format!("{normalized_prefix}:{rest}"));
     }
-    Some(
-        value
-            .replace("hgnc:", "HGNC:")
-            .replace("mesh:", "MESH:")
-            .replace("go:", "GO:")
-            .replace("doid:", "DOID:")
-            .replace("mondo:", "MONDO:")
-            .replace("hp:", "HP:")
-            .replace("ordo:", "ORDO:")
-            .replace("chebi:", "CHEBI:")
-            .replace("dron:", "DRON:")
-            .replace("ncit:", "NCIT:")
-            .replace("so:", "SO:")
-            .replace("wikipathways:", "WIKIPATHWAYS:"),
-    )
+
+    let upper = value.to_ascii_uppercase();
+    for (prefix, normalized_prefix) in [
+        ("HGNC_", "HGNC"),
+        ("MESH_", "MESH"),
+        ("GO_", "GO"),
+        ("DOID_", "DOID"),
+        ("MONDO_", "MONDO"),
+        ("HP_", "HP"),
+        ("ORDO_", "ORDO"),
+        ("CHEBI_", "CHEBI"),
+        ("DRON_", "DRON"),
+        ("NCIT_", "NCIT"),
+        ("SO_", "SO"),
+        ("WIKIPATHWAYS_", "WIKIPATHWAYS"),
+    ] {
+        if let Some(rest) = upper.strip_prefix(prefix) {
+            if rest.is_empty() {
+                return None;
+            }
+            return Some(format!("{normalized_prefix}:{rest}"));
+        }
+    }
+
+    Some(value.to_string())
 }
 
 fn split_prefixed_id(value: &str) -> (String, String) {
@@ -2011,9 +2049,9 @@ mod tests {
     use super::{
         AliasFallbackDecision, ConceptSource, ConceptXref, DiscoverConcept, DiscoverConfidence,
         DiscoverIntent, DiscoverResult, DiscoverType, MatchTier, build_result,
-        classify_alias_fallback, concept_from_ols, generate_commands,
-        resolve_exact_article_keyword_entity, resolve_exact_article_keyword_entity_from_ols_docs,
-        symptom_disease_lookup_query,
+        classify_alias_fallback, concept_from_ols, generate_commands, normalize_primary_id,
+        ols_doc_identifier, resolve_exact_article_keyword_entity,
+        resolve_exact_article_keyword_entity_from_ols_docs, symptom_disease_lookup_query,
     };
     use crate::sources::medlineplus::MedlinePlusTopic;
     use crate::sources::ols4::OlsDoc;
@@ -2021,6 +2059,50 @@ mod tests {
     use crate::test_support::{env_lock, set_env_var};
     use wiremock::matchers::{method, path, query_param};
     use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[test]
+    fn ols_doc_identifier_falls_back_to_short_form_when_obo_id_is_empty() {
+        let doc = OlsDoc {
+            iri: "http://purl.obolibrary.org/obo/MONDO_0007947".to_string(),
+            ontology_name: "mondo".to_string(),
+            ontology_prefix: "mondo".to_string(),
+            short_form: Some("MONDO_0007947".to_string()),
+            obo_id: Some("".to_string()),
+            label: "Marfan syndrome".to_string(),
+            description: Vec::new(),
+            exact_synonyms: Vec::new(),
+            is_defining_ontology: true,
+            doc_type: Some("class".to_string()),
+        };
+
+        assert_eq!(ols_doc_identifier(&doc), Some("MONDO_0007947"));
+        assert_eq!(
+            concept_from_ols(&doc, "Marfan syndrome")
+                .primary_id
+                .as_deref(),
+            Some("MONDO:0007947")
+        );
+    }
+
+    #[test]
+    fn normalize_primary_id_accepts_ols4_underscore_short_forms() {
+        assert_eq!(
+            normalize_primary_id("MONDO_0007947"),
+            Some("MONDO:0007947".to_string())
+        );
+        assert_eq!(
+            normalize_primary_id("DOID_14323"),
+            Some("DOID:14323".to_string())
+        );
+        assert_eq!(
+            normalize_primary_id("mesh_D008382"),
+            Some("MESH:D008382".to_string())
+        );
+        assert_eq!(
+            normalize_primary_id("hgnc:3236"),
+            Some("HGNC:3236".to_string())
+        );
+    }
 
     fn hgnc_doc(label: &str, obo_id: &str, exact_synonyms: &[&str]) -> OlsDoc {
         OlsDoc {
