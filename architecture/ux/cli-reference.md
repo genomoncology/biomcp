@@ -21,7 +21,7 @@ Ops commands:
 ```
 biomcp health [--apis-only]   → inspect per-source connectivity and excluded key-gated rows
 biomcp version                → show version and build info
-biomcp update [--check]       → self-update or check for updates
+biomcp update [--check] [--allow-missing-checksum] → self-update or check for updates
 biomcp list [entity]          → show entities, commands, and filters
 biomcp skill                  → show the embedded BioMCP agent guide
 biomcp skill render           → print the canonical agent prompt

@@ -419,9 +419,10 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 }
             },
             Commands::Chart { command } => Ok(crate::cli::chart::show(command.as_ref())?),
-            Commands::Update(super::system::UpdateArgs { check }) => {
-                Ok(crate::cli::update::run(check).await?)
-            }
+            Commands::Update(super::system::UpdateArgs {
+                check,
+                allow_missing_checksum,
+            }) => Ok(crate::cli::update::run(check, allow_missing_checksum).await?),
             Commands::Uninstall => outcome_to_string(super::system::handle_uninstall().await?),
             Commands::Enrich(args) => {
                 outcome_to_string(super::system::handle_enrich(args, json).await?)

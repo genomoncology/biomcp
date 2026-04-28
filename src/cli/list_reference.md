@@ -170,7 +170,7 @@ Results depend on source document wording and may vary across sources.
 - `cvx sync`
 - `gtr sync`
 - `who-ivd sync`
-- `update [--check]`
+- `update [--check] [--allow-missing-checksum]` - self-update with release SHA256 checksum verification; the missing-checksum override is UNSAFE
 - `uninstall`
 - `health [--apis-only]`
 - `version`

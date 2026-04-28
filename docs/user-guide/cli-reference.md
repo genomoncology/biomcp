@@ -99,7 +99,7 @@ biomcp skill list                 # list embedded worked examples
 biomcp mcp
 biomcp serve
 biomcp serve-http [--host 127.0.0.1] [--port 8080]
-biomcp update [--check]
+biomcp update [--check] [--allow-missing-checksum]
 biomcp uninstall
 biomcp version
 ```
@@ -136,6 +136,11 @@ the sibling `downloads/` directory, prompts for confirmation when stdin is a
 TTY, and refuses non-interactive runs with plain stderr unless you pass
 `--yes`. Successful `--json` output uses `{ "bytes_freed": <number|null>,
 "entries_removed": <number> }`.
+
+`biomcp update` downloads the matching GitHub release archive and requires
+SHA256 checksum verification before replacing the local binary. If a legitimate
+release is missing its checksum sidecar, `--allow-missing-checksum` is an
+UNSAFE per-invocation override.
 
 ## Search command families
 
