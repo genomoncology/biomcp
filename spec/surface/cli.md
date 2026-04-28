@@ -151,6 +151,30 @@ echo "$structure_out" | mustmatch like "article_cli_test_split_files_exist_with_
 test "$structure_status" -eq 0
 ```
 
+## Update Verifies Release Checksum
+
+The self-update command must fail closed when the release `.sha256` sidecar
+is missing or mismatched. The unsafe override has to be opt-in per
+invocation, marked UNSAFE in `--help`, and the underlying policy must stay
+covered by named unit tests so the operator surface can never silently
+downgrade to TLS-only trust.
+
+```bash
+help="$(../../tools/biomcp-ci update --help)"
+echo "$help" | mustmatch like "verifies the release SHA256"
+echo "$help" | mustmatch like "--allow-missing-checksum"
+echo "$help" | mustmatch like "UNSAFE"
+```
+
+```bash
+set +e
+update_out="$(cd ../.. && cargo test --lib --quiet enforce_checksum_policy_missing_sidecar_without_override_fails_closed -- --nocapture 2>&1)"
+update_status=$?
+set -e
+echo "$update_out" | mustmatch like "enforce_checksum_policy_missing_sidecar_without_override_fails_closed"
+test "$update_status" -eq 0
+```
+
 ## Benchmark Run and Score Decomposition Stays Executable
 
 The benchmark command family should keep its documented decomposition ratchet

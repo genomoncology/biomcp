@@ -320,6 +320,32 @@ async fn verify_archive_checksum_if_available(
     Ok(true)
 }
 
+// ---- 331 fail-closed checksum policy (assertions landed; bodies arrive in the build step) ----
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+enum ChecksumStatus {
+    Verified,
+    MissingSidecar,
+}
+
+#[allow(dead_code)]
+fn enforce_checksum_policy(
+    _status: ChecksumStatus,
+    _allow_missing: bool,
+    _asset_name: &str,
+) -> Result<Option<String>, BioMcpError> {
+    panic!("enforce_checksum_policy: 331 build step has not implemented this yet");
+}
+
+#[allow(dead_code)]
+fn verify_archive_against_checksum(
+    _checksum_text: &str,
+    _archive_bytes: &[u8],
+) -> Result<(), BioMcpError> {
+    panic!("verify_archive_against_checksum: 331 build step has not implemented this yet");
+}
+
 fn render_check_output(current: &str, latest_tag: &str, status_line: &str) -> String {
     format!("Current version: {current}\nLatest version: {latest_tag}\nStatus: {status_line}\n")
 }
@@ -478,5 +504,109 @@ mod tests {
                 && id == "biomcp"
                 && suggestion == "Release archive did not contain expected biomcp binary"
         ));
+    }
+
+    // ---- 331 fail-closed checksum policy assertions (red until 331 build step) ----
+
+    #[test]
+    fn enforce_checksum_policy_missing_sidecar_without_override_fails_closed() {
+        let err = enforce_checksum_policy(
+            ChecksumStatus::MissingSidecar,
+            false,
+            "biomcp-linux-x86_64.tar.gz",
+        )
+        .expect_err("missing sidecar without override must fail closed");
+        let message = match err {
+            BioMcpError::Api { message, .. } => message,
+            other => panic!("expected BioMcpError::Api, got {other:?}"),
+        };
+        assert!(
+            message.to_lowercase().contains("checksum"),
+            "error message must name the checksum: {message}"
+        );
+        assert!(
+            message.contains("--allow-missing-checksum"),
+            "error message must point to the explicit override flag: {message}"
+        );
+        assert!(
+            message.contains("biomcp-linux-x86_64.tar.gz"),
+            "error message must name the asset: {message}"
+        );
+    }
+
+    #[test]
+    fn enforce_checksum_policy_missing_sidecar_with_override_warns_and_continues() {
+        let warning = enforce_checksum_policy(
+            ChecksumStatus::MissingSidecar,
+            true,
+            "biomcp-linux-x86_64.tar.gz",
+        )
+        .expect("override must allow continuation")
+        .expect("override path must produce a loud warning");
+        assert!(
+            warning.contains("UNSAFE"),
+            "override warning must mark itself UNSAFE: {warning}"
+        );
+        assert!(
+            warning.contains("biomcp-linux-x86_64.tar.gz"),
+            "override warning must name the asset: {warning}"
+        );
+    }
+
+    #[test]
+    fn enforce_checksum_policy_verified_returns_no_warning() {
+        assert!(
+            enforce_checksum_policy(
+                ChecksumStatus::Verified,
+                false,
+                "biomcp-linux-x86_64.tar.gz"
+            )
+            .expect("verified must succeed")
+            .is_none(),
+            "verified path must not emit a warning under default policy"
+        );
+        assert!(
+            enforce_checksum_policy(ChecksumStatus::Verified, true, "biomcp-linux-x86_64.tar.gz")
+                .expect("verified must succeed even with override flag set")
+                .is_none(),
+            "verified path must not emit a warning even when the override is set"
+        );
+    }
+
+    #[test]
+    fn verify_archive_against_checksum_accepts_matching_sha256() {
+        let payload = b"archive bytes payload";
+        let expected = sha256_hex(payload);
+        verify_archive_against_checksum(&expected, payload).expect("matching sha256 must verify");
+    }
+
+    #[test]
+    fn verify_archive_against_checksum_rejects_mismatch() {
+        let payload = b"archive bytes payload";
+        let wrong = "0".repeat(64);
+        let err = verify_archive_against_checksum(&wrong, payload)
+            .expect_err("mismatched sha256 must fail closed");
+        let message = match err {
+            BioMcpError::Api { message, .. } => message,
+            other => panic!("expected BioMcpError::Api, got {other:?}"),
+        };
+        assert!(
+            message.to_lowercase().contains("mismatch"),
+            "error message must name mismatch: {message}"
+        );
+    }
+
+    #[test]
+    fn verify_archive_against_checksum_rejects_invalid_format() {
+        let err = verify_archive_against_checksum("not-a-hex-token", b"payload")
+            .expect_err("malformed sidecar must fail closed");
+        let message = match err {
+            BioMcpError::Api { message, .. } => message,
+            other => panic!("expected BioMcpError::Api, got {other:?}"),
+        };
+        assert!(
+            message.contains("Invalid checksum file format"),
+            "error message must call out invalid format: {message}"
+        );
     }
 }
