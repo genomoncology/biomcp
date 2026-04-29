@@ -51,19 +51,25 @@ fn tracked_cli_rust_files(root: &Path) -> Vec<String> {
         .collect()
 }
 
-#[test]
-fn ticket_347_residual_allowlist_entries_are_absorbed() {
-    let root = repo_root();
+fn allowlist_entries(root: &Path) -> Vec<serde_json::Value> {
     let allowlist_path = root.join("tools/cli-line-cap-allowlist.json");
     let allowlist: serde_json::Value = serde_json::from_str(&read_source(&allowlist_path))
         .unwrap_or_else(|err| panic!("invalid allowlist JSON {}: {err}", allowlist_path.display()));
-    let entries = allowlist["entries"].as_array().unwrap_or_else(|| {
-        panic!(
-            "allowlist entries must be an array in {}",
-            allowlist_path.display()
-        )
-    });
+    allowlist["entries"]
+        .as_array()
+        .unwrap_or_else(|| {
+            panic!(
+                "allowlist entries must be an array in {}",
+                allowlist_path.display()
+            )
+        })
+        .clone()
+}
 
+#[test]
+fn ticket_347_residual_allowlist_entries_are_absorbed() {
+    let root = repo_root();
+    let entries = allowlist_entries(&root);
     let residual_paths = RESIDUAL_PATHS.iter().copied().collect::<BTreeSet<_>>();
     let residual_entries = entries
         .iter()
@@ -74,7 +80,12 @@ fn ticket_347_residual_allowlist_entries_are_absorbed() {
         residual_entries.is_empty(),
         "ticket 347 residual allowlist entries must be removed after decomposition: {residual_entries:?}"
     );
+}
 
+#[test]
+fn ticket_347_follow_up_allowlist_entries_are_absorbed() {
+    let root = repo_root();
+    let entries = allowlist_entries(&root);
     let ticket_entries = entries
         .iter()
         .filter(|entry| {
