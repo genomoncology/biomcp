@@ -12,6 +12,9 @@ const DATAHUB_BASE: &str = "https://datahub.assets.cbioportal.org";
 const DATAHUB_API: &str = "cbioportal-datahub";
 const DATAHUB_BASE_ENV: &str = "BIOMCP_CBIOPORTAL_DATAHUB_BASE";
 const DATAHUB_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const DATAHUB_ARCHIVE_IDLE_TIMEOUT: Duration = Duration::from_secs(120);
+#[cfg(test)]
+const DATAHUB_ARCHIVE_IDLE_TIMEOUT_FOR_TEST: Duration = Duration::from_millis(100);
 
 #[derive(Debug, Clone)]
 pub struct StudyInstallResult {
@@ -23,6 +26,7 @@ pub struct StudyInstallResult {
 pub struct CBioPortalDownloadClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
+    download_idle_timeout: Duration,
 }
 
 impl CBioPortalDownloadClient {
@@ -30,6 +34,7 @@ impl CBioPortalDownloadClient {
         Ok(Self {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, None)?,
             base: crate::sources::env_base(DATAHUB_BASE, DATAHUB_BASE_ENV),
+            download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT,
         })
     }
 
@@ -38,6 +43,7 @@ impl CBioPortalDownloadClient {
         Ok(Self {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, None)?,
             base: Cow::Owned(base),
+            download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT_FOR_TEST,
         })
     }
 
@@ -102,8 +108,22 @@ impl CBioPortalDownloadClient {
             });
         }
         let mut file = tokio::fs::File::create(dest).await?;
-        while let Some(chunk) = resp.chunk().await? {
-            file.write_all(&chunk).await?;
+        loop {
+            match tokio::time::timeout(self.download_idle_timeout, resp.chunk()).await {
+                Ok(Ok(Some(chunk))) => file.write_all(&chunk).await?,
+                Ok(Ok(None)) => break,
+                Ok(Err(err)) => return Err(err.into()),
+                Err(_) => {
+                    return Err(BioMcpError::SourceUnavailable {
+                        source_name: "cBioPortal DataHub".to_string(),
+                        reason: format!(
+                            "Archive download stalled because no bytes or progress arrived within {:?}.",
+                            self.download_idle_timeout
+                        ),
+                        suggestion: "Retry the study download later.".to_string(),
+                    });
+                }
+            }
         }
         file.flush().await?;
         Ok(())
@@ -417,6 +437,9 @@ mod tests {
     use std::io::Write;
     use std::time::Duration;
     use tar::{Builder, Header};
+    use tokio::io::AsyncReadExt;
+    use tokio::net::TcpListener;
+    use tokio::sync::oneshot;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -455,6 +478,67 @@ mod tests {
         let mut gz = GzEncoder::new(Vec::new(), Compression::default());
         gz.write_all(&tar_buf).expect("write gz");
         gz.finish().expect("finish gz")
+    }
+
+    struct StalledArchiveServer {
+        uri: String,
+        release: Option<oneshot::Sender<()>>,
+        handle: tokio::task::JoinHandle<()>,
+    }
+
+    impl StalledArchiveServer {
+        async fn shutdown(mut self) {
+            if let Some(release) = self.release.take() {
+                let _ = release.send(());
+            }
+            let _ = self.handle.await;
+        }
+    }
+
+    async fn stalled_archive_server(study_id: &'static str) -> StalledArchiveServer {
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind stalled archive server");
+        let uri = format!("http://{}", listener.local_addr().expect("local addr"));
+        let (release_tx, release_rx) = oneshot::channel::<()>();
+        let expected_request = format!("GET /{study_id}.tar.gz ");
+
+        let handle = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.expect("accept stalled request");
+            let mut request = Vec::new();
+            let mut buf = [0_u8; 1024];
+            loop {
+                let read = stream.read(&mut buf).await.expect("read stalled request");
+                if read == 0 {
+                    break;
+                }
+                request.extend_from_slice(&buf[..read]);
+                if request.windows(4).any(|window| window == b"\r\n\r\n") {
+                    break;
+                }
+            }
+            let request = String::from_utf8_lossy(&request);
+            assert!(
+                request.starts_with(&expected_request),
+                "unexpected request: {request}"
+            );
+
+            stream
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Type: application/gzip\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nabcde\r\n",
+                )
+                .await
+                .expect("write stalled response prefix");
+            stream.flush().await.expect("flush stalled response prefix");
+
+            let _ = release_rx.await;
+        });
+
+        StalledArchiveServer {
+            uri,
+            release: Some(release_tx),
+            handle,
+        }
     }
 
     #[tokio::test]
@@ -498,6 +582,7 @@ mod tests {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, Some(Duration::from_millis(50)))
                 .expect("timed client"),
             base: Cow::Owned(server.uri()),
+            download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT_FOR_TEST,
         };
         let err = timed_client
             .list_study_ids()
@@ -513,6 +598,7 @@ mod tests {
         let untimed_client = CBioPortalDownloadClient {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, None).expect("untimed client"),
             base: Cow::Owned(server.uri()),
+            download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT_FOR_TEST,
         };
         let study_ids = untimed_client
             .list_study_ids()
@@ -554,6 +640,50 @@ mod tests {
             crate::sources::cbioportal_study::list_studies(&root.path).expect("local study list");
         assert_eq!(studies.len(), 1);
         assert_eq!(studies[0].study_id, "demo_study");
+    }
+
+    #[tokio::test]
+    async fn download_study_stalled_archive_body_times_out_with_clear_error() {
+        let server = stalled_archive_server("stalled_study").await;
+        let root = TempRoot::new("stalled-archive");
+        let client = CBioPortalDownloadClient::new_for_test(server.uri.clone()).expect("client");
+
+        let result = tokio::time::timeout(
+            Duration::from_millis(750),
+            client.download_study("stalled_study", &root.path),
+        )
+        .await;
+        server.shutdown().await;
+
+        let err = match result {
+            Ok(Ok(result)) => panic!("stalled download unexpectedly succeeded: {result:?}"),
+            Ok(Err(err)) => err,
+            Err(_) => panic!(
+                "stalled download should fail with a readable idle timeout before the test harness timeout"
+            ),
+        };
+        let message = err.to_string();
+        assert!(
+            message.contains("cBioPortal DataHub"),
+            "stall error should name the DataHub source, got: {message}"
+        );
+        assert!(
+            message.contains("stalled"),
+            "stall error should describe a stalled archive download, got: {message}"
+        );
+        assert!(
+            message.contains("no bytes") || message.contains("progress"),
+            "stall error should explain the no-progress condition, got: {message}"
+        );
+        assert!(!root.path.join("stalled_study").exists());
+        let remaining = fs::read_dir(&root.path)
+            .expect("read temp root")
+            .collect::<Result<Vec<_>, _>>()
+            .expect("collect temp root entries");
+        assert!(
+            remaining.is_empty(),
+            "stalled download should not leave partial archive or install files behind"
+        );
     }
 
     #[tokio::test]

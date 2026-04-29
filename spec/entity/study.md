@@ -33,6 +33,18 @@ echo "$out" | mustmatch like "## Top Variant Classes"
 echo "$out" | mustmatch like "## Top Protein Changes"
 ```
 
+## Remote Download Stall Policy
+
+Remote DataHub archives can be large, but a server that starts an archive
+response and then stops sending bytes should fail clearly instead of hanging
+forever.
+
+```bash
+out="$(cargo test download_study_stalled_archive_body_times_out_with_clear_error --lib 2>&1 || true)"
+echo "$out" | mustmatch like "download_study_stalled_archive_body_times_out_with_clear_error"
+echo "$out" | mustmatch like "test result: ok"
+```
+
 ## Filter Validation
 
 Filter workflows should reject missing criteria explicitly instead of silently
