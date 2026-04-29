@@ -38,7 +38,8 @@ for cmd in mcp serve; do
   stderr="$(cat "$stderr_file")"
   echo "$stderr" | mustmatch like "expects an MCP client on stdin"
   echo "$stderr" | mustmatch like "biomcp serve-http"
-  echo "$stderr" | mustmatch not like "connection closed: initialized request"
+  echo "$stderr" | mustmatch not like "connection closed"
+  echo "$stderr" | mustmatch not like "initialized request"
 done
 ```
 
