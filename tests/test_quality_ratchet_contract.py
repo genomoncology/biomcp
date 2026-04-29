@@ -99,6 +99,37 @@ def _write_clean_spec(spec_dir: Path) -> Path:
     return spec_path
 
 
+def _init_git_fixture(root: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+
+
+def _write_cli_line_cap_allowlist(
+    allowlist_path: Path,
+    entries: list[dict[str, object]],
+) -> None:
+    allowlist_path.parent.mkdir(parents=True, exist_ok=True)
+    allowlist_path.write_text(
+        json.dumps(
+            {
+                "cap": 700,
+                "created": "2026-04-28",
+                "scope": "tracked Rust files under src/cli",
+                "entries": entries,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_tracked_file(root: Path, relative_path: str, line_count: int) -> Path:
+    path = root / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(["//! fixture", *("// filler" for _ in range(line_count - 1))]) + "\n", encoding="utf-8")
+    subprocess.run(["git", "add", relative_path], cwd=root, check=True)
+    return path
+
+
 def _write_failing_spec(spec_dir: Path) -> Path:
     spec_dir.mkdir(parents=True, exist_ok=True)
     spec_path = spec_dir / "failing-spec.md"
@@ -349,6 +380,7 @@ def test_wrapper_writes_summary_artifacts_for_pass_fixture(tmp_path: Path) -> No
         "quality-ratchet-lint.json",
         "quality-ratchet-mcp-allowlist.json",
         "quality-ratchet-source-registry.json",
+        "quality-ratchet-cli-line-cap.json",
         "quality-ratchet-summary.json",
     ):
         assert (output_dir / name).exists(), name
@@ -358,7 +390,101 @@ def test_wrapper_writes_summary_artifacts_for_pass_fixture(tmp_path: Path) -> No
     assert summary["lint"]["status"] == "pass"
     assert summary["lint"]["files_checked"] == 1
     assert summary["lint"]["finding_count"] == 0
+    assert summary["cli_line_cap"]["status"] == "pass"
     assert "smoke_lane" not in summary
+
+
+def test_cli_line_cap_audit_reports_unallowlisted_tracked_overcap_file(
+    tmp_path: Path,
+) -> None:
+    fixture_root = tmp_path / "line-cap-fixture"
+    fixture_root.mkdir()
+    _init_git_fixture(fixture_root)
+    _write_tracked_file(fixture_root, "src/cli/new_over_cap.rs", 701)
+    allowlist_path = fixture_root / "tools" / "cli-line-cap-allowlist.json"
+    _write_cli_line_cap_allowlist(allowlist_path, [])
+
+    ratchet = _load_ratchet_module()
+    payload = ratchet.check_cli_line_cap(fixture_root, allowlist_path)
+
+    assert payload["status"] == "fail"
+    assert payload["missing_allowlist_entries"] == [
+        {
+            "path": "src/cli/new_over_cap.rs",
+            "lines": 701,
+            "message": (
+                "tracked src/cli Rust file exceeds 700 lines without an allowlist entry"
+            ),
+        }
+    ]
+
+
+def test_cli_line_cap_audit_reports_stale_allowlist_entry(tmp_path: Path) -> None:
+    fixture_root = tmp_path / "line-cap-fixture"
+    fixture_root.mkdir()
+    _init_git_fixture(fixture_root)
+    _write_tracked_file(fixture_root, "src/cli/cache.rs", 12)
+    allowlist_path = fixture_root / "tools" / "cli-line-cap-allowlist.json"
+    _write_cli_line_cap_allowlist(
+        allowlist_path,
+        [
+            {
+                "path": "src/cli/cache.rs",
+                "lines": 759,
+                "date": "2026-04-28",
+                "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet",
+            }
+        ],
+    )
+
+    ratchet = _load_ratchet_module()
+    payload = ratchet.check_cli_line_cap(fixture_root, allowlist_path)
+
+    assert payload["status"] == "fail"
+    assert payload["stale_allowlist_entries"] == [
+        {
+            "path": "src/cli/cache.rs",
+            "lines": 12,
+            "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet",
+            "message": "allowlist entry is no longer needed; remove it",
+        }
+    ]
+
+
+def test_cli_line_cap_audit_reports_allowlisted_file_growth(tmp_path: Path) -> None:
+    fixture_root = tmp_path / "line-cap-fixture"
+    fixture_root.mkdir()
+    _init_git_fixture(fixture_root)
+    _write_tracked_file(fixture_root, "src/cli/drug/tests.rs", 705)
+    allowlist_path = fixture_root / "tools" / "cli-line-cap-allowlist.json"
+    _write_cli_line_cap_allowlist(
+        allowlist_path,
+        [
+            {
+                "path": "src/cli/drug/tests.rs",
+                "lines": 704,
+                "date": "2026-04-28",
+                "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet",
+            }
+        ],
+    )
+
+    ratchet = _load_ratchet_module()
+    payload = ratchet.check_cli_line_cap(fixture_root, allowlist_path)
+
+    assert payload["status"] == "fail"
+    assert payload["grown_allowlist_entries"] == [
+        {
+            "path": "src/cli/drug/tests.rs",
+            "lines": 705,
+            "allowed_lines": 704,
+            "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet",
+            "message": (
+                "allowlisted file grew beyond its recorded line count; decompose it "
+                "instead of expanding the allowlist"
+            ),
+        }
+    ]
 
 
 def test_wrapper_is_thin_shell_around_committed_python_tool() -> None:
@@ -374,6 +500,7 @@ def test_wrapper_is_thin_shell_around_committed_python_tool() -> None:
     assert "uv run --no-project python" in wrapper
     assert "tools/check-quality-ratchet.py" in wrapper
     assert "spec/**/*.md" in wrapper
+    assert "QUALITY_RATCHET_CLI_LINE_CAP_ALLOWLIST" in wrapper
     assert "tools/spec_smoke_args.py" not in wrapper
 
 

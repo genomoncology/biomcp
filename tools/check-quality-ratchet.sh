@@ -10,6 +10,7 @@ BUILD_FILE="${QUALITY_RATCHET_BUILD_FILE:-$ROOT_DIR/build.rs}"
 SOURCES_DIR="${QUALITY_RATCHET_SOURCES_DIR:-$ROOT_DIR/src/sources}"
 SOURCES_MOD="${QUALITY_RATCHET_SOURCES_MOD:-$ROOT_DIR/src/sources/mod.rs}"
 HEALTH_FILE="${QUALITY_RATCHET_HEALTH_FILE:-$ROOT_DIR/src/cli/health/catalog.rs}"
+CLI_LINE_CAP_ALLOWLIST="${QUALITY_RATCHET_CLI_LINE_CAP_ALLOWLIST:-$ROOT_DIR/tools/cli-line-cap-allowlist.json}"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -22,4 +23,5 @@ exec uv run --no-project python "$ROOT_DIR/tools/check-quality-ratchet.py" \
   --build-file "$BUILD_FILE" \
   --sources-dir "$SOURCES_DIR" \
   --sources-mod "$SOURCES_MOD" \
-  --health-file "$HEALTH_FILE"
+  --health-file "$HEALTH_FILE" \
+  --cli-line-cap-allowlist "$CLI_LINE_CAP_ALLOWLIST"
