@@ -230,10 +230,12 @@ These properties should be preserved across releases:
 2. **`biomcp list <entity>`** shows entity-specific filters and examples —
    examples must be runnable
 3. **JSON output** (`--json` flag) is available on all query commands and
-   produces valid JSON — scripts and agents depend on this. `biomcp cache path`
-   is the documented operator-command exception: it stays plain text even under
-   `--json`, while `biomcp cache stats` and `biomcp cache clean` keep their
-   normal JSON contracts
+   produces valid JSON — scripts and agents depend on this. `biomcp --json list`
+   and `biomcp --json list <entity>` provide structured command-reference data:
+   the root object carries `entities`, `commands`, and `patterns`, while entity
+   pages carry `entity` and `commands`. `biomcp cache path` is the documented
+   operator-command exception: it stays plain text even under `--json`, while
+   `biomcp cache stats` and `biomcp cache clean` keep their normal JSON contracts
 4. **`biomcp health`** reports per-source connectivity, cache writability, and
    excluded key-gated sources in one inspection view; partial upstream failures
    stay visible in output even though the command currently exits 0
