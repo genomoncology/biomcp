@@ -19,6 +19,30 @@ echo "$serve_help" | mustmatch like 'Alias for `mcp`'
 echo "$serve_help" | mustmatch like "Usage: biomcp serve"
 ```
 
+## Manual Stdio Startup Points Operators to HTTP
+
+When an operator launches a stdio entrypoint without an MCP client, BioMCP
+should fail closed but still explain the recovery path. Both spellings should
+print the same stderr guidance and keep stdout free for MCP protocol traffic.
+
+```bash
+for cmd in mcp serve; do
+  stdout_file="$(mktemp)"
+  stderr_file="$(mktemp)"
+  set +e
+  ../../target/release/biomcp "$cmd" </dev/null >"$stdout_file" 2>"$stderr_file"
+  status=$?
+  set -e
+  test "$status" -ne 0
+  test ! -s "$stdout_file"
+  stderr="$(cat "$stderr_file")"
+  echo "$stderr" | mustmatch like "expects an MCP client on stdin"
+  echo "$stderr" | mustmatch like "biomcp serve-http"
+  echo "$stderr" | mustmatch not like "connection closed"
+  echo "$stderr" | mustmatch not like "initialized request"
+done
+```
+
 ## Streamable HTTP Help Names the Canonical Route
 
 The remote/server deployment mode should keep pointing operators at `/mcp` and

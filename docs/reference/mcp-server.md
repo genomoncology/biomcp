@@ -11,6 +11,11 @@ BioMCP exposes two MCP entrypoints:
 - stdio: `biomcp serve`
 - remote Streamable HTTP: `biomcp serve-http`
 
+Manual stdio runs require an MCP client to send the initialize handshake on
+stdin. If `biomcp serve` or its `biomcp mcp` alias is launched with stdin closed,
+the command exits non-zero and prints recovery guidance that points operators to
+`biomcp serve-http` for manual testing.
+
 The canonical remote endpoint is `/mcp`. Lightweight probe routes are `/health`,
 `/readyz`, and `/`.
 
