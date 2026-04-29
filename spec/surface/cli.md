@@ -42,7 +42,7 @@ entity page exposes the named command entries for that surface.
 set -e
 root_json="$(../../tools/biomcp-ci --json list)"
 gene_json="$(../../tools/biomcp-ci --json list gene)"
-ROOT_JSON="$root_json" GENE_JSON="$gene_json" uv run --no-sync python - <<'PY'
+ROOT_JSON="$root_json" GENE_JSON="$gene_json" uv run --no-sync python3 - <<'PY'
 import json, os
 root = json.loads(os.environ["ROOT_JSON"])
 gene = json.loads(os.environ["GENE_JSON"])
