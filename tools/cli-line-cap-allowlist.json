@@ -2,42 +2,5 @@
   "cap": 700,
   "created": "2026-04-28",
   "scope": "tracked Rust files under src/cli",
-  "entries": [
-    {
-      "path": "src/cli/drug/tests.rs",
-      "lines": 869,
-      "date": "2026-04-28",
-      "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet"
-    },
-    {
-      "path": "src/cli/trial/tests.rs",
-      "lines": 797,
-      "date": "2026-04-28",
-      "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet"
-    },
-    {
-      "path": "src/cli/cache.rs",
-      "lines": 759,
-      "date": "2026-04-28",
-      "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet"
-    },
-    {
-      "path": "src/cli/article/session.rs",
-      "lines": 722,
-      "date": "2026-04-28",
-      "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet"
-    },
-    {
-      "path": "src/cli/article/dispatch.rs",
-      "lines": 722,
-      "date": "2026-04-28",
-      "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet"
-    },
-    {
-      "path": "src/cli/variant/dispatch.rs",
-      "lines": 702,
-      "date": "2026-04-28",
-      "follow_up_ticket": "347-decompose-residual-over-cap-src-cli-files-under-global-ratchet"
-    }
-  ]
+  "entries": []
 }

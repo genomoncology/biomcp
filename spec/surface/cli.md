@@ -151,6 +151,22 @@ echo "$structure_out" | mustmatch like "article_cli_test_split_files_exist_with_
 test "$structure_status" -eq 0
 ```
 
+## Global CLI Line-Cap Allowlist Is Fully Absorbed
+
+The global `src/cli` 700-line ratchet should no longer need the ticket-334
+bootstrap exceptions once residual oversized files are decomposed. Keep the
+allowlist empty of ticket-347 follow-ups and keep every tracked CLI Rust file
+under the cap.
+
+```bash
+set +e
+structure_out="$(cd ../.. && cargo test --test cli_line_cap_absorption -- --nocapture 2>&1)"
+structure_status=$?
+set -e
+echo "$structure_out" | mustmatch like "ticket_347_residual_allowlist_entries_are_absorbed"
+test "$structure_status" -eq 0
+```
+
 ## Update Verifies Release Checksum
 
 The self-update command must fail closed when the release `.sha256` sidecar
