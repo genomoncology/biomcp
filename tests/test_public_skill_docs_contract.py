@@ -326,7 +326,10 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert 'biomcp search phenotype "HP:0001263 HP:0001250"' in symptom_use_case
     assert 'biomcp search phenotype "seizure, developmental delay" --limit 5' in symptom_use_case
     assert "# Pattern: Gene-in-disease orientation" in orientation_use_case
-    assert 'biomcp search all --gene BRAF --disease "melanoma"' in orientation_use_case
+    assert "biomcp get gene IPO8" in orientation_use_case
+    assert 'biomcp search article -g IPO8 -k "biallelic loss-of-function Loeys-Dietz Shprintzen-Goldberg thoracic aortic aneurysm" --limit 5' in orientation_use_case
+    assert "biomcp get gene IPO8 diseases" in orientation_use_case
+    assert "biomcp article batch 36905820 34010605" in orientation_use_case
     assert "# Pattern: Article follow-up via citations and recommendations" in article_follow_up
     assert "biomcp article citations 22663011 --limit 5" in article_follow_up
 

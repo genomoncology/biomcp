@@ -1,16 +1,16 @@
 # Pattern: Drug regulatory and approval evidence
 
-Use this when the question asks for a brand-to-generic mapping, approval history, licensing status, or developer context.
+Use this when the question asks for brand-to-generic mapping, approval status, or whether a drug belongs to a target-defined class.
 
 ```bash
-biomcp search drug "Gliolan" --region eu --limit 5
-biomcp get drug "5-aminolevulinic acid" regulatory --region eu
-biomcp get drug "5-aminolevulinic acid" approvals
-biomcp search article --drug "5-aminolevulinic acid" -k glioma --type review --limit 5
+biomcp get drug "Gocovri" regulatory --region us
+biomcp get drug "zanubrutinib" approvals
+biomcp get drug "zanubrutinib" targets
+biomcp search article --drug "zanubrutinib" -k "second-generation BTK inhibitor" --limit 5
 ```
 
 Interpretation:
-- Resolve the brand name to the active substance before interpreting approval records.
-- Prefer structured regulatory and approval sections for dates, regions, and authorization status.
-- Use article reviews only for development history or context missing from regulatory records.
-- Keep region labels explicit because U.S., EU, and WHO records answer different approval questions.
+- Let BioMCP normalize brand names first: Gocovri resolves to amantadine, then the U.S. regulatory section answers the FDA-approval question.
+- Do not use `biomcp get drug "ADS-5102" all`; current drug cards do not resolve that investigational code, so keep ADS-5102 only as an article or trial-search synonym when needed.
+- Split multi-part yes/no questions: approval comes from structured regulatory or approvals sections, while target/class evidence starts with `biomcp get drug "zanubrutinib" targets`.
+- Use literature only for context not carried by structured fields, such as first- vs second-generation BTK inhibitor wording.

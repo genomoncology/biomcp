@@ -46,10 +46,10 @@ EXPECTED_PLAYBOOK_MARKERS = {
     ],
     "drug-regulatory": [
         "# Pattern: Drug regulatory and approval evidence",
-        'biomcp search drug "Gliolan" --region eu --limit 5',
-        'biomcp get drug "5-aminolevulinic acid" regulatory --region eu',
-        'biomcp get drug "5-aminolevulinic acid" approvals',
-        'biomcp search article --drug "5-aminolevulinic acid" -k glioma --type review --limit 5',
+        'biomcp get drug "Gocovri" regulatory --region us',
+        'biomcp get drug "zanubrutinib" approvals',
+        'biomcp get drug "zanubrutinib" targets',
+        'biomcp search article --drug "zanubrutinib" -k "second-generation BTK inhibitor" --limit 5',
     ],
     "gene-function-localization": [
         "# Pattern: Gene function and localization",
