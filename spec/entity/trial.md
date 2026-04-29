@@ -50,3 +50,62 @@ echo "$out" | mustmatch like "## Eligibility (ClinicalTrials.gov)"
 echo "$out" | mustmatch like "## Locations (ClinicalTrials.gov)"
 echo "$out" | mustmatch like "| Facility | City | Country | Status | Contact |"
 ```
+
+## Source-Provided Intervention Aliases in JSON
+
+ClinicalTrials.gov can attach alternate names directly to an intervention. BioMCP
+should preserve that source evidence in JSON instead of leaving agents with only
+the investigational code.
+
+```bash
+bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
+. ../../.cache/spec-ctgov-intervention-alias-env
+trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
+json_out="$(../../tools/biomcp-ci --json get trial NCT02136914)"
+echo "$json_out" | jq -r '.intervention_details[]? | select(.name == "ADS-5102") | .other_names[]?' \
+  | mustmatch like "amantadine HCl extended release"
+```
+
+## Source-Provided Intervention Aliases in Markdown
+
+The same alias belongs in the human-readable intervention card so a clinician or
+agent can see the source-provided follow-up name without inspecting raw CTGov.
+
+```bash
+bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
+. ../../.cache/spec-ctgov-intervention-alias-env
+trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
+out="$(../../tools/biomcp-ci get trial NCT02136914)"
+echo "$out" | mustmatch like "## Interventions (ClinicalTrials.gov)"
+echo "$out" | mustmatch like "ADS-5102"
+echo "$out" | mustmatch like "amantadine HCl extended release"
+```
+
+## Investigational Codes Avoid Brittle Drug Cards
+
+If CTGov names an investigational intervention code and also supplies an
+alternate name, BioMCP should not advertise a drug-card lookup for the raw code
+unless that identity is known to resolve.
+
+```bash
+bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
+. ../../.cache/spec-ctgov-intervention-alias-env
+trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
+json_out="$(../../tools/biomcp-ci --json get trial NCT02136914)"
+echo "$json_out" | jq -r '._meta.next_commands[]?' \
+  | mustmatch not like "biomcp get drug ADS-5102"
+```
+
+## Alias-Based Follow-Ups Stay Search-Safe
+
+A safe next step can still use the intervention evidence, but it should stay in
+a search or article context and carry the source-provided alias forward.
+
+```bash
+bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
+. ../../.cache/spec-ctgov-intervention-alias-env
+trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
+json_out="$(../../tools/biomcp-ci --json get trial NCT02136914)"
+echo "$json_out" | jq -r '._meta.next_commands[]? | select((startswith("biomcp search drug ") or startswith("biomcp search article ")) and contains("amantadine HCl extended release"))' \
+  | mustmatch like "amantadine HCl extended release"
+```
