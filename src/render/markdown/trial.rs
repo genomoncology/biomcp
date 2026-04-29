@@ -37,6 +37,7 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
         age_range => &trial.age_range,
         conditions => &trial.conditions,
         interventions => &trial.interventions,
+        intervention_details => &trial.intervention_details,
         sponsor => &trial.sponsor,
         enrollment => &trial.enrollment,
         summary => &trial.summary,

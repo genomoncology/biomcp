@@ -20,6 +20,7 @@ const CTGOV_GET_FIELDS_BASE: &[&str] = &[
     "StudyType",
     "Condition",
     "InterventionName",
+    "InterventionOtherName",
     "LeadSponsorName",
     "EnrollmentCount",
     "BriefSummary",
@@ -63,6 +64,7 @@ const CTGOV_GET_FIELDS_ARMS: &[&str] = &[
     "ArmGroupInterventionName",
     "InterventionType",
     "InterventionName",
+    "InterventionOtherName",
     "InterventionDescription",
     "InterventionArmGroupLabel",
 ];
@@ -421,6 +423,8 @@ pub struct CtGovIntervention {
     pub name: Option<String>,
     pub intervention_type: Option<String>,
     pub description: Option<String>,
+    #[serde(default)]
+    pub other_names: Vec<String>,
     #[serde(default)]
     pub arm_group_labels: Vec<String>,
 }

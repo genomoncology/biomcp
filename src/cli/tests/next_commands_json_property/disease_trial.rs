@@ -264,6 +264,7 @@ fn trial_json_next_commands_parse() {
         age_range: None,
         conditions: vec!["melanoma".to_string()],
         interventions: vec!["dabrafenib".to_string()],
+        intervention_details: Vec::new(),
         sponsor: None,
         enrollment: None,
         summary: None,

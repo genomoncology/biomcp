@@ -394,6 +394,7 @@ fn format_sections_block_describes_guardrailed_drug_and_trial_sections() {
         age_range: None,
         conditions: vec!["melanoma".to_string()],
         interventions: vec!["trametinib".to_string()],
+        intervention_details: Vec::new(),
         sponsor: None,
         enrollment: None,
         summary: None,

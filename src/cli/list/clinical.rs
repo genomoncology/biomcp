@@ -56,6 +56,7 @@ pub(super) fn list_trial() -> String {
 ## JSON Output
 
 - Non-empty `search trial --json` responses include `_meta.next_commands`.
+- `get trial --json` can include CTGov source-provided intervention alternate names; See-also and JSON next commands may prefer search/article follow-ups for investigational codes.
 - Alias-expanded trial rows may include `matched_intervention_label`.
 - The first follow-up drills the top result with `biomcp get trial <nct_id>`.
 - `biomcp list trial` is always included so agents can inspect the full filter surface.

@@ -1,7 +1,9 @@
 use std::borrow::Cow;
+use std::collections::HashSet;
 
 use crate::entities::trial::{
-    Trial, TrialArm, TrialLocation, TrialOutcome, TrialOutcomes, TrialReference, TrialSearchResult,
+    Trial, TrialArm, TrialIntervention, TrialLocation, TrialOutcome, TrialOutcomes, TrialReference,
+    TrialSearchResult,
 };
 use crate::sources::clinicaltrials::CtGovStudy;
 
@@ -322,6 +324,35 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
+    let intervention_details = p
+        .and_then(|p| p.arms_interventions_module.as_ref())
+        .map(|m| {
+            m.interventions
+                .iter()
+                .filter_map(|i| {
+                    let name = clean_opt(i.name.as_deref())?;
+                    let mut seen = HashSet::new();
+                    let other_names = i
+                        .other_names
+                        .iter()
+                        .map(|s| s.trim())
+                        .filter(|s| !s.is_empty())
+                        .filter(|s| !s.eq_ignore_ascii_case(&name))
+                        .filter(|s| seen.insert(s.to_ascii_lowercase()))
+                        .take(25)
+                        .map(|s| s.to_string())
+                        .collect();
+                    Some(TrialIntervention {
+                        name,
+                        intervention_type: clean_opt(i.intervention_type.as_deref()),
+                        description: clean_opt(i.description.as_deref()),
+                        other_names,
+                    })
+                })
+                .take(25)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
 
     Trial {
         nct_id: id,
@@ -333,6 +364,7 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
         age_range,
         conditions,
         interventions,
+        intervention_details,
         sponsor,
         enrollment,
         summary,
@@ -506,6 +538,7 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Trial {
         age_range,
         conditions,
         interventions,
+        intervention_details: Vec::new(),
         sponsor,
         enrollment,
         summary,

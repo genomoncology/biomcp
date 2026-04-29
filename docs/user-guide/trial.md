@@ -109,7 +109,7 @@ For higher limits and reliable authenticated access, set `NCI_API_KEY`.
 biomcp get trial NCT02576665
 ```
 
-The default response summarizes title, status, condition context, and source metadata.
+The default response summarizes title, status, condition context, intervention names, and source metadata. CTGov detail can include source-provided intervention alternate names; for investigational codes, follow-ups may use safer search/article routes instead of a brittle drug-card lookup.
 
 ## Request trial sections
 
