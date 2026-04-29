@@ -247,6 +247,10 @@ while `cache clear` still refuses non-TTY destructive runs unless `--yes` is
 present. The cache family remains CLI-only because revealing workstation-local
 filesystem paths over MCP would cross the runtime security boundary.
 
+`biomcp version` also supports `--json` for release identity (`version`,
+`git_revision`, `build_timestamp`), while `--verbose` remains the plain-text
+executable provenance/PATH diagnostic mode.
+
 `search drug --json` is the region-aware exception inside the otherwise flat
 search-wrapper family. Drug search has heterogeneous U.S./EU/WHO row schemas,
 so its stable contract uses top-level `region`, top-level `regions`, and

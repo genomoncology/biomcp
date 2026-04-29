@@ -440,7 +440,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 anyhow::bail!("MCP/serve commands should not go through CLI run()")
             }
             Commands::Version(args) => {
-                outcome_to_string(super::system::handle_version(args).await?)
+                outcome_to_string(super::system::handle_version(args, json).await?)
             }
         }
     })

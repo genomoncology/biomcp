@@ -101,7 +101,7 @@ biomcp serve
 biomcp serve-http [--host 127.0.0.1] [--port 8080]
 biomcp update [--check] [--allow-missing-checksum]
 biomcp uninstall
-biomcp version
+biomcp version [--verbose]
 ```
 
 Worked examples are also addressable directly:
@@ -119,6 +119,11 @@ managed HTTP cache is over size or below the configured disk-free floor.
 
 `biomcp cache path` is a local-CLI-only operator command. It prints the managed
 HTTP cache path as plain text and ignores the global `--json` flag.
+
+`biomcp version` prints release identity as plain text by default. With
+`--json`, it emits `{ "version": "...", "git_revision": "...",
+"build_timestamp": "..." }`; `--verbose` remains the plain-text mode for
+executable provenance and PATH diagnostics.
 
 `biomcp cache stats` is the companion local-CLI operator command. It reports the
 resolved cache path, total blob inventory, referenced blob bytes used for
