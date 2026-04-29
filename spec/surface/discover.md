@@ -21,11 +21,16 @@ echo "$out" | mustmatch like '`biomcp get gene EGFR`'
 ## Disease-Specific Symptom Phrases Stay Clinically Modest
 
 Queries that ask for symptoms of a known disease should route to disease
-phenotypes and plain-language context rather than pretending BioMCP can make a
-diagnosis from the free text alone.
+phenotypes, keep the resolved disease visible in concepts, and treat
+UMLS/MedlinePlus plain-language context as optional enrichment rather than a
+baseline requirement. The CI wrapper strips `UMLS_API_KEY`, so this canary
+asserts the degraded-mode banner instead of depending on live UMLS enrichment.
 
 ```bash
 out="$(../../tools/biomcp-ci discover "symptoms of Marfan syndrome")"
+concepts="$(printf '%s\n' "$out" | awk '/^## Concepts$/{in_concepts=1; next} /^## /{in_concepts=0} in_concepts')"
+echo "$concepts" | mustmatch like "Marfan syndrome"
+echo "$out" | mustmatch like "UMLS enrichment unavailable"
 echo "$out" | mustmatch like '`biomcp get disease "Marfan syndrome" phenotypes`'
 ```
 
