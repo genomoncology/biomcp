@@ -77,8 +77,8 @@ bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
 trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 out="$(../../tools/biomcp-ci get trial NCT02136914)"
 echo "$out" | mustmatch like "## Interventions (ClinicalTrials.gov)"
-echo "$out" | mustmatch like "ADS-5102"
-echo "$out" | mustmatch like "amantadine HCl extended release"
+echo "$out" | grep -F "ADS-5102" \
+  | mustmatch like "amantadine HCl extended release"
 ```
 
 ## Investigational Codes Avoid Brittle Drug Cards

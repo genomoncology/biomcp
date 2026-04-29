@@ -629,7 +629,6 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
             .any(|entry| entry["key"] == "locations")
     );
 }
-
 #[test]
 fn paginate_trial_locations_handles_missing_locations() {
     let mut trial = crate::entities::trial::Trial {
@@ -663,7 +662,6 @@ fn paginate_trial_locations_handles_missing_locations() {
     assert!(trial.locations.is_some());
     assert_eq!(trial.locations.as_ref().map_or(usize::MAX, Vec::len), 0);
 }
-
 #[test]
 fn trial_search_query_summary_includes_geo_filters() {
     let summary = trial_search_query_summary(
