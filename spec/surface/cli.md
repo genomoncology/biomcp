@@ -31,6 +31,64 @@ echo "$batch" | mustmatch like '`batch <entity> <id1,id2,...>`'
 echo "$batch" | mustmatch like "up to 10 IDs"
 ```
 
+## Validation Exit Codes Separate Bad Usage From Runtime Failures
+
+Invalid command usage should exit `2` whether clap catches it during parsing or
+BioMCP catches it during custom validation. Runtime and configuration failures
+still use exit `1`, so scripts can distinguish bad usage from a command that was
+well-formed but could not complete.
+
+```bash
+set +e
+tmpdir="$(mktemp -d)"
+../../tools/biomcp-ci get gene >"$tmpdir/clap.out" 2>"$tmpdir/clap.err"; clap_status=$?
+../../tools/biomcp-ci search gene >"$tmpdir/gene.out" 2>"$tmpdir/gene.err"; gene_status=$?
+set -e
+test "$clap_status" -eq 2
+test "$gene_status" -eq 2
+cat "$tmpdir/gene.err" | mustmatch like "Query is required"
+rm -rf "$tmpdir"
+```
+
+Diagnostic search has its own custom missing-filter validator and should follow
+the same bad-usage exit policy.
+
+```bash
+set +e
+tmpdir="$(mktemp -d)"
+../../tools/biomcp-ci search diagnostic >"$tmpdir/diagnostic.out" 2>"$tmpdir/diagnostic.err"; diagnostic_status=$?
+set -e
+test "$diagnostic_status" -eq 2
+cat "$tmpdir/diagnostic.err" | mustmatch like "requires at least one of"
+rm -rf "$tmpdir"
+```
+
+The same mapping applies to custom validation outside entity search.
+
+```bash
+set +e
+tmpdir="$(mktemp -d)"
+ids="BRAF,TP53,EGFR,KRAS,NRAS,PIK3CA,ALK,ROS1,MET,RET,NTRK"
+../../tools/biomcp-ci batch gene "$ids" >"$tmpdir/batch.out" 2>"$tmpdir/batch.err"; batch_status=$?
+set -e
+test "$batch_status" -eq 2
+cat "$tmpdir/batch.err" | mustmatch like "Batch is limited to 10 IDs"
+rm -rf "$tmpdir"
+```
+
+A non-validation failure stays on the runtime-failure exit code.
+
+```bash
+set +e
+tmpdir="$(mktemp -d)"
+../../tools/biomcp-ci search trial -c melanoma --source nci >"$tmpdir/nci.out" 2>"$tmpdir/nci.err"; nci_status=$?
+set -e
+test "$nci_status" -eq 1
+cat "$tmpdir/nci.err" | mustmatch like "API key required"
+cat "$tmpdir/nci.err" | mustmatch like "NCI_API_KEY"
+rm -rf "$tmpdir"
+```
+
 ## List Command Honors Global JSON
 
 `biomcp list` remains the human command-reference page by default, but scripts
