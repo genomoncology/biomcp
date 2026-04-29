@@ -27,15 +27,6 @@ def _entries(value: object) -> list[object]:
     return []
 
 
-def _has_named_entry(entries: object, name: str) -> bool:
-    for entry in _entries(entries):
-        if entry == name:
-            return True
-        if isinstance(entry, dict) and entry.get("name") == name:
-            return True
-    return False
-
-
 def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
 
@@ -44,7 +35,7 @@ def test_json_list_outputs_are_parseable_reference_objects() -> None:
     root = _run_json("list")
     gene = _run_json("list", "gene")
 
-    assert _has_named_entry(root.get("entities"), "gene")
+    assert "gene" in _entries(root.get("entities"))
     root_refs = [*_entries(root.get("patterns")), *_entries(root.get("commands"))]
     assert any("search all" in str(entry) for entry in root_refs)
     assert gene.get("entity") == "gene"
