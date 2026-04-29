@@ -21,10 +21,14 @@ def _run_json(*args: str) -> dict[str, Any]:
     return json.loads(result.stdout)
 
 
+def _entries(value: object) -> list[object]:
+    if isinstance(value, list):
+        return value
+    return []
+
+
 def _has_named_entry(entries: object, name: str) -> bool:
-    if not isinstance(entries, list):
-        return False
-    for entry in entries:
+    for entry in _entries(entries):
         if entry == name:
             return True
         if isinstance(entry, dict) and entry.get("name") == name:
@@ -41,10 +45,10 @@ def test_json_list_outputs_are_parseable_reference_objects() -> None:
     gene = _run_json("list", "gene")
 
     assert _has_named_entry(root.get("entities"), "gene")
-    root_refs = [*root.get("patterns", []), *root.get("commands", [])]
+    root_refs = [*_entries(root.get("patterns")), *_entries(root.get("commands"))]
     assert any("search all" in str(entry) for entry in root_refs)
     assert gene.get("entity") == "gene"
-    assert any("get gene <symbol>" in str(command) for command in gene.get("commands", []))
+    assert any("get gene <symbol>" in str(command) for command in _entries(gene.get("commands")))
 
 
 def test_public_docs_document_json_list_shape() -> None:
@@ -54,8 +58,8 @@ def test_public_docs_document_json_list_shape() -> None:
     for content in (docs, ux):
         assert "biomcp --json list" in content
         assert "biomcp --json list <entity>" in content
-        assert "entities" in content
-        assert "entity" in content
-        assert "commands" in content
+        assert "`entities`" in content
+        assert "`entity`" in content
+        assert "`commands`" in content
         assert "biomcp cache path" in content
         assert "plain text" in content

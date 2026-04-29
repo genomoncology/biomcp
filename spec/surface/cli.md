@@ -41,15 +41,20 @@ entity page exposes the named command entries for that surface.
 ```bash
 set -e
 root_json="$(../../tools/biomcp-ci --json list)"
-printf '%s\n' "$root_json" | uv run --no-sync python -m json.tool >/dev/null
-echo "$root_json" | mustmatch like '"entities"'
-echo "$root_json" | mustmatch like '"gene"'
-echo "$root_json" | mustmatch like "search all"
 gene_json="$(../../tools/biomcp-ci --json list gene)"
-printf '%s\n' "$gene_json" | uv run --no-sync python -m json.tool >/dev/null
-echo "$gene_json" | mustmatch like '"entity"'
-echo "$gene_json" | mustmatch like '"gene"'
-echo "$gene_json" | mustmatch like "get gene <symbol>"
+ROOT_JSON="$root_json" GENE_JSON="$gene_json" uv run --no-sync python - <<'PY'
+import json, os
+root = json.loads(os.environ["ROOT_JSON"])
+gene = json.loads(os.environ["GENE_JSON"])
+def entries(value): return value if isinstance(value, list) else []
+entities = entries(root.get("entities"))
+assert "gene" in entities
+refs = [*entries(root.get("patterns")), *entries(root.get("commands"))]
+assert any("search all" in str(entry) for entry in refs)
+assert gene.get("entity") == "gene"
+assert any("get gene <symbol>" in str(command) for command in entries(gene.get("commands")))
+PY
+echo "$root_json" | mustmatch like '"entities"'
 ```
 
 ## Operator Commands Keep Distinct Output Modes
