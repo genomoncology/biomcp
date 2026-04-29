@@ -475,8 +475,16 @@ pub(crate) async fn handle_uninstall() -> anyhow::Result<CommandOutcome> {
     Ok(CommandOutcome::stdout(uninstall_self()?))
 }
 
-pub(crate) async fn handle_version(args: VersionArgs) -> anyhow::Result<CommandOutcome> {
-    Ok(CommandOutcome::stdout(version_output(args.verbose)))
+pub(crate) async fn handle_version(
+    args: VersionArgs,
+    json: bool,
+) -> anyhow::Result<CommandOutcome> {
+    let text = if json {
+        crate::render::json::to_pretty(&version_identity())?
+    } else {
+        version_output(args.verbose)
+    };
+    Ok(CommandOutcome::stdout(text))
 }
 
 pub(super) fn parse_batch_sections(value: Option<&str>) -> Vec<String> {
@@ -489,15 +497,32 @@ pub(super) fn parse_batch_sections(value: Option<&str>) -> Vec<String> {
         .collect()
 }
 
-pub(super) fn version_output(verbose: bool) -> String {
+#[derive(serde::Serialize)]
+pub(super) struct VersionIdentity {
+    version: &'static str,
+    git_revision: &'static str,
+    build_timestamp: &'static str,
+}
+
+pub(super) fn version_identity() -> VersionIdentity {
     let cargo_version = env!("CARGO_PKG_VERSION");
     let git_tag = option_env!("BIOMCP_BUILD_GIT_TAG");
-    let git = option_env!("BIOMCP_BUILD_GIT_SHA").unwrap_or("unknown");
-    let build = option_env!("BIOMCP_BUILD_DATE").unwrap_or("unknown");
     let version = git_tag
         .filter(|t| t.starts_with('v') && !t.contains('-'))
         .map(|t| &t[1..])
         .unwrap_or(cargo_version);
+    VersionIdentity {
+        version,
+        git_revision: option_env!("BIOMCP_BUILD_GIT_SHA").unwrap_or("unknown"),
+        build_timestamp: option_env!("BIOMCP_BUILD_DATE").unwrap_or("unknown"),
+    }
+}
+
+pub(super) fn version_output(verbose: bool) -> String {
+    let identity = version_identity();
+    let version = identity.version;
+    let git = identity.git_revision;
+    let build = identity.build_timestamp;
     let base = format!("biomcp {version} (git {git}, build {build})");
     if !verbose {
         return base;

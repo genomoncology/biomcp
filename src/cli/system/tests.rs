@@ -369,6 +369,30 @@ fn version_command_parses_verbose_flag() {
     ));
 }
 
+#[tokio::test]
+async fn version_json_contract_has_identity_fields() {
+    let output = execute(vec![
+        "biomcp".to_string(),
+        "--json".to_string(),
+        "version".to_string(),
+    ])
+    .await
+    .expect("version json should execute");
+    let value: serde_json::Value = serde_json::from_str(&output).expect("valid version json");
+    let object = value.as_object().expect("version json should be an object");
+
+    assert_eq!(object.len(), 3);
+    for field in ["version", "git_revision", "build_timestamp"] {
+        assert!(
+            object
+                .get(field)
+                .and_then(serde_json::Value::as_str)
+                .is_some_and(|value| !value.is_empty()),
+            "{field} should be a non-empty string"
+        );
+    }
+}
+
 #[test]
 fn serve_http_help_describes_streamable_http() {
     let mut command = crate::cli::build_cli();
