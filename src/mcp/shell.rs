@@ -243,7 +243,9 @@ fn mcp_stdio_guidance() -> &'static str {
 
 fn is_handshake_startup_error(err: &anyhow::Error) -> bool {
     let msg = err.to_string().to_ascii_lowercase();
-    msg.contains("expect initialize") || msg.contains("unexpected eof")
+    msg.contains("expect initialize")
+        || msg.contains("unexpected eof")
+        || (msg.contains("connection closed") && msg.contains("initialize"))
 }
 
 async fn health_handler() -> Json<serde_json::Value> {
