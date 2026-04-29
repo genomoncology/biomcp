@@ -127,6 +127,9 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp://skill/<slug>" in mcp_server
     assert "Streamable HTTP" in mcp_server
     assert "`biomcp serve-http`" in mcp_server
+    assert "MCP client to send the initialize handshake on" in mcp_server
+    assert "stdin closed" in mcp_server
+    assert "recovery guidance" in mcp_server
     assert "`/mcp`" in mcp_server
     assert "`/health`" in mcp_server
     assert "`/readyz`" in mcp_server
