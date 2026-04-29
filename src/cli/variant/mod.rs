@@ -133,6 +133,7 @@ See also: biomcp list variant")]
 }
 
 mod dispatch;
+mod guidance;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
 
 #[cfg(test)]
