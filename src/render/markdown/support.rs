@@ -3,14 +3,7 @@
 use super::*;
 
 pub(super) fn quote_arg(value: &str) -> String {
-    let v = value.trim();
-    if v.is_empty() {
-        return String::new();
-    }
-    if v.chars().any(|c| c.is_whitespace()) {
-        return format!("\"{}\"", v.replace('\"', "\\\""));
-    }
-    v.to_string()
+    shell_quote_arg(value)
 }
 
 pub(super) fn force_quote_arg(value: &str) -> String {
@@ -18,7 +11,14 @@ pub(super) fn force_quote_arg(value: &str) -> String {
     if v.is_empty() {
         return String::new();
     }
-    format!("\"{}\"", v.replace('\"', "\\\""))
+    let escaped = v.chars().fold(String::new(), |mut out, ch| {
+        if matches!(ch, '\\' | '"' | '$' | '`') {
+            out.push('\\');
+        }
+        out.push(ch);
+        out
+    });
+    format!("\"{escaped}\"")
 }
 
 pub(super) fn alias_fallback_suggestion(

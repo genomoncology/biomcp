@@ -577,6 +577,7 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
         age_range: Some("18 Years and older".to_string()),
         conditions: vec!["melanoma".to_string()],
         interventions: vec!["osimertinib".to_string()],
+        intervention_details: Vec::new(),
         sponsor: Some("Example Sponsor".to_string()),
         enrollment: Some(100),
         summary: Some("Example summary".to_string()),
@@ -628,7 +629,6 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
             .any(|entry| entry["key"] == "locations")
     );
 }
-
 #[test]
 fn paginate_trial_locations_handles_missing_locations() {
     let mut trial = crate::entities::trial::Trial {
@@ -641,6 +641,7 @@ fn paginate_trial_locations_handles_missing_locations() {
         age_range: Some("18 Years and older".to_string()),
         conditions: vec!["melanoma".to_string()],
         interventions: vec!["osimertinib".to_string()],
+        intervention_details: Vec::new(),
         sponsor: Some("Example Sponsor".to_string()),
         enrollment: Some(100),
         summary: Some("Example summary".to_string()),
@@ -661,7 +662,6 @@ fn paginate_trial_locations_handles_missing_locations() {
     assert!(trial.locations.is_some());
     assert_eq!(trial.locations.as_ref().map_or(usize::MAX, Vec::len), 0);
 }
-
 #[test]
 fn trial_search_query_summary_includes_geo_filters() {
     let summary = trial_search_query_summary(

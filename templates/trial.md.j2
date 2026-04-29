@@ -17,7 +17,15 @@ Source: {{ trial_source_label }}
 - {{ c }}
 {% endfor %}
 {% endif -%}
-{% if interventions -%}
+{% if intervention_details -%}
+## Interventions ({{ trial_source_label }})
+{% for i in intervention_details[:5] -%}
+- {{ i.name }}{% if i.other_names %} (also known as: {{ i.other_names | join(", ") }}){% endif %}
+{% endfor %}
+{% if intervention_details | length > 5 -%}
+_and {{ intervention_details | length - 5 }} more (see `arms` section)_
+{% endif -%}
+{% elif interventions -%}
 ## Interventions ({{ trial_source_label }})
 {% for i in interventions[:5] -%}
 - {{ i }}

@@ -269,6 +269,7 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         age_range: Some("18 Years and older".to_string()),
         conditions: vec!["cystic fibrosis".to_string()],
         interventions: vec!["ivacaftor".to_string()],
+        intervention_details: Vec::new(),
         sponsor: Some("Example Sponsor".to_string()),
         enrollment: Some(42),
         summary: Some("Trial summary.".to_string()),

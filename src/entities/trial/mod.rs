@@ -29,6 +29,8 @@ pub struct Trial {
     pub conditions: Vec<String>,
     #[serde(default)]
     pub interventions: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub intervention_details: Vec<TrialIntervention>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sponsor: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -49,6 +51,17 @@ pub struct Trial {
     pub arms: Option<Vec<TrialArm>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub references: Option<Vec<TrialReference>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrialIntervention {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub intervention_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub other_names: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
