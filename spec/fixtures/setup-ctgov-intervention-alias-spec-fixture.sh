@@ -20,7 +20,7 @@ server_log="$fixture_root/server.log"
 uv run --no-sync python - "$ready_file" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 import json
 import sys
 
@@ -73,14 +73,25 @@ NCT02136914_STUDY = {
 }
 
 
+def study_payload_for_request(parsed):
+    payload = json.loads(json.dumps(NCT02136914_STUDY))
+    fields = ",".join(parse_qs(parsed.query).get("fields", []))
+    requested_fields = {field.strip() for field in fields.split(",") if field.strip()}
+    if "InterventionOtherName" not in requested_fields:
+        interventions = payload["protocolSection"]["armsInterventionsModule"]["interventions"]
+        for intervention in interventions:
+            intervention.pop("otherNames", None)
+    return payload
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/api/v2/studies/NCT02136914":
-            send_json(self, 200, NCT02136914_STUDY)
+            send_json(self, 200, study_payload_for_request(parsed))
             return
         if parsed.path == "/api/v2/studies/nct02136914":
-            send_json(self, 200, NCT02136914_STUDY)
+            send_json(self, 200, study_payload_for_request(parsed))
             return
         send_json(self, 404, {"error": "not found"})
 
