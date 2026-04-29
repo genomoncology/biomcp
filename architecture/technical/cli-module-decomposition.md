@@ -118,7 +118,14 @@ For any decomposition slice, proof should include:
 
 ## Ratchet rules
 
-Every decomposed CLI area must add an executable structure ratchet in a dedicated
+`make check` runs `tools/check-quality-ratchet.py`, which performs a global scan
+of tracked Rust files under `src/cli/` and enforces the 700-line cap. Files over
+the cap must either be decomposed or appear in `tools/cli-line-cap-allowlist.json`
+with a dated follow-up ticket reference and their current line count. The
+allowlist is a ratchet: entries become failures once the file is under the cap,
+and allowlisted files may not grow beyond the recorded count.
+
+Every decomposed CLI area must also add an executable structure ratchet in a dedicated
 integration test, normally named:
 
 - `tests/<area>_cli_structure.rs`, or

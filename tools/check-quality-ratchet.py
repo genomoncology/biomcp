@@ -13,6 +13,8 @@ MUSTMATCH_JSON_RE = re.compile(r"(?:^|\|\s*)mustmatch\s+json\b")
 SHORT_LIKE_RE = re.compile(r'(?:^|\|\s*)mustmatch\s+like\s+("([^"]*)"|\'([^\']*)\')')
 MUSTMATCH_PIPE_RE = re.compile(r"\|\s*mustmatch\b")
 MUSTMATCH_LINT_SKIP = "<!-- mustmatch-lint: skip -->"
+CLI_LINE_CAP = 700
+CLI_LINE_CAP_TICKET_RE = re.compile(r"^\d+(?:[-_][a-z0-9][a-z0-9-]*)?$")
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,6 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sources-dir", type=Path, required=True)
     parser.add_argument("--sources-mod", type=Path, required=True)
     parser.add_argument("--health-file", type=Path, required=True)
+    parser.add_argument("--cli-line-cap-allowlist", type=Path)
     return parser.parse_args()
 
 
@@ -65,6 +68,188 @@ def run_json_command(
     if proc.stderr:
         payload["stderr"] = proc.stderr
     return payload
+
+
+def tracked_cli_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
+    proc = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root_dir),
+            "ls-files",
+            "--",
+            "src/cli/*.rs",
+            "src/cli/**/*.rs",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return [], [proc.stderr.strip() or "git ls-files failed"]
+    return sorted({line for line in proc.stdout.splitlines() if line}), []
+
+
+def load_cli_line_cap_allowlist(
+    allowlist_path: Path,
+) -> tuple[dict[str, dict[str, object]], list[str]]:
+    try:
+        payload = json.loads(allowlist_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        return {}, [f"failed to read allowlist {allowlist_path}: {exc}"]
+    except json.JSONDecodeError as exc:
+        return {}, [f"invalid allowlist JSON {allowlist_path}: {exc}"]
+
+    if not isinstance(payload, dict):
+        return {}, ["allowlist root must be a JSON object"]
+    if payload.get("cap") != CLI_LINE_CAP:
+        return {}, [f"allowlist cap must be {CLI_LINE_CAP}"]
+
+    entries = payload.get("entries")
+    if not isinstance(entries, list):
+        return {}, ["allowlist entries must be a list"]
+
+    allowlist: dict[str, dict[str, object]] = {}
+    errors: list[str] = []
+    for index, entry in enumerate(entries):
+        prefix = f"allowlist entries[{index}]"
+        if not isinstance(entry, dict):
+            errors.append(f"{prefix} must be an object")
+            continue
+
+        path = entry.get("path")
+        lines = entry.get("lines")
+        date = entry.get("date")
+        follow_up_ticket = entry.get("follow_up_ticket")
+        if (
+            not isinstance(path, str)
+            or not path.startswith("src/cli/")
+            or not path.endswith(".rs")
+        ):
+            errors.append(f"{prefix}.path must be a src/cli/*.rs path")
+            continue
+        if path in allowlist:
+            errors.append(f"duplicate allowlist path: {path}")
+            continue
+        if not isinstance(lines, int) or lines <= CLI_LINE_CAP:
+            errors.append(
+                f"{prefix}.lines must be an integer greater than {CLI_LINE_CAP}"
+            )
+        if not isinstance(date, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+            errors.append(f"{prefix}.date must be YYYY-MM-DD")
+        if (
+            not isinstance(follow_up_ticket, str)
+            or not CLI_LINE_CAP_TICKET_RE.fullmatch(follow_up_ticket)
+        ):
+            errors.append(
+                f"{prefix}.follow_up_ticket must be a ticket number or ticket slug"
+            )
+        allowlist[path] = entry
+
+    return allowlist, errors
+
+
+def check_cli_line_cap(root_dir: Path, allowlist_path: Path) -> dict[str, object]:
+    allowlist, errors = load_cli_line_cap_allowlist(allowlist_path)
+    tracked_files, git_errors = tracked_cli_rust_files(root_dir)
+    errors.extend(git_errors)
+    if errors:
+        return {
+            "status": "error",
+            "cap": CLI_LINE_CAP,
+            "allowlist": str(allowlist_path),
+            "errors": errors,
+        }
+
+    missing_allowlist_entries: list[dict[str, object]] = []
+    grown_allowlist_entries: list[dict[str, object]] = []
+    over_cap_files: list[dict[str, object]] = []
+    stale_allowlist_entries: list[dict[str, object]] = []
+
+    tracked_set = set(tracked_files)
+    for relative_path in tracked_files:
+        path = root_dir / relative_path
+        line_count = len(path.read_text(encoding="utf-8").splitlines())
+        if line_count <= CLI_LINE_CAP:
+            continue
+
+        finding = {"path": relative_path, "lines": line_count}
+        over_cap_files.append(finding)
+        entry = allowlist.get(relative_path)
+        if entry is None:
+            missing_allowlist_entries.append(
+                {
+                    **finding,
+                    "message": (
+                        f"tracked src/cli Rust file exceeds {CLI_LINE_CAP} lines "
+                        "without an allowlist entry"
+                    ),
+                }
+            )
+            continue
+
+        allowed_lines = entry["lines"]
+        if isinstance(allowed_lines, int) and line_count > allowed_lines:
+            grown_allowlist_entries.append(
+                {
+                    **finding,
+                    "allowed_lines": allowed_lines,
+                    "follow_up_ticket": entry.get("follow_up_ticket"),
+                    "message": (
+                        "allowlisted file grew beyond its recorded line count; "
+                        "decompose it instead of expanding the allowlist"
+                    ),
+                }
+            )
+
+    for relative_path, entry in allowlist.items():
+        if relative_path not in tracked_set:
+            stale_allowlist_entries.append(
+                {
+                    "path": relative_path,
+                    "lines": entry.get("lines"),
+                    "follow_up_ticket": entry.get("follow_up_ticket"),
+                    "message": (
+                        "allowlist entry no longer points to a tracked "
+                        "src/cli Rust file"
+                    ),
+                }
+            )
+            continue
+
+        line_count = len(
+            (root_dir / relative_path).read_text(encoding="utf-8").splitlines()
+        )
+        if line_count <= CLI_LINE_CAP:
+            stale_allowlist_entries.append(
+                {
+                    "path": relative_path,
+                    "lines": line_count,
+                    "follow_up_ticket": entry.get("follow_up_ticket"),
+                    "message": "allowlist entry is no longer needed; remove it",
+                }
+            )
+
+    status = (
+        "fail"
+        if missing_allowlist_entries
+        or grown_allowlist_entries
+        or stale_allowlist_entries
+        else "pass"
+    )
+    return {
+        "status": status,
+        "cap": CLI_LINE_CAP,
+        "allowlist": str(allowlist_path),
+        "files_checked": len(tracked_files),
+        "over_cap_count": len(over_cap_files),
+        "allowlist_count": len(allowlist),
+        "over_cap_files": over_cap_files,
+        "missing_allowlist_entries": missing_allowlist_entries,
+        "grown_allowlist_entries": grown_allowlist_entries,
+        "stale_allowlist_entries": stale_allowlist_entries,
+        "errors": [],
+    }
 
 
 def make_repo_compatibility_findings(
@@ -289,6 +474,9 @@ def lint_specs(spec_paths: list[Path], spec_glob: str) -> dict[str, object]:
 def main() -> int:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    cli_line_cap_allowlist = args.cli_line_cap_allowlist or (
+        args.root_dir / "tools" / "cli-line-cap-allowlist.json"
+    )
 
     spec_paths = resolve_spec_paths(args.spec_glob)
     lint_payload = lint_specs(spec_paths, args.spec_glob)
@@ -326,10 +514,14 @@ def main() -> int:
     )
     write_json(args.output_dir / "quality-ratchet-source-registry.json", source_payload)
 
+    cli_line_cap_payload = check_cli_line_cap(args.root_dir, cli_line_cap_allowlist)
+    write_json(args.output_dir / "quality-ratchet-cli-line-cap.json", cli_line_cap_payload)
+
     statuses = [
         lint_payload["status"],
         mcp_payload.get("status"),
         source_payload.get("status"),
+        cli_line_cap_payload.get("status"),
     ]
     if "error" in statuses:
         summary_status = "error"
@@ -343,6 +535,7 @@ def main() -> int:
         "lint": lint_payload,
         "mcp_allowlist": {"status": mcp_payload.get("status")},
         "source_registry": {"status": source_payload.get("status")},
+        "cli_line_cap": {"status": cli_line_cap_payload.get("status")},
     }
     write_json(args.output_dir / "quality-ratchet-summary.json", summary_payload)
     return 0 if summary_status == "pass" else 1
