@@ -50,6 +50,23 @@ out="$(../../tools/biomcp-ci get drug MK-3475)"
 echo "$out" | mustmatch like "biomcp drug trials pembrolizumab"
 ```
 
+## Ambiguous Research-Code Fallback
+
+Research codes with ambiguous drug discovery signal should not render the code
+as a sparse drug card. They should fall back to the same alias-guidance surface
+used for disambiguation.
+
+```bash
+out="$(../../tools/biomcp-ci get drug MK-7684 2>&1 || true)"
+echo "$out" | mustmatch like "BioMCP could not map 'MK-7684' to a single drug."
+echo "$out" | mustmatch like "biomcp discover MK-7684"
+echo "$out" | mustmatch like "biomcp search drug -q MK-7684"
+echo "$out" | mustmatch like "Possible matches:"
+echo "$out" | mustmatch like "Vibostolimab (Drug, NCIT:C140041)"
+echo "$out" | mustmatch like "Vibostolimab/Pembrolizumab MK-7684A (Drug, NCIT:C176841)"
+echo "$out" | mustmatch not like "# mk-7684"
+```
+
 ## Structured Drug Interactions
 
 When the question is explicitly about drug-drug interactions, the helper should
