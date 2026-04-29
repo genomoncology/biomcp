@@ -69,10 +69,10 @@ The quoted form below is the copy-paste contract, not presentation polish.
 set -e
 discover_disease_cmd="$(../../tools/biomcp-ci discover "Graves'" | grep 'biomcp search disease -q' | head -1 | tr -d '`' | sed 's/^- //')"
 discover_article_cmd="$(../../tools/biomcp-ci discover "Graves'" | grep 'biomcp search article -k' | head -1 | tr -d '`' | sed 's/^- //')"
-discover_disease_argv="$(uv run --no-sync python3 -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$discover_disease_cmd")"
-discover_article_argv="$(uv run --no-sync python3 -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$discover_article_cmd")"
-echo "$discover_disease_argv" | mustmatch '/Graves'"'"'/'
-echo "$discover_article_argv" | mustmatch '/Graves'"'"'/'
+discover_disease_argv="$(uv run --no-sync python3 -c 'import shlex,sys; print(" ".join(shlex.split(sys.argv[1])))' "$discover_disease_cmd")"
+discover_article_argv="$(uv run --no-sync python3 -c 'import shlex,sys; print(" ".join(shlex.split(sys.argv[1])))' "$discover_article_cmd")"
+echo "$discover_disease_argv" | mustmatch like "search disease -q Graves'"
+echo "$discover_article_argv" | mustmatch like "search article -k Graves'"
 ```
 
 Cross-entity orientation needs the same contract in its counts-only follow-up
@@ -91,8 +91,8 @@ Apostrophe-bearing counts-only follow-ups are the current broken surface in
 ```bash
 set -e
 apostrophe_cmd="$(../../tools/biomcp-ci search all --keyword "Graves'" --counts-only | grep 'type review' | head -1 | tr -d '`' | sed 's/^- //')"
-apostrophe_argv="$(uv run --no-sync python3 -c 'import shlex,sys; print(shlex.split(sys.argv[1]))' "$apostrophe_cmd")"
-echo "$apostrophe_argv" | mustmatch '/Graves'"'"'/'
+apostrophe_argv="$(uv run --no-sync python3 -c 'import shlex,sys; print(" ".join(shlex.split(sys.argv[1])))' "$apostrophe_cmd")"
+echo "$apostrophe_argv" | mustmatch like "--keyword Graves'"
 ```
 
 ## Health and Admin Help Stay Explicit
