@@ -120,6 +120,9 @@ managed HTTP cache is over size or below the configured disk-free floor.
 `biomcp cache path` is a local-CLI-only operator command. It prints the managed
 HTTP cache path as plain text and ignores the global `--json` flag.
 
+`biomcp --json list` emits structured reference data for scripts and agents.
+The root object includes `entities`, `commands`, and `patterns`; `biomcp --json list <entity>` emits a per-surface object with `entity` and `commands`.
+
 `biomcp version` prints release identity as plain text by default. With
 `--json`, it emits `{ "version": "...", "git_revision": "...",
 "build_timestamp": "..." }`; `--verbose` remains the plain-text mode for

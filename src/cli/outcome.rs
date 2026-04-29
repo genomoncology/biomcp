@@ -434,7 +434,11 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 crate::cli::discover::run(crate::cli::discover::DiscoverArgs { query }, json).await
             }
             Commands::List(super::system::ListArgs { entity }) => {
-                crate::cli::list::render(entity.as_deref()).map_err(Into::into)
+                if json {
+                    crate::cli::list::render_json(entity.as_deref()).map_err(Into::into)
+                } else {
+                    crate::cli::list::render(entity.as_deref()).map_err(Into::into)
+                }
             }
             Commands::Mcp | Commands::Serve | Commands::ServeHttp(_) | Commands::ServeSse => {
                 anyhow::bail!("MCP/serve commands should not go through CLI run()")
