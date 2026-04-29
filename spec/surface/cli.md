@@ -31,6 +31,27 @@ echo "$batch" | mustmatch like '`batch <entity> <id1,id2,...>`'
 echo "$batch" | mustmatch like "up to 10 IDs"
 ```
 
+## List Command Honors Global JSON
+
+`biomcp list` remains the human command-reference page by default, but scripts
+and agents that pass the global `--json` flag need structured reference data
+instead of Markdown. The root list exposes the entity/command inventory, while an
+entity page exposes the named command entries for that surface.
+
+```bash
+set -e
+root_json="$(../../tools/biomcp-ci --json list)"
+printf '%s\n' "$root_json" | uv run --no-sync python -m json.tool >/dev/null
+echo "$root_json" | mustmatch like '"entities"'
+echo "$root_json" | mustmatch like '"gene"'
+echo "$root_json" | mustmatch like "search all"
+gene_json="$(../../tools/biomcp-ci --json list gene)"
+printf '%s\n' "$gene_json" | uv run --no-sync python -m json.tool >/dev/null
+echo "$gene_json" | mustmatch like '"entity"'
+echo "$gene_json" | mustmatch like '"gene"'
+echo "$gene_json" | mustmatch like "get gene <symbol>"
+```
+
 ## Operator Commands Keep Distinct Output Modes
 
 The operator-facing cache and version commands intentionally differ from the
