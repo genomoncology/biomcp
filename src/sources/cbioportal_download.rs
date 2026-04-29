@@ -12,6 +12,9 @@ const DATAHUB_BASE: &str = "https://datahub.assets.cbioportal.org";
 const DATAHUB_API: &str = "cbioportal-datahub";
 const DATAHUB_BASE_ENV: &str = "BIOMCP_CBIOPORTAL_DATAHUB_BASE";
 const DATAHUB_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const DATAHUB_ARCHIVE_IDLE_TIMEOUT: Duration = Duration::from_secs(120);
+#[cfg(test)]
+const DATAHUB_ARCHIVE_IDLE_TIMEOUT_FOR_TEST: Duration = Duration::from_millis(100);
 
 #[derive(Debug, Clone)]
 pub struct StudyInstallResult {
@@ -23,6 +26,7 @@ pub struct StudyInstallResult {
 pub struct CBioPortalDownloadClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
+    download_idle_timeout: Duration,
 }
 
 impl CBioPortalDownloadClient {
@@ -30,6 +34,7 @@ impl CBioPortalDownloadClient {
         Ok(Self {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, None)?,
             base: crate::sources::env_base(DATAHUB_BASE, DATAHUB_BASE_ENV),
+            download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT,
         })
     }
 
@@ -38,6 +43,7 @@ impl CBioPortalDownloadClient {
         Ok(Self {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, None)?,
             base: Cow::Owned(base),
+            download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT_FOR_TEST,
         })
     }
 
@@ -102,8 +108,22 @@ impl CBioPortalDownloadClient {
             });
         }
         let mut file = tokio::fs::File::create(dest).await?;
-        while let Some(chunk) = resp.chunk().await? {
-            file.write_all(&chunk).await?;
+        loop {
+            match tokio::time::timeout(self.download_idle_timeout, resp.chunk()).await {
+                Ok(Ok(Some(chunk))) => file.write_all(&chunk).await?,
+                Ok(Ok(None)) => break,
+                Ok(Err(err)) => return Err(err.into()),
+                Err(_) => {
+                    return Err(BioMcpError::SourceUnavailable {
+                        source_name: "cBioPortal DataHub".to_string(),
+                        reason: format!(
+                            "Archive download stalled because no bytes or progress arrived within {:?}.",
+                            self.download_idle_timeout
+                        ),
+                        suggestion: "Retry the study download later.".to_string(),
+                    });
+                }
+            }
         }
         file.flush().await?;
         Ok(())
@@ -562,6 +582,7 @@ mod tests {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, Some(Duration::from_millis(50)))
                 .expect("timed client"),
             base: Cow::Owned(server.uri()),
+            download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT_FOR_TEST,
         };
         let err = timed_client
             .list_study_ids()
@@ -577,6 +598,7 @@ mod tests {
         let untimed_client = CBioPortalDownloadClient {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, None).expect("untimed client"),
             base: Cow::Owned(server.uri()),
+            download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT_FOR_TEST,
         };
         let study_ids = untimed_client
             .list_study_ids()

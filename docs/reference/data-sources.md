@@ -63,6 +63,11 @@ All HTTP-based sources share a common client with:
 - Retries: exponential backoff, up to 3 retries for transient failures
 - Disk cache: `<cache_root>/http` under the resolved cache root (`~/.cache/biomcp/http` on Linux)
 
+cBioPortal DataHub study archive downloads are the exception: archive downloads do
+not use a total request timeout, so large files can keep downloading while bytes
+arrive. They do use an idle/no-progress timeout; if a stalled archive sends no bytes
+or progress within that window, the download fails clearly.
+
 Run `biomcp cache path` to print the managed HTTP cache directory on the current
 machine without creating or migrating cache directories.
 
