@@ -97,7 +97,48 @@ keyed data plane ran.
 json_out="$(../../tools/biomcp-ci --json search article -g BRAF --limit 3 2>/dev/null)"
 echo "$json_out" | mustmatch like '"semantic_scholar_enabled": true'
 echo "$json_out" | mustmatch like '"ranking": {'
+echo "$json_out" | jq -e 'any(._meta.source_status[]?; .source == "semanticscholar" and .enabled == true and .auth_mode == "shared_pool" and (.status == "ok" or .status == "degraded" or .status == "unavailable"))' >/dev/null
 echo "$json_out" | jq -e 'all(.results[]; .ranking.mode == "lexical")' >/dev/null
+```
+
+## Semantic Scholar Source Status Appears in Debug Plans
+
+Debug plans are for operators and benchmark agents who need to explain the
+route BioMCP used. The Semantic Scholar leg should carry the same redacted
+auth and availability state there, without requiring stderr parsing.
+
+```bash
+json_out="$(../../tools/biomcp-ci --json search article -g BRAF --limit 1 --debug-plan 2>/dev/null)"
+echo "$json_out" | mustmatch like '"debug_plan": {'
+echo "$json_out" | jq -e 'any(.debug_plan.legs[]?.source_status[]?; .source == "semanticscholar" and .auth_mode == "shared_pool" and (.status == "ok" or .status == "degraded" or .status == "unavailable"))' >/dev/null
+```
+
+## Authenticated Source Status Is Redacted
+
+When an operator provides `S2_API_KEY`, article search should identify the
+authenticated mode but never echo the key, a prefix, or any secret-derived
+string in JSON metadata.
+
+```bash
+secret_value="spec-secret-do-not-print-365"
+biomcp_bin="${BIOMCP_BIN:-../../target/release/biomcp}"
+json_out="$(S2_API_KEY="$secret_value" RUST_LOG=error "$biomcp_bin" --json search article -g BRAF --limit 1 2>/dev/null)"
+echo "$json_out" | mustmatch not like "$secret_value"
+echo "$json_out" | mustmatch not like "spec-secret"
+echo "$json_out" | jq -e --arg secret "$secret_value" --arg prefix "spec-secret" '(tostring | contains($secret) | not) and (tostring | contains($prefix) | not) and any(._meta.source_status[]?; .source == "semanticscholar" and .enabled == true and .auth_mode == "authenticated" and (.status == "ok" or .status == "degraded" or .status == "unavailable"))' >/dev/null
+```
+
+## Markdown Notes Semantic Scholar Unavailability
+
+Markdown should stay quiet on healthy paths, but a failed Semantic Scholar leg is
+operator-relevant. When the source is unavailable, the page should still render
+primary article rows and include one concise source-status note.
+
+```bash
+out="$(BIOMCP_S2_BASE=http://127.0.0.1:9 ../../tools/biomcp-ci search article -g BRAF --limit 1 2>/dev/null)"
+echo "$out" | mustmatch like "# Articles: gene=BRAF"
+echo "$out" | mustmatch like "Semantic Scholar source status:"
+echo "$out" | mustmatch like "unavailable"
 ```
 
 ## Entity Follow-Up

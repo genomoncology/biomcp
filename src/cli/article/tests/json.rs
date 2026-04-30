@@ -101,6 +101,20 @@ fn article_search_json_includes_query_and_ranking_context() {
     assert_eq!(value["query"], query);
     assert_eq!(value["sort"], "relevance");
     assert_eq!(value["semantic_scholar_enabled"], true);
+    let source_status = value["_meta"]["source_status"]
+        .as_array()
+        .expect("article search JSON should expose source status metadata");
+    assert!(source_status.iter().any(|status| {
+        status.get("source") == Some(&serde_json::Value::String("semanticscholar".into()))
+            && status.get("enabled") == Some(&serde_json::Value::Bool(true))
+            && status.get("auth_mode") == Some(&serde_json::Value::String("shared_pool".into()))
+            && matches!(
+                status.get("status").and_then(serde_json::Value::as_str),
+                Some("ok" | "degraded" | "unavailable")
+            )
+    }));
+    assert!(!json.contains("test-secret-key-365"));
+    assert!(!json.contains("test-secret"));
     assert_eq!(
         value["ranking_policy"],
         crate::entities::article::ARTICLE_RELEVANCE_RANKING_POLICY
