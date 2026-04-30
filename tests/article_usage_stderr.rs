@@ -46,8 +46,8 @@ fn run_article_search(
 fn assert_clean_usage_error(result: &CommandResult, expected_stderr_line: &str) {
     assert_eq!(
         result.status.code(),
-        Some(1),
-        "expected runtime invalid-argument exit code 1\nstdout:\n{}\nstderr:\n{}",
+        Some(2),
+        "expected invalid-usage exit code 2\nstdout:\n{}\nstderr:\n{}",
         result.stdout,
         result.stderr
     );

@@ -60,6 +60,9 @@
 
 ### Fixes
 
+- Changed custom CLI validation failures (`BioMcpError::InvalidArgument`) to exit
+  `2`, matching clap parser failures and separating bad usage from runtime
+  failures.
 - Fixed `suggest` so resistance-to-drug mechanism questions anchor starter
   commands on the drug instead of filler text. (291)
 - Patched `rustls-webpki` to the safe release line and made `make check` enforce
