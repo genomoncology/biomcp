@@ -55,10 +55,23 @@ def test_biomcp_ci_fails_closed_before_stale_path_biomcp_executes(
     assert str(stale_bin) in result.stderr
     assert "BIOMCP_BIN" in result.stderr
 
+
+def test_biomcp_ci_architecture_contract_documents_fail_closed_path_policy() -> None:
     wrapper_contract = _section(
         ARCHITECTURE_CONTRACT,
         "## `tools/biomcp-ci` wrapper contract",
     )
-    assert "fail closed" in wrapper_contract.lower()
-    assert "BIOMCP_BIN" in wrapper_contract
-    assert "otherwise resolve `biomcp` from\n  `PATH`" not in wrapper_contract
+    normalized = " ".join(wrapper_contract.lower().split())
+
+    assert "fail closed" in normalized
+    assert "biomcp_bin" in normalized
+    assert any(
+        phrase in normalized
+        for phrase in ("never execute", "must not execute", "refuse to execute")
+    )
+    assert "from path" in normalized
+    assert any(
+        phrase in normalized
+        for phrase in ("rejected path", "rejected candidate", "names the rejected")
+    )
+    assert "falling back" not in normalized
