@@ -343,6 +343,16 @@ Authenticated or key-gated integrations have extra requirements.
   echo the credential value.
 - Do not log secrets.
 
+Semantic Scholar is the model optional-key integration for agent harnesses that
+launch BioMCP as a child process. `SemanticScholarClient::new()` reads
+`S2_API_KEY` from the `biomcp` process environment and selects either the
+authenticated shared client or the unauthenticated shared-pool client. Parent
+runners that intentionally strip subprocess environments must expose an explicit,
+redacted allowlist policy; BioMCP does not read credentials from runner metadata,
+bot folders, command arguments, or logs. See
+[Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md) for the
+cross-process target state.
+
 ## Graceful Degradation and Timeouts
 
 Optional enrichment is best-effort across the repo, but the exact fallback
@@ -376,6 +386,9 @@ Source additions must preserve BioMCP's runtime boundaries.
   `architecture/technical/overview.md`.
 - When many workers need one shared limiter budget, the operational answer is
   `biomcp serve-http`, not a per-ticket custom coordination layer.
+- CLI subprocess benchmark harnesses that cannot use `serve-http` must own an
+  explicit aggregate concurrency/rate policy outside BioMCP; a process-local
+  BioMCP limiter is not an aggregate quota guarantee.
 - Reuse source-specific rate limiting already present in `src/sources/` when a
   provider has special throughput rules.
 - Document source-specific enforced limits, practical ceilings, or payload

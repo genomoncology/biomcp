@@ -204,7 +204,7 @@ unlock additional data:
 | Key | Source | Effect |
 |-----|--------|--------|
 | `NCBI_API_KEY` | PubTator3, PMC OA, NCBI ID converter | Higher rate limits |
-| `S2_API_KEY` | Semantic Scholar article enrichment/navigation | Optional authenticated Semantic Scholar requests at 1 req/sec; shared-pool requests run at 1 req/2sec without the key |
+| `S2_API_KEY` | Semantic Scholar article enrichment/navigation | Optional authenticated Semantic Scholar requests at 1 req/sec per BioMCP process; shared-pool requests run at 1 req/2sec without the key |
 | `OPENFDA_API_KEY` | OpenFDA | Higher rate limits |
 | `NCI_API_KEY` | NCI CTS trial search (`--source nci`) | Required for NCI source |
 | `DISGENET_API_KEY` | DisGeNET scored gene/disease associations | Required for `get gene <symbol> disgenet` and `get disease <name_or_id> disgenet`; DisGeNET sections are unavailable without the key |
@@ -221,6 +221,12 @@ Rate limiting is process-local. Multiple concurrent CLI invocations or MCP
 server workers do NOT share a limiter. For deployments with many concurrent
 agent workers, run a single shared `biomcp serve-http` endpoint so all workers
 share one limiter budget and one Streamable HTTP `/mcp` surface.
+
+Semantic Scholar has an additional process-boundary contract for benchmark and
+agent harnesses: `S2_API_KEY` is read from the `biomcp` subprocess environment,
+so a parent runner that strips env vars must provide an explicit allowlist before
+BioMCP can authenticate. The target contract and follow-up work are documented
+in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 
 ## Release Pipeline
 
@@ -466,6 +472,9 @@ replacing the real BioMCP markdown output.
 ## Known Constraints
 
 - Rate limiting is process-local (see above)
+- Semantic Scholar authentication depends on `S2_API_KEY` reaching the `biomcp`
+  process environment; parent runners with stripped environments need an explicit
+  env allowlist before BioMCP can use the key
 - Semantic Scholar participates in article search fan-out only on the
   compatible `search article --source all` path
 - Semantic Scholar always owns TLDR, citations, references, and
