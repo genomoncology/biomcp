@@ -12,10 +12,8 @@ Found {{ count }} article{% if count != 1 %}s{% endif %}
 
 {% endif %}
 Semantic Scholar: {% if semantic_scholar_enabled %}enabled{% else %}disabled{% endif %}
-{% if semantic_scholar_source_status_note %}
-{{ semantic_scholar_source_status_note }}
-{% endif %}
-{% if sort == "relevance" %}
+{% if semantic_scholar_source_status_note %}{{ semantic_scholar_source_status_note }}
+{% endif %}{% if sort == "relevance" %}
 Ranking: {{ ranking_policy }}
 {% endif %}
 
