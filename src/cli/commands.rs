@@ -506,8 +506,8 @@ See also: biomcp list pgx")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp get trial NCT02576665
-  biomcp get trial NCT02576665 eligibility --source ctgov
-  biomcp get trial NCT02576665 locations --offset 20 --limit 20
+  biomcp get trial NCT02576665 --source ctgov eligibility
+  biomcp get trial NCT02576665 --offset 20 --limit 20 locations
 
 See also: biomcp list trial")]
     Trial(trial::TrialGetArgs),

@@ -5,7 +5,27 @@ pub(in crate::cli) async fn handle_get(
     args: TrialGetArgs,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
-    let (sections, location_offset, location_limit) = parse_trial_location_paging(&args.sections)?;
+    let (sections, legacy_offset, legacy_limit) = parse_trial_location_paging(&args.sections)?;
+    if args.offset.is_some() && legacy_offset.is_some() {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--offset supplied twice; place named options before 'locations'".into(),
+        )
+        .into());
+    }
+    if args.limit.is_some() && legacy_limit.is_some() {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--limit supplied twice; place named options before 'locations'".into(),
+        )
+        .into());
+    }
+    let location_offset = args.offset.or(legacy_offset);
+    let location_limit = args.limit.or(legacy_limit);
+    if location_limit.is_some_and(|value| value == 0) {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--limit must be >= 1 for trial location pagination".into(),
+        )
+        .into());
+    }
     let (sections, json_override) = super::super::extract_json_from_sections(&sections);
     let json_output = json || json_override;
     let trial_source = crate::entities::trial::TrialSource::from_flag(&args.source)?;

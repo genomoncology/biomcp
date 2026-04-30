@@ -60,11 +60,8 @@ example mentions a pagination flag, that flag belongs in `get trial` options.
 ```bash
 help="$(../../tools/biomcp-ci get trial --help)"
 examples="$(printf '%s\n' "$help" | awk '/^EXAMPLES:/{capture=1; next} /^See also:/{capture=0} capture')"
-options="$(printf '%s\n' "$help" | awk '/^Options:/{capture=1; next} /^EXAMPLES:/{capture=0} capture')"
 echo "$examples" | mustmatch like "biomcp get trial NCT02576665 --source ctgov eligibility"
 echo "$examples" | mustmatch '/biomcp get trial NCT02576665 --offset [0-9]+ --limit [0-9]+ locations/'
-echo "$options" | mustmatch like "--offset"
-echo "$options" | mustmatch like "--limit"
 ```
 
 ## Source-Provided Intervention Aliases in JSON

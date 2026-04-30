@@ -24,14 +24,14 @@ def _run_help(*args: str) -> str:
     return result.stdout
 
 
-def _section(text: str, start_heading: str, end_heading: str) -> str:
+def _section(text: str, start_heading: str, end_heading_prefix: str) -> str:
     capture = False
     lines: list[str] = []
     for line in text.splitlines():
         if line == start_heading:
             capture = True
             continue
-        if capture and line == end_heading:
+        if capture and line.startswith(end_heading_prefix):
             break
         if capture:
             lines.append(line)
@@ -39,7 +39,7 @@ def _section(text: str, start_heading: str, end_heading: str) -> str:
 
 
 def _get_trial_examples(help_text: str) -> list[str]:
-    examples = _section(help_text, "EXAMPLES:", "See also: biomcp list trial")
+    examples = _section(help_text, "EXAMPLES:", "See also:")
     commands = [
         line.strip()
         for line in examples.splitlines()
@@ -64,7 +64,7 @@ def _flags_after_first_section(command: str) -> list[str]:
 
 def test_get_trial_help_examples_reference_only_declared_options() -> None:
     help_text = _run_help("get", "trial", "--help")
-    examples = _section(help_text, "EXAMPLES:", "See also: biomcp list trial")
+    examples = _section(help_text, "EXAMPLES:", "See also:")
     options = _section(help_text, "Options:", "EXAMPLES:")
 
     example_flags = set(LONG_FLAG.findall(examples))

@@ -48,7 +48,7 @@ biomcp get trial NCT02576665 eligibility
 Returns an eligibility section with inclusion and exclusion criteria text.
 
 ```bash
-biomcp get trial NCT02576665 locations --limit 3
+biomcp get trial NCT02576665 --limit 3 locations
 ```
 
 Returns a locations table with facility, city, country, status, and contact fields.

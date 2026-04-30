@@ -394,6 +394,8 @@ fn get_trial_parses_source_before_sections() {
                         nct_id,
                         sections,
                         source,
+                        offset,
+                        limit,
                     }),
             },
         ..
@@ -405,6 +407,48 @@ fn get_trial_parses_source_before_sections() {
     assert_eq!(nct_id, "NCT02576665");
     assert_eq!(sections, vec!["eligibility".to_string()]);
     assert_eq!(source, "ctgov");
+    assert_eq!(offset, None);
+    assert_eq!(limit, None);
+}
+
+#[test]
+fn get_trial_parses_location_paging_before_sections() {
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "get",
+        "trial",
+        "NCT02576665",
+        "--offset",
+        "20",
+        "--limit",
+        "10",
+        "locations",
+    ])
+    .expect("get trial should parse");
+
+    let Cli {
+        command:
+            Commands::Get {
+                entity:
+                    GetEntity::Trial(crate::cli::trial::TrialGetArgs {
+                        nct_id,
+                        sections,
+                        source,
+                        offset,
+                        limit,
+                    }),
+            },
+        ..
+    } = cli
+    else {
+        panic!("expected get trial command");
+    };
+
+    assert_eq!(nct_id, "NCT02576665");
+    assert_eq!(sections, vec!["locations".to_string()]);
+    assert_eq!(source, "ctgov");
+    assert_eq!(offset, Some(20));
+    assert_eq!(limit, Some(10));
 }
 
 #[tokio::test]

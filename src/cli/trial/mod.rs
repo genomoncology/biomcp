@@ -132,6 +132,12 @@ pub struct TrialGetArgs {
     /// Trial data source (ctgov or nci)
     #[arg(long, default_value = "ctgov")]
     pub source: String,
+    /// Skip the first N locations (requires locations section)
+    #[arg(long)]
+    pub offset: Option<usize>,
+    /// Maximum locations to show (requires locations section; must be >= 1)
+    #[arg(long)]
+    pub limit: Option<usize>,
 }
 
 mod dispatch;
