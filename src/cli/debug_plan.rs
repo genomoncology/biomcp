@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use crate::entities::article::ArticleSourceStatus;
+
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub(crate) struct DebugPlan {
     pub surface: &'static str,
@@ -21,6 +23,8 @@ pub(crate) struct DebugPlanLeg {
     pub sources: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub matched_sources: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub source_status: Vec<ArticleSourceStatus>,
     pub count: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub total: Option<usize>,

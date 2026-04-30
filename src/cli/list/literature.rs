@@ -106,6 +106,7 @@ Worked examples:
 
 - Set `NCBI_API_KEY` to increase throughput for NCBI-backed article enrichment.
 - Set `S2_API_KEY` to send authenticated Semantic Scholar requests at 1 req/sec. Without it, BioMCP uses the shared pool at 1 req/2sec.
+- `search article --json` and `--debug-plan` expose redacted Semantic Scholar auth/availability source status.
 - `get article <id> fulltext` tries XML first, then PMC HTML, and never falls back to PDF.
 - Add `--pdf` only with `fulltext` to extend that ladder with Semantic Scholar PDF as the last resort.
 - `--pdf` requires the `fulltext` section and is rejected for other article requests.

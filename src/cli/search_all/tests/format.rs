@@ -137,6 +137,7 @@ fn counts_only_json_projection_preserves_debug_plan() {
                 routing: vec!["anchor=gene".to_string()],
                 sources: vec!["PubMed".to_string()],
                 matched_sources: vec!["PubMed".to_string()],
+                source_status: Vec::new(),
                 count: 1,
                 total: Some(5),
                 note: None,

@@ -34,6 +34,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcSort;
+use crate::sources::semantic_scholar::SemanticScholarAuthMode;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Article {
@@ -117,6 +118,36 @@ pub struct ArticleSemanticScholarPdf {
     pub status: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub license: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleSourceStatus {
+    pub source: ArticleSource,
+    pub enabled: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auth_mode: Option<SemanticScholarAuthMode>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<ArticleSourceAvailability>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleSourceAvailability {
+    Ok,
+    Degraded,
+    Unavailable,
+    Skipped,
+}
+
+#[derive(Debug, Clone)]
+pub struct ArticleSearchPage {
+    pub results: Vec<ArticleSearchResult>,
+    pub total: Option<usize>,
+    #[allow(dead_code)]
+    pub next_page_token: Option<String>,
+    pub source_status: Vec<ArticleSourceStatus>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

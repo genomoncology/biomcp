@@ -35,6 +35,7 @@ fn build_article_debug_plan_includes_article_type_limitation_note() {
         3,
         &[],
         &pagination,
+        &[],
     )
     .expect("debug plan should build");
 

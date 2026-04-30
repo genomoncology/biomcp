@@ -266,6 +266,7 @@ pub(in crate::cli) async fn handle_command(
                         note: None,
                         debug_plan: None,
                         exact_entity_commands: &[],
+                        source_status: &[],
                     },
                 )?
             }

@@ -127,6 +127,7 @@ pub(super) fn build_result_plan(input: &PreparedInput, sections: &[SearchAllSect
                 } else {
                     Vec::new()
                 },
+                source_status: Vec::new(),
                 count: section.count,
                 total: section.total,
                 note: section.note.clone(),

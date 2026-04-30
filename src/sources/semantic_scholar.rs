@@ -22,6 +22,13 @@ const CITATION_EDGE_FIELDS: &str = "contexts,intents,isInfluential,citingPaper.p
 const REFERENCE_EDGE_FIELDS: &str = "contexts,intents,isInfluential,citedPaper.paperId,citedPaper.externalIds,citedPaper.title,citedPaper.venue,citedPaper.year";
 const RECOMMENDATION_FIELDS: &str = "paperId,externalIds,title,venue,year";
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SemanticScholarAuthMode {
+    Authenticated,
+    SharedPool,
+}
+
 #[derive(Clone)]
 pub struct SemanticScholarClient {
     client: reqwest_middleware::ClientWithMiddleware,
@@ -41,6 +48,13 @@ impl SemanticScholarClient {
             base: crate::sources::env_base(SEMANTIC_SCHOLAR_BASE, SEMANTIC_SCHOLAR_BASE_ENV),
             api_key,
         })
+    }
+
+    pub fn auth_mode(&self) -> SemanticScholarAuthMode {
+        match self.api_key.as_ref() {
+            Some(_) => SemanticScholarAuthMode::Authenticated,
+            None => SemanticScholarAuthMode::SharedPool,
+        }
     }
 
     #[cfg(test)]
@@ -456,6 +470,25 @@ mod tests {
         F: Future<Output = ()>,
     {
         crate::sources::with_no_cache(true, future).await;
+    }
+
+    #[test]
+    fn auth_mode_reports_authenticated_without_exposing_key() {
+        let client = SemanticScholarClient::new_for_test(
+            "http://example.test".into(),
+            Some("spec-secret-key-365".into()),
+        )
+        .unwrap();
+
+        assert_eq!(client.auth_mode(), SemanticScholarAuthMode::Authenticated);
+    }
+
+    #[test]
+    fn auth_mode_reports_shared_pool_without_key() {
+        let client = SemanticScholarClient::new_for_test("http://example.test".into(), None)
+            .unwrap();
+
+        assert_eq!(client.auth_mode(), SemanticScholarAuthMode::SharedPool);
     }
 
     #[tokio::test]

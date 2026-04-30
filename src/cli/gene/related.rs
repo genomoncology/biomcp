@@ -126,6 +126,7 @@ pub(super) async fn handle_related_command(
                         note: None,
                         debug_plan: None,
                         exact_entity_commands: &[],
+                        source_status: &[],
                     },
                 )?
             }

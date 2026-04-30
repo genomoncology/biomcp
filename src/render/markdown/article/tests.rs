@@ -296,6 +296,7 @@ fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
             ),
             debug_plan: None,
             exact_entity_commands: &[],
+            source_status: &[],
         },
     )
     .expect("markdown should render");
@@ -517,6 +518,7 @@ fn article_search_markdown_prepends_debug_plan_block() {
             routing: vec!["planner=federated".to_string()],
             sources: vec!["PubTator3".to_string(), "Europe PMC".to_string()],
             matched_sources: vec!["PubTator3".to_string()],
+            source_status: Vec::new(),
             count: 1,
             total: Some(1),
             note: None,
@@ -556,6 +558,7 @@ fn article_search_markdown_prepends_debug_plan_block() {
             note: None,
             debug_plan: Some(&debug_plan),
             exact_entity_commands: &[],
+            source_status: &[],
         },
     )
     .expect("markdown should render");
@@ -603,6 +606,7 @@ fn article_search_markdown_renders_related_block_before_pagination() {
             note: None,
             debug_plan: None,
             exact_entity_commands: &exact_commands,
+            source_status: &[],
         },
     )
     .expect("markdown should render");
@@ -658,6 +662,7 @@ fn article_search_markdown_includes_cross_entity_discover_hint_for_short_keyword
             note: None,
             debug_plan: None,
             exact_entity_commands: &[],
+            source_status: &[],
         },
     )
     .expect("markdown should render");
@@ -723,6 +728,7 @@ fn article_search_markdown_omits_index_footer_when_no_rows_have_it() {
             note: None,
             debug_plan: None,
             exact_entity_commands: &[],
+            source_status: &[],
         },
     )
     .expect("markdown should render");

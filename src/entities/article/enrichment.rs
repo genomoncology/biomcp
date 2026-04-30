@@ -13,7 +13,7 @@ use super::candidates::finalize_article_candidates;
 use super::detail::{parse_pmid, resolve_article_from_pmid};
 use super::{
     Article, ArticleSearchFilters, ArticleSearchResult, ArticleSource,
-    SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS,
+    ArticleSourceAvailability, ArticleSourceStatus, SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS,
 };
 
 fn article_search_semantic_scholar_lookup_id(row: &ArticleSearchResult) -> Option<String> {
@@ -84,7 +84,7 @@ fn merge_article_search_row_with_semantic_scholar(
 
 pub(super) async fn enrich_article_search_rows_with_semantic_scholar(
     rows: &mut [ArticleSearchResult],
-) {
+) -> Option<ArticleSourceStatus> {
     let mut lookup_ids = Vec::new();
     let mut lookup_positions: HashMap<String, Vec<usize>> = HashMap::new();
 
@@ -105,15 +105,29 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar(
     }
 
     if lookup_ids.is_empty() {
-        return;
+        return None;
     }
 
     let client = match SemanticScholarClient::new() {
         Ok(client) => client,
         Err(err) => {
             warn!(?err, "Semantic Scholar search-row enrichment unavailable");
-            return;
+            return Some(ArticleSourceStatus {
+                source: ArticleSource::SemanticScholar,
+                enabled: true,
+                auth_mode: None,
+                status: Some(ArticleSourceAvailability::Unavailable),
+                message: Some("Semantic Scholar enrichment unavailable".to_string()),
+            });
         }
+    };
+    let auth_mode = client.auth_mode();
+    let mut status = ArticleSourceStatus {
+        source: ArticleSource::SemanticScholar,
+        enabled: true,
+        auth_mode: Some(auth_mode),
+        status: Some(ArticleSourceAvailability::Ok),
+        message: None,
     };
 
     for (chunk_idx, chunk) in lookup_ids
@@ -143,10 +157,13 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar(
                     chunk_end,
                     "Semantic Scholar article-search batch enrichment failed",
                 );
+                status.status = Some(ArticleSourceAvailability::Unavailable);
+                status.message = Some("Semantic Scholar enrichment unavailable".to_string());
                 break;
             }
         }
     }
+    Some(status)
 }
 
 fn article_search_row_needs_visible_article_fallback(row: &ArticleSearchResult) -> bool {
@@ -212,23 +229,37 @@ async fn enrich_visible_article_search_rows_with_article_base(rows: &mut [Articl
     }
 }
 
-pub(super) async fn enrich_and_finalize_article_candidates(
+pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar_status(
     mut rows: Vec<ArticleSearchResult>,
     limit: usize,
     offset: usize,
     total: Option<usize>,
     filters: &ArticleSearchFilters,
-) -> SearchPage<ArticleSearchResult> {
-    enrich_article_search_rows_with_semantic_scholar(&mut rows).await;
+) -> (SearchPage<ArticleSearchResult>, Option<ArticleSourceStatus>) {
+    let source_status = enrich_article_search_rows_with_semantic_scholar(&mut rows).await;
     let mut page = finalize_article_candidates(rows, limit, offset, total, filters);
     enrich_visible_article_search_rows_with_article_base(&mut page.results).await;
-    page
+    (page, source_status)
+}
+
+pub(super) async fn enrich_and_finalize_article_candidates(
+    rows: Vec<ArticleSearchResult>,
+    limit: usize,
+    offset: usize,
+    total: Option<usize>,
+    filters: &ArticleSearchFilters,
+) -> SearchPage<ArticleSearchResult> {
+    enrich_and_finalize_article_candidates_with_semantic_scholar_status(
+        rows, limit, offset, total, filters,
+    )
+    .await
+    .0
 }
 
 pub(super) async fn enrich_visible_article_search_page(
     mut page: SearchPage<ArticleSearchResult>,
 ) -> SearchPage<ArticleSearchResult> {
-    enrich_article_search_rows_with_semantic_scholar(&mut page.results).await;
+    let _ = enrich_article_search_rows_with_semantic_scholar(&mut page.results).await;
     enrich_visible_article_search_rows_with_article_base(&mut page.results).await;
     page
 }
