@@ -69,7 +69,7 @@ SOURCE_PAGE_SPECS = {
             'biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 3',
             "biomcp get trial NCT02576665",
             "biomcp get trial NCT02576665 eligibility",
-            "biomcp get trial NCT02576665 locations --limit 3",
+            "biomcp get trial NCT02576665 --limit 3 locations",
         ],
     },
     "clinvar.md": {
