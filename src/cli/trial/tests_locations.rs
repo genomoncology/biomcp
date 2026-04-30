@@ -1,7 +1,8 @@
 //! Trial location pagination and query-summary tests.
 
+use super::TrialGetArgs;
 use super::dispatch::{
-    LocationPaginationMeta, paginate_trial_locations, parse_trial_location_paging,
+    LocationPaginationMeta, handle_get, paginate_trial_locations, parse_trial_location_paging,
     should_show_trial_zero_result_nickname_hint, trial_locations_json, trial_search_query_summary,
 };
 
@@ -18,6 +19,85 @@ fn parse_trial_location_paging_extracts_offset_limit_flags() {
     assert_eq!(cleaned, vec!["locations".to_string()]);
     assert_eq!(offset, Some(20));
     assert_eq!(limit, Some(10));
+}
+
+#[tokio::test]
+async fn handle_get_rejects_duplicate_declared_and_legacy_paging() {
+    let err = handle_get(
+        TrialGetArgs {
+            nct_id: "NCT02576665".to_string(),
+            sections: vec![
+                "locations".to_string(),
+                "--offset".to_string(),
+                "20".to_string(),
+            ],
+            source: "ctgov".to_string(),
+            offset: Some(10),
+            limit: None,
+        },
+        false,
+    )
+    .await
+    .expect_err("duplicate offset should fail fast");
+
+    assert!(err.to_string().contains("--offset supplied twice"));
+}
+
+#[tokio::test]
+async fn handle_get_rejects_declared_paging_without_locations() {
+    let err = handle_get(
+        TrialGetArgs {
+            nct_id: "NCT02576665".to_string(),
+            sections: vec!["eligibility".to_string()],
+            source: "ctgov".to_string(),
+            offset: Some(20),
+            limit: None,
+        },
+        false,
+    )
+    .await
+    .expect_err("location paging without locations should fail fast");
+
+    assert!(
+        err.to_string()
+            .contains("--offset and --limit are only valid with the 'locations' section")
+    );
+}
+
+#[tokio::test]
+async fn handle_get_rejects_declared_limit_zero() {
+    let err = handle_get(
+        TrialGetArgs {
+            nct_id: "NCT02576665".to_string(),
+            sections: vec!["locations".to_string()],
+            source: "ctgov".to_string(),
+            offset: None,
+            limit: Some(0),
+        },
+        false,
+    )
+    .await
+    .expect_err("limit zero should fail fast");
+
+    assert!(
+        err.to_string()
+            .contains("--limit must be >= 1 for trial location pagination")
+    );
+}
+
+#[test]
+fn parse_trial_location_paging_rejects_legacy_limit_zero() {
+    let sections = vec![
+        "locations".to_string(),
+        "--limit".to_string(),
+        "0".to_string(),
+    ];
+    let err = parse_trial_location_paging(&sections).expect_err("limit zero should fail");
+
+    assert!(
+        err.to_string()
+            .contains("--limit must be >= 1 for trial location pagination")
+    );
 }
 
 #[test]

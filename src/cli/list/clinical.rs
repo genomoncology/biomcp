@@ -7,7 +7,7 @@ pub(super) fn list_trial() -> String {
 - `get trial <nct_id>` - protocol card by NCT ID
 - `get trial <nct_id> eligibility` - show eligibility criteria inline
 - `get trial <nct_id> locations` - site locations section
-- `get trial <nct_id> locations --offset <N> --limit <N>` - paged location slice
+- `get trial <nct_id> --offset <N> --limit <N> locations` - paged location slice
 - `get trial <nct_id> outcomes` - primary/secondary outcomes
 - `get trial <nct_id> arms` - arm/intervention details
 - `get trial <nct_id> references` - trial publication references

@@ -51,6 +51,19 @@ echo "$out" | mustmatch like "## Locations (ClinicalTrials.gov)"
 echo "$out" | mustmatch like "| Facility | City | Country | Status | Contact |"
 ```
 
+## Location Pagination Help Declares Its Flags
+
+Location paging is part of the trial detail surface, so the paged locations
+example must be discoverable from the same help page that teaches it. If the
+example mentions a pagination flag, that flag belongs in `get trial` options.
+
+```bash
+help="$(../../tools/biomcp-ci get trial --help)"
+examples="$(printf '%s\n' "$help" | awk '/^EXAMPLES:/{capture=1; next} /^See also:/{capture=0} capture')"
+echo "$examples" | mustmatch like "biomcp get trial NCT02576665 --source ctgov eligibility"
+echo "$examples" | mustmatch '/biomcp get trial NCT02576665 --offset [0-9]+ --limit [0-9]+ locations/'
+```
+
 ## Source-Provided Intervention Aliases in JSON
 
 ClinicalTrials.gov can attach alternate names directly to an intervention. BioMCP

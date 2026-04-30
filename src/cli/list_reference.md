@@ -77,7 +77,7 @@ New to BioMCP? Try:
 - `get drug <name> all [--region <us|eu|who|all>]` - include all sections plus region-aware regulatory context
 - `ema` is accepted as an input alias for the canonical `eu` drug region value
 - Omitting `--region` on `get drug <name> regulatory` is the one implicit combined-region get path; other no-flag `get drug` shapes stay on the default U.S. path
-- `get trial <nct_id> locations --offset <N> --limit <N>` - page trial locations
+- `get trial <nct_id> --offset <N> --limit <N> locations` - page trial locations
 - `enrich <GENE1,GENE2,...>` - gene-set enrichment via g:Profiler
 - `batch <entity> <id1,id2,...>` - parallel get operations
 - `study list|download|top-mutated|filter|query|co-occurrence|cohort|survival|compare` - local cBioPortal study analytics
