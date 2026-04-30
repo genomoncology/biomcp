@@ -421,9 +421,9 @@ async fn semantic_scholar_candidates_keep_unknown_retraction_rows() {
     .await
     .expect("semantic scholar search should succeed");
 
-    assert_eq!(rows.len(), 1);
-    assert_eq!(rows[0].source, ArticleSource::SemanticScholar);
-    assert_eq!(rows[0].is_retracted, None);
+    assert_eq!(rows.rows.len(), 1);
+    assert_eq!(rows.rows[0].source, ArticleSource::SemanticScholar);
+    assert_eq!(rows.rows[0].is_retracted, None);
 }
 
 #[test]
@@ -489,8 +489,8 @@ async fn semantic_scholar_candidates_send_effective_year_filter() {
     .await
     .expect("semantic scholar search should include the effective year filter");
 
-    assert_eq!(rows.len(), 1);
-    assert_eq!(rows[0].date.as_deref(), Some("2005"));
+    assert_eq!(rows.rows.len(), 1);
+    assert_eq!(rows.rows[0].date.as_deref(), Some("2005"));
 }
 #[tokio::test]
 async fn litsense2_candidates_deduplicate_and_hydrate_pubmed_metadata() {

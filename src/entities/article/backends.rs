@@ -19,7 +19,8 @@ use super::query::{
     build_search_query, pubtator_sort,
 };
 use super::{
-    ArticleSearchFilters, ArticleSearchResult, ArticleSort, ArticleSource, EUROPE_PMC_PAGE_SIZE,
+    ArticleSearchFilters, ArticleSearchResult, ArticleSort, ArticleSource,
+    ArticleSourceAvailability, ArticleSourceStatus, EUROPE_PMC_PAGE_SIZE,
     MAX_FEDERATED_FETCH_RESULTS, MAX_PAGE_FETCHES, PUBMED_PAGE_SIZE, PUBTATOR_PAGE_SIZE,
     WARN_PAGE_THRESHOLD,
 };
@@ -41,6 +42,11 @@ pub(super) fn semantic_scholar_year_filter(
         (None, Some(to)) => Some(format!("-{to}")),
         (None, None) => None,
     }
+}
+
+pub(super) struct SemanticScholarCandidateOutcome {
+    pub rows: Vec<ArticleSearchResult>,
+    pub status: ArticleSourceStatus,
 }
 
 pub(super) async fn search_pubmed_page(
@@ -326,12 +332,23 @@ pub(super) async fn search_pubtator_page(
 pub(super) async fn search_semantic_scholar_candidates(
     filters: &ArticleSearchFilters,
     limit: usize,
-) -> Result<Vec<ArticleSearchResult>, BioMcpError> {
+) -> Result<SemanticScholarCandidateOutcome, BioMcpError> {
     let client = SemanticScholarClient::new()?;
+    let auth_mode = client.auth_mode();
+    let mut status = ArticleSourceStatus {
+        source: ArticleSource::SemanticScholar,
+        enabled: true,
+        auth_mode: Some(auth_mode),
+        status: Some(ArticleSourceAvailability::Ok),
+        message: None,
+    };
 
     let query = build_free_text_article_query(filters);
     if query.trim().is_empty() {
-        return Ok(Vec::new());
+        return Ok(SemanticScholarCandidateOutcome {
+            rows: Vec::new(),
+            status,
+        });
     }
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
     let year_filter = semantic_scholar_year_filter(
@@ -346,7 +363,12 @@ pub(super) async fn search_semantic_scholar_candidates(
         Ok(response) => response,
         Err(err) => {
             warn!(?err, query, "Semantic Scholar article search leg failed");
-            return Ok(Vec::new());
+            status.status = Some(ArticleSourceAvailability::Unavailable);
+            status.message = Some("Semantic Scholar search unavailable".to_string());
+            return Ok(SemanticScholarCandidateOutcome {
+                rows: Vec::new(),
+                status,
+            });
         }
     };
 
@@ -419,7 +441,7 @@ pub(super) async fn search_semantic_scholar_candidates(
         }
     }
 
-    Ok(rows)
+    Ok(SemanticScholarCandidateOutcome { rows, status })
 }
 
 pub(super) async fn search_litsense2_candidates(

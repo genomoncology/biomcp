@@ -24,6 +24,7 @@ pub struct ArticleSearchRenderContext<'a> {
     pub note: Option<&'a str>,
     pub debug_plan: Option<&'a DebugPlan>,
     pub exact_entity_commands: &'a [String],
+    pub source_status: &'a [crate::entities::article::ArticleSourceStatus],
 }
 
 pub fn article_markdown(
@@ -378,6 +379,33 @@ fn format_article_score(value: f64) -> String {
     if out == "-0" { "0".to_string() } else { out }
 }
 
+fn semantic_scholar_source_status_note(
+    source_status: &[crate::entities::article::ArticleSourceStatus],
+) -> Option<String> {
+    source_status.iter().find_map(|status| {
+        if status.source != ArticleSource::SemanticScholar {
+            return None;
+        }
+        let availability = match status.status? {
+            crate::entities::article::ArticleSourceAvailability::Degraded => "degraded",
+            crate::entities::article::ArticleSourceAvailability::Unavailable => "unavailable",
+            _ => return None,
+        };
+        let auth = match status.auth_mode {
+            Some(crate::sources::semantic_scholar::SemanticScholarAuthMode::Authenticated) => {
+                "authenticated"
+            }
+            Some(crate::sources::semantic_scholar::SemanticScholarAuthMode::SharedPool) => {
+                "shared_pool"
+            }
+            None => "unknown_auth",
+        };
+        Some(format!(
+            "Semantic Scholar source status: {availability} ({auth})"
+        ))
+    })
+}
+
 fn article_ranking_why(row: &ArticleSearchResult, filters: &ArticleSearchFilters) -> String {
     if filters.sort != ArticleSort::Relevance {
         return "-".to_string();
@@ -447,6 +475,8 @@ pub fn article_search_markdown_with_footer_and_context(
         ),
     );
     let index_date_footer = newest_indexed_footer(results);
+    let semantic_scholar_source_status_note =
+        semantic_scholar_source_status_note(context.source_status);
 
     let tmpl = env()?.get_template("article_search.md.j2")?;
     let body = tmpl.render(context! {
@@ -454,6 +484,7 @@ pub fn article_search_markdown_with_footer_and_context(
         count => results.len(),
         rows => rows,
         semantic_scholar_enabled => context.semantic_scholar_enabled,
+        semantic_scholar_source_status_note => semantic_scholar_source_status_note,
         note => context.note,
         sort => filters.sort.as_str(),
         ranking_policy => crate::entities::article::article_relevance_ranking_policy(filters),

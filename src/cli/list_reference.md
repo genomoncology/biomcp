@@ -140,6 +140,7 @@ Results depend on source document wording and may vary across sources.
 
 - Set `NCBI_API_KEY` to increase NCBI request throughput for article annotation/full-text paths.
 - Set `S2_API_KEY` for authenticated Semantic Scholar requests at 1 req/sec; without it, BioMCP uses the shared pool at 1 req/2sec.
+- `search article --json` and `--debug-plan` expose redacted Semantic Scholar auth/availability source status.
 - On the default `search article --source all` route, typed gene/disease/drug anchors participate in PubTator3 + Europe PMC + PubMed when the filter set is compatible, and Semantic Scholar is still automatic on compatible queries.
 - Add `-k/--keyword` for mechanisms, phenotypes, datasets, and other free-text concepts; that also brings LitSense2 into compatible federated searches and makes the default relevance mode hybrid instead of lexical.
 - Cap each federated source's contribution after deduplication and before ranking.

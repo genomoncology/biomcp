@@ -112,7 +112,7 @@ pub struct ArticleSearchArgs {
     /// Skip the first N results
     #[arg(long, default_value = "0")]
     pub offset: usize,
-    /// Include the executed search planner output in markdown or JSON output
+    /// Include the executed search planner output and redacted source status in markdown or JSON output
     #[arg(long = "debug-plan")]
     pub debug_plan: bool,
 }

@@ -269,6 +269,7 @@ pub(in crate::cli) async fn handle_search(
     } else {
         (search_future.await?, None)
     };
+    let source_status = page.source_status;
     let results = page.results;
     let pagination =
         super::super::PaginationMeta::offset(args.offset, args.limit, results.len(), page.total);
@@ -282,6 +283,7 @@ pub(in crate::cli) async fn handle_search(
             args.limit,
             &results,
             &pagination,
+            &source_status,
         )?)
     } else {
         None
@@ -337,6 +339,7 @@ pub(in crate::cli) async fn handle_search(
                 pagination,
                 next_commands,
                 suggestions,
+                source_status: source_status.clone(),
             },
         )?
     } else {
@@ -356,6 +359,7 @@ pub(in crate::cli) async fn handle_search(
                 .as_deref(),
                 debug_plan: debug_plan.as_ref(),
                 exact_entity_commands: &exact_entity_commands,
+                source_status: &source_status,
             },
         )?
     };
@@ -545,6 +549,7 @@ pub(super) fn build_article_debug_plan(
     limit: usize,
     results: &[crate::entities::article::ArticleSearchResult],
     pagination: &crate::cli::PaginationMeta,
+    source_status: &[crate::entities::article::ArticleSourceStatus],
 ) -> Result<crate::cli::debug_plan::DebugPlan, crate::error::BioMcpError> {
     let summary = crate::entities::article::summarize_debug_plan(filters, source_filter, results)?;
     Ok(crate::cli::debug_plan::DebugPlan {
@@ -558,6 +563,7 @@ pub(super) fn build_article_debug_plan(
             routing: summary.routing,
             sources: summary.sources,
             matched_sources: summary.matched_sources,
+            source_status: source_status.to_vec(),
             count: results.len(),
             total: pagination.total,
             note: crate::entities::article::article_type_limitation_note(filters, source_filter),
@@ -571,6 +577,7 @@ pub(super) struct ArticleSearchJsonPage {
     pub pagination: crate::cli::PaginationMeta,
     pub next_commands: Vec<String>,
     pub suggestions: Vec<ArticleSuggestion>,
+    pub source_status: Vec<crate::entities::article::ArticleSourceStatus>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
@@ -587,11 +594,14 @@ struct ArticleSearchJsonMeta {
     next_commands: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     suggestions: Vec<ArticleSuggestion>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    source_status: Vec<crate::entities::article::ArticleSourceStatus>,
 }
 
 fn article_search_json_meta(
     next_commands: Vec<String>,
     suggestions: Vec<ArticleSuggestion>,
+    source_status: Vec<crate::entities::article::ArticleSourceStatus>,
 ) -> Option<ArticleSearchJsonMeta> {
     let next_commands = super::super::normalize_next_commands(next_commands);
     let suggestions = suggestions
@@ -601,10 +611,13 @@ fn article_search_json_meta(
         })
         .collect::<Vec<_>>();
 
-    (!next_commands.is_empty() || !suggestions.is_empty()).then_some(ArticleSearchJsonMeta {
-        next_commands,
-        suggestions,
-    })
+    (!next_commands.is_empty() || !suggestions.is_empty() || !source_status.is_empty()).then_some(
+        ArticleSearchJsonMeta {
+            next_commands,
+            suggestions,
+            source_status,
+        },
+    )
 }
 
 pub(super) fn article_search_json(
@@ -644,7 +657,7 @@ pub(super) fn article_search_json(
         count,
         results: page.results,
         debug_plan,
-        _meta: article_search_json_meta(page.next_commands, page.suggestions),
+        _meta: article_search_json_meta(page.next_commands, page.suggestions, page.source_status),
     })
     .map_err(Into::into)
 }

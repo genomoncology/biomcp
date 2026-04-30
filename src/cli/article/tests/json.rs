@@ -92,6 +92,15 @@ fn article_search_json_includes_query_and_ranking_context() {
             pagination,
             next_commands,
             suggestions: Vec::new(),
+            source_status: vec![crate::entities::article::ArticleSourceStatus {
+                source: crate::entities::article::ArticleSource::SemanticScholar,
+                enabled: true,
+                auth_mode: Some(
+                    crate::sources::semantic_scholar::SemanticScholarAuthMode::SharedPool,
+                ),
+                status: Some(crate::entities::article::ArticleSourceAvailability::Ok),
+                message: None,
+            }],
         },
     )
     .expect("article search json should render");
@@ -101,6 +110,18 @@ fn article_search_json_includes_query_and_ranking_context() {
     assert_eq!(value["query"], query);
     assert_eq!(value["sort"], "relevance");
     assert_eq!(value["semantic_scholar_enabled"], true);
+    let source_status = value["_meta"]["source_status"]
+        .as_array()
+        .expect("article search JSON should expose source status metadata");
+    assert!(source_status.iter().any(|status| {
+        status.get("source") == Some(&serde_json::Value::String("semanticscholar".into()))
+            && status.get("enabled") == Some(&serde_json::Value::Bool(true))
+            && status.get("auth_mode") == Some(&serde_json::Value::String("shared_pool".into()))
+            && matches!(
+                status.get("status").and_then(serde_json::Value::as_str),
+                Some("ok" | "degraded" | "unavailable")
+            )
+    }));
     assert_eq!(
         value["ranking_policy"],
         crate::entities::article::ARTICLE_RELEVANCE_RANKING_POLICY
@@ -209,6 +230,7 @@ fn article_search_json_emits_structured_exact_entity_suggestions() {
             pagination,
             next_commands,
             suggestions,
+            source_status: Vec::new(),
         },
     )
     .expect("article search json should render");
@@ -288,6 +310,7 @@ fn article_search_json_allows_loop_suggestions_without_sections() {
             pagination,
             next_commands: Vec::new(),
             suggestions,
+            source_status: Vec::new(),
         },
     )
     .expect("article search json should render");
@@ -624,6 +647,7 @@ fn article_search_json_next_commands_preserve_source_filter() {
             pagination,
             next_commands,
             suggestions: Vec::new(),
+            source_status: Vec::new(),
         },
     )
     .expect("article search json should render");
