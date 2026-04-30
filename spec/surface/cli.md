@@ -31,6 +31,22 @@ echo "$batch" | mustmatch like '`batch <entity> <id1,id2,...>`'
 echo "$batch" | mustmatch like "up to 10 IDs"
 ```
 
+## List Command Documents Update Checksum Override
+
+The root command reference is also the operator quick reference. Its update line
+must list the unsafe missing-checksum override next to the default checksum
+verification behavior, and the rendered `biomcp list` output must match the
+committed static reference.
+
+```bash
+set +e
+list_contract_out="$(cd ../.. && uv run --no-sync pytest tests/test_update_command_docs_contract.py::test_update_list_reference_and_rendered_list_describe_checksum_override -v 2>&1)"
+list_contract_status=$?
+set -e
+echo "$list_contract_out" | mustmatch like "test_update_list_reference_and_rendered_list_describe_checksum_override"
+test "$list_contract_status" -eq 0
+```
+
 ## Validation Exit Codes Separate Bad Usage From Runtime Failures
 
 Invalid command usage should exit `2` whether clap catches it during parsing or
@@ -266,6 +282,39 @@ printf '%s\n' "$help" | grep -Eiq "checksum"
 echo "$help" | mustmatch like "--allow-missing-checksum"
 ```
 
+The unsafe marker belongs on the override option itself. This block extracts the
+`--allow-missing-checksum` help stanza and checks the warning and checksum
+concept inside that stanza rather than matching a floating short token.
+
+```bash
+help="$(../../tools/biomcp-ci update --help)"
+allow_block="$(HELP_TEXT="$help" uv run --no-sync python3 - <<'PY'
+import os
+import re
+
+lines = os.environ["HELP_TEXT"].splitlines()
+start = next(
+    index for index, line in enumerate(lines)
+    if "--allow-missing-checksum" in line
+)
+block = []
+for line in lines[start:]:
+    if block and re.match(r"\s*(?:-[A-Za-z],\s*)?--[A-Za-z0-9-]+\b", line):
+        break
+    block.append(line)
+text = "\n".join(block)
+assert "UNSAFE" in text, text
+assert "checksum" in text.lower(), text
+assert re.search(r"SHA-?256", text, flags=re.IGNORECASE), text
+print(text)
+PY
+)"
+echo "$allow_block" | mustmatch like "--allow-missing-checksum"
+printf '%s\n' "$allow_block" | grep -q "UNSAFE"
+printf '%s\n' "$allow_block" | grep -Eiq "checksum"
+printf '%s\n' "$allow_block" | grep -Eiq "SHA-?256"
+```
+
 ```bash
 set +e
 update_out="$(cd ../.. && cargo test --lib enforce_checksum_policy_missing_sidecar_without_override_fails_closed -- --nocapture 2>&1)"
@@ -273,6 +322,22 @@ update_status=$?
 set -e
 echo "$update_out" | mustmatch like "enforce_checksum_policy_missing_sidecar_without_override_fails_closed"
 test "$update_status" -eq 0
+```
+
+## MCP Description Audit Filters Update Structurally
+
+The MCP tool description is read-only, so mutating `update` Ops lines must be
+filtered by command shape rather than one historical flag list. The quality
+ratchet synthesizes a future grammar drift and rejects an exact-marker-only
+filter before such a line can leak to MCP clients.
+
+```bash
+set +e
+mcp_policy_out="$(cd ../.. && uv run --no-sync pytest tests/test_quality_ratchet_contract.py::test_mcp_description_policy_rejects_legacy_update_marker_only -v 2>&1)"
+mcp_policy_status=$?
+set -e
+echo "$mcp_policy_out" | mustmatch like "test_mcp_description_policy_rejects_legacy_update_marker_only"
+test "$mcp_policy_status" -eq 0
 ```
 
 ## Benchmark Internal Harness Ratchet Stays Executable

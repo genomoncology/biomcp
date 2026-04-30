@@ -203,6 +203,18 @@ def _remove_description_filter_term(build_file: Path) -> None:
     build_file.write_text(updated, encoding="utf-8")
 
 
+def _remove_structural_update_description_filter(build_file: Path) -> None:
+    content = build_file.read_text(encoding="utf-8")
+    updated = content.replace(
+        '        || line.trim_start().starts_with("- `update ")\n',
+        "",
+        count=1,
+    )
+    assert updated != content
+    assert '"`update [--check]`"' in updated
+    build_file.write_text(updated, encoding="utf-8")
+
+
 def _remove_mygene_health_entry(health_file: Path) -> None:
     content = health_file.read_text(encoding="utf-8")
     updated, count = re.subn(
@@ -307,6 +319,27 @@ def test_mcp_allowlist_audit_reports_description_policy_drift(tmp_path: Path) ->
 
     assert result.returncode == 1
     payload = _load_json(result.stdout)
+    assert payload["status"] == "fail"
+    assert payload["description_policy_ok"] is False
+
+
+def test_mcp_description_policy_rejects_legacy_update_marker_only(tmp_path: Path) -> None:
+    fixture_root = _copy_mcp_fixture(tmp_path)
+    _remove_structural_update_description_filter(fixture_root / "build.rs")
+
+    result = _run_python_script(
+        MCP_SCRIPT,
+        "--cli-file",
+        str(fixture_root / "src/cli/mod.rs"),
+        "--shell-file",
+        str(fixture_root / "src/mcp/shell.rs"),
+        "--build-file",
+        str(fixture_root / "build.rs"),
+        "--json",
+    )
+
+    payload = _load_json(result.stdout)
+    assert result.returncode == 1, result.stdout
     assert payload["status"] == "fail"
     assert payload["description_policy_ok"] is False
 

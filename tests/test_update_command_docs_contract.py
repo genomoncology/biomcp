@@ -9,14 +9,88 @@ still describes the old fail-open behavior.
 
 from __future__ import annotations
 
+import os
 import re
+import subprocess
 from pathlib import Path
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
+
+
+def _release_bin() -> Path:
+    configured = os.environ.get("BIOMCP_BIN")
+    return Path(configured) if configured else REPO_ROOT / "target" / "release" / "biomcp"
+
+
+def _render_list() -> str:
+    binary = _release_bin()
+    assert binary.exists(), f"missing release binary for rendered list contract: {binary}"
+    result = subprocess.run(
+        [str(binary), "list"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout
+
+
+def _update_ops_lines(text: str) -> list[str]:
+    return [
+        line.strip()
+        for line in text.splitlines()
+        if line.strip().startswith("- `update ")
+    ]
+
+
+def _assert_update_reference_contract(label: str, text: str) -> str:
+    lines = _update_ops_lines(text)
+    assert lines, f"{label} must include an update Ops command line"
+
+    for line in lines:
+        lower = line.lower()
+        has_checksum_concept = "checksum" in lower or re.search(
+            r"sha-?256", line, flags=re.IGNORECASE
+        )
+        if (
+            "update" in line
+            and "--check" in line
+            and "--allow-missing-checksum" in line
+            and has_checksum_concept
+            and "unsafe" in lower
+        ):
+            return line
+
+    joined = "\n".join(lines)
+    raise AssertionError(
+        f"{label} update Ops line must document --check, "
+        "--allow-missing-checksum, checksum/SHA256 verification, and unsafe "
+        f"override wording; saw:\n{joined}"
+    )
+
+
+def test_update_list_reference_and_rendered_list_describe_checksum_override() -> None:
+    source_line = _assert_update_reference_contract(
+        "src/cli/list_reference.md",
+        _read("src/cli/list_reference.md"),
+    )
+    rendered_line = _assert_update_reference_contract("biomcp list", _render_list())
+
+    assert "--allow-missing-checksum" in source_line
+    assert "--allow-missing-checksum" in rendered_line
+
+
+def test_update_list_reference_contract_rejects_stale_update_line() -> None:
+    stale_ops = "## Ops\n\n- `update [--check]` - self-update from GitHub releases\n"
+
+    with pytest.raises(AssertionError, match="--allow-missing-checksum"):
+        _assert_update_reference_contract("synthetic stale list reference", stale_ops)
 
 
 def test_update_command_docs_describe_verification_requirement() -> None:
