@@ -225,6 +225,26 @@ enum SharedHttpClientKind {
 #[error("semantic scholar shared-pool rate limit exceeded")]
 struct SemanticScholarSharedPoolRateLimitError;
 
+struct RetryAfterTooManyRequestsMiddleware;
+
+#[async_trait::async_trait]
+impl Middleware for RetryAfterTooManyRequestsMiddleware {
+    async fn handle(
+        &self,
+        req: reqwest::Request,
+        extensions: &mut Extensions,
+        next: Next<'_>,
+    ) -> reqwest_middleware::Result<reqwest::Response> {
+        let response = next.run(req, extensions).await?;
+        if response.status() == StatusCode::TOO_MANY_REQUESTS
+            && let Some(duration) = parse_retry_after_header(response.headers())
+        {
+            tokio::time::sleep(duration).await;
+        }
+        Ok(response)
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 struct SemanticScholarSharedPoolRateLimitMiddleware;
 
@@ -300,7 +320,7 @@ fn build_http_client(kind: SharedHttpClientKind) -> Result<ClientWithMiddleware,
             .with_retry_log_level(tracing::Level::DEBUG),
     );
     let builder = match kind {
-        SharedHttpClientKind::Default => builder,
+        SharedHttpClientKind::Default => builder.with(RetryAfterTooManyRequestsMiddleware),
         SharedHttpClientKind::SemanticScholarSharedPool => {
             builder.with(SemanticScholarSharedPoolRateLimitMiddleware)
         }
