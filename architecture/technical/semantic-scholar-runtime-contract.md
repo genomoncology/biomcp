@@ -47,15 +47,6 @@ Semantic Scholar leg ran authenticated, shared-pool, unavailable, or degraded.
 Warnings are emitted on stderr, which is easy for agents and benchmark reports to
 miss when stdout is the primary evidence channel.
 
-### Authenticated retries ignore Retry-After on the shared-client path
-
-The shared HTTP client in `src/sources/mod.rs::build_http_client()` uses
-`reqwest_retry::policies::ExponentialBackoff` with three retries. The current
-shared-client policy does not opt into honoring `Retry-After` for 429 responses.
-The separate `retry_send()` helper parses `Retry-After`, but Semantic Scholar's
-standard authenticated request path uses the shared middleware client instead.
-Under authenticated aggregate pressure, short retries can amplify a 429 storm.
-
 ## Target Architecture
 
 ### Credential boundary: BotAssembly owns env forwarding policy
@@ -145,14 +136,16 @@ The structure is additive. Existing rows, pagination, ranking metadata,
 
 ### Retry contract
 
-The shared HTTP client retry policy should honor upstream `Retry-After` for 429
-responses. The target code path is `src/sources/mod.rs::build_http_client()`:
-construct `ExponentialBackoff` with Retry-After support, and add a focused test
-that proves an authenticated Semantic Scholar 429 with `Retry-After` is not
-retried on the short 100/200/400ms cadence.
+The shared HTTP client retry policy honors upstream numeric `Retry-After` floors
+for 429 responses on the default shared-client path. The target code path is
+`src/sources/mod.rs::build_http_client()`: a private middleware delays 429
+responses with numeric `Retry-After` before they return to the shared
+`RetryTransientMiddleware`, preserving the existing exponential retry
+classification and max-retry behavior while preventing the next retry from
+starting on the short 100/200/400ms cadence.
 
 The unauthenticated shared-pool fast-fail behavior remains unchanged:
-`SemanticScholarSharedPoolRateLimitMiddleware` should continue converting
+`SemanticScholarSharedPoolRateLimitMiddleware` continues converting
 unauthenticated S2 429s into the explicit "Set S2_API_KEY" error instead of
 retrying the shared pool.
 
@@ -196,8 +189,6 @@ BioMCP.
    controlled PATH-only vs allowlisted subprocess behavior.
 3. BioMCP: add redacted Semantic Scholar source-status metadata to article
    search output/debug plans.
-4. BioMCP: honor `Retry-After` on authenticated shared-client retries while
-   preserving unauthenticated shared-pool fast-fail behavior.
-5. Agents BioMCP: after key propagation, measure authenticated parallel S2
+4. Agents BioMCP: after key propagation, measure authenticated parallel S2
    behavior and decide whether Project 38 should use `serve-http`, panel-level
    serialization, or a new BotAssembly generic tool-rate policy.
