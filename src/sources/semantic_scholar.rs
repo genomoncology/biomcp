@@ -485,8 +485,8 @@ mod tests {
 
     #[test]
     fn auth_mode_reports_shared_pool_without_key() {
-        let client = SemanticScholarClient::new_for_test("http://example.test".into(), None)
-            .unwrap();
+        let client =
+            SemanticScholarClient::new_for_test("http://example.test".into(), None).unwrap();
 
         assert_eq!(client.auth_mode(), SemanticScholarAuthMode::SharedPool);
     }

@@ -266,8 +266,8 @@ pub(super) fn merge_federated_pages(
     offset: usize,
     filters: &ArticleSearchFilters,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    let semantic_scholar_leg = semantic_scholar_leg.map(|rows| {
-        super::backends::SemanticScholarCandidateOutcome {
+    let semantic_scholar_leg =
+        semantic_scholar_leg.map(|rows| super::backends::SemanticScholarCandidateOutcome {
             rows,
             status: ArticleSourceStatus {
                 source: ArticleSource::SemanticScholar,
@@ -276,8 +276,7 @@ pub(super) fn merge_federated_pages(
                 status: Some(ArticleSourceAvailability::Ok),
                 message: None,
             },
-        }
-    });
+        });
     let rows = collect_federated_article_rows(
         pubtator_leg,
         europe_leg,
@@ -286,7 +285,9 @@ pub(super) fn merge_federated_pages(
         litsense2_leg,
     )?
     .rows;
-    Ok(finalize_article_candidates(rows, limit, offset, None, filters))
+    Ok(finalize_article_candidates(
+        rows, limit, offset, None, filters,
+    ))
 }
 
 async fn search_type_capable_page(
@@ -431,12 +432,12 @@ pub async fn search_page(
                 Vec::new(),
             ))
         }
-        BackendPlan::PubMedOnly | BackendPlan::LitSense2Only | BackendPlan::TypeCapable => Ok(
-            article_search_page(
+        BackendPlan::PubMedOnly | BackendPlan::LitSense2Only | BackendPlan::TypeCapable => {
+            Ok(article_search_page(
                 search_relevance_page(filters, limit, offset, plan).await?,
                 Vec::new(),
-            ),
-        ),
+            ))
+        }
         BackendPlan::Both => search_federated_page(filters, limit, offset).await,
     }
 }
