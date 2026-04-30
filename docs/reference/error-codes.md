@@ -5,14 +5,16 @@ This reference maps each `BioMcpError` variant to likely causes and practical re
 
 ## Process exit codes
 
-BioMCP uses process exit codes to distinguish parser failures from command
+BioMCP uses process exit codes to distinguish invalid usage from command
 execution failures:
 
 - exit `2`: `clap` rejected the command before BioMCP command execution started.
   Example: `biomcp search pathway --badflag`
-- exit `1`: the command parsed, then BioMCP returned
+- exit `2`: the command parsed, then BioMCP returned
   `BioMcpError::InvalidArgument` for invalid or inconsistent usage.
   Examples: `biomcp search pathway`, `biomcp get pathway hsa05200 events`
+- exit `1`: runtime, upstream, configuration, not-found, and other execution
+  failures unless an explicit command outcome says otherwise.
 - exit `1`: alias fallback guidance for `get gene` / `get drug` still counts as a
   not-found miss even when BioMCP can suggest a canonical retry command.
   Example: `biomcp get gene ERBB1`
