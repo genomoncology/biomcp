@@ -35,15 +35,17 @@ echo "$batch" | mustmatch like "up to 10 IDs"
 
 The root command reference is also the operator quick reference. Its update line
 must list the unsafe missing-checksum override next to the default checksum
-verification behavior, and the rendered `biomcp list` output must match the
-committed static reference.
+verification behavior. The source reference and rendered `biomcp list` output
+must satisfy the same structural update-line contract, and the contract helper
+must reject the stale `update [--check]` line from ticket 331.
 
 ```bash
 set +e
-list_contract_out="$(cd ../.. && uv run --no-sync pytest tests/test_update_command_docs_contract.py::test_update_list_reference_and_rendered_list_describe_checksum_override -v 2>&1)"
+list_contract_out="$(cd ../.. && uv run --no-sync pytest tests/test_update_command_docs_contract.py -k update_list_reference -v 2>&1)"
 list_contract_status=$?
 set -e
 echo "$list_contract_out" | mustmatch like "test_update_list_reference_and_rendered_list_describe_checksum_override"
+echo "$list_contract_out" | mustmatch like "test_update_list_reference_contract_rejects_stale_update_line"
 test "$list_contract_status" -eq 0
 ```
 

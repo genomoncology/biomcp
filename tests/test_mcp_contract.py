@@ -131,7 +131,10 @@ async def test_biomcp_description_matches_list_contract(
         assert "cache stats" not in description
         assert "cache clean" not in description
         assert "cache clear" not in description
-        assert "update [--check]" not in description
+        assert not any(
+            line.strip().startswith("- `update ")
+            for line in description.splitlines()
+        )
         assert "uninstall" not in description
 
 
