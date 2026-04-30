@@ -54,6 +54,22 @@ echo "$out" | mustmatch like "## Diagnostics"
 echo "$out" | mustmatch '/Showing [0-9]+ of [0-9]+ diagnostic matches/'
 ```
 
+## Clinical Features
+
+Clinical features are a separate opt-in MedlinePlus section for reviewed
+configured diseases. Uterine leiomyoma should render source-native symptom rows
+with reviewed HPO mappings instead of falling back to the broader phenotype
+section or a blank table.
+
+```bash
+out="$(../../tools/biomcp-ci get disease "uterine leiomyoma" clinical_features)"
+echo "$out" | mustmatch like "## Clinical Features (MedlinePlus)"
+echo "$out" | mustmatch like "| Rank | Feature | HPO | Confidence | Evidence | Source |"
+echo "$out" | mustmatch like "heavy menstrual bleeding"
+echo "$out" | mustmatch like "HP:0000132 (Menorrhagia)"
+echo "$out" | mustmatch like "[MedlinePlus](https://medlineplus.gov/uterinefibroids.html)"
+```
+
 ## NIH Funding Context
 
 Funding belongs in its own section. The card should keep that view truthful and
