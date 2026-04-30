@@ -176,12 +176,12 @@ def test_authenticated_semantic_scholar_retry_waits_for_retry_after() -> None:
             "authenticated Semantic Scholar retry should recover after the local 429\n"
             f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
-        assert all(server.state.batch_seen_api_key), (
-            "authenticated seed lookup should send x-api-key to Semantic Scholar"
-        )
-        assert all(server.state.citation_seen_api_key), (
-            "authenticated citation retries should keep x-api-key on every attempt"
-        )
+        assert server.state.batch_seen_api_key and all(
+            server.state.batch_seen_api_key
+        ), "authenticated seed lookup should send x-api-key to Semantic Scholar"
+        assert server.state.citation_seen_api_key and all(
+            server.state.citation_seen_api_key
+        ), "authenticated citation retries should keep x-api-key on every attempt"
         assert len(server.state.citation_times) >= 2, (
             "authenticated 429 should be retried and reach the recovery response"
         )
@@ -205,12 +205,12 @@ def test_unauthenticated_semantic_scholar_shared_pool_429_fails_fast_without_ret
             "shared-pool 429 should keep the dedicated-key recovery guidance\n"
             f"stderr:\n{result.stderr}"
         )
-        assert not any(server.state.batch_seen_api_key), (
-            "unauthenticated seed lookup should not send x-api-key"
-        )
-        assert not any(server.state.citation_seen_api_key), (
-            "unauthenticated citation request should not send x-api-key"
-        )
+        assert server.state.batch_seen_api_key and not any(
+            server.state.batch_seen_api_key
+        ), "unauthenticated seed lookup should not send x-api-key"
+        assert server.state.citation_seen_api_key and not any(
+            server.state.citation_seen_api_key
+        ), "unauthenticated citation request should not send x-api-key"
         assert len(server.state.citation_times) == 1, (
             "shared-pool 429 should be converted to a fast-fail error without retrying"
         )
