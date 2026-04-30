@@ -295,9 +295,13 @@ import os
 import re
 
 lines = os.environ["HELP_TEXT"].splitlines()
-start = next(
+options_start = next(
     index for index, line in enumerate(lines)
-    if "--allow-missing-checksum" in line
+    if line.strip() == "Options:"
+)
+start = next(
+    index for index, line in enumerate(lines[options_start + 1 :], options_start + 1)
+    if line.strip().startswith("--allow-missing-checksum")
 )
 block = []
 for line in lines[start:]:
