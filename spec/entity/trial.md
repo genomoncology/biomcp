@@ -76,8 +76,13 @@ bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
 . ../../.cache/spec-ctgov-intervention-alias-env
 trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 out="$(../../tools/biomcp-ci get trial NCT02136914)"
-echo "$out" | mustmatch like "## Interventions (ClinicalTrials.gov)"
-echo "$out" | grep -F "ADS-5102" \
+interventions_section="$(printf '%s\n' "$out" | awk '
+  /^## Interventions / {capture=1}
+  capture && /^## / && !/^## Interventions / {exit}
+  capture {print}
+')"
+echo "$interventions_section" | mustmatch like "## Interventions (ClinicalTrials.gov)"
+echo "$interventions_section" | grep -F "ADS-5102" \
   | mustmatch like "amantadine HCl extended release"
 ```
 
@@ -108,4 +113,27 @@ trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' E
 json_out="$(../../tools/biomcp-ci --json get trial NCT02136914)"
 echo "$json_out" | jq -r '._meta.next_commands[]? | select((startswith("biomcp search drug ") or startswith("biomcp search article ")) and contains("amantadine HCl extended release"))' \
   | mustmatch like "amantadine HCl extended release"
+```
+
+## CTGov Source Strings Stay Shell-Safe in Next Commands
+
+ClinicalTrials.gov condition and alias values are untrusted source text, but
+BioMCP presents them inside copy-pasteable next commands. Shell-active text must
+be escaped in the emitted commands while preserving the visible source strings.
+
+```bash
+bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
+. ../../.cache/spec-ctgov-intervention-alias-env
+trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
+rm -f /tmp/biomcp-357-pwned
+json_out="$(../../tools/biomcp-ci --json get trial NCT35700001)"
+condition_cmd="$(echo "$json_out" | jq -r '._meta.next_commands[]? | select(startswith("biomcp search disease --query "))')"
+alias_cmd="$(echo "$json_out" | jq -r '._meta.next_commands[]? | select(startswith("biomcp search drug -q "))')"
+echo "$condition_cmd" | mustmatch like 'biomcp search disease --query "quoted \$(touch /tmp/biomcp-357-pwned) \"condition\""'
+echo "$alias_cmd" | mustmatch like 'biomcp search drug -q "alias \$(touch /tmp/biomcp-357-pwned) \"dose\""'
+parsed="$(bash -c 'condition_cmd="$1"; alias_cmd="$2"; eval "set -- $condition_cmd"; printf "condition=%s\n" "$5"; eval "set -- $alias_cmd"; printf "alias=%s\n" "$5"' _ "$condition_cmd" "$alias_cmd")"
+test ! -e /tmp/biomcp-357-pwned
+echo "$parsed" | mustmatch like 'condition=quoted $(touch /tmp/biomcp-357-pwned) "condition"'
+echo "$parsed" | mustmatch like 'alias=alias $(touch /tmp/biomcp-357-pwned) "dose"'
+rm -f /tmp/biomcp-357-pwned
 ```
