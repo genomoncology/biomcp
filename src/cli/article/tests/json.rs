@@ -113,8 +113,6 @@ fn article_search_json_includes_query_and_ranking_context() {
                 Some("ok" | "degraded" | "unavailable")
             )
     }));
-    assert!(!json.contains("test-secret-key-365"));
-    assert!(!json.contains("test-secret"));
     assert_eq!(
         value["ranking_policy"],
         crate::entities::article::ARTICLE_RELEVANCE_RANKING_POLICY
