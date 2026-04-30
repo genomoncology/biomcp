@@ -41,7 +41,6 @@ EXPECTED_DESCRIPTION_BLOCKED_TERMS = {
     "`who-ivd sync`",
     "`skill install`",
     "`uninstall`",
-    "`update [--check]`",
 }
 
 
@@ -143,8 +142,10 @@ def check_description_policy(build_text: str) -> bool:
         "fn mcp_safe_description_line",
         "fn mcp_safe_list_reference",
     }
-    return all(term in build_text for term in EXPECTED_DESCRIPTION_BLOCKED_TERMS) and all(
-        marker in build_text for marker in required_markers
+    return (
+        re.search(r'\.trim_start\(\)\.starts_with\(\s*"- `update "\s*\)', build_text) is not None
+        and all(term in build_text for term in EXPECTED_DESCRIPTION_BLOCKED_TERMS)
+        and all(marker in build_text for marker in required_markers)
     )
 
 
