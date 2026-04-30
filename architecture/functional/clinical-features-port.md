@@ -90,9 +90,13 @@ the disease clinical-feature fixtures.
 
 ## Verification
 
-The shipped behavior is covered by focused rendering and source tests while the
-bootstrap spec-v2 canaries stay limited to gene, variant, and article:
+The shipped behavior is covered by focused rendering/source tests and an
+executable disease spec canary:
 
+- `spec/entity/disease.md::Clinical Features` exercises the public
+  `get disease "uterine leiomyoma" clinical_features` CLI path and checks the
+  MedlinePlus section, stable table columns, reviewed symptom row, HPO mapping,
+  and source provenance.
 - Disease rendering and provenance tests cover the MedlinePlus section heading,
   evidence URLs, and `_meta.section_sources`.
 - The MedlinePlus source tests cover bounded request parsing and invalid input
