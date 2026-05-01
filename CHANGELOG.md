@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.22 — 2026-04-23
+## 0.8.22 — 2026-04-30
 
 ### New features
 
@@ -34,13 +34,23 @@
 - Added opt-in `clinical_features` disease output backed by MedlinePlus
   clinical summaries, reviewed HPO phenotype mapping, source-native evidence
   URLs, and unsupported-disease empty states via
-  `get disease <name> clinical_features`. (252, 253)
+  `get disease <name> clinical_features`. (252, 253, 254)
 - Added offline routing via `biomcp suggest <question>` so worked-example
   prompts can resolve to structured `_meta.workflow` guidance without requiring
   a live tool call. (279)
 - Added workflow-ladder sidecars and schema-backed `_meta.ladder[]` payloads
   so routed workflows can carry explicit ladder steps across the CLI/MCP
   contract. (282)
+- Added richer CLI help examples for batch/variant-limit usage and preserved
+  the parser-level skill uninstall contract through current help and MCP guard
+  surfaces. (217, 224)
+- Added opt-in article fulltext source-boundary coverage and PDF fallback so
+  article retrieval can truthfully report source limits while recovering PDF
+  text when structured fulltext is unavailable. (255, 256)
+- Added DDInter-backed drug-drug interaction workflows with
+  `biomcp drug interactions <name>`, `get drug <name> interactions`, local
+  bundle health, source-scoped empty wording, and `biomcp ddinter sync`.
+  (303)
 
 ### Docs
 
@@ -57,16 +67,24 @@
 - Aligned the public landing-copy contract with the shipped `suggest` and
   workflow landing bullets so `make test-contracts` accepts the current README
   and docs homepage feature counts. (286)
+- Refreshed source, licensing, versioning, CLI decomposition, diagnostic,
+  clinical-features, API-key, quality-bar, and staging-demo docs to match the
+  shipped v0.8.22 surface and current local-runtime key expectations. (222,
+  272, 292, 304, 306, 314, 318, 329, 332, 341, 358, 362)
 
 ### Fixes
 
 - Changed custom CLI validation failures (`BioMcpError::InvalidArgument`) to exit
   `2`, matching clap parser failures and separating bad usage from runtime
-  failures.
+  failures. (353)
 - Fixed `suggest` so resistance-to-drug mechanism questions anchor starter
   commands on the drug instead of filler text. (291)
 - Patched `rustls-webpki` to the safe release line and made `make check` enforce
-  the cargo-deny advisory gate alongside the existing license gate.
+  the cargo-deny advisory gate alongside the existing license gate. (290)
+- Fixed cargo-install compatibility, deterministic EMA freshness checks, OLS4
+  smoke routing, WHO drug JSON envelopes, and WHO API cache-limit wording so
+  install, health, and explicit WHO/API drug searches stay stable. (218, 220,
+  226, 232)
 - Added compact diagnostic rows and capped disease diagnostic pivots so
   gene/disease diagnostic follow-ups stay scannable and bounded. (266, 267)
 - Replaced the stale GTR sample with a live-valid GTR example and added
@@ -74,10 +92,26 @@
 - Tightened entity-aware article follow-ups with a same-session loop-breaker
   for overlapping suggestions and PubMed ESearch cleanup for bounded
   question-format filler words. (277, 278, 283)
+- Improved sparse drug research-code recovery, relational `discover` filtering,
+  trial help example/flag consistency, and CTGov intervention alias preservation
+  so generated follow-up commands stay useful and shell-safe for degraded or
+  ambiguous inputs. (302, 310, 313, 338, 339, 340, 342, 351, 357)
 - Repaired the targeted `SPEC_SMOKE_ARGS` lane so it stores stable smoke
   section IDs and resolves them to current mustmatch pytest item IDs at runtime;
   the quality ratchet now checks collectability before stale line-qualified
   selectors can reach `make spec-smoke`. (288)
+- Hardened update and machine-readable CLI contracts: `biomcp update` fails
+  closed when checksum sidecars are missing, `biomcp --json version` documents
+  its plain-text exception, `biomcp --json list` remains parseable, and
+  short-literal update ratchets were replaced with structural behavior checks.
+  (331, 333, 352, 355)
+- Stabilized MCP stdio no-input guidance, cBioPortal study download idle/stall
+  handling, disease clinical-feature specs, OLS4 disease/discover fallback IDs,
+  WikiPathways parallel tests, and protein ComplexPortal specs with regression
+  coverage. (326, 336, 345, 346, 350, 354, 358)
+- Surfaced Semantic Scholar authentication/degradation status in article search
+  and honored `Retry-After` during authenticated retries so throttled searches
+  disclose source health and back off correctly. (364, 365, 366)
 
 ### Internal
 
@@ -89,8 +123,22 @@
 - Reworked `SPEC_SMOKE_ARGS` handling around stable smoke inventory and current
   mustmatch pytest item IDs, and cleaned up `.march` artifact handling for
   repo submission paths. (270, 271)
-- Recorded the neural-reranking spike as a no-go for `0.8.22`: no runtime wiring
-  shipped, and the spike remains deferred from the release surface. (284)
+- Migrated the release gate to the spec-v2 corpus, made `spec-pr` self-contained
+  for March kickoff, restored release-gate reliability, and kept stable smoke,
+  canary, cache-warm, and test-contract lanes aligned with the current shipped
+  docs/spec surface. (294, 297, 298, 299, 300, 301, 307, 308, 344)
+- Decomposed oversized CLI modules, absorbed residual line-cap allowlists,
+  clarified the benchmark harness as internal, and added runtime-wiring/line-cap
+  ratchets so structural cleanup cannot reintroduce public-surface drift. (309,
+  319, 320, 321, 322, 323, 324, 325, 334, 335, 343, 347)
+- Strengthened release readiness with gene-all warm-budget coverage, local gate
+  uv-build fixes, leaked-artifact cleanup, binary asset attributes, CI wrapper
+  stale-binary warnings, and final v0.8.22 readiness audits before publish.
+  (247, 258, 262, 263, 285, 289, 315, 316, 317, 327, 328, 330, 348, 363)
+- Recorded the diagnostic-entity, HPO clinical-feature, Obsidian vault,
+  biomedical news, post-v0.8.21 shipped-surface, and neural-reranking reviews
+  as architecture or deferred work unless runtime wiring shipped in the bullets
+  above. (230, 243, 244, 245, 246, 284)
 
 ## 0.8.21 — 2026-04-16
 
