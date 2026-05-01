@@ -89,7 +89,9 @@ Optional runtime keys:
 - `S2_API_KEY`
 - `OPENFDA_API_KEY`
 - `NCI_API_KEY`
+- `DISGENET_API_KEY`
 - `ONCOKB_TOKEN`
+- `UMLS_API_KEY`
 - `ALPHAGENOME_API_KEY`
 
 The canonical OncoKB production token name is `ONCOKB_TOKEN` across code,

@@ -173,8 +173,10 @@ diagnostics card points to a broader
 `search diagnostic --disease ... --source all --limit 50` command without
 concatenating unescaped source text into a shell command.
 
-Executable proof currently lives in focused tests while the bootstrap spec-v2
-canaries stay limited to gene, variant, and article:
+Executable proof now includes the public diagnostic spec in
+`spec/entity/diagnostic.md` plus focused tests. The active spec/entity corpus
+covers diagnostic and other shipped entities beyond the original gene,
+variant, and article bootstrap canaries:
 
 - `src/entities/diagnostic/search.rs::disease_phrase_matches_accepts_word_and_phrase_boundaries`,
   `src/entities/diagnostic/search.rs::disease_phrase_matches_rejects_partial_words_and_keeps_scanning`,

@@ -1,4 +1,4 @@
-# CLI Decomposition 2026 Retrospective and Residual Plan
+# CLI Decomposition 2026 Retrospective
 
 ## Status
 
@@ -6,8 +6,9 @@ This document is no longer the live plan for tickets 319-325. Those CLI
 module-decomposition slices have shipped, and the durable decomposition contract
 now lives in `architecture/technical/cli-module-decomposition.md`.
 
-Keep this file as a dated 2026 migration record plus a short residual-over-cap
-plan. Do not use it as the steady-state architecture contract.
+Keep this file as a dated 2026 migration record plus a short completed
+line-cap absorption history. Do not use it as the steady-state architecture
+contract.
 
 Benchmark CLI ownership is fixed by
 `architecture/technical/benchmark-cli-ownership-decision.md`: the benchmark tree
@@ -65,53 +66,26 @@ Implications for this document:
 - ticket 335 owns the follow-up runtime-wiring ratchet that prevents the
   architecture and production binary from drifting apart again
 
-## Residual over-cap inventory
+## Absorbed line-cap inventory
 
-Ticket 327's release-readiness review found that the named 319-325 surfaces are
-healthy, but the global `src/cli/**/*.rs <= 700` rule is not yet enforced across
-all CLI files. The remaining over-cap files are:
+Ticket 327's release-readiness review found that the named 319-325 surfaces were
+healthy, but the global `src/cli/**/*.rs <= 700` rule was not yet enforced across
+all CLI files. Ticket 334 added the completed global scan and dated allowlist,
+and ticket 347 absorbed the former allowlist entries so the allowlist is now
+empty and the former over-cap files are under the cap:
 
-| File | Lines at 327/332 refresh | Residual owner |
-|---|---:|---|
-| `src/cli/drug/tests.rs` | 869 | Ticket 334 global line-cap ratchet allowlist |
-| `src/cli/trial/tests.rs` | 797 | Ticket 334 global line-cap ratchet allowlist |
-| `src/cli/cache.rs` | 759 | Ticket 334 global line-cap ratchet allowlist |
-| `src/cli/article/session.rs` | 722 | Ticket 334 global line-cap ratchet allowlist |
-| `src/cli/article/dispatch.rs` | 722 | Ticket 334 global line-cap ratchet allowlist |
-| `src/cli/variant/dispatch.rs` | 702 | Ticket 334 global line-cap ratchet allowlist |
-
-Ticket 334 is the absorb-back path: it adds a global scan with an explicit,
-dated allowlist and follow-up ownership for every residual over-cap file. This
-retrospective does not decompose those files and should not grow a parallel
-residual-ticket plan.
-
-## Residual decomposition guidance
-
-Future work on the residual files should follow the durable contract, not the
-superseded slice text that used to live in this file:
-
-- keep the stable in-crate facade path for the touched command family
-- split by ownership zone, not by arbitrary line count
-- keep public command grammar/help/spec behavior unchanged unless the ticket
-  explicitly changes behavior
-- move large test ownership into focused sidecars when test size is the problem
-- add or update the area ratchet in the same ticket that decomposes the area
-- remove allowlist entries from ticket 334's ratchet when a file comes back under
-  the cap
-
-Likely ownership zones by residual file:
-
-| File | Likely split axis |
+| Former file | Historical status |
 |---|---|
-| `src/cli/drug/tests.rs` | help/parse tests, search/filter tests, detail/pivot tests, JSON/render tests |
-| `src/cli/trial/tests.rs` | help/parse tests, search/filter tests, detail/eligibility tests, JSON/render tests |
-| `src/cli/cache.rs` | command routing, path/config inspection, cleanup execution, render helpers |
-| `src/cli/article/session.rs` | session parsing, loop prevention, ranking context, persisted-state helpers |
-| `src/cli/article/dispatch.rs` | request construction, source dispatch, exact lookup, response shaping |
-| `src/cli/variant/dispatch.rs` | identifier parsing, query planning, source dispatch, response shaping |
+| `src/cli/drug/tests.rs` | Absorbed; under the cap |
+| `src/cli/trial/tests.rs` | Absorbed; under the cap |
+| `src/cli/cache.rs` | Absorbed; under the cap |
+| `src/cli/article/session.rs` | Absorbed; under the cap |
+| `src/cli/article/dispatch.rs` | Absorbed; under the cap |
+| `src/cli/variant/dispatch.rs` | Absorbed; under the cap |
 
-These are orientation notes only. Any actual decomposition should be filed as a
-build-flow ticket with its own focused design/proof matrix.
+This retrospective does not keep a current residual decomposition plan for those
+files. Any future CLI decomposition should use the durable contract in
+`cli-module-decomposition.md` with its own focused design/proof matrix.
 
 ## Public-surface proof contract for future CLI decompositions
 
@@ -137,17 +111,18 @@ benchmark ownership decision accordingly.
 
 ## Alignment with team goals and frontier
 
-The completed decomposition work and the residual ticket 334 path align with:
+The completed decomposition work and the absorbed ticket 334 path align with:
 
 - **Goal G6: quality over features** — architecture ratchets and review-sized
   files reduce regression risk without inventing new functionality
 - **Frontier: Quality Ratchet Absorptions** — the original CLI 700-line cap gap
-  was absorbed for tickets 319-325 and is being generalized by ticket 334
+  was absorbed for tickets 319-325 and then completed by the ticket 334/347
+  allowlist absorption
 - **FAQ #18** — health decomposition preserved coverage for every
   readiness-significant local source
 - **FAQ #9** — list/help-facing tickets kept docs-contract tests in the proof
   matrix when they touched command-reference surfaces
 
-The 2026 decomposition batch is complete for its named targets. Remaining work is
-limited to the residual over-cap inventory above and the global ratchet that will
-own it.
+The 2026 decomposition batch is complete for its named targets. The former
+residual over-cap inventory was absorbed by the global ratchet and is no longer
+a current plan in this retrospective.
