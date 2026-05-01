@@ -31,8 +31,8 @@ fi
 
 FALLBACK_BIN="$(command -v biomcp || true)"
 if [[ -n "$FALLBACK_BIN" ]]; then
-  printf 'warning: BIOMCP_BIN is unset; tools/biomcp-ci falling back to biomcp at %s\n' "$FALLBACK_BIN" >&2
+  printf 'error: BIOMCP_BIN is unset; rejected PATH biomcp candidate: %s; set BIOMCP_BIN to select a binary\n' "$FALLBACK_BIN" >&2
 else
-  printf 'warning: BIOMCP_BIN is unset; tools/biomcp-ci falling back to biomcp on PATH, but no biomcp binary was found\n' >&2
+  printf 'error: BIOMCP_BIN is unset; no repo-selected biomcp binary is available; set BIOMCP_BIN to select a binary\n' >&2
 fi
-exec biomcp "$@"
+exit 1

@@ -124,7 +124,7 @@ def test_biomcp_ci_wrapper_preserves_explicit_cache_mode(tmp_path: Path) -> None
     assert payload["env"]["BIOMCP_CACHE_MODE"] == "off"
 
 
-def test_biomcp_ci_wrapper_warns_when_falling_back_to_biomcp_on_path(
+def test_biomcp_ci_wrapper_fails_closed_when_biomcp_bin_unset(
     tmp_path: Path,
 ) -> None:
     path_bin = tmp_path / "path-bin"
@@ -145,13 +145,9 @@ def test_biomcp_ci_wrapper_warns_when_falling_back_to_biomcp_on_path(
         env=wrapper_env,
     )
 
-    assert result.returncode == 0, result.stderr
-    assert result.stderr == (
-        "warning: BIOMCP_BIN is unset; tools/biomcp-ci falling back to biomcp "
-        f"at {fallback_bin}\n"
-    )
-    payload = json.loads(result.stdout)
-    assert payload["argv"] == ["version"]
+    assert result.returncode != 0, result.stdout
+    assert "BIOMCP_BIN" in result.stderr
+    assert str(fallback_bin) in result.stderr
 
 
 def test_biomcp_ci_wrapper_avoids_pwd_dependent_shell_tricks() -> None:
@@ -160,7 +156,7 @@ def test_biomcp_ci_wrapper_avoids_pwd_dependent_shell_tricks() -> None:
     assert 'REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"' in content
     assert 'exec "${BIOMCP_BIN}" "$@"' in content
     assert "command -v biomcp" in content
-    assert 'exec biomcp "$@"' in content
+    assert 'exec biomcp "$@"' not in content
     assert "eval" not in content
     assert "git rev-parse" not in content
     assert "$PWD" not in content
