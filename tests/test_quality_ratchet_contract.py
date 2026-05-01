@@ -191,14 +191,14 @@ def _remove_allowlisted_discover(shell_file: Path) -> None:
 
 def _break_study_download_guard(shell_file: Path) -> None:
     content = shell_file.read_text(encoding="utf-8")
-    updated = content.replace('args.len() == 4 && args[3] == "--list"', "true", count=1)
+    updated = content.replace('args.len() == 4 && args[3] == "--list"', "true", 1)
     assert updated != content
     shell_file.write_text(updated, encoding="utf-8")
 
 
 def _remove_description_filter_term(build_file: Path) -> None:
     content = build_file.read_text(encoding="utf-8")
-    updated = content.replace('    "`skill install`",\n', "", count=1)
+    updated = content.replace('    "`skill install`",\n', "", 1)
     assert updated != content
     build_file.write_text(updated, encoding="utf-8")
 
@@ -208,7 +208,7 @@ def _remove_structural_update_description_filter(build_file: Path) -> None:
     updated = content.replace(
         '        || line.trim_start().starts_with("- `update ")\n',
         "",
-        count=1,
+        1,
     )
     assert updated != content
     assert '"`update [--check]`"' in updated
@@ -242,7 +242,7 @@ def _append_orphan_health_entry(health_file: Path) -> None:
         "        },\n"
         "    },\n"
     )
-    updated = content.replace("];\n", f"{entry}];\n", count=1)
+    updated = content.replace("];\n", f"{entry}];\n", 1)
     assert updated != content
     health_file.write_text(updated, encoding="utf-8")
 

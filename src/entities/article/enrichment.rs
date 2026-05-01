@@ -138,7 +138,7 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar(
         let chunk_end = chunk_start + chunk.len();
         match client.paper_batch_search_enrichment(chunk).await {
             Ok(papers) => {
-                for (lookup_id, paper) in chunk.iter().zip(papers.into_iter()) {
+                for (lookup_id, paper) in chunk.iter().zip(papers) {
                     let Some(paper) = paper else {
                         continue;
                     };
