@@ -1,6 +1,6 @@
 # Healthcare Agents Need Skills, Not Just Models
 
-*Curated skills lift healthcare agent pass rates from 34% to 86%. BioMCP ships one — optimized for 30+ biomedical sources across 12 entity types.*
+*Curated skills lift healthcare agent pass rates from 34% to 86%. BioMCP ships one — optimized for 30+ biomedical sources across the current public entity surface.*
 
 ![Agent Skills for Healthcare — BioMCP ships an embedded skill that lifts healthcare agent pass rates by +51.9pp](images/slide-7-agent-skills.png)
 
@@ -28,13 +28,14 @@ But a fast tool without domain knowledge is just a fast way to get lost.
 
 BioMCP ships an embedded skill — a `SKILL.md` with procedural guidance that teaches agents how to actually do biomedical work. Not what the APIs return, but *how to investigate* a variant, *how to profile* a drug's safety, *how to trace* a resistance mechanism across genes, drugs, trials, and literature.
 
-The skill covers all 12 entity types:
+The skill covers the public entity surface:
 
 | Entity | What agents can do | Sources |
 |--------|-------------------|---------|
 | Gene | Function, pathways, druggability, disease associations | MyGene, Enrichr, OpenTargets |
 | Variant | Pathogenicity, clinical evidence, population frequency, trial matching | ClinVar, CIViC, OncoKB, MyVariant |
 | Trial | Search by condition, mutation, drug, status, location | ClinicalTrials.gov, NCI CTS |
+| Diagnostic | Find gene- and disease-linked diagnostic tests | NCBI GTR, WHO IVD, OpenFDA |
 | Drug | Labels, interactions, adverse events, approvals, targets | DrugBank, ChEMBL, OpenFDA |
 | Article | Literature search, citation graphs, full text | PubMed, Semantic Scholar, Europe PMC |
 | Disease | Ontology, gene associations, phenotype matching | Monarch, MyDisease, OpenTargets |
@@ -111,7 +112,7 @@ biomcp skill install
 
 BioMCP auto-detects your agent — Claude Code, Codex, Gemini CLI, Pi, Cursor, Copilot — and installs the skill to the right directory.
 
-Two commands. Thirty sources. Twelve entity types. The domain expertise to use them.
+Two commands. Thirty sources. The public entity surface. The domain expertise to use it.
 
 ---
 

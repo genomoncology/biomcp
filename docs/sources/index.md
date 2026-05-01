@@ -1,6 +1,6 @@
 ---
 title: "Biomedical Data Sources for AI Agents | BioMCP"
-description: "Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, CDC WONDER VAERS, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, SEER Explorer, CIViC, OncoKB, cBioPortal, DDInter, EMA, WHO Prequalification, WHO Prequalified IVD, CDC CVX/MVX, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative."
+description: "Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, CDC WONDER VAERS, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, SEER Explorer, CIViC, OncoKB, cBioPortal, DDInter, EMA, WHO Prequalification, NCBI Genetic Testing Registry, WHO Prequalified IVD, CDC CVX/MVX, MedlinePlus, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative."
 ---
 
 # Biomedical Data Sources for AI Agents
@@ -31,8 +31,10 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | DDInter | Structured drug-drug interactions, severity levels, and class-oriented partner review | [DDInter](ddinter.md) |
 | EMA | EU regulatory, safety, and shortage context for medicines | [EMA](ema.md) |
 | WHO Prequalification | WHO-backed medicine and vaccine prequalification search plus global access checks | [WHO Prequalification](who-prequalification.md) |
+| NCBI Genetic Testing Registry | Gene-centric genetic tests, GTR diagnostic cards, and local bundle lifecycle | [NCBI Genetic Testing Registry](gtr.md) |
 | WHO Prequalified IVD | Infectious-disease diagnostic products, assay formats, and WHO product-card provenance | [WHO Prequalified IVD](who-ivd.md) |
 | CDC CVX/MVX | Vaccine brand-to-antigen bridge for EMA/default lookups and explicit WHO vaccine search | [CDC CVX/MVX](cdc-cvx.md) |
+| MedlinePlus | Plain-language disease/symptom context for `discover` and disease `clinical_features` | [MedlinePlus](medlineplus.md) |
 | KEGG | KEGG pathway IDs, summary cards, and pathway genes | [KEGG](kegg.md) |
 | PharmGKB / CPIC | Pharmacogenomic recommendations, frequencies, and clinical annotations | [PharmGKB / CPIC](pharmgkb.md) |
 | Human Protein Atlas | Tissue expression, localization, and cancer-expression context | [Human Protein Atlas](human-protein-atlas.md) |

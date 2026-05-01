@@ -54,8 +54,10 @@ nav:
       - DDInter: sources/ddinter.md
       - EMA: sources/ema.md
       - WHO Prequalification: sources/who-prequalification.md
+      - NCBI Genetic Testing Registry: sources/gtr.md
       - WHO Prequalified IVD: sources/who-ivd.md
       - CDC CVX/MVX: sources/cdc-cvx.md
+      - MedlinePlus: sources/medlineplus.md
       - KEGG: sources/kegg.md
       - PharmGKB / CPIC: sources/pharmgkb.md
       - Human Protein Atlas: sources/human-protein-atlas.md

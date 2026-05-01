@@ -314,7 +314,46 @@ vaccine name/brand search when `--product-type vaccine` is set. It does not
 change WHO finished-pharma/API lookups or `get drug`, and pure `--region us`
 searches do not use the CVX root.
 
-## 16) Diagnostic local data not available
+## 16) DDInter local data not available
+
+Drug interaction commands depend on the local DDInter CSV bundle. BioMCP
+auto-downloads the eight ATC-sliced DDInter files on first use for
+`biomcp drug interactions <name>` and `get drug <name> interactions`, but full
+`biomcp health` is still the right readiness surface when you need to debug the
+local DDInter state:
+
+```bash
+biomcp health
+```
+
+Interpret the DDInter row like this:
+
+- `configured`: `BIOMCP_DDINTER_DIR` is set and all required DDInter CSV files are present
+- `configured (stale)`: `BIOMCP_DDINTER_DIR` is set and complete, but at least one file is older than the 72-hour refresh window
+- `available (default path)`: BioMCP found a complete DDInter bundle in the default platform data directory
+- `available (default path, stale)`: the default-path DDInter bundle is complete but older than the 72-hour refresh window
+- `not configured`: no complete DDInter root was found at the default path, so DDInter-backed interaction rows are currently unavailable but the install is not considered broken
+- `error (missing: ...)`: BioMCP found a partial DDInter root or unreadable file; install the missing files or point `BIOMCP_DDINTER_DIR` at a complete bundle
+
+If a refresh fails, retry explicitly with `biomcp ddinter sync`:
+
+```bash
+biomcp ddinter sync
+```
+
+If you need to override the default path:
+
+```bash
+export BIOMCP_DDINTER_DIR="/path/to/ddinter"
+biomcp health
+```
+
+Manual preseed remains supported for offline or controlled environments. A
+complete DDInter root must contain the eight public DDInter CSV files downloaded
+from the ATC-sliced DDInter bundle. Empty interaction results stay scoped to the
+current DDInter bundle and do not prove absence of clinical interactions.
+
+## 17) Diagnostic local data not available
 
 Diagnostic search/get flows depend on two local bundles:
 

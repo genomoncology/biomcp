@@ -20,7 +20,7 @@ They're not wrong. We learned the same lesson the hard way.
 
 ## The Problem
 
-BioMCP connects AI agents to 20+ biomedical databases — PubMed, ClinVar, ClinicalTrials.gov, gnomAD, OpenFDA, and more — covering 12 entity types from genes and variants to clinical trials and adverse events. The original Python version worked, but it was fighting the agent at every turn.
+BioMCP connects AI agents to 30+ biomedical data sources — PubMed, ClinVar, ClinicalTrials.gov, gnomAD, OpenFDA, NCBI GTR, WHO IVD, and more — across a public entity surface that spans genes, variants, diagnostics, clinical trials, drugs, adverse events, and literature. The original Python version worked, but it was fighting the agent at every turn.
 
 **36 tools ate the context window.** Every MCP connection loaded all tool descriptions — `article_searcher`, `trial_getter`, `variant_searcher`, and 33 more — consuming ~16,600 tokens before a single query. That's 8% of a 200K context window gone on tool signatures alone.
 
