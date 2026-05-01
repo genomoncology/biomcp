@@ -6,7 +6,23 @@ import re
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BOOTSTRAP_ENTITY_SET = {"gene", "variant", "article"}
+ABSORBED_CLI_RESIDUAL_PATHS = {
+    "src/cli/drug/tests.rs",
+    "src/cli/trial/tests.rs",
+    "src/cli/cache.rs",
+    "src/cli/article/session.rs",
+    "src/cli/article/dispatch.rs",
+    "src/cli/variant/dispatch.rs",
+}
 ENV_VAR_RE = re.compile(r"`([A-Z][A-Z0-9_]*(?:API_KEY|TOKEN))`")
+COMPLETED_STATE_RE = re.compile(
+    r"\b(absorbed|complete|completed|former|historical|no longer|under the cap)\b",
+    re.IGNORECASE,
+)
+CURRENT_RESIDUAL_RE = re.compile(
+    r"\b(residual|remaining|over-cap|allowlist|follow-up|future work|split axis)\b",
+    re.IGNORECASE,
+)
 
 
 def _read(relative_path: str) -> str:
@@ -26,24 +42,62 @@ def _entity_spec_names() -> set[str]:
     return {path.stem for path in (REPO_ROOT / "spec" / "entity").glob("*.md")}
 
 
-def test_cli_decomposition_doc_does_not_claim_absorbed_allowlist_work_is_pending() -> None:
+def _paragraphs(text: str) -> list[str]:
+    return [block.strip() for block in re.split(r"\n\s*\n", text) if block.strip()]
+
+
+def _optional_runtime_key_bullets(staging_demo: str) -> set[str]:
+    credentials = _section(staging_demo, "## Credentials and Environment Variables")
+    marker = "Optional runtime keys:"
+    assert marker in credentials, "staging-demo must keep an Optional runtime keys list"
+    optional_block = credentials.split(marker, 1)[1]
+
+    bullet_lines = []
+    for line in optional_block.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            if bullet_lines:
+                break
+            continue
+        if stripped.startswith("- "):
+            bullet_lines.append(stripped)
+            continue
+        if bullet_lines:
+            break
+
+    return set(ENV_VAR_RE.findall("\n".join(bullet_lines)))
+
+
+def test_cli_decomposition_doc_does_not_claim_absorbed_allowlist_work_is_pending():
     allowlist = json.loads(_read("tools/cli-line-cap-allowlist.json"))
     assert allowlist["entries"] == []
 
     cli_decomposition = _read("architecture/technical/cli-decomposition-2026.md")
-    stale_pending_markers = [
-        "The remaining over-cap files are:",
-        "Ticket 334 is the absorb-back path",
-        "Ticket 334 global line-cap ratchet allowlist",
-    ]
+    current_residual_path_claims = set()
+    current_ticket_334_claims = []
+    for paragraph in _paragraphs(cli_decomposition):
+        describes_current_residual_work = CURRENT_RESIDUAL_RE.search(
+            paragraph
+        ) and not COMPLETED_STATE_RE.search(paragraph)
+        if not describes_current_residual_work:
+            continue
 
-    stale_markers_present = [
-        marker for marker in stale_pending_markers if marker in cli_decomposition
-    ]
-    assert not stale_markers_present, (
-        "architecture/technical/cli-decomposition-2026.md must not describe "
-        "absorbed line-cap allowlist work as pending when the allowlist is empty; "
-        f"stale markers still present: {stale_markers_present}"
+        for path in sorted(ABSORBED_CLI_RESIDUAL_PATHS):
+            if path in paragraph:
+                current_residual_path_claims.add(path)
+        if "Ticket 334" in paragraph:
+            current_ticket_334_claims.append(re.sub(r"\s+", " ", paragraph))
+
+    assert not current_residual_path_claims, (
+        "architecture/technical/cli-decomposition-2026.md must not keep the "
+        "absorbed ticket-347 CLI files in a current residual-over-cap plan when "
+        "the allowlist is empty; current residual path claims: "
+        f"{sorted(current_residual_path_claims)}"
+    )
+    assert not current_ticket_334_claims, (
+        "architecture/technical/cli-decomposition-2026.md must describe ticket-334 "
+        "line-cap work as absorbed/completed or historical when the allowlist is "
+        f"empty; current ticket-334 claims: {current_ticket_334_claims}"
     )
 
 
@@ -66,7 +120,9 @@ def test_functional_docs_describe_current_spec_v2_entity_corpus() -> None:
         re.IGNORECASE | re.DOTALL,
     )
     stale_docs = [
-        path for path, text in functional_docs.items() if stale_subset_pattern.search(text)
+        path
+        for path, text in functional_docs.items()
+        if stale_subset_pattern.search(text)
     ]
     assert not stale_docs, (
         "functional architecture docs must describe the current spec/entity corpus, "
@@ -82,19 +138,18 @@ def test_functional_docs_describe_current_spec_v2_entity_corpus() -> None:
 
 def test_staging_demo_optional_runtime_keys_cover_overview_api_key_table() -> None:
     overview_api_keys = set(
-        ENV_VAR_RE.findall(_section(_read("architecture/technical/overview.md"), "## API Keys"))
-    )
-    staging_optional_keys = set(
         ENV_VAR_RE.findall(
-            _section(
-                _read("architecture/technical/staging-demo.md"),
-                "## Credentials and Environment Variables",
-            )
+            _section(_read("architecture/technical/overview.md"), "## API Keys")
         )
+    )
+    staging_optional_keys = _optional_runtime_key_bullets(
+        _read("architecture/technical/staging-demo.md")
     )
 
     assert overview_api_keys, "overview API-key table should expose runtime key names"
-    assert staging_optional_keys, "staging-demo optional-key section should expose key names"
+    assert staging_optional_keys, (
+        "staging-demo optional runtime key bullets should expose key names"
+    )
 
     missing_from_staging = sorted(overview_api_keys - staging_optional_keys)
     assert not missing_from_staging, (
