@@ -1424,15 +1424,11 @@ fn parse_meta_study(path: &Path, fallback_study_id: &str) -> Result<StudyMeta, B
         let value = raw_value.trim();
 
         match key.as_str() {
-            "cancer_study_identifier" => {
-                if !value.is_empty() {
-                    study_id = value.to_string();
-                }
+            "cancer_study_identifier" if !value.is_empty() => {
+                study_id = value.to_string();
             }
-            "name" => {
-                if !value.is_empty() {
-                    name = value.to_string();
-                }
+            "name" if !value.is_empty() => {
+                name = value.to_string();
             }
             "short_name" => {
                 short_name = non_empty(value);

@@ -256,7 +256,7 @@ fn cap_article_candidates_by_source(
     let effective_cap = match cap_mode {
         ArticleSourceCapMode::Disabled => return candidates,
         ArticleSourceCapMode::Default(_) if source_count < 3 => return candidates,
-        ArticleSourceCapMode::Default(cap) | ArticleSourceCapMode::Explicit(cap)
+        ArticleSourceCapMode::Default(_cap) | ArticleSourceCapMode::Explicit(_cap)
             if source_count < 2 =>
         {
             return candidates;

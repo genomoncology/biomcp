@@ -181,12 +181,10 @@ fn parse_pathway_record(body: &str) -> Result<KeggPathwayRecord, BioMcpError> {
                     id = Some(candidate.to_string());
                 }
             }
-            "NAME" => {
-                if name.is_none() {
-                    let cleaned = value.trim_end_matches(';').trim();
-                    if !cleaned.is_empty() {
-                        name = Some(cleaned.to_string());
-                    }
+            "NAME" if name.is_none() => {
+                let cleaned = value.trim_end_matches(';').trim();
+                if !cleaned.is_empty() {
+                    name = Some(cleaned.to_string());
                 }
             }
             "DESCRIPTION" => {

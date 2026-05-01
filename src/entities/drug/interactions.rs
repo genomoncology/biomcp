@@ -335,8 +335,17 @@ fn normalized_bucket_from_drug_name(drug_name: &str) -> Option<&'static str> {
         || lowered == "voriconazole"
     {
         Some("anti-infectives")
+    } else if lowered.contains("platelet")
+        || matches!(
+            lowered.as_str(),
+            "aspirin" | "clopidogrel" | "prasugrel" | "ticagrelor"
+        )
+    {
+        Some("antiplatelets")
     } else if lowered.contains("statin") {
         Some("statins")
+    } else if lowered.contains("cyp3a4") {
+        Some("CYP3A4")
     } else {
         None
     }

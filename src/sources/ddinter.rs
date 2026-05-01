@@ -78,7 +78,7 @@ impl DdinterIdentity {
         let mut out = Vec::new();
         let mut seen = HashSet::new();
         for candidate in std::iter::once(primary)
-            .chain(canonical.into_iter())
+            .chain(canonical)
             .chain(aliases.iter().map(String::as_str))
         {
             let Some(key) = normalize_name_key(candidate) else {

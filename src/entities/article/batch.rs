@@ -103,7 +103,7 @@ pub(super) fn merge_semantic_scholar_compact_rows(
     item_positions: &[usize],
     rows: Vec<Option<SemanticScholarPaper>>,
 ) {
-    for (idx, paper) in item_positions.iter().zip(rows.into_iter()) {
+    for (idx, paper) in item_positions.iter().zip(rows) {
         let Some(paper) = paper else {
             continue;
         };

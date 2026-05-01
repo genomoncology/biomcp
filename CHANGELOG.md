@@ -133,8 +133,9 @@
   319, 320, 321, 322, 323, 324, 325, 334, 335, 343, 347)
 - Strengthened release readiness with gene-all warm-budget coverage, local gate
   uv-build fixes, leaked-artifact cleanup, binary asset attributes, CI wrapper
-  stale-binary warnings, and final v0.8.22 readiness audits before publish.
-  (247, 258, 262, 263, 285, 289, 315, 316, 317, 327, 328, 330, 348, 363)
+  stale-binary warnings, Python 3.12/Rust 1.95 CI compatibility, self-contained
+  local-data spec fixtures, and final v0.8.22 readiness audits before publish.
+  (247, 258, 262, 263, 285, 289, 315, 316, 317, 327, 328, 330, 348, 363, 367)
 - Recorded the diagnostic-entity, HPO clinical-feature, Obsidian vault,
   biomedical news, post-v0.8.21 shipped-surface, and neural-reranking reviews
   as architecture or deferred work unless runtime wiring shipped in the bullets

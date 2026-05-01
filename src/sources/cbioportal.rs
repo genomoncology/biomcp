@@ -267,7 +267,7 @@ impl CBioPortalClient {
                 sample_count: sample_count as i32,
             })
             .collect::<Vec<_>>();
-        dist.sort_by(|a, b| b.sample_count.cmp(&a.sample_count));
+        dist.sort_by_key(|row| std::cmp::Reverse(row.sample_count));
         dist.truncate(5);
 
         Ok(CBioMutationSummary {
