@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3616,11 +3784,15 @@ the article leg keeps the broader keyword context.</p>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;checkpoint inhibitor&quot;</span>
 </code></pre></div>
 <h2 id="use-counts-only-for-a-low-noise-orientation-pass">Use <code>--counts-only</code> for a low-noise orientation pass<a class="headerlink" href="#use-counts-only-for-a-low-noise-orientation-pass" title="Permanent link">&para;</a></h2>
-<p><code>--counts-only</code> keeps the section totals and next-step links while suppressing
-row tables. That makes it easier to decide which entity to inspect next.</p>
+<p><code>--counts-only</code> is the low-noise orientation pass.</p>
+<p>In markdown output, it keeps the section totals and follow-up links while
+suppressing row tables. In <code>--json --counts-only</code>, each section shrinks to
+metadata plus orientation counts only, so per-section <code>results</code> and <code>links</code>
+are omitted.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--counts-only
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w"> </span>--counts-only
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--counts-only
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--counts-only
 </code></pre></div>
 <p>In markdown output, each section keeps its heading and shows the stable marker
 <code>Rows omitted (`--counts-only`).</code></p>

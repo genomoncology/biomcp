@@ -679,10 +679,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cross-entity-helpers" class="md-nav__link">
+  <a href="#cross-entity-pivots" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cross-entity helpers
+        Cross-entity pivots
       
     </span>
   </a>
@@ -1334,6 +1334,34 @@
     
   
     Trial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
   
 
     
@@ -2057,6 +2085,34 @@
   
   
     <li class="md-nav__item">
+      <a href="sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="sources/ema/" class="md-nav__link">
         
   
@@ -2093,6 +2149,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3789,10 +3957,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cross-entity-helpers" class="md-nav__link">
+  <a href="#cross-entity-pivots" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cross-entity helpers
+        Cross-entity pivots
       
     </span>
   </a>
@@ -3957,19 +4125,21 @@ stdio:</p>
 <p>Install to first result in under 30 seconds:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;chest pain&quot;</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>list<span class="w"> </span>gene
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w">  </span><span class="c1"># unified cross-entity discovery</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w"> </span>hpa
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>suggest<span class="w"> </span><span class="s2">&quot;What drugs treat melanoma?&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;chest pain&quot;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>list<span class="w"> </span>gene
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w">  </span><span class="c1"># unified cross-entity discovery</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w"> </span>hpa
 </code></pre></div>
 <h2 id="command-grammar">Command grammar<a class="headerlink" href="#command-grammar" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>search &lt;entity&gt; [filters]    → discovery
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>discover &lt;query&gt;            → concept resolution before entity selection
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>get &lt;entity&gt; &lt;id&gt; [sections] → focused detail
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>&lt;entity&gt; &lt;helper&gt; &lt;id&gt;       → cross-entity pivots
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>enrich &lt;GENE1,GENE2,...&gt;     → gene-set enrichment
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>batch &lt;entity&gt; &lt;id1,id2,...&gt; → parallel gets
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>search all [slot filters]    → counts-first cross-entity orientation
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>suggest &lt;question&gt;           → playbook routing for how-to questions
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>discover &lt;query&gt;             → single-entity concept resolution before entity selection
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>get &lt;entity&gt; &lt;id&gt; [sections] → focused detail
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>&lt;entity&gt; &lt;helper&gt; &lt;id&gt;       → cross-entity pivots
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>enrich &lt;GENE1,GENE2,...&gt;     → gene-set enrichment
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>batch &lt;entity&gt; &lt;id1,id2,...&gt; → parallel gets
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>search all [slot filters]    → counts-first cross-entity orientation
 </code></pre></div>
 <h2 id="feature-highlights">Feature highlights<a class="headerlink" href="#feature-highlights" title="Permanent link">&para;</a></h2>
 <ul>
@@ -3977,7 +4147,11 @@ stdio:</p>
   Europe PMC, deduplicates PMID/PMCID/DOI identifiers, and can add a Semantic
   Scholar leg when your filters support it.</li>
 <li><strong>Resolve messy queries:</strong> <code>biomcp discover</code> turns aliases, brands, symptoms,
-  and pathway names into the right entity before you commit to a typed command.</li>
+  and close concept names into the right entity before you commit to a typed
+  command. Relational or multi-entity questions may redirect to
+  <code>biomcp search all --keyword "&lt;query&gt;"</code>.</li>
+<li><strong>Choose the workflow:</strong> <code>biomcp suggest "&lt;question&gt;"</code> returns the matching
+  worked-example playbook and two starter commands.</li>
 <li><strong>Pivot across entities:</strong> move from a known gene, variant, drug, disease,
   pathway, protein, or article into trials, articles, drugs, pathways,
   structures, or article graph helpers without rebuilding context.</li>
@@ -3991,6 +4165,8 @@ stdio:</p>
   runs up to 10 focused <code>get</code> calls with shared JSON metadata.</li>
 </ul>
 <h2 id="entities-and-sources">Entities and sources<a class="headerlink" href="#entities-and-sources" title="Permanent link">&para;</a></h2>
+<p>The 13-row table below is the public entity surface; individual rows may use
+live APIs, local runtime data, or hybrid source overlays.</p>
 <table>
 <thead>
 <tr>
@@ -4002,7 +4178,7 @@ stdio:</p>
 <tbody>
 <tr>
 <td>gene</td>
-<td>MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen, NIH Reporter</td>
+<td>MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen, NIH Reporter, DisGeNET, GTR-backed diagnostics pivot</td>
 <td><code>biomcp get gene ERBB2 funding</code></td>
 </tr>
 <tr>
@@ -4021,18 +4197,23 @@ stdio:</p>
 <td><code>biomcp search trial -c melanoma -s recruiting</code></td>
 </tr>
 <tr>
+<td>diagnostic</td>
+<td>NCBI Genetic Testing Registry local bulk bundle + WHO IVD local CSV + optional OpenFDA device overlay</td>
+<td><code>biomcp get diagnostic GTR000006692.3 regulatory</code></td>
+</tr>
+<tr>
 <td>drug</td>
-<td>MyChem.info, EMA local batch, WHO Prequalification local CSV, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA, CIViC</td>
-<td><code>biomcp get drug trastuzumab regulatory --region who</code></td>
+<td>MyChem.info, DDInter local bundle, EMA local batch, WHO Prequalification local exports, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA labels/shortages/approvals/FAERS/MAUDE/recalls, CIViC</td>
+<td><code>biomcp drug interactions warfarin</code></td>
 </tr>
 <tr>
 <td>disease</td>
-<td>MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC, SEER Explorer, NIH Reporter</td>
+<td>MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC, SEER Explorer, NIH Reporter, DisGeNET, MedlinePlus <code>clinical_features</code>, GTR/WHO IVD diagnostics pivot</td>
 <td><code>biomcp get disease "chronic myeloid leukemia" funding</code></td>
 </tr>
 <tr>
 <td>pathway</td>
-<td>Reactome, KEGG, g:Profiler, Enrichr-backed enrichment sections</td>
+<td>Reactome, KEGG, WikiPathways, g:Profiler, Enrichr-backed enrichment sections</td>
 <td><code>biomcp get pathway hsa05200 genes</code></td>
 </tr>
 <tr>
@@ -4042,7 +4223,7 @@ stdio:</p>
 </tr>
 <tr>
 <td>adverse-event</td>
-<td>OpenFDA FAERS, MAUDE, Recalls</td>
+<td>OpenFDA FAERS/MAUDE/recalls plus CDC WONDER VAERS aggregate vaccine search</td>
 <td><code>biomcp search adverse-event --drug pembrolizumab</code></td>
 </tr>
 <tr>
@@ -4062,9 +4243,9 @@ stdio:</p>
 </tr>
 </tbody>
 </table>
-<h2 id="cross-entity-helpers">Cross-entity helpers<a class="headerlink" href="#cross-entity-helpers" title="Permanent link">&para;</a></h2>
+<h2 id="cross-entity-pivots">Cross-entity pivots<a class="headerlink" href="#cross-entity-pivots" title="Permanent link">&para;</a></h2>
 <p>See the <a href="how-to/cross-entity-pivots/">cross-entity pivot guide</a> for when to
-use a helper versus a fresh search.</p>
+use a helper, a sectioned diagnostic pivot, or a fresh search.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
@@ -4072,19 +4253,21 @@ use a helper versus a fresh search.</p>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
 <a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>hsa05200
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
-<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>tuberculosis<span class="w"> </span>diagnostics
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRCA1<span class="w"> </span>diagnostics
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>hsa05200
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <h2 id="gene-set-enrichment">Gene-set enrichment<a class="headerlink" href="#gene-set-enrichment" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>enrich<span class="w"> </span>BRAF,KRAS,NRAS<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
@@ -4113,8 +4296,9 @@ catalog. Read it with <code>biomcp skill</code>, install it with
 <a href="getting-started/skills/">Skills</a> for the current workflow and legacy notes.</p>
 <h2 id="local-study-analytics">Local study analytics<a class="headerlink" href="#local-study-analytics" title="Permanent link">&para;</a></h2>
 <p><code>study</code> is BioMCP's local analysis family for downloaded cBioPortal-style datasets.
-The 12 remote entity commands handle live API-backed discovery and detail; <code>study</code>
-commands cover local query, cohort, survival, compare, and co-occurrence workflows.</p>
+The public entity surface handles API-backed, local-runtime, and hybrid
+discovery/detail; <code>study</code> commands cover local query, cohort, survival,
+compare, and co-occurrence workflows.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_STUDY_DIR</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.local/share/biomcp/studies&quot;</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>msk_impact_2017
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--chart<span class="w"> </span>bar<span class="w"> </span>--theme<span class="w"> </span>dark<span class="w"> </span>--palette<span class="w"> </span>wong<span class="w"> </span>-o<span class="w"> </span>docs/blog/images/tp53-mutation-bar.svg

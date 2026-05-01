@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -2861,6 +3029,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#cdc-wonder-vaers-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CDC WONDER VAERS behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#provenance-expectations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3630,6 +3809,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#cdc-wonder-vaers-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CDC WONDER VAERS behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#provenance-expectations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3799,10 +3989,10 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 </tr>
 <tr>
 <td>Article full-text resolution</td>
-<td>PMC OA + NCBI ID Converter</td>
-<td><code>https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi</code>, <code>https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles</code></td>
-<td>No</td>
-<td>Full-text and PMID/PMCID/DOI bridging</td>
+<td>Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + opt-in Semantic Scholar PDF metadata</td>
+<td><code>https://www.ebi.ac.uk/europepmc/webservices/rest</code>, <code>https://eutils.ncbi.nlm.nih.gov/entrez/eutils</code>, <code>https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi</code>, <code>https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles</code>, <code>https://pmc.ncbi.nlm.nih.gov/articles</code>, <code>https://api.semanticscholar.org</code></td>
+<td>Optional (<code>NCBI_API_KEY</code>, <code>S2_API_KEY</code>)</td>
+<td>NCBI ID Converter bridges identifiers; XML/HTML/PDF content rungs save Markdown when available</td>
 </tr>
 <tr>
 <td>Drug</td>
@@ -3816,14 +4006,35 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>EMA website JSON batch (local human-medicines download)</td>
 <td><code>https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format</code></td>
 <td>No</td>
-<td>Supports <code>search/get drug --region eu|all</code> for regulatory, safety, and shortage; auto-downloads into <code>BIOMCP_EMA_DIR</code> or the platform data directory on first use and <code>biomcp ema sync</code> force-refreshes the local files</td>
+<td>Supports canonical <code>search/get drug --region eu|all</code> for regulatory, safety, and shortage, accepts <code>ema</code> as an input alias for <code>eu</code>, and auto-downloads into <code>BIOMCP_EMA_DIR</code> or the platform data directory on first use; <code>biomcp ema sync</code> force-refreshes the local files and omitting <code>--region</code> on <code>get drug &lt;name&gt; regulatory</code> checks U.S. and EU regulatory data</td>
 </tr>
 <tr>
 <td>Drug WHO regional context</td>
-<td>WHO finished-pharmaceutical-products CSV (local download)</td>
-<td><code>https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&amp;_format=csv</code></td>
+<td>WHO finished-pharmaceutical-products CSV + WHO active-pharmaceutical-ingredients CSV + WHO vaccine CSV (local downloads)</td>
+<td><code>https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&amp;_format=csv</code>, <code>https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients/export?page&amp;_format=csv</code>, <code>https://extranet.who.int/prequal/vaccines/prequalified/export</code></td>
 <td>No</td>
-<td>Supports <code>search/get drug --region who|all</code> for regulatory plus WHO-filtered structured <code>search drug --region who</code>; auto-downloads into <code>BIOMCP_WHO_DIR</code> or the platform data directory on first use and <code>biomcp who sync</code> force-refreshes the local file</td>
+<td>Supports <code>search/get drug --region who|all</code>, WHO-filtered structured <code>search drug --region who</code> for finished-pharma/API, and WHO-only <code>--product-type &lt;finished_pharma|api|vaccine&gt;</code> filters; WHO vaccine support is explicit search-only; auto-downloads all three files into <code>BIOMCP_WHO_DIR</code> or the platform data directory on first use and <code>biomcp who sync</code> force-refreshes the local exports</td>
+</tr>
+<tr>
+<td>Drug-drug interactions</td>
+<td>DDInter public CSV download bundle (local downloads)</td>
+<td><code>https://ddinter.scbdd.com/download/</code></td>
+<td>No</td>
+<td>Supports <code>biomcp drug interactions &lt;name&gt;</code> plus <code>get drug &lt;name&gt; interactions</code>; auto-downloads the eight ATC-sliced DDInter CSVs into <code>BIOMCP_DDINTER_DIR</code> or the platform data directory on first use, refreshes stale files after 72 hours, and <code>biomcp ddinter sync</code> force-refreshes the local bundle; empty results stay scoped to the current DDInter bundle and do not prove absence of clinical interactions</td>
+</tr>
+<tr>
+<td>Drug vaccine identity bridge</td>
+<td>CDC CVX code set + CDC trade-name map + CDC MVX manufacturer table (local downloads)</td>
+<td><code>https://www2.cdc.gov/vaccines/iis/iisstandards/downloads/cvx.txt</code>, <code>https://www2.cdc.gov/vaccines/iis/iisstandards/downloads/TRADENAME.txt</code>, <code>https://www2.cdc.gov/vaccines/iis/iisstandards/downloads/mvx.txt</code></td>
+<td>No</td>
+<td>Supports omitted-<code>--region</code> plain-name vaccine search plus explicit <code>search drug &lt;name&gt; --region eu|all</code> and explicit WHO vaccine name/brand search (<code>--region who --product-type vaccine</code>) when MyChem identity resolution misses; auto-downloads the bundle into <code>BIOMCP_CVX_DIR</code> or the platform data directory on first use, refreshes stale files after 30 days, and <code>biomcp cvx sync</code> force-refreshes the local CDC data; <code>--region us</code> stays outside this path</td>
+</tr>
+<tr>
+<td>Diagnostic</td>
+<td>NCBI Genetic Testing Registry bulk exports + WHO IVD CSV export (local downloads) + optional OpenFDA device overlay</td>
+<td><code>https://ftp.ncbi.nlm.nih.gov/pub/GTR/data/test_version.gz</code>, <code>https://ftp.ncbi.nlm.nih.gov/pub/GTR/data/test_condition_gene.txt</code>, <code>https://extranet.who.int/prequal/vitro-diagnostics/prequalified/in-vitro-diagnostics/export?page&amp;_format=csv</code>, <code>https://api.fda.gov/device/510k.json</code>, <code>https://api.fda.gov/device/pma.json</code></td>
+<td>Optional (<code>OPENFDA_API_KEY</code>) for the FDA overlay only</td>
+<td>Supports source-aware <code>search diagnostic --source &lt;gtr|who-ivd|all&gt;</code> and <code>get diagnostic</code>; auto-downloads the GTR files into <code>BIOMCP_GTR_DIR</code>, <code>who_ivd.csv</code> into <code>BIOMCP_WHO_IVD_DIR</code>, refreshes stale GTR data after 7 days and WHO IVD data after 72 hours, and <code>biomcp gtr sync</code> / <code>biomcp who-ivd sync</code> force-refresh the local bundles; <code>get diagnostic &lt;id&gt; regulatory</code> adds an opt-in live OpenFDA device 510(k)/PMA lookup without changing the base summary card</td>
 </tr>
 <tr>
 <td>Drug section enrichments</td>
@@ -3861,6 +4072,13 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>Best-effort disease/symptom context for <code>biomcp discover</code>; suppressed for gene/drug/pathway flows</td>
 </tr>
 <tr>
+<td>Disease <code>clinical_features</code> section</td>
+<td>MedlinePlus Search</td>
+<td><code>https://wsearch.nlm.nih.gov/ws/query</code></td>
+<td>No</td>
+<td>Opt-in clinical-summary feature rows for configured diseases, with embedded reviewed fixtures as the offline fallback</td>
+</tr>
+<tr>
 <td>Phenotype term resolution</td>
 <td>HPO JAX API</td>
 <td><code>https://ontology.jax.org/api/hp</code></td>
@@ -3879,7 +4097,7 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>SEER Explorer</td>
 <td><code>https://seer.cancer.gov/statistics-network/explorer/source/content_writers</code></td>
 <td>No</td>
-<td>Opt-in disease survival section with live site-catalog resolution and all-ages / all-races 5-year relative survival by sex; undocumented UI endpoints are validated and degrade to stable notes on mapping or availability failures</td>
+<td>Disease survival detail for mapped cancers, surfaced by the explicit <code>survival</code> section and preserved in disease <code>all</code>; uses live site-catalog resolution plus all-ages / all-races 5-year relative survival by sex, and degrades to stable notes on mapping or availability failures</td>
 </tr>
 <tr>
 <td>Disease <code>genes</code> and <code>phenotypes</code> sections</td>
@@ -3952,11 +4170,18 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>Protein cards, domains, interactions, structures, and human protein complex membership; structure IDs are surfaced from UniProt cross-references to PDB and AlphaFold DB</td>
 </tr>
 <tr>
-<td>Drug/device safety, labels, shortages, and approvals</td>
+<td>Drug/device safety, labels, shortages, approvals, and diagnostic regulatory overlay</td>
 <td>OpenFDA</td>
 <td><code>https://api.fda.gov</code></td>
 <td>Optional (<code>OPENFDA_API_KEY</code>)</td>
-<td>FAERS, MAUDE, recalls, drug labels, shortages, and Drugs@FDA-derived approvals</td>
+<td>FAERS, MAUDE, recalls, drug labels, shortages, Drugs@FDA-derived approvals, and exact-name-first diagnostic device 510(k)/PMA overlays</td>
+</tr>
+<tr>
+<td>Vaccine adverse-event search</td>
+<td>CDC WONDER VAERS</td>
+<td><code>https://wonder.cdc.gov/controller/datarequest/D8</code></td>
+<td>No</td>
+<td>Aggregate-only vaccine adverse-event summaries for <code>search adverse-event --source vaers|all</code>; BioMCP uses the CDC WONDER XML POST contract, includes the required data-use agreement, and resolves vaccine identity through the CDC CVX/MVX bridge when available</td>
 </tr>
 <tr>
 <td>Gene enrichment sections</td>
@@ -3982,6 +4207,10 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <li>Retries: exponential backoff, up to 3 retries for transient failures</li>
 <li>Disk cache: <code>&lt;cache_root&gt;/http</code> under the resolved cache root (<code>~/.cache/biomcp/http</code> on Linux)</li>
 </ul>
+<p>cBioPortal DataHub study archive downloads are the exception: archive downloads do
+not use a total request timeout, so large files can keep downloading while bytes
+arrive. They do use an idle/no-progress timeout; if a stalled archive sends no bytes
+or progress within that window, the download fails clearly.</p>
 <p>Run <code>biomcp cache path</code> to print the managed HTTP cache directory on the current
 machine without creating or migrating cache directories.</p>
 <p>For freshness-sensitive workflows, use <code>--no-cache</code>.</p>
@@ -4004,7 +4233,7 @@ machine without creating or migrating cache directories.</p>
 <tr>
 <td>Semantic Scholar</td>
 <td><code>S2_API_KEY</code></td>
-<td>Optional authenticated requests for <code>search article</code>, <code>get article</code>, <code>article batch</code>, TLDR, and citation/reference/recommendation helpers</td>
+<td>Optional authenticated requests for <code>search article</code>, <code>get article</code>, <code>article batch</code>, TLDR, citation/reference/recommendation helpers, and <code>get article &lt;id&gt; fulltext --pdf</code> metadata enrichment</td>
 </tr>
 <tr>
 <td>NCI CTS API</td>
@@ -4054,6 +4283,11 @@ and practical ceilings observed in command behavior.</p>
 <td>OpenFDA adverse-event / recall / device</td>
 <td><code>--limit</code> must be 1-50</td>
 <td>Use narrower filters and iterative queries for large pulls</td>
+</tr>
+<tr>
+<td>CDC WONDER VAERS</td>
+<td>Automated queries should run one at a time; CDC recommends about 2 minutes between repeated data-mining requests</td>
+<td>Keep VAERS queries targeted, prefer fixture-frozen contract tests over live loops, and use <code>biomcp health --apis-only</code> for readiness checks</td>
 </tr>
 <tr>
 <td>Gene search</td>
@@ -4144,9 +4378,13 @@ and practical ceilings observed in command behavior.</p>
 <li>PubTator3 + Europe PMC + PubMed for federated search, with LitSense2 added for keyword-bearing queries and an optional Semantic Scholar leg when the filter set is compatible (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, per-source capping after deduplication and before ranking, local lexical/semantic/hybrid relevance ranking)</li>
 <li>Europe PMC for bibliographic metadata</li>
 <li>PubTator3 for entity annotations</li>
-<li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, and recommendations</li>
-<li>NCBI ID converter + PMC OA for full-text resolution where available</li>
+<li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, recommendations, and <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback</li>
+<li>NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs when the base article lacks PMCID</li>
+<li>Europe PMC PMC XML, NCBI EFetch PMC XML, PMC OA Archive XML, Europe PMC MED XML, PMC HTML, and opt-in Semantic Scholar PDF form the full-text content ladder where available</li>
 </ol>
+<p>NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs.
+Semantic Scholar supplies <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback;
+BioMCP fetches that third-party PDF URL only after the caller opts in.</p>
 <p>This means metadata, annotations, and full text may have different availability
 for the same PMID.</p>
 <h2 id="openfda-behavior">OpenFDA behavior<a class="headerlink" href="#openfda-behavior" title="Permanent link">&para;</a></h2>
@@ -4155,9 +4393,17 @@ for the same PMID.</p>
 <li>FAERS drug adverse events</li>
 <li>Drug/device recalls</li>
 <li>MAUDE device events</li>
+<li>Diagnostic <code>regulatory</code> overlays from device 510(k) and PMA</li>
 </ul>
 <p>OpenFDA may return no results for highly specific filters even when broader filters succeed.
 Start broad (<code>--drug</code>, <code>--type</code>) and then tighten with <code>--reaction</code>, <code>--outcome</code>, <code>--classification</code>, or date filters.</p>
+<h2 id="cdc-wonder-vaers-behavior">CDC WONDER VAERS behavior<a class="headerlink" href="#cdc-wonder-vaers-behavior" title="Permanent link">&para;</a></h2>
+<p>CDC WONDER VAERS drives the aggregate vaccine branch of <code>search adverse-event</code>.</p>
+<ul>
+<li><code>--source all</code> always keeps the OpenFDA FAERS path and adds VAERS only when the query resolves to a vaccine and the active filters are VAERS-compatible.</li>
+<li><code>--source vaers</code> is aggregate-only and uses the CDC WONDER D8 XML POST contract rather than case-level VAERS report retrieval.</li>
+<li>CDC WONDER requires consent to its data use restrictions, and the public API guidance asks automated data-mining clients to send queries one at a time with recovery time between repeated requests.</li>
+</ul>
 <h2 id="provenance-expectations">Provenance expectations<a class="headerlink" href="#provenance-expectations" title="Permanent link">&para;</a></h2>
 <p>BioMCP output intentionally preserves source identity and record identifiers.
 Users should always be able to trace:</p>
@@ -4170,7 +4416,7 @@ Users should always be able to trace:</p>
 <p>When debugging source discrepancies:</p>
 <ol>
 <li>Run <code>biomcp health --apis-only</code> to inspect upstream/API connectivity plus any excluded key-gated sources</li>
-<li>Run <code>biomcp health</code> to inspect local readiness rows such as EMA local data, WHO Prequalification local data, and cache dir</li>
+<li>Run <code>biomcp health</code> to inspect local readiness rows such as DDInter local data, EMA local data, WHO Prequalification local data, CDC CVX/MVX local data, GTR local data, WHO IVD local data, and cache dir</li>
 <li>Treat <code>biomcp health</code> as an inspection surface: it does not currently exit non-zero on partial upstream failures</li>
 <li>Run <code>./scripts/contract-smoke.sh --fast</code> for representative live probes, or <code>./scripts/contract-smoke.sh</code> for the fuller contract set</li>
 <li>Retry with <code>--no-cache</code></li>

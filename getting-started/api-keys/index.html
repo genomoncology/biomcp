@@ -1268,6 +1268,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1971,6 +1999,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -2007,6 +2063,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3740,7 +3908,9 @@ Some enrichment and higher-rate access paths improve with API keys. For provider
 </code></pre></div>
 <h2 id="additional-api-keys">Additional API keys<a class="headerlink" href="#additional-api-keys" title="Permanent link">&para;</a></h2>
 <h3 id="oncokb_token"><code>ONCOKB_TOKEN</code><a class="headerlink" href="#oncokb_token" title="Permanent link">&para;</a></h3>
-<p>Used for the production <code>biomcp variant oncokb ...</code> helper.
+<p>Used for the production <code>biomcp variant oncokb ...</code> helper. Without the
+token, that helper is unavailable and reports the required environment
+variable.
 BioMCP keeps <code>ONCOKB_TOKEN</code> because OncoKB itself calls the credential a
 token.</p>
 <p>Register at: <a href="https://www.oncokb.org/account/register">https://www.oncokb.org/account/register</a></p>
@@ -3754,14 +3924,17 @@ token.</p>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci
 </code></pre></div>
 <h3 id="disgenet_api_key"><code>DISGENET_API_KEY</code><a class="headerlink" href="#disgenet_api_key" title="Permanent link">&para;</a></h3>
-<p>Required for DisGeNET scored association sections on genes and diseases.</p>
+<p>Required for DisGeNET scored association sections on genes and diseases.
+Without the key, those DisGeNET sections are unavailable and report the
+required environment variable.</p>
 <p>Register at: <a href="https://www.disgenet.com/">https://www.disgenet.com/</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DISGENET_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>TP53<span class="w"> </span>disgenet
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;breast cancer&quot;</span><span class="w"> </span>disgenet
 </code></pre></div>
 <h3 id="umls_api_key"><code>UMLS_API_KEY</code><a class="headerlink" href="#umls_api_key" title="Permanent link">&para;</a></h3>
-<p>Adds optional clinical crosswalk enrichment to <code>biomcp discover</code>.</p>
+<p>Adds optional clinical crosswalk enrichment to <code>biomcp discover</code>. Without the
+key, <code>discover</code> still runs with OLS4-only results and omits UMLS crosswalks.</p>
 <p>Register at: <a href="https://uts.nlm.nih.gov/uts/signup-login">https://uts.nlm.nih.gov/uts/signup-login</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">UMLS_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;cystic fibrosis&quot;</span>

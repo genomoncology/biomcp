@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3573,7 +3741,7 @@
 
 
 <h1 id="healthcare-agents-need-skills-not-just-models">Healthcare Agents Need Skills, Not Just Models<a class="headerlink" href="#healthcare-agents-need-skills-not-just-models" title="Permanent link">&para;</a></h1>
-<p><em>Curated skills lift healthcare agent pass rates from 34% to 86%. BioMCP ships one — optimized for 30+ biomedical sources across 12 entity types.</em></p>
+<p><em>Curated skills lift healthcare agent pass rates from 34% to 86%. BioMCP ships one — optimized for 30+ biomedical sources across the current public entity surface.</em></p>
 <p><img alt="Agent Skills for Healthcare — BioMCP ships an embedded skill that lifts healthcare agent pass rates by +51.9pp" src="../images/slide-7-agent-skills.png" /></p>
 <p>AI agents are good at reasoning. They're bad at biomedical data.</p>
 <p>Ask an agent to investigate BRAF V600E across ClinVar, CIViC, ClinicalTrials.gov, PubMed, and OpenFDA, and it will try to write API client code for each source — different authentication, different identifiers, different rate limits, different output formats. The code is fragile. The context window fills up with HTTP plumbing instead of results. And the agent still misses sources it doesn't know about.</p>
@@ -3590,7 +3758,7 @@
 <p>BioMCP is a single Rust binary that federates 30+ biomedical data sources — ClinVar, MyVariant, PubMed, ClinicalTrials.gov, OpenFDA, UniProt, Reactome, DrugBank, PharmGKB, Monarch, and more — through one unified interface. Parallel API fan-out, built-in caching, retries, rate limiting, and compact output that keeps the agent's context window tight. The agent never writes API code.</p>
 <p>But a fast tool without domain knowledge is just a fast way to get lost.</p>
 <p>BioMCP ships an embedded skill — a <code>SKILL.md</code> with procedural guidance that teaches agents how to actually do biomedical work. Not what the APIs return, but <em>how to investigate</em> a variant, <em>how to profile</em> a drug's safety, <em>how to trace</em> a resistance mechanism across genes, drugs, trials, and literature.</p>
-<p>The skill covers all 12 entity types:</p>
+<p>The skill covers the public entity surface:</p>
 <table>
 <thead>
 <tr>
@@ -3614,6 +3782,11 @@
 <td>Trial</td>
 <td>Search by condition, mutation, drug, status, location</td>
 <td>ClinicalTrials.gov, NCI CTS</td>
+</tr>
+<tr>
+<td>Diagnostic</td>
+<td>Find gene- and disease-linked diagnostic tests</td>
+<td>NCBI GTR, WHO IVD, OpenFDA</td>
 </tr>
 <tr>
 <td>Drug</td>
@@ -3713,7 +3886,7 @@
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install
 </code></pre></div>
 <p>BioMCP auto-detects your agent — Claude Code, Codex, Gemini CLI, Pi, Cursor, Copilot — and installs the skill to the right directory.</p>
-<p>Two commands. Thirty sources. Twelve entity types. The domain expertise to use them.</p>
+<p>Two commands. Thirty sources. The public entity surface. The domain expertise to use it.</p>
 <hr />
 <p><strong>References:</strong></p>
 <ul>

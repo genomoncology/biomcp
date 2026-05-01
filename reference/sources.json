@@ -153,6 +153,28 @@
     "notes": "DGIdb itself is open to query, but it aggregates claims from many external drug-gene sources."
   },
   {
+    "id": "ddinter",
+    "name": "DDInter",
+    "tier": 3,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "biomcp drug interactions <name>",
+      "get drug <name> interactions",
+      "biomcp health",
+      "biomcp ddinter sync"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public DDInter download bundle; BioMCP downloads and reads local copies on demand, or operators can preseed BIOMCP_DDINTER_DIR manually",
+    "license_summary": "CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists",
+    "redistribution_summary": "reuse requires attribution, non-commercial use, and ShareAlike treatment; do not turn missing rows into safety claims or assume commercial redistribution rights",
+    "terms_url": "https://ddinter.scbdd.com/terms/",
+    "key_url": null,
+    "reviewed_on": "2026-04-25",
+    "notes": "BioMCP requires ddinter_downloads_code_A.csv, ddinter_downloads_code_B.csv, ddinter_downloads_code_D.csv, ddinter_downloads_code_H.csv, ddinter_downloads_code_L.csv, ddinter_downloads_code_P.csv, ddinter_downloads_code_R.csv, and ddinter_downloads_code_V.csv; it auto-downloads them on first interaction use, refreshes stale files after 72 hours, supports explicit refresh via biomcp ddinter sync, and keeps empty results scoped to the current DDInter bundle."
+  },
+  {
     "id": "disgenet",
     "name": "DisGeNET",
     "tier": 2,
@@ -168,6 +190,50 @@
     "key_url": "https://www.disgenet.com/",
     "reviewed_on": "2026-03-20",
     "notes": "DisGeNET's public site advertises free and commercial plans. BioMCP documents the API as key-gated and treats it as provider-controlled."
+  },
+  {
+    "id": "cdc-cvx",
+    "name": "CDC CVX/MVX",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "search drug <name> --region eu|all",
+      "search drug <name> --region who --product-type vaccine",
+      "search drug <name> (default plain-name all-region search)",
+      "biomcp health",
+      "biomcp cvx sync"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "on-demand local download by BioMCP on first EU/default/WHO-vaccine bridge use, or manual preseed via BIOMCP_CVX_DIR",
+    "license_summary": "most CDC website materials are public domain, but attribution, disclaimer, and exceptions for third-party or non-federal content still apply",
+    "redistribution_summary": "reuse is generally allowed with CDC attribution and non-endorsement language; avoid CDC logos and review exceptions before republishing",
+    "terms_url": "https://www.cdc.gov/other/agencymaterials.html",
+    "key_url": null,
+    "reviewed_on": "2026-04-17",
+    "notes": "BioMCP auto-downloads cvx.txt, TRADENAME.txt, and mvx.txt into BIOMCP_CVX_DIR or the default data directory on first use, refreshes stale files after 30 days, supports explicit refresh via biomcp cvx sync, augments EMA/default vaccine search plus explicit WHO vaccine name/brand search after MyChem misses, and does not use the CVX root for pure --region us searches or WHO finished-pharma/API lookups."
+  },
+  {
+    "id": "vaers",
+    "name": "CDC WONDER VAERS",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "search adverse-event --source vaers",
+      "search adverse-event --source all",
+      "biomcp health"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public CDC WONDER web/API access; consent to the CDC WONDER data use restrictions is required",
+    "license_summary": "CDC WONDER data use restrictions require statistical reporting/analysis use and prohibit re-identification attempts",
+    "redistribution_summary": "reuse is allowed for statistical reporting and analysis with source attribution, but do not try to identify individuals or publish identifying linkages",
+    "terms_url": "https://wonder.cdc.gov/datause.html",
+    "key_url": null,
+    "reviewed_on": "2026-04-18",
+    "notes": "BioMCP calls the CDC WONDER VAERS D8 XML POST endpoint for aggregate vaccine adverse-event summaries only. The source is aggregate-only in this ticket; case-level VAERS export and direct report detail retrieval are intentionally out of scope."
   },
   {
     "id": "ema",
@@ -189,7 +255,7 @@
     "terms_url": "https://www.ema.europa.eu/en/about-us/about-website/legal-notice",
     "key_url": null,
     "reviewed_on": "2026-03-24",
-    "notes": "BioMCP auto-downloads the EMA human-medicines JSON batch into BIOMCP_EMA_DIR or the default data directory on first use, refreshes stale files, and supports explicit refresh via biomcp ema sync."
+    "notes": "BioMCP auto-downloads the EMA human-medicines JSON batch into BIOMCP_EMA_DIR or the default data directory on first use, refreshes stale files, supports explicit refresh via biomcp ema sync, accepts `ema` as an input alias for the canonical `eu` region value, and treats omitted `--region` on `get drug <name> regulatory` as the combined U.S.+EU direct-regulatory path."
   },
   {
     "id": "who-prequalification",
@@ -200,6 +266,7 @@
     "bioMcp_surfaces": [
       "search drug --region who|all",
       "search drug --indication <disease> --region who",
+      "search drug <name> --region who --product-type <finished_pharma|api|vaccine>",
       "get drug <name> regulatory --region who|all"
     ],
     "bioMcp_auth": "none",
@@ -210,7 +277,7 @@
     "terms_url": "https://www.who.int/about/policies/publishing/copyright",
     "key_url": null,
     "reviewed_on": "2026-04-10",
-    "notes": "BioMCP auto-downloads the WHO finished-pharmaceutical-products CSV into BIOMCP_WHO_DIR or the default data directory on first use, refreshes stale files, and supports explicit refresh via biomcp who sync."
+    "notes": "BioMCP auto-downloads the WHO finished-pharmaceutical-products CSV, active-pharmaceutical-ingredients CSV, and vaccine CSV into BIOMCP_WHO_DIR or the default data directory on first use, refreshes stale files, supports WHO-only `--product-type <finished_pharma|api|vaccine>` filtering on explicit `--region who` searches, and supports explicit refresh via biomcp who sync. WHO vaccine support is search-only; `get drug <name> regulatory --region who|all` remains finished-pharma/API only."
   },
   {
     "id": "enrichr",
@@ -235,7 +302,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["search article", "get article <pmid>"],
+    "bioMcp_surfaces": ["search article", "get article <pmid>", "get article <id> fulltext"],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public API",
@@ -244,7 +311,7 @@
     "terms_url": "https://europepmc.org/RestfulWebService",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP uses Europe PMC for search and bibliographic metadata. Open-access reuse depends on the publication license attached to each record."
+    "notes": "BioMCP uses Europe PMC for search, bibliographic metadata, and article full-text XML lookups. Open-access reuse depends on the publication license attached to each record."
   },
   {
     "id": "gnomad",
@@ -388,7 +455,10 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["discover plain-language topics"],
+    "bioMcp_surfaces": [
+      "discover plain-language topics",
+      "get disease <name_or_id> clinical_features"
+    ],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public search API",
@@ -397,7 +467,7 @@
     "terms_url": "https://medlineplus.gov/about/using/",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP uses MedlinePlus only for best-effort plain-language discover context."
+    "notes": "BioMCP uses MedlinePlus for best-effort plain-language discover context and opt-in disease clinical-feature summaries for configured diseases."
   },
   {
     "id": "litsense2",
@@ -516,7 +586,41 @@
     "terms_url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-04-10",
-    "notes": "BioMCP uses PMC `efetch` as a full-text fallback when Europe PMC does not serve the article. `NCBI_API_KEY` raises the baseline NCBI E-utilities budget but is not required."
+    "notes": "BioMCP uses PMC `efetch` as one XML full-text fallback when Europe PMC does not serve the article; PMC OA and PMC article HTML are separate later fallback surfaces. `NCBI_API_KEY` raises the baseline NCBI E-utilities budget but is not required."
+  },
+  {
+    "id": "gtr",
+    "name": "NCBI Genetic Testing Registry",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["search diagnostic", "get diagnostic <gtr_accession> [genes|conditions|methods|regulatory]", "biomcp health", "biomcp gtr sync"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public FTP bulk export; BioMCP downloads and reads local copies on demand, or operators can preseed `BIOMCP_GTR_DIR` manually",
+    "license_summary": "NLM/NCBI government data service with public bulk-export access",
+    "redistribution_summary": "GTR records are broadly queryable and reusable, but preserve accession provenance and review any embedded third-party identifiers separately",
+    "terms_url": "https://www.ncbi.nlm.nih.gov/gtr/docs/faq/",
+    "key_url": null,
+    "reviewed_on": "2026-04-17",
+    "notes": "BioMCP requires `test_version.gz` and `test_condition_gene.txt`, auto-downloads them on first diagnostic use, refreshes stale files after 7 days, and supports explicit refresh via `biomcp gtr sync`."
+  },
+  {
+    "id": "who-ivd",
+    "name": "WHO Prequalified IVD",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["search diagnostic --source who-ivd|all", "get diagnostic <who_ivd_product_code> [conditions|regulatory]", "biomcp health", "biomcp who-ivd sync"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public WHO CSV export; BioMCP downloads and reads a local copy on demand, or operators can preseed `BIOMCP_WHO_IVD_DIR` manually",
+    "license_summary": "WHO content generally requires attribution; commercial reuse may require permission and third-party materials can carry separate rights",
+    "redistribution_summary": "Preserve WHO attribution, review commercial-use conditions, and verify third-party material rights before republishing WHO IVD-derived content",
+    "terms_url": "https://www.who.int/about/policies/publishing/copyright",
+    "key_url": null,
+    "reviewed_on": "2026-04-18",
+    "notes": "BioMCP requires `who_ivd.csv`, auto-downloads it on first diagnostic WHO IVD use, refreshes stale files after 72 hours, and supports explicit refresh via `biomcp who-ivd sync`."
   },
   {
     "id": "ncbi-id-converter",
@@ -609,7 +713,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["search adverse-event", "get drug <name> label", "get drug <name> approvals"],
+    "bioMcp_surfaces": ["search adverse-event", "get drug <name> label", "get drug <name> approvals", "get diagnostic <diagnostic_id> regulatory"],
     "bioMcp_auth": "optional_env",
     "env_var": "OPENFDA_API_KEY",
     "provider_access": "open public API; optional key increases quota headroom",
@@ -617,8 +721,8 @@
     "redistribution_summary": "data is broadly reusable, but avoid implying FDA endorsement and preserve source context",
     "terms_url": "https://open.fda.gov/apis/authentication/",
     "key_url": "https://open.fda.gov/apis/authentication/",
-    "reviewed_on": "2026-03-20",
-    "notes": "The authentication page says API keys are required while also publishing no-key quotas. BioMCP documents the real runtime behavior: baseline use works without a key, with higher quotas when one is configured."
+    "reviewed_on": "2026-04-18",
+    "notes": "The authentication page says API keys are required while also publishing no-key quotas. BioMCP documents the real runtime behavior: baseline use works without a key, with higher quotas when one is configured. Diagnostic regulatory uses the OpenFDA device 510(k) and PMA endpoints as an exact-name-first live overlay rather than a mirrored device catalog."
   },
   {
     "id": "opentargets",
@@ -669,7 +773,7 @@
     "terms_url": "https://pmc.ncbi.nlm.nih.gov/tools/openftlist/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP queries PMC OA on demand and does not ship the article corpus. Returned full text is still governed by article-level licenses."
+    "notes": "BioMCP queries PMC OA on demand as one XML full-text rung and does not ship the article corpus. PMC article HTML is a separate derived fallback, and returned full text is still governed by article-level licenses."
   },
   {
     "id": "pubtator3",
@@ -703,7 +807,7 @@
     "terms_url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-04-10",
-    "notes": "BioMCP uses PubMed as a first-class article search source while keeping separate rows for PubTator3 annotations, PMC OA full text, and other NCBI article helpers."
+    "notes": "BioMCP uses PubMed as a first-class article search source while keeping separate rows for PubTator3 annotations, NCBI E-utilities/PMC OA XML full text, NCBI ID Converter bridging, and Semantic Scholar PDF metadata; PMC article HTML is documented as a PMC web fallback in the data-source matrix."
   },
   {
     "id": "quickgo",
@@ -745,7 +849,7 @@
     "tier": 2,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["search article", "get article <id> tldr", "article citations <id>", "article references <id>", "article recommendations <id>"],
+    "bioMcp_surfaces": ["search article", "get article <id> tldr", "get article <id> fulltext --pdf", "article citations <id>", "article references <id>", "article recommendations <id>"],
     "bioMcp_auth": "optional_env",
     "env_var": "S2_API_KEY",
     "provider_access": "Unauthenticated access is available on the shared pool; authenticated access uses the provider-issued API key and remains governed by the API license agreement",
@@ -754,7 +858,7 @@
     "terms_url": "https://www.semanticscholar.org/product/api/license",
     "key_url": "https://www.semanticscholar.org/product/api",
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP can call Semantic Scholar without `S2_API_KEY`, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability."
+    "notes": "BioMCP can call Semantic Scholar without `S2_API_KEY`, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability. For `get article <id> fulltext --pdf`, BioMCP uses Semantic Scholar `openAccessPdf` metadata, then fetches the third-party PDF URL only after explicit PDF opt-in; the PDF's article-level reuse terms remain separate."
   },
   {
     "id": "seer-explorer",

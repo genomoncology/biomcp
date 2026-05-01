@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1688,6 +1716,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#official-source" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1893,6 +1932,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ema/" class="md-nav__link">
         
   
@@ -1929,6 +1996,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3531,6 +3710,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#official-source" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3574,7 +3764,7 @@
 
 <h1 id="semantic-scholar">Semantic Scholar<a class="headerlink" href="#semantic-scholar" title="Permanent link">&para;</a></h1>
 <p>Semantic Scholar matters when you already have the paper and need the graph around it: the TLDR, the follow-up literature, the references it builds on, and the related papers worth checking next. It turns a flat article lookup into a literature-review workflow that an agent can keep extending without losing the thread.</p>
-<p>In BioMCP, <code>search article</code> does not expose <code>--source semantic-scholar</code>. Instead, Semantic Scholar is an automatic optional search leg when the filter set is compatible. The dedicated helper commands on this page are the direct reason to come here: <code>get article &lt;id&gt; tldr</code>, <code>article citations</code>, <code>article references</code>, and <code>article recommendations</code>.</p>
+<p>In BioMCP, <code>search article</code> does not expose <code>--source semantic-scholar</code>. Instead, Semantic Scholar is an automatic optional search leg when the filter set is compatible, with shared-pool mode at 1 req/2sec without <code>S2_API_KEY</code> and authenticated mode at 1 req/sec with the key. The dedicated helper commands on this page are the direct reason to come here: <code>get article &lt;id&gt; tldr</code>, <code>article citations</code>, <code>article references</code>, and <code>article recommendations</code>.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3587,8 +3777,8 @@
 <tbody>
 <tr>
 <td><code>search article</code></td>
-<td>Optional compatible search-leg enrichment</td>
-<td>Semantic Scholar joins article search automatically when the filter set allows it</td>
+<td>Optional compatible search-leg enrichment plus source status</td>
+<td>Semantic Scholar joins article search automatically when the filter set allows it; <code>--source semantic-scholar</code> is not a public source switch</td>
 </tr>
 <tr>
 <td><code>get article &lt;id&gt; tldr</code></td>
@@ -3627,6 +3817,23 @@
 <p>Returns a recommendations table with PMID, title, journal, and year columns.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>Optional <code>S2_API_KEY</code> for dedicated quota and higher reliability. Configure it with the <a href="../../getting-started/api-keys/">API Keys</a> guide and request one from the <a href="https://www.semanticscholar.org/product/api">Semantic Scholar API page</a>.</p>
+<p>Without <code>S2_API_KEY</code>, BioMCP uses the shared unauthenticated pool at
+1 req/2sec. A shared-pool HTTP 429 fails fast with guidance to set the key
+instead of retrying against the same public pool. With <code>S2_API_KEY</code>, BioMCP
+sends authenticated requests at 1 req/sec and honors authenticated
+<code>Retry-After</code> responses before retrying. Source status and debug-plan output
+report <code>auth_mode</code> as <code>shared_pool</code> or <code>authenticated</code>, but never print the
+secret key or key prefix.</p>
+<h2 id="runtime-behavior">Runtime behavior<a class="headerlink" href="#runtime-behavior" title="Permanent link">&para;</a></h2>
+<p><code>search article</code> exposes Semantic Scholar as an automatic compatible leg rather
+than a user-selectable source flag. Keep using <code>--source all</code>, <code>pubtator</code>,
+<code>europepmc</code>, <code>pubmed</code>, or <code>litsense2</code> for the public source switch; Semantic
+Scholar joins only when the article filters can support it.</p>
+<p>JSON search responses can include redacted Semantic Scholar source status under
+<code>_meta.source_status[]</code>, and <code>--debug-plan</code> mirrors that redacted status in the
+article leg so operators can distinguish <code>ok</code>, <code>degraded</code>, and <code>unavailable</code>
+without exposing credentials. Degradation of the optional Semantic Scholar leg
+should not be read as a PubMed, Europe PMC, or PubTator failure.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
 <p><a href="https://www.semanticscholar.org/">Semantic Scholar</a> is the official literature-graph product behind BioMCP's TLDR and citation helper workflows.</p>
 <h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>

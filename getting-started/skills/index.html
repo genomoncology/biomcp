@@ -1179,6 +1179,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1882,6 +1910,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1918,6 +1974,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3553,25 +3721,37 @@
 <h1 id="skills">Skills<a class="headerlink" href="#skills" title="Permanent link">&para;</a></h1>
 <p>BioMCP ships one embedded guide plus supporting reference files and worked
 examples for agent workflows. The current workflow is:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>skill
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>list
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>article-follow-up
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>suggest<span class="w"> </span><span class="s2">&quot;What drugs treat melanoma?&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>skill
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>render
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>list
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>article-follow-up
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>~/.claude
 </code></pre></div>
 <h2 id="read-the-overview">Read the overview<a class="headerlink" href="#read-the-overview" title="Permanent link">&para;</a></h2>
+<p><code>biomcp suggest "&lt;question&gt;"</code> is the quickest way to choose the matching
+worked-example playbook when you only know the biomedical question. It returns
+the playbook slug, two starter commands, and the <code>biomcp skill &lt;slug&gt;</code> command
+for the full workflow.</p>
 <p><code>biomcp skill</code> prints the embedded <code>skills/SKILL.md</code> overview. Start there if
 you want the current BioMCP workflow guidance without installing anything into
 an agent directory.</p>
+<p><code>biomcp skill render</code> prints the same canonical agent-facing prompt for
+scripts and eval runners. Redirected output from <code>biomcp skill render</code> is the
+same content installed as <code>SKILL.md</code>.</p>
 <h2 id="learn-the-workflows">Learn the workflows<a class="headerlink" href="#learn-the-workflows" title="Permanent link">&para;</a></h2>
 <p>Use <code>biomcp skill list</code> to browse the embedded worked examples and
 <code>biomcp skill &lt;slug|number&gt;</code> to open one in the CLI:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>list
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>article-follow-up
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>variant-pathogenicity
 </code></pre></div>
-<p>Current builds ship examples for treatment lookup, symptom lookup,
-gene-disease orientation, and article follow-up. The installed <code>skills/</code> tree
-also includes worked examples you can read directly in the repo or in an agent
-directory:</p>
+<p>Current builds ship 15 worked examples. The catalog keeps the original
+treatment lookup, symptom lookup, gene-disease orientation, and article
+follow-up examples, plus expanded playbooks such as <code>variant-pathogenicity</code>,
+<code>drug-regulatory</code>, <code>trial-recruitment</code>, <code>mutation-catalog</code>, and
+<code>negative-evidence</code>. The installed <code>skills/</code> tree also includes worked
+examples you can read directly in the repo or in an agent directory:</p>
 <ul>
 <li><a href="../../how-to/guide-workflows/">Guide Workflows</a> - variant pathogenicity,
   drug safety, and broad gene-disease investigation</li>
@@ -3597,6 +3777,17 @@ the current working tree, then prompts before installing when stdin is a TTY.</p
 <li><code>examples/</code></li>
 <li><code>schemas/</code></li>
 </ul>
+<p>The install payload also includes <code>schemas/workflow-ladder.schema.json</code> and
+seven <code>use-cases/&lt;slug&gt;.ladder.json</code> sidecars for workflow ladders:
+<code>treatment-lookup</code>, <code>article-follow-up</code>, <code>variant-pathogenicity</code>,
+<code>trial-recruitment</code>, <code>mechanism-pathway</code>, <code>pharmacogene-cumulative</code>, and
+<code>mutation-catalog</code>. These JSON sidecars are not listed by <code>biomcp skill list</code>;
+they are runtime metadata assets paired with the numbered markdown playbooks.</p>
+<p>When a first-call JSON response matches a ladder trigger, BioMCP can emit
+<code>_meta.workflow</code> plus <code>_meta.ladder[]</code>. The ladder commands are static copies of
+the matching playbook's fenced bash block; they are not templated with user
+input. <code>_meta.next_commands</code> remains the dynamic one-hop follow-up list for the
+current result.</p>
 
 
 

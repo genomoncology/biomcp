@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -2968,6 +3136,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#skill-prompt-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skill Prompt Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#provenance-and-terms" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3586,6 +3765,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#skill-prompt-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skill Prompt Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#provenance-and-terms" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3729,6 +3919,19 @@ ranking changes.</p>
 <p>This is not a new benchmark lane. The calibration surface stays in Rust tests
 and benchmark docs because live ranking-order assertions against upstream
 article responses are unstable.</p>
+<h2 id="skill-prompt-integration">Skill Prompt Integration<a class="headerlink" href="#skill-prompt-integration" title="Permanent link">&para;</a></h2>
+<p>eval runners should call <code>biomcp skill render</code> immediately before building the
+system prompt for a measurement run. That command is the canonical
+agent-facing BioMCP prompt surface and avoids pinning a stale <code>SKILL.md</code>
+snapshot in benchmark harnesses.</p>
+<p>Snapshot-based eval runners should refresh their snapshot before measurement
+with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>render<span class="w"> </span>&gt;<span class="w"> </span>&lt;snapshot-path&gt;
+</code></pre></div>
+<p>This repository contains BioASQ data preparation and benchmark documentation,
+but it does not contain the external eval CLI startup path. BioMCP therefore
+ships the stable render command and documents the startup/snapshot contract; it
+does not claim that external eval startup code was switched here.</p>
 <h2 id="provenance-and-terms">Provenance and terms<a class="headerlink" href="#provenance-and-terms" title="Permanent link">&para;</a></h2>
 <p>The public bundle metadata lives in <code>benchmarks/bioasq/datasets/manifest.json</code>.
 Each normalized record carries a <code>provenance</code> object with lane, source,

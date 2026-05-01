@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Use BioMCP to search WHO Prequalification-backed drug records in BioMCP and retrieve global regulatory context through the local WHO batch.">
+        <meta name="description" content="Use BioMCP to search WHO Prequalification-backed drug and vaccine records in BioMCP and retrieve global regulatory context through the local WHO finished-pharma, API, and vaccine exports.">
       
       
         <meta name="author" content="Ian Maurer">
@@ -18,7 +18,7 @@
         <link rel="prev" href="../ema/">
       
       
-        <link rel="next" href="../kegg/">
+        <link rel="next" href="../gtr/">
       
       
         
@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1791,6 +1819,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ema/" class="md-nav__link">
         
   
@@ -1937,6 +1993,118 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -3573,8 +3741,8 @@
 
 
 <h1 id="who-prequalification">WHO Prequalification<a class="headerlink" href="#who-prequalification" title="Permanent link">&para;</a></h1>
-<p>WHO Prequalification matters when you need global regulatory context for medicines used across procurement and access programs outside the U.S./EU-only lens. It is the right page for questions about whether a medicine appears in the WHO finished-pharmaceutical-products list and for comparing that status with other regional drug views.</p>
-<p>In BioMCP, WHO Prequalification is a local-runtime source for drug name/alias lookups and regional regulatory sections rather than a live per-request API surface. BioMCP auto-downloads the finished-pharmaceutical-products CSV into <code>BIOMCP_WHO_DIR</code> or the default data directory on first use, supports <code>--region who|all</code>, lets structured <code>--region who</code> searches filter structured U.S. hits through WHO prequalification, and exposes <code>biomcp who sync</code> when you want a forced refresh.</p>
+<p>WHO Prequalification matters when you need global regulatory context for medicines and WHO-prequalified vaccines used across procurement and access programs outside the U.S./EU-only lens. It is the right page for questions about whether a medicine appears in the WHO finished-pharmaceutical-products list or the WHO active-pharmaceutical-ingredients list, whether a vaccine appears in the WHO vaccine prequalification export, and how that status compares with other regional drug views.</p>
+<p>In BioMCP, WHO Prequalification is a local-runtime source for drug name/alias lookups and regional regulatory sections rather than a live per-request API surface. BioMCP auto-downloads the finished-pharmaceutical-products CSV, the active-pharmaceutical-ingredients CSV, and the vaccine export into <code>BIOMCP_WHO_DIR</code> or the default data directory on first use, supports <code>--region who|all</code>, lets structured <code>--region who</code> searches filter structured U.S. hits through WHO prequalification for finished-pharma/API rows, supports <code>--product-type &lt;finished_pharma|api|vaccine&gt;</code> on explicit WHO searches, keeps vaccine support search-only in this ticket, and exposes <code>biomcp who sync</code> when you want a forced refresh of all three exports.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3588,7 +3756,7 @@
 <tr>
 <td><code>search drug &lt;name&gt; --region who</code></td>
 <td>WHO-prequalified drug matches by name or alias</td>
-<td>Uses the local WHO batch for WHO-only name/alias lookups</td>
+<td>Uses the local WHO finished-pharma + API batch for WHO-only name/alias lookups</td>
 </tr>
 <tr>
 <td><code>search drug &lt;name&gt; --region all</code></td>
@@ -3601,6 +3769,11 @@
 <td>Keeps MyChem structured semantics and narrows results through the WHO batch</td>
 </tr>
 <tr>
+<td><code>search drug &lt;name&gt; --region who --product-type &lt;finished_pharma|api|vaccine&gt;</code></td>
+<td>WHO-only source-type filtering</td>
+<td>Narrows WHO search rows to finished pharmaceutical products, active pharmaceutical ingredients, or vaccine rows</td>
+</tr>
+<tr>
 <td><code>get drug &lt;name&gt; regulatory --region who|all</code></td>
 <td>WHO or combined regulatory context</td>
 <td>WHO-backed regional regulatory section</td>
@@ -3611,22 +3784,27 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>trastuzumab<span class="w"> </span>--region<span class="w"> </span>who<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Returns WHO-prequalified trastuzumab rows from the local WHO dataset.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--indication<span class="w"> </span>malaria<span class="w"> </span>--region<span class="w"> </span>who<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>artesunate<span class="w"> </span>--region<span class="w"> </span>who<span class="w"> </span>--product-type<span class="w"> </span>api<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>Returns only WHO active-pharmaceutical-ingredient rows for artesunate. <code>--product-type</code> requires explicit <code>--region who</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>BCG<span class="w"> </span>--region<span class="w"> </span>who<span class="w"> </span>--product-type<span class="w"> </span>vaccine<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>Returns WHO vaccine rows for BCG. WHO vaccine support is explicit search-only in this release, so use a vaccine name or brand with <code>--product-type vaccine</code> instead of <code>get drug</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--indication<span class="w"> </span>malaria<span class="w"> </span>--region<span class="w"> </span>who<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Filters structured U.S. malaria hits through the local WHO prequalification batch.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>trastuzumab<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>who
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>trastuzumab<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>who
 </code></pre></div>
 <p>Returns WHO-backed regulatory context for the WHO region.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>imatinib<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>who
-</code></pre></div>
-<p>Returns the truthful WHO empty state when the drug is not WHO-prequalified.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>who<span class="w"> </span>sync
-</code></pre></div>
-<p>Refreshes the local WHO batch without waiting for the next automatic sync.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
-<p>No BioMCP API key required. BioMCP auto-downloads the WHO finished-pharmaceutical-products CSV into <code>BIOMCP_WHO_DIR</code> or the default data directory on first use.</p>
+<p>No BioMCP API key required. BioMCP auto-downloads the WHO finished-pharmaceutical-products CSV, active-pharmaceutical-ingredients CSV, and vaccine CSV into <code>BIOMCP_WHO_DIR</code> or the default data directory on first use.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
-<p><a href="https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&amp;_format=csv">WHO Prequalification</a> is the official WHO CSV export behind BioMCP's WHO drug context.</p>
+<p>The official WHO CSV exports behind BioMCP's WHO drug context are:</p>
+<ul>
+<li><a href="https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&amp;_format=csv">Finished pharmaceutical products</a></li>
+<li><a href="https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients/export?page&amp;_format=csv">Active pharmaceutical ingredients</a></li>
+<li><a href="https://extranet.who.int/prequal/vaccines/prequalified/export">Vaccines</a></li>
+</ul>
 <h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../user-guide/drug/">Drug</a></li>

@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3019,6 +3187,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exact-entity-suggestions-from-keyword-only-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exact entity suggestions from keyword-only search
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#session-loop-breaker-suggestions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Session loop-breaker suggestions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#when-keyword-should-be-combined-with-typed-filters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3520,6 +3710,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#exact-entity-suggestions-from-keyword-only-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exact entity suggestions from keyword-only search
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#session-loop-breaker-suggestions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Session loop-breaker suggestions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#when-keyword-should-be-combined-with-typed-filters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3621,12 +3833,58 @@ surviving primary sources. Rows count against their primary source after
 deduplication. Use <code>--max-per-source &lt;N&gt;</code> to override that cap, use
 <code>--max-per-source 0</code> for the default cap explicitly, and set it equal to
 <code>--limit</code> to disable capping.</p>
+<h2 id="exact-entity-suggestions-from-keyword-only-search">Exact entity suggestions from keyword-only search<a class="headerlink" href="#exact-entity-suggestions-from-keyword-only-search" title="Permanent link">&para;</a></h2>
+<p>If the whole normalized keyword exactly matches a gene, drug, or disease
+vocabulary label or exact alias, article search may add a direct typed follow-up
+command. The same command appears in markdown <code>See also</code> and in JSON
+<code>_meta.next_commands</code>; JSON also includes an article-local
+<code>_meta.suggestions[]</code> object with <code>command</code>, <code>reason</code>, and <code>sections</code>.</p>
+<p>Examples:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span>imatinib<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>The exact check is for the whole keyword, not any token inside the phrase.
+<code>BRAF V600E</code> does not suggest <code>biomcp get gene BRAF</code>, and <code>lung cancer
+immunotherapy</code> does not invent a single disease card. Searches that already
+include <code>-g/--gene</code>, <code>-d/--disease</code>, or <code>--drug</code> also suppress these direct
+entity suggestions because the typed anchor was chosen explicitly.</p>
+<h2 id="session-loop-breaker-suggestions">Session loop-breaker suggestions<a class="headerlink" href="#session-loop-breaker-suggestions" title="Permanent link">&para;</a></h2>
+<p>Use <code>--session &lt;token&gt;</code> when a caller may issue multiple keyword-only article
+searches for one task and wants JSON guidance if the wording starts to loop.
+The token is a local correlation label, not an authentication token or secret.
+Use short non-identifying labels such as <code>lit-review-1</code>; do not include PHI,
+credentials, email addresses, or user identifiers.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX review&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX DCIS&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>BioMCP compares consecutive successful article keyword searches with the same
+session token. It lowercases the keyword, removes common search filler words,
+and triggers when the post-stopword term-set Jaccard overlap is at least 60%.
+The session baseline expires after 10 minutes and stores only the last keyword
+terms plus up to 20 PMIDs from the previous result page under the local cache
+root.</p>
+<p>Loop-breaker guidance appears only in JSON <code>_meta.suggestions[]</code>; default
+markdown output is unchanged. Exact entity suggestions keep <code>sections</code>.
+Loop-breaker suggestions omit <code>sections</code> and are ordered by fallback strategy:</p>
+<ol>
+<li><code>biomcp article batch ...</code> for the previous search's top PMIDs, when any
+   were available.</li>
+<li><code>biomcp discover "&lt;topic&gt;"</code> to map the current topic to structured
+   biomedical entities.</li>
+<li>A date-narrowed <code>biomcp search article ... --year-min ... --year-max ...</code>
+   retry derived from the current result page when such a retry is available.</li>
+</ol>
+<p>Calls without <code>--session</code>, first calls in a new session, disjoint keyword
+changes, expired session state, or keywords that normalize to no meaningful
+terms do not emit loop-breaker suggestions.</p>
 <h2 id="when-keyword-should-be-combined-with-typed-filters">When <code>--keyword</code> should be combined with typed filters<a class="headerlink" href="#when-keyword-should-be-combined-with-typed-filters" title="Permanent link">&para;</a></h2>
 <p>If the gene, disease, or drug is already known, keep that anchor in a typed
 flag and use <code>-k</code> for mechanisms, phenotypes, outcomes, datasets, and other
 free-text concepts.</p>
 <p>Example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>--drug<span class="w"> </span>amiodarone<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;photosensitivity mechanism&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>--drug<span class="w"> </span>amiodarone<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;photosensitivity mechanism&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Without <code>-k</code>, typed-only searches stay on the compatible federated lexical
 route.</p>
@@ -3639,8 +3897,14 @@ before you search, use <code>biomcp discover "&lt;question&gt;"</code>.</p>
 <h2 id="keyword-behavior">Keyword behavior<a class="headerlink" href="#keyword-behavior" title="Permanent link">&para;</a></h2>
 <p><code>--keyword</code> (<code>-k</code>) is treated as escaped free text and no longer auto-quotes
 whitespace-containing values.</p>
+<p>PubMed-specific behavior: direct <code>--source pubmed</code> searches and the compatible
+federated PubMed leg clean bounded question-format filler words from
+unfielded gene, disease, drug, and keyword terms before PubMed ESearch.
+Markdown and JSON query echoes keep the original wording, and PubTator3,
+Europe PMC, LitSense2, and Semantic Scholar keep their existing query
+behavior.</p>
 <p>This allows multi-word keyword retrieval such as:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;large language model clinical trials&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;large language model clinical trials&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="phrase-behavior-for-entity-filters">Phrase behavior for entity filters<a class="headerlink" href="#phrase-behavior-for-entity-filters" title="Permanent link">&para;</a></h2>
 <p>Entity-oriented filters retain phrase quoting behavior:</p>
@@ -3651,11 +3915,11 @@ whitespace-containing values.</p>
 <li><code>--author</code></li>
 </ul>
 <p>Example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--author<span class="w"> </span><span class="s2">&quot;Jane Doe&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--author<span class="w"> </span><span class="s2">&quot;Jane Doe&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="combined-filters">Combined filters<a class="headerlink" href="#combined-filters" title="Permanent link">&para;</a></h2>
 <p>Filters can also be combined with typed anchors and other article controls:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>--drug<span class="w"> </span>amiodarone<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;photosensitivity mechanism&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>--drug<span class="w"> </span>amiodarone<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;photosensitivity mechanism&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 
 

@@ -1088,6 +1088,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../drug/" class="md-nav__link">
         
   
@@ -1937,6 +1965,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1973,6 +2029,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3682,7 +3850,10 @@ they are the stable form BioMCP uses for normalization and fallback repair.
 When ranked disease-gene context is present, the <code>See also:</code> block also promotes
 the strongest follow-up gene pivot before the generic disease-level searches,
 for example <code>biomcp get gene SCN1A clingen constraint</code> on a Dravet syndrome
-gene card.</p>
+gene card.
+The default disease card's <code>More:</code> block keeps <code>genes</code>, <code>pathways</code>, and
+<code>phenotypes</code> visible while also surfacing <code>survival</code> and <code>funding</code> so those
+opt-in sections stay discoverable from the base card.</p>
 <h2 id="disease-sections">Disease sections<a class="headerlink" href="#disease-sections" title="Permanent link">&para;</a></h2>
 <p>Genes (Monarch-backed rows plus additive CIViC and OpenTargets disease-gene associations; OpenTargets scores attach to any rendered row with a matching target score):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>genes
@@ -3694,49 +3865,67 @@ gene card.</p>
 <code>### Key Features</code> above the HPO table. That summary is also exposed as
 <code>key_features[]</code> in <code>--json</code> output. The table remains the comprehensive phenotype
 annotation list, and the existing completeness note still applies.</p>
+<p>Clinical features (MedlinePlus clinical-summary rows):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>&lt;name_or_id&gt;<span class="w"> </span>clinical_features
+</code></pre></div>
+<p>This opt-in section is currently available for the reviewed configured disease
+set: uterine leiomyoma / uterine fibroid, endometriosis, and chronic venous
+insufficiency. Rows are source-native MedlinePlus clinical-summary statements
+with auditable HPO mapping metadata. Unsupported diseases omit the
+<code>clinical_features</code> field rather than fabricating rows, and the section is not
+included in <code>biomcp get disease &lt;name_or_id&gt; all</code>.</p>
 <p>Variants (CIViC disease-associated variants):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>variants
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>variants
 </code></pre></div>
 <p>When the variants section is loaded, JSON also exposes <code>top_variant</code> as the
 highest-ranked CIViC-backed association, and markdown shows the same compact
 anchor above the full variants table.</p>
 <p>Models (Monarch model-organism evidence):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>models
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>models
 </code></pre></div>
 <p>Pathways (associated pathways):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>pathways
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>pathways
 </code></pre></div>
 <p>Prevalence (prevalence data):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>prevalence
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>prevalence
 </code></pre></div>
 <p>Survival (SEER Explorer 5-year relative survival by sex for mapped cancers):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;chronic myeloid leukemia&quot;</span><span class="w"> </span>survival
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;chronic myeloid leukemia&quot;</span><span class="w"> </span>survival
 </code></pre></div>
 <p>The survival section is filtered to all ages and all races / ethnicities. When
 the normalized disease does not map cleanly to one SEER cancer site, BioMCP
 returns a stable <code>survival_note</code> instead of failing the disease card.</p>
-<p>Funding (NIH Reporter grants for the requested disease phrase, with canonical-name fallback for identifier lookups, over the most recent 5 NIH fiscal years):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;chronic myeloid leukemia&quot;</span><span class="w"> </span>funding
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;Marfan syndrome&quot;</span><span class="w"> </span>funding
+<p>Diagnostic-test pivot (GTR and WHO IVD tests for the condition):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>tuberculosis<span class="w"> </span>diagnostics
 </code></pre></div>
-<p>The funding section stays opt-in and is not included in <code>biomcp get disease &lt;name_or_id&gt; all</code>.</p>
+<p>The disease diagnostic card is capped at 10 rows so it stays terminal-sized.
+When rows exist, BioMCP prints a <code>See also:</code> command such as
+<code>biomcp search diagnostic --disease tuberculosis --source all --limit 50</code> for
+the broader paged diagnostic search; use <code>--offset</code> on <code>search diagnostic</code> to
+continue paging.</p>
+<p>Funding (NIH Reporter grants for the requested disease phrase, with canonical-name fallback for identifier lookups, over the most recent 5 NIH fiscal years):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;chronic myeloid leukemia&quot;</span><span class="w"> </span>funding
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;Marfan syndrome&quot;</span><span class="w"> </span>funding
+</code></pre></div>
+<p>The diagnostics, DisGeNET, funding, and clinical features sections stay opt-in
+and are not included in <code>biomcp get disease &lt;name_or_id&gt; all</code>.</p>
 <p>CIViC (clinical evidence):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>civic
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>civic
 </code></pre></div>
 <p>Combined sections:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>genes<span class="w"> </span>phenotypes<span class="w"> </span>variants<span class="w"> </span>models
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;Marfan syndrome&quot;</span><span class="w"> </span>funding
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;chronic myeloid leukemia&quot;</span><span class="w"> </span>survival
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>all
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>genes<span class="w"> </span>phenotypes<span class="w"> </span>variants<span class="w"> </span>models
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;Marfan syndrome&quot;</span><span class="w"> </span>funding
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;chronic myeloid leukemia&quot;</span><span class="w"> </span>survival
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>all
 </code></pre></div>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="phenotype-to-disease-search">Phenotype-to-disease search<a class="headerlink" href="#phenotype-to-disease-search" title="Permanent link">&para;</a></h2>
 <p>Use HPO term sets for ranked disease candidates:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>You can pass terms space-separated or comma-separated.</p>
 <h2 id="typical-disease-centric-workflow">Typical disease-centric workflow<a class="headerlink" href="#typical-disease-centric-workflow" title="Permanent link">&para;</a></h2>
@@ -3746,14 +3935,14 @@ returns a stable <code>survival_note</code> instead of failing the disease card.
 <li>Use normalized concept for trial or article searches.</li>
 </ol>
 <p>Example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>genes<span class="w"> </span>phenotypes
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;chronic myeloid leukemia&quot;</span><span class="w"> </span>survival
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>genes<span class="w"> </span>phenotypes
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;chronic myeloid leukemia&quot;</span><span class="w"> </span>survival
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>all
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>all
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span>
 </code></pre></div>
 <p><code>biomcp --json get disease MONDO:0005105</code> includes <code>top_gene_scores[]</code> with
 overall OpenTargets scores and any available GWAS, rare-variant, or somatic subtype scores.</p>

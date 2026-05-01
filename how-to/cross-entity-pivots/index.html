@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3619,8 +3787,10 @@
 <h1 id="how-to-use-cross-entity-pivots">How to: use cross-entity pivots<a class="headerlink" href="#how-to-use-cross-entity-pivots" title="Permanent link">&para;</a></h1>
 <p>Cross-entity pivot helpers let you move from one BioMCP entity to a related one
 without rebuilding the next query from scratch. The grammar is:
-<code>biomcp &lt;entity&gt; &lt;helper&gt; &lt;id&gt;</code>. Use it when you already know the entity you
-want to investigate and need the built-in related lookup.</p>
+<code>biomcp &lt;entity&gt; &lt;helper&gt; &lt;id&gt;</code> for helper families and
+<code>biomcp get &lt;entity&gt; &lt;id&gt; &lt;section&gt;</code> for sectioned pivots such as diagnostics.
+Use these when you already know the entity you want to investigate and need the
+built-in related lookup.</p>
 <h2 id="when-to-use-a-pivot-helper-vs-a-fresh-search">When to use a pivot helper vs. a fresh search<a class="headerlink" href="#when-to-use-a-pivot-helper-vs-a-fresh-search" title="Permanent link">&para;</a></h2>
 <p>Use a pivot helper when you already have a specific entity identifier or label
 and want the built-in related lookup. Use <code>search</code> when you are still
@@ -3664,7 +3834,8 @@ exploring or need richer downstream filters such as <code>--status</code>, <code
 </table>
 <p>Current boundary: helper subcommands accept the pivot identifier plus paging or
 source-style options, but they do not replace the full search surfaces for
-trials, articles, or other entities.</p>
+trials, articles, or other entities. Diagnostic pivots from gene and disease
+are <code>get</code> sections, not new helper subcommands.</p>
 <h2 id="variant-pivots">Variant pivots<a class="headerlink" href="#variant-pivots" title="Permanent link">&para;</a></h2>
 <p>Variant pivots are useful when you already have a mutation call and want the
 next clinical or literature surface immediately.</p>
@@ -3686,25 +3857,33 @@ for a quick safety review, but the output depends on OpenFDA availability and
 rate limits.</p>
 <h2 id="disease-pivots">Disease pivots<a class="headerlink" href="#disease-pivots" title="Permanent link">&para;</a></h2>
 <p>Disease pivots are useful when you want to move from a diagnosis into the most
-common next surfaces: trials, drugs, and articles.</p>
+common next surfaces: trials, drugs, articles, and diagnostic tests.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>tuberculosis<span class="w"> </span>diagnostics
 </code></pre></div>
 <p>These helpers keep the disease context intact. Article pivots are best-effort:
 the mix of article sources can vary, so rely on the heading and table shape
-rather than a specific provider subsection.</p>
+rather than a specific provider subsection. The diagnostics pivot is an opt-in
+<code>get disease</code> section that can combine GTR and WHO IVD local rows for the
+resolved condition. It is capped at 10 rows and prints a <code>See also:</code> command
+for <code>biomcp search diagnostic --disease &lt;query&gt; --source all --limit 50</code>; use
+<code>--offset</code> on <code>search diagnostic</code> for later pages.</p>
 <h2 id="gene-pivots">Gene pivots<a class="headerlink" href="#gene-pivots" title="Permanent link">&para;</a></h2>
 <p>Gene pivots are useful when a biomarker or target is the center of the session
-and you want the standard downstream clinical and pathway views.</p>
+and you want the standard downstream clinical, diagnostic, and pathway views.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRCA1<span class="w"> </span>diagnostics
 </code></pre></div>
 <p><code>gene drugs</code> pivots into target-based drug lookup. <code>gene pathways</code> returns the
 source-labelled pathway table for the gene, which is useful when you want
-to expand from a biomarker into pathway context without leaving the CLI.</p>
+to expand from a biomarker into pathway context without leaving the CLI. The
+diagnostics pivot is an opt-in <code>get gene</code> section backed by GTR diagnostic
+tests for the gene.</p>
 <h2 id="other-pivot-helpers">Other pivot helpers<a class="headerlink" href="#other-pivot-helpers" title="Permanent link">&para;</a></h2>
 <p>The same pattern extends beyond the main four families:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>

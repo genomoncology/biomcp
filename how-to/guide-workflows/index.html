@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3605,18 +3773,26 @@ pathogenicity and clinical evidence.</p>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>&lt;name&gt;<span class="w"> </span>--outcome<span class="w"> </span>death<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>Do not write <code>biomcp drug adverse-events &lt;name&gt; --outcome ...</code>.</p>
+<p>Vaccine-focused aggregate safety summary:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;&lt;vaccine name&gt;&quot;</span><span class="w"> </span>--source<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;&lt;vaccine name&gt;&quot;</span><span class="w"> </span>--source<span class="w"> </span>vaers<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+<p>Use <code>--source vaers</code> when you specifically want the aggregate CDC WONDER VAERS
+summary; leave the default <code>--source all</code> path when you want FAERS plus VAERS
+for vaccine queries.</p>
 <p>Example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>label<span class="w"> </span>interactions<span class="w"> </span>approvals
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab<span class="w"> </span>label<span class="w"> </span>interactions<span class="w"> </span>approvals
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;COVID-19 vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <h2 id="broad-gene-disease-workflow">Broad Gene-Disease Workflow<a class="headerlink" href="#broad-gene-disease-workflow" title="Permanent link">&para;</a></h2>
 <p><strong>When to use:</strong> you want broad but bounded context on a gene in a specific
 disease.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>&lt;gene&gt;<span class="w"> </span>--disease<span class="w"> </span><span class="s2">&quot;&lt;disease&gt;&quot;</span><span class="w"> </span>--counts-only
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>&lt;gene&gt;<span class="w"> </span>pathways<span class="w"> </span>diseases<span class="w"> </span>protein<span class="w"> </span>druggability<span class="w"> </span>civic
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--target<span class="w"> </span>&lt;gene&gt;<span class="w"> </span>--indication<span class="w"> </span><span class="s2">&quot;&lt;disease&gt;&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;&lt;disease&gt;&quot;</span><span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;&lt;gene&gt;&quot;</span><span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>&lt;gene&gt;<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;&lt;disease&gt;&quot;</span><span class="w"> </span>--sort<span class="w"> </span>citations<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>&lt;gene&gt;<span class="w"> </span>--disease<span class="w"> </span><span class="s2">&quot;&lt;disease&gt;&quot;</span><span class="w"> </span>--counts-only
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>&lt;gene&gt;<span class="w"> </span>pathways<span class="w"> </span>diseases<span class="w"> </span>protein<span class="w"> </span>druggability<span class="w"> </span>civic
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--target<span class="w"> </span>&lt;gene&gt;<span class="w"> </span>--indication<span class="w"> </span><span class="s2">&quot;&lt;disease&gt;&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;&lt;disease&gt;&quot;</span><span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;&lt;gene&gt;&quot;</span><span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>&lt;gene&gt;<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;&lt;disease&gt;&quot;</span><span class="w"> </span>--sort<span class="w"> </span>citations<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>Rules:</p>
 <ul>
@@ -3633,11 +3809,11 @@ disease.</p>
 <li>stop once you can cover: gene role/pathway, actionable alterations, approved drugs, active trials, and resistance mechanisms</li>
 </ul>
 <p>Example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>EGFR<span class="w"> </span>--disease<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span><span class="w"> </span>--counts-only
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>EGFR<span class="w"> </span>pathways<span class="w"> </span>diseases<span class="w"> </span>protein<span class="w"> </span>druggability<span class="w"> </span>civic
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--target<span class="w"> </span>EGFR<span class="w"> </span>--indication<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span><span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;EGFR&quot;</span><span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>EGFR<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span><span class="w"> </span>--sort<span class="w"> </span>citations<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>EGFR<span class="w"> </span>--disease<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span><span class="w"> </span>--counts-only
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>EGFR<span class="w"> </span>pathways<span class="w"> </span>diseases<span class="w"> </span>protein<span class="w"> </span>druggability<span class="w"> </span>civic
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>--target<span class="w"> </span>EGFR<span class="w"> </span>--indication<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span><span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;EGFR&quot;</span><span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>EGFR<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;non-small cell lung cancer&quot;</span><span class="w"> </span>--sort<span class="w"> </span>citations<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <h2 id="evidence-discipline">Evidence Discipline<a class="headerlink" href="#evidence-discipline" title="Permanent link">&para;</a></h2>
 <p>Across all workflows:</p>

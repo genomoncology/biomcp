@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3512,6 +3680,13 @@
 <td>2026-02-15</td>
 </tr>
 <tr>
+<td>CDC WONDER VAERS</td>
+<td><code>https://wonder.cdc.gov/controller/datarequest/D8</code></td>
+<td>Unversioned</td>
+<td>CDC WONDER exposes the VAERS D8 database through a stable dataset ID and XML POST contract; BioMCP freezes the request/response shape in fixtures instead of relying on a versioned path segment</td>
+<td>2026-04-18</td>
+</tr>
+<tr>
 <td>ChEMBL</td>
 <td><code>https://www.ebi.ac.uk/chembl/api/data</code></td>
 <td>Unversioned</td>
@@ -3601,6 +3776,20 @@
 <td>Versioned (<code>v1</code>)</td>
 <td>Endpoint already pinned</td>
 <td>2026-02-15</td>
+</tr>
+<tr>
+<td>NCBI Genetic Testing Registry</td>
+<td><code>https://ftp.ncbi.nlm.nih.gov/pub/GTR/data</code></td>
+<td>Unversioned bulk export</td>
+<td>GTR bulk files are published at stable filenames and refreshed in place rather than by versioned path</td>
+<td>2026-04-17</td>
+</tr>
+<tr>
+<td>WHO Prequalified IVD</td>
+<td><code>https://extranet.who.int/prequal/vitro-diagnostics/prequalified/in-vitro-diagnostics/export?page&amp;_format=csv</code></td>
+<td>Unversioned export</td>
+<td>WHO IVD publishes a stable CSV export path that refreshes in place rather than exposing a versioned endpoint</td>
+<td>2026-04-18</td>
 </tr>
 <tr>
 <td>NCBI ID Converter</td>
@@ -3712,6 +3901,9 @@
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
 <ul>
 <li>If a provider introduces a stable version path, update the corresponding <code>src/sources/*.rs</code> base constant and this table in the same change.</li>
+<li>CDC WONDER VAERS intentionally stays out of <code>./scripts/contract-smoke.sh</code>: the
+  D8 contract is POST/XML, relatively volatile, and already covered by the
+  real-query health row plus fixture-frozen unit/spec tests.</li>
 <li>gnomAD versioning is handled by dataset selection in GraphQL variables and is verified by dataset fallback tests.</li>
 </ul>
 

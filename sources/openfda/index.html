@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1893,6 +1921,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ema/" class="md-nav__link">
         
   
@@ -1929,6 +1985,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3574,7 +3742,11 @@
 
 <h1 id="openfda">OpenFDA<a class="headerlink" href="#openfda" title="Permanent link">&para;</a></h1>
 <p>OpenFDA is where drug-safety work turns from abstract concern into concrete public records. It matters because FAERS, MAUDE, recalls, and label documents are the source material behind many real-world surveillance, safety-review, and regulatory triage workflows.</p>
-<p>In BioMCP, OpenFDA covers adverse events, recalls, device-event reporting, labels, shortages, and U.S. approval context. Approval views are Drugs@FDA-derived inside BioMCP, not a separate direct client, so the OpenFDA page is the right mental model for those U.S. safety and approval workflows.</p>
+<p>In BioMCP, OpenFDA covers adverse events, recalls, device-event reporting,
+labels, shortages, U.S. approval context, and the optional diagnostic
+<code>regulatory</code> overlay. Approval views are Drugs@FDA-derived inside BioMCP, not a
+separate direct client, so the OpenFDA page is the right mental model for
+those U.S. safety and approval workflows.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3630,6 +3802,11 @@
 <td>U.S. safety summary and recall context</td>
 <td>OpenFDA-backed U.S. safety workflow</td>
 </tr>
+<tr>
+<td><code>get diagnostic &lt;id&gt; regulatory</code></td>
+<td>FDA device 510(k)/PMA status overlay</td>
+<td>Exact-name-first live lookup over device regulatory records</td>
+</tr>
 </tbody>
 </table>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
@@ -3649,9 +3826,13 @@
 </code></pre></div>
 <p>Returns U.S. approval and application details from the Drugs@FDA-derived path.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
-<p>Optional <code>OPENFDA_API_KEY</code> for higher quota headroom. Configure it with the <a href="../../getting-started/api-keys/">API Keys</a> guide and request one from the <a href="https://open.fda.gov/apis/authentication/">OpenFDA authentication page</a>.</p>
+<p>Optional <code>OPENFDA_API_KEY</code> for higher quota headroom. Configure it with the
+<a href="../../getting-started/api-keys/">API Keys</a> guide and request one from the
+<a href="https://open.fda.gov/apis/authentication/">OpenFDA authentication page</a>.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
-<p><a href="https://open.fda.gov/">OpenFDA</a> is the official FDA developer surface for adverse events, recalls, labels, and related public regulatory data.</p>
+<p><a href="https://open.fda.gov/">OpenFDA</a> is the official FDA developer surface for
+adverse events, recalls, labels, device records, and related public regulatory
+data.</p>
 <h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../user-guide/adverse-event/">Adverse Event</a></li>

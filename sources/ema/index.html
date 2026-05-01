@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://biomcp.org/sources/ema/">
       
       
-        <link rel="prev" href="../cbioportal/">
+        <link rel="prev" href="../ddinter/">
       
       
         <link rel="next" href="../who-prequalification/">
@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1788,6 +1816,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1929,6 +1985,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3574,7 +3742,7 @@
 
 <h1 id="ema">EMA<a class="headerlink" href="#ema" title="Permanent link">&para;</a></h1>
 <p>EMA matters when you need European regulatory context that does not appear in U.S.-only drug sources. It is the right page for questions about EU approvals, regional safety wording, or shortage status when those answers depend on the European Medicines Agency's published human-medicines data.</p>
-<p>In BioMCP, EMA is a local-runtime source for drug name/alias lookups and region-aware sections rather than a live per-request API surface. BioMCP auto-downloads the six EMA human-medicines JSON feeds into <code>BIOMCP_EMA_DIR</code> or the default data directory on first use, supports <code>--region eu|all</code>, and exposes <code>biomcp ema sync</code> when you want a forced refresh.</p>
+<p>In BioMCP, EMA is a local-runtime source for drug name/alias lookups and region-aware sections rather than a live per-request API surface. BioMCP auto-downloads the six EMA human-medicines JSON feeds into <code>BIOMCP_EMA_DIR</code> or the default data directory on first use, supports the canonical <code>--region eu|all</code> grammar, accepts <code>--region ema</code> as an input alias for <code>eu</code>, and exposes <code>biomcp ema sync</code> when you want a forced refresh.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3588,17 +3756,17 @@
 <tr>
 <td><code>search drug &lt;name&gt; --region eu</code></td>
 <td>EU drug matches by name or alias</td>
-<td>Uses the local EMA batch for region-aware name/alias lookups</td>
+<td>Uses the local EMA batch for region-aware name/alias lookups; <code>ema</code> is accepted as an input alias for <code>eu</code></td>
 </tr>
 <tr>
 <td><code>search drug &lt;name&gt; --region all</code></td>
-<td>Combined U.S. and EU name/alias search</td>
-<td>Merges EMA local results with U.S. data</td>
+<td>Combined U.S., EU, and WHO name/alias search</td>
+<td>Merges EMA local results with U.S. and WHO data</td>
 </tr>
 <tr>
 <td><code>get drug &lt;name&gt; regulatory --region eu|all</code></td>
 <td>EU or combined regulatory context</td>
-<td>EMA-backed regional section</td>
+<td>EMA-backed regional section; omitting <code>--region</code> on this direct regulatory path checks U.S. and EU data</td>
 </tr>
 <tr>
 <td><code>get drug &lt;name&gt; safety --region eu|all</code></td>
@@ -3619,12 +3787,12 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>eu
 </code></pre></div>
 <p>Returns EMA-backed regulatory context for the EU region.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Ozempic<span class="w"> </span>safety<span class="w"> </span>--region<span class="w"> </span>eu
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Dupixent<span class="w"> </span>regulatory<span class="w"> </span>--region<span class="w"> </span>ema
+</code></pre></div>
+<p>Returns the same EMA-backed regulatory context while using the accepted <code>ema</code> input alias for the canonical <code>eu</code> region.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>Ozempic<span class="w"> </span>safety<span class="w"> </span>--region<span class="w"> </span>eu
 </code></pre></div>
 <p>Returns EMA-backed safety context for the EU region.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>carboplatin<span class="w"> </span>shortage<span class="w"> </span>--region<span class="w"> </span>eu
-</code></pre></div>
-<p>Returns EMA-backed shortage context for the EU region.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>ema<span class="w"> </span>sync
 </code></pre></div>
 <p>Refreshes the local EMA batch without waiting for the next automatic sync.</p>

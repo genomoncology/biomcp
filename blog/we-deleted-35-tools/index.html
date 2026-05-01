@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3817,7 +3985,7 @@
 <p>They're not wrong. We learned the same lesson the hard way.</p>
 <hr />
 <h2 id="the-problem">The Problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h2>
-<p>BioMCP connects AI agents to 20+ biomedical databases — PubMed, ClinVar, ClinicalTrials.gov, gnomAD, OpenFDA, and more — covering 12 entity types from genes and variants to clinical trials and adverse events. The original Python version worked, but it was fighting the agent at every turn.</p>
+<p>BioMCP connects AI agents to 30+ biomedical data sources — PubMed, ClinVar, ClinicalTrials.gov, gnomAD, OpenFDA, NCBI GTR, WHO IVD, and more — across a public entity surface that spans genes, variants, diagnostics, clinical trials, drugs, adverse events, and literature. The original Python version worked, but it was fighting the agent at every turn.</p>
 <p><strong>36 tools ate the context window.</strong> Every MCP connection loaded all tool descriptions — <code>article_searcher</code>, <code>trial_getter</code>, <code>variant_searcher</code>, and 33 more — consuming ~16,600 tokens before a single query. That's 8% of a 200K context window gone on tool signatures alone.</p>
 <p><strong>Mandatory scaffolding wasted round-trips.</strong> A <code>think</code> tool forced a planning step before every real query. Reasonable for spring 2025 models that genuinely reasoned better when forced to plan. Unnecessary for today's models, which plan internally.</p>
 <p><strong>Verbose output burned tokens on formatting.</strong> A trial search that should cost 400 tokens cost 1,600 — indented blocks, nested labels, metadata nobody needed. Multiply by a dozen queries per session.</p>
@@ -3851,7 +4019,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp get gene BRAF              → summary card (~200 tokens)
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp get gene BRAF pathways     → + Reactome pathways
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>biomcp get gene BRAF civic        → + CIViC evidence
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>biomcp get gene BRAF all          → everything (~2,000 tokens)
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>biomcp get gene BRAF all          → standard deep bundle (~2,000 tokens)
 </code></pre></div>
 <p>Every command also supports <code>--json</code> for agents that parse structured data. Same data, two formats, every command. The goal is simple: keep the agent's context window free for reasoning, not formatting ceremony.</p>
 <p><em>The general principle: Return less by default, let the agent ask for more. Agents are good at iterating; they're bad at filtering 5,000 tokens down to the 200 that matter.</em></p>

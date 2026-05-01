@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1893,6 +1921,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../ema/" class="md-nav__link">
         
   
@@ -1929,6 +1985,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3578,9 +3746,14 @@
 default compatible article federation. <code>search article --source pubmed</code> uses
 BioMCP's PubMed ESearch/ESummary loop directly, while the default <code>--source
 all</code> route combines PubTator3, Europe PMC, and PubMed when the selected
-filters are PubMed-compatible. Full-text resolution uses Europe PMC, NCBI E-utilities, PMC OA, and the NCBI ID Converter. Semantic Scholar TLDR, citation, reference, and
-recommendation helpers belong on the <a href="../semantic-scholar/">Semantic Scholar</a>
-page because they come from a different provider surface.</p>
+filters are PubMed-compatible. Direct PubMed search and the compatible
+federated PubMed leg clean question-format unfielded article terms before
+ESearch; BioMCP keeps the raw gene, disease, drug, or keyword wording in
+markdown and JSON query echoes, and other article sources keep their existing
+query behavior. Full-text resolution uses Europe PMC, NCBI E-utilities, PMC OA, NCBI ID Converter, PMC HTML, and opt-in Semantic Scholar PDF metadata; full text and PDFs remain governed by article-level licenses.
+Semantic Scholar TLDR, citation, reference, and recommendation helpers belong
+on the <a href="../semantic-scholar/">Semantic Scholar</a> page because they come from a
+different provider surface.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3609,7 +3782,7 @@ page because they come from a different provider surface.</p>
 <tr>
 <td><code>get article &lt;id&gt; fulltext</code></td>
 <td>Open-access full-text handoff with saved Markdown path and rendered references when available</td>
-<td>Uses Europe PMC, NCBI E-utilities, PMC OA, and NCBI ID Converter fallbacks</td>
+<td>Uses Europe PMC, NCBI E-utilities, PMC OA, PMC HTML, and opt-in Semantic Scholar PDF fallbacks; NCBI ID Converter bridges PMID/DOI identifiers to PMCID before the PMCID-dependent source attempts</td>
 </tr>
 <tr>
 <td><code>article entities &lt;pmid&gt;</code></td>
@@ -3633,7 +3806,9 @@ page because they come from a different provider surface.</p>
 <p>Returns an entity-grouped follow-up view with separate genes, diseases, and drugs sections.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">27083046</span><span class="w"> </span>fulltext
 </code></pre></div>
-<p>Returns a full-text section when Europe PMC, NCBI E-utilities, or PMC OA can supply PMC XML, prints a <code>Saved to:</code> cache path, and includes rendered references when JATS bibliography data is available.</p>
+<p>Returns a full-text section with a <code>Saved to:</code> cache path.
+XML, PMC HTML, or explicitly opted-in PDF sources can resolve, and JATS
+bibliography data can render references. Semantic Scholar PDF is attempted only when the caller passes <code>--pdf</code>.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>Optional <code>NCBI_API_KEY</code> for higher NCBI throughput. Set it through the <a href="../../getting-started/api-keys/">API Keys</a> guide and create one in <a href="https://www.ncbi.nlm.nih.gov/account/settings/">My NCBI</a>.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
@@ -3643,6 +3818,7 @@ page because they come from a different provider surface.</p>
 <li><a href="../../user-guide/article/">Article</a></li>
 <li><a href="../../how-to/find-articles/">How to find articles</a></li>
 <li><a href="../../getting-started/api-keys/">API Keys</a></li>
+<li><a href="../../reference/source-licensing/">Source Licensing and Terms</a></li>
 </ul>
 
 

@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3576,14 +3744,16 @@
 <p>BioMCP exposes structured internal error variants through human-readable CLI messages.
 This reference maps each <code>BioMcpError</code> variant to likely causes and practical recovery steps.</p>
 <h2 id="process-exit-codes">Process exit codes<a class="headerlink" href="#process-exit-codes" title="Permanent link">&para;</a></h2>
-<p>BioMCP uses process exit codes to distinguish parser failures from command
+<p>BioMCP uses process exit codes to distinguish invalid usage from command
 execution failures:</p>
 <ul>
 <li>exit <code>2</code>: <code>clap</code> rejected the command before BioMCP command execution started.
   Example: <code>biomcp search pathway --badflag</code></li>
-<li>exit <code>1</code>: the command parsed, then BioMCP returned
+<li>exit <code>2</code>: the command parsed, then BioMCP returned
   <code>BioMcpError::InvalidArgument</code> for invalid or inconsistent usage.
   Examples: <code>biomcp search pathway</code>, <code>biomcp get pathway hsa05200 events</code></li>
+<li>exit <code>1</code>: runtime, upstream, configuration, not-found, and other execution
+  failures unless an explicit command outcome says otherwise.</li>
 <li>exit <code>1</code>: alias fallback guidance for <code>get gene</code> / <code>get drug</code> still counts as a
   not-found miss even when BioMCP can suggest a canonical retry command.
   Example: <code>biomcp get gene ERBB1</code></li>

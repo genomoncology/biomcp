@@ -1083,6 +1083,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1786,6 +1814,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1822,6 +1878,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3075,10 +3243,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#faers-summary-statistics" class="md-nav__link">
+  <a href="#adverse-event-summary-statistics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FAERS summary statistics
+        Adverse-event summary statistics
       
     </span>
   </a>
@@ -3476,10 +3644,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#faers-summary-statistics" class="md-nav__link">
+  <a href="#adverse-event-summary-statistics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FAERS summary statistics
+        Adverse-event summary statistics
       
     </span>
   </a>
@@ -3507,7 +3675,9 @@
 
 
 <h1 id="drug-approvals-and-adverse-event-summary">Drug Approvals and Adverse-Event Summary<a class="headerlink" href="#drug-approvals-and-adverse-event-summary" title="Permanent link">&para;</a></h1>
-<p>This reference covers the new Drugs@FDA approvals section and FAERS summary statistics.</p>
+<p>This reference covers the Drugs@FDA approvals section plus the adverse-event
+search summary contract for OpenFDA FAERS and vaccine-capable CDC WONDER VAERS
+searches.</p>
 <h2 id="drug-approvals-drugsfda">Drug approvals (Drugs@FDA)<a class="headerlink" href="#drug-approvals-drugsfda" title="Permanent link">&para;</a></h2>
 <p>Use the <code>approvals</code> section on drug entities:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>dabrafenib<span class="w"> </span>approvals
@@ -3526,19 +3696,28 @@ existing normalized approval date:</p>
 <li><code>approval_date_display</code> provides a human-friendly month-name rendering,</li>
 <li><code>approval_summary</code> provides a one-line <code>"FDA approved on &lt;date&gt;"</code> summary.</li>
 </ul>
-<h2 id="faers-summary-statistics">FAERS summary statistics<a class="headerlink" href="#faers-summary-statistics" title="Permanent link">&para;</a></h2>
-<p>FAERS search responses include summary metadata above the report table:</p>
+<h2 id="adverse-event-summary-statistics">Adverse-event summary statistics<a class="headerlink" href="#adverse-event-summary-statistics" title="Permanent link">&para;</a></h2>
+<p>OpenFDA FAERS search responses include summary metadata above the report table:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>-d<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
-<p>Summary fields:</p>
+<p>OpenFDA FAERS summary fields:</p>
 <ul>
-<li>total reports from OpenFDA metadata,</li>
+<li>total reports from OpenFDA FAERS metadata,</li>
 <li>returned report count,</li>
 <li>top reactions with count and percentage.</li>
 </ul>
 <p>The same summary appears in:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
+<p>For vaccine queries, <code>search adverse-event</code> also supports CDC WONDER VAERS:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;COVID-19 vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;MMR vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>vaers<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+<p><code>--source all</code> preserves the FAERS table and adds a CDC VAERS aggregate summary
+when the query resolves to a vaccine and the active filters are VAERS-compatible.
+<code>--source vaers</code> is aggregate-only and surfaces matched vaccine identity, CDC
+WONDER code, CVX code(s) when available, serious vs non-serious counts, age
+distribution, and top reactions.</p>
 
 
 

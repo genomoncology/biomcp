@@ -1190,6 +1190,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../drug/" class="md-nav__link">
         
   
@@ -1893,6 +1921,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1929,6 +1985,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3574,19 +3742,24 @@
 
 <h1 id="discover">Discover<a class="headerlink" href="#discover" title="Permanent link">&para;</a></h1>
 <p>Use <code>biomcp discover</code> to resolve free-text biomedical phrases into the right
-BioMCP follow-up commands. Run it when you know the phrase but do not yet know
-whether the next step should be <code>get gene</code>, <code>search disease</code>, <code>search pathway</code>,
-or another typed command.</p>
+BioMCP follow-up commands. It is primarily a single-entity resolver for aliases,
+brands, symptoms, and close concept names. Run it when you know the phrase but
+do not yet know whether the next step should be <code>get gene</code>, <code>search disease</code>,
+<code>search pathway</code>, or another typed command.</p>
 <p>Use <code>search all</code> after you already have typed slots such as <code>--gene</code>,
 <code>--disease</code>, <code>--drug</code>, <code>--variant</code>, or <code>--keyword</code>. <code>discover</code> resolves free
 text into concepts first; <code>search all</code> fans out from the typed slots you
-already trust.</p>
+already trust. Relational or multi-entity questions may redirect to
+<code>biomcp search all --keyword "&lt;query&gt;"</code> instead of surfacing weak collocation
+matches as if they were a good discover answer.</p>
 <h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>discover<span class="w"> </span>ERBB1
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>discover<span class="w"> </span>Keytruda
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;chest pain&quot;</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;developmental delay&quot;</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>discover<span class="w"> </span>diabetes
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>discover<span class="w"> </span>BRCA1
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>discover<span class="w"> </span>dabigatran
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>discover<span class="w"> </span>ERBB1
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>biomcp<span class="w"> </span>discover<span class="w"> </span>Keytruda
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;chest pain&quot;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;developmental delay&quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>discover<span class="w"> </span>diabetes
 </code></pre></div>
 <h2 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Permanent link">&para;</a></h2>
 <ul>
@@ -3595,22 +3768,35 @@ already trust.</p>
 <li>Adds MedlinePlus plain-language context for disease and symptom queries.</li>
 <li>Suggests <code>biomcp search phenotype "HP:..."</code> first when symptom concepts
   resolve to HPO-backed IDs.</li>
+<li>Keeps the existing discover-specific routed flows for symptom-of-disease,
+  HPO symptom, treatment, gene+disease, and unambiguous gene-plus-topic prompts.</li>
+<li>Relational or multi-entity questions may redirect to
+  <code>biomcp search all --keyword "&lt;query&gt;"</code> through <code>notes</code> and
+  <code>_meta.next_commands</code> when only weak single-entity residue remains.</li>
+<li>If no entities resolve, suggests <code>biomcp search article -k "&lt;query&gt;" --type review --limit 5</code>.</li>
+<li>If only low-confidence concepts resolve, adds a broader-results article-search hint.</li>
 <li>Returns suggested BioMCP follow-up commands without auto-executing them.</li>
 </ul>
 <h2 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h2>
-<p>Markdown groups concepts by type and shows suggested commands.</p>
+<p>Markdown groups concepts by type, shows notes, and lists suggested commands.</p>
 <p>For symptom-first queries such as <code>biomcp discover "developmental delay"</code>,
 discover can surface <code>HP:</code> identifiers directly in the concept list and suggest
 <code>biomcp search phenotype "HP:..."</code> as the next command. Disease-specific
 queries like <code>biomcp discover "symptoms of Marfan syndrome"</code> still route to
-<code>biomcp get disease ... phenotypes</code>.</p>
-<p>JSON preserves the same concepts and adds:</p>
+<code>biomcp get disease ... phenotypes</code>. Treatment prompts, gene+disease
+orientation, and unambiguous gene-plus-topic follow-ups stay supported as
+existing discover exceptions.</p>
+<p>JSON preserves the same concepts, keeps the same guidance in <code>notes</code>, and adds:</p>
 <ul>
 <li><code>_meta.next_commands</code></li>
 <li><code>_meta.section_sources</code></li>
 <li><code>_meta.discovery_sources</code></li>
 <li><code>_meta.evidence_urls</code></li>
 </ul>
+<p><code>notes</code> is the user-visible guidance channel in both markdown and JSON.
+<code>_meta.next_commands</code> remains the machine-actionable command list, including the
+relational redirect to <code>biomcp search all --keyword "&lt;query&gt;"</code> when discover
+declines to answer a multi-entity question directly.</p>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
 <ul>
 <li>OLS4 is required; if it fails, <code>discover</code> fails.</li>

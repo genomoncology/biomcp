@@ -1245,6 +1245,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/diagnostic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Diagnostic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/drug/" class="md-nav__link">
         
   
@@ -1948,6 +1976,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/ddinter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DDInter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/ema/" class="md-nav__link">
         
   
@@ -1984,6 +2040,118 @@
     
   
     WHO Prequalification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/gtr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NCBI Genetic Testing Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/who-ivd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WHO Prequalified IVD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/cdc-cvx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/medlineplus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MedlinePlus
   
 
     
@@ -3702,10 +3870,15 @@ The goal is to deliver dependable, compact answers that can be expanded on deman
 <p>This grammar is intentionally shared across entities so users and agents do not
 need a different mental model per endpoint.</p>
 <h2 id="entities">Entities<a class="headerlink" href="#entities" title="Permanent link">&para;</a></h2>
-<p>BioMCP covers entities across clinical, research, and regulatory domains:</p>
-<p><strong>Core clinical entities:</strong> gene, variant, trial, article, drug, disease</p>
-<p><strong>Extended entities:</strong> pathway, protein, adverse-event, PGx (pharmacogenomics)</p>
-<p><strong>Discovery entities:</strong> GWAS and phenotype search</p>
+<p>BioMCP covers a public entity surface across clinical, research, and regulatory
+domains:</p>
+<p><strong>Core clinical and research entities:</strong> gene, variant, trial, article, drug,
+disease, and diagnostic</p>
+<p><strong>Extended entities:</strong> pathway, protein, adverse-event, PGx (pharmacogenomics),
+GWAS, and phenotype</p>
+<p><strong>Discovery and local-analytics surfaces:</strong> <code>discover</code> resolves free-text
+biomedical phrases into follow-up commands, while <code>study</code> operates on local
+downloaded cBioPortal-style datasets.</p>
 <h2 id="why-this-matters-for-agents">Why this matters for agents<a class="headerlink" href="#why-this-matters-for-agents" title="Permanent link">&para;</a></h2>
 <p>Agent runtimes often fail on data tooling for three reasons:</p>
 <ul>
