@@ -423,6 +423,36 @@ def test_temporal_and_term_drift_are_removed_from_touched_docs() -> None:
     assert "metadata, annotations, and full text may have different availability" in data_sources
 
 
+def test_current_entity_taxonomy_and_local_troubleshooting_cover_release_sources() -> None:
+    concept = _read("docs/concepts/what-is-biomcp.md")
+    troubleshooting = _read("docs/troubleshooting.md")
+    skillbench = _read("docs/blog/skillbench-biomcp-skills.md")
+    deleted_tools = _read("docs/blog/we-deleted-35-tools.md")
+
+    assert "disease, and diagnostic" in concept
+    assert "GWAS, and phenotype" in concept
+    assert "public entity surface" in concept
+    assert "Core clinical entities: gene, variant, trial, article, drug, disease" not in concept
+    assert "Discovery entities: GWAS and phenotype search" not in concept
+
+    ddinter_block = troubleshooting.split("## 16) DDInter local data not available\n", 1)[1].split("\n## 17) Diagnostic local data not available", 1)[0]
+    for phrase in (
+        "`biomcp drug interactions <name>`",
+        "`get drug <name> interactions`",
+        "`BIOMCP_DDINTER_DIR`",
+        "`biomcp ddinter sync`",
+        "available (default path)",
+        "Empty interaction results stay scoped to the\ncurrent DDInter bundle",
+    ):
+        assert phrase in ddinter_block
+
+    assert "across 12 entity types" not in skillbench
+    assert "Twelve entity types" not in skillbench
+    assert "Diagnostic | Find gene- and disease-linked diagnostic tests" in skillbench
+    assert "covering 12 entity types" not in deleted_tools
+    assert "diagnostics" in deleted_tools
+
+
 def test_cache_path_docs_match_resolved_cache_root_contract() -> None:
     troubleshooting = _read("docs/troubleshooting.md")
     data_sources = _read("docs/reference/data-sources.md")

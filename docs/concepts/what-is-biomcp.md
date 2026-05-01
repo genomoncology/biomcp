@@ -25,13 +25,18 @@ need a different mental model per endpoint.
 
 ## Entities
 
-BioMCP covers entities across clinical, research, and regulatory domains:
+BioMCP covers a public entity surface across clinical, research, and regulatory
+domains:
 
-**Core clinical entities:** gene, variant, trial, article, drug, disease
+**Core clinical and research entities:** gene, variant, trial, article, drug,
+disease, and diagnostic
 
-**Extended entities:** pathway, protein, adverse-event, PGx (pharmacogenomics)
+**Extended entities:** pathway, protein, adverse-event, PGx (pharmacogenomics),
+GWAS, and phenotype
 
-**Discovery entities:** GWAS and phenotype search
+**Discovery and local-analytics surfaces:** `discover` resolves free-text
+biomedical phrases into follow-up commands, while `study` operates on local
+downloaded cBioPortal-style datasets.
 
 ## Why this matters for agents
 

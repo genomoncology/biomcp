@@ -255,6 +255,8 @@ SOURCE_PAGE_SPECS = {
         "required_intro_phrases": [
             "`search article` does not expose `--source semantic-scholar`",
             "automatic optional search leg",
+            "shared-pool mode at 1 req/2sec",
+            "authenticated mode at 1 req/sec",
             "article citations",
             "article references",
             "article recommendations",
@@ -473,6 +475,38 @@ SOURCE_PAGE_SPECS = {
             "biomcp get drug trastuzumab regulatory --region who",
         ],
     },
+    "gtr.md": {
+        "title": "NCBI Genetic Testing Registry MCP Tool for Diagnostics | BioMCP",
+        "description": "Use BioMCP to search GTR-backed genetic tests, fetch source-native diagnostic cards, and manage the local NCBI Genetic Testing Registry bundle.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://www.ncbi.nlm.nih.gov/gtr/",
+        "required_intro_phrases": [
+            "gene-centric genetic tests",
+            "local-runtime backbone for the multi-source `diagnostic` entity",
+            "`--source all` route can merge GTR rows with WHO IVD rows",
+            "`BIOMCP_GTR_DIR`",
+            "`biomcp gtr sync`",
+        ],
+        "exposes": [
+            "search diagnostic --gene <symbol> --source gtr",
+            "search diagnostic --disease <name> --source gtr",
+            "search diagnostic --type <method> --source gtr",
+            "search diagnostic --manufacturer <name> --source gtr",
+            "get diagnostic GTR000006692.3",
+            "get diagnostic GTR000006692.3 genes",
+            "get diagnostic GTR000006692.3 conditions",
+            "get diagnostic GTR000006692.3 methods",
+            "biomcp health",
+            "biomcp gtr sync",
+        ],
+        "example_commands": [
+            "biomcp search diagnostic --gene BRCA1 --source gtr --limit 5",
+            "biomcp search diagnostic --disease \"hereditary breast cancer\" --source gtr --limit 5",
+            "biomcp get diagnostic GTR000006692.3 genes conditions methods",
+            "biomcp gtr sync",
+            "biomcp health",
+        ],
+    },
     "who-ivd.md": {
         "title": "WHO Prequalified IVD MCP Tool for Infectious Disease Diagnostics | BioMCP",
         "description": "Use BioMCP to search WHO prequalified infectious-disease diagnostics, fetch source-native WHO IVD product cards, and manage the local WHO IVD CSV lifecycle without learning the raw export format.",
@@ -531,6 +565,28 @@ SOURCE_PAGE_SPECS = {
             "biomcp search drug fluzone --region eu --limit 5",
             "biomcp search drug gardasil --region who --product-type vaccine --limit 5",
             "biomcp health",
+        ],
+    },
+    "medlineplus.md": {
+        "title": "MedlinePlus MCP Tool for Plain-Language Disease Context | BioMCP",
+        "description": "Use BioMCP to add MedlinePlus plain-language context to discover results and opt-in disease clinical-feature summaries.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://medlineplus.gov/",
+        "required_intro_phrases": [
+            "plain-language disease or symptom context",
+            "supplements `biomcp discover`",
+            "suppressed for gene, drug, pathway",
+            "`get disease <name_or_id> clinical_features`",
+            "embedded reviewed fixtures",
+        ],
+        "exposes": [
+            "biomcp discover <query>",
+            "get disease <name_or_id> clinical_features",
+        ],
+        "example_commands": [
+            "biomcp discover \"symptoms of Marfan syndrome\"",
+            "biomcp get disease \"uterine leiomyoma\" clinical_features",
+            "biomcp get disease MONDO:0007947 clinical_features",
         ],
     },
     "kegg.md": {
@@ -652,8 +708,10 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - DDInter: sources/ddinter.md
       - EMA: sources/ema.md
       - WHO Prequalification: sources/who-prequalification.md
+      - NCBI Genetic Testing Registry: sources/gtr.md
       - WHO Prequalified IVD: sources/who-ivd.md
       - CDC CVX/MVX: sources/cdc-cvx.md
+      - MedlinePlus: sources/medlineplus.md
       - KEGG: sources/kegg.md
       - PharmGKB / CPIC: sources/pharmgkb.md
       - Human Protein Atlas: sources/human-protein-atlas.md
@@ -745,7 +803,7 @@ def test_sources_overview_page_has_required_metadata_and_links() -> None:
     )
     assert (
         _front_matter_value(overview, "description")
-        == "Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, CDC WONDER VAERS, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, SEER Explorer, CIViC, OncoKB, cBioPortal, DDInter, EMA, WHO Prequalification, WHO Prequalified IVD, CDC CVX/MVX, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative."
+        == "Explore BioMCP source guides for PubMed, ClinicalTrials.gov, ClinVar, OpenFDA, CDC WONDER VAERS, UniProt, gnomAD, Reactome, Semantic Scholar, ChEMBL, OpenTargets, SEER Explorer, CIViC, OncoKB, cBioPortal, DDInter, EMA, WHO Prequalification, NCBI Genetic Testing Registry, WHO Prequalified IVD, CDC CVX/MVX, MedlinePlus, KEGG, PharmGKB / CPIC, Human Protein Atlas, and Monarch Initiative."
     )
 
     assert "# Biomedical Data Sources for AI Agents" in overview
@@ -845,6 +903,25 @@ def test_pubmed_source_page_fulltext_contract_matches_current_ladder() -> None:
     assert "`--pdf`" in examples
     assert "`Saved to:`" in examples
     assert "full text and PDFs remain governed by article-level licenses" in page
+
+
+def test_semantic_scholar_source_page_documents_auth_status_and_backoff_contract() -> None:
+    page = _read_source_page("semantic-scholar.md")
+    source_table = _source_table_block(page)
+
+    for phrase in (
+        "`--source semantic-scholar` is not a public source switch",
+        "shared unauthenticated pool at\n1 req/2sec",
+        "authenticated requests at 1 req/sec",
+        "honors authenticated\n`Retry-After` responses",
+        "never print the\nsecret key or key prefix",
+        "`_meta.source_status[]`",
+        "`--debug-plan` mirrors that redacted status",
+        "`ok`, `degraded`, and `unavailable`",
+    ):
+        assert phrase in page
+
+    assert "source status" in source_table
 
 
 def test_each_source_page_has_three_to_four_related_doc_links_that_resolve() -> None:
