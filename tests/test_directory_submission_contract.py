@@ -216,6 +216,7 @@ def test_specs_do_not_depend_on_bare_python_alias() -> None:
 def test_gene_canary_runs_as_a_targeted_heading() -> None:
     env = dict(os.environ)
     env["PATH"] = f"{REPO_ROOT / 'target' / 'release'}:{env['PATH']}"
+    env["BIOMCP_BIN"] = str(REPO_ROOT / "target" / "release" / "biomcp")
     spec_root = REPO_ROOT / "spec"
 
     try:

@@ -303,9 +303,10 @@ product command.
 
 - Form: `tools/biomcp-ci <biomcp args...>`
 - Argument policy: pass `"$@"` through unchanged.
-- Binary resolution: use `BIOMCP_BIN` when set; otherwise resolve `biomcp` from
-  `PATH`, emit a one-line stderr warning that names the fallback binary path,
-  and execute it.
+- Binary resolution: use `BIOMCP_BIN` when set; otherwise fail closed. The
+  wrapper may resolve `biomcp` from PATH only for diagnostic context, must
+  refuse to execute from PATH, and names the rejected PATH candidate when one
+  exists.
 
 ### Environment handling
 
@@ -337,13 +338,16 @@ The wrapper owns these environment decisions:
 
 ### Failure modes
 
-- Missing binary: wrapper exits with the underlying `exec` failure status and
-  preserves stderr.
+- Missing explicit `BIOMCP_BIN` target: wrapper exits with the underlying `exec`
+  failure status and preserves stderr.
+- Unset or empty `BIOMCP_BIN`: wrapper fails closed before invoking `biomcp`;
+  any `PATH` candidate is rejected diagnostic context only.
 - Directory creation failure: wrapper exits nonzero before invoking `biomcp`.
 - Warm-cache replay miss (`BIOMCP_SPEC_CACHE_HIT=1` + `BIOMCP_CACHE_MODE=infinite`):
   BioMCP fails loudly on the cache miss; this is the desired signal that the CI
   cache key or schema version is wrong.
-- Output and exit behavior: stdout, stderr, and exit code pass through exactly.
+- Explicit `BIOMCP_BIN` output and exit behavior: stdout, stderr, and exit code
+  pass through exactly.
 
 ## Cache-warm gate design
 
