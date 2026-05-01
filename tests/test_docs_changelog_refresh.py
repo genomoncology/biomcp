@@ -436,7 +436,7 @@ def test_diagnostic_docs_and_count_language_are_current() -> None:
         "MCP-safe",
         "shell-quoted",
         "`search diagnostic --disease ... --source all --limit 50`",
-        "bootstrap spec-v2 canaries stay limited to gene, variant, and article",
+        "`spec/entity/diagnostic.md`",
         "`src/entities/diagnostic/search.rs::disease_phrase_matches_accepts_word_and_phrase_boundaries`",
         "`src/entities/diagnostic/search.rs::disease_phrase_matches_rejects_partial_words_and_keeps_scanning`",
         "`src/entities/diagnostic/search.rs::normalized_filters_reject_short_disease_filter`",
