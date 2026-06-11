@@ -2514,6 +2514,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/medlineplus/" class="md-nav__link">
         
   
@@ -4871,8 +4899,10 @@ broader paged results.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
 <a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
 <a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext<span class="w"> </span>--pdf
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>&lt;id&gt;<span class="w"> </span>assets
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>&lt;id&gt;<span class="w"> </span>asset<span class="w"> </span>&lt;filename&gt;
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span>
 </code></pre></div>
 <p><code>S2_API_KEY</code> is optional. With it, BioMCP sends authenticated Semantic Scholar
 requests at 1 req/sec for <code>search article</code>, <code>get article</code>, <code>get article ... tldr</code>,
@@ -4881,7 +4911,12 @@ helpers. Without it, those same paths use the shared unauthenticated pool at
 1 req/2sec.</p>
 <p>For article full text, the default ladder is XML -&gt; PMC HTML. Add <code>--pdf</code> only
 to <code>get article &lt;id&gt; fulltext</code> when you want Semantic Scholar open-access PDF
-as the final fallback after XML and HTML miss.</p>
+as the final fallback after XML and HTML miss. Use <code>get article &lt;id&gt; assets</code>
+for the JSON article-asset manifest (PMC OA first, Figshare fallback when
+Semantic Scholar points at supported Figshare metadata). Figshare manifests may
+merge same-paper sibling records discovered by DOI/title; handles stay as BioMCP
+commands. Use <code>get article &lt;id&gt; asset &lt;name&gt;</code> to stream one asset as raw bytes
+with no conversion.</p>
 <h3 id="trial_1">Trial<a class="headerlink" href="#trial_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
@@ -4978,25 +5013,28 @@ requested empty sections remain present as <code>[]</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
 <a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>warfarin
-<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
-<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab
-<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
-<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
-<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
-<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
-<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
-<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
-<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>hsa05200
-<a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
-<a id="__codelineno-34-19" name="__codelineno-34-19" href="#__codelineno-34-19"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
-<a id="__codelineno-34-20" name="__codelineno-34-20" href="#__codelineno-34-20"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-34-21" name="__codelineno-34-21" href="#__codelineno-34-21"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-34-22" name="__codelineno-34-22" href="#__codelineno-34-22"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>&lt;service&gt;<span class="w"> </span>&lt;transcript_hgvs&gt;
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span>NM_000248.3:c.135del
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span>NM_004448.2:c.829G&gt;T
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>warfarin
+<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
+<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab
+<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
+<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
+<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
+<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
+<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
+<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
+<a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>hsa05200
+<a id="__codelineno-34-19" name="__codelineno-34-19" href="#__codelineno-34-19"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-34-20" name="__codelineno-34-20" href="#__codelineno-34-20"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-34-21" name="__codelineno-34-21" href="#__codelineno-34-21"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-34-22" name="__codelineno-34-22" href="#__codelineno-34-22"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-34-23" name="__codelineno-34-23" href="#__codelineno-34-23"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-34-24" name="__codelineno-34-24" href="#__codelineno-34-24"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-34-25" name="__codelineno-34-25" href="#__codelineno-34-25"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <h2 id="chart-reference">Chart reference<a class="headerlink" href="#chart-reference" title="Permanent link">&para;</a></h2>
 <p>Use <code>biomcp chart</code> to list chart families and <code>biomcp chart &lt;type&gt;</code> for the

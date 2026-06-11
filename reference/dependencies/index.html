@@ -1982,6 +1982,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/medlineplus/" class="md-nav__link">
         
   
@@ -3260,6 +3288,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#article-fulltext-and-conversion-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Article fulltext and conversion stack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#key-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3738,6 +3777,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#article-fulltext-and-conversion-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Article fulltext and conversion stack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#key-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3886,6 +3936,17 @@
 
 <h1 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h1>
 <p>BioMCP is a single Rust binary. All dependencies are compiled in — no runtime installations required.</p>
+<h2 id="article-fulltext-and-conversion-stack">Article fulltext and conversion stack<a class="headerlink" href="#article-fulltext-and-conversion-stack" title="Permanent link">&para;</a></h2>
+<p>Article fulltext resolution uses provider APIs and in-process converters rather
+than external runtime tools. Europe PMC supplies open-access article metadata and
+fulltext links; NCBI EFetch retrieves PubMed/PMC records; the NCBI ID Converter
+maps between PMID, PMCID, and DOI when one identifier needs another route; PMC OA
+supplies open-access package/file discovery; Figshare supports article
+supplement and hosted-file retrieval; Semantic Scholar PDF links are optional
+PDF candidates when available. Retrieved content is normalized by Rust
+transformers: JATS XML through <code>src/transform/article/jats.rs</code>, HTML through
+<code>src/transform/article/html.rs</code>, and PDF text extraction through
+<code>src/transform/article/pdf.rs</code>.</p>
 <h2 id="key-dependencies">Key Dependencies<a class="headerlink" href="#key-dependencies" title="Permanent link">&para;</a></h2>
 <h3 id="kuva-charting">Kuva — Charting<a class="headerlink" href="#kuva-charting" title="Permanent link">&para;</a></h3>
 <p><a href="https://github.com/Psy-Fer/kuva">Kuva</a> (v0.1.4) is the charting engine behind BioMCP's <code>--chart</code> flag. BioMCP currently exposes 12 chart modes (<code>bar</code>, <code>stacked-bar</code>, <code>pie</code>, <code>waterfall</code>, <code>heatmap</code>, <code>histogram</code>, <code>density</code>, <code>box</code>, <code>violin</code>, <code>ridgeline</code>, <code>scatter</code>, <code>survival</code>) backed by Kuva plots and rendered to terminal, SVG, and PNG.</p>

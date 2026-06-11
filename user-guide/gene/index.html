@@ -2183,6 +2183,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/medlineplus/" class="md-nav__link">
         
   
@@ -3945,9 +3973,12 @@
 <h2 id="get-a-gene-record">Get a gene record<a class="headerlink" href="#get-a-gene-record" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF
 </code></pre></div>
-<p>The default gene view is concise and intended for orientation.
-Its <code>More:</code> block keeps <code>pathways</code>, <code>ontology</code>, and <code>diseases</code> visible and now
-also surfaces <code>funding</code> as a direct follow-up from the base card.</p>
+<p>The default gene view is concise and intended for orientation. When MyGene.info
+returns genomic coordinates, BioMCP labels them with the GRCh38 genome build
+(<code>Chromosome (GRCh38): ...</code>) so coordinate consumers do not have to infer the
+reference. Its <code>More:</code> block keeps <code>pathways</code>, <code>ontology</code>, and <code>diseases</code>
+visible and now also surfaces <code>funding</code> as a direct follow-up from the base
+card.</p>
 <h2 id="request-deeper-sections">Request deeper sections<a class="headerlink" href="#request-deeper-sections" title="Permanent link">&para;</a></h2>
 <p>BioMCP expands detail via positional sections.</p>
 <p>Pathway view:</p>

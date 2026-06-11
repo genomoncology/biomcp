@@ -1097,6 +1097,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#normalize-transcript-hgvs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Normalize transcript HGVS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#request-variant-sections" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2135,6 +2146,34 @@
     
   
     CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
   
 
     
@@ -3765,6 +3804,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#normalize-transcript-hgvs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Normalize transcript HGVS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#request-variant-sections" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3916,12 +3966,28 @@ and detail cards also show <code>Legacy Name</code>, and JSON output includes
 <code>legacy_name</code>.</p>
 <p>Shorthand such as <code>PTPN22 620W</code> or <code>R620W</code> is not treated as an exact variant
 ID. Use <code>biomcp search variant</code> for those inputs.</p>
+<h2 id="normalize-transcript-hgvs">Normalize transcript HGVS<a class="headerlink" href="#normalize-transcript-hgvs" title="Permanent link">&para;</a></h2>
+<p>Use the explicit normalization proxy when you already have a transcript HGVS
+string and want source-labelled output from Mutalyzer and VariantValidator:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span>NM_000248.3:c.135del
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span>NM_004448.2:c.829G&gt;T
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>mutalyzer<span class="w"> </span>NM_000248.3:c.135del
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>variantvalidator<span class="w"> </span>NM_004448.2:c.829G&gt;T
+</code></pre></div>
+<p>JSON output preserves the submitted <code>input</code>, one result per service, each
+service <code>status</code>, source-returned transcript/normalized/genomic/protein fields,
+and warnings such as VariantValidator <code>TranscriptVersionWarning</code>. Markdown
+VariantValidator genomic descriptions are labeled as GRCh38 because BioMCP calls
+VariantValidator's GRCh38 normalization endpoint.</p>
+<p>This helper does not parse messy report prose, does not choose, select, guess,
+or infer transcripts, and does not classify variants or provide clinical
+interpretation/clinical meaning.</p>
 <h2 id="request-variant-sections">Request variant sections<a class="headerlink" href="#request-variant-sections" title="Permanent link">&para;</a></h2>
 <p>Prediction section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predict
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predict
 </code></pre></div>
 <p>ClinVar-focused section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>clinvar
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>clinvar
 </code></pre></div>
 <p>ClinVar JSON also exposes <code>top_disease</code> when condition aggregation is available,
 reusing the highest-ranked ClinVar condition row already shown in the section.
@@ -3931,50 +3997,62 @@ VUS / uncertain-significance variants add a literature search anchored by the
 variant alias and any available disease context before the generic drug-target
 fallback.</p>
 <p>Population section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="w"> </span>population
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="w"> </span>population
 </code></pre></div>
 <p>Population JSON exposes additive compact frequency fields:
 <code>allele_frequency_raw</code> and <code>allele_frequency_percent</code>. Markdown keeps the raw
 gnomAD AF line and appends the compact percent inline.</p>
 <p>CIViC section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>civic
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>civic
 </code></pre></div>
 <p>GWAS section (trait associations from GWAS Catalog):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
 </code></pre></div>
 <p>GWAS JSON exposes <code>supporting_pmids</code> as an ordered, deduplicated array when the
 section loads successfully. <code>null</code> means either the GWAS section was not loaded
 or GWAS Catalog was temporarily unavailable. In the unavailable case, JSON also
 includes <code>gwas_unavailable_reason</code> with a source-specific message.</p>
 <p>Predictions (aggregated prediction scores):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predictions
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predictions
 </code></pre></div>
 <p>Conservation (GERP, phyloP):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>conservation
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>conservation
 </code></pre></div>
 <p>COSMIC (somatic mutation data):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>cosmic
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>cosmic
 </code></pre></div>
 <p>CGI (Cancer Genome Interpreter annotations):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>cgi
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>cgi
 </code></pre></div>
 <p>cBioPortal (frequency data):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>cbioportal
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>cbioportal
 </code></pre></div>
+<p>Cancerhotspots.org recurrence counts are loaded by <code>all</code> for exact gene/protein
+queries such as <code>BRAF V600E</code>. JSON includes <code>cancerhotspots.source</code>,
+<code>matched_transcript</code>, <code>position_count</code> (residue-level <code>tumorCount</code>), and
+<code>same_aa_count</code> (the exact alternate amino acid count). If the lookup succeeds
+but the residue/change is not a cancerhotspots hotspot, those count/provenance
+fields are present as JSON <code>null</code> under the source-labelled object; upstream
+unavailability omits the object instead of emitting zeros.</p>
 <p>All supported sections:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>all
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>all
 </code></pre></div>
+<p><code>all</code> includes broad source-backed annotation sections such as ClinVar,
+population, conservation, expanded MyVariant prediction scores, cBioPortal,
+Cancerhotspots.org, CIViC, CGI, COSMIC, and GWAS. It does not run the
+AlphaGenome <code>predict</code> section because that path requires <code>ALPHAGENOME_API_KEY</code>;
+request <code>predict</code> explicitly when you want AlphaGenome output.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">   </span><span class="c1"># search trials mentioning this mutation</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span><span class="c1"># search PubMed for this variant</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">   </span><span class="c1"># OncoKB lookup (requires ONCOKB_TOKEN)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">   </span><span class="c1"># search trials mentioning this mutation</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span><span class="c1"># search PubMed for this variant</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">   </span><span class="c1"># OncoKB lookup (requires ONCOKB_TOKEN)</span>
 </code></pre></div>
 <h2 id="search-gwas-associations">Search GWAS associations<a class="headerlink" href="#search-gwas-associations" title="Permanent link">&para;</a></h2>
 <p>By gene:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>TCF7L2<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>TCF7L2<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>By trait:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>Trait search uses GWAS Catalog trait endpoints first, then study-association fallback paths when needed.</p>
 <h2 id="optional-enrichment">Optional enrichment<a class="headerlink" href="#optional-enrichment" title="Permanent link">&para;</a></h2>
@@ -3984,9 +4062,9 @@ OncoKB is accessed explicitly via <code>biomcp variant oncokb "&lt;gene&gt; &lt;
 <p>Prediction sections may require <code>ALPHAGENOME_API_KEY</code> depending on source path.
 Unsupported inputs are surfaced with explicit validation messages.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span>
 </code></pre></div>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>

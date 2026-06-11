@@ -676,6 +676,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Entities and sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gettable-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gettable entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-only-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search-only entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2233,6 +2261,34 @@
     
   
     CDC CVX/MVX
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
   
 
     
@@ -3954,6 +4010,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Entities and sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gettable-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gettable entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-only-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search-only entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4165,8 +4249,9 @@ stdio:</p>
   runs up to 10 focused <code>get</code> calls with shared JSON metadata.</li>
 </ul>
 <h2 id="entities-and-sources">Entities and sources<a class="headerlink" href="#entities-and-sources" title="Permanent link">&para;</a></h2>
-<p>The 13-row table below is the public entity surface; individual rows may use
-live APIs, local runtime data, or hybrid source overlays.</p>
+<p>The tables below distinguish detail-card entities from search-only surfaces so
+agents do not synthesize unsupported <code>get</code> commands.</p>
+<h3 id="gettable-entities">Gettable entities<a class="headerlink" href="#gettable-entities" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -4231,6 +4316,18 @@ live APIs, local runtime data, or hybrid source overlays.</p>
 <td>CPIC, PharmGKB</td>
 <td><code>biomcp get pgx CYP2D6 recommendations</code></td>
 </tr>
+</tbody>
+</table>
+<h3 id="search-only-entities">Search-only entities<a class="headerlink" href="#search-only-entities" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Upstream providers used by BioMCP</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
 <tr>
 <td>gwas</td>
 <td>GWAS Catalog</td>

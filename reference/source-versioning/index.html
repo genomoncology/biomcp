@@ -1982,6 +1982,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/medlineplus/" class="md-nav__link">
         
   
@@ -3680,11 +3708,39 @@
 <td>2026-02-15</td>
 </tr>
 <tr>
+<td>Cancerhotspots.org</td>
+<td><code>https://www.cancerhotspots.org</code></td>
+<td>Unversioned</td>
+<td>Website-backed recurrence endpoint is stable without explicit URL versioning</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
 <td>CDC WONDER VAERS</td>
 <td><code>https://wonder.cdc.gov/controller/datarequest/D8</code></td>
 <td>Unversioned</td>
 <td>CDC WONDER exposes the VAERS D8 database through a stable dataset ID and XML POST contract; BioMCP freezes the request/response shape in fixtures instead of relying on a versioned path segment</td>
 <td>2026-04-18</td>
+</tr>
+<tr>
+<td>CDC CVX</td>
+<td><code>https://www2.cdc.gov/vaccines/iis/iisstandards/downloads/cvx.txt</code></td>
+<td>Unversioned file export</td>
+<td>CDC publishes current CVX codes at a stable filename that refreshes in place</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>CDC MVX</td>
+<td><code>https://www2.cdc.gov/vaccines/iis/iisstandards/downloads/mvx.txt</code></td>
+<td>Unversioned file export</td>
+<td>CDC publishes current MVX manufacturer codes at a stable filename that refreshes in place</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>CDC vaccine trade names</td>
+<td><code>https://www2.cdc.gov/vaccines/iis/iisstandards/downloads/TRADENAME.txt</code></td>
+<td>Unversioned file export</td>
+<td>CDC publishes current trade-name mapping at a stable filename that refreshes in place</td>
+<td>2026-06-11</td>
 </tr>
 <tr>
 <td>ChEMBL</td>
@@ -3701,11 +3757,67 @@
 <td>2026-02-15</td>
 </tr>
 <tr>
+<td>ClinGen Search</td>
+<td><code>https://search.clinicalgenome.org</code></td>
+<td>Unversioned</td>
+<td>Public search endpoint has no stable version path segment</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>ComplexPortal</td>
+<td><code>https://www.ebi.ac.uk/intact/complex-ws</code></td>
+<td>Unversioned</td>
+<td>EBI complex web service is path-stable without URL versioning</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>CPIC</td>
+<td><code>https://api.cpicpgx.org/v1</code></td>
+<td>Versioned (<code>v1</code>)</td>
+<td>Endpoint already pinned</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>CIViC</td>
+<td><code>https://civicdb.org/api</code></td>
+<td>Unversioned</td>
+<td>Public API root is stable without explicit major version path</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>DDInter downloads</td>
+<td><code>https://ddinter.scbdd.com/download/</code></td>
+<td>Unversioned download bundle</td>
+<td>Public CSV bundle refreshes in place under stable filenames</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>DGIdb GraphQL</td>
+<td><code>https://dgidb.org/api/graphql</code></td>
+<td>Unversioned</td>
+<td>GraphQL endpoint has no URL version segment</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>DisGeNET</td>
+<td><code>https://api.disgenet.com/api/v1</code></td>
+<td>Versioned (<code>v1</code>)</td>
+<td>Endpoint already pinned</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
 <td>Enrichr</td>
 <td><code>https://maayanlab.cloud/Enrichr</code></td>
 <td>Unversioned</td>
 <td>Service does not publish versioned path variant for current API</td>
 <td>2026-02-15</td>
+</tr>
+<tr>
+<td>EMA human medicines data</td>
+<td><code>https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format</code></td>
+<td>Unversioned download page</td>
+<td>EMA publishes current JSON batch links from a stable page</td>
+<td>2026-06-11</td>
 </tr>
 <tr>
 <td>Europe PMC</td>
@@ -3729,11 +3841,32 @@
 <td>2026-02-15</td>
 </tr>
 <tr>
+<td>GTEx Portal</td>
+<td><code>https://gtexportal.org/api/v2</code></td>
+<td>Versioned (<code>v2</code>)</td>
+<td>Endpoint already pinned</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>GWAS Catalog</td>
+<td><code>https://www.ebi.ac.uk/gwas/rest/api</code></td>
+<td>Unversioned</td>
+<td>REST root is stable and has no exposed version segment</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
 <td>HPO JAX API</td>
 <td><code>https://ontology.jax.org/api/hp</code></td>
 <td>Unversioned</td>
 <td>API path is canonical and currently unversioned</td>
 <td>2026-02-15</td>
+</tr>
+<tr>
+<td>Human Protein Atlas</td>
+<td><code>https://www.proteinatlas.org</code></td>
+<td>Unversioned</td>
+<td>Public endpoint is website-backed with stable path contracts rather than API versioning</td>
+<td>2026-06-11</td>
 </tr>
 <tr>
 <td>InterPro</td>
@@ -3743,11 +3876,39 @@
 <td>2026-02-15</td>
 </tr>
 <tr>
+<td>KEGG REST</td>
+<td><code>https://rest.kegg.jp</code></td>
+<td>Unversioned</td>
+<td>KEGG REST exposes stable operation paths without major versioning</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
 <td>LitSense2</td>
 <td><code>https://www.ncbi.nlm.nih.gov/research/litsense2-api/api</code></td>
 <td>Versioned-by-product (<code>litsense2-api</code>)</td>
 <td>Version identity is in the product namespace rather than the path suffix</td>
 <td>2026-04-10</td>
+</tr>
+<tr>
+<td>MedlinePlus Search</td>
+<td><code>https://wsearch.nlm.nih.gov/ws/query</code></td>
+<td>Unversioned</td>
+<td>NLM search endpoint is stable without URL versioning</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>Monarch Initiative API v3</td>
+<td><code>https://api-v3.monarchinitiative.org</code></td>
+<td>Versioned (<code>v3</code>)</td>
+<td>Version identity is in the host name</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>Mutalyzer</td>
+<td><code>https://mutalyzer.nl/api</code></td>
+<td>Unversioned</td>
+<td>Public API root has no versioned path for current normalize calls</td>
+<td>2026-06-11</td>
 </tr>
 <tr>
 <td>MyChem.info</td>
@@ -3783,6 +3944,20 @@
 <td>Unversioned bulk export</td>
 <td>GTR bulk files are published at stable filenames and refreshed in place rather than by versioned path</td>
 <td>2026-04-17</td>
+</tr>
+<tr>
+<td>NCBI GTR condition-gene file</td>
+<td><code>https://ftp.ncbi.nlm.nih.gov/pub/GTR/data/test_condition_gene.txt</code></td>
+<td>Unversioned file export</td>
+<td>Stable filename refreshed in place under the GTR bulk root</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>NCBI GTR test-version file</td>
+<td><code>https://ftp.ncbi.nlm.nih.gov/pub/GTR/data/test_version.gz</code></td>
+<td>Unversioned file export</td>
+<td>Stable filename refreshed in place under the GTR bulk root</td>
+<td>2026-06-11</td>
 </tr>
 <tr>
 <td>WHO Prequalified IVD</td>
@@ -3827,11 +4002,46 @@
 <td>2026-02-15</td>
 </tr>
 <tr>
+<td>OpenFDA device 510(k)</td>
+<td><code>https://api.fda.gov/device/510k.json</code></td>
+<td>Unversioned</td>
+<td>OpenFDA resource path is stable without URL versioning</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>OpenFDA device PMA</td>
+<td><code>https://api.fda.gov/device/pma.json</code></td>
+<td>Unversioned</td>
+<td>OpenFDA resource path is stable without URL versioning</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
 <td>OpenTargets</td>
 <td><code>https://api.platform.opentargets.org/api/v4/graphql</code></td>
 <td>Versioned (<code>v4</code>)</td>
 <td>Endpoint already pinned</td>
 <td>2026-02-15</td>
+</tr>
+<tr>
+<td>OLS4</td>
+<td><code>https://www.ebi.ac.uk/ols4</code></td>
+<td>Versioned-by-product (<code>ols4</code>)</td>
+<td>Version identity is in the product namespace</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>PharmGKB</td>
+<td><code>https://api.pharmgkb.org/v1</code></td>
+<td>Versioned (<code>v1</code>)</td>
+<td>Endpoint already pinned</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>PMC HTML</td>
+<td><code>https://pmc.ncbi.nlm.nih.gov/articles</code></td>
+<td>Unversioned</td>
+<td>NCBI article HTML route is stable and not API-versioned</td>
+<td>2026-06-11</td>
 </tr>
 <tr>
 <td>PMC OA</td>
@@ -3895,6 +4105,48 @@
 <td>Unversioned</td>
 <td>REST base is canonical and not versioned in URL</td>
 <td>2026-02-15</td>
+</tr>
+<tr>
+<td>UMLS REST</td>
+<td><code>https://uts-ws.nlm.nih.gov/rest</code></td>
+<td>Unversioned</td>
+<td>UMLS REST path is stable without explicit major version segment</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>VariantValidator</td>
+<td><code>https://rest.variantvalidator.org</code></td>
+<td>Unversioned</td>
+<td>Public REST root has no URL version path for current variant normalization</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>WHO active pharmaceutical ingredients</td>
+<td><code>https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients/export?page&amp;_format=csv</code></td>
+<td>Unversioned export</td>
+<td>WHO export refreshes in place behind a stable CSV URL</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>WHO finished pharmaceutical products</td>
+<td><code>https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&amp;_format=csv</code></td>
+<td>Unversioned export</td>
+<td>WHO export refreshes in place behind a stable CSV URL</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>WHO vaccines</td>
+<td><code>https://extranet.who.int/prequal/vaccines/prequalified/export</code></td>
+<td>Unversioned export</td>
+<td>WHO vaccine export refreshes in place behind a stable URL</td>
+<td>2026-06-11</td>
+</tr>
+<tr>
+<td>WikiPathways</td>
+<td><code>https://www.wikipathways.org/json</code></td>
+<td>Unversioned</td>
+<td>JSON endpoint has stable route names rather than a public version segment</td>
+<td>2026-06-11</td>
 </tr>
 </tbody>
 </table>

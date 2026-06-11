@@ -1982,6 +1982,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/medlineplus/" class="md-nav__link">
         
   
@@ -2968,6 +2996,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#operator-runtime-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator runtime configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#output-modes-and-discovery-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3820,6 +3859,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#operator-runtime-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operator runtime configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#output-modes-and-discovery-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4024,6 +4074,22 @@ platform-specific notes.</p>
 <a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;chest pain&quot;</span><span class="w">           </span><span class="c1"># relational or multi-entity questions may redirect to search all --keyword</span>
 </code></pre></div>
 <p>See also: <a href="../../how-to/search-all-workflow/">Search All Workflow</a></p>
+<h2 id="operator-runtime-configuration">Operator runtime configuration<a class="headerlink" href="#operator-runtime-configuration" title="Permanent link">&para;</a></h2>
+<p>Cache configuration is resolved from env &gt; file &gt; default for env-overridable
+fields. <code>BIOMCP_CACHE_DIR</code>, <code>BIOMCP_CACHE_MAX_SIZE</code>, and
+<code>BIOMCP_CACHE_MIN_DISK_FREE</code> override <code>cache.toml</code> values; the file lives under
+the platform config directory's <code>biomcp/cache.toml</code>. Supported TOML fields are
+<code>[cache].dir</code>, <code>[cache].max_size</code>, <code>[cache].min_disk_free</code>, and
+<code>[cache].max_age_secs</code>. Defaults are a platform cache directory with a <code>biomcp</code>
+subdirectory (or temp-dir fallback), max size <code>10_000_000_000</code>, min disk free
+<code>10%</code>, and max age <code>86_400</code> seconds. Max age is file &gt; default only in the
+current runtime.</p>
+<p>Logging/tracing goes to stderr. The default <code>RUST_LOG</code> filter is <code>warn</code>; set
+<code>RUST_LOG=error</code> for quieter automation. <code>tools/biomcp-ci</code> defaults to
+<code>RUST_LOG=error</code>. ANSI color is emitted only when stderr is a TTY. Do not log or
+copy API-key values, partial values, hashes, or secret-derived strings; operator
+notes and reports should redact secrets. In <code>--json</code> mode, machine-readable
+payloads stay on stdout while errors and diagnostics stay on stderr.</p>
 <h2 id="output-modes-and-discovery-commands">Output modes and discovery commands<a class="headerlink" href="#output-modes-and-discovery-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>suggest<span class="w"> </span><span class="s2">&quot;When was imatinib approved?&quot;</span>

@@ -2161,6 +2161,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/medlineplus/" class="md-nav__link">
         
   
@@ -4026,27 +4054,50 @@ remains an automatic compatible leg rather than a directly selectable backend.</
 the XML path misses for a PMCID-backed article. It never falls back to PDF.
 When full text resolves, BioMCP prints a local <code>Saved to:</code> path for cached
 Markdown and surfaces the winning source label (<code>Europe PMC XML</code>, <code>PMC HTML</code>,
-etc.) in markdown and JSON provenance.</p>
+etc.) in markdown and JSON provenance. For XML/JATS winners, the saved Markdown
+keeps section text, tables, references, figure captions, supplementary-material
+metadata, and explicit markers for complex merged-cell tables that are not yet
+flattened. JSON fulltext responses also include <code>full_text_manifest</code>, an
+additive artifact manifest with the normalized source family (<code>jats_xml</code>,
+<code>pmc_html</code>, or <code>pdf</code>), provider label/source, concrete source identifier,
+quality flags, known license/reuse state, and provenance facts such as
+open-access and explicit PDF fallback status. JSON fulltext also reports
+<code>not_included</code> counts and points to the OA package asset manifest when figure
+images, supplementary files, or complex tables are not inlined.</p>
+<p>Article assets:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>&lt;id&gt;<span class="w"> </span>assets
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>&lt;id&gt;<span class="w"> </span>asset<span class="w"> </span>&lt;filename&gt;
+</code></pre></div>
+<p><code>get article &lt;id&gt; assets</code> returns a JSON-only provider-labelled manifest. BioMCP
+prefers the canonical PMC OA package; if none is available and Semantic Scholar
+enrichment points at supported Figshare/AACR Figshare metadata, it resolves the
+Figshare API and lists those public files instead. Figshare manifests can include
+same-paper sibling records discovered by DOI/title, while excluding records that
+do not match the paper. <code>get article &lt;id&gt; asset &lt;name&gt;</code> returns the selected
+member as raw bytes with no conversion; downstream tools parse CSV, XLSX, DOC,
+PDF, or images. Manifest handles remain BioMCP commands, not provider download
+URLs. Figshare supplement PDFs and tables remain assets, not full-text article
+substitutes.</p>
 <p>Opt in to the final PDF rung only when you want the last-resort open-access PDF
 path after XML and PMC HTML both miss:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext<span class="w"> </span>--pdf
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext<span class="w"> </span>--pdf
 </code></pre></div>
 <p>With <code>--pdf</code>, BioMCP can use the Semantic Scholar open-access PDF URL as the
 final fallback and labels the winner as <code>Semantic Scholar PDF</code>. <code>--pdf</code> is only
 valid with the <code>fulltext</code> section; <code>biomcp get article 22663011 --pdf</code> is
 rejected instead of silently doing nothing.</p>
 <p>Annotation section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
 </code></pre></div>
 <p>Semantic Scholar TLDR section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
 </code></pre></div>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span><span class="w">   </span><span class="c1"># extract annotated entities via PubTator</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span><span class="w">          </span><span class="c1"># compact multi-article summary cards</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">         </span><span class="c1"># Semantic Scholar citation graph</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">        </span><span class="c1"># Semantic Scholar reference graph</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span><span class="w">   </span><span class="c1"># extract annotated entities via PubTator</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span><span class="w">          </span><span class="c1"># compact multi-article summary cards</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">         </span><span class="c1"># Semantic Scholar citation graph</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">        </span><span class="c1"># Semantic Scholar reference graph</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
 </code></pre></div>
 <p><code>article batch</code> works without <code>S2_API_KEY</code> and echoes the original
 <code>requested_id</code> together with resolved PMID/PMCID/DOI fields. When Semantic
@@ -4063,15 +4114,20 @@ publisher elision in the Semantic Scholar graph.</p>
 <p>Downloaded content is stored in the BioMCP cache directory.
 This avoids repeated large payload downloads during iterative workflows.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX review&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX review&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span>
 </code></pre></div>
 <p>JSON article responses include <code>_meta.next_commands</code> and <code>_meta.section_sources</code>,
 so article workflows can promote the next likely pivots and preserve section
-provenance without scraping markdown. JSON <code>search article</code> responses also echo
-<code>query</code>, <code>sort</code>, <code>semantic_scholar_enabled</code>, and row-level ranking/provenance
+provenance without scraping markdown. For <code>get article &lt;id&gt; fulltext --json</code>,
+<code>full_text_manifest.quality</code> reports whether saved Markdown has sections,
+tables, references, fulltext signal, and fulltext entity annotations;
+<code>full_text_manifest.reuse</code> separates known licenses from an explicit unknown
+license/reuse warning; and <code>full_text_manifest.provenance</code> carries available
+open-access, retraction, package, and PDF-fallback facts. JSON <code>search article</code>
+responses also echo <code>query</code>, <code>sort</code>, <code>semantic_scholar_enabled</code>, and row-level ranking/provenance
 metadata. In relevance mode, ranking metadata now includes the effective mode
 plus normalized lexical, citation, and position components; semantic-aware
 rows expose <code>ranking.semantic_score</code> as the LitSense2-derived signal and use

@@ -2100,6 +2100,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../medlineplus/" class="md-nav__link">
         
   
@@ -3820,10 +3848,11 @@
 <p>Without <code>S2_API_KEY</code>, BioMCP uses the shared unauthenticated pool at
 1 req/2sec. A shared-pool HTTP 429 fails fast with guidance to set the key
 instead of retrying against the same public pool. With <code>S2_API_KEY</code>, BioMCP
-sends authenticated requests at 1 req/sec and honors authenticated
-<code>Retry-After</code> responses before retrying. Source status and debug-plan output
-report <code>auth_mode</code> as <code>shared_pool</code> or <code>authenticated</code>, but never print the
-secret key or key prefix.</p>
+sends authenticated requests at 1 req/sec and honors authenticated numeric
+<code>Retry-After</code> responses before retrying, bounded by BioMCP's shared 5-second
+per-attempt cap and 15-second total retry-sleep budget. Source status and
+debug-plan output report <code>auth_mode</code> as <code>shared_pool</code> or <code>authenticated</code>, but
+never print the secret key or key prefix.</p>
 <h2 id="runtime-behavior">Runtime behavior<a class="headerlink" href="#runtime-behavior" title="Permanent link">&para;</a></h2>
 <p><code>search article</code> exposes Semantic Scholar as an automatic compatible leg rather
 than a user-selectable source flag. Keep using <code>--source all</code>, <code>pubtator</code>,

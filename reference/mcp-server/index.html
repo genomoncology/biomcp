@@ -1982,6 +1982,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/medlineplus/" class="md-nav__link">
         
   
@@ -3952,9 +3980,11 @@ from the installed <code>skills/biomcp/use-cases/&lt;slug&gt;.ladder.json</code>
 </code></pre></div>
 <h2 id="read-only-allowlist">Read-only Allowlist<a class="headerlink" href="#read-only-allowlist" title="Permanent link">&para;</a></h2>
 <p>The MCP <code>biomcp</code> tool accepts read-only CLI commands, including <code>suggest</code>,
-<code>discover</code>, <code>biomcp skill render</code>, and the exact <code>study download --list</code>
+<code>discover</code>, <code>biomcp skill list</code>, <code>biomcp skill render</code>, existing embedded
+<code>biomcp skill &lt;number-or-slug&gt;</code> lookups, and the exact <code>study download --list</code>
 catalog lookup.
-Mutating commands remain blocked. Cache-family commands such as <code>cache path</code>,
+Mutating or unknown <code>skill</code> subcommands remain blocked unless they are added to
+the positive MCP skill allowlist. Cache-family commands such as <code>cache path</code>,
 <code>cache stats</code>, <code>cache clean</code>, and <code>cache clear</code> are also rejected because they reveal workstation-local paths and filesystem context.
 In particular, <code>study download &lt;study_id&gt;</code> is rejected because installation
 performs network and filesystem writes into the local study directory, while
@@ -3971,16 +4001,21 @@ and local-runtime refresh commands directly via the CLI, outside MCP.</p>
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="k">assert</span> <span class="s1">&#39;&quot;study&quot; =&gt; {&#39;</span> <span class="ow">in</span> <span class="n">shell</span>
 <a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="k">assert</span> <span class="s1">&#39;&quot;download&quot; =&gt; args.len() == 4 &amp;&amp; args[3] == &quot;--list&quot;&#39;</span> <span class="ow">in</span> <span class="n">shell</span>
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="k">assert</span> <span class="s2">&quot;suggest/discover/skill&quot;</span> <span class="ow">in</span> <span class="n">shell</span> <span class="ow">or</span> <span class="s2">&quot;suggest/discover/skill).&quot;</span> <span class="ow">in</span> <span class="n">shell</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="k">assert</span> <span class="s1">&#39;&quot;render&quot;.into()&#39;</span> <span class="ow">in</span> <span class="n">shell</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="k">assert</span> <span class="s1">&#39;test_biomcp_suggest_is_allowed_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="k">assert</span> <span class="s1">&#39;assert &quot;study download --list&quot; in description&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="k">assert</span> <span class="s1">&#39;test_mutating_study_download_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
-<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="k">assert</span> <span class="s1">&#39;test_gtr_sync_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="k">assert</span> <span class="s1">&#39;test_who_ivd_sync_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
-<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="k">assert</span> <span class="s1">&#39;&quot;BioMCP allows read-only commands only&quot; in result.content[0].text&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
-<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="k">assert</span> <span class="s1">&#39;test_cache_path_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
-<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="k">assert</span> <span class="s1">&#39;&quot;CLI-only over MCP&quot; in result.content[0].text&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
-<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="k">assert</span> <span class="s1">&#39;&quot;workstation-local filesystem paths&quot; in result.content[0].text&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="k">assert</span> <span class="s1">&#39;matches!(sub.as_str(), &quot;list&quot; | &quot;render&quot;)&#39;</span> <span class="ow">in</span> <span class="n">shell</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="k">assert</span> <span class="s2">&quot;show_use_case(&amp;sub).is_ok()&quot;</span> <span class="ow">in</span> <span class="n">shell</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="k">assert</span> <span class="s2">&quot;!matches!(sub.as_str()&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">shell</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="k">assert</span> <span class="s1">&#39;test_biomcp_suggest_is_allowed_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="k">assert</span> <span class="s1">&#39;test_skill_list_is_allowed_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="k">assert</span> <span class="s1">&#39;test_unknown_skill_subcommand_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="k">assert</span> <span class="s1">&#39;test_skill_install_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="k">assert</span> <span class="s1">&#39;assert &quot;study download --list&quot; in description&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="k">assert</span> <span class="s1">&#39;test_mutating_study_download_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="k">assert</span> <span class="s1">&#39;test_gtr_sync_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="k">assert</span> <span class="s1">&#39;test_who_ivd_sync_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="k">assert</span> <span class="s1">&#39;&quot;BioMCP allows read-only commands only&quot; in result.content[0].text&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="k">assert</span> <span class="s1">&#39;test_cache_path_is_rejected_in_mcp_mode&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="k">assert</span> <span class="s1">&#39;&quot;CLI-only over MCP&quot; in result.content[0].text&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="k">assert</span> <span class="s1">&#39;&quot;workstation-local filesystem paths&quot; in result.content[0].text&#39;</span> <span class="ow">in</span> <span class="n">tests</span>
 </code></pre></div>
 <h2 id="resource-catalog">Resource Catalog<a class="headerlink" href="#resource-catalog" title="Permanent link">&para;</a></h2>
 <p>Current builds always publish the help resource and one markdown resource per embedded skill use-case. The help resource is the canonical prompt body, the

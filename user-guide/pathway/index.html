@@ -2111,6 +2111,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/medlineplus/" class="md-nav__link">
         
   
@@ -3797,9 +3825,12 @@
 <h2 id="search-pathways">Search pathways<a class="headerlink" href="#search-pathways" title="Permanent link">&para;</a></h2>
 <p><code>QUERY</code> is required for normal pathway search. <code>--top-level</code> is the only queryless search mode.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span><span class="s2">&quot;MAPK signaling&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;Pathways in cancer&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span>--top-level<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span><span class="s2">&quot;MAPK signaling pathway&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;Pathways in cancer&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span>--top-level<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
+<p>Exact KEGG title searches can surface organism-specific KEGG rows such as
+<code>hsa04010</code> for <code>MAPK signaling pathway</code> when the live KEGG source participates.</p>
 <h2 id="get-pathway-records">Get pathway records<a class="headerlink" href="#get-pathway-records" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pathway<span class="w"> </span>R-HSA-5673001
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pathway<span class="w"> </span>hsa05200

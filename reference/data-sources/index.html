@@ -1982,6 +1982,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/medlineplus/" class="md-nav__link">
         
   
@@ -3876,7 +3904,9 @@
 <p>BioMCP unifies multiple biomedical data providers behind one CLI grammar.
 This reference explains source provenance, authentication requirements, base endpoints,
 and operational caveats so users can reason about result quality and troubleshooting.
-Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider terms, reuse constraints, and indirect-only provenance rows.</p>
+Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider terms, reuse constraints, and indirect-only provenance rows.
+Use <a href="../configuration/">Configuration Reference</a> for supported environment
+variables, test-only override seams, cache settings, and release/install knobs.</p>
 <h2 id="source-matrix">Source matrix<a class="headerlink" href="#source-matrix" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3894,7 +3924,7 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>MyGene.info</td>
 <td><code>https://mygene.info/v3</code></td>
 <td>No</td>
-<td>Symbol lookup, aliases, summaries</td>
+<td>Symbol lookup, aliases, summaries, and GRCh38-labeled genomic coordinates when returned</td>
 </tr>
 <tr>
 <td>Gene sections</td>
@@ -3916,6 +3946,27 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td><code>https://myvariant.info/v1</code></td>
 <td>No</td>
 <td>rsID/HGVS lookup, ClinVar and population annotations</td>
+</tr>
+<tr>
+<td>Variant cancerhotspots recurrence</td>
+<td>Cancerhotspots.org</td>
+<td><code>https://www.cancerhotspots.org</code></td>
+<td>No</td>
+<td><code>get variant &lt;gene&gt; &lt;change&gt; all</code> adds source-labelled residue and exact amino-acid recurrence counts when cancerhotspots can be checked</td>
+</tr>
+<tr>
+<td>Variant normalization</td>
+<td>Mutalyzer</td>
+<td><code>variant normalize</code> / <code>https://mutalyzer.nl/api</code></td>
+<td>No</td>
+<td>Calls <code>GET /normalize/{description}</code> for explicit transcript HGVS and preserves normalized/corrected/protein fields plus source warnings/status</td>
+</tr>
+<tr>
+<td>Variant normalization</td>
+<td>VariantValidator</td>
+<td><code>variant normalize</code> / <code>https://rest.variantvalidator.org</code></td>
+<td>No</td>
+<td>Calls <code>GET /VariantValidator/variantvalidator/{genome_build}/{variant_description}/{select_transcripts}</code> for explicit transcript HGVS and preserves <code>TranscriptVersionWarning</code>, GRCh38 genomic descriptions, and source status</td>
 </tr>
 <tr>
 <td>Variant population section</td>
@@ -4197,6 +4248,13 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <td>No</td>
 <td>Supplemental cancer frequency context</td>
 </tr>
+<tr>
+<td>Cancer hotspot recurrence</td>
+<td>Cancerhotspots.org</td>
+<td><code>https://www.cancerhotspots.org</code></td>
+<td>No</td>
+<td>Best-effort source-labelled recurrence counts for exact gene/protein variant detail under <code>get variant ... all</code></td>
+</tr>
 </tbody>
 </table>
 <h2 id="global-http-behavior">Global HTTP behavior<a class="headerlink" href="#global-http-behavior" title="Permanent link">&para;</a></h2>
@@ -4205,6 +4263,7 @@ Use <a href="../source-licensing/">Source Licensing and Terms</a> for provider t
 <li>Connect timeout: 10 seconds</li>
 <li>Request timeout: 30 seconds</li>
 <li>Retries: exponential backoff, up to 3 retries for transient failures</li>
+<li>Retry-After: numeric 429 hints are honored only within a 5-second per-attempt cap and 15-second total retry-sleep budget</li>
 <li>Disk cache: <code>&lt;cache_root&gt;/http</code> under the resolved cache root (<code>~/.cache/biomcp/http</code> on Linux)</li>
 </ul>
 <p>cBioPortal DataHub study archive downloads are the exception: archive downloads do
@@ -4300,6 +4359,11 @@ and practical ceilings observed in command behavior.</p>
 <td>Use <code>--gene</code> + <code>--consequence</code> to reduce noise</td>
 </tr>
 <tr>
+<td>VariantValidator <code>variant normalize</code></td>
+<td>Single explicit transcript HGVS per command; upstream docs mention 2 requests / second</td>
+<td>Use <code>all</code>, <code>mutalyzer</code>, or <code>variantvalidator</code>; BioMCP does not batch, parse report prose, choose transcripts, or classify clinical meaning</td>
+</tr>
+<tr>
 <td>PGx (CPIC)</td>
 <td>Rate-limited to 1 request / 250ms</td>
 <td>Keep result limits focused around target gene/drug</td>
@@ -4378,13 +4442,14 @@ and practical ceilings observed in command behavior.</p>
 <li>PubTator3 + Europe PMC + PubMed for federated search, with LitSense2 added for keyword-bearing queries and an optional Semantic Scholar leg when the filter set is compatible (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, per-source capping after deduplication and before ranking, local lexical/semantic/hybrid relevance ranking)</li>
 <li>Europe PMC for bibliographic metadata</li>
 <li>PubTator3 for entity annotations</li>
-<li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, recommendations, and <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback</li>
-<li>NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs when the base article lacks PMCID</li>
+<li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, recommendations, <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback, and supported Figshare article-asset discovery</li>
+<li>NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and PMC OA asset rungs when the base article lacks PMCID</li>
 <li>Europe PMC PMC XML, NCBI EFetch PMC XML, PMC OA Archive XML, Europe PMC MED XML, PMC HTML, and opt-in Semantic Scholar PDF form the full-text content ladder where available</li>
+<li>PMC OA Archive remains the preferred article-asset source; when unavailable, Figshare can provide raw article assets after Semantic Scholar points at a supported Figshare/AACR Figshare article URL</li>
 </ol>
-<p>NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs.
-Semantic Scholar supplies <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback;
-BioMCP fetches that third-party PDF URL only after the caller opts in.</p>
+<p>NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and asset rungs.
+Semantic Scholar supplies <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback and for supported Figshare asset discovery;
+BioMCP fetches third-party PDF URLs only after the caller opts in, while Figshare asset retrieval re-resolves bytes through the Figshare API <code>download_url</code>.</p>
 <p>This means metadata, annotations, and full text may have different availability
 for the same PMID.</p>
 <h2 id="openfda-behavior">OpenFDA behavior<a class="headerlink" href="#openfda-behavior" title="Permanent link">&para;</a></h2>

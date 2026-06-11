@@ -1987,6 +1987,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../vaers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CDC WONDER VAERS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../medlineplus/" class="md-nav__link">
         
   
@@ -3778,7 +3806,7 @@
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pathway<span class="w"> </span><span class="s2">&quot;MAPK signaling&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>Returns a mixed-source pathway table that can include KEGG rows.</p>
+<p>Returns a mixed-source pathway table that can include KEGG rows. Exact title searches such as <code>MAPK signaling pathway</code> can include the human KEGG row <code>hsa04010</code> when KEGG participates.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pathway<span class="w"> </span>hsa05200
 </code></pre></div>
 <p>Returns a KEGG pathway card with summary context for the resolved ID.</p>
