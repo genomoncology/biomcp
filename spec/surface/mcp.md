@@ -49,7 +49,8 @@ the lightweight probe routes rather than drifting back toward legacy SSE copy.
 ```bash
 ../../tools/biomcp-ci serve-http --help | mustmatch like 'Streamable HTTP server at /mcp
 GET /health, GET /readyz, GET /.
---host <HOST>'
+--host <HOST>
+--allowed-hosts <ALLOWED_HOSTS>'
 ```
 
 ## Probe Routes Stay Lightweight
@@ -73,6 +74,51 @@ curl -fsS "http://127.0.0.1:$port/health" | mustmatch like '"status":"ok"'
 curl -fsS "http://127.0.0.1:$port/readyz" | mustmatch like '"status":"ok"'
 curl -fsS "http://127.0.0.1:$port/" | mustmatch like '"transport":"streamable-http"
 "mcp":"/mcp"'
+```
+
+## Streamable HTTP Host Headers Are Open By Default And Restrictable
+
+Default `serve-http` should not inherit rmcp's localhost-only Host guard, while
+operators can re-enable a precise Host allowlist with `--allowed-hosts`.
+
+```bash
+port=39089
+body=/tmp/biomcp-mcp-host-default.body
+../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" >/tmp/biomcp-mcp-host-default.log 2>&1 &
+pid=$!
+trap 'kill "$pid" 2>/dev/null || true' EXIT
+for _ in $(seq 1 40); do
+  if curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null; then
+    break
+  fi
+  sleep 0.25
+done
+curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
+status=$(curl -sS -o "$body" -w '%{http_code}' -X POST -H 'Host: example.com' "http://127.0.0.1:$port/mcp")
+test "$status" != 403
+cat "$body" | mustmatch not like 'Host header is not allowed'
+kill "$pid" 2>/dev/null || true
+wait "$pid" 2>/dev/null || true
+trap - EXIT
+
+port=39090
+body=/tmp/biomcp-mcp-host-restricted.body
+../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" --allowed-hosts example.com >/tmp/biomcp-mcp-host-restricted.log 2>&1 &
+pid=$!
+trap 'kill "$pid" 2>/dev/null || true' EXIT
+for _ in $(seq 1 40); do
+  if curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null; then
+    break
+  fi
+  sleep 0.25
+done
+curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
+status=$(curl -sS -o "$body" -w '%{http_code}' -X POST -H 'Host: evil.com' "http://127.0.0.1:$port/mcp")
+test "$status" = 403
+cat "$body" | mustmatch like 'Host header is not allowed'
+status=$(curl -sS -o "$body" -w '%{http_code}' -X POST -H 'Host: example.com' "http://127.0.0.1:$port/mcp")
+test "$status" != 403
+cat "$body" | mustmatch not like 'Host header is not allowed'
 ```
 
 ## Remote Workflow Calls Keep BioMCP Text

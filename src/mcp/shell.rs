@@ -294,7 +294,7 @@ pub async fn run_stdio() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn run_http(host: &str, port: u16) -> anyhow::Result<()> {
+pub async fn run_http(host: &str, port: u16, allowed_hosts: Vec<String>) -> anyhow::Result<()> {
     let ip: std::net::IpAddr = host
         .parse()
         .map_err(|e| anyhow::anyhow!("Invalid host address: {e}"))?;
@@ -306,6 +306,7 @@ pub async fn run_http(host: &str, port: u16) -> anyhow::Result<()> {
         let mut http_config = StreamableHttpServerConfig::default();
         http_config.stateful_mode = true;
         http_config.cancellation_token = shutdown.child_token();
+        http_config.allowed_hosts = allowed_hosts;
         http_config
     };
 

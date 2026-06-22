@@ -23,8 +23,8 @@ pub async fn run_stdio() -> anyhow::Result<()> {
 /// # Errors
 ///
 /// Returns an error when TCP bind or server startup fails.
-pub async fn run_http(host: &str, port: u16) -> anyhow::Result<()> {
-    shell::run_http(host, port).await
+pub async fn run_http(host: &str, port: u16, allowed_hosts: Vec<String>) -> anyhow::Result<()> {
+    shell::run_http(host, port, allowed_hosts).await
 }
 
 /// Returns the deprecation guidance for the removed SSE transport command.

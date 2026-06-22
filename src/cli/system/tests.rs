@@ -409,6 +409,7 @@ fn serve_http_help_describes_streamable_http() {
     assert!(help.contains("/mcp"));
     assert!(help.contains("--host <HOST>"));
     assert!(help.contains("--port <PORT>"));
+    assert!(help.contains("--allowed-hosts <ALLOWED_HOSTS>"));
     assert!(!help.contains("SSE transport"));
     assert!(!help.contains("--json"));
     assert!(!help.contains("--no-cache"));

@@ -65,7 +65,7 @@ fn runtime_commands_still_parse_hidden_global_flags() {
     assert!(cli.no_cache);
     assert!(matches!(
         cli.command,
-        Commands::ServeHttp(crate::cli::system::ServeHttpArgs { host, port })
+        Commands::ServeHttp(crate::cli::system::ServeHttpArgs { host, port, .. })
             if host == "127.0.0.1" && port == 8080
     ));
 
