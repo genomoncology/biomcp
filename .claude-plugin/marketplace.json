@@ -1,0 +1,39 @@
+{
+  "$schema": "https://code.claude.com/schemas/marketplace.json",
+  "name": "biomcp",
+  "owner": {
+    "name": "GenomOncology",
+    "email": "support@genomoncology.com"
+  },
+  "metadata": {
+    "description": "BioMCP biomedical search and evidence retrieval for Claude Code and other agent harnesses."
+  },
+  "plugins": [
+    {
+      "name": "biomcp",
+      "source": "./",
+      "description": "Read-only biomedical search and evidence retrieval across BioMCP's CLI command grammar (genes, variants, trials, articles, drugs, diseases, pathways, proteins, and more). Wires the local BioMCP MCP server.",
+      "version": "1.0.0",
+      "author": {
+        "name": "GenomOncology",
+        "email": "support@genomoncology.com"
+      },
+      "homepage": "https://biomcp.org",
+      "repository": "https://github.com/genomoncology/biomcp",
+      "license": "MIT",
+      "keywords": [
+        "bioinformatics",
+        "mcp",
+        "genomics",
+        "clinical-trials",
+        "pubmed"
+      ],
+      "mcpServers": {
+        "biomcp": {
+          "command": "biomcp",
+          "args": ["serve"]
+        }
+      }
+    }
+  ]
+}

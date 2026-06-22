@@ -47,6 +47,28 @@ uv tool install biomcp-cli
 
 This installs the `biomcp` binary on your PATH.
 
+### Claude Code plugin
+
+Install the `biomcp` binary first, then add the hosted plugin marketplace and
+install the BioMCP plugin in Claude Code:
+
+```text
+/plugin marketplace add genomoncology/biomcp
+/plugin install biomcp@biomcp
+```
+
+The plugin wires Claude Code to the local stdio MCP server with `biomcp serve`.
+For guided BioMCP workflows, also install the skill assets below.
+
+### Codex MCP server
+
+Install the `biomcp` binary first, then register the same stdio MCP server with
+Codex:
+
+```bash
+codex mcp add biomcp -- biomcp serve
+```
+
 ### Claude Desktop extension (.mcpb)
 
 Install BioMCP from the Anthropic Directory in Claude Desktop when that path is
