@@ -336,6 +336,10 @@ limiter budget:
 biomcp serve-http --host 0.0.0.0 --port 8080
 ```
 
+By default, `serve-http` accepts any HTTP `Host` header. Add
+`--allowed-hosts example.com,internal.example.com` when you want to restrict
+accepted Host header values.
+
 Remote clients should connect to `http://<host>:8080/mcp`. Lightweight process
 probes are available at `GET /health`, `GET /readyz`, and `GET /`.
 

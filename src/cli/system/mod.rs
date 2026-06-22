@@ -53,6 +53,9 @@ pub struct ServeHttpArgs {
     /// Port to listen on
     #[arg(long, default_value = "8080")]
     pub port: u16,
+    /// Host header values to allow (comma-separated). Empty = allow any host.
+    #[arg(long, value_delimiter = ',')]
+    pub allowed_hosts: Vec<String>,
 }
 
 #[derive(Args, Debug)]
