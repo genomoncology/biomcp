@@ -305,6 +305,7 @@ dependencies = [
  "async-trait",
  "axum 0.8.8",
  "base64 0.22.1",
+ "biomcp-mcp-contract-client",
  "bytesize",
  "cacache",
  "chrono",
@@ -355,6 +356,19 @@ dependencies = [
  "unpdf",
  "zip",
  "zstd 0.13.3",
+]
+
+[[package]]
+name = "biomcp-mcp-contract-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "reqwest 0.12.28",
+ "rmcp",
+ "serde_json",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
