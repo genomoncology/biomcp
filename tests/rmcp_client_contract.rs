@@ -1,8 +1,8 @@
 use biomcp_mcp_contract_client::{
     ContractHarness, assert_chart_calls, assert_explore_core_contract, assert_initialize_and_tools,
     assert_invalid_resource_error, assert_mcp_provenance_calls, assert_read_only_and_policy_calls,
-    assert_resource_inventory_and_reads, assert_version_call, provision_study_fixture,
-    start_ols4_stub, study_dir_from_fixture, terminate_process,
+    assert_resource_inventory_and_reads, assert_typed_tool_calls, assert_version_call,
+    provision_study_fixture, start_ols4_stub, study_dir_from_fixture, terminate_process,
 };
 
 fn harness() -> ContractHarness {
@@ -34,6 +34,7 @@ async fn rmcp_child_process_client_verifies_stdio_full_contract() -> anyhow::Res
     assert_resource_inventory_and_reads(&client, &harness.repo_root).await?;
     assert_read_only_and_policy_calls(&client).await?;
     assert_mcp_provenance_calls(&client).await?;
+    assert_typed_tool_calls(&client).await?;
     assert_invalid_resource_error(&client).await?;
 
     terminate_process(pid)?;
@@ -89,6 +90,7 @@ async fn rmcp_streamable_http_client_verifies_full_contract() -> anyhow::Result<
         assert_resource_inventory_and_reads(&client, &harness.repo_root).await?;
         assert_read_only_and_policy_calls(&client).await?;
         assert_mcp_provenance_calls(&client).await?;
+        assert_typed_tool_calls(&client).await?;
         assert_invalid_resource_error(&client).await?;
         client.cancel().await?;
         Ok::<(), anyhow::Error>(())

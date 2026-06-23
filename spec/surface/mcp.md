@@ -53,6 +53,30 @@ GET /health, GET /readyz, GET /.
 --allowed-hosts <ALLOWED_HOSTS>'
 ```
 
+## Typed Tool Schemas Are Advertised
+
+Agents should be able to choose typed MCP tools instead of composing one large
+shell command string. The tool surface keeps `biomcp` as an escape hatch, but
+also advertises typed `search` and `get` tools whose schemas expose entity,
+section, and limit constraints.
+
+```bash
+port=39091
+../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" >/tmp/biomcp-mcp-typed-tools.log 2>&1 &
+pid=$!
+trap 'kill "$pid" 2>/dev/null || true' EXIT
+for _ in $(seq 1 40); do
+  if curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null; then
+    break
+  fi
+  sleep 0.25
+done
+curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
+cargo run --quiet --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get
+search schema includes entity enum and bounded limit
+get schema includes entity and sections enum'
+```
+
 ## Probe Routes Stay Lightweight
 
 The HTTP surface is intentionally tiny: two readiness probes and one root

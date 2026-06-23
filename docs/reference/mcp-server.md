@@ -1,8 +1,8 @@
 # MCP Server Reference
 
-BioMCP exposes one execution tool (`biomcp`) and a current resource inventory
-centered on the help guide. This page documents the stable MCP contract and
-executes lightweight checks against the source tree.
+BioMCP exposes typed `search` and `get` tools plus the raw `biomcp` escape hatch,
+and a current resource inventory centered on the help guide. This page documents
+the stable MCP contract and executes lightweight checks against the source tree.
 
 ## Runtime Surface
 
@@ -40,6 +40,11 @@ The server must advertise both tools and resources.
 | `tools` | enabled |
 | `resources` | enabled |
 
+The tool list includes typed `search` and `get` entries whose schemas enumerate
+valid entity names, valid get section tokens, and the bounded search `limit`.
+The raw `biomcp` tool remains available for read-only commands outside the first
+typed slice.
+
 ```python
 from pathlib import Path
 
@@ -53,7 +58,8 @@ assert "enable_resources()" in shell
 
 The runtime `biomcp` description is generated from
 `src/cli/list_reference.md`, but the build step emits an MCP-safe read-only
-subset. That sanitized description keeps the catalog-only
+subset and tells agents to prefer the typed `search`/`get` tools before falling
+back to raw command strings. That sanitized description keeps the catalog-only
 `study download --list` form, but it must not advertise
 `study download <study_id>` or the combined CLI syntax
 `study download [--list] [<study_id>]`. CLI-only packaging or mutating
@@ -71,6 +77,8 @@ tests = (repo_root / "tests/rmcp_client_contract.rs").read_text()
 
 assert "MCP_SHELL_INTRO" in build
 assert "read-only biomedical MCP tool" in build
+assert "Prefer typed `search` and `get`" in build
+assert "raw `biomcp` as an escape hatch" in build
 assert "BLOCKED_MCP_DESCRIPTION_TERMS" in build
 assert "`skill install`" in build
 assert "`ema sync`" in build

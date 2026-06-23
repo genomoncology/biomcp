@@ -1,8 +1,10 @@
+use std::collections::BTreeSet;
 use std::future::Future;
 use std::time::Duration;
 
 use axum::{Json, Router, routing::get};
 use base64::Engine;
+use clap::CommandFactory;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
 use rmcp::model::{
     AnnotateAble, CallToolResult, Content, Implementation, ListResourcesResult,
@@ -33,6 +35,64 @@ struct ShellCommand {
     json: bool,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct TypedSearch {
+    #[schemars(transform = add_search_entity_enum)]
+    entity: String,
+    #[serde(default)]
+    query: Option<String>,
+    #[serde(default = "default_typed_limit")]
+    #[schemars(range(min = 1, max = 25))]
+    limit: usize,
+    #[serde(default)]
+    offset: usize,
+    #[serde(default)]
+    json: bool,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct TypedGet {
+    #[schemars(transform = add_get_entity_enum)]
+    entity: String,
+    id: String,
+    #[serde(default)]
+    sections: Vec<McpGetSection>,
+    #[serde(default)]
+    json: bool,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(transparent)]
+struct McpGetSection(#[schemars(transform = add_get_section_enum)] String);
+
+fn default_typed_limit() -> usize {
+    10
+}
+
+fn add_string_enum(schema: &mut schemars::Schema, values: &[String]) {
+    schema.insert(
+        "enum".to_string(),
+        Value::Array(
+            values
+                .iter()
+                .map(|value| Value::String(value.clone()))
+                .collect(),
+        ),
+    );
+}
+
+fn add_search_entity_enum(schema: &mut schemars::Schema) {
+    add_string_enum(schema, &subcommand_names("search"));
+}
+
+fn add_get_entity_enum(schema: &mut schemars::Schema) {
+    add_string_enum(schema, &subcommand_names("get"));
+}
+
+fn add_get_section_enum(schema: &mut schemars::Schema) {
+    add_string_enum(schema, &all_get_sections());
+}
+
 const RESOURCE_HELP_URI: &str = "biomcp://help";
 const GENERIC_MCP_REJECTION_MESSAGE: &str = "Error: BioMCP allows read-only commands only. Allowed families are search/get/helpers/list/version/health/batch/enrich/discover/suggest/skill plus MCP-safe study commands (`study list`, `study download --list`, `study top-mutated`, `study query`, `study filter`, `study cohort`, `study survival`, `study compare`, `study co-occurrence`).";
 const CACHE_FAMILY_MCP_REJECTION_MESSAGE: &str = "Error: biomcp cache commands are CLI-only over MCP because they reveal workstation-local filesystem paths.";
@@ -46,6 +106,25 @@ impl BioMcpServer {
 
     fn tool_error(message: impl Into<String>) -> CallToolResult {
         CallToolResult::error(vec![Content::text(message.into())])
+    }
+
+    async fn execute_args(args: Vec<String>, json: bool) -> Result<CallToolResult, McpError> {
+        match crate::cli::execute_mcp(args.clone()).await {
+            Ok(output) => {
+                let text = if json {
+                    output.text
+                } else {
+                    append_default_mcp_footer(output.text, &args).await
+                };
+                let mut content = vec![Content::text(text)];
+                if let Some(svg) = output.svg {
+                    let encoded = base64::engine::general_purpose::STANDARD.encode(svg.as_bytes());
+                    content.push(Content::image(encoded, "image/svg+xml"));
+                }
+                Ok(CallToolResult::success(content))
+            }
+            Err(err) => Ok(Self::tool_error(format!("Error: {err}"))),
+        }
     }
 }
 
@@ -112,6 +191,118 @@ fn args_with_json(args: &[String]) -> Vec<String> {
         with_json.push("--json".to_string());
     }
     with_json
+}
+
+fn get_section_groups() -> &'static [&'static [&'static str]] {
+    &[
+        crate::entities::gene::GENE_SECTION_NAMES,
+        crate::entities::article::ARTICLE_SECTION_NAMES,
+        crate::entities::disease::DISEASE_SECTION_NAMES,
+        crate::entities::diagnostic::DIAGNOSTIC_SECTION_NAMES,
+        crate::entities::pgx::PGX_SECTION_NAMES,
+        crate::entities::trial::TRIAL_SECTION_NAMES,
+        crate::entities::variant::VARIANT_SECTION_NAMES,
+        crate::entities::drug::DRUG_SECTION_NAMES,
+        crate::entities::pathway::PATHWAY_SECTION_NAMES,
+        crate::entities::protein::PROTEIN_SECTION_NAMES,
+        crate::entities::adverse_event::ADVERSE_EVENT_SECTION_NAMES,
+    ]
+}
+
+fn subcommand_names(name: &str) -> Vec<String> {
+    crate::cli::Cli::command()
+        .find_subcommand(name)
+        .expect("top-level subcommand exists")
+        .get_subcommands()
+        .map(|cmd| cmd.get_name().to_string())
+        .collect()
+}
+
+fn all_get_sections() -> Vec<String> {
+    get_section_groups()
+        .iter()
+        .flat_map(|group| group.iter().copied())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .map(str::to_string)
+        .collect()
+}
+
+fn normalize_token(raw: &str, allowed: &[String], field: &str) -> Result<String, McpError> {
+    let token = raw.trim();
+    if allowed.iter().any(|allowed| allowed == token) {
+        Ok(token.to_string())
+    } else {
+        Err(McpError::invalid_params(
+            format!(
+                "invalid {field}: {token}; allowed values: {}",
+                allowed.join(", ")
+            ),
+            None,
+        ))
+    }
+}
+
+fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
+    let search_entities = subcommand_names("search");
+    let entity = normalize_token(&input.entity, &search_entities, "search entity")?;
+    if input.limit == 0 || input.limit > 25 {
+        return Err(McpError::invalid_params(
+            "invalid limit: typed search limit must be between 1 and 25",
+            None,
+        ));
+    }
+
+    let mut args = vec![
+        "biomcp".to_string(),
+        "search".to_string(),
+        entity.to_string(),
+    ];
+    if let Some(query) = input
+        .query
+        .as_deref()
+        .map(str::trim)
+        .filter(|q| !q.is_empty())
+    {
+        match entity.as_str() {
+            "article" => args.extend(["--keyword".to_string(), query.to_string()]),
+            "diagnostic" | "gwas" | "pgx" => {
+                args.extend(["--gene".to_string(), query.to_string()]);
+            }
+            "trial" => args.extend(["--condition".to_string(), query.to_string()]),
+            "all" => args.extend(["--keyword".to_string(), query.to_string()]),
+            _ => args.push(query.to_string()),
+        }
+    }
+    args.extend(["--limit".to_string(), input.limit.to_string()]);
+    if input.offset > 0 {
+        args.extend(["--offset".to_string(), input.offset.to_string()]);
+    }
+    if input.json {
+        args = args_with_json(&args);
+    }
+    Ok(args)
+}
+
+fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
+    let get_entities = subcommand_names("get");
+    let entity = normalize_token(&input.entity, &get_entities, "get entity")?;
+    let allowed_sections = all_get_sections();
+    for section in &input.sections {
+        normalize_token(&section.0, &allowed_sections, "get section")?;
+    }
+
+    let mut args = vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        entity.to_string(),
+        input.id,
+    ];
+    args.extend(input.sections.into_iter().map(|section| section.0));
+    if input.json {
+        args = args_with_json(&args);
+    }
+    Ok(args)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -263,22 +454,29 @@ impl BioMcpServer {
             args = args_with_json(&args);
         }
 
-        match crate::cli::execute_mcp(args.clone()).await {
-            Ok(output) => {
-                let text = if json {
-                    output.text
-                } else {
-                    append_default_mcp_footer(output.text, &args).await
-                };
-                let mut content = vec![Content::text(text)];
-                if let Some(svg) = output.svg {
-                    let encoded = base64::engine::general_purpose::STANDARD.encode(svg.as_bytes());
-                    content.push(Content::image(encoded, "image/svg+xml"));
-                }
-                Ok(CallToolResult::success(content))
-            }
-            Err(err) => Ok(Self::tool_error(format!("Error: {err}"))),
-        }
+        Self::execute_args(args, json).await
+    }
+
+    /// Search a biomedical entity with typed MCP parameters instead of a shell command string.
+    #[tool(annotations(title = "BioMCP typed search", read_only_hint = true))]
+    async fn search(
+        &self,
+        Parameters(input): Parameters<TypedSearch>,
+    ) -> Result<CallToolResult, McpError> {
+        let json = input.json;
+        let args = search_args(input)?;
+        Self::execute_args(args, json).await
+    }
+
+    /// Get one biomedical entity record with typed entity, id, and section parameters.
+    #[tool(annotations(title = "BioMCP typed get", read_only_hint = true))]
+    async fn get(
+        &self,
+        Parameters(input): Parameters<TypedGet>,
+    ) -> Result<CallToolResult, McpError> {
+        let json = input.json;
+        let args = get_args(input)?;
+        Self::execute_args(args, json).await
     }
 }
 
@@ -296,7 +494,7 @@ impl ServerHandler for BioMcpServer {
             "BioMCP provides biomedical data from leading public biomedical data sources \
              (PubMed, ClinicalTrials.gov, ClinVar, gnomAD, OncoKB, Reactome, UniProt, \
              PharmGKB, OpenFDA, and more). \
-             Use the `biomcp` tool to run BioMCP CLI commands. \
+             Prefer the typed `search` and `get` tools for structured entity lookup; use the raw `biomcp` command tool as an escape hatch for long-tail commands. \
              Start with `biomcp suggest \"<question>\"` when you need the right playbook, \
              `biomcp list` for a command reference, \
              or `biomcp skill` for guided investigation workflows."
@@ -483,12 +681,80 @@ pub async fn run_http(host: &str, port: u16, allowed_hosts: Vec<String>) -> anyh
 
 #[cfg(test)]
 mod tests {
-    use axum::Json;
+    use std::collections::BTreeSet;
 
     use super::{
-        CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, index_handler,
-        is_allowed_mcp_command, mcp_rejection_message,
+        CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet, TypedSearch,
+        all_get_sections, get_args, get_section_groups, index_handler, is_allowed_mcp_command,
+        mcp_rejection_message, search_args, subcommand_names,
     };
+    use axum::Json;
+
+    fn section_names_from_sources() -> BTreeSet<&'static str> {
+        get_section_groups()
+            .iter()
+            .flat_map(|group| group.iter().copied())
+            .collect()
+    }
+
+    #[test]
+    fn typed_schema_sources_match_cli_entities_and_sections() {
+        assert!(subcommand_names("search").contains(&"pathway".to_string()));
+        assert!(subcommand_names("get").contains(&"gene".to_string()));
+        assert_eq!(
+            all_get_sections().into_iter().collect::<BTreeSet<String>>(),
+            section_names_from_sources()
+                .into_iter()
+                .map(str::to_string)
+                .collect::<BTreeSet<String>>()
+        );
+    }
+
+    #[test]
+    fn typed_search_and_get_build_cli_args() {
+        let search = search_args(TypedSearch {
+            entity: "pathway".to_string(),
+            query: Some("MAPK signaling".to_string()),
+            limit: 5,
+            offset: 0,
+            json: true,
+        })
+        .expect("typed search args");
+        assert_eq!(
+            search,
+            [
+                "biomcp",
+                "search",
+                "pathway",
+                "MAPK signaling",
+                "--limit",
+                "5",
+                "--json"
+            ]
+        );
+
+        let get = get_args(TypedGet {
+            entity: "gene".to_string(),
+            id: "BRAF".to_string(),
+            sections: vec![super::McpGetSection("pathways".to_string())],
+            json: false,
+        })
+        .expect("typed get args");
+        assert_eq!(get, ["biomcp", "get", "gene", "BRAF", "pathways"]);
+    }
+
+    #[test]
+    fn typed_search_rejects_out_of_schema_limit_before_cli_dispatch() {
+        let err = search_args(TypedSearch {
+            entity: "pathway".to_string(),
+            query: Some("MAPK".to_string()),
+            limit: 50,
+            offset: 0,
+            json: false,
+        })
+        .expect_err("limit over schema cap should be invalid params");
+        assert!(err.message.contains("typed search limit"));
+    }
 
     #[test]
     fn mcp_allowlist_blocks_mutating_commands() {
