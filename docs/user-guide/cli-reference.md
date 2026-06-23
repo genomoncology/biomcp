@@ -424,6 +424,7 @@ biomcp get trial NCT02576665 all
 
 ```bash
 biomcp get variant "BRAF V600E"
+biomcp get variant NM_004333.6:c.1799T>A
 biomcp get variant "BRAF V600E" predict
 biomcp get variant rs7903146 gwas
 ```

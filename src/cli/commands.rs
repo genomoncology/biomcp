@@ -536,12 +536,13 @@ Supported section tokens: eligibility, contacts, locations, outcomes, arms, refe
 
 See also: biomcp list trial")]
     Trial(trial::TrialGetArgs),
-    /// Get variant by exact rsID, HGVS, or "GENE CHANGE" (e.g., "BRAF V600E" or "BRAF p.Val600Glu")
+    /// Get variant by exact rsID, genomic/transcript HGVS, or "GENE CHANGE" (e.g., "BRAF V600E" or "BRAF p.Val600Glu")
     #[command(after_help = "\
 EXAMPLES:
   biomcp get variant rs113488022
   biomcp get variant \"BRAF V600E\" clinvar
   biomcp get variant \"BRAF p.Val600Glu\"
+  biomcp get variant NM_004333.6:c.1799T>A
 
 Shorthand like \"PTPN22 620W\" or \"R620W\" should go through `biomcp search variant`.
 

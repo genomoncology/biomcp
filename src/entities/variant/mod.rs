@@ -25,6 +25,7 @@ pub use self::resolution::{
 #[allow(unused_imports)]
 pub use self::search::{search, search_page, search_query_summary};
 
+pub(crate) use self::normalization::transcript_coding_hgvs_re;
 pub(crate) use self::resolution::{gnomad_variant_slug, normalize_protein_change};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -294,6 +295,7 @@ pub enum VariantShorthand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VariantInputKind {
     Exact(VariantIdFormat),
+    TranscriptCodingHgvs(String),
     Shorthand(VariantShorthand),
     Unsupported,
 }

@@ -19,7 +19,9 @@ use super::gwas::add_gwas_section;
 use super::gwas::mark_gwas_unavailable;
 use super::resolution::{hgvs_coords_re, parse_variant_id};
 use super::{
-    TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat, VariantOncoKbResult,
+    TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat, VariantInputKind,
+    VariantNormalizationResponse, VariantNormalizationStatus, VariantOncoKbResult,
+    classify_variant_input, normalize_variant,
 };
 
 const VARIANT_SECTION_PREDICT: &str = "predict";
@@ -218,6 +220,80 @@ fn therapies_from_oncokb(annotation: &OncoKBAnnotation) -> Vec<TreatmentImplicat
     implications
 }
 
+fn normalized_genomic_hgvs_for_get(candidate: &str) -> Option<String> {
+    if matches!(
+        parse_variant_id(candidate),
+        Ok(VariantIdFormat::HgvsGenomic(_))
+    ) {
+        return Some(candidate.to_string());
+    }
+
+    let (accession, suffix) = candidate.split_once(":g.")?;
+    let digits = accession
+        .strip_prefix("NC_")?
+        .split_once('.')?
+        .0
+        .parse::<u32>()
+        .ok()?;
+    let chromosome = match digits {
+        1..=22 => digits.to_string(),
+        23 => "X".to_string(),
+        24 => "Y".to_string(),
+        _ if accession.starts_with("NC_012920.") => "M".to_string(),
+        _ => return None,
+    };
+    let hgvs = format!("chr{chromosome}:g.{suffix}");
+    matches!(parse_variant_id(&hgvs), Ok(VariantIdFormat::HgvsGenomic(_))).then_some(hgvs)
+}
+
+fn transcript_hgvs_normalization_error(
+    id: &str,
+    response: Option<&VariantNormalizationResponse>,
+) -> BioMcpError {
+    let detail = response
+        .and_then(|response| {
+            response
+                .services
+                .iter()
+                .find_map(|service| service.message.as_deref())
+        })
+        .filter(|message| !message.trim().is_empty())
+        .map(|message| format!(" Normalization reported: {message}"))
+        .unwrap_or_default();
+
+    BioMcpError::InvalidArgument(format!(
+        "Could not normalize transcript HGVS for `get variant`: '{id}'.{detail}\n\n\
+Try first: biomcp variant normalize all {id}"
+    ))
+}
+
+pub(crate) fn normalized_get_variant_id(
+    response: &VariantNormalizationResponse,
+) -> Result<String, BioMcpError> {
+    response
+        .services
+        .iter()
+        .filter(|service| service.status == VariantNormalizationStatus::Success)
+        .flat_map(|service| service.genomic_descriptions.iter())
+        .find_map(|candidate| normalized_genomic_hgvs_for_get(candidate))
+        .ok_or_else(|| transcript_hgvs_normalization_error(&response.input, Some(response)))
+}
+
+fn transcript_hgvs_clinvar_query(id: &str) -> String {
+    format!(
+        "clinvar.hgvs.coding:\"{}\"",
+        MyVariantClient::escape_query_value(id)
+    )
+}
+
+async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, BioMcpError> {
+    let response = normalize_variant("all", id)
+        .await
+        .map_err(|_| transcript_hgvs_normalization_error(id, None))?;
+    let normalized_id = normalized_get_variant_id(&response)?;
+    parse_variant_id(&normalized_id)
+}
+
 async fn resolve_base(id: &str) -> Result<(Variant, VariantIdFormat), BioMcpError> {
     let id = id.trim();
     if id.is_empty() {
@@ -226,11 +302,32 @@ async fn resolve_base(id: &str) -> Result<(Variant, VariantIdFormat), BioMcpErro
         ));
     }
 
-    let id_format = parse_variant_id(id)?;
+    let input_kind = classify_variant_input(id);
+    let id_format = match input_kind {
+        VariantInputKind::TranscriptCodingHgvs(_) => normalize_transcript_hgvs_for_get(id).await?,
+        _ => parse_variant_id(id)?,
+    };
 
     let myvariant = MyVariantClient::new()?;
     let hit = match &id_format {
-        VariantIdFormat::HgvsGenomic(hgvs) => myvariant.get(hgvs).await?,
+        VariantIdFormat::HgvsGenomic(hgvs) => {
+            let direct = myvariant.get(hgvs).await;
+            if matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_)) && direct.is_err() {
+                let q = transcript_hgvs_clinvar_query(id);
+                let resp = myvariant
+                    .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
+                    .await?;
+                best_hit(&resp.hits)
+                    .cloned()
+                    .ok_or_else(|| BioMcpError::NotFound {
+                        entity: "variant".into(),
+                        id: id.to_string(),
+                        suggestion: format!("Try first: biomcp variant normalize all {id}"),
+                    })?
+            } else {
+                direct?
+            }
+        }
         VariantIdFormat::RsId(rsid) => {
             let q = format!("dbsnp.rsid:{rsid}");
             let resp = myvariant

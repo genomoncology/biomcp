@@ -57,6 +57,7 @@ biomcp get gene BRAF civic interactions   # + multiple sections
 biomcp get gene BRAF all                  # everything
 
 biomcp get variant "BRAF V600E" clinvar population conservation
+biomcp get variant NM_004333.6:c.1799T>A
 biomcp get article 22663011 tldr
 biomcp --json get article <id> assets
 biomcp get article <id> asset <name>
