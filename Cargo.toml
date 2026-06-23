@@ -107,6 +107,7 @@ default = []
 charts-png = ["kuva/png"]
 
 [dev-dependencies]
+biomcp-mcp-contract-client = { path = "crates/biomcp-mcp-contract-client" }
 serial_test = "3"
 tempfile = "3"
 

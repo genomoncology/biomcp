@@ -594,7 +594,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "`climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`)" in technical
     assert (
         "`contracts` (`cargo build --release --locked`, `uv sync --extra dev --no-install-project`, "
-        '`uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, '
+        '`uv run --no-sync pytest tests/ -v`, '
         "`uv run --no-sync mkdocs build --strict`)" in technical_ws
     )
     assert (
@@ -1069,13 +1069,13 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     expected_ci_contract_runs = [
         "cargo build --release --locked",
         "uv sync --extra dev --no-install-project",
-        'uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"',
+        'uv run --no-sync pytest tests/ -v',
         "uv run --no-sync mkdocs build --strict",
     ]
     expected_release_contract_runs = [
         "cargo build --release --locked",
         "uv sync --extra dev --no-install-project",
-        'uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"',
+        'uv run --no-sync pytest tests/ -v',
         "uv run --no-sync mkdocs build --strict",
     ]
 
@@ -1233,8 +1233,8 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "sync_python_dev" not in runner
     assert "uv run --no-sync pytest" not in runner
     assert "run_python_contracts" not in runner
-    assert "prepare_mcp_markdown_deps()" in runner
-    assert "uv sync --extra dev --no-install-project" in runner
+    assert "prepare_mcp_markdown_deps()" not in runner
+    assert "uv sync --extra dev --no-install-project" not in runner
     assert 'verify) default_biomcp_bin="$ROOT/target/release/biomcp"' in runner
     assert '*) default_biomcp_bin="$ROOT/target/spec/biomcp"' in runner
     assert 'BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"' in runner
@@ -1248,7 +1248,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         r"^test-contracts:\n"
         r"\tcargo build --release --locked\n"
         r"\t\$\(MAKE\) sync-python-dev\n"
-        r'\tuv run --no-sync pytest tests/ -v --mcp-cmd "\./target/release/biomcp serve"\n'
+        r'\tuv run --no-sync pytest tests/ -v\n'
         r"\tuv run --no-sync mkdocs build --strict$",
         makefile,
         flags=re.MULTILINE,
@@ -1446,7 +1446,7 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "./scripts/contract-smoke.sh --fast" in staging_demo
     assert "uv sync --extra dev --no-install-project" in staging_demo
     assert (
-        'uv run --no-sync pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"'
+        'cargo nextest run --test rmcp_client_contract'
         in staging_demo
     )
     assert "ONCOKB_TOKEN" in staging_demo
@@ -1458,7 +1458,7 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "GET /health" in staging_demo
     assert "GET /readyz" in staging_demo
     assert "GET /" in staging_demo
-    assert "tests/test_mcp_http_transport.py" in staging_demo
+    assert "tests/rmcp_client_contract.rs" in staging_demo
     assert "S2_API_KEY" in staging_demo
     assert "article citations 22663011 --limit 3" in staging_demo
 
@@ -1468,21 +1468,21 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "./target/release/biomcp serve-http --host 127.0.0.1 --port 8080" in runbook
     assert "uv sync --extra dev --no-install-project" in runbook
     assert (
-        'uv run --no-sync pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"'
+        'cargo nextest run --test rmcp_client_contract'
         in runbook
     )
     assert "curl http://127.0.0.1:8080/health" in runbook
     assert "curl http://127.0.0.1:8080/readyz" in runbook
     assert "curl http://127.0.0.1:8080/" in runbook
     assert "tests/test_mcp_http_surface.py" in runbook
-    assert "tests/test_mcp_http_transport.py" in runbook
+    assert "tests/rmcp_client_contract.rs" in runbook
     assert "make spec" in runbook
     assert "make test-contracts" in runbook
     assert "S2_API_KEY" in runbook
     assert "./target/release/biomcp article citations 22663011 --limit 3" in runbook
     assert (
         "`make test-contracts` runs `cargo build --release --locked`, "
-        '`uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, '
+        '`uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, '
         "and `uv run --no-sync mkdocs build --strict` - the same Python/docs steps that `make test` and PR CI `contracts` require."
         in runbook
     )

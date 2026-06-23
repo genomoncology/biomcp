@@ -139,7 +139,7 @@ to rerun just the Python/docs contract lane. Repo-root Ruff still runs through
 scratch experiment scripts do not block the production Python lint gate. Use
 `git commit --no-verify` to skip the hook for a one-off commit.
 
-`make test-contracts` runs `cargo build --release --locked`, `uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`, and `uv run --no-sync mkdocs build --strict` - the same Python/docs steps that `make test` and PR CI `contracts` require. The `--no-install-project`/`--no-sync` split is intentional: Python/docs lanes install only Python dev tooling and exercise the already-built `target/release/biomcp` binary instead of rebuilding the maturin package into `.venv`. `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
+`make test-contracts` runs `cargo build --release --locked`, `uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, and `uv run --no-sync mkdocs build --strict` - the same Python/docs steps that `make test` and PR CI `contracts` require. The `--no-install-project`/`--no-sync` split is intentional: Python/docs lanes install only Python dev tooling and exercise the already-built `target/release/biomcp` binary instead of rebuilding the maturin package into `.venv`. `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
 
 ## Smoke Checks
 
@@ -156,10 +156,11 @@ Use `architecture/technical/staging-demo.md` for the promotion contract and
 
 ## MCP Contract Verification
 
+The protocol-level stdio and Streamable HTTP assertions live in `tests/rmcp_client_contract.rs`; route-only HTTP checks live in `tests/test_mcp_http_surface.py`.
+
 ```bash
-uv sync --extra dev --no-install-project
-uv run --no-sync pytest tests/test_mcp_contract.py -v --mcp-cmd "./target/release/biomcp serve"
-uv run --no-sync pytest tests/test_mcp_http_surface.py tests/test_mcp_http_transport.py -v
+cargo nextest run --test rmcp_client_contract
+uv run --no-sync pytest tests/test_mcp_http_surface.py -v
 curl http://127.0.0.1:8080/health
 curl http://127.0.0.1:8080/readyz
 curl http://127.0.0.1:8080/

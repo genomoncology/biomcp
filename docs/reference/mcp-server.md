@@ -67,7 +67,7 @@ from pathlib import Path
 
 repo_root = Path.cwd()
 build = (repo_root / "build.rs").read_text()
-tests = (repo_root / "tests/test_mcp_contract.py").read_text()
+tests = (repo_root / "tests/rmcp_client_contract.rs").read_text()
 
 assert "MCP_SHELL_INTRO" in build
 assert "read-only biomedical MCP tool" in build
@@ -82,12 +82,12 @@ assert "`update [--check]`" in build
 assert "`uninstall`" in build
 assert "study download --list" in build
 assert "study download [--list] [<study_id>]" in build
-assert 'assert "study download --list" in description' in tests
-assert 'assert "study download [--list] [<study_id>]" not in description' in tests
-assert 'assert "who-ivd sync" not in description' in tests
-assert 'test_cache_stats_is_rejected_in_mcp_mode' in tests
-assert 'test_cache_clean_is_rejected_in_mcp_mode' in tests
-assert 'test_cache_clear_is_rejected_in_mcp_mode' in tests
+assert 'assert!(description.contains("study download --list"))' in tests
+assert '"study download [--list] [<study_id>]"' in tests
+assert '"who-ivd sync"' in tests
+assert '"biomcp cache stats"' in tests
+assert '"biomcp cache clean"' in tests
+assert '"biomcp cache clear"' in tests
 ```
 
 ## Tool Response Content
@@ -148,7 +148,7 @@ from pathlib import Path
 
 repo_root = Path.cwd()
 shell = (repo_root / "src/mcp/shell.rs").read_text()
-tests = (repo_root / "tests/test_mcp_contract.py").read_text()
+tests = (repo_root / "tests/rmcp_client_contract.rs").read_text()
 assert '"suggest" => true' in shell or '| "suggest" => true' in shell
 assert '"discover" => true' in shell or '| "discover" => true' in shell
 assert '"study" => {' in shell
@@ -157,18 +157,18 @@ assert "suggest/discover/skill" in shell or "suggest/discover/skill)." in shell
 assert 'matches!(sub.as_str(), "list" | "render")' in shell
 assert "show_use_case(&sub).is_ok()" in shell
 assert "!matches!(sub.as_str()" not in shell
-assert 'test_biomcp_suggest_is_allowed_in_mcp_mode' in tests
-assert 'test_skill_list_is_allowed_in_mcp_mode' in tests
-assert 'test_unknown_skill_subcommand_is_rejected_in_mcp_mode' in tests
-assert 'test_skill_install_is_rejected_in_mcp_mode' in tests
-assert 'assert "study download --list" in description' in tests
-assert 'test_mutating_study_download_is_rejected_in_mcp_mode' in tests
-assert 'test_gtr_sync_is_rejected_in_mcp_mode' in tests
-assert 'test_who_ivd_sync_is_rejected_in_mcp_mode' in tests
-assert '"BioMCP allows read-only commands only" in result.content[0].text' in tests
-assert 'test_cache_path_is_rejected_in_mcp_mode' in tests
-assert '"CLI-only over MCP" in result.content[0].text' in tests
-assert '"workstation-local filesystem paths" in result.content[0].text' in tests
+assert 'biomcp suggest \\"What drugs treat melanoma?\\"' in tests
+assert 'biomcp skill list' in tests
+assert 'biomcp skill sync' in tests
+assert 'biomcp skill install /tmp/biomcp-skills' in tests
+assert 'assert!(description.contains("study download --list"))' in tests
+assert 'biomcp study download msk_impact_2017' in tests
+assert 'biomcp gtr sync' in tests
+assert 'biomcp who-ivd sync' in tests
+assert 'READ_ONLY_MESSAGE' in tests
+assert 'biomcp cache path' in tests
+assert 'CACHE_CLI_ONLY_MESSAGE' in tests
+assert 'CACHE_FILESYSTEM_MESSAGE' in tests
 ```
 
 ## Resource Catalog
@@ -209,10 +209,11 @@ from pathlib import Path
 repo_root = Path.cwd()
 shell = (repo_root / "src/mcp/shell.rs").read_text()
 outcome = (repo_root / "src/cli/outcome.rs").read_text()
-tests = (repo_root / "tests/test_mcp_contract.py").read_text()
+tests = (repo_root / "tests/rmcp_client_contract.rs").read_text()
 assert "show_overview()" in shell
 assert "render_system_prompt()" in outcome
-assert "test_skill_render_matches_help_resource_body" in tests
+assert "assert_resource_inventory_and_reads" in tests
+assert "assert_read_only_and_policy_calls" in tests
 assert 'if let Some(slug) = uri.strip_prefix("biomcp://skill/")' in shell
 assert "show_use_case(slug)" in shell
 assert 'with_mime_type("text/markdown")' in shell
@@ -233,12 +234,12 @@ assert "Unknown resource:" in shell
 
 ## Companion Runtime Tests
 
-Protocol-level checks are implemented in Python integration tests:
+Protocol-level checks are implemented in Rust rmcp integration tests plus HTTP surface pytest checks:
 
 - `tests/conftest.py`
-- `tests/test_mcp_contract.py`
+- `tests/rmcp_client_contract.rs`
 - `tests/test_mcp_http_surface.py`
-- `tests/test_mcp_http_transport.py`
+- `examples/rmcp_streamable_http_contract.rs`
 
 These tests validate both transport modes:
 
@@ -254,7 +255,7 @@ from pathlib import Path
 
 repo_root = Path.cwd()
 assert (repo_root / "tests/conftest.py").exists()
-assert (repo_root / "tests/test_mcp_contract.py").exists()
+assert (repo_root / "tests/rmcp_client_contract.rs").exists()
 assert (repo_root / "tests/test_mcp_http_surface.py").exists()
-assert (repo_root / "tests/test_mcp_http_transport.py").exists()
+assert (repo_root / "examples/rmcp_streamable_http_contract.rs").exists()
 ```
