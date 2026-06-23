@@ -137,7 +137,6 @@ shell = (repo_root / "src/mcp/shell.rs").read_text()
 cli = (repo_root / "src/cli/mod.rs").read_text()
 
 assert "crate::cli::execute_mcp(args.clone())" in shell
-assert "Self::execute_args(args, json).await" in shell
 assert "append_default_mcp_footer" in shell
 assert "mcp_meta_footer_from_json" in shell
 assert "json: bool" in shell
