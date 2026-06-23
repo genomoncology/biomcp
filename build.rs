@@ -70,7 +70,7 @@ fn write_shell_description() -> Result<(), Box<dyn std::error::Error>> {
     description.push_str(MCP_SHELL_INTRO);
     description.push_str(list_reference.trim());
     description.push_str(
-        "\n\nSEARCH FILTERS:\n  Use `biomcp list <entity>` for entity-specific filters and examples.\n  Trial geo filters include --lat, --lon, and --distance.\n\nAGENT GUIDANCE:\n  Use biomedical synonyms and abbreviations (for example NSCLC -> non-small cell lung cancer).\n  If zero results are returned, retry with nearby terms, aliases, or alternate spellings.\n",
+        "\n\nSEARCH FILTERS:\n  Use `biomcp list <entity>` for entity-specific filters and examples.\n  Trial geo filters include --lat, --lon, and --distance.\n\nMCP RESPONSE METADATA:\n  Default text responses append compact `Sources` and `Next commands` sections when upstream provenance is available.\n  Pass tool input `json: true` to return the CLI JSON contract with full `_meta.section_sources`, `_meta.evidence_urls`, `_meta.next_commands`, and `_meta.ladder`.\n\nAGENT GUIDANCE:\n  Use biomedical synonyms and abbreviations (for example NSCLC -> non-small cell lung cancer).\n  If zero results are returned, retry with nearby terms, aliases, or alternate spellings.\n",
     );
 
     let out_dir = PathBuf::from(std::env::var("OUT_DIR")?);

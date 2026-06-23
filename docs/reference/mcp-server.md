@@ -92,7 +92,14 @@ assert '"biomcp cache clear"' in tests
 
 ## Tool Response Content
 
-The `biomcp` tool keeps non-chart calls text-only. In MCP mode, charted `study`
+By default, the `biomcp` tool keeps non-chart calls as readable text and appends compact provenance when the CLI JSON path exposes it:
+
+- `## Sources` rolls up `_meta.section_sources` per section, using the same upstream source labels as CLI JSON.
+- `## Next commands` rolls up `_meta.next_commands` as copyable follow-up commands.
+
+Agents that need the full structured contract can pass the tool input field `json: true`; BioMCP injects `--json` and returns CLI JSON text with `_meta.section_sources`, `_meta.evidence_urls`, `_meta.next_commands`, and `_meta.ladder`.
+
+In MCP mode, charted `study`
 commands return two success content blocks in order:
 
 - `text` with the normal markdown/table output
@@ -108,7 +115,7 @@ Alias fallback is the main exception to the usual CLI stderr contract: failed
  can apply their own retry policy without parsing markdown.
 
 Workflow ladders do not add MCP resources. MCP callers that execute BioMCP
-commands with `--json` receive the same CLI JSON contract, so first-call
+commands with `--json`, or pass tool input `json: true`, receive the same CLI JSON contract, so first-call
 responses can include `_meta.workflow` and `_meta.ladder[]` when a sidecar-backed
 ladder trigger matches. `_meta.next_commands` remains the dynamic one-hop
 follow-up list; `_meta.ladder[]` is the static multi-step worked example loaded
@@ -121,7 +128,10 @@ repo_root = Path.cwd()
 shell = (repo_root / "src/mcp/shell.rs").read_text()
 cli = (repo_root / "src/cli/mod.rs").read_text()
 
-assert "crate::cli::execute_mcp(args)" in shell
+assert "crate::cli::execute_mcp(args.clone())" in shell
+assert "append_default_mcp_footer" in shell
+assert "mcp_meta_footer_from_json" in shell
+assert "json: bool" in shell
 assert "CallToolResult::success" in shell
 assert 'Content::image(encoded, "image/svg+xml")' in shell
 assert "MCP chart responses do not support --output/-o" in cli

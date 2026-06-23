@@ -94,6 +94,21 @@ where
         .await?)
 }
 
+pub async fn call_biomcp_json<T>(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
+    command: &str,
+) -> anyhow::Result<rmcp::model::CallToolResult>
+where
+    T: rmcp::Service<rmcp::RoleClient>,
+{
+    let mut arguments = tool_arguments(command);
+    arguments.insert("json".to_string(), json!(true));
+    Ok(client
+        .peer()
+        .call_tool(CallToolRequestParams::new("biomcp").with_arguments(arguments))
+        .await?)
+}
+
 fn expected_skill_resources(
     repo_root: impl AsRef<std::path::Path>,
 ) -> anyhow::Result<Vec<(String, String)>> {
@@ -230,6 +245,9 @@ where
     assert!(description.contains("leading public biomedical data sources"));
     assert!(!description.contains("15 biomedical sources"));
     assert!(description.contains("SEARCH FILTERS:"));
+    assert!(description.contains("MCP RESPONSE METADATA:"));
+    assert!(description.contains("json: true"));
+    assert!(description.contains("_meta.section_sources"));
     assert!(description.contains("AGENT GUIDANCE:"));
     assert!(description.contains("biomcp list"));
     for forbidden in [
@@ -465,6 +483,58 @@ where
         assert!(text.contains(CACHE_CLI_ONLY_MESSAGE));
         assert!(text.contains(CACHE_FILESYSTEM_MESSAGE));
     }
+
+    Ok(())
+}
+
+pub async fn assert_mcp_provenance_calls<T>(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
+) -> anyhow::Result<()>
+where
+    T: rmcp::Service<rmcp::RoleClient>,
+{
+    let default_call = call_biomcp(client, "biomcp discover BRCA1").await?;
+    assert_eq!(default_call.is_error, Some(false));
+    let default_text = first_text(&default_call.content);
+    assert!(
+        default_text.contains("## Sources"),
+        "default MCP text lacked Sources footer: {default_text}"
+    );
+    assert!(
+        default_text.contains("Structured Concepts") && default_text.contains("OLS4"),
+        "default MCP text lacked upstream resolver attribution: {default_text}"
+    );
+    assert!(
+        default_text.contains("## Next commands") && default_text.contains("biomcp get gene BRCA1"),
+        "default MCP text lacked next-command hints: {default_text}"
+    );
+
+    let json_call = call_biomcp_json(client, "biomcp discover BRCA1").await?;
+    assert_eq!(json_call.is_error, Some(false));
+    let value: serde_json::Value = serde_json::from_str(first_text(&json_call.content))?;
+    assert!(
+        value["_meta"]["section_sources"]
+            .as_array()
+            .is_some_and(|items| !items.is_empty()),
+        "json:true response lacked _meta.section_sources: {value}"
+    );
+    assert!(
+        value["_meta"]["next_commands"]
+            .as_array()
+            .is_some_and(|items| !items.is_empty()),
+        "json:true response lacked _meta.next_commands: {value}"
+    );
+    assert!(
+        value["_meta"]["evidence_urls"]
+            .as_array()
+            .is_some_and(|items| !items.is_empty()),
+        "json:true response lacked _meta.evidence_urls: {value}"
+    );
+
+    let command_json = call_biomcp(client, "biomcp discover BRCA1 --json").await?;
+    assert_eq!(command_json.is_error, Some(false));
+    let command_value: serde_json::Value = serde_json::from_str(first_text(&command_json.content))?;
+    assert!(command_value["_meta"]["section_sources"].is_array());
 
     Ok(())
 }
