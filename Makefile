@@ -40,7 +40,7 @@ test:
 test-contracts:
 	cargo build --release --locked
 	$(MAKE) sync-python-dev
-	uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"
+	uv run --no-sync pytest tests/ -v
 	uv run --no-sync mkdocs build --strict
 
 lint:

@@ -139,25 +139,8 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-uv run --no-sync python3 - "$port" <<'PY' | mustmatch like 'Command: biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
+cargo run --quiet --example rmcp_streamable_http_contract -- remote-workflow "$port" | mustmatch like 'Command: biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
 # Study Mutation Frequency: TP53 (msk_impact_2017)'
-import asyncio
-import sys
-from datetime import timedelta
-from mcp import ClientSession, types
-from mcp.client.streamable_http import streamable_http_client
-
-async def main(port: str) -> None:
-    async with streamable_http_client(f"http://127.0.0.1:{port}/mcp", terminate_on_close=False) as (read_stream, write_stream, _):
-        async with ClientSession(read_stream, write_stream, read_timeout_seconds=timedelta(seconds=30)) as session:
-            await session.initialize()
-            command = "biomcp study query --study msk_impact_2017 --gene TP53 --type mutations"
-            result = await session.call_tool("biomcp", arguments={"command": command})
-            print(f"Command: {command}")
-            print(next(c.text for c in result.content if isinstance(c, types.TextContent)))
-
-asyncio.run(main(sys.argv[1]))
-PY
 ```
 
 ## Read-Only Boundaries and Charted Calls Stay Visible
@@ -176,34 +159,11 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-uv run --no-sync python3 - "$port" <<'PY' | mustmatch like 'CLI-only over MCP
+cargo run --quiet --example rmcp_streamable_http_contract -- boundaries "$port" | mustmatch like 'CLI-only over MCP
 workstation-local filesystem paths
 BioMCP allows read-only commands only
 # Study Mutation Frequency: TP53 (msk_impact_2017)
 IMAGE: image/svg+xml'
-import asyncio
-import sys
-from datetime import timedelta
-from mcp import ClientSession, types
-from mcp.client.streamable_http import streamable_http_client
-
-def mime_type(content):
-    return getattr(content, "mimeType", getattr(content, "mime_type", None))
-
-async def main(port: str) -> None:
-    async with streamable_http_client(f"http://127.0.0.1:{port}/mcp", terminate_on_close=False) as (read_stream, write_stream, _):
-        async with ClientSession(read_stream, write_stream, read_timeout_seconds=timedelta(seconds=30)) as session:
-            await session.initialize()
-            reject = await session.call_tool("biomcp", arguments={"command": "biomcp cache path"})
-            unknown_skill = await session.call_tool("biomcp", arguments={"command": "biomcp skill sync"})
-            chart = await session.call_tool("biomcp", arguments={"command": "biomcp study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar"})
-            print(next(c.text for c in reject.content if isinstance(c, types.TextContent)))
-            print(next(c.text for c in unknown_skill.content if isinstance(c, types.TextContent)))
-            print(next(c.text.splitlines()[0] for c in chart.content if isinstance(c, types.TextContent)))
-            print(f"IMAGE: {next(mime_type(c) for c in chart.content if isinstance(c, types.ImageContent))}")
-
-asyncio.run(main(sys.argv[1]))
-PY
 ```
 
 ## Repository Test Gate Runs Both Runtime Layers
@@ -214,7 +174,7 @@ runtime layer can report a silent green.
 
 ```bash
 make -C ../.. -n test 2>&1 | mustmatch like 'cargo nextest run
-uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"
+uv run --no-sync pytest tests/ -v
 uv run --no-sync mkdocs build --strict'
 ```
 
@@ -326,7 +286,6 @@ find ../../scripts -maxdepth 1 -name run-specs.sh -type f -exec sed -n '1,240p' 
 --timeout 180
 SPEC_ROUTINE_PATHS
 SPEC_LIVE_PATHS
-prepare_mcp_markdown_deps
 default_biomcp_bin="$ROOT/target/spec/biomcp"
 BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"'
 ```
@@ -379,15 +338,13 @@ rg -n 'cargo test' ../../spec/entity/article.md ../../spec/entity/study.md ../..
 ## Routine Spec Targets Avoid Broad Python Contract Setup
 
 Once Python static contracts move to `make test`, routine spec modes should not
-enable a broad Python contract leg before running mustmatch. The MCP markdown
-contracts are the only routine specs that still import a Python package, so the
-runner keeps an explicit bounded setup for that client dependency.
+enable a broad Python contract leg before running mustmatch. MCP markdown
+contracts use the Rust rmcp helper, so the runner does not prepare Python MCP
+client dependencies.
 
 ```bash
 rg -n 'sync_python_dev|run_python=1|uv run --no-sync pytest' ../../scripts/run-specs.sh | mustmatch ""
-rg -n 'prepare_mcp_markdown_deps|uv sync --extra dev --no-install-project' ../../scripts/run-specs.sh | mustmatch like 'prepare_mcp_markdown_deps
-uv sync --extra dev --no-install-project
-prepare_mcp_markdown_deps'
+rg -n 'prepare_mcp_markdown_deps|uv sync --extra dev --no-install-project' ../../scripts/run-specs.sh | mustmatch ""
 ```
 
 ## Mustmatch Is No Longer A Python Dev Dependency

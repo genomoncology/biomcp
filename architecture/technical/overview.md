@@ -16,7 +16,7 @@ BioMCP is a single Rust binary (`biomcp`) with three operating modes:
   `cohort`, `survival`, `compare`, `co-occurrence`) are allowed.
   Operator-local or mutating commands such as `cache`, `update`, `serve`,
   `serve-http`, and `skill install` stay blocked over MCP.
-  See `src/mcp/shell.rs`, `tests/test_mcp_contract.py`, and
+  See `src/mcp/shell.rs`, `tests/rmcp_client_contract.rs`, and
   `tests/test_skill_prompt_contract.py` for the canonical boundary.
 - **HTTP mode:** `biomcp serve-http --host 0.0.0.0 --port 8080` starts the
   Streamable HTTP server. Remote MCP traffic uses `/mcp`, and lightweight
@@ -260,7 +260,7 @@ rebuild path, not a second source of release truth.
      `climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`),
      `contracts` (`cargo build --release --locked`,
      `uv sync --extra dev --no-install-project`,
-     `uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`,
+     `uv run --no-sync pytest tests/ -v`,
      `uv run --no-sync mkdocs build --strict`), and `spec-stable`
      (release build, spec-cache metadata/restore, then `make spec-pr`).
    - Routine release proof uses `make release-gate`, which composes `make lint`,
@@ -272,7 +272,7 @@ rebuild path, not a second source of release truth.
      canary docs.
    - Release validation runs the Rust checks again, builds the release binary,
      syncs Python dev dependencies with `uv sync --extra dev --no-install-project`,
-     then runs `uv run --no-sync pytest tests/ -v --mcp-cmd "./target/release/biomcp serve"`
+     then runs `uv run --no-sync pytest tests/ -v`
      and `uv run --no-sync mkdocs build --strict`.
    - Release build jobs package cross-platform binaries, publish PyPI wheels,
      and deploy docs.

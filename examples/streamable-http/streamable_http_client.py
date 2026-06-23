@@ -14,9 +14,6 @@ import asyncio
 import sys
 from datetime import timedelta
 
-from mcp import ClientSession, types
-from mcp.client.streamable_http import streamable_http_client
-
 DEFAULT_BASE_URL = "http://127.0.0.1:8080"
 WORKFLOW = [
     "biomcp search all --gene BRAF --disease melanoma --counts-only",
@@ -32,6 +29,9 @@ def resolve_base_url(argv: list[str]) -> str:
 
 
 async def main(base_url: str) -> None:
+    from mcp import ClientSession, types
+    from mcp.client.streamable_http import streamable_http_client
+
     mcp_url = f"{base_url.rstrip('/')}/mcp"
     print(f"Connecting to {mcp_url}\n")
 
