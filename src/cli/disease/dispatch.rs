@@ -69,7 +69,7 @@ pub(in crate::cli) async fn handle_search(
         super::super::PaginationMeta::offset(args.offset, args.limit, results.len(), page.total);
     let text = if json {
         let next_commands = crate::render::markdown::search_next_commands_disease(&results);
-        let workflow = disease_search_workflow(results.first()).await?;
+        let workflow = disease_search_workflow(results.first(), args.limit > 1).await?;
         disease_search_json(results, pagination, fallback_used, next_commands, workflow)?
     } else {
         let footer = super::super::pagination_footer_offset(&pagination);
@@ -86,6 +86,7 @@ pub(in crate::cli) async fn handle_search(
 
 async fn disease_search_workflow(
     top_result: Option<&crate::entities::disease::DiseaseSearchResult>,
+    allow_recruiting_trial_probe: bool,
 ) -> Result<Option<crate::workflow_ladders::WorkflowMeta>, crate::error::BioMcpError> {
     let Some(top_result) = top_result else {
         return Ok(None);
@@ -104,6 +105,10 @@ async fn disease_search_workflow(
         crate::workflow_ladders::WorkflowProbeOutcome::Triggered(meta) => return Ok(Some(meta)),
         crate::workflow_ladders::WorkflowProbeOutcome::Unavailable => return Ok(None),
         crate::workflow_ladders::WorkflowProbeOutcome::NotTriggered => {}
+    }
+
+    if !allow_recruiting_trial_probe {
+        return Ok(None);
     }
 
     match crate::workflow_ladders::probe_workflow(
@@ -166,13 +171,32 @@ fn recruiting_trial_filters(disease_name: &str) -> crate::entities::trial::Trial
         condition: Some(disease_name.to_string()),
         status: Some("recruiting".to_string()),
         source: crate::entities::trial::TrialSource::ClinicalTrialsGov,
+        no_condition_expand: true,
+        ..Default::default()
+    }
+}
+
+fn disease_trial_filters(
+    name: &str,
+    trial_source: crate::entities::trial::TrialSource,
+    limit: usize,
+) -> crate::entities::trial::TrialSearchFilters {
+    crate::entities::trial::TrialSearchFilters {
+        condition: Some(name.to_string()),
+        source: trial_source,
+        no_condition_expand: matches!(
+            trial_source,
+            crate::entities::trial::TrialSource::ClinicalTrialsGov
+        ) && limit == 1,
         ..Default::default()
     }
 }
 
 #[cfg(test)]
 mod workflow_tests {
-    use super::{pathogenic_variant_catalog_filters, recruiting_trial_filters};
+    use super::{
+        disease_trial_filters, pathogenic_variant_catalog_filters, recruiting_trial_filters,
+    };
 
     #[test]
     fn disease_workflow_probe_filters_use_top_result_name_and_bounded_queries() {
@@ -188,6 +212,38 @@ mod workflow_tests {
             trial_filters.source,
             crate::entities::trial::TrialSource::ClinicalTrialsGov
         ));
+        assert!(
+            trial_filters.no_condition_expand,
+            "workflow recruiting-trial probe must not fan out CTGov condition aliases"
+        );
+    }
+
+    #[test]
+    fn disease_trials_limit_one_disables_ctgov_condition_fanout() {
+        let fast_filters = disease_trial_filters(
+            "Phelan-McDermid Syndrome",
+            crate::entities::trial::TrialSource::ClinicalTrialsGov,
+            1,
+        );
+        assert_eq!(
+            fast_filters.condition.as_deref(),
+            Some("Phelan-McDermid Syndrome")
+        );
+        assert!(fast_filters.no_condition_expand);
+
+        let broader_filters = disease_trial_filters(
+            "Phelan-McDermid Syndrome",
+            crate::entities::trial::TrialSource::ClinicalTrialsGov,
+            2,
+        );
+        assert!(!broader_filters.no_condition_expand);
+
+        let nci_filters = disease_trial_filters(
+            "Phelan-McDermid Syndrome",
+            crate::entities::trial::TrialSource::NciCts,
+            1,
+        );
+        assert!(!nci_filters.no_condition_expand);
     }
 }
 
@@ -204,11 +260,7 @@ pub(in crate::cli) async fn handle_command(
         } => {
             validate_related_limit("disease trials", limit, offset)?;
             let trial_source = crate::entities::trial::TrialSource::from_flag(&source)?;
-            let filters = crate::entities::trial::TrialSearchFilters {
-                condition: Some(name.clone()),
-                source: trial_source,
-                ..Default::default()
-            };
+            let filters = disease_trial_filters(&name, trial_source, limit);
             let (results, total) = crate::entities::trial::search(&filters, limit, offset).await?;
             if let Some(total) = total {
                 super::super::log_pagination_truncation(total as usize, offset, results.len());
