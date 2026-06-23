@@ -6,6 +6,12 @@ import tomllib
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_RELEASE_TICKETS = {
+    "0.8.24": {
+        239,
+        240,
+        432,
+        433,
+    },
     "0.8.23": {
         369,
         *range(371, 387),
@@ -135,6 +141,29 @@ EXPECTED_RELEASE_TICKETS = {
     }
 }
 EXPECTED_RELEASE_MARKERS = {
+    "0.8.24": {
+        "fixes": [
+            "RUSTSEC-2026-0186",
+            "memmap2",
+            "Python `mcp` test-client dependency",
+            "Rust rmcp-client harness",
+            "Dependabot alerts",
+        ],
+        "new_features": [
+            "Claude Code plugin marketplace",
+            "serve-http --allowed-hosts",
+            "Host guard",
+        ],
+        "docs": [
+            "release-prep metadata",
+            "v0.8.24",
+        ],
+        "internal": [
+            "light parity/coherence review",
+            "Rust rmcp-client contract",
+            "no release-blocking findings",
+        ],
+    },
     "0.8.23": {
         "fixes": [
             "CDC WONDER-compatible",
@@ -306,24 +335,6 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     assert "biomcp ema sync" in previous_new_features_block
     assert _ticket_references(previous_release_block) == {182, *range(193, 214), 221}
 
-    assert "source-first article full-text" in latest_release_block
-    assert "Figshare supplementary-file retrieval" in latest_release_block
-    assert "Cancerhotspots recurrence enrichment" in latest_release_block
-    assert "AlphaGenome prediction credentials" in latest_new_features_block
-    assert "VAERS live support" in latest_fixes_block
-    assert "CDC WONDER-compatible" in latest_fixes_block
-    assert "Figshare provider-supplied asset download URLs" in latest_fixes_block
-    assert "Monarch phenotype 5xx" in latest_fixes_block
-    assert "Source unavailable" in latest_fixes_block
-    assert "gettable versus search-only" in latest_docs_block
-    assert "source-versioning" in latest_docs_block
-    assert "configuration" in latest_docs_block
-    assert "observability" in latest_docs_block
-    assert "architecture experiment policy" in latest_docs_block
-    assert "mustmatch binary" in latest_internal_block
-    assert "live upstream specs" in latest_internal_block
-    assert "0.8.23 hardening pass" in latest_internal_block
-    assert "Monarch 502" in latest_internal_block
     assert _ticket_references(latest_release_block) == EXPECTED_RELEASE_TICKETS[
         current_release_version
     ]

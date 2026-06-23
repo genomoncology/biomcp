@@ -285,7 +285,7 @@ so release-visible version identity and docs parity are checked against the
 live surfaces:
 
 ```bash
-tag="${BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. v0.8.23}"
+tag="${BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. v0.8.24}"
 version="${tag#v}"
 tmpdir="$(mktemp -d)" && BIOMCP_INSTALL_DIR="$tmpdir" BIOMCP_VERSION="$tag" bash install.sh >/tmp/biomcp-install.log && "$tmpdir/biomcp" version | head -n 1
 bioasq_page="$(mktemp)" && curl -fsSL -A 'Mozilla/5.0' https://biomcp.org/reference/bioasq-benchmark/ >"$bioasq_page" && rg -q 'hf-public-pre2026' "$bioasq_page" && rg -q 'Phase A\+' "$bioasq_page" && rg -q 'Phase B' "$bioasq_page"

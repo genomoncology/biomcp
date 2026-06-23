@@ -9,6 +9,35 @@
   now rejects structured filters, and `drug trials --no-alias-expand` now
   rejects non-CTGov trial sources.
 
+## 0.8.24 — 2026-06-23
+
+### New features
+
+- Added Claude Code plugin marketplace metadata so users can install the BioMCP
+  plugin through `/plugin`. (239)
+- Changed `serve-http --allowed-hosts` to be opt-in, leaving the Host guard
+  open by default for normal proxy and deployment setups while preserving
+  explicit host restrictions when configured. (240)
+
+### Fixes
+
+- Resolved the RUSTSEC-2026-0186 `memmap2` advisory in the release dependency
+  set.
+- Removed the Python `mcp` test-client dependency by migrating protocol contract
+  coverage to the Rust rmcp-client harness, clearing all seven remaining
+  Dependabot alerts tied to the removed Python dependency tree. (433)
+
+### Docs
+
+- Refreshed release-prep metadata and public release notes for v0.8.24.
+  (432)
+
+### Internal
+
+- Completed a light parity/coherence review of the Rust rmcp-client contract
+  migration before tagging v0.8.24, with no release-blocking findings. (432,
+  433)
+
 ## 0.8.23 — 2026-06-11
 
 ### New features

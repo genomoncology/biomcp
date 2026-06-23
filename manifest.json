@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "biomcp",
   "display_name": "BioMCP",
-  "version": "0.8.23",
+  "version": "0.8.24",
   "description": "Read-only biomedical search and evidence retrieval across BioMCP's CLI command grammar.",
   "long_description": "BioMCP packages the existing Rust CLI and MCP server as a local read-only bundle for biomedical discovery, detail lookups, cross-entity pivots, enrichment, and study analytics.",
   "author": {
