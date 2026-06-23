@@ -61,37 +61,20 @@ also advertises typed `search` and `get` tools whose schemas expose entity,
 section, and limit constraints.
 
 ```bash
-python3 - <<'PY' | mustmatch like 'Typed MCP search/get tool schemas are wired'
-from pathlib import Path
-
-repo = Path('../..')
-shell = (repo / 'src/mcp/shell.rs').read_text()
-contract = (repo / 'crates/biomcp-mcp-contract-client/src/lib.rs').read_text()
-tests = (repo / 'tests/rmcp_client_contract.rs').read_text()
-docs = (repo / 'docs/reference/mcp-server.md').read_text()
-build = (repo / 'build.rs').read_text()
-
-required = [
-    ('typed search tool method', 'async fn search' in shell),
-    ('typed get tool method', 'async fn get' in shell),
-    ('search entity schema source', 'SearchEntity' in shell),
-    ('get entity schema source', 'GetEntity' in shell),
-    ('pathway section schema source', 'PATHWAY_SECTION_NAMES' in shell),
-    ('gene section schema source', 'GENE_SECTION_NAMES' in shell),
-    ('drug section schema source', 'DRUG_SECTION_NAMES' in shell),
-    ('bounded search limit schema', 'limit' in shell and '25' in shell),
-    ('execute_mcp dispatch path', 'crate::cli::execute_mcp(args' in shell),
-    ('rmcp typed surface contract helper', 'assert_typed_tool_surface' in contract),
-    ('rmcp typed surface test call', 'assert_typed_tool_surface' in tests),
-    ('typed search docs', 'typed `search`' in docs),
-    ('typed get docs', 'typed `get`' in docs),
-    ('typed tool description guidance', 'typed tools' in build),
-]
-missing = [name for name, ok in required if not ok]
-if missing:
-    raise AssertionError('typed MCP surface missing: ' + ', '.join(missing))
-print('Typed MCP search/get tool schemas are wired')
-PY
+port=39091
+../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" >/tmp/biomcp-mcp-typed-tools.log 2>&1 &
+pid=$!
+trap 'kill "$pid" 2>/dev/null || true' EXIT
+for _ in $(seq 1 40); do
+  if curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null; then
+    break
+  fi
+  sleep 0.25
+done
+curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
+cargo run --quiet --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get
+search schema includes entity enum and bounded limit
+get schema includes entity and sections enum'
 ```
 
 ## Probe Routes Stay Lightweight
