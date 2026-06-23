@@ -8,7 +8,7 @@ use crate::error::BioMcpError;
 
 const MAX_TRANSCRIPT_HGVS_LEN: usize = 512;
 
-fn transcript_coding_hgvs_re() -> &'static Regex {
+pub(crate) fn transcript_coding_hgvs_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"^[A-Z]{2}_[0-9]+\.[0-9]+:c\.[^\s]+$").expect("valid regex"))
 }

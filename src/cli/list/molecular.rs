@@ -120,6 +120,7 @@ pub(super) fn list_variant() -> String {
 Supported formats:
 - rsID: `rs113488022`
 - HGVS genomic: `chr7:g.140453136A>T`
+- Transcript HGVS: `NM_004333.6:c.1799T>A`
 - Gene + protein: `BRAF V600E`, `BRAF p.Val600Glu`
 
 Transcript normalization examples:

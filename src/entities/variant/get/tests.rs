@@ -44,6 +44,87 @@ fn braf_variant_stub() -> Variant {
 }
 
 #[test]
+fn transcript_hgvs_get_and_normalize_share_normalized_genomic_identity() {
+    let input = "NM_004333.6:c.1799T>A";
+    assert!(matches!(
+        classify_variant_input(input),
+        VariantInputKind::TranscriptCodingHgvs(value) if value == input
+    ));
+
+    let response = VariantNormalizationResponse {
+        input: input.to_string(),
+        services: vec![
+            crate::entities::variant::VariantNormalizationServiceResult {
+                service: "mutalyzer".to_string(),
+                status: VariantNormalizationStatus::Success,
+                input_description: Some(input.to_string()),
+                normalized_description: Some(input.to_string()),
+                corrected_description: None,
+                transcript_description: None,
+                protein: Some(json!("NP_004324.2:p.(Val600Glu)")),
+                genomic_descriptions: Vec::new(),
+                warnings: Vec::new(),
+                message: None,
+            },
+            crate::entities::variant::VariantNormalizationServiceResult {
+                service: "variantvalidator".to_string(),
+                status: VariantNormalizationStatus::Success,
+                input_description: Some(input.to_string()),
+                normalized_description: Some(input.to_string()),
+                corrected_description: None,
+                transcript_description: Some(input.to_string()),
+                protein: Some(json!("NP_004324.2:p.(Val600Glu)")),
+                genomic_descriptions: vec!["NC_000007.14:g.140753336A>T".to_string()],
+                warnings: Vec::new(),
+                message: None,
+            },
+        ],
+    };
+
+    assert_eq!(
+        normalized_get_variant_id(&response).expect("normalization should yield gettable ID"),
+        "chr7:g.140753336A>T"
+    );
+}
+
+#[test]
+fn transcript_hgvs_fallback_queries_clinvar_coding_identity() {
+    assert_eq!(
+        transcript_hgvs_clinvar_query("NM_004333.6:c.1799T>A"),
+        "clinvar.hgvs.coding:\"NM_004333.6\\:c.1799T>A\""
+    );
+}
+
+#[test]
+fn transcript_hgvs_normalization_failure_suggests_variant_normalize() {
+    let response = VariantNormalizationResponse {
+        input: "NM_004333.6:c.1799T>A".to_string(),
+        services: vec![
+            crate::entities::variant::VariantNormalizationServiceResult {
+                service: "mutalyzer".to_string(),
+                status: VariantNormalizationStatus::InvalidInput,
+                input_description: Some("NM_004333.6:c.1799T>A".to_string()),
+                normalized_description: None,
+                corrected_description: None,
+                transcript_description: None,
+                protein: None,
+                genomic_descriptions: Vec::new(),
+                warnings: Vec::new(),
+                message: Some("Invalid transcript HGVS".to_string()),
+            },
+        ],
+    };
+
+    let message = normalized_get_variant_id(&response)
+        .unwrap_err()
+        .to_string();
+    assert!(message.contains("Could not normalize transcript HGVS"));
+    assert!(message.contains("Invalid transcript HGVS"));
+    assert!(message.contains("biomcp variant normalize all NM_004333.6:c.1799T>A"));
+    assert!(!message.contains("Unrecognized variant format"));
+}
+
+#[test]
 fn variant_json_omits_legacy_name_when_absent() {
     let variant = gwas_only_variant_stub("rs7903146");
     let json = serde_json::to_value(&variant).expect("variant should serialize");

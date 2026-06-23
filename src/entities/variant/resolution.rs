@@ -7,7 +7,7 @@ use crate::error::BioMcpError;
 
 use super::{
     VariantGuidance, VariantGuidanceKind, VariantIdFormat, VariantInputKind, VariantProteinAlias,
-    VariantShorthand,
+    VariantShorthand, transcript_coding_hgvs_re,
 };
 
 fn rsid_re() -> &'static Regex {
@@ -115,6 +115,9 @@ pub fn classify_variant_input(input: &str) -> VariantInputKind {
     if let Some(caps) = hgvs_re().captures(input) {
         return VariantInputKind::Exact(VariantIdFormat::HgvsGenomic(caps[1].to_string()));
     }
+    if transcript_coding_hgvs_re().is_match(input) {
+        return VariantInputKind::TranscriptCodingHgvs(input.to_string());
+    }
     if let Some(caps) = gene_protein_re().captures(input) {
         return VariantInputKind::Exact(VariantIdFormat::GeneProteinChange {
             gene: caps[1].to_string(),
@@ -219,6 +222,9 @@ Try:\n\
             "\n\nThis looks like a search phrase or alteration description, not an exact variant ID.\n\
 Use `biomcp search variant \"{id}\"` to search, or pass an exact rsID/HGVS/gene+protein change to `get variant`."
         ),
+        VariantInputKind::TranscriptCodingHgvs(_) => format!(
+            "\n\nThis looks like transcript HGVS. `biomcp get variant` normalizes transcript HGVS before lookup; if normalization fails, try `biomcp variant normalize all {id}` first."
+        ),
         _ => String::new(),
     };
 
@@ -227,6 +233,7 @@ Use `biomcp search variant \"{id}\"` to search, or pass an exact rsID/HGVS/gene+
 Supported formats:\n\
 - rsID: rs113488022\n\
 - HGVS genomic: chr7:g.140453136A>T\n\
+- Transcript HGVS: NM_004333.6:c.1799T>A\n\
 - Gene + protein: BRAF V600E, BRAF p.Val600Glu"
     )))
 }

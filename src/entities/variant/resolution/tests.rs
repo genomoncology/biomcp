@@ -99,6 +99,26 @@ fn classify_variant_input_detects_search_only_shorthand() {
 }
 
 #[test]
+fn classify_variant_input_detects_transcript_coding_hgvs_before_rejecting() {
+    match classify_variant_input("NM_004333.6:c.1799T>A") {
+        VariantInputKind::TranscriptCodingHgvs(value) => {
+            assert_eq!(value, "NM_004333.6:c.1799T>A");
+        }
+        other => panic!("expected transcript coding HGVS, got {other:?}"),
+    }
+}
+
+#[test]
+fn parse_variant_id_points_transcript_hgvs_to_normalize_when_direct_parse_is_used() {
+    let message = parse_variant_id("NM_004333.6:c.1799T>A")
+        .unwrap_err()
+        .to_string();
+    assert!(message.contains("transcript HGVS"));
+    assert!(message.contains("biomcp variant normalize all NM_004333.6:c.1799T>A"));
+    assert!(message.contains("Transcript HGVS: NM_004333.6:c.1799T>A"));
+}
+
+#[test]
 fn classify_variant_input_normalizes_long_form_single_token_protein_change() {
     match classify_variant_input("p.Val600Glu") {
         VariantInputKind::Shorthand(VariantShorthand::ProteinChangeOnly { change }) => {
