@@ -583,10 +583,32 @@ async fn spawn_stdio_client(
 ) -> anyhow::Result<
     rmcp::service::RunningService<rmcp::RoleClient, impl rmcp::Service<rmcp::RoleClient>>,
 > {
+    let (client, _) = spawn_stdio_client_with_pid(extra_env).await?;
+    Ok(client)
+}
+
+async fn spawn_stdio_client_with_pid(
+    extra_env: &[(&str, String)],
+) -> anyhow::Result<(
+    rmcp::service::RunningService<rmcp::RoleClient, impl rmcp::Service<rmcp::RoleClient>>,
+    Option<u32>,
+)> {
     let mut command = base_server_command(extra_env);
     command.arg("serve");
     let transport = TokioChildProcess::new(command)?;
-    Ok(().serve(transport).await?)
+    let pid = transport.id();
+    Ok((().serve(transport).await?, pid))
+}
+
+fn terminate_process(pid: Option<u32>) -> anyhow::Result<()> {
+    if let Some(pid) = pid {
+        let status = std::process::Command::new("kill")
+            .arg("-TERM")
+            .arg(pid.to_string())
+            .status()?;
+        anyhow::ensure!(status.success(), "failed to terminate child process {pid}");
+    }
+    Ok(())
 }
 
 async fn spawn_http_server(extra_env: &[(&str, String)]) -> anyhow::Result<(Child, String)> {
@@ -633,7 +655,7 @@ async fn rmcp_child_process_client_verifies_stdio_core_contract() -> anyhow::Res
 #[tokio::test(flavor = "multi_thread")]
 async fn rmcp_child_process_client_verifies_stdio_full_contract() -> anyhow::Result<()> {
     let (_ols_thread, ols_url) = start_ols4_stub()?;
-    let client = spawn_stdio_client(&[("BIOMCP_OLS4_BASE", ols_url)]).await?;
+    let (client, pid) = spawn_stdio_client_with_pid(&[("BIOMCP_OLS4_BASE", ols_url)]).await?;
 
     assert_initialize_and_tools(&client).await?;
     assert_version_call(&client).await?;
@@ -641,6 +663,7 @@ async fn rmcp_child_process_client_verifies_stdio_full_contract() -> anyhow::Res
     assert_read_only_and_policy_calls(&client).await?;
     assert_invalid_resource_error(&client).await?;
 
+    terminate_process(pid)?;
     client.cancel().await?;
     Ok(())
 }
