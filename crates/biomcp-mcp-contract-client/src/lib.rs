@@ -81,6 +81,18 @@ pub fn tool_arguments(command: &str) -> serde_json::Map<String, serde_json::Valu
         .collect()
 }
 
+fn json_contains(value: &serde_json::Value, needle: &str) -> bool {
+    match value {
+        serde_json::Value::String(text) => text == needle,
+        serde_json::Value::Array(items) => items.iter().any(|item| json_contains(item, needle)),
+        serde_json::Value::Object(map) => map
+            .iter()
+            .any(|(key, value)| key == needle || json_contains(value, needle)),
+        serde_json::Value::Number(number) => number.to_string() == needle,
+        serde_json::Value::Bool(_) | serde_json::Value::Null => false,
+    }
+}
+
 pub async fn call_biomcp<T>(
     client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
     command: &str,
@@ -107,6 +119,70 @@ where
         .peer()
         .call_tool(CallToolRequestParams::new("biomcp").with_arguments(arguments))
         .await?)
+}
+
+pub async fn assert_typed_tool_calls<T>(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
+) -> anyhow::Result<()>
+where
+    T: rmcp::Service<rmcp::RoleClient>,
+{
+    let search = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("search").with_arguments(
+                BTreeMap::from([
+                    ("entity".to_string(), json!("pathway")),
+                    ("query".to_string(), json!("MAPK signaling")),
+                    ("limit".to_string(), json!(1)),
+                    ("json".to_string(), json!(true)),
+                ])
+                .into_iter()
+                .collect(),
+            ),
+        )
+        .await?;
+    assert_eq!(search.is_error, Some(false));
+    assert!(!first_text(&search.content).trim().is_empty());
+
+    let get = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("get").with_arguments(
+                BTreeMap::from([
+                    ("entity".to_string(), json!("pathway")),
+                    ("id".to_string(), json!("R-HSA-5673001")),
+                    ("sections".to_string(), json!(["genes"])),
+                    ("json".to_string(), json!(true)),
+                ])
+                .into_iter()
+                .collect(),
+            ),
+        )
+        .await?;
+    assert_eq!(get.is_error, Some(false));
+    assert!(!first_text(&get.content).trim().is_empty());
+
+    let invalid = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("search").with_arguments(
+                BTreeMap::from([
+                    ("entity".to_string(), json!("pathway")),
+                    ("query".to_string(), json!("MAPK")),
+                    ("limit".to_string(), json!(50)),
+                ])
+                .into_iter()
+                .collect(),
+            ),
+        )
+        .await
+        .expect_err("out-of-schema typed search limit should be rejected");
+    match invalid {
+        ServiceError::McpError(data) => assert!(data.message.contains("typed search limit")),
+        other => panic!("expected MCP invalid params error, got {other:?}"),
+    }
+    Ok(())
 }
 
 fn expected_skill_resources(
@@ -176,7 +252,33 @@ where
         .map(|tool| tool.name.as_ref())
         .collect::<Vec<_>>();
     assert!(tool_names.contains(&"biomcp"));
+    assert!(tool_names.contains(&"search"));
+    assert!(tool_names.contains(&"get"));
     assert!(!tool_names.contains(&"shell"));
+    let search = tools
+        .tools
+        .iter()
+        .find(|tool| tool.name == "search")
+        .expect("typed search tool listed");
+    let get = tools
+        .tools
+        .iter()
+        .find(|tool| tool.name == "get")
+        .expect("typed get tool listed");
+    let search_schema = serde_json::to_value(&search.input_schema)?;
+    for marker in ["entity", "pathway", "limit", "25"] {
+        assert!(
+            json_contains(&search_schema, marker),
+            "typed search schema missing {marker}: {search_schema}"
+        );
+    }
+    let get_schema = serde_json::to_value(&get.input_schema)?;
+    for marker in ["entity", "gene", "sections", "pathways"] {
+        assert!(
+            json_contains(&get_schema, marker),
+            "typed get schema missing {marker}: {get_schema}"
+        );
+    }
     let biomcp = tools
         .tools
         .iter()
@@ -244,6 +346,9 @@ where
     }
     assert!(description.contains("leading public biomedical data sources"));
     assert!(!description.contains("15 biomedical sources"));
+    assert!(description.contains("TYPED MCP TOOLS:"));
+    assert!(description.contains("Prefer typed `search` and `get`"));
+    assert!(description.contains("raw `biomcp` as an escape hatch"));
     assert!(description.contains("SEARCH FILTERS:"));
     assert!(description.contains("MCP RESPONSE METADATA:"));
     assert!(description.contains("json: true"));
