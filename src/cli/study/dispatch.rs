@@ -122,6 +122,12 @@ pub(crate) async fn handle_command(
             }
         }
         StudyCommand::TopMutated { study, limit } => {
+            if limit == 0 || limit > 50 {
+                return Err(crate::error::BioMcpError::InvalidArgument(
+                    "--limit for study top-mutated must be 1-50".into(),
+                )
+                .into());
+            }
             let result = crate::entities::study::top_mutated_genes(&study, limit).await?;
             if json {
                 crate::render::json::to_pretty(&result)?

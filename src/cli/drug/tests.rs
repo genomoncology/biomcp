@@ -51,7 +51,9 @@ fn get_drug_help_lists_region_flag_and_examples() {
     let help = String::from_utf8(help).expect("help should be utf-8");
 
     assert!(help.contains("--region <REGION>"));
+    assert!(help.contains("--name <NAME>"));
     assert!(help.contains("biomcp get drug Keytruda regulatory --region eu"));
+    assert!(help.contains("biomcp get drug --name \"tepotinib hydrochloride\" label"));
     assert!(help.contains("biomcp get drug Dupixent regulatory --region ema"));
     assert!(help.contains("biomcp get drug Ozempic safety --region eu"));
     assert!(
@@ -180,7 +182,7 @@ fn get_drug_parses_region_split_form() {
                 entity:
                     GetEntity::Drug(crate::cli::drug::DrugGetArgs {
                         name,
-                        sections,
+                        args,
                         region,
                         raw,
                     }),
@@ -192,12 +194,42 @@ fn get_drug_parses_region_split_form() {
         panic!("expected get drug command");
     };
 
-    assert_eq!(name, "trastuzumab");
-    assert_eq!(sections, vec!["regulatory".to_string()]);
+    assert!(name.is_none());
+    assert_eq!(
+        args,
+        vec!["trastuzumab".to_string(), "regulatory".to_string()]
+    );
     assert_eq!(region, Some(DrugRegionArg::Who));
     assert!(!raw);
     assert!(!json);
     assert!(!no_cache);
+}
+
+#[test]
+fn get_drug_accepts_explicit_multi_word_name() {
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "get",
+        "drug",
+        "--name",
+        "tepotinib hydrochloride",
+        "label",
+    ])
+    .expect("explicit multi-word drug name should parse");
+
+    let Cli {
+        command:
+            Commands::Get {
+                entity: GetEntity::Drug(crate::cli::drug::DrugGetArgs { name, args, .. }),
+            },
+        ..
+    } = cli
+    else {
+        panic!("expected get drug command");
+    };
+
+    assert_eq!(name.as_deref(), Some("tepotinib hydrochloride"));
+    assert_eq!(args, vec!["label".to_string()]);
 }
 
 #[test]
@@ -216,10 +248,7 @@ fn get_drug_parses_ema_region_alias_as_eu() {
     let Cli {
         command:
             Commands::Get {
-                entity:
-                    GetEntity::Drug(crate::cli::drug::DrugGetArgs {
-                        region, sections, ..
-                    }),
+                entity: GetEntity::Drug(crate::cli::drug::DrugGetArgs { region, args, .. }),
             },
         ..
     } = cli
@@ -227,7 +256,7 @@ fn get_drug_parses_ema_region_alias_as_eu() {
         panic!("expected get drug command");
     };
 
-    assert_eq!(sections, vec!["regulatory".to_string()]);
+    assert_eq!(args, vec!["Dupixent".to_string(), "regulatory".to_string()]);
     assert_eq!(region, Some(DrugRegionArg::Eu));
 }
 

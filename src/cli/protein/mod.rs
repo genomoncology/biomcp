@@ -22,7 +22,7 @@ pub struct ProteinSearchArgs {
     /// Filter by protein existence level (1-5)
     #[arg(long)]
     pub existence: Option<u8>,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-100 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results
@@ -54,7 +54,7 @@ See also: biomcp list protein")]
     Structures {
         /// UniProt accession or HGNC symbol (e.g., P15056 or BRAF)
         accession: String,
-        /// Maximum structures to show (default: 10)
+        /// Maximum structures to show, 1-100 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results

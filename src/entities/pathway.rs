@@ -128,6 +128,16 @@ fn source_kind_for_pathway_id(st_id: &str) -> PathwaySourceKind {
     }
 }
 
+fn pathway_lookup_error(st_id: &str, err: BioMcpError) -> BioMcpError {
+    if crate::entities::protein::is_uniprot_accession(st_id) {
+        BioMcpError::InvalidArgument(format!(
+            "{err}\n\n`{st_id}` looks like a UniProt accession — did you mean `biomcp get protein {st_id}`?"
+        ))
+    } else {
+        err
+    }
+}
+
 fn source_kind_for_pathway_source(source: &str) -> PathwaySourceKind {
     if source.trim().eq_ignore_ascii_case("KEGG") {
         PathwaySourceKind::Kegg
@@ -703,7 +713,10 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
     }
 
     let client = ReactomeClient::new()?;
-    let record = client.get_pathway(st_id).await?;
+    let record = client
+        .get_pathway(st_id)
+        .await
+        .map_err(|err| pathway_lookup_error(st_id, err))?;
 
     let mut pathway = transform::pathway::from_reactome_record(record);
 
@@ -755,6 +768,21 @@ mod tests {
 
         let err = parse_sections(&["bad".to_string()]).unwrap_err();
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    }
+
+    #[test]
+    fn pathway_lookup_error_adds_protein_redirect_for_uniprot_accession() {
+        let err = pathway_lookup_error(
+            "P21964-2",
+            BioMcpError::NotFound {
+                entity: "pathway".to_string(),
+                id: "P21964-2".to_string(),
+                suggestion: "Try searching: biomcp search pathway -q P21964-2".to_string(),
+            },
+        );
+        let message = err.to_string();
+        assert!(message.contains("looks like a UniProt accession"));
+        assert!(message.contains("biomcp get protein P21964-2"));
     }
 
     #[test]

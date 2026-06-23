@@ -4,6 +4,11 @@ use crate::cli::CommandOutcome;
 pub(super) fn validate_search_args(
     args: &ProteinSearchArgs,
 ) -> Result<(), crate::error::BioMcpError> {
+    if args.limit == 0 || args.limit > 100 {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--limit for search protein must be 1-100".into(),
+        ));
+    }
     if args
         .next_page
         .as_deref()

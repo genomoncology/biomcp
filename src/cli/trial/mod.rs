@@ -130,7 +130,7 @@ pub struct TrialSearchArgs {
     /// `--no-condition-expand`, or `--no-alias-expand`.
     #[arg(long = "next-page")]
     pub next_page: Option<String>,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
 }

@@ -2,7 +2,7 @@ use clap::{CommandFactory, Parser};
 
 use super::DiseaseCommand;
 use super::dispatch::disease_search_json;
-use crate::cli::{Cli, Commands, PaginationMeta};
+use crate::cli::{Cli, Commands, GetEntity, PaginationMeta};
 
 fn render_disease_get_long_help() -> String {
     let mut command = Cli::command();
@@ -33,7 +33,36 @@ fn get_disease_help_includes_when_to_use_guidance() {
     assert!(!help.contains("accepted MedlinePlus clinical-feature foundation section"));
     assert!(help.contains("tuberculosis diagnostics"));
     assert!(help.contains("melanoma clinical_features"));
+    assert!(help.contains("--name <NAME_OR_ID>"));
+    assert!(help.contains("biomcp get disease --name \"chronic myeloid leukemia\" survival"));
     assert!(help.contains("search article -d"));
+}
+
+#[test]
+fn get_disease_accepts_explicit_multi_word_name() {
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "get",
+        "disease",
+        "--name",
+        "chronic myeloid leukemia",
+        "survival",
+    ])
+    .expect("explicit multi-word disease name should parse");
+
+    let Cli {
+        command:
+            Commands::Get {
+                entity: GetEntity::Disease(crate::cli::disease::DiseaseGetArgs { name_or_id, args }),
+            },
+        ..
+    } = cli
+    else {
+        panic!("expected get disease command");
+    };
+
+    assert_eq!(name_or_id.as_deref(), Some("chronic myeloid leukemia"));
+    assert_eq!(args, vec!["survival".to_string()]);
 }
 
 #[test]
@@ -63,6 +92,25 @@ fn disease_trials_parses_source_and_limit() {
 }
 
 #[test]
+fn disease_trials_limit_rejects_too_big_before_lookup() {
+    let cli = Cli::try_parse_from(["biomcp", "disease", "trials", "melanoma", "--limit", "51"])
+        .expect("disease trials should parse before validation");
+
+    let Commands::Disease { cmd } = cli.command else {
+        panic!("expected disease command");
+    };
+    let DiseaseCommand::Trials { limit, offset, .. } = cmd else {
+        panic!("expected disease trials command");
+    };
+    let err = super::dispatch::validate_related_limit("disease trials", limit, offset)
+        .expect_err("too-large disease trials limit should fail fast");
+    assert!(
+        err.to_string()
+            .contains("--limit for disease trials must be 1-50")
+    );
+}
+
+#[test]
 fn related_limit_rejects_zero_before_lookup() {
     let cli = Cli::try_parse_from(["biomcp", "disease", "articles", "melanoma", "--limit", "0"])
         .expect("disease articles should parse");
@@ -80,9 +128,12 @@ fn related_limit_rejects_zero_before_lookup() {
     let DiseaseCommand::Articles { limit, offset, .. } = cmd else {
         panic!("expected disease articles command");
     };
-    let err = super::dispatch::validate_related_limit(limit, offset)
+    let err = super::dispatch::validate_related_limit("disease articles", limit, offset)
         .expect_err("zero disease articles limit should fail fast");
-    assert!(err.to_string().contains("--limit must be between 1 and 50"));
+    assert!(
+        err.to_string()
+            .contains("--limit for disease articles must be 1-50")
+    );
 }
 
 #[test]

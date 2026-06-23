@@ -92,7 +92,7 @@ pub struct BatchArgs {
 pub struct EnrichArgs {
     /// Comma-separated HGNC symbols (e.g., BRAF,KRAS,NRAS)
     pub genes: String,
-    /// Maximum enrichment terms (default: 10)
+    /// Maximum enrichment terms, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
 }

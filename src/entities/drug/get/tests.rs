@@ -20,6 +20,18 @@ fn parse_sections_supports_all_and_rejects_unknown() {
 }
 
 #[test]
+fn parse_sections_unknown_value_suggests_name_flag_for_multi_word_drugs() {
+    let err = parse_sections_for_name(
+        "tepotinib",
+        &["hydrochloride".to_string(), "label".to_string()],
+    )
+    .unwrap_err();
+    let message = err.to_string();
+    assert!(message.contains("Unknown section \"hydrochloride\" for drug"));
+    assert!(message.contains("--name \"tepotinib hydrochloride\" label"));
+}
+
+#[test]
 fn parse_sections_all_with_explicit_label_keeps_label() {
     let flags = parse_sections(&["all".to_string(), "label".to_string()]).unwrap();
     assert!(flags.include_label);

@@ -19,7 +19,7 @@ pub struct GwasSearchArgs {
     /// Filter by p-value threshold
     #[arg(long = "p-value")]
     pub p_value: Option<f64>,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results

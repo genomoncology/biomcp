@@ -37,7 +37,7 @@ pub struct DiagnosticSearchArgs {
     /// Filter by manufacturer or lab substring
     #[arg(long)]
     pub manufacturer: Option<String>,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results

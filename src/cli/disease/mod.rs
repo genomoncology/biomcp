@@ -25,7 +25,7 @@ pub struct DiseaseSearchArgs {
     /// Disable automatic discover fallback when zero direct disease rows are found
     #[arg(long)]
     pub no_fallback: bool,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results
@@ -35,11 +35,12 @@ pub struct DiseaseSearchArgs {
 
 #[derive(Args, Debug)]
 pub struct DiseaseGetArgs {
-    /// Disease name (e.g., melanoma) or ID (e.g., MONDO:0005105)
-    pub name_or_id: String,
-    /// Sections to include (genes, pathways, phenotypes, diagnostics, variants, models, prevalence, survival, civic, disgenet, funding, clinical_features, all). clinical_features is an opt-in MedlinePlus clinical-summary section for configured diseases and remains excluded from all.
-    #[arg(trailing_var_arg = true)]
-    pub sections: Vec<String>,
+    /// Explicit disease name or ID; use this for multi-word names before section tokens
+    #[arg(long = "name", value_name = "NAME_OR_ID")]
+    pub name_or_id: Option<String>,
+    /// Disease name/ID followed by optional sections; with --name, all positional values are sections
+    #[arg(value_name = "NAME_OR_SECTION", num_args = 0..)]
+    pub args: Vec<String>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -56,7 +57,7 @@ See also: biomcp list disease")]
     Trials {
         /// Disease name (e.g., melanoma)
         name: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
@@ -77,7 +78,7 @@ See also: biomcp list disease")]
     Articles {
         /// Disease name (e.g., melanoma)
         name: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
@@ -95,7 +96,7 @@ See also: biomcp list disease")]
     Drugs {
         /// Disease name (e.g., melanoma)
         name: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
