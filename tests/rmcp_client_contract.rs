@@ -655,7 +655,11 @@ async fn rmcp_child_process_client_verifies_stdio_core_contract() -> anyhow::Res
 #[tokio::test(flavor = "multi_thread")]
 async fn rmcp_child_process_client_verifies_stdio_full_contract() -> anyhow::Result<()> {
     let (_ols_thread, ols_url) = start_ols4_stub()?;
-    let (client, pid) = spawn_stdio_client_with_pid(&[("BIOMCP_OLS4_BASE", ols_url)]).await?;
+    let (client, pid) = spawn_stdio_client_with_pid(&[
+        ("BIOMCP_OLS4_BASE", ols_url.clone()),
+        ("BIOMCP_MEDLINEPLUS_BASE", ols_url),
+    ])
+    .await?;
 
     assert_initialize_and_tools(&client).await?;
     assert_version_call(&client).await?;
@@ -699,7 +703,11 @@ async fn rmcp_streamable_http_client_verifies_core_contract() -> anyhow::Result<
 #[tokio::test(flavor = "multi_thread")]
 async fn rmcp_streamable_http_client_verifies_full_contract() -> anyhow::Result<()> {
     let (_ols_thread, ols_url) = start_ols4_stub()?;
-    let (mut child, base_url) = spawn_http_server(&[("BIOMCP_OLS4_BASE", ols_url)]).await?;
+    let (mut child, base_url) = spawn_http_server(&[
+        ("BIOMCP_OLS4_BASE", ols_url.clone()),
+        ("BIOMCP_MEDLINEPLUS_BASE", ols_url),
+    ])
+    .await?;
     let result = async {
         let transport = StreamableHttpClientTransport::from_uri(format!("{base_url}/mcp"));
         let client = ().serve(transport).await?;
