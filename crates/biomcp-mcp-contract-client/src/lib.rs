@@ -93,6 +93,59 @@ fn json_contains(value: &serde_json::Value, needle: &str) -> bool {
     }
 }
 
+fn json_refs_contain(root: &serde_json::Value, value: &serde_json::Value, needle: &str) -> bool {
+    match value {
+        serde_json::Value::Object(map) => {
+            if let Some(reference) = map.get("$ref").and_then(serde_json::Value::as_str) {
+                if let Some(target) = reference
+                    .strip_prefix('#')
+                    .and_then(|pointer| root.pointer(pointer))
+                {
+                    return json_contains(target, needle);
+                }
+            }
+            map.values()
+                .any(|child| json_refs_contain(root, child, needle))
+        }
+        serde_json::Value::Array(items) => items
+            .iter()
+            .any(|child| json_refs_contain(root, child, needle)),
+        serde_json::Value::String(_)
+        | serde_json::Value::Number(_)
+        | serde_json::Value::Bool(_)
+        | serde_json::Value::Null => false,
+    }
+}
+
+fn json_property_contains(value: &serde_json::Value, property: &str, needle: &str) -> bool {
+    fn visit(
+        root: &serde_json::Value,
+        value: &serde_json::Value,
+        property: &str,
+        needle: &str,
+    ) -> bool {
+        match value {
+            serde_json::Value::Object(map) => {
+                map.get(property).is_some_and(|property_value| {
+                    json_contains(property_value, needle)
+                        || json_refs_contain(root, property_value, needle)
+                }) || map
+                    .values()
+                    .any(|child| visit(root, child, property, needle))
+            }
+            serde_json::Value::Array(items) => items
+                .iter()
+                .any(|child| visit(root, child, property, needle)),
+            serde_json::Value::String(_)
+            | serde_json::Value::Number(_)
+            | serde_json::Value::Bool(_)
+            | serde_json::Value::Null => false,
+        }
+    }
+
+    visit(value, value, property, needle)
+}
+
 pub async fn call_biomcp<T>(
     client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
     command: &str,
@@ -266,19 +319,23 @@ where
         .find(|tool| tool.name == "get")
         .expect("typed get tool listed");
     let search_schema = serde_json::to_value(&search.input_schema)?;
-    for marker in ["entity", "pathway", "limit", "25"] {
-        assert!(
-            json_contains(&search_schema, marker),
-            "typed search schema missing {marker}: {search_schema}"
-        );
-    }
+    assert!(
+        json_property_contains(&search_schema, "entity", "pathway"),
+        "typed search entity schema missing pathway enum: {search_schema}"
+    );
+    assert!(
+        json_property_contains(&search_schema, "limit", "25"),
+        "typed search limit schema missing 25 bound: {search_schema}"
+    );
     let get_schema = serde_json::to_value(&get.input_schema)?;
-    for marker in ["entity", "gene", "sections", "pathways"] {
-        assert!(
-            json_contains(&get_schema, marker),
-            "typed get schema missing {marker}: {get_schema}"
-        );
-    }
+    assert!(
+        json_property_contains(&get_schema, "entity", "gene"),
+        "typed get entity schema missing gene enum: {get_schema}"
+    );
+    assert!(
+        json_property_contains(&get_schema, "sections", "pathways"),
+        "typed get sections schema missing pathways enum: {get_schema}"
+    );
     let biomcp = tools
         .tools
         .iter()

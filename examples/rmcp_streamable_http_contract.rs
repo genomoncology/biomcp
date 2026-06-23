@@ -59,6 +59,59 @@ fn json_contains(value: &serde_json::Value, needle: &str) -> bool {
     }
 }
 
+fn json_refs_contain(root: &serde_json::Value, value: &serde_json::Value, needle: &str) -> bool {
+    match value {
+        serde_json::Value::Object(map) => {
+            if let Some(reference) = map.get("$ref").and_then(serde_json::Value::as_str) {
+                if let Some(target) = reference
+                    .strip_prefix('#')
+                    .and_then(|pointer| root.pointer(pointer))
+                {
+                    return json_contains(target, needle);
+                }
+            }
+            map.values()
+                .any(|child| json_refs_contain(root, child, needle))
+        }
+        serde_json::Value::Array(items) => items
+            .iter()
+            .any(|child| json_refs_contain(root, child, needle)),
+        serde_json::Value::String(_)
+        | serde_json::Value::Number(_)
+        | serde_json::Value::Bool(_)
+        | serde_json::Value::Null => false,
+    }
+}
+
+fn json_property_contains(value: &serde_json::Value, property: &str, needle: &str) -> bool {
+    fn visit(
+        root: &serde_json::Value,
+        value: &serde_json::Value,
+        property: &str,
+        needle: &str,
+    ) -> bool {
+        match value {
+            serde_json::Value::Object(map) => {
+                map.get(property).is_some_and(|property_value| {
+                    json_contains(property_value, needle)
+                        || json_refs_contain(root, property_value, needle)
+                }) || map
+                    .values()
+                    .any(|child| visit(root, child, property, needle))
+            }
+            serde_json::Value::Array(items) => items
+                .iter()
+                .any(|child| visit(root, child, property, needle)),
+            serde_json::Value::String(_)
+            | serde_json::Value::Number(_)
+            | serde_json::Value::Bool(_)
+            | serde_json::Value::Null => false,
+        }
+    }
+
+    visit(value, value, property, needle)
+}
+
 async fn print_typed_tool_surface(
     client: &rmcp::service::RunningService<rmcp::RoleClient, impl rmcp::Service<rmcp::RoleClient>>,
 ) -> anyhow::Result<()> {
@@ -87,15 +140,17 @@ async fn print_typed_tool_surface(
     let search_schema = tool_schema(search);
     let get_schema = tool_schema(get);
 
-    for required in ["entity", "pathway", "limit", "25"] {
-        if !json_contains(&search_schema, required) {
-            anyhow::bail!("search schema missing {required}");
-        }
+    if !json_property_contains(&search_schema, "entity", "pathway") {
+        anyhow::bail!("search entity schema missing pathway enum");
     }
-    for required in ["entity", "gene", "sections", "pathways"] {
-        if !json_contains(&get_schema, required) {
-            anyhow::bail!("get schema missing {required}");
-        }
+    if !json_property_contains(&search_schema, "limit", "25") {
+        anyhow::bail!("search limit schema missing 25 bound");
+    }
+    if !json_property_contains(&get_schema, "entity", "gene") {
+        anyhow::bail!("get entity schema missing gene enum");
+    }
+    if !json_property_contains(&get_schema, "sections", "pathways") {
+        anyhow::bail!("get sections schema missing pathways enum");
     }
 
     println!("MCP typed tools: biomcp, search, get");
