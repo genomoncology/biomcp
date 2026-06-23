@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use http_cache::{CacheManager, HttpResponse};
 use http_cache_reqwest::CACacheManager;
 use http_cache_semantics::CachePolicy;
-use tracing::warn;
+use tracing::{debug, warn};
 
 use super::{
     CleanOptions, FilesystemSpace, ResolvedCacheConfig, evaluate_cache_limits, execute_cache_clean,
@@ -325,7 +325,7 @@ where
         .min_disk_free
         .is_violated(space_after.available_bytes, space_after.total_bytes)
     {
-        warn!(
+        debug!(
             cache_path = %cache_path.display(),
             min_disk_free = %config.min_disk_free.display(),
             available_bytes = space_after.available_bytes,
@@ -343,6 +343,7 @@ mod tests {
     use std::fs;
     use std::path::Path;
     use std::sync::Arc;
+    use std::sync::Mutex;
     use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
     use std::time::Duration;
 
@@ -350,6 +351,10 @@ mod tests {
     use http::Response;
     use http_cache::{HttpResponse, HttpVersion};
     use http_cache_semantics::CachePolicy;
+    use tracing::Event;
+    use tracing::field::{Field, Visit};
+    use tracing_subscriber::layer::{Context, SubscriberExt};
+    use tracing_subscriber::{Layer, Registry};
 
     use super::{
         FilesystemSpace, SizeAwareCacheManager, estimate_cache_bytes_fast, run_eviction_cycle_with,
@@ -415,6 +420,47 @@ mod tests {
             status: 200,
             url: reqwest::Url::parse("https://example.test/cache-key").expect("url"),
             version: HttpVersion::Http11,
+        }
+    }
+
+    #[derive(Clone, Debug)]
+    struct CapturedEvent {
+        level: tracing::Level,
+        message: String,
+    }
+
+    #[derive(Clone, Default)]
+    struct CapturingLayer {
+        events: Arc<Mutex<Vec<CapturedEvent>>>,
+    }
+
+    impl<S> Layer<S> for CapturingLayer
+    where
+        S: tracing::Subscriber,
+    {
+        fn on_event(&self, event: &Event<'_>, _ctx: Context<'_, S>) {
+            let mut visitor = MessageVisitor::default();
+            event.record(&mut visitor);
+            self.events
+                .lock()
+                .expect("capture events")
+                .push(CapturedEvent {
+                    level: *event.metadata().level(),
+                    message: visitor.message.unwrap_or_default(),
+                });
+        }
+    }
+
+    #[derive(Default)]
+    struct MessageVisitor {
+        message: Option<String>,
+    }
+
+    impl Visit for MessageVisitor {
+        fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+            if field.name() == "message" {
+                self.message = Some(format!("{value:?}"));
+            }
         }
     }
 
@@ -600,6 +646,94 @@ mod tests {
 
         assert_eq!(seen_max_size.load(Ordering::SeqCst), 8);
         assert_eq!(approx_bytes.load(Ordering::Relaxed), 8);
+    }
+
+    fn captured_eviction_events(
+        after_available_bytes: u64,
+        errors: Vec<String>,
+    ) -> Vec<CapturedEvent> {
+        let before_root = TempDirGuard::new("log-capture-before");
+        let after_root = TempDirGuard::new("log-capture-after");
+        let before_cache = before_root.path().join("http");
+        let after_cache = after_root.path().join("http");
+        write_entry(&before_cache, "retained", b"live-bytes", 100);
+        write_entry(&after_cache, "retained", b"live-bytes", 100);
+        let before_snapshot = snapshot_cache(&before_cache).expect("before snapshot");
+        let after_snapshot = snapshot_cache(&after_cache).expect("after snapshot");
+        let config = test_config(before_root.path(), 100, DiskFreeThreshold::Percent(20));
+        let approx_bytes = AtomicU64::new(0);
+        let snapshot_calls = AtomicUsize::new(0);
+        let inspect_calls = AtomicUsize::new(0);
+        let capture = CapturingLayer::default();
+        let events = Arc::clone(&capture.events);
+        let subscriber = Registry::default().with(capture);
+
+        tracing::subscriber::with_default(subscriber, || {
+            run_eviction_cycle_with(
+                &before_cache,
+                &config,
+                &approx_bytes,
+                |_| {
+                    let call = snapshot_calls.fetch_add(1, Ordering::SeqCst);
+                    Ok(if call == 0 {
+                        before_snapshot.clone()
+                    } else {
+                        after_snapshot.clone()
+                    })
+                },
+                |_| {
+                    let call = inspect_calls.fetch_add(1, Ordering::SeqCst);
+                    Ok(FilesystemSpace {
+                        available_bytes: if call == 0 { 10 } else { after_available_bytes },
+                        total_bytes: 100,
+                    })
+                },
+                |_, _, _, _| {
+                    Ok(crate::cache::CleanReport {
+                        dry_run: false,
+                        orphans_removed: 0,
+                        entries_removed: 0,
+                        bytes_freed: 0,
+                        errors: errors.clone(),
+                    })
+                },
+                || 1_000,
+            )
+            .expect("cycle");
+        });
+
+        events.lock().expect("captured events").clone()
+    }
+
+    #[test]
+    fn run_eviction_cycle_logs_successful_cleanup_still_under_floor_at_debug() {
+        let events = captured_eviction_events(15, Vec::new());
+        let message =
+            "cache cleanup completed but free disk space is still below the configured floor";
+        assert!(
+            events.iter().any(
+                |event| event.level == tracing::Level::DEBUG && event.message.contains(message)
+            ),
+            "expected under-floor cleanup message at debug; captured events: {events:?}"
+        );
+        assert!(
+            !events
+                .iter()
+                .any(|event| event.level == tracing::Level::WARN && event.message.contains(message)),
+            "under-floor cleanup success must not warn; captured events: {events:?}"
+        );
+    }
+
+    #[test]
+    fn run_eviction_cycle_logs_cleanup_errors_at_warn() {
+        let events = captured_eviction_events(25, vec!["simulated cleanup failure".to_string()]);
+        let message = "cache eviction completed with cleanup errors";
+        assert!(
+            events
+                .iter()
+                .any(|event| event.level == tracing::Level::WARN && event.message.contains(message)),
+            "expected cleanup errors to warn; captured events: {events:?}"
+        );
     }
 
     #[test]
