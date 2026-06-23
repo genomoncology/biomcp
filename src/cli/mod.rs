@@ -63,9 +63,9 @@ use self::shared::search_meta_with_suggestions;
 use self::shared::{
     PaginationMeta, SearchJsonMeta, empty_sections, extract_json_from_sections,
     log_pagination_truncation, normalize_cli_query, normalize_cli_tokens, normalize_next_commands,
-    paged_fetch_limit, paginate_results, pagination_footer_cursor, pagination_footer_offset,
-    related_article_filters, render_batch_json, resolve_query_input, search_json,
-    search_json_with_meta, search_json_with_meta_and_suggestions, search_meta,
+    paged_fetch_limit, paged_fetch_limit_for, paginate_results, pagination_footer_cursor,
+    pagination_footer_offset, related_article_filters, render_batch_json, resolve_query_input,
+    search_json, search_json_with_meta, search_json_with_meta_and_suggestions, search_meta,
     search_meta_with_workflow, try_alias_fallback_outcome,
 };
 

@@ -25,7 +25,7 @@ pub struct GeneSearchArgs {
     /// Filter by GO term ID/text (e.g., GO:0004672)
     #[arg(long = "go")]
     pub go_term: Option<String>,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results
@@ -71,7 +71,7 @@ See also: biomcp list gene")]
     Trials {
         /// HGNC gene symbol (e.g., BRAF)
         symbol: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
@@ -91,7 +91,7 @@ See also: biomcp list gene")]
     Drugs {
         /// HGNC gene symbol (e.g., BRAF)
         symbol: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
@@ -108,7 +108,7 @@ See also: biomcp list gene")]
     Articles {
         /// HGNC gene symbol (e.g., BRAF)
         symbol: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
@@ -126,7 +126,7 @@ See also: biomcp list gene")]
     Pathways {
         /// HGNC gene symbol (e.g., BRAF)
         symbol: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-25 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results

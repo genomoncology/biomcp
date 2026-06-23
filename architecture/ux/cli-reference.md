@@ -63,7 +63,9 @@ biomcp get article <id> asset <name>
 biomcp get diagnostic GTR000006692.3 genes conditions
 biomcp get diagnostic "ITPW02232- TC40" conditions
 biomcp get drug pembrolizumab label targets civic approvals
+biomcp get drug --name "tepotinib hydrochloride" label
 biomcp get disease "Lynch syndrome" genes phenotypes variants
+biomcp get disease --name "chronic myeloid leukemia" survival
 biomcp get disease "uterine leiomyoma" clinical_features
 biomcp get trial NCT02576665 eligibility locations outcomes
 # target rare-disease trial detail contract (ticket 412):
@@ -81,6 +83,7 @@ fallback when Semantic Scholar points at supported Figshare metadata, including
 same-paper Figshare siblings discovered by DOI/title), while `asset <name>`
 streams raw bytes with no conversion for downstream parsers. Asset handles remain
 BioMCP commands rather than provider download URLs.
+Use `--name` when a multi-word drug or disease name would otherwise be confused with section tokens.
 Opt-in sections such as
 `clinical_features`, `diagnostics`, `disgenet`, and `funding` still require
 explicit naming.
@@ -153,6 +156,7 @@ biomcp drug trials pembrolizumab
 
 # Disease pivots
 biomcp disease trials melanoma
+biomcp disease trials melanoma --limit 50
 biomcp disease drugs melanoma
 biomcp disease articles "Lynch syndrome"
 
@@ -166,6 +170,7 @@ biomcp gene pathways BRAF
 biomcp pathway drugs R-HSA-5673001
 biomcp pathway articles R-HSA-5673001
 biomcp pathway trials R-HSA-5673001
+biomcp get pathway P21964-2  # hints to use `biomcp get protein P21964-2`
 
 # Protein pivots
 biomcp protein structures P15056

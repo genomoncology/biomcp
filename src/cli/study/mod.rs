@@ -63,7 +63,7 @@ See also: biomcp list study")]
         /// cBioPortal study ID (for example, msk_impact_2017)
         #[arg(short, long)]
         study: String,
-        /// Maximum number of genes to display (default: 10)
+        /// Maximum number of genes to display, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },

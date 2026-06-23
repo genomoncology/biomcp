@@ -28,6 +28,7 @@ fn search_pathway_help_describes_conditional_query_contract() {
     assert!(help.contains("required unless --top-level is present"));
     assert!(help.contains("multi-word queries must be quoted"));
     assert!(help.contains("biomcp search pathway --top-level --limit 5"));
+    assert!(help.contains("Maximum results, 1-25"));
 }
 
 #[test]
@@ -49,6 +50,7 @@ fn pathway_help_describes_source_aware_section_contract() {
     assert!(help.contains("enrichment (Reactome only)"));
     assert!(help.contains("all = all sections available for the resolved source"));
     assert!(help.contains("biomcp get pathway R-HSA-5673001 events"));
+    assert!(help.contains("biomcp get pathway P21964-2"));
     assert!(!help.contains("biomcp get pathway hsa05200 enrichment"));
 }
 
@@ -85,6 +87,25 @@ fn pathway_trials_parse_source_and_limit() {
     }
 }
 
+#[tokio::test]
+async fn search_pathway_limit_rejects_too_big_with_range() {
+    let err = execute(vec![
+        "biomcp".to_string(),
+        "search".to_string(),
+        "pathway".to_string(),
+        "MAPK".to_string(),
+        "--limit".to_string(),
+        "26".to_string(),
+    ])
+    .await
+    .expect_err("too-large pathway search limit should fail fast");
+
+    assert!(
+        err.to_string()
+            .contains("--limit for search pathway must be 1-25")
+    );
+}
+
 #[test]
 fn related_limit_rejects_zero_before_lookup() {
     let cli = Cli::try_parse_from([
@@ -110,9 +131,12 @@ fn related_limit_rejects_zero_before_lookup() {
     let PathwayCommand::Drugs { limit, offset, .. } = cmd else {
         panic!("expected pathway drugs command");
     };
-    let err = super::dispatch::validate_related_limit(limit, offset)
+    let err = super::dispatch::validate_related_limit("pathway drugs", limit, offset)
         .expect_err("zero pathway drugs limit should fail fast");
-    assert!(err.to_string().contains("--limit must be between 1 and 50"));
+    assert!(
+        err.to_string()
+            .contains("--limit for pathway drugs must be 1-50")
+    );
 }
 
 #[test]

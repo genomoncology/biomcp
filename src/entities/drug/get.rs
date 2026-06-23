@@ -44,7 +44,12 @@ struct DrugSections {
     requested_shortage: bool,
 }
 
+#[cfg(test)]
 fn parse_sections(sections: &[String]) -> Result<DrugSections, BioMcpError> {
+    parse_sections_for_name("", sections)
+}
+
+fn parse_sections_for_name(name: &str, sections: &[String]) -> Result<DrugSections, BioMcpError> {
     let mut out = DrugSections::default();
     let mut include_all = false;
     let mut any_section = false;
@@ -81,9 +86,8 @@ fn parse_sections(sections: &[String]) -> Result<DrugSections, BioMcpError> {
                 out.requested_all = true;
             }
             _ => {
-                return Err(BioMcpError::InvalidArgument(format!(
-                    "Unknown section \"{section}\" for drug. Available: {}",
-                    DRUG_SECTION_NAMES.join(", ")
+                return Err(BioMcpError::InvalidArgument(unknown_drug_section_message(
+                    name, sections, raw, &section,
                 )));
             }
         }
@@ -103,6 +107,52 @@ fn parse_sections(sections: &[String]) -> Result<DrugSections, BioMcpError> {
     }
 
     Ok(out)
+}
+
+fn unknown_drug_section_message(
+    name: &str,
+    sections: &[String],
+    raw_section: &str,
+    normalized_section: &str,
+) -> String {
+    let available = DRUG_SECTION_NAMES.join(", ");
+    let tail = sections
+        .iter()
+        .skip_while(|section| section.as_str() != raw_section)
+        .skip(1)
+        .collect::<Vec<_>>();
+    let section_start = tail
+        .iter()
+        .position(|section| {
+            DRUG_SECTION_NAMES.contains(&section.trim().to_ascii_lowercase().as_str())
+        })
+        .unwrap_or(tail.len());
+    let name_tail = tail
+        .iter()
+        .take(section_start)
+        .map(|section| section.trim())
+        .filter(|section| !section.is_empty());
+    let suggestion_name = std::iter::once(name.trim())
+        .chain(std::iter::once(raw_section.trim()))
+        .chain(name_tail)
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let remaining_sections = tail
+        .iter()
+        .skip(section_start)
+        .map(|section| section.trim())
+        .filter(|section| !section.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let next = if remaining_sections.is_empty() {
+        format!("biomcp get drug --name \"{suggestion_name}\"")
+    } else {
+        format!("biomcp get drug --name \"{suggestion_name}\" {remaining_sections}")
+    };
+    format!(
+        "Unknown section \"{normalized_section}\" for drug. Available: {available}. If \"{raw_section}\" is part of a multi-word drug name, use `{next}`."
+    )
 }
 
 fn is_section_only_requested(sections: &[String]) -> bool {
@@ -745,7 +795,7 @@ async fn get_with_region_owned(
     region_explicit: bool,
     raw_label: bool,
 ) -> Result<Drug, BioMcpError> {
-    let section_flags = parse_sections(&sections)?;
+    let section_flags = parse_sections_for_name(&name, &sections)?;
     validate_region_usage(&section_flags, region, region_explicit)?;
     validate_raw_usage(&section_flags, raw_label)?;
 

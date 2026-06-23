@@ -22,7 +22,7 @@ pub struct PgxSearchArgs {
     /// Filter by evidence level (best-effort)
     #[arg(long)]
     pub evidence: Option<String>,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results

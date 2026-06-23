@@ -16,7 +16,7 @@ pub struct PathwaySearchArgs {
     /// Include top-level pathways
     #[arg(long = "top-level")]
     pub top_level: bool,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-25 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results
@@ -47,7 +47,7 @@ See also: biomcp list pathway")]
     Drugs {
         /// Pathway ID (e.g., R-HSA-5673001, hsa05200)
         id: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
@@ -66,7 +66,7 @@ See also: biomcp list pathway")]
     Articles {
         /// Pathway ID (e.g., R-HSA-5673001, hsa05200)
         id: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
@@ -85,7 +85,7 @@ See also: biomcp list pathway")]
     Trials {
         /// Pathway ID (e.g., R-HSA-5673001, hsa05200)
         id: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results

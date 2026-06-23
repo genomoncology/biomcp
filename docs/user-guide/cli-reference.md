@@ -320,6 +320,8 @@ biomcp search pathway -q "MAPK signaling" --limit 5 --offset 0
 biomcp search pathway -q "Pathways in cancer" --limit 5 --offset 0
 ```
 
+`search pathway --limit` accepts 1-25; pathway pivot helpers accept 1-50. Out-of-range errors state the range.
+
 ### Protein
 
 ```bash
@@ -364,9 +366,11 @@ biomcp get disease MONDO:0005105 variants models
 biomcp get disease MONDO:0005105 pathways prevalence civic survival
 biomcp get disease "chronic myeloid leukemia" funding
 biomcp get disease "chronic myeloid leukemia" survival
+biomcp get disease --name "chronic myeloid leukemia" survival
 biomcp get disease MONDO:0005105 all
 ```
 
+Use `--name` when a multi-word disease name would otherwise be confused with section tokens.
 `clinical_features`, `diagnostics`, `disgenet`, and `funding` stay opt-in and
 are not included in `biomcp get disease <name_or_id> all`.
 Disease diagnostic cards are capped at 10 rows and print a
@@ -435,8 +439,10 @@ biomcp get drug Keytruda regulatory --region eu
 biomcp get drug Dupixent regulatory --region ema
 biomcp get drug Ozempic safety --region eu
 biomcp get drug carboplatin shortage
+biomcp get drug --name "tepotinib hydrochloride" label
 ```
 
+Use `--name` when a multi-word drug name would otherwise be confused with section tokens.
 Omitting `--region` on a plain name/alias `search drug` checks U.S., EU, and
 WHO data. If you omit `--region` while using structured filters such as
 `--target` or `--indication`, BioMCP stays on the U.S. MyChem path. Explicit
@@ -485,7 +491,10 @@ biomcp get pathway R-HSA-5673001
 biomcp get pathway R-HSA-5673001 genes
 biomcp get pathway hsa05200
 biomcp get pathway hsa05200 genes
+biomcp get pathway P21964-2  # hints to use `biomcp get protein P21964-2`
 ```
+
+Reactome lookup failures for UniProt-like accessions include a redirect hint to `get protein`.
 
 ### Protein
 
@@ -545,6 +554,7 @@ biomcp drug interactions warfarin
 biomcp drug adverse-events pembrolizumab
 biomcp drug trials pembrolizumab
 biomcp disease trials melanoma
+biomcp disease trials melanoma --limit 50
 biomcp disease drugs melanoma
 biomcp disease articles "Lynch syndrome"
 biomcp gene trials BRAF

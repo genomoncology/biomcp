@@ -6,7 +6,7 @@ use clap::Args;
 pub struct PhenotypeSearchArgs {
     /// HPO IDs (space- or comma-separated) or one symptom phrase / comma-separated symptom phrases
     pub terms: String,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results

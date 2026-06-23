@@ -494,6 +494,10 @@ EXAMPLES:
   biomcp get disease melanoma clinical_features
   biomcp get disease \"chronic myeloid leukemia\" funding
   biomcp get disease \"chronic myeloid leukemia\" survival
+  biomcp get disease --name \"chronic myeloid leukemia\" survival
+
+Use --name when a multi-word disease name would otherwise be confused with section tokens.
+clinical_features is the MedlinePlus clinical-summary section for configured diseases.
 
 See also: biomcp list disease")]
     Disease(disease::DiseaseGetArgs),
@@ -554,7 +558,9 @@ EXAMPLES:
   biomcp get drug Ozempic safety --region eu
   biomcp get drug pembrolizumab targets
   biomcp get drug pembrolizumab approvals
+  biomcp get drug --name \"tepotinib hydrochloride\" label
 
+Use --name when a multi-word drug name would otherwise be confused with section tokens.
 Note: `--region ema` is accepted as an alias for the canonical `eu` region value.
 If you omit `--region` on `biomcp get drug <name> regulatory`, BioMCP checks U.S. and EU regulatory data.
 
@@ -567,6 +573,7 @@ EXAMPLES:
   biomcp get pathway hsa05200
   biomcp get pathway R-HSA-5673001 genes
   biomcp get pathway R-HSA-5673001 events
+  biomcp get pathway P21964-2  # returns a hint to use `biomcp get protein P21964-2`
 
 See also: biomcp list pathway")]
     Pathway(pathway::PathwayGetArgs),

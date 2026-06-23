@@ -130,7 +130,7 @@ fn uniprot_accession_re() -> &'static Regex {
     })
 }
 
-fn is_uniprot_accession(value: &str) -> bool {
+pub(crate) fn is_uniprot_accession(value: &str) -> bool {
     uniprot_accession_re().is_match(value.trim())
 }
 

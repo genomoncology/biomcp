@@ -61,7 +61,7 @@ fn study_top_mutated_help_describes_limit() {
     let help = render_study_subcommand_long_help("top-mutated");
 
     assert!(help.contains("cBioPortal study ID"));
-    assert!(help.contains("Maximum number of genes to display (default: 10)"));
+    assert!(help.contains("Maximum number of genes to display, 1-50 (default: 10)"));
 }
 
 #[test]

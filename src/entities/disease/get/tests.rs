@@ -80,6 +80,22 @@ fn parse_sections_unknown_section_lists_clinical_features() {
 }
 
 #[test]
+fn parse_sections_unknown_value_suggests_name_flag_for_multi_word_diseases() {
+    let err = parse_sections_for_name(
+        "chronic",
+        &[
+            "myeloid".to_string(),
+            "leukemia".to_string(),
+            "survival".to_string(),
+        ],
+    )
+    .expect_err("ambiguous multi-word disease should fail with guidance");
+    let message = err.to_string();
+    assert!(message.contains("Unknown section \"myeloid\" for disease"));
+    assert!(message.contains("--name \"chronic myeloid leukemia\" survival"));
+}
+
+#[test]
 fn get_disease_preserves_canonical_mondo_lookup_path() {
     let plan = crate::sources::mydisease::MyDiseaseClient::get_plan("MONDO:0005105")
         .expect("canonical get plan");

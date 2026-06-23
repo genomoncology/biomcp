@@ -2,19 +2,27 @@ use super::{DiseaseCommand, DiseaseGetArgs, DiseaseSearchArgs};
 use crate::cli::CommandOutcome;
 
 pub(super) fn validate_related_limit(
+    command_name: &str,
     limit: usize,
     offset: usize,
 ) -> Result<(), crate::error::BioMcpError> {
-    super::super::paged_fetch_limit(limit, offset, 50).map(|_| ())
+    super::super::paged_fetch_limit_for(command_name, limit, offset, 50).map(|_| ())
 }
 
 pub(in crate::cli) async fn handle_get(
     args: DiseaseGetArgs,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
-    let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
+    let (name_or_id, raw_sections) = match args.name_or_id.as_deref() {
+        Some(name_or_id) => (name_or_id, args.args.as_slice()),
+        None => (
+            args.args.first().map(String::as_str).unwrap_or_default(),
+            args.args.get(1..).unwrap_or_default(),
+        ),
+    };
+    let (sections, json_override) = super::super::extract_json_from_sections(raw_sections);
     let json_output = json || json_override;
-    let disease = crate::entities::disease::get(&args.name_or_id, &sections).await?;
+    let disease = crate::entities::disease::get(name_or_id, &sections).await?;
     let text = if json_output {
         crate::render::json::to_entity_json_with_suggestions(
             &disease,
@@ -194,6 +202,7 @@ pub(in crate::cli) async fn handle_command(
             offset,
             source,
         } => {
+            validate_related_limit("disease trials", limit, offset)?;
             let trial_source = crate::entities::trial::TrialSource::from_flag(&source)?;
             let filters = crate::entities::trial::TrialSearchFilters {
                 condition: Some(name.clone()),
@@ -231,7 +240,7 @@ pub(in crate::cli) async fn handle_command(
             limit,
             offset,
         } => {
-            validate_related_limit(limit, offset)?;
+            validate_related_limit("disease articles", limit, offset)?;
             let filters = crate::entities::article::ArticleSearchFilters {
                 disease: Some(name.clone()),
                 ..super::super::related_article_filters()
@@ -284,7 +293,7 @@ pub(in crate::cli) async fn handle_command(
             limit,
             offset,
         } => {
-            validate_related_limit(limit, offset)?;
+            validate_related_limit("disease drugs", limit, offset)?;
             let filters = crate::entities::drug::DrugSearchFilters {
                 indication: Some(name.clone()),
                 ..Default::default()

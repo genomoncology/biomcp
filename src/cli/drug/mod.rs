@@ -43,7 +43,7 @@ pub struct DrugSearchArgs {
     /// Filter by interaction partner drug name (currently unavailable from public data sources)
     #[arg(long)]
     pub interactions: Option<String>,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results
@@ -59,10 +59,12 @@ pub struct DrugSearchArgs {
 
 #[derive(Args, Debug)]
 pub struct DrugGetArgs {
-    /// Drug name (e.g., pembrolizumab, carboplatin)
-    pub name: String,
-    /// Sections to include (label, regulatory, safety, shortage, targets, indications, interactions, civic, approvals, all)
-    pub sections: Vec<String>,
+    /// Explicit drug name; use this for multi-word names before section tokens
+    #[arg(long = "name", value_name = "NAME")]
+    pub name: Option<String>,
+    /// Drug name followed by optional sections; with --name, all positional values are sections
+    #[arg(value_name = "NAME_OR_SECTION", num_args = 0..)]
+    pub args: Vec<String>,
     /// Data region for regional sections (regulatory, safety, shortage, or all)
     #[arg(long, value_enum)]
     pub region: Option<DrugRegionArg>,
@@ -88,7 +90,7 @@ See also: biomcp list drug")]
     Trials {
         /// Drug name (e.g., pembrolizumab)
         name: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
@@ -114,7 +116,7 @@ See also: biomcp list drug")]
     AdverseEvents {
         /// Drug name (e.g., pembrolizumab)
         name: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results

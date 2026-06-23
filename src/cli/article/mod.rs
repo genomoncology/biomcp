@@ -106,7 +106,7 @@ pub struct ArticleSearchArgs {
     /// Local caller label for JSON loop-breaker suggestions across consecutive article keyword searches
     #[arg(long = "session", value_name = "TOKEN")]
     pub session: Option<String>,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results
@@ -142,7 +142,7 @@ See also: biomcp list article")]
     Entities {
         /// PMID (e.g., 22663011)
         pmid: String,
-        /// Maximum related entity commands to surface (default: 10)
+        /// Maximum related entity commands to surface, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },
@@ -174,7 +174,7 @@ See also: biomcp list article")]
     Citations {
         /// PMID, PMCID, or DOI
         id: String,
-        /// Maximum citing papers (default: 10)
+        /// Maximum citing papers, 1-100 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },
@@ -190,7 +190,7 @@ See also: biomcp list article")]
     References {
         /// PMID, PMCID, or DOI
         id: String,
-        /// Maximum referenced papers (default: 10)
+        /// Maximum referenced papers, 1-100 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },
@@ -210,7 +210,7 @@ See also: biomcp list article")]
         /// Negative seed PMIDs, PMCIDs, or DOIs to repel
         #[arg(long = "negative")]
         negative: Vec<String>,
-        /// Maximum recommendations (default: 10)
+        /// Maximum recommendations, 1-100 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },

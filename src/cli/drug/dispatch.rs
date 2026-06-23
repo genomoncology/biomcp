@@ -9,11 +9,18 @@ pub(crate) async fn handle_get(
     json: bool,
     alias_suggestions_as_json: bool,
 ) -> anyhow::Result<CommandOutcome> {
-    let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
+    let (name, raw_sections) = match args.name.as_deref() {
+        Some(name) => (name, args.args.as_slice()),
+        None => (
+            args.args.first().map(String::as_str).unwrap_or_default(),
+            args.args.get(1..).unwrap_or_default(),
+        ),
+    };
+    let (sections, json_override) = super::super::extract_json_from_sections(raw_sections);
     let region = args.region.map(DrugRegion::from);
     let json_output = json || json_override;
     render_drug_card_outcome(
-        &args.name,
+        name,
         &sections,
         region,
         args.raw,

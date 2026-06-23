@@ -58,7 +58,7 @@ pub struct VariantSearchArgs {
     /// Filter CIViC therapy name
     #[arg(long)]
     pub therapy: Option<String>,
-    /// Maximum results (default: 10)
+    /// Maximum results, 1-50 (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results
@@ -89,7 +89,7 @@ See also: biomcp list variant")]
     Trials {
         /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
         id: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
@@ -110,7 +110,7 @@ See also: biomcp list variant")]
     Articles {
         /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
         id: String,
-        /// Maximum results (default: 10)
+        /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results

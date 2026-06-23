@@ -25,7 +25,15 @@ pub(super) struct DiseaseSections {
     pub(super) include_clinical_features: bool,
 }
 
+#[cfg(test)]
 fn parse_sections(sections: &[String]) -> Result<DiseaseSections, BioMcpError> {
+    parse_sections_for_name("", sections)
+}
+
+fn parse_sections_for_name(
+    name_or_id: &str,
+    sections: &[String],
+) -> Result<DiseaseSections, BioMcpError> {
     let mut out = DiseaseSections::default();
     let mut include_all = false;
 
@@ -53,10 +61,9 @@ fn parse_sections(sections: &[String]) -> Result<DiseaseSections, BioMcpError> {
             DISEASE_SECTION_CLINICAL_FEATURES => out.include_clinical_features = true,
             DISEASE_SECTION_ALL => include_all = true,
             _ => {
-                return Err(BioMcpError::InvalidArgument(format!(
-                    "Unknown section \"{section}\" for disease. Available: {}",
-                    DISEASE_SECTION_NAMES.join(", ")
-                )));
+                return Err(BioMcpError::InvalidArgument(
+                    unknown_disease_section_message(name_or_id, sections, raw, &section),
+                ));
             }
         }
     }
@@ -75,8 +82,54 @@ fn parse_sections(sections: &[String]) -> Result<DiseaseSections, BioMcpError> {
     Ok(out)
 }
 
+fn unknown_disease_section_message(
+    name_or_id: &str,
+    sections: &[String],
+    raw_section: &str,
+    normalized_section: &str,
+) -> String {
+    let available = DISEASE_SECTION_NAMES.join(", ");
+    let tail = sections
+        .iter()
+        .skip_while(|section| section.as_str() != raw_section)
+        .skip(1)
+        .collect::<Vec<_>>();
+    let section_start = tail
+        .iter()
+        .position(|section| {
+            DISEASE_SECTION_NAMES.contains(&section.trim().to_ascii_lowercase().as_str())
+        })
+        .unwrap_or(tail.len());
+    let name_tail = tail
+        .iter()
+        .take(section_start)
+        .map(|section| section.trim())
+        .filter(|section| !section.is_empty());
+    let suggestion_name = std::iter::once(name_or_id.trim())
+        .chain(std::iter::once(raw_section.trim()))
+        .chain(name_tail)
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let remaining_sections = tail
+        .iter()
+        .skip(section_start)
+        .map(|section| section.trim())
+        .filter(|section| !section.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let next = if remaining_sections.is_empty() {
+        format!("biomcp get disease --name \"{suggestion_name}\"")
+    } else {
+        format!("biomcp get disease --name \"{suggestion_name}\" {remaining_sections}")
+    };
+    format!(
+        "Unknown section \"{normalized_section}\" for disease. Available: {available}. If \"{raw_section}\" is part of a multi-word disease name, use `{next}`."
+    )
+}
+
 pub async fn get(name_or_id: &str, sections: &[String]) -> Result<Disease, BioMcpError> {
-    let parsed_sections = parse_sections(sections)?;
+    let parsed_sections = parse_sections_for_name(name_or_id, sections)?;
     let name_or_id = name_or_id.trim();
     if name_or_id.is_empty() {
         return Err(BioMcpError::InvalidArgument(

@@ -4,10 +4,11 @@ use futures::StreamExt;
 use tracing::{debug, warn};
 
 pub(super) fn validate_related_limit(
+    command_name: &str,
     limit: usize,
     offset: usize,
 ) -> Result<(), crate::error::BioMcpError> {
-    super::super::paged_fetch_limit(limit, offset, 50).map(|_| ())
+    super::super::paged_fetch_limit_for(command_name, limit, offset, 50).map(|_| ())
 }
 
 pub(in crate::cli) async fn handle_get(
@@ -40,7 +41,8 @@ pub(in crate::cli) async fn handle_search(
         pathway_type: args.pathway_type,
         top_level: args.top_level,
     };
-    let fetch_limit = super::super::paged_fetch_limit(args.limit, args.offset, 25)?;
+    let fetch_limit =
+        super::super::paged_fetch_limit_for("search pathway", args.limit, args.offset, 25)?;
     let mut query_summary = crate::entities::pathway::search_query_summary(&filters);
     if args.offset > 0 {
         query_summary = if query_summary.is_empty() {
@@ -77,8 +79,9 @@ pub(in crate::cli) async fn handle_command(
 ) -> anyhow::Result<CommandOutcome> {
     let text = match cmd {
         PathwayCommand::Drugs { id, limit, offset } => {
-            validate_related_limit(limit, offset)?;
-            let fetch_limit = super::super::paged_fetch_limit(limit, offset, 50)?;
+            validate_related_limit("pathway drugs", limit, offset)?;
+            let fetch_limit =
+                super::super::paged_fetch_limit_for("pathway drugs", limit, offset, 50)?;
             let rows = pathway_drug_results(&id, fetch_limit).await?;
             let (results, total) = super::super::paginate_results(rows, offset, limit);
             super::super::log_pagination_truncation(total, offset, results.len());
@@ -105,7 +108,7 @@ pub(in crate::cli) async fn handle_command(
             }
         }
         PathwayCommand::Articles { id, limit, offset } => {
-            validate_related_limit(limit, offset)?;
+            validate_related_limit("pathway articles", limit, offset)?;
             let pathway =
                 crate::entities::pathway::get(&id, super::super::empty_sections()).await?;
             let pathway_name = pathway.name.trim();
@@ -123,7 +126,8 @@ pub(in crate::cli) async fn handle_command(
             } else {
                 format!("keyword={keyword}")
             };
-            let fetch_limit = super::super::paged_fetch_limit(limit, offset, 50)?;
+            let fetch_limit =
+                super::super::paged_fetch_limit_for("pathway articles", limit, offset, 50)?;
             let rows = crate::entities::article::search(&filters, fetch_limit).await?;
             let (results, total) = super::super::paginate_results(rows, offset, limit);
             super::super::log_pagination_truncation(total, offset, results.len());
@@ -167,7 +171,7 @@ pub(in crate::cli) async fn handle_command(
             offset,
             source,
         } => {
-            validate_related_limit(limit, offset)?;
+            validate_related_limit("pathway trials", limit, offset)?;
             let pathway =
                 crate::entities::pathway::get(&id, super::super::empty_sections()).await?;
             let pathway_name = pathway.name.trim();
