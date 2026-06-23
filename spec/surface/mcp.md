@@ -121,6 +121,39 @@ test "$status" != 403
 cat "$body" | mustmatch not like 'Host header is not allowed'
 ```
 
+## MCP Responses Surface Provenance Metadata
+
+Default MCP tool text should carry upstream provenance without requiring the caller to know `--json`, while structured callers can opt in with the tool input `json: true`.
+
+```bash
+python3 - <<'PY' | mustmatch like 'MCP provenance metadata contract is wired'
+from pathlib import Path
+
+repo = Path('../..')
+shell = (repo / 'src/mcp/shell.rs').read_text()
+build = (repo / 'build.rs').read_text()
+tests = (repo / 'tests/rmcp_client_contract.rs').read_text()
+contract = (repo / 'crates/biomcp-mcp-contract-client/src/lib.rs').read_text()
+
+assert 'json: bool' in shell
+assert 'args_with_json' in shell
+assert 'append_default_mcp_footer' in shell
+assert 'mcp_meta_footer_from_json' in shell
+assert '## Sources' in shell
+assert '## Next commands' in shell
+assert 'MCP RESPONSE METADATA:' in build
+assert 'json: true' in build
+assert '_meta.section_sources' in build
+assert 'assert_mcp_provenance_calls' in tests
+assert 'assert_mcp_provenance_calls' in contract
+assert 'biomcp discover BRCA1 --json' in contract
+assert 'call_biomcp_json' in contract
+assert 'Structured Concepts' in contract
+assert 'OLS4' in contract
+print('MCP provenance metadata contract is wired')
+PY
+```
+
 ## Remote Workflow Calls Keep BioMCP Text
 
 The remote tool should execute normal BioMCP workflows, not collapse them into

@@ -18,7 +18,7 @@ use rmcp::{
     ErrorData as McpError, RoleServer, ServerHandler, ServiceExt, tool, tool_handler, tool_router,
 };
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Clone)]
@@ -29,6 +29,8 @@ pub struct BioMcpServer {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct ShellCommand {
     command: String,
+    #[serde(default)]
+    json: bool,
 }
 
 const RESOURCE_HELP_URI: &str = "biomcp://help";
@@ -99,13 +101,139 @@ fn mcp_rejection_message(args: &[String]) -> &'static str {
     }
 }
 
+fn args_include_json(args: &[String]) -> bool {
+    args.iter()
+        .any(|arg| matches!(arg.as_str(), "--json" | "-j"))
+}
+
+fn args_with_json(args: &[String]) -> Vec<String> {
+    let mut with_json = args.to_vec();
+    if !args_include_json(&with_json) {
+        with_json.push("--json".to_string());
+    }
+    with_json
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct McpSectionSource {
+    label: String,
+    sources: Vec<String>,
+}
+
+#[derive(Debug, Default)]
+struct McpMetaFooter {
+    section_sources: Vec<McpSectionSource>,
+    next_commands: Vec<String>,
+}
+
+fn push_unique<T: PartialEq>(items: &mut Vec<T>, item: T) {
+    if !items.contains(&item) {
+        items.push(item);
+    }
+}
+
+fn collect_meta_footer(value: &Value, footer: &mut McpMetaFooter) {
+    if let Some(meta) = value.get("_meta").and_then(Value::as_object) {
+        if let Some(sections) = meta.get("section_sources").and_then(Value::as_array) {
+            for section in sections {
+                let Some(label) = section.get("label").and_then(Value::as_str) else {
+                    continue;
+                };
+                let sources = section
+                    .get("sources")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Value::as_str)
+                    .map(str::to_string)
+                    .collect::<Vec<_>>();
+                if !sources.is_empty() {
+                    push_unique(
+                        &mut footer.section_sources,
+                        McpSectionSource {
+                            label: label.to_string(),
+                            sources,
+                        },
+                    );
+                }
+            }
+        }
+
+        if let Some(commands) = meta.get("next_commands").and_then(Value::as_array) {
+            for command in commands.iter().filter_map(Value::as_str) {
+                push_unique(&mut footer.next_commands, command.to_string());
+            }
+        }
+    }
+
+    match value {
+        Value::Array(values) => {
+            for item in values {
+                collect_meta_footer(item, footer);
+            }
+        }
+        Value::Object(map) => {
+            for item in map.values() {
+                collect_meta_footer(item, footer);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn mcp_meta_footer_from_json(json_text: &str) -> Option<String> {
+    let value: Value = serde_json::from_str(json_text).ok()?;
+    let mut footer = McpMetaFooter::default();
+    collect_meta_footer(&value, &mut footer);
+
+    if footer.section_sources.is_empty() && footer.next_commands.is_empty() {
+        return None;
+    }
+
+    let mut lines = Vec::new();
+    if !footer.section_sources.is_empty() {
+        lines.push("## Sources".to_string());
+        for section in footer.section_sources {
+            lines.push(format!(
+                "- {}: {}",
+                section.label,
+                section.sources.join(", ")
+            ));
+        }
+    }
+    if !footer.next_commands.is_empty() {
+        if !lines.is_empty() {
+            lines.push(String::new());
+        }
+        lines.push("## Next commands".to_string());
+        for command in footer.next_commands {
+            lines.push(format!("- `{command}`"));
+        }
+    }
+    Some(lines.join("\n"))
+}
+
+async fn append_default_mcp_footer(text: String, args: &[String]) -> String {
+    if args_include_json(args) {
+        return text;
+    }
+
+    match crate::cli::execute_mcp(args_with_json(args)).await {
+        Ok(output) => match mcp_meta_footer_from_json(&output.text) {
+            Some(footer) => format!("{text}\n\n{footer}"),
+            None => text,
+        },
+        Err(_) => text,
+    }
+}
+
 #[tool_router]
 impl BioMcpServer {
     #[doc = include_str!(concat!(env!("OUT_DIR"), "/mcp_shell_description.txt"))]
     #[tool(annotations(title = "BioMCP", read_only_hint = true))]
     async fn biomcp(
         &self,
-        Parameters(ShellCommand { command }): Parameters<ShellCommand>,
+        Parameters(ShellCommand { command, json }): Parameters<ShellCommand>,
     ) -> Result<CallToolResult, McpError> {
         if command.len() > 1024 {
             return Ok(Self::tool_error("Error: command is too long"));
@@ -131,9 +259,18 @@ impl BioMcpServer {
             return Ok(Self::tool_error(mcp_rejection_message(&args)));
         }
 
-        match crate::cli::execute_mcp(args).await {
+        if json {
+            args = args_with_json(&args);
+        }
+
+        match crate::cli::execute_mcp(args.clone()).await {
             Ok(output) => {
-                let mut content = vec![Content::text(output.text)];
+                let text = if json {
+                    output.text
+                } else {
+                    append_default_mcp_footer(output.text, &args).await
+                };
+                let mut content = vec![Content::text(text)];
                 if let Some(svg) = output.svg {
                     let encoded = base64::engine::general_purpose::STANDARD.encode(svg.as_bytes());
                     content.push(Content::image(encoded, "image/svg+xml"));
