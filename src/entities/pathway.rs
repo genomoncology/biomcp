@@ -129,13 +129,51 @@ fn source_kind_for_pathway_id(st_id: &str) -> PathwaySourceKind {
 }
 
 fn pathway_lookup_error(st_id: &str, err: BioMcpError) -> BioMcpError {
-    if crate::entities::protein::is_uniprot_accession(st_id) {
-        BioMcpError::InvalidArgument(format!(
-            "{err}\n\n`{st_id}` looks like a UniProt accession — did you mean `biomcp get protein {st_id}`?"
+    let trimmed = st_id.trim();
+    let redirect = if crate::entities::protein::is_uniprot_accession(trimmed) {
+        Some(format!(
+            "`{trimmed}` looks like a UniProt accession — did you mean `biomcp get protein {trimmed}`?"
         ))
+    } else if looks_like_ensembl_gene_or_transcript_id(trimmed) {
+        Some(format!(
+            "`{trimmed}` looks like an Ensembl id — did you mean `biomcp get gene {trimmed}`?"
+        ))
+    } else if crate::entities::variant::is_rsid(trimmed) {
+        Some(format!(
+            "`{trimmed}` looks like a dbSNP rsID — did you mean `biomcp get variant {trimmed}`?"
+        ))
+    } else if crate::entities::gene::looks_like_symbol(trimmed) {
+        Some(format!(
+            "`{trimmed}` looks like a gene symbol — did you mean `biomcp get gene {trimmed}`?"
+        ))
+    } else {
+        None
+    };
+
+    if let Some(redirect) = redirect {
+        BioMcpError::InvalidArgument(format!("{err}\n\n{redirect}"))
     } else {
         err
     }
+}
+
+fn looks_like_ensembl_gene_or_transcript_id(value: &str) -> bool {
+    let Some(suffix) = value
+        .strip_prefix("ENSG")
+        .or_else(|| value.strip_prefix("ENST"))
+    else {
+        return false;
+    };
+    let (stable_part, version_part) = match suffix.split_once('.') {
+        Some((stable_part, version_part)) => (stable_part, Some(version_part)),
+        None => (suffix, None),
+    };
+    !stable_part.is_empty()
+        && stable_part.chars().all(|c| c.is_ascii_digit())
+        && match version_part {
+            Some(part) => !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()),
+            None => true,
+        }
 }
 
 fn source_kind_for_pathway_source(source: &str) -> PathwaySourceKind {
@@ -770,19 +808,68 @@ mod tests {
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
     }
 
-    #[test]
-    fn pathway_lookup_error_adds_protein_redirect_for_uniprot_accession() {
-        let err = pathway_lookup_error(
-            "P21964-2",
+    fn pathway_lookup_error_message(st_id: &str) -> String {
+        pathway_lookup_error(
+            st_id,
             BioMcpError::NotFound {
                 entity: "pathway".to_string(),
-                id: "P21964-2".to_string(),
-                suggestion: "Try searching: biomcp search pathway -q P21964-2".to_string(),
+                id: st_id.to_string(),
+                suggestion: format!("Try searching: biomcp search pathway -q {st_id}"),
             },
-        );
-        let message = err.to_string();
+        )
+        .to_string()
+    }
+
+    #[test]
+    fn pathway_lookup_error_adds_protein_redirect_for_uniprot_accession() {
+        let message = pathway_lookup_error_message("P21964-2");
         assert!(message.contains("looks like a UniProt accession"));
         assert!(message.contains("biomcp get protein P21964-2"));
+    }
+
+    #[test]
+    fn pathway_lookup_error_adds_gene_redirect_for_ensembl_gene_id() {
+        let message = pathway_lookup_error_message("ENSG00000157764");
+        assert!(message.contains("looks like an Ensembl id"));
+        assert!(message.contains("biomcp get gene ENSG00000157764"));
+    }
+
+    #[test]
+    fn pathway_lookup_error_adds_gene_redirect_for_ensembl_transcript_id() {
+        let message = pathway_lookup_error_message("ENST00000646891");
+        assert!(message.contains("looks like an Ensembl id"));
+        assert!(message.contains("biomcp get gene ENST00000646891"));
+    }
+
+    #[test]
+    fn pathway_lookup_error_adds_gene_redirect_for_versioned_ensembl_id() {
+        let message = pathway_lookup_error_message("ENSG00000157764.13");
+        assert!(message.contains("looks like an Ensembl id"));
+        assert!(message.contains("biomcp get gene ENSG00000157764.13"));
+    }
+
+    #[test]
+    fn ensembl_redirect_matcher_rejects_malformed_version_suffix() {
+        assert!(!looks_like_ensembl_gene_or_transcript_id(
+            "ENSG00000157764."
+        ));
+        assert!(!looks_like_ensembl_gene_or_transcript_id(
+            "ENSG00000157764.x"
+        ));
+    }
+
+    #[test]
+    fn pathway_lookup_error_adds_gene_redirect_for_gene_symbol() {
+        let message = pathway_lookup_error_message("BRAF");
+        assert!(message.contains("looks like a gene symbol"));
+        assert!(message.contains("biomcp get gene BRAF"));
+    }
+
+    #[test]
+    fn pathway_lookup_error_adds_variant_redirect_for_rsid() {
+        let message = pathway_lookup_error_message("rs113488022");
+        assert!(message.contains("looks like a dbSNP rsID"));
+        assert!(message.contains("biomcp get variant rs113488022"));
     }
 
     #[test]

@@ -26,7 +26,7 @@ pub use self::resolution::{
 pub use self::search::{search, search_page, search_query_summary};
 
 pub(crate) use self::normalization::transcript_coding_hgvs_re;
-pub(crate) use self::resolution::{gnomad_variant_slug, normalize_protein_change};
+pub(crate) use self::resolution::{gnomad_variant_slug, is_rsid, normalize_protein_change};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Variant {

@@ -15,6 +15,10 @@ fn rsid_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"(?i)^(rs\d+)$").expect("valid regex"))
 }
 
+pub(crate) fn is_rsid(value: &str) -> bool {
+    rsid_re().is_match(value.trim())
+}
+
 fn hgvs_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"^(chr[0-9XYM]+:g\.\d+[ACGT]>[ACGT])$").expect("valid regex"))

@@ -623,7 +623,7 @@ pub struct EnrichmentTerm {
     pub genes: String,
 }
 
-fn looks_like_symbol(query: &str) -> bool {
+pub(crate) fn looks_like_symbol(query: &str) -> bool {
     if query.is_empty() {
         return false;
     }

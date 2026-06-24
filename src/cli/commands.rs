@@ -575,7 +575,10 @@ EXAMPLES:
   biomcp get pathway hsa05200
   biomcp get pathway R-HSA-5673001 genes
   biomcp get pathway R-HSA-5673001 events
-  biomcp get pathway P21964-2  # returns a hint to use `biomcp get protein P21964-2`
+  biomcp get pathway P21964-2        # returns a hint to use `biomcp get protein P21964-2`
+  biomcp get pathway ENSG00000157764 # returns a hint to use `biomcp get gene ENSG00000157764`
+  biomcp get pathway BRAF            # returns a hint to use `biomcp get gene BRAF`
+  biomcp get pathway rs113488022     # returns a hint to use `biomcp get variant rs113488022`
 
 See also: biomcp list pathway")]
     Pathway(pathway::PathwayGetArgs),
