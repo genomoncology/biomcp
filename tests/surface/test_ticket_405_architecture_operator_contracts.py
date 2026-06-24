@@ -95,7 +95,9 @@ def test_ticket_405_surface_contract_lane_is_documented_for_make_spec_and_make_t
         "current guidance must describe the split between Markdown specs and "
         "Python/static contracts"
     )
-    assert "run_python_contracts" not in runner and "uv run --no-sync pytest" not in runner
+    assert "tests/surface/test_parallel_isolation_contract.py" in runner
+    assert "uv sync --extra dev --no-install-project" not in runner
+    assert "uv run --no-sync pytest" not in runner
     assert "test-contracts" in makefile and "pytest tests/" in makefile
 
 

@@ -368,18 +368,28 @@ to run a bad caller value.
 env BIOMCP_BIN="/tmp/biomcp-missing-for-spec-contract" make -C ../.. -n spec 2>&1 | mustmatch like "cargo build --locked --profile"
 ```
 
-## Routine Spec Runner Is Markdown Only
+## Routine Spec Runner Keeps One Python Canary
 
-Routine specs are executable Markdown contracts. Static Python checks belong to
-`make test`, so the shared spec runner should not partition or run
-`spec/surface/test_*.py` files in the routine lane.
+Routine specs are mostly executable Markdown contracts. The one static Python
+exception is `tests/surface/test_parallel_isolation_contract.py`, which stays in
+`make spec` to guard the disease/discover isolation split without reintroducing
+Python MCP setup or broad pytest collection.
 
 ```bash
-awk '/SPEC_ROUTINE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch not like "spec/surface/test_"
+awk '/SPEC_ROUTINE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch like "spec/surface/mcp.md
+tests/surface/test_parallel_isolation_contract.py"
 ```
 
 ```bash
-rg -n 'PY_PATHS|run_python_contracts|uv run --no-sync pytest' ../../scripts/run-specs.sh | mustmatch ""
+python3 - <<'PY'
+import re
+from pathlib import Path
+runner = Path('../../scripts/run-specs.sh').read_text()
+assert re.findall(r'tests/surface/\S+\.py', runner) == ['tests/surface/test_parallel_isolation_contract.py']
+assert 'uv sync --extra dev --no-install-project' not in runner
+assert 'uv run --no-sync pytest' not in runner
+print('routine pytest canary is bounded')
+PY
 ```
 
 ## Routine Markdown Specs Do Not Relaunch Unit Tests

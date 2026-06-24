@@ -33,9 +33,10 @@ is a deterministic legacy subset kept for profile compatibility. `make verify`
 is the explicit opt-in live public-upstream confidence lane; `make
 release-live-smoke` remains a compatibility alias. `make spec-pr` remains
 available for the same offline `SPEC_ROUTINE_PATHS` as `make spec`, through
-`scripts/run-specs.sh`: routine specs are Markdown-only and use `mustmatch test
---lang bash`. Static Python surface contracts live under `tests/surface/` and
-run through `make test`. The executable docs themselves call
+`scripts/run-specs.sh`: routine Markdown specs use `mustmatch test --lang bash`,
+with `tests/surface/test_parallel_isolation_contract.py` as the only routine
+pytest canary. Other static Python surface contracts live under `tests/surface/`
+and run through `make test`. The executable docs themselves call
 `tools/biomcp-ci`, which owns release-binary resolution, the repo-owned
 `.cache/biomcp-specs/` cache/XDG roots, optional-key stripping, and warm-hit
 `BIOMCP_CACHE_MODE=infinite` replay when CI sets `BIOMCP_SPEC_CACHE_HIT=1`.
@@ -88,6 +89,6 @@ warm timing tracks the current sum of those warmed routine component lanes.
 | `make lint` | refresh pending | includes the quality ratchet |
 | `make test` | refresh pending | Rust nextest plus Python/docs contract lane |
 | `make spec-contracts` | `337.47s` | Markdown-only deterministic subset, including local MCP proof (2026-06-17; ticket 427) |
-| `make spec` / `make spec-pr` | refresh pending | Markdown-only offline deterministic routine spec lane after ticket 427 |
+| `make spec` / `make spec-pr` | refresh pending | offline deterministic routine spec lane plus the parallel-isolation pytest canary |
 | `make verify` | `operator-run` | opt-in live public-upstream smoke; not part of routine gates |
 | `make release-gate` | refresh pending | lint + test + spec routine gate |

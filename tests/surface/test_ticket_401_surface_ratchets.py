@@ -119,7 +119,7 @@ def test_ticket_401_request_plan_ratchets_execute_named_contracts_not_list_only(
     )
 
 
-def test_ticket_401_routine_modes_are_markdown_only() -> None:
+def test_ticket_401_routine_modes_are_markdown_plus_parallel_canary_only() -> None:
     runner = _read_repo("scripts/run-specs.sh")
     match = re.search(r"(?ms)^\s*spec\|spec-pr\)\n(?P<body>.*?)\n\s*;;", runner)
     assert match is not None, "missing run-specs routine modes"
@@ -127,6 +127,7 @@ def test_ticket_401_routine_modes_are_markdown_only() -> None:
     assert "SPEC_ROUTINE_PATHS" in body, "routine modes must run the path inventory"
     assert "run_markdown_specs" in runner, "routine modes must run Markdown specs"
 
-    assert "PY_PATHS" not in runner
-    assert "run_python_contracts" not in runner
+    py_paths = re.findall(r"tests/surface/\S+\.py", runner)
+    assert py_paths == ["tests/surface/test_parallel_isolation_contract.py"]
+    assert "uv sync --extra dev --no-install-project" not in runner
     assert "uv run --no-sync pytest" not in runner

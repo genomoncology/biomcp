@@ -859,6 +859,21 @@ def _make_variable_paths(name: str) -> set[str]:
     return set(re.findall(r"spec/\S+", match.group("body")))
 
 
+def _runner_array_paths(name: str) -> list[str]:
+    runner = _read_repo("scripts/run-specs.sh")
+    match = re.search(rf"(?ms)^{re.escape(name)}=\(\n(?P<body>.*?)^\)", runner)
+    assert match is not None, f"missing runner array {name}"
+    return re.findall(r"(?:spec|tests)/\S+", match.group("body"))
+
+
+def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
+    routine = _runner_array_paths("SPEC_ROUTINE_PATHS")
+    mcp_index = routine.index("spec/surface/mcp.md")
+    assert routine[mcp_index + 1] == "tests/surface/test_parallel_isolation_contract.py"
+    assert "spec/entity/disease.md" not in routine
+    assert "spec/surface/discover.md" not in routine
+
+
 def test_ticket_395_routine_and_live_spec_variables_are_disjoint_and_complete() -> None:
     routine = _make_variable_paths("SPEC_ROUTINE_PATHS")
     live = _make_variable_paths("SPEC_LIVE_PATHS")
@@ -977,7 +992,7 @@ def test_ticket_378_routine_lane_no_longer_depends_on_serialized_live_carveouts(
     assert "spec/surface/mcp.md" in spec_contracts_surface, (
         "spec-contracts should keep local MCP transport proof in routine validation"
     )
-    assert "test_parallel_isolation_contract.py" not in spec_contracts_surface, (
+    assert "test_parallel_isolation_contract.py" not in spec_contracts, (
         "spec-contracts must not run Python surface contracts; they belong to make test"
     )
     assert "spec/surface/cli.md" not in spec_contracts, (
