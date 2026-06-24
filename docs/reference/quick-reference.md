@@ -180,8 +180,9 @@ workflows require a supported expression matrix.
 
 ## Common gene aliases
 
-Use these aliases in `search` when a clinical report or paper does not use the HGNC symbol.
-Follow with `get gene <SYMBOL>` once you identify the canonical symbol.
+Use these aliases when a clinical report or paper does not use the HGNC symbol.
+For aliases that map to one canonical human gene, `get gene <alias>` resolves to the
+official symbol; use `search gene <alias>` when you want to inspect candidates first.
 
 | Alias in literature | Official symbol |
 |---------------------|-----------------|

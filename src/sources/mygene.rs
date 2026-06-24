@@ -71,7 +71,7 @@ impl MyGeneClient {
             .query("species", "human")
             .query(
                 "fields",
-                "symbol,name,entrezgene,type_of_gene,genomic_pos.chr,genomic_pos.start,genomic_pos.end,MIM,uniprot,pathway.kegg.id,pathway.reactome.id,go.BP.id,go.CC.id,go.MF.id",
+                "symbol,name,entrezgene,alias,type_of_gene,genomic_pos.chr,genomic_pos.start,genomic_pos.end,MIM,uniprot,pathway.kegg.id,pathway.reactome.id,go.BP.id,go.CC.id,go.MF.id",
             )
             .query("size", limit.to_string())
             .query("from", offset.to_string());
@@ -295,6 +295,8 @@ pub struct MyGeneHit {
     pub symbol: Option<String>,
     pub name: Option<String>,
     pub entrezgene: Option<StringOrU64>,
+    #[serde(default)]
+    pub alias: StringOrVec,
     pub type_of_gene: Option<String>,
     pub genomic_pos: Option<GenomicPosField>,
     #[serde(rename = "MIM")]

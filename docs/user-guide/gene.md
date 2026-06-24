@@ -11,7 +11,8 @@ Use gene commands to retrieve canonical metadata and targeted biological context
 
 ## Search genes
 
-Start with search when you are unsure of symbol spelling or aliases.
+Start with search when you are unsure of symbol spelling or want to inspect alias candidates.
+Known aliases that map to one canonical human gene can also be passed directly to `get gene`.
 
 ```bash
 biomcp search gene BRAF --limit 5
