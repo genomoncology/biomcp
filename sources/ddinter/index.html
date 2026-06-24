@@ -3830,7 +3830,10 @@ shows <code>DDInter local data (&lt;root&gt;)</code> in full health output, and 
 files into <code>BIOMCP_DDINTER_DIR</code> or the default data directory on first use.
 DDInter's own terms warn that absence from the database does not prove no
 interaction exists, so BioMCP keeps empty results scoped to the current local
-bundle instead of treating them as safety claims.</p>
+bundle instead of treating them as safety claims. When the queried drug is not
+present in the loaded DDInter bundle at all, JSON includes
+<code>coverage_status: "not_in_ddinter_coverage"</code> and markdown says this is a source
+coverage miss.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
 <p>The official DDInter surfaces behind BioMCP's DDI workflow are:</p>
 <ul>

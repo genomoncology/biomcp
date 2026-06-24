@@ -4019,10 +4019,10 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 </tr>
 <tr>
 <td>Article search &amp; metadata</td>
-<td>PubTator3 + Europe PMC + PubMed + LitSense2 + optional Semantic Scholar</td>
+<td>PubTator3 + Europe PMC + PubMed + optional Semantic Scholar; Semantic Scholar and LitSense2 by explicit <code>--source semanticscholar</code> / <code>--source litsense2</code></td>
 <td><code>https://www.ncbi.nlm.nih.gov/research/pubtator3-api</code>, <code>https://www.ebi.ac.uk/europepmc/webservices/rest</code>, <code>https://eutils.ncbi.nlm.nih.gov/entrez/eutils</code>, <code>https://www.ncbi.nlm.nih.gov/research/litsense2-api/api</code>, <code>https://api.semanticscholar.org</code></td>
 <td>Optional (<code>S2_API_KEY</code>)</td>
-<td>Federated search with identifier-aware merge, per-source capping after deduplication and before ranking, plus lexical, semantic, or weighted hybrid relevance ranking</td>
+<td>Federated default search with identifier-aware merge, per-source capping after deduplication and before ranking, plus lexical, semantic, or weighted hybrid relevance ranking; Semantic Scholar and LitSense2 remain individually selectable</td>
 </tr>
 <tr>
 <td>Article enrichment and graph helpers</td>
@@ -4439,7 +4439,7 @@ and practical ceilings observed in command behavior.</p>
 <h2 id="article-pipeline-behavior">Article pipeline behavior<a class="headerlink" href="#article-pipeline-behavior" title="Permanent link">&para;</a></h2>
 <p>Article workflows compose multiple APIs for different tasks:</p>
 <ol>
-<li>PubTator3 + Europe PMC + PubMed for federated search, with LitSense2 added for keyword-bearing queries and an optional Semantic Scholar leg when the filter set is compatible (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, per-source capping after deduplication and before ranking, local lexical/semantic/hybrid relevance ranking)</li>
+<li>PubTator3 + Europe PMC + PubMed for default federated search, with an optional Semantic Scholar leg when the filter set is compatible; Semantic Scholar and LitSense2 can also be queried alone through explicit <code>--source semanticscholar</code> / <code>--source litsense2</code> (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, per-source capping after deduplication and before ranking, local lexical/semantic/hybrid relevance ranking)</li>
 <li>Europe PMC for bibliographic metadata</li>
 <li>PubTator3 for entity annotations</li>
 <li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, recommendations, <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback, and supported Figshare article-asset discovery</li>

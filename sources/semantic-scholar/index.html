@@ -3792,7 +3792,7 @@
 
 <h1 id="semantic-scholar">Semantic Scholar<a class="headerlink" href="#semantic-scholar" title="Permanent link">&para;</a></h1>
 <p>Semantic Scholar matters when you already have the paper and need the graph around it: the TLDR, the follow-up literature, the references it builds on, and the related papers worth checking next. It turns a flat article lookup into a literature-review workflow that an agent can keep extending without losing the thread.</p>
-<p>In BioMCP, <code>search article</code> does not expose <code>--source semantic-scholar</code>. Instead, Semantic Scholar is an automatic optional search leg when the filter set is compatible, with shared-pool mode at 1 req/2sec without <code>S2_API_KEY</code> and authenticated mode at 1 req/sec with the key. The dedicated helper commands on this page are the direct reason to come here: <code>get article &lt;id&gt; tldr</code>, <code>article citations</code>, <code>article references</code>, and <code>article recommendations</code>.</p>
+<p>In BioMCP, Semantic Scholar is an automatic optional <code>search article --source all</code> leg when the filter set is compatible, and it is also individually selectable with <code>--source semanticscholar</code>. Both routes use shared-pool mode at 1 req/2sec without <code>S2_API_KEY</code> and authenticated mode at 1 req/sec with the key. The dedicated helper commands on this page are the graph-oriented reason to come here: <code>get article &lt;id&gt; tldr</code>, <code>article citations</code>, <code>article references</code>, and <code>article recommendations</code>.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3806,7 +3806,7 @@
 <tr>
 <td><code>search article</code></td>
 <td>Optional compatible search-leg enrichment plus source status</td>
-<td>Semantic Scholar joins article search automatically when the filter set allows it; <code>--source semantic-scholar</code> is not a public source switch</td>
+<td>Semantic Scholar joins article search automatically when the filter set allows it and can be selected alone with <code>--source semanticscholar</code></td>
 </tr>
 <tr>
 <td><code>get article &lt;id&gt; tldr</code></td>
@@ -3831,16 +3831,19 @@
 </tbody>
 </table>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;BRAF melanoma&quot;</span><span class="w"> </span>--source<span class="w"> </span>semanticscholar<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>Returns article rows whose source is Semantic Scholar.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
 </code></pre></div>
 <p>Returns a Semantic Scholar section with TLDR text and influence metadata.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <p>Returns a citation graph table with intents, influential flags, and context columns.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <p>Returns a reference graph table with the same citation-context fields.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <p>Returns a recommendations table with PMID, title, journal, and year columns.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
@@ -3854,10 +3857,10 @@ per-attempt cap and 15-second total retry-sleep budget. Source status and
 debug-plan output report <code>auth_mode</code> as <code>shared_pool</code> or <code>authenticated</code>, but
 never print the secret key or key prefix.</p>
 <h2 id="runtime-behavior">Runtime behavior<a class="headerlink" href="#runtime-behavior" title="Permanent link">&para;</a></h2>
-<p><code>search article</code> exposes Semantic Scholar as an automatic compatible leg rather
-than a user-selectable source flag. Keep using <code>--source all</code>, <code>pubtator</code>,
-<code>europepmc</code>, <code>pubmed</code>, or <code>litsense2</code> for the public source switch; Semantic
-Scholar joins only when the article filters can support it.</p>
+<p><code>search article</code> exposes Semantic Scholar both as an automatic compatible leg
+inside <code>--source all</code> and as a standalone source with <code>--source semanticscholar</code>.
+The standalone route uses the same client, auth mode, rate limits, and graceful
+degradation behavior as the compatible federated route.</p>
 <p>JSON search responses can include redacted Semantic Scholar source status under
 <code>_meta.source_status[]</code>, and <code>--debug-plan</code> mirrors that redacted status in the
 article leg so operators can distinguish <code>ok</code>, <code>degraded</code>, and <code>unavailable</code>

@@ -3770,7 +3770,7 @@
 
 <h1 id="cbioportal">cBioPortal<a class="headerlink" href="#cbioportal" title="Permanent link">&para;</a></h1>
 <p>cBioPortal matters when a single variant or gene question turns into a cohort question. It is the source page to use when you need cancer-study frequencies, downloadable study datasets, or local analytics that operate on a concrete study instead of a live one-record API lookup.</p>
-<p>In BioMCP, the variant <code>cbioportal</code> section adds best-effort cohort frequency context, while <code>study</code> is BioMCP's local cBioPortal analytics family for downloaded datasets. Use <code>study download</code> to install a study into your local root and <code>study query</code> when you want per-study mutation, CNA, or expression summaries.</p>
+<p>In BioMCP, the variant <code>cbioportal</code> section adds best-effort cohort frequency context, while <code>study</code> is BioMCP's local cBioPortal analytics family for downloaded datasets. Use <code>study list</code> to see the local cohort list, <code>study download</code> to install a study into your local root, and <code>study query</code> when you want per-study mutation, CNA, expression, or structural-variant/fusion summaries from local files. If a query names a study outside the local snapshot, BioMCP returns <code>not_in_local_cohorts</code> with a <code>study download &lt;study_id&gt;</code> hint rather than a hollow cohort result.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3797,8 +3797,8 @@
 <td>Downloads into the default study root or <code>BIOMCP_STUDY_DIR</code></td>
 </tr>
 <tr>
-<td><code>study query --study &lt;id&gt; --gene &lt;symbol&gt; --type &lt;mutations|cna|expression&gt;</code></td>
-<td>Per-study summaries for one gene</td>
+<td><code>study query --study &lt;id&gt; --gene &lt;symbol&gt; --type &lt;mutations|cna|expression|sv&gt;</code></td>
+<td>Per-study summaries for one gene, including structural variants/fusions from <code>data_sv.txt</code></td>
 <td>Local analytics workflow over downloaded files</td>
 </tr>
 </tbody>
@@ -3812,10 +3812,11 @@
 <p>Returns a list of downloadable cBioPortal-style study IDs.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>msk_impact_2017
 </code></pre></div>
-<p>Downloads the named study into the configured local study root.</p>
+<p>Downloads the named study into the configured local study root. <code>biomcp study list</code> documents which cohorts are local in that root.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>RET<span class="w"> </span>--type<span class="w"> </span>sv
 </code></pre></div>
-<p>Returns a per-study mutation summary for TP53 from local study files.</p>
+<p>Returns a per-study mutation summary for TP53 from local study files. Mutation summaries remain mutation-only; if local <code>data_sv.txt</code> is present, BioMCP notes that fusions/SV are excluded and points to <code>--type sv</code>. For a non-local study ID such as an undownloaded melanoma cohort, the query returns <code>not_in_local_cohorts</code> and suggests <code>biomcp study download &lt;study_id&gt;</code>.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>No BioMCP API key required. Local study analytics use downloaded datasets in the default study root or <code>BIOMCP_STUDY_DIR</code>.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>

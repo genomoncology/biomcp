@@ -3850,11 +3850,12 @@ gene, disease, or drug anchor.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s1">&#39;&quot;cafe-au-lait spots&quot; neurofibromas disease&#39;</span><span class="w"> </span>--type<span class="w"> </span>review<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;TCGA mutation analysis dataset&quot;</span><span class="w"> </span>--type<span class="w"> </span>review<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>On the default <code>--source all</code> route, adding <code>-k/--keyword</code> also brings LitSense2
-into compatible federated searches and makes the default relevance mode
-<code>hybrid</code>.
-That semantic-aware path uses the LitSense2-derived semantic signal; rows
-without LitSense2 provenance contribute <code>semantic=0</code>.
+<p>On the default <code>--source all</code> route, adding <code>-k/--keyword</code> keeps the source set
+on PubTator3, Europe PMC, PubMed, and compatible Semantic Scholar while making
+the default relevance mode <code>hybrid</code>. Use <code>--source semanticscholar</code> or
+<code>--source litsense2</code> explicitly when you want one of those sources alone.
+Semantic-aware ranking uses the LitSense2-derived semantic signal when a row has
+LitSense2 provenance; rows without LitSense2 provenance contribute <code>semantic=0</code>.
 BioMCP caps each federated source's contribution after deduplication and before
 ranking. Default: 40% of <code>--limit</code> on federated pools with at least three
 surviving primary sources. Rows count against their primary source after
@@ -3928,9 +3929,11 @@ whitespace-containing values.</p>
 <p>PubMed-specific behavior: direct <code>--source pubmed</code> searches and the compatible
 federated PubMed leg clean bounded question-format filler words from
 unfielded gene, disease, drug, and keyword terms before PubMed ESearch.
-Markdown and JSON query echoes keep the original wording, and PubTator3,
-Europe PMC, LitSense2, and Semantic Scholar keep their existing query
-behavior.</p>
+Markdown and JSON query echoes keep the original wording, PubTator3, Europe
+PMC, and Semantic Scholar keep their existing default-route query behavior,
+explicit <code>--source semanticscholar</code> searches use that same Semantic Scholar
+query behavior alone, and explicit <code>--source litsense2</code> searches keep the
+LitSense2 query behavior.</p>
 <p>This allows multi-word keyword retrieval such as:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;large language model clinical trials&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>

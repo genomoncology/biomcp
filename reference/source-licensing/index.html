@@ -6559,7 +6559,7 @@
 </ul>
 <h3 id="semantic-scholar">Semantic Scholar<a class="headerlink" href="#semantic-scholar" title="Permanent link">&para;</a></h3>
 <ul>
-<li>BioMCP surfaces: <code>search article; get article &lt;id&gt; tldr; get article &lt;id&gt; fulltext --pdf; article citations &lt;id&gt;; article references &lt;id&gt;; article recommendations &lt;id&gt;</code></li>
+<li>BioMCP surfaces: <code>search article --source semanticscholar; get article &lt;id&gt; tldr; get article &lt;id&gt; fulltext --pdf; article citations &lt;id&gt;; article references &lt;id&gt;; article recommendations &lt;id&gt;</code></li>
 <li>Integration mode: <code>direct_api</code></li>
 <li>BioMCP auth: <code>optional_env</code> via <code>S2_API_KEY</code></li>
 <li>Provider access / registration: unauthenticated access is available on the shared pool; authenticated access uses the provider-issued API key and remains governed by the API license agreement</li>
@@ -6568,7 +6568,7 @@
 <li>Official terms URL: <a href="https://www.semanticscholar.org/product/api/license">https://www.semanticscholar.org/product/api/license</a></li>
 <li>API key / account URL: <a href="https://www.semanticscholar.org/product/api">https://www.semanticscholar.org/product/api</a></li>
 <li>Reviewed on: <code>2026-03-20</code></li>
-<li>Notes: BioMCP can call Semantic Scholar without <code>S2_API_KEY</code>, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability. For <code>get article &lt;id&gt; fulltext --pdf</code>, BioMCP uses Semantic Scholar <code>openAccessPdf</code> metadata, then fetches the third-party PDF URL only after explicit PDF opt-in; the PDF's article-level reuse terms remain separate.</li>
+<li>Notes: BioMCP can call Semantic Scholar without <code>S2_API_KEY</code>, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability. Article search can use Semantic Scholar through compatible default federation or <code>--source semanticscholar</code>. For <code>get article &lt;id&gt; fulltext --pdf</code>, BioMCP uses Semantic Scholar <code>openAccessPdf</code> metadata, then fetches the third-party PDF URL only after explicit PDF opt-in; the PDF's article-level reuse terms remain separate.</li>
 </ul>
 <h3 id="umls">UMLS<a class="headerlink" href="#umls" title="Permanent link">&para;</a></h3>
 <ul>
@@ -6658,7 +6658,7 @@
 </ul>
 <h3 id="litsense2">LitSense2<a class="headerlink" href="#litsense2" title="Permanent link">&para;</a></h3>
 <ul>
-<li>BioMCP surfaces: <code>search article -k &lt;query&gt;</code></li>
+<li>BioMCP surfaces: <code>search article --source litsense2 -k &lt;query&gt;</code></li>
 <li>Integration mode: <code>direct_api</code></li>
 <li>BioMCP auth: <code>none</code></li>
 <li>Provider access / registration: open public API</li>
@@ -6666,7 +6666,7 @@
 <li>Redistribution / reuse summary: query results are broadly reusable, but preserve article-level provenance and record rights separately</li>
 <li>Official terms URL: <a href="https://www.ncbi.nlm.nih.gov/research/litsense2-api/">https://www.ncbi.nlm.nih.gov/research/litsense2-api/</a></li>
 <li>Reviewed on: <code>2026-04-10</code></li>
-<li>Notes: LitSense2 is only used for keyword-bearing article search paths and contributes semantic-signal metadata rather than acting as the sole article backend.</li>
+<li>Notes: LitSense2 is individually selectable with <code>search article --source litsense2</code> and contributes semantic-signal metadata; it is not part of the default <code>--source all</code> federation.</li>
 </ul>
 <h3 id="pharmgkb">PharmGKB<a class="headerlink" href="#pharmgkb" title="Permanent link">&para;</a></h3>
 <ul>

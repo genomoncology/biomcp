@@ -3982,11 +3982,12 @@ unchanged.</p>
 </code></pre></div>
 <h3 id="multi-source-federation">Multi-source federation<a class="headerlink" href="#multi-source-federation" title="Permanent link">&para;</a></h3>
 <p>Article search fans out to PubTator3, Europe PMC, and PubMed by default when
-the filter set is compatible. Known gene, disease, and drug anchors
-participate in that typed route. When a non-empty keyword is present, BioMCP
-also adds LitSense2 to the federated route. Semantic Scholar can still join
-the same query when the filter set is compatible. BioMCP merges duplicates
-across PMID, PMCID, and DOI where possible. <code>S2_API_KEY</code> upgrades the Semantic
+the filter set is compatible. Known gene, disease, drug, and keyword queries
+participate in that route. Semantic Scholar can still join the same query when
+the filter set is compatible. Semantic Scholar and LitSense2 are also available
+as explicit single-source routes with <code>--source semanticscholar</code> and
+<code>--source litsense2</code>. BioMCP merges duplicates across PMID,
+PMCID, and DOI where possible. <code>S2_API_KEY</code> upgrades the Semantic
 Scholar leg to authenticated requests at 1 req/sec; without it, BioMCP uses
 the shared unauthenticated pool at 1 req/2sec. Search results are still
 deduplicated by PMID when BioMCP can resolve one.</p>
@@ -4007,8 +4008,8 @@ deduplicated by PMID when BioMCP can resolve one.</p>
 <p>Markdown preserves the merged rank order, and JSON includes row-level
 <code>matched_sources</code>, <code>ranking</code>, <code>citation_count</code>, and
 <code>influential_citation_count</code>.</p>
-<p>Use <code>--source &lt;all, pubtator, europepmc, pubmed, litsense2&gt;</code> to select one
-backend or keep the default federated search.
+<p>Use <code>--source &lt;all, pubtator, europepmc, pubmed, semanticscholar, litsense2&gt;</code>
+to select one backend or keep the default federated search.
 BioMCP caps each federated source's contribution after deduplication and before
 ranking. Default: 40% of <code>--limit</code> on federated pools with at least three
 surviving primary sources. Rows count against their primary source after
@@ -4043,9 +4044,10 @@ indexed by PubMed or Europe PMC and cannot be resolved.</p>
 <p>Default article output can include an optional Semantic Scholar section with
 TLDR text, influence counts, and open-access PDF metadata when that paper
 resolves in Semantic Scholar. <code>S2_API_KEY</code> makes those requests authenticated;
-without it, BioMCP uses the shared pool. <code>search article --source</code> now supports
-<code>all</code>, <code>pubtator</code>, <code>europepmc</code>, <code>pubmed</code>, and <code>litsense2</code>; Semantic Scholar
-remains an automatic compatible leg rather than a directly selectable backend.</p>
+without it, BioMCP uses the shared pool. <code>search article --source</code> supports
+<code>all</code>, <code>pubtator</code>, <code>europepmc</code>, <code>pubmed</code>, <code>semanticscholar</code>, and <code>litsense2</code>;
+Semantic Scholar remains an automatic compatible leg and can also be queried
+alone with <code>--source semanticscholar</code>.</p>
 <h2 id="request-specific-sections">Request specific sections<a class="headerlink" href="#request-specific-sections" title="Permanent link">&para;</a></h2>
 <p>Full text section:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext

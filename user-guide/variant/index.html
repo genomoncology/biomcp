@@ -4044,9 +4044,13 @@ AlphaGenome <code>predict</code> section because that path requires <code>ALPHAG
 request <code>predict</code> explicitly when you want AlphaGenome output.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">   </span><span class="c1"># search trials mentioning this mutation</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span><span class="c1"># search PubMed for this variant</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span><span class="c1"># search PubMed/PubTator for this variant</span>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">   </span><span class="c1"># OncoKB lookup (requires ONCOKB_TOKEN)</span>
 </code></pre></div>
+<p><code>variant articles</code> uses PubTator variant annotations when BioMCP can resolve a
+confident variant entity. If annotation recall is unavailable, the output labels
+the route as a best-effort free-text fallback so agents know which recall path
+was used.</p>
 <h2 id="search-gwas-associations">Search GWAS associations<a class="headerlink" href="#search-gwas-associations" title="Permanent link">&para;</a></h2>
 <p>By gene:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>TCF7L2<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>

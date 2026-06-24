@@ -4395,10 +4395,11 @@ catalog. Read it with <code>biomcp skill</code>, install it with
 <p><code>study</code> is BioMCP's local analysis family for downloaded cBioPortal-style datasets.
 The public entity surface handles API-backed, local-runtime, and hybrid
 discovery/detail; <code>study</code> commands cover local query, cohort, survival,
-compare, and co-occurrence workflows.</p>
+compare, and co-occurrence workflows. Local queries can read structural variants/fusions from <code>data_sv.txt</code>; mutation summaries remain mutation-only and point to <code>--type sv</code> when SV data is present.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BIOMCP_STUDY_DIR</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.local/share/biomcp/studies&quot;</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>msk_impact_2017
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--chart<span class="w"> </span>bar<span class="w"> </span>--theme<span class="w"> </span>dark<span class="w"> </span>--palette<span class="w"> </span>wong<span class="w"> </span>-o<span class="w"> </span>docs/blog/images/tp53-mutation-bar.svg
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>RET<span class="w"> </span>--type<span class="w"> </span>fusion
 </code></pre></div>
 <h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
 <ul>

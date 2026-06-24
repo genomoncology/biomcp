@@ -4039,9 +4039,10 @@ search output does not show loop-breaker suggestions.</p>
 <p><code>search article</code> always works without credentials. BioMCP keeps
 <code>sort=relevance</code> as the default, but the effective ranking mode depends on the
 query: keyword-bearing searches default to hybrid scoring, while entity-only
-searches default to lexical directness. LitSense2 joins keyword-bearing
-federated searches, and the Semantic Scholar leg is still eligible whenever the
-filter set is compatible. <code>S2_API_KEY</code> upgrades those Semantic Scholar
+searches default to lexical directness. The default source set stays PubTator3,
+Europe PMC, PubMed, and compatible Semantic Scholar; use <code>--source
+semanticscholar</code> or <code>--source litsense2</code> explicitly when you want one of those
+sources alone. <code>S2_API_KEY</code> upgrades Semantic Scholar
 requests to authenticated quota; without it, BioMCP uses the shared pool.
 BioMCP also caps each federated source's contribution after deduplication and
 before ranking. Default: 40% of <code>--limit</code> on federated pools with at least

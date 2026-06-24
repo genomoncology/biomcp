@@ -3891,9 +3891,11 @@ common next surfaces: trials, drugs, articles, and diagnostic tests.</p>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>tuberculosis<span class="w"> </span>diagnostics
 </code></pre></div>
-<p>These helpers keep the disease context intact. Article pivots are best-effort:
+<p>These helpers keep the disease context intact. Most article pivots are best-effort:
 the mix of article sources can vary, so rely on the heading and table shape
-rather than a specific provider subsection. The diagnostics pivot is an opt-in
+rather than a specific provider subsection. <code>variant articles</code> first tries
+PubTator variant annotation recall and labels the output if it must fall back to
+best-effort free text. The diagnostics pivot is an opt-in
 <code>get disease</code> section that can combine GTR and WHO IVD local rows for the
 resolved condition. It is capped at 10 rows and prints a <code>See also:</code> command
 for <code>biomcp search diagnostic --disease &lt;query&gt; --source all --limit 50</code>; use
