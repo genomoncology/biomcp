@@ -192,6 +192,10 @@ def test_default_release_smoke_rebuilds_stale_target_binary(tmp_path: Path) -> N
     assert "Binary build date: 2026-06-24T00:00:00Z" in result.stdout
     assert f"Current HEAD: {head_sha}" in result.stdout
     assert "FAIL: 0" in result.stdout
+    report = repo_root / "target" / "release-readiness-0.8.24.md"
+    assert report.is_file()
+    assert "FAIL: 0" in report.read_text(encoding="utf-8")
+    assert not list(repo_root.glob("RELEASE-READINESS-*.md"))
 
 
 def test_explicit_bin_mismatch_is_visible_and_not_rebuilt(tmp_path: Path) -> None:

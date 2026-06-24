@@ -8,7 +8,7 @@ This document describes a target state, not the current implementation. It delib
 
 The survey for ticket 373 identified six root causes:
 
-1. At the time of the ticket-373 survey, routine March validation still routed ordinary proof through one live/cache-backed executable-spec canary lane: `.march/validation-profiles.toml` mapped `spec-only` to `make spec-pr`, and `full-blocking`/`full-contracts` to `make release-gate`, while `Makefile` kept disease/discover/protein serialized canaries inside `spec` and `spec-pr`. Ticket 378 split routine `spec-only`/`release-gate` proof onto deterministic `make spec-contracts` and left public upstream checks in explicit `make release-live-smoke`.
+1. At the time of the ticket-373 survey, routine March validation still routed ordinary proof through one live/cache-backed executable-spec canary lane, while `Makefile` kept disease/discover/protein serialized canaries inside `spec` and `spec-pr`. Ticket 378 split routine proof onto deterministic `make spec-contracts` and left public upstream checks in explicit `make release-live-smoke`.
 2. Disease and discover jump from CLI args to network-backed entity execution without a durable request-command seam: `src/cli/discover.rs::run()`, `src/entities/discover.rs::resolve_query()`, `src/cli/disease/dispatch.rs::handle_search()`, `src/entities/disease/search.rs::search_page()`, and `src/entities/disease/fallback.rs::fallback_search_page()` interleave intent, fallback, and source execution.
 3. Source request construction is trapped inside execution methods such as `src/sources/ols4.rs::OlsClient::search()`, `src/sources/mydisease.rs::{query,lookup_disease_by_xref,get}()`, `src/sources/myvariant.rs::{query_with_fields,search,get}()`, `src/sources/pubmed.rs::esearch()`, `src/sources/europepmc.rs::search_query_with_sort()`, and `src/sources/semantic_scholar.rs::paper_search()`.
 4. Existing planning seams are uneven: article has `src/entities/article/planner.rs::BackendPlan`, variant has `src/cli/variant/dispatch.rs::VariantSearchPlan`, and search-all has `src/cli/search_all/plan.rs`, but none of these is a complete source-request contract and disease/discover have no equivalent request seam.
@@ -90,34 +90,29 @@ follow-up construction with markdown presentation. Treat that as a named
 next-command ownership follow-up rather than widening this ticket into a broad
 renderer refactor.
 
-## Validation profile target
+## Retired validation profile notes
 
-Keep March profile names compatible with the current build flow. Change command bodies only after deterministic replacements exist.
+March validation profiles are retired. The repository no longer keeps a tracked
+March profile file, and routine proof routing is expressed by the standard repo
+gates instead:
 
-Current profile behavior after ticket 378:
+- `make lint`
+- `make test`
+- `make spec`
 
-| Profile | Target command shape | Live network? | Contract |
-|---|---|---:|---|
-| `preflight` / `baseline` | `cargo check --all-targets` | No | Compilation and target graph health |
-| `focused` | `cargo test --lib && cargo clippy --lib --tests -- -D warnings`, with touched-area deterministic tests included by ordinary cargo test selection | No | Unit, request, source-plan, response/status, and renderer contracts for touched code |
-| `spec-only` | deterministic `make spec-contracts` | No by default | CLI help/list, JSON envelope, fixture-backed/static workflows, no routine live upstream blockers |
-| `full-blocking` / `full-contracts` | `make release-gate`, which composes `make lint`, `make test`, and `make spec` | No by default | Release-quality deterministic local gate |
-| `release-live-smoke` | explicit opt-in `make release-live-smoke` target using `tools/biomcp-ci` and a small serialized matrix | Yes | Public upstream availability and release/operator confidence |
+Keep live public-upstream confidence explicit and opt-in through `make verify`
+(with `make release-live-smoke` as a compatibility alias). Do not bury live calls
+inside routine local proof.
 
-Target `Makefile` shape:
+Current invariants:
 
-- keep `make lint`, `make test`, and `make spec` as the canonical local gates and keep the advisory ratchets under `bin/lint`/`make lint`;
-- add an explicit live target such as `release-live-smoke` or `spec-live-smoke` instead of burying live calls inside `spec-only`;
-- keep `tools/biomcp-ci` as the executable-spec wrapper for cache roots, XDG roots, key stripping, and warm replay;
-- update `tests/test_validation_profile_contract.py` whenever profile commands change;
-- keep `spec/surface/test_parallel_isolation_contract.py` aligned with both the legacy canary partition and the deterministic routine/live-smoke split.
-
-Invariants:
-
-- Existing March profile names remain present until the shared flow changes.
-- Dependency-free build tickets can still run `make lint`, `make test`, and `make spec` successfully at every intermediate state.
-- No live public API call is required by ordinary kickoff/focused/spec-only proof after the split is complete.
-- FAQ #14's OLS4 parallel-isolation ratchet remains executable for the legacy canary targets while routine proof uses deterministic `spec-contracts` and live OLS4 confidence lives in `release-live-smoke`.
+- Dependency-free build tickets can still run `make lint`, `make test`, and
+  `make spec` successfully at every intermediate state.
+- No live public API call is required by ordinary routine proof.
+- `tools/biomcp-ci` remains the executable-spec wrapper for cache roots, XDG
+  roots, key stripping, and warm replay in live/operator lanes.
+- `.march/code-review-log.md` is the only tracked `.march/*` allowlist entry;
+  other local March artifacts stay ignored and untracked.
 
 ## Coverage restoration and pruning order
 
@@ -142,7 +137,6 @@ Every implementation ticket that touches these areas should include the relevant
 
 - `cargo test --lib` for Rust request builders, source plans, entity orchestration, and renderer model tests.
 - Targeted module tests where useful, e.g. `cargo test --lib sources::ols4`, `cargo test --lib sources::mydisease`, `cargo test --lib entities::article::planner`, `cargo test --lib cli::variant`.
-- `uv run --no-sync pytest tests/test_validation_profile_contract.py -v` when changing `.march/validation-profiles.toml`.
 - `uv run --no-sync pytest spec/surface/test_parallel_isolation_contract.py -v` when changing `Makefile`, OLS4 disease/discover spec partitioning, or the ticket-372 quarantine replacement.
 - `make lint`, `make test`, and `make spec` as the canonical local gates, preserving FAQ #12's advisory visibility.
 - Deterministic spec commands (`make spec-contracts` for routine proof, with `make spec-pr` retained for full canary debugging) only after replacement fixture contracts exist.

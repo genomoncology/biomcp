@@ -10,7 +10,6 @@ tests/
 spec/
 docs/
 architecture/
-paper/
 benchmarks/
 examples/
 scripts/

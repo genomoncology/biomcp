@@ -1,15 +1,14 @@
 """Reusable request-contract inventory library for BioMCP ticket 371.
 
 The library is intentionally static/lightweight: it extracts repo-local
-contracts, source-test seams, spec dependency hints, validation profiles, and
-recent March preflight evidence without rerunning expensive live gates.
+contracts, source-test seams, spec dependency hints, and recent March preflight
+evidence without rerunning expensive live gates.
 """
 
 from __future__ import annotations
 
 import json
 import re
-import tomllib
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -156,22 +155,8 @@ def extract_sections(path: Path, root: Path) -> list[SpecSection]:
 
 
 def validation_profiles(config: InventoryConfig) -> dict[str, Any]:
-    profile_file = config.repo_root / ".march/validation-profiles.toml"
-    data = tomllib.loads(read(profile_file))
-    comments = {}
-    current = None
-    for line in read(profile_file).splitlines():
-        if line.startswith("# observed"):
-            current = line.lstrip("# ").strip()
-        elif line.startswith("[profile."):
-            name = line.removeprefix("[profile.").removesuffix("]")
-            if current:
-                comments[name] = current
-                current = None
-    return {
-        name: {"command": body["command"], "observed_comment": comments.get(name)}
-        for name, body in data.get("profile", {}).items()
-    }
+    del config
+    return {}
 
 
 def makefile_targets(config: InventoryConfig) -> dict[str, str]:

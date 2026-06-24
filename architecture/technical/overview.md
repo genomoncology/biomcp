@@ -335,38 +335,19 @@ BioMCP has six distinct verification and operator-inspection surfaces.
 
 #### March Validation Profiles
 
-`.march/validation-profiles.toml` is retained for legacy/profile compatibility,
-not as the current gate source of truth. The standard repo gates are `make
-lint`, `make test`, and `make spec`. The shared build flow currently maps
-`kickoff` to `preflight`, leaves `01-design` and `02-design-review` without a
-validation profile, runs `focused` for `03-code` and `04-code-review`, and runs
-`full-blocking` for `05-verify`. `spec-only` is declared for slices that need a
-legacy deterministic subset directly without re-running the full release gate.
+The standard repo gates are `make lint`, `make test`, and `make spec`.
+March validation profiles are retired; the repository no longer keeps tracked
+profile files under `.march/` for routine proof routing.
 
 The exhaustive tracked and staged `.march/*` allowlist is
-`.march/code-review-log.md` and `.march/validation-profiles.toml`.
-`.march/` remains ignored by `.gitignore`; allowlisted tracked files are rare
-explicit index exceptions, not ignore-rule negations. The Python cleanup
-contract rejects every other tracked `.march/*` path, and the pre-commit helper
-rejects staged non-deletion `.march/*` paths outside the same allowlist.
+`.march/code-review-log.md`. `.march/` remains ignored by `.gitignore`;
+allowlisted tracked files are rare explicit index exceptions, not ignore-rule
+negations. The Python cleanup contract rejects every other tracked `.march/*`
+path, and the pre-commit helper rejects staged non-deletion `.march/*` paths
+outside the same allowlist.
 
-| Profile | Command | Current build-flow use |
-|---|---|---|
-| `preflight` | `cargo check --all-targets` | `kickoff` |
-| `baseline` | `cargo check --all-targets` | declared, not assigned |
-| `focused` | `cargo test --lib && cargo clippy --lib --tests -- -D warnings` | `03-code`, `04-code-review` |
-| `spec-only` | `make spec-contracts` | deterministic routine executable contracts |
-| `full-blocking` | `make release-gate` | `05-verify` |
-| `full-contracts` | `make release-gate` | declared, not assigned |
-
-`full-blocking` deliberately uses `make release-gate`, which expands to `make
-lint`, `make test`, and `make spec`; ordinary March verification no longer
-depends on public upstream availability. `spec-only` exists so follow-on slices
-can target the legacy fixture-backed/static subset directly.
-`full-contracts` remains a compatibility alias of the same command; the shared
-build flow still does not assign it today. Live public-upstream proof moved to the explicit
-opt-in `make verify` operator lane, with `make release-live-smoke` kept as an
-alias.
+Live public-upstream proof moved to the explicit opt-in `make verify` operator
+lane, with `make release-live-smoke` kept as an alias.
 
 ### 2. Spec Suite (`spec/`)
 

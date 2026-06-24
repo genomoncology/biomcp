@@ -17,12 +17,7 @@ REQUIRED_EXAMPLE_MARKERS = (
     "**Expected output:**",
 )
 SPEC_BARE_PYTHON_PATTERN = re.compile(r"(?<![A-Za-z0-9_])python(?=(?: |$))")
-TRACKED_MARCH_ALLOWLIST = frozenset(
-    {
-        ".march/code-review-log.md",
-        ".march/validation-profiles.toml",
-    }
-)
+TRACKED_MARCH_ALLOWLIST = frozenset({".march/code-review-log.md"})
 
 
 def _read(path: str) -> str:
@@ -131,16 +126,10 @@ def test_packaging_workspace_is_ignored_and_bundle_payload_is_filtered() -> None
 
 
 def test_tracked_march_allowlist_is_exhaustive_and_actionable() -> None:
-    assert TRACKED_MARCH_ALLOWLIST == frozenset(
-        {
-            ".march/code-review-log.md",
-            ".march/validation-profiles.toml",
-        }
-    )
+    assert TRACKED_MARCH_ALLOWLIST == frozenset({".march/code-review-log.md"})
 
     tracked_files = [
         ".march/code-review-log.md",
-        ".march/validation-profiles.toml",
         ".march/verify-log.md",
         ".march/blueprint.md",
         ".claude/settings.local.json",

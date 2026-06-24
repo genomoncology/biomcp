@@ -9,7 +9,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = Path("scripts") / "pre-commit-reject-march-artifacts.sh"
 ALLOWED_MARCH_PATHS = (
     ".march/code-review-log.md",
-    ".march/validation-profiles.toml",
 )
 BAD_MARCH_PATHS = (
     ".march/verify-log.md",

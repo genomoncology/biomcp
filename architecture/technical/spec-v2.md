@@ -511,12 +511,9 @@ working and keeps the active gate meaningful.
 
 ### Build-flow note
 
-The intended discipline for slices 2-4 is **build2**, but BioMCP does **not**
-currently declare `[profile.spec-only]` in `.march/validation-profiles.toml`.
-Slice 1 must add that repo opt-in alongside the new spec lane. Until that lands,
-the queue can only run under `build`; once slice 1 ships, the remaining tickets
-should be reflowed or created under `build2` so design authors can land literal
-red assertions first.
+The intended discipline for slices 2-4 was **build2** during the original
+migration plan. That profile-based routing is now retired; current work should
+use the repository's standard `make lint`, `make test`, and `make spec` gates.
 
 ## Kill conditions
 

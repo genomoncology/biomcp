@@ -71,9 +71,9 @@ HOOK
 chmod +x "$hook_path"
 ```
 
-The helper allows only `.march/code-review-log.md` and
-`.march/validation-profiles.toml` under `.march/`, and it permits staged
-deletions so cleanup commits can remove old March artifacts from tracking.
+The helper allows only `.march/code-review-log.md` under `.march/`, and it
+permits staged deletions so cleanup commits can remove old March artifacts from
+tracking.
 
 ### Timing Method
 

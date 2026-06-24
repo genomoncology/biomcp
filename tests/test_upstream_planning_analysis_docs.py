@@ -1529,9 +1529,6 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     contributing_hook = _normalize_ws(
         _markdown_section(contributing, "Local Pre-Commit Hook", level=3)
     )
-    ci_gate_section = _normalize_ws(
-        _markdown_section(technical, "1. CI and Repo Gates", level=3)
-    )
     march_profiles = _normalize_ws(
         _markdown_section(technical, "March Validation Profiles", level=4)
     )
@@ -1555,12 +1552,8 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "`make release-gate`" in runbook_premerge
     assert "`make test-contracts`" in runbook_premerge
     assert "git commit --no-verify" in runbook_premerge
-    for allowed_path in (
-        ".march/code-review-log.md",
-        ".march/validation-profiles.toml",
-    ):
-        assert allowed_path in runbook_premerge
-        assert allowed_path in contributing_hook
+    assert ".march/code-review-log.md" in runbook_premerge
+    assert ".march/code-review-log.md" in contributing_hook
 
     assert "opt in" in contributing_hook
     assert "does not install it automatically" in contributing_hook
@@ -1570,36 +1563,12 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "`cargo clippy --lib --tests -- -D warnings`" in contributing_hook
     assert "staged deletions" in contributing_hook
 
-    assert ".march/validation-profiles.toml" in ci_gate_section
-    assert (
-        "`01-design` and `02-design-review` without a validation profile"
-        in ci_gate_section
-    )
-    assert ".march/validation-profiles.toml" in march_profiles
+    assert "March validation profiles are retired" in march_profiles
     assert ".march/code-review-log.md" in march_profiles
     assert ".march/verify-log.md" not in march_profiles
     assert ".march/blueprint.md" not in march_profiles
     assert "`.march/` remains ignored by `.gitignore`" in march_profiles
     assert "Python cleanup contract" in march_profiles
     assert "pre-commit helper" in march_profiles
-    for row in (
-        "| `preflight` | `cargo check --all-targets` | `kickoff` |",
-        "| `baseline` | `cargo check --all-targets` | declared, not assigned |",
-        "| `focused` | `cargo test --lib && cargo clippy --lib --tests -- -D warnings` | `03-code`, `04-code-review` |",
-        "| `spec-only` | `make spec-contracts` | deterministic routine executable contracts |",
-        "| `full-blocking` | `make release-gate` | `05-verify` |",
-        "| `full-contracts` | `make release-gate` | declared, not assigned |",
-    ):
-        assert row in ci_gate_section
-    assert (
-        "`full-blocking` deliberately uses `make release-gate`, which expands to `make lint`, `make test`, and `make spec`"
-        in ci_gate_section
-    )
-    assert (
-        "`spec-only` exists so follow-on slices can target the legacy fixture-backed/static subset directly"
-        in ci_gate_section
-    )
-    assert (
-        "`full-contracts` remains a compatibility alias of the same command; the shared build flow still does not assign it today."
-        in ci_gate_section
-    )
+    assert "standard repo gates are `make lint`, `make test`, and `make spec`" in march_profiles
+    assert "Live public-upstream proof moved to the explicit opt-in `make verify`" in march_profiles

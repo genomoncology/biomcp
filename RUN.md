@@ -106,8 +106,8 @@ The installed pre-commit hook is the fast local gate. It should run
 `scripts/pre-commit-reject-march-artifacts.sh` before `cargo fmt --check` and
 `cargo clippy --lib --tests -- -D warnings`. The March helper rejects staged
 non-deletion `.march/*` paths outside the exhaustive allowlist:
-`.march/code-review-log.md` and `.march/validation-profiles.toml`. The hook
-does not run `cargo nextest run`, `make lint`, `make test`, `make spec`,
+`.march/code-review-log.md`. The hook does not run `cargo nextest run`,
+`make lint`, `make test`, `make spec`,
 `make spec-pr`, `make release-gate`, or `make test-contracts`.
 
 Use `make lint`, `make test`, and `make spec` for the canonical local gates.
