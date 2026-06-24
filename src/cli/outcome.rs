@@ -4,6 +4,13 @@ use std::io::IsTerminal;
 
 use super::{Cli, CliOutput, CommandOutcome, Commands, GetEntity, SearchEntity, StudyCommand};
 
+fn bio_mcp_error_exit_code(error: &crate::error::BioMcpError) -> u8 {
+    match error {
+        crate::error::BioMcpError::InvalidArgument(_) => 2,
+        _ => 1,
+    }
+}
+
 fn outcome_to_string(outcome: CommandOutcome) -> anyhow::Result<String> {
     if outcome.exit_code == 0 {
         if let Some(bytes) = outcome.bytes {
@@ -586,7 +593,19 @@ async fn run_outcome_inner(
 }
 
 pub async fn run_outcome(cli: Cli) -> anyhow::Result<CommandOutcome> {
-    run_outcome_inner(cli, false).await
+    let json = cli.json;
+    match run_outcome_inner(cli, false).await {
+        Ok(outcome) => Ok(outcome),
+        Err(err) => {
+            if json && let Some(bio_err) = err.downcast_ref::<crate::error::BioMcpError>() {
+                return Ok(CommandOutcome::stdout_with_exit(
+                    crate::render::json::to_error_json(bio_err)?,
+                    bio_mcp_error_exit_code(bio_err),
+                ));
+            }
+            Err(err)
+        }
+    }
 }
 
 async fn run_outcome_with_worker_stack(cli: Cli) -> anyhow::Result<CommandOutcome> {

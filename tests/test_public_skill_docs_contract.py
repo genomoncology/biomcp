@@ -94,10 +94,12 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert 'biomcp discover "developmental delay"' in cli_reference
     assert 'biomcp search phenotype "seizure, developmental delay" --limit 10' in cli_reference
     assert (
-        "`--json` normally returns structured output, but `biomcp cache path` "
-        "is a plain-text exception. `biomcp cache stats`, `biomcp cache clean`, "
-        "and `biomcp cache clear` respect `--json` on success. `biomcp cache clear` "
-        "still refuses non-TTY destructive runs with plain stderr unless you pass `--yes`."
+        "`--json` normally returns structured output, including JSON `error` "
+        "objects on stdout for BioMCP command errors while preserving nonzero exit "
+        "codes. `biomcp cache path` is a plain-text exception. `biomcp cache stats`, "
+        "`biomcp cache clean`, and `biomcp cache clear` respect `--json` on success. "
+        "`biomcp cache clear` still refuses non-TTY destructive runs with plain stderr "
+        "unless you pass `--yes`."
         in cli_reference
     )
     assert "biomcp serve-sse                  # removed compatibility command; use serve-http" not in cli_reference

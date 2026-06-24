@@ -55,23 +55,34 @@ async fn main() -> std::process::ExitCode {
                         } else {
                             println!("{}", output.text);
                         }
+                        let _ = std::io::stdout().flush();
                     }
-                    biomcp_cli::cli::OutputStream::Stderr => eprintln!("{}", output.text),
+                    biomcp_cli::cli::OutputStream::Stderr => {
+                        eprintln!("{}", output.text);
+                        let _ = std::io::stderr().flush();
+                    }
                 }
-                std::process::ExitCode::from(output.exit_code)
+                if output.exit_code != 0 {
+                    std::process::exit(i32::from(output.exit_code));
+                }
+                std::process::ExitCode::SUCCESS
             }
             Err(err) => {
                 if let Some(bio_err) = err.downcast_ref::<biomcp_cli::error::BioMcpError>() {
                     eprintln!("Error: {bio_err}");
+                    let _ = std::io::stderr().flush();
                     match bio_err {
                         biomcp_cli::error::BioMcpError::InvalidArgument(_) => {
-                            std::process::ExitCode::from(2)
+                            std::process::exit(2);
                         }
-                        _ => std::process::ExitCode::from(1),
+                        _ => {
+                            std::process::exit(1);
+                        }
                     }
                 } else {
                     eprintln!("Error: {err}");
-                    std::process::ExitCode::from(1)
+                    let _ = std::io::stderr().flush();
+                    std::process::exit(1);
                 }
             }
         },
