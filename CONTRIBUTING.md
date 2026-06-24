@@ -42,8 +42,11 @@ and run through `make test`. The executable docs themselves call
 `BIOMCP_CACHE_MODE=infinite` replay when CI sets `BIOMCP_SPEC_CACHE_HIT=1`.
 Use `make lint`, `make test`, and `make spec` as the canonical local gates;
 there is no supported `make check` command. `make release-gate` is the single
-routine release-readiness command; it runs `lint test spec` directly. Use
-`make test-contracts` to rerun just the release-critical Python/docs lane.
+routine release-readiness command; it runs `lint test spec` directly. The GitHub
+Release workflow additionally hard-runs the live contract and release smokes in
+`validate` before publishing assets; the contract smoke workflow is manual-only
+and does not run on a daily schedule. Use `make test-contracts` to rerun just
+the release-critical Python/docs lane.
 
 ### Local Pre-Commit Hook
 

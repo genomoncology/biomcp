@@ -152,7 +152,10 @@ BIOMCP_BIN=./target/release/biomcp ./scripts/geneagent-demo.sh
 ```
 
 Use `architecture/technical/staging-demo.md` for the promotion contract and
-`scripts/source-contracts.md` for the deeper source probe inventory.
+`scripts/source-contracts.md` for the deeper source probe inventory. The GitHub
+Release workflow hard-runs `make spec`, `scripts/contract-smoke.sh`, and
+`scripts/release-smoke.sh` in its `validate` job before publishing assets; the
+contract smoke workflow is manual-only and no longer runs on a daily schedule.
 
 ## MCP Contract Verification
 

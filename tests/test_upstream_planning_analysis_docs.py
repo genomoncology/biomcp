@@ -1074,6 +1074,9 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     ]
     expected_release_contract_runs = [
         "cargo build --release --locked",
+        "make spec",
+        "bash scripts/contract-smoke.sh",
+        "bash scripts/release-smoke.sh",
         "uv sync --extra dev --no-install-project",
         'uv run --no-sync pytest tests/ -v',
         "uv run --no-sync mkdocs build --strict",
@@ -1114,7 +1117,7 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     ) in ci_spec
     assert "if: steps.spec-cache.outputs.cache-hit == 'true'" in ci_spec
     assert "BIOMCP_SPEC_CACHE_HIT=1" in ci_spec
-    assert _workflow_run_steps(release_validate)[-4:] == expected_release_contract_runs
+    assert _workflow_run_steps(release_validate)[-7:] == expected_release_contract_runs
     assert "- uses: actions/checkout@v4" in ci_version_sync
     assert _workflow_run_steps(ci_version_sync) == [
         "bash scripts/check-version-sync.sh"
@@ -1145,7 +1148,8 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
         assert forbidden not in ci_climb_hygiene
 
     assert "name: Contract Smoke Tests" in contracts_smoke
-    assert 'cron: "0 6 * * *"' in contracts_smoke
+    assert "schedule:" not in contracts_smoke
+    assert 'cron: "0 6 * * *"' not in contracts_smoke
     assert "workflow_dispatch:" in contracts_smoke
     assert "continue-on-error: true" in contracts_smoke
     assert "- run: bash scripts/contract-smoke.sh" in contracts_smoke
