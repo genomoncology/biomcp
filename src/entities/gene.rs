@@ -23,7 +23,7 @@ use crate::sources::gnomad::{
 };
 use crate::sources::gtex::{GeneExpression, GtexClient};
 use crate::sources::hpa::{GeneHpa, HpaClient};
-use crate::sources::mygene::MyGeneClient;
+use crate::sources::mygene::{MyGeneClient, MyGeneHit};
 use crate::sources::nih_reporter::{NihReporterClient, NihReporterFundingSection};
 use crate::sources::opentargets::{
     OpenTargetsClient, OpenTargetsTargetClinicalContext, OpenTargetsTargetDruggabilityContext,
@@ -640,6 +640,50 @@ fn mygene_query_term(query: &str) -> String {
     } else {
         MyGeneClient::escape_query_value(query)
     }
+}
+
+fn normalized_alias_key(value: &str) -> String {
+    value.trim().to_ascii_uppercase()
+}
+
+fn matching_canonical_alias_symbols(query: &str, hits: &[MyGeneHit]) -> Vec<String> {
+    let query = normalized_alias_key(query);
+    let mut out = Vec::new();
+    for hit in hits {
+        let Some(symbol) = hit
+            .symbol
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            continue;
+        };
+        if hit.entrezgene.is_none() {
+            continue;
+        }
+        let symbol_matches = normalized_alias_key(symbol) == query;
+        let alias_matches = hit
+            .alias
+            .clone()
+            .into_vec()
+            .iter()
+            .any(|alias| normalized_alias_key(alias) == query);
+        if (symbol_matches || alias_matches) && !out.iter().any(|existing| existing == symbol) {
+            out.push(symbol.to_string());
+        }
+    }
+    out
+}
+
+async fn unique_canonical_alias_symbol(
+    client: &MyGeneClient,
+    query: &str,
+) -> Result<Option<String>, BioMcpError> {
+    let resp = client
+        .search(&mygene_query_term(query), 10, 0, None)
+        .await?;
+    let matches = matching_canonical_alias_symbols(query, &resp.hits);
+    Ok((matches.len() == 1).then(|| matches[0].clone()))
 }
 
 fn normalize_gene_type(value: &str) -> Result<&'static str, BioMcpError> {
@@ -2140,6 +2184,15 @@ pub async fn get_with_report(
     );
     let resp = match resp {
         Ok(resp) => resp,
+        Err(err @ BioMcpError::NotFound { .. }) => {
+            if let Some(handle) = clingen_prefetch.take() {
+                handle.abort();
+            }
+            if let Some(canonical_symbol) = unique_canonical_alias_symbol(&client, symbol).await? {
+                return Box::pin(get_with_report(&canonical_symbol, options)).await;
+            }
+            return Err(err);
+        }
         Err(err) => {
             if let Some(handle) = clingen_prefetch.take() {
                 handle.abort();
@@ -2795,6 +2848,53 @@ mod tests {
     fn mygene_query_term_searches_aliases_for_symbol_like_input() {
         assert_eq!(mygene_query_term("ERBB1"), "(symbol:ERBB1 OR alias:ERBB1)");
         assert_eq!(mygene_query_term("P53"), "(symbol:P53 OR alias:P53)");
+    }
+
+    fn mygene_hit(symbol: &str, aliases: &[&str]) -> MyGeneHit {
+        MyGeneHit {
+            symbol: Some(symbol.to_string()),
+            name: Some(format!("{symbol} gene")),
+            entrezgene: Some(crate::sources::mygene::StringOrU64::Number(1)),
+            alias: crate::utils::serde::StringOrVec::Multiple(
+                aliases.iter().map(|alias| alias.to_string()).collect(),
+            ),
+            type_of_gene: Some("protein-coding".to_string()),
+            genomic_pos: None,
+            mim: None,
+            uniprot: None,
+        }
+    }
+
+    #[test]
+    fn canonical_alias_matches_cover_common_gene_aliases() {
+        let hits = vec![
+            mygene_hit("CD274", &["PD-L1", "PDCD1L1"]),
+            mygene_hit("ERBB2", &["HER2", "NEU"]),
+            mygene_hit("TP53", &["P53"]),
+        ];
+
+        assert_eq!(
+            matching_canonical_alias_symbols("PD-L1", &hits),
+            vec!["CD274"]
+        );
+        assert_eq!(
+            matching_canonical_alias_symbols("HER2", &hits),
+            vec!["ERBB2"]
+        );
+        assert_eq!(matching_canonical_alias_symbols("P53", &hits), vec!["TP53"]);
+    }
+
+    #[test]
+    fn canonical_alias_matches_keep_ambiguous_aliases_ambiguous() {
+        let hits = vec![
+            mygene_hit("GENE1", &["SHARED"]),
+            mygene_hit("GENE2", &["SHARED"]),
+        ];
+
+        assert_eq!(
+            matching_canonical_alias_symbols("SHARED", &hits),
+            vec!["GENE1", "GENE2"]
+        );
     }
 
     #[test]

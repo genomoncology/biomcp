@@ -16,6 +16,7 @@ fn search_plan_sets_path_and_core_query_params() {
     assert_eq!(plan.query_value("from"), Some("0"));
     assert!(!plan.has_query("chr"));
     let fields = plan.query_value("fields").expect("fields present");
+    assert!(fields.contains("alias"));
     assert!(fields.contains("genomic_pos.chr"));
 }
 

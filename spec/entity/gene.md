@@ -36,6 +36,18 @@ biomcp get gene BRAF pathways
 biomcp get gene BRAF diagnostics'
 ```
 
+## Common Alias Get Resolves Canonical Gene
+
+Clinical reports and papers often use common aliases instead of the HGNC symbol.
+For an alias that maps to one canonical gene, `get gene` should return the same
+stable gene card a user would get from the official symbol.
+
+```bash
+../../tools/biomcp-ci --json get gene PD-L1 | mustmatch like '"symbol": "CD274"
+"entrez_id": "29126"
+"PD-L1"'
+```
+
 ## All-Section Warm Budget
 
 Quarantined from routine executable specs by ticket 372 because this timing-only
