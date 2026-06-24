@@ -1,6 +1,10 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+
+mod build_git_watch;
+
+use build_git_watch::git_ref_watch_paths;
 
 const MCP_SHELL_INTRO: &str = "BioMCP is a read-only biomedical MCP tool for \
 search, detail retrieval, discovery, enrichment, and study analytics across \
@@ -32,6 +36,38 @@ fn command_output(command: &str, args: &[&str]) -> Option<String> {
     } else {
         Some(trimmed.to_string())
     }
+}
+
+fn emit_rerun_if_changed_if_exists(path: &Path) {
+    if path.exists() {
+        println!("cargo:rerun-if-changed={}", path.display());
+    }
+}
+
+fn emit_git_ref_rerun_paths() {
+    let Some(git_dir) =
+        command_output("git", &["rev-parse", "--path-format=absolute", "--git-dir"])
+    else {
+        return;
+    };
+    let Some(git_common_dir) = command_output(
+        "git",
+        &["rev-parse", "--path-format=absolute", "--git-common-dir"],
+    ) else {
+        return;
+    };
+
+    let paths = git_ref_watch_paths(
+        &git_dir,
+        &git_common_dir,
+        &fs::read_to_string(Path::new(&git_dir).join("HEAD")).unwrap_or_default(),
+    );
+
+    emit_rerun_if_changed_if_exists(&paths.head);
+    if let Some(current_ref) = &paths.current_ref {
+        emit_rerun_if_changed_if_exists(current_ref);
+    }
+    emit_rerun_if_changed_if_exists(&paths.packed_refs);
 }
 
 fn is_blocked_mcp_description_line(line: &str) -> bool {
@@ -88,6 +124,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // crate — on EVERY build. Watch the current directory instead.
     println!("cargo:rerun-if-changed=src/cli/list");
     println!("cargo:rerun-if-changed=src/cli/list_reference.md");
+    // Stamp git identity below, so watch the real git metadata files that move
+    // when HEAD moves. Worktrees store `.git` as a pointer file, so resolve the
+    // per-worktree git dir for HEAD and the common git dir for refs/packed-refs.
+    // Missing git metadata is ignored so non-git package builds keep the existing
+    // `unknown` fallback instead of failing or watching permanently-missing paths.
+    emit_git_ref_rerun_paths();
 
     write_shell_description()?;
 
