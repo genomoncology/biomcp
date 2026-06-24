@@ -291,6 +291,44 @@ struct AliasError {
 }
 
 #[derive(Serialize)]
+struct ErrorJsonResponse {
+    error: AliasError,
+    _meta: ErrorMeta,
+}
+
+#[derive(Serialize)]
+struct ErrorMeta {
+    not_found: bool,
+}
+
+pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> {
+    let code = match error {
+        BioMcpError::HttpClientInit(_) => "http_client_init",
+        BioMcpError::Http(_) => "http",
+        BioMcpError::HttpMiddleware(_) => "http_middleware",
+        BioMcpError::Api { .. } => "api",
+        BioMcpError::ApiJson { .. } => "api_json",
+        BioMcpError::NotFound { .. } => "not_found",
+        BioMcpError::InvalidArgument(_) => "invalid_argument",
+        BioMcpError::ApiKeyRequired { .. } => "api_key_required",
+        BioMcpError::SourceUnavailable { .. } => "source_unavailable",
+        BioMcpError::Template(_) => "template",
+        BioMcpError::Json(_) => "json",
+        BioMcpError::Io(_) => "io",
+    };
+
+    to_pretty(&ErrorJsonResponse {
+        error: AliasError {
+            code,
+            message: error.to_string(),
+        },
+        _meta: ErrorMeta {
+            not_found: matches!(error, BioMcpError::NotFound { .. }),
+        },
+    })
+}
+
+#[derive(Serialize)]
 struct AliasJsonResponse<'a> {
     error: AliasError,
     _meta: AliasMeta<'a>,
