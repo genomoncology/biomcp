@@ -189,9 +189,9 @@ operator muscle memory.
 `make spec` and `make spec-pr` both run explicit `SPEC_ROUTINE_PATHS`: the
 Markdown subset (`spec/entity/article.md`, `spec/entity/study.md`,
 `spec/entity/variant.md`, and `spec/surface/mcp.md`) through `mustmatch test`,
-and deterministic `spec/surface/test_*.py` contracts through a separate plain
-pytest leg. `make spec-contracts` keeps its deterministic Python static-contract
-coverage on the same kind of plain pytest leg.
+plus the lone `tests/surface/test_parallel_isolation_contract.py` pytest canary
+that guards disease/discover isolation. `make spec-contracts` stays a Markdown
+subset for profile compatibility.
 Live-upstream specs such as `spec/entity/phenotype.md`, `spec/entity/protein.md`,
 `spec/entity/disease.md`, `spec/surface/discover.md`, `spec/entity/pathway.md`,
 and `spec/surface/cli.md` run only in `make verify`. Every bash block in those

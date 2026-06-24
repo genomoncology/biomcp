@@ -9,6 +9,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/study.md
   spec/entity/variant.md
   spec/surface/mcp.md
+  tests/surface/test_parallel_isolation_contract.py
   spec/surface/trial-action-summary.md
 )
 
@@ -47,6 +48,19 @@ mustmatch_dir() {
   return 1
 }
 
+partition_paths() {
+  MD_PATHS=()
+  PY_PATHS=()
+  local path
+  for path in "$@"; do
+    case "$path" in
+      *.md) MD_PATHS+=("$path") ;;
+      *.py) PY_PATHS+=("$path") ;;
+      *) echo "unsupported spec path extension: $path" >&2; return 1 ;;
+    esac
+  done
+}
+
 source_if_present() {
   local path="$1"
   if [[ -f "$path" ]]; then
@@ -71,7 +85,15 @@ run_ctgov_fixture() {
 }
 
 run_markdown_specs() {
-  mustmatch test "$@" --lang bash "${timeout_args[@]}"
+  if ((${#MD_PATHS[@]})); then
+    mustmatch test "${MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
+  fi
+}
+
+run_python_contracts() {
+  if ((${#PY_PATHS[@]})); then
+    uv run --with pytest --no-project pytest "${PY_PATHS[@]}" -v
+  fi
 }
 
 prebuild_cargo_test_targets() {
@@ -128,4 +150,6 @@ if [[ "$mode" == "verify" ]]; then
   prebuild_cargo_test_targets
 fi
 
-run_markdown_specs "${paths[@]}"
+partition_paths "${paths[@]}"
+run_markdown_specs
+run_python_contracts

@@ -1232,9 +1232,10 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     )
     assert "sync_python_dev" not in runner
     assert "uv run --no-sync pytest" not in runner
-    assert "run_python_contracts" not in runner
     assert "prepare_mcp_markdown_deps()" not in runner
     assert "uv sync --extra dev --no-install-project" not in runner
+    assert "tests/surface/test_parallel_isolation_contract.py" in runner
+    assert re.findall(r"tests/surface/\S+\.py", runner) == ["tests/surface/test_parallel_isolation_contract.py"]
     assert 'verify) default_biomcp_bin="$ROOT/target/release/biomcp"' in runner
     assert '*) default_biomcp_bin="$ROOT/target/spec/biomcp"' in runner
     assert 'BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"' in runner
@@ -1243,7 +1244,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         mode_block = re.search(rf"  {re.escape(mode)}\)\n(?P<body>.*?)\n    ;;", runner, flags=re.DOTALL)
         assert mode_block is not None, f"runner must define {mode} mode"
         assert "run_markdown_specs" in runner
-    assert "PY_PATHS" not in runner and "run_python_contracts" not in runner
+    assert "PY_PATHS" in runner and "run_python_contracts" in runner
     assert re.search(
         r"^test-contracts:\n"
         r"\tcargo build --release --locked\n"

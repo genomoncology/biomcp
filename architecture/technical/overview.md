@@ -398,15 +398,16 @@ Run locally with `make spec` for the offline routine executable-spec gate,
 opt-in live public-upstream confidence, or `make spec-pr` for
 the same offline corpus with the longer PR timeout.
 
-Repo-local `make spec` and `make spec-pr` use `scripts/run-specs.sh` to run
-`mustmatch test` with `--lang bash` over explicit `SPEC_ROUTINE_PATHS` that are
-Markdown-only: local or fixture-backed specs such as
+Repo-local `make spec` and `make spec-pr` use `scripts/run-specs.sh` over
+explicit `SPEC_ROUTINE_PATHS`: local or fixture-backed Markdown specs such as
 `spec/entity/article.md`, `spec/entity/study.md`, `spec/entity/variant.md`, and
-`spec/surface/mcp.md`. Python/static surface contracts live under
-`tests/surface/` and run in the `make test` contract lane, not in the Markdown
-spec runner. Live-upstream specs leave routine canaries
-entirely for `make verify`: phenotype/Monarch, protein/UniProt and
-ComplexPortal, disease/discover OLS4 paths, pathway Reactome/WikiPathways/KEGG,
+`spec/surface/mcp.md` run through `mustmatch test` with `--lang bash`; the lone Python
+entry is `tests/surface/test_parallel_isolation_contract.py`, a static canary
+that keeps disease/discover isolation from regressing. Python/static surface
+contracts live under `tests/surface/`; all others run in the `make test`
+contract lane, not in the Markdown spec runner. Live-upstream specs leave
+routine canaries entirely for `make verify`: phenotype/Monarch, protein/UniProt
+and ComplexPortal, disease/discover OLS4 paths, pathway Reactome/WikiPathways/KEGG,
 plus gene, drug, diagnostic, trial, PGx, VAERS, and CLI/discover surfaces that
 still exercise public APIs. There is no serialized live rerun leg in `make spec`
 or `make spec-pr`; public OLS4/pathway confidence belongs to `make verify`.
