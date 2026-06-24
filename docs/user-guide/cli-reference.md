@@ -492,10 +492,15 @@ biomcp get pathway R-HSA-5673001
 biomcp get pathway R-HSA-5673001 genes
 biomcp get pathway hsa05200
 biomcp get pathway hsa05200 genes
-biomcp get pathway P21964-2  # hints to use `biomcp get protein P21964-2`
+biomcp get pathway P21964-2        # hints to use `biomcp get protein P21964-2`
+biomcp get pathway ENSG00000157764 # hints to use `biomcp get gene ENSG00000157764`
+biomcp get pathway BRAF            # hints to use `biomcp get gene BRAF`
+biomcp get pathway rs113488022     # hints to use `biomcp get variant rs113488022`
 ```
 
-Reactome lookup failures for UniProt-like accessions include a redirect hint to `get protein`.
+Reactome lookup failures for IDs that look like UniProt accessions, Ensembl IDs, gene symbols,
+or dbSNP rsIDs include a redirect hint to the matching `get protein`, `get gene`, or
+`get variant` command.
 
 ### Protein
 

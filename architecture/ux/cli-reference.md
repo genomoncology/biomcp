@@ -171,7 +171,10 @@ biomcp gene pathways BRAF
 biomcp pathway drugs R-HSA-5673001
 biomcp pathway articles R-HSA-5673001
 biomcp pathway trials R-HSA-5673001
-biomcp get pathway P21964-2  # hints to use `biomcp get protein P21964-2`
+biomcp get pathway P21964-2        # hints to use `biomcp get protein P21964-2`
+biomcp get pathway ENSG00000157764 # hints to use `biomcp get gene ENSG00000157764`
+biomcp get pathway BRAF            # hints to use `biomcp get gene BRAF`
+biomcp get pathway rs113488022     # hints to use `biomcp get variant rs113488022`
 
 # Protein pivots
 biomcp protein structures P15056
