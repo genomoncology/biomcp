@@ -447,12 +447,13 @@ See also: biomcp list adverse-event")]
 
 #[derive(Subcommand, Debug)]
 pub enum GetEntity {
-    /// Get gene by symbol
+    /// Get gene by symbol or known single-gene alias
     #[command(after_help = "\
-When to use: use this for the default card, then add protein, hpa, expression, diseases, diagnostics, or funding when you need deeper biology, localization, diagnostic-test, or NIH grant context.
+When to use: use this for the default card, then add protein, hpa, expression, diseases, diagnostics, or funding when you need deeper biology, localization, diagnostic-test, or NIH grant context. Known aliases that map to one canonical human gene also resolve here.
 
 EXAMPLES:
   biomcp get gene BRAF
+  biomcp get gene PD-L1
   biomcp get gene BRAF pathways
   biomcp get gene BRCA1 diagnostics
   biomcp get gene BRAF hpa

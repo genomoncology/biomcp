@@ -35,7 +35,7 @@ pub struct GeneSearchArgs {
 
 #[derive(Args, Debug)]
 pub struct GeneGetArgs {
-    /// Gene symbol (e.g., BRAF, TP53, EGFR)
+    /// Gene symbol or known single-gene alias (e.g., BRAF, TP53, PD-L1)
     pub symbol: String,
     /// Sections to include (pathways, ontology, diseases, diagnostics, protein, go, interactions, civic, expression, hpa, druggability, clingen, constraint, disgenet, funding, all)
     #[arg(trailing_var_arg = true)]
