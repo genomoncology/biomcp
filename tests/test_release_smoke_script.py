@@ -30,7 +30,11 @@ def _fake_biomcp_script(git_sha: str, build_date: str = "2026-06-24T00:00:00Z") 
         def version():
             print(f"biomcp 0.8.24 (git {{GIT_SHA}}, build {{BUILD_DATE}})")
 
-        if args in (["--version"], ["version"]):
+        if args == ["--version"]:
+            print("biomcp 0.8.24")
+            raise SystemExit(0)
+
+        if args == ["version"]:
             version()
             raise SystemExit(0)
 

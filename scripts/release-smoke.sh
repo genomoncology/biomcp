@@ -20,7 +20,12 @@ current_head_sha() {
 
 binary_version_output() {
   local bin="$1"
-  "$bin" --version 2>/dev/null || true
+  local output
+  output=$("$bin" version 2>/dev/null || true)
+  if [[ -z "$(binary_git_sha "$output")" ]]; then
+    output=$("$bin" --version 2>/dev/null || true)
+  fi
+  printf '%s\n' "$output"
 }
 
 binary_git_sha() {
