@@ -14,8 +14,69 @@ Options:
 USAGE
 }
 
+current_head_sha() {
+  git rev-parse --short=8 HEAD
+}
+
+binary_version_output() {
+  local bin="$1"
+  "$bin" --version 2>/dev/null || true
+}
+
+binary_git_sha() {
+  local version_output="$1"
+  sed -nE 's/.*\(git ([^,)]*), build .*/\1/p' <<<"$version_output"
+}
+
+binary_build_date() {
+  local version_output="$1"
+  sed -nE 's/.*\(git [^,)]*, build ([^)]*)\).*/\1/p' <<<"$version_output"
+}
+
+refresh_binary_metadata() {
+  local version_output
+  version_output=$(binary_version_output "$BIN")
+  BINARY_GIT_SHA=$(binary_git_sha "$version_output")
+  BINARY_BUILD_DATE=$(binary_build_date "$version_output")
+  [[ -n "$BINARY_GIT_SHA" ]] || BINARY_GIT_SHA="unknown"
+  [[ -n "$BINARY_BUILD_DATE" ]] || BINARY_BUILD_DATE="unknown"
+}
+
+build_default_release_binary() {
+  cargo build --release --locked || exit 2
+  BIN="target/release/biomcp"
+}
+
+ensure_binary_ready() {
+  HEAD_SHA=$(current_head_sha)
+  if [[ ! -x "$BIN" ]]; then
+    if [[ "$BIN_SOURCE" == "default" ]]; then
+      echo "BioMCP release binary not found at $BIN; building target/release/biomcp" >&2
+      build_default_release_binary
+    else
+      echo "BioMCP release binary not found or not executable at $BIN (from $BIN_SOURCE)" >&2
+      exit 2
+    fi
+  fi
+
+  refresh_binary_metadata
+  if [[ "$BIN_SOURCE" == "default" && "$BINARY_GIT_SHA" != "$HEAD_SHA" ]]; then
+    # The default release smoke must never test a stale target/release binary.
+    echo "BioMCP release binary at $BIN is stamped git $BINARY_GIT_SHA, not HEAD $HEAD_SHA; rebuilding" >&2
+    build_default_release_binary
+    refresh_binary_metadata
+    if [[ "$BINARY_GIT_SHA" != "$HEAD_SHA" ]]; then
+      echo "BioMCP release binary at $BIN is still stamped git $BINARY_GIT_SHA after rebuild; expected HEAD $HEAD_SHA" >&2
+      exit 2
+    fi
+  fi
+}
+
 BIN_SOURCE="default"
 BIN="target/release/biomcp"
+HEAD_SHA=""
+BINARY_GIT_SHA="unknown"
+BINARY_BUILD_DATE="unknown"
 if [[ -n "${BIOMCP_BIN:-}" ]]; then
   BIN="$BIOMCP_BIN"
   BIN_SOURCE="BIOMCP_BIN"
@@ -40,16 +101,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ ! -x "$BIN" ]]; then
-  if [[ "$BIN_SOURCE" == "default" ]]; then
-    echo "BioMCP release binary not found at $BIN; building target/release/biomcp" >&2
-    cargo build --release --locked || exit 2
-    BIN="target/release/biomcp"
-  else
-    echo "BioMCP release binary not found or not executable at $BIN (from $BIN_SOURCE)" >&2
-    exit 2
-  fi
-fi
+ensure_binary_ready
 
 PASS=0
 FAIL=0
@@ -240,6 +292,12 @@ smoke_version() {
 
 echo "== BioMCP v0.8.24 release smoke =="
 echo "Binary: $BIN"
+echo "Binary git SHA: $BINARY_GIT_SHA"
+echo "Binary build date: $BINARY_BUILD_DATE"
+echo "Current HEAD: $HEAD_SHA"
+if [[ "$BIN_SOURCE" != "default" && "$BINARY_GIT_SHA" != "$HEAD_SHA" ]]; then
+  echo "WARNING: $BIN_SOURCE binary is stamped git $BINARY_GIT_SHA, not current HEAD $HEAD_SHA"
+fi
 
 smoke_serve_http
 smoke_plugin
