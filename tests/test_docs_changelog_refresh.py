@@ -11,6 +11,7 @@ EXPECTED_RELEASE_TICKETS = {
         240,
         432,
         433,
+        *range(434, 445),
     },
     "0.8.23": {
         369,
@@ -148,11 +149,20 @@ EXPECTED_RELEASE_MARKERS = {
             "Python `mcp` test-client dependency",
             "Rust rmcp-client harness",
             "Dependabot alerts",
+            "cache disk-space WARN",
+            "CTGov trial-helper post-output latency",
+            "canonical HGNC genes",
+            "JSON error objects on stdout",
         ],
         "new_features": [
             "Claude Code plugin marketplace",
             "serve-http --allowed-hosts",
             "Host guard",
+            "MCP responses",
+            "typed MCP `search` and `get` tools",
+            "CLI rejection errors",
+            "transcript HGVS inputs",
+            "`get pathway` redirect hints",
         ],
         "docs": [
             "release-prep metadata",
@@ -162,6 +172,8 @@ EXPECTED_RELEASE_MARKERS = {
             "light parity/coherence review",
             "Rust rmcp-client contract",
             "no release-blocking findings",
+            "parallel-isolation canary",
+            "baked version string",
         ],
     },
     "0.8.23": {
