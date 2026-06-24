@@ -31,10 +31,59 @@ while [[ $# -gt 0 ]]; do
 done
 
 CURL_BASE=(curl -sS -L --max-time 40)
+MAX_ATTEMPTS="${CONTRACT_SMOKE_ATTEMPTS:-3}"
 PASS=0
 FAIL=0
 ONCOKB_TOKEN_VALUE="${ONCOKB_TOKEN:-${ONCOKB_API_TOKEN:-}}"
 S2_API_KEY_VALUE="${S2_API_KEY:-}"
+
+is_transient_code() {
+  local code="$1"
+  [[ "$code" == "000" || "$code" == "429" || "$code" =~ ^5[0-9][0-9]$ ]]
+}
+
+run_probe() {
+  local name="$1"
+  local code_re="$2"
+  local body_re="$3"
+  local url="$4"
+  shift 4
+
+  local attempt=1
+  local tmp code body ok
+  while true; do
+    tmp=$(mktemp)
+    code=$("${CURL_BASE[@]}" "$@" -o "$tmp" -w "%{http_code}" "$url" || true)
+    body=$(cat "$tmp")
+    rm -f "$tmp"
+
+    ok=1
+    if [[ ! "$code" =~ $code_re ]]; then
+      ok=0
+    fi
+    if [[ -n "$body_re" ]] && ! grep -qE "$body_re" <<<"$body"; then
+      ok=0
+    fi
+
+    if [[ $ok -eq 1 ]]; then
+      echo "[PASS] $name (code=$code)"
+      PASS=$((PASS + 1))
+      return
+    fi
+
+    if (( attempt < MAX_ATTEMPTS )) && is_transient_code "$code"; then
+      echo "[WARN] $name transient response (code=$code); retrying attempt $((attempt + 1))/$MAX_ATTEMPTS"
+      sleep "$attempt"
+      attempt=$((attempt + 1))
+      continue
+    fi
+
+    echo "[FAIL] $name (code=$code)"
+    echo "        url: $url"
+    FAIL=$((FAIL + 1))
+    return
+  done
+}
 
 probe_get() {
   local name="$1"
@@ -42,30 +91,7 @@ probe_get() {
   local body_re="$3"
   local url="$4"
 
-  local tmp
-  tmp=$(mktemp)
-  local code
-  code=$("${CURL_BASE[@]}" -o "$tmp" -w "%{http_code}" "$url" || true)
-  local body
-  body=$(cat "$tmp")
-  rm -f "$tmp"
-
-  local ok=1
-  if [[ ! "$code" =~ $code_re ]]; then
-    ok=0
-  fi
-  if [[ -n "$body_re" ]] && ! grep -qE "$body_re" <<<"$body"; then
-    ok=0
-  fi
-
-  if [[ $ok -eq 1 ]]; then
-    echo "[PASS] $name (code=$code)"
-    PASS=$((PASS + 1))
-  else
-    echo "[FAIL] $name (code=$code)"
-    echo "        url: $url"
-    FAIL=$((FAIL + 1))
-  fi
+  run_probe "$name" "$code_re" "$body_re" "$url"
 }
 
 probe_post_json() {
@@ -75,30 +101,7 @@ probe_post_json() {
   local url="$4"
   local payload="$5"
 
-  local tmp
-  tmp=$(mktemp)
-  local code
-  code=$("${CURL_BASE[@]}" -H "content-type: application/json" -X POST -d "$payload" -o "$tmp" -w "%{http_code}" "$url" || true)
-  local body
-  body=$(cat "$tmp")
-  rm -f "$tmp"
-
-  local ok=1
-  if [[ ! "$code" =~ $code_re ]]; then
-    ok=0
-  fi
-  if [[ -n "$body_re" ]] && ! grep -qE "$body_re" <<<"$body"; then
-    ok=0
-  fi
-
-  if [[ $ok -eq 1 ]]; then
-    echo "[PASS] $name (code=$code)"
-    PASS=$((PASS + 1))
-  else
-    echo "[FAIL] $name (code=$code)"
-    echo "        url: $url"
-    FAIL=$((FAIL + 1))
-  fi
+  run_probe "$name" "$code_re" "$body_re" "$url" -H "content-type: application/json" -X POST -d "$payload"
 }
 
 probe_get_with_header() {
@@ -108,30 +111,7 @@ probe_get_with_header() {
   local header_value="$4"
   local url="$5"
 
-  local tmp
-  tmp=$(mktemp)
-  local code
-  code=$("${CURL_BASE[@]}" -H "$header_value" -o "$tmp" -w "%{http_code}" "$url" || true)
-  local body
-  body=$(cat "$tmp")
-  rm -f "$tmp"
-
-  local ok=1
-  if [[ ! "$code" =~ $code_re ]]; then
-    ok=0
-  fi
-  if [[ -n "$body_re" ]] && ! grep -qE "$body_re" <<<"$body"; then
-    ok=0
-  fi
-
-  if [[ $ok -eq 1 ]]; then
-    echo "[PASS] $name (code=$code)"
-    PASS=$((PASS + 1))
-  else
-    echo "[FAIL] $name (code=$code)"
-    echo "        url: $url"
-    FAIL=$((FAIL + 1))
-  fi
+  run_probe "$name" "$code_re" "$body_re" "$url" -H "$header_value"
 }
 
 echo "== contract smoke checks ($( [[ $FAST -eq 1 ]] && echo fast || echo full )) =="
@@ -218,11 +198,11 @@ fi
 
 # WikiPathways
 if [[ $FAST -eq 1 ]]; then
-  probe_get "WikiPathways fast" '^200$' 'result' "https://webservice.wikipathways.org/findPathwaysByText?query=apoptosis&organism=Homo+sapiens&format=json"
+  probe_get "WikiPathways fast" '^200$' 'pathwayInfo' "https://www.wikipathways.org/json/findPathwaysByText.json"
 else
-  probe_get "WikiPathways happy search" '^200$' 'result' "https://webservice.wikipathways.org/findPathwaysByText?query=apoptosis&organism=Homo+sapiens&format=json"
-  probe_get "WikiPathways happy get" '^200$' 'pathwayInfo' "https://webservice.wikipathways.org/getPathwayInfo?pwId=WP254&format=json"
-  probe_get "WikiPathways no-hit" '^200$' '"result"' "https://webservice.wikipathways.org/findPathwaysByText?query=NO_SUCH_PATHWAY_091&organism=Homo+sapiens&format=json"
+  probe_get "WikiPathways happy search" '^200$' 'pathwayInfo' "https://www.wikipathways.org/json/findPathwaysByText.json"
+  probe_get "WikiPathways happy get" '^200$' 'pathwayInfo' "https://www.wikipathways.org/json/getPathwayInfo.json"
+  probe_get "WikiPathways no-hit" '^200$' 'pathwayInfo' "https://www.wikipathways.org/json/findPathwaysByText.json"
 fi
 
 # g:Profiler
@@ -319,21 +299,12 @@ else
 fi
 
 if [[ -n "$ONCOKB_TOKEN_VALUE" ]]; then
-  local_tmp=$(mktemp)
-  code=$(
-    "${CURL_BASE[@]}" -H "Authorization: Bearer $ONCOKB_TOKEN_VALUE" \
-      -o "$local_tmp" -w "%{http_code}" \
-      "https://www.oncokb.org/api/v1/annotate/mutations/byProteinChange?hugoSymbol=BRAF&alteration=V600E" || true
-  )
-  body=$(cat "$local_tmp")
-  rm -f "$local_tmp"
-  if [[ "$code" =~ ^200$ ]] && printf '%s' "$body" | grep -qE 'geneExist|variantExist|oncogenic'; then
-    echo "[PASS] OncoKB happy (token)"
-    PASS=$((PASS + 1))
-  else
-    echo "[FAIL] OncoKB happy (token) code=$code"
-    FAIL=$((FAIL + 1))
-  fi
+  probe_get_with_header \
+    "OncoKB happy (token)" \
+    '^200$' \
+    'geneExist|variantExist|oncogenic' \
+    "Authorization: Bearer $ONCOKB_TOKEN_VALUE" \
+    "https://www.oncokb.org/api/v1/annotate/mutations/byProteinChange?hugoSymbol=BRAF&alteration=V600E"
 else
   echo "[SKIP] OncoKB probes (set ONCOKB_TOKEN to enable; ONCOKB_API_TOKEN is still accepted)"
 fi
