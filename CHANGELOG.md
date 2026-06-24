@@ -1,14 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Back compatibility
-
-- Changed `search article --source all` to stop querying LitSense2 by default; use `--source litsense2` explicitly when you want LitSense2.
-- Tightened drug CLI validation: `search drug --region who --product-type vaccine`
-  now rejects structured filters, and `drug trials --no-alias-expand` now
-  rejects non-CTGov trial sources.
-
 ## 0.8.24 — 2026-06-23
 
 ### New features
@@ -18,6 +9,17 @@
 - Changed `serve-http --allowed-hosts` to be opt-in, leaving the Host guard
   open by default for normal proxy and deployment setups while preserving
   explicit host restrictions when configured. (240)
+- Surfaced upstream source attribution through MCP responses so agent callers can
+  see section-level provenance without separately requesting JSON. (434)
+- Added typed MCP `search` and `get` tools with schema enums for entities and
+  sections, keeping the raw `biomcp` tool as the escape hatch. (435)
+- Made CLI rejection errors more actionable for over-limit requests, multi-word
+  `get drug` / `get disease` inputs, and pathway identifiers that should be
+  routed to protein, gene, or variant commands. (436)
+- Accepted transcript HGVS inputs such as `NM_004333.6:c.1799T>A` through
+  `get variant` by reusing the existing normalization seam. (440)
+- Generalized `get pathway` redirect hints for Ensembl IDs, gene symbols, and
+  dbSNP rsIDs, in addition to UniProt accessions. (443)
 
 ### Fixes
 
@@ -26,6 +28,14 @@
 - Removed the Python `mcp` test-client dependency by migrating protocol contract
   coverage to the Rust rmcp-client harness, clearing all seven remaining
   Dependabot alerts tied to the removed Python dependency tree. (433)
+- Quieted cache disk-space WARN output after successful cleanup so normal
+  commands do not emit misleading warnings on stderr. (437)
+- Bounded CTGov trial-helper post-output latency for `--limit 1` gene and
+  disease trial searches. (438)
+- Preferred canonical HGNC genes for common aliases such as PD-L1, HER2, and P53
+  instead of lower-value NCIT/MESH matches. (439)
+- Made `-j` / `--json` error paths emit JSON error objects on stdout for command
+  errors, including unknown genes and invalid variants. (441)
 
 ### Docs
 
@@ -37,6 +47,18 @@
 - Completed a light parity/coherence review of the Rust rmcp-client contract
   migration before tagging v0.8.24, with no release-blocking findings. (432,
   433)
+- Restored the parallel-isolation canary to `SPEC_ROUTINE_PATHS`, keeping
+  `make verify` green after the rmcp contract migration. (442)
+- Updated `build.rs` so the baked version string re-runs on Git HEAD/ref changes
+  and release binaries report the current commit metadata. (444)
+
+### Back compatibility
+
+- Changed `search article --source all` to stop querying LitSense2 by default;
+  use `--source litsense2` explicitly when you want LitSense2.
+- Tightened drug CLI validation: `search drug --region who --product-type vaccine`
+  now rejects structured filters, and `drug trials --no-alias-expand` now
+  rejects non-CTGov trial sources.
 
 ## 0.8.23 — 2026-06-11
 
