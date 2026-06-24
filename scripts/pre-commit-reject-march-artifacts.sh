@@ -12,7 +12,7 @@ git diff --cached --name-only -z --diff-filter=ACMRT -- .march >"$staged_paths_f
 offending_paths=()
 while IFS= read -r -d '' path; do
     case "$path" in
-        .march/code-review-log.md | .march/validation-profiles.toml)
+        .march/code-review-log.md)
             ;;
         .march/*)
             offending_paths+=("$path")
@@ -27,7 +27,6 @@ if (( ${#offending_paths[@]} > 0 )); then
     done
     echo "Allowed .march paths:" >&2
     echo "  - .march/code-review-log.md" >&2
-    echo "  - .march/validation-profiles.toml" >&2
     echo "Remediation:" >&2
     echo "  - Unstage local March artifacts: git restore --staged -- <path>" >&2
     echo "  - Remove already tracked artifacts: git rm --cached -- <path>" >&2

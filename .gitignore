@@ -12,12 +12,11 @@ site/
 .climb/
 .climb-test-vault/
 .march/*
-!.march/validation-profiles.toml
 .march-runtime/
 .claude/
 .agents/
 /planning/
-paper/generated/
+RELEASE-READINESS-*.md
 architecture/experiments/**/results/
 benchmarks/bioasq/datasets/raw/
 benchmarks/bioasq/datasets/normalized/

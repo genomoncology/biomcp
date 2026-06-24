@@ -366,7 +366,6 @@ def test_blog_try_it_and_install_copy_are_consistent() -> None:
 def test_examples_and_operator_readmes_use_plain_runtime_copy() -> None:
     examples_index = _read("examples/README.md")
     scripts = _read("scripts/README.md")
-    paper = _read("paper/README.md")
     bioasq = _read("benchmarks/bioasq/README.md")
 
     assert "project 116" not in examples_index
@@ -385,9 +384,6 @@ def test_examples_and_operator_readmes_use_plain_runtime_copy() -> None:
         in _normalize_whitespace(scripts)
     )
     assert "source-facing contract probes" not in scripts
-    assert "Today, only" not in paper
-    assert "committed stubs now" not in paper
-    assert "Only `run-traceability-audit.sh` is runnable immediately." in paper
     assert "uv run --quiet --script benchmarks/bioasq/ingest_public.py" in bioasq
 
 

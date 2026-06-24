@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import tomllib
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -933,19 +932,12 @@ def test_ticket_395_mcp_spec_uses_bounded_ready_probe_instead_of_fixed_sleep() -
 
 
 
-def test_ticket_378_profiles_route_routine_specs_to_deterministic_contracts() -> None:
-    profiles = tomllib.loads(_read_repo(".march/validation-profiles.toml"))["profile"]
-    commands = {name: body["command"] for name, body in profiles.items()}
+def test_ticket_378_release_gate_routes_routine_specs_to_standard_gates() -> None:
     makefile = _read_repo("Makefile")
     release_gate_match = re.search(r"^release-gate:\s*(?P<deps>.*)$", makefile, flags=re.MULTILINE)
     assert release_gate_match is not None, "missing Makefile target release-gate"
     release_gate_deps = set(release_gate_match.group("deps").split())
 
-    assert commands["spec-only"] == "make spec-contracts", (
-        "March spec-only must run deterministic fixture-backed/static specs by default, not live specs"
-    )
-    assert commands["full-blocking"] == "make release-gate"
-    assert commands["full-contracts"] == "make release-gate"
     assert {"lint", "test"}.issubset(release_gate_deps), (
         "release-gate must compose the standard lint and test gates directly"
     )

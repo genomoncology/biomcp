@@ -8,7 +8,7 @@ How should BioMCP reset its routine development and March validation strategy ar
 
 BioMCP already has strong pieces of the desired shape, but they are not the routine gate's organizing principle yet.
 
-- `.march/validation-profiles.toml` currently maps `preflight`/`baseline` to `cargo check --all-targets`, `focused` to `cargo test --lib && cargo clippy --lib --tests -- -D warnings`, `spec-only` to `make spec-pr`, and `full-blocking`/`full-contracts` to `make release-gate`.
+- March validation profile routing existed when this experiment was written, but the repo now uses the standard `make lint`, `make test`, and `make spec` gates directly.
 - `Makefile` makes `release-gate = check spec-pr`; `spec-pr` builds a release binary, syncs Python dev deps, runs most executable specs in xdist, then serializes `spec/entity/protein.md`, `spec/entity/disease.md`, and `spec/surface/discover.md`.
 - `tools/biomcp-ci` is useful prior art: it centralizes executable-spec isolation, key stripping, cache roots, and warm-cache replay. Keep it for retained executable specs and live smoke.
 - There is no general `RequestCommand` today. CLI dispatchers usually convert clap args to entity filter structs and immediately execute entity/source calls.

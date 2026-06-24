@@ -82,6 +82,7 @@ BIN="target/release/biomcp"
 HEAD_SHA=""
 BINARY_GIT_SHA="unknown"
 BINARY_BUILD_DATE="unknown"
+REPORT_PATH="target/release-readiness-0.8.24.md"
 if [[ -n "${BIOMCP_BIN:-}" ]]; then
   BIN="$BIOMCP_BIN"
   BIN_SOURCE="BIOMCP_BIN"
@@ -107,6 +108,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 ensure_binary_ready
+mkdir -p "$(dirname "$REPORT_PATH")"
+: >"$REPORT_PATH"
+exec > >(tee "$REPORT_PATH")
 
 PASS=0
 FAIL=0
