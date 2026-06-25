@@ -59,13 +59,16 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "_meta.workflow" in skills
     assert "_meta.ladder[]" in skills
     assert "Current builds ship examples for treatment lookup, symptom lookup" not in skills
-    assert "Current builds ship 15 worked examples" in skills
+    assert "Current builds ship 16 worked examples" in skills
+    assert "AUTHORING.md" in skills
+    assert "_TEMPLATE.*" in skills
     for slug in (
         "variant-pathogenicity",
         "drug-regulatory",
         "trial-recruitment",
         "mutation-catalog",
         "negative-evidence",
+        "normalize-to-codes",
     ):
         assert slug in skills
     assert "Legacy compatibility note" not in skills

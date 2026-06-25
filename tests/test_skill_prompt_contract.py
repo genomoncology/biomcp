@@ -17,6 +17,7 @@ LADDER_WORKFLOW_SLUGS = [
     "mechanism-pathway",
     "pharmacogene-cumulative",
     "mutation-catalog",
+    "normalize-to-codes",
 ]
 EXPECTED_SLUGS = [
     "treatment-lookup",
@@ -34,6 +35,7 @@ EXPECTED_SLUGS = [
     "mutation-catalog",
     "syndrome-disambiguation",
     "negative-evidence",
+    "normalize-to-codes",
 ]
 NEW_PLAYBOOK_SLUGS = EXPECTED_SLUGS[4:]
 EXPECTED_PLAYBOOK_MARKERS = {
@@ -113,6 +115,12 @@ EXPECTED_PLAYBOOK_MARKERS = {
         'biomcp search disease "Borna disease" --limit 5',
         'biomcp search article -k "\\"Borna disease virus\\" glioma association" --limit 5',
         'biomcp search article -k "\\"Notch\\" CADASIL Pick prion neurodegenerative" --type review --limit 5',
+    ],
+    "normalize-to-codes": [
+        "# Pattern: Normalize a term to ontology codes",
+        'biomcp discover "type 2 diabetes mellitus"',
+        'biomcp --json discover "type 2 diabetes mellitus"',
+        'biomcp discover "metformin"',
     ],
 }
 REMOVED_ACTIVE_SLUGS = [
@@ -249,7 +257,11 @@ def test_skill_prompt_render_install_and_slug_surfaces_match(tmp_path: Path) -> 
 def test_workflow_ladder_sidecars_match_schema_and_playbooks() -> None:
     schema_path = REPO_ROOT / "skills" / "schemas" / "workflow-ladder.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    sidecars = sorted((REPO_ROOT / "skills" / "use-cases").glob("*.ladder.json"))
+    sidecars = [
+        path
+        for path in sorted((REPO_ROOT / "skills" / "use-cases").glob("*.ladder.json"))
+        if not path.name.startswith("_")
+    ]
 
     assert [path.stem.removesuffix(".ladder") for path in sidecars] == sorted(
         LADDER_WORKFLOW_SLUGS
@@ -295,6 +307,8 @@ def test_installed_output_schemas_allow_workflow_ladder_meta() -> None:
 def test_rust_sources_do_not_embed_workflow_ladder_commands() -> None:
     commands: list[str] = []
     for sidecar_path in sorted((REPO_ROOT / "skills" / "use-cases").glob("*.ladder.json")):
+        if sidecar_path.name.startswith("_"):
+            continue
         sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
         commands.extend(step["command"] for step in sidecar["ladder"])
 

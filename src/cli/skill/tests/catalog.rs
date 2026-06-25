@@ -185,6 +185,7 @@ fn embedded_use_case_catalog_lists_expected_worked_examples() -> Result<(), BioM
             "mutation-catalog",
             "syndrome-disambiguation",
             "negative-evidence",
+            "normalize-to-codes",
         ]
     );
 
@@ -196,6 +197,10 @@ fn embedded_use_case_catalog_lists_expected_worked_examples() -> Result<(), BioM
             "15 negative-evidence - Pattern: Negative evidence and no-association checks"
         )
     );
+    assert!(
+        listing.contains("16 normalize-to-codes - Pattern: Normalize a term to ontology codes")
+    );
+    assert!(!listing.contains("_TEMPLATE"));
 
     let numbered = show_use_case("05")?;
     assert!(numbered.contains("# Pattern: Variant pathogenicity evidence"));
@@ -213,10 +218,10 @@ fn embedded_use_case_anchor_commands_parse() -> Result<(), BioMcpError> {
         .filter(|case| {
             case.number
                 .parse::<u32>()
-                .is_ok_and(|number| (5..=15).contains(&number))
+                .is_ok_and(|number| (5..=16).contains(&number))
         })
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 11);
+    assert_eq!(cases.len(), 12);
 
     for case in cases {
         let content = embedded_text(&case.embedded_path)?;

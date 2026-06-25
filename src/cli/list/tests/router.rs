@@ -9,6 +9,8 @@ fn list_skill_alias_routes_to_skill_listing() {
     assert!(out.contains("01 treatment-lookup"));
     assert!(out.contains("04 article-follow-up"));
     assert!(out.contains("15 negative-evidence"));
+    assert!(out.contains("16 normalize-to-codes"));
+    assert!(!out.contains("_TEMPLATE"));
 }
 
 #[test]

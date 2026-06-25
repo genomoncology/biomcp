@@ -831,6 +831,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/study.md",
     "spec/entity/variant.md",
     "spec/surface/mcp.md",
+    "spec/surface/skills.md",
     "spec/surface/trial-action-summary.md",
 )
 
@@ -867,8 +868,8 @@ def _runner_array_paths(name: str) -> list[str]:
 
 def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
     routine = _runner_array_paths("SPEC_ROUTINE_PATHS")
-    mcp_index = routine.index("spec/surface/mcp.md")
-    assert routine[mcp_index + 1] == "tests/surface/test_parallel_isolation_contract.py"
+    skills_index = routine.index("spec/surface/skills.md")
+    assert routine[skills_index + 1] == "tests/surface/test_parallel_isolation_contract.py"
     assert "spec/entity/disease.md" not in routine
     assert "spec/surface/discover.md" not in routine
 

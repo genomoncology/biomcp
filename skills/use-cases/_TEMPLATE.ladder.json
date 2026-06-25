@@ -1,0 +1,22 @@
+{
+  "workflow": "template-workflow",
+  "rationale": "Copy this structure for a real workflow sidecar; do not route the template itself.",
+  "playbook": "biomcp skill template-workflow",
+  "ladder": [
+    {
+      "step": 1,
+      "command": "biomcp <first command with concrete example input>",
+      "what_it_gives": "Describe the evidence or decision support from step 1."
+    },
+    {
+      "step": 2,
+      "command": "biomcp <second command with concrete example input>",
+      "what_it_gives": "Describe the evidence or decision support from step 2."
+    },
+    {
+      "step": 3,
+      "command": "biomcp <third command with concrete example input>",
+      "what_it_gives": "Describe the evidence or decision support from step 3."
+    }
+  ]
+}
