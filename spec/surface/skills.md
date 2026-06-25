@@ -11,7 +11,6 @@ new authoring guide, the non-routing templates, and the worked example sidecar
 alongside the canonical prompt.
 
 ```bash
-rm -rf ../../.cache/spec-skill-install
 ../../tools/biomcp-ci skill install ../../.cache/spec-skill-install --force
 find ../../.cache/spec-skill-install/skills/biomcp -maxdepth 3 -type f | sed 's#^.*/biomcp/##' | sort | mustmatch like "AUTHORING.md
 SKILL.md
