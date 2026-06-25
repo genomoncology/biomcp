@@ -5,7 +5,7 @@
       "accession": "P15056",
       "protein_domains": {
         "label": "protein_domains",
-        "latency_ms": 22882,
+        "latency_ms": 19883,
         "ok": true,
         "value": {
           "domain_has_locations": false,
@@ -33,7 +33,7 @@
       },
       "protein_structures": {
         "label": "protein_structures",
-        "latency_ms": 556,
+        "latency_ms": 533,
         "ok": true,
         "value": {
           "domain_has_locations": false,
@@ -63,7 +63,7 @@
       "variant": "BRAF V600E",
       "variant_all": {
         "label": "variant_all",
-        "latency_ms": 2428,
+        "latency_ms": 3234,
         "ok": true,
         "value": {
           "domain_has_locations": false,
@@ -113,7 +113,7 @@
       "accession": "P04637",
       "protein_domains": {
         "label": "protein_domains",
-        "latency_ms": 7597,
+        "latency_ms": 12869,
         "ok": true,
         "value": {
           "domain_has_locations": false,
@@ -141,7 +141,7 @@
       },
       "protein_structures": {
         "label": "protein_structures",
-        "latency_ms": 682,
+        "latency_ms": 665,
         "ok": true,
         "value": {
           "domain_has_locations": false,
@@ -171,7 +171,7 @@
       "variant": "TP53 R175H",
       "variant_all": {
         "label": "variant_all",
-        "latency_ms": 2896,
+        "latency_ms": 3776,
         "ok": true,
         "value": {
           "domain_has_locations": false,
@@ -222,7 +222,7 @@
       "accession": "P08922",
       "protein_domains": {
         "label": "protein_domains",
-        "latency_ms": 18746,
+        "latency_ms": 12313,
         "ok": true,
         "value": {
           "domain_has_locations": false,
@@ -250,7 +250,7 @@
       },
       "protein_structures": {
         "label": "protein_structures",
-        "latency_ms": 621,
+        "latency_ms": 447,
         "ok": true,
         "value": {
           "domain_has_locations": false,
@@ -280,7 +280,7 @@
       "variant": "ROS1 G2032R",
       "variant_all": {
         "label": "variant_all",
-        "latency_ms": 2443,
+        "latency_ms": 2180,
         "ok": true,
         "value": {
           "domain_has_locations": false,

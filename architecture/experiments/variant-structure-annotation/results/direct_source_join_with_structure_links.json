@@ -5,10 +5,10 @@
       "accession": "P15056",
       "cancerhotspots": {
         "label": "cancerhotspots_via_cli",
-        "latency_ms": 2426,
+        "latency_ms": 2313,
         "ok": true,
         "value": {
-          "latency_ms": 2426,
+          "latency_ms": 2313,
           "ok": true,
           "present": true,
           "value": {
@@ -22,7 +22,7 @@
       "gene": "BRAF",
       "interpro": {
         "label": "interpro",
-        "latency_ms": 1849,
+        "latency_ms": 12486,
         "ok": true,
         "value": {
           "domain_count": 11,
@@ -145,7 +145,7 @@
       },
       "myvariant": {
         "label": "myvariant",
-        "latency_ms": 293,
+        "latency_ms": 290,
         "ok": true,
         "value": {
           "clinvar_variant_id": 13961,
@@ -184,7 +184,7 @@
       "residue": 600,
       "structure_reference_probe": {
         "label": "rcsb_coverage",
-        "latency_ms": 739,
+        "latency_ms": 719,
         "ok": true,
         "value": {
           "alphafold_url": "https://alphafold.ebi.ac.uk/entry/P15056",
@@ -242,7 +242,7 @@
       },
       "uniprot": {
         "label": "uniprot",
-        "latency_ms": 527,
+        "latency_ms": 556,
         "ok": true,
         "value": {
           "accession": "P15056",
@@ -292,10 +292,10 @@
       "accession": "P04637",
       "cancerhotspots": {
         "label": "cancerhotspots_via_cli",
-        "latency_ms": 2998,
+        "latency_ms": 2955,
         "ok": true,
         "value": {
-          "latency_ms": 2998,
+          "latency_ms": 2955,
           "ok": true,
           "present": true,
           "value": {
@@ -309,7 +309,7 @@
       "gene": "TP53",
       "interpro": {
         "label": "interpro",
-        "latency_ms": 21019,
+        "latency_ms": 20571,
         "ok": true,
         "value": {
           "domain_count": 9,
@@ -484,7 +484,7 @@
       "residue": 175,
       "structure_reference_probe": {
         "label": "rcsb_coverage",
-        "latency_ms": 711,
+        "latency_ms": 695,
         "ok": true,
         "value": {
           "alphafold_url": "https://alphafold.ebi.ac.uk/entry/P04637",
@@ -540,7 +540,7 @@
       },
       "uniprot": {
         "label": "uniprot",
-        "latency_ms": 736,
+        "latency_ms": 751,
         "ok": true,
         "value": {
           "accession": "P04637",
@@ -590,10 +590,10 @@
       "accession": "P08922",
       "cancerhotspots": {
         "label": "cancerhotspots_via_cli",
-        "latency_ms": 2163,
+        "latency_ms": 2019,
         "ok": true,
         "value": {
-          "latency_ms": 2163,
+          "latency_ms": 2019,
           "ok": true,
           "present": true,
           "value": {
@@ -607,7 +607,7 @@
       "gene": "ROS1",
       "interpro": {
         "label": "interpro",
-        "latency_ms": 9699,
+        "latency_ms": 12321,
         "ok": true,
         "value": {
           "domain_count": 14,
@@ -785,7 +785,7 @@
       },
       "myvariant": {
         "label": "myvariant",
-        "latency_ms": 282,
+        "latency_ms": 267,
         "ok": true,
         "value": {
           "clinvar_variant_id": null,
@@ -822,7 +822,7 @@
       "residue": 2032,
       "structure_reference_probe": {
         "label": "rcsb_coverage",
-        "latency_ms": 596,
+        "latency_ms": 618,
         "ok": true,
         "value": {
           "alphafold_url": "https://alphafold.ebi.ac.uk/entry/P08922",
@@ -878,7 +878,7 @@
       },
       "uniprot": {
         "label": "uniprot",
-        "latency_ms": 512,
+        "latency_ms": 446,
         "ok": true,
         "value": {
           "accession": "P08922",

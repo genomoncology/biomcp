@@ -6,7 +6,7 @@
       "domain_locations_exposed": false,
       "domains_ok": true,
       "structures_ok": true,
-      "total_latency_ms": 25866,
+      "total_latency_ms": 23650,
       "variant": "BRAF V600E",
       "variant_ok": true
     },
@@ -14,7 +14,7 @@
       "domain_locations_exposed": false,
       "domains_ok": true,
       "structures_ok": true,
-      "total_latency_ms": 11175,
+      "total_latency_ms": 17310,
       "variant": "TP53 R175H",
       "variant_ok": true
     },
@@ -22,7 +22,7 @@
       "domain_locations_exposed": false,
       "domains_ok": true,
       "structures_ok": true,
-      "total_latency_ms": 21810,
+      "total_latency_ms": 14940,
       "variant": "ROS1 G2032R",
       "variant_ok": true
     }
