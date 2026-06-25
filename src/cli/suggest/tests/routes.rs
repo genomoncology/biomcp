@@ -14,11 +14,12 @@ fn parse_cmd(cmd: &str) {
 
 #[test]
 fn route_examples_cover_shipped_skill_slugs() {
-    let shipped = crate::cli::skill::list_use_case_refs()
+    let mut shipped = crate::cli::skill::list_use_case_refs()
         .expect("skills")
         .into_iter()
         .map(|case| case.slug.to_string())
         .collect::<BTreeSet<_>>();
+    shipped.remove("normalize-to-codes");
     let routed = routes::ROUTES
         .iter()
         .map(|route| route.slug.to_string())

@@ -5,6 +5,7 @@ SPEC_ROUTINE_PATHS = \
 	spec/entity/study.md \
 	spec/entity/variant.md \
 	spec/surface/mcp.md \
+	spec/surface/skills.md \
 	spec/surface/trial-action-summary.md
 SPEC_LIVE_PATHS = \
 	spec/entity/diagnostic.md \

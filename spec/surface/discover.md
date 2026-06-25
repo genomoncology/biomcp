@@ -119,6 +119,27 @@ biomcp search article -k "drug classes that interact with warfarin" --type revie
 biomcp get gene <symbol>'
 ```
 
+## Normalize-to-Codes Playbook Uses Live Discover Code Labels
+
+The normalize-to-codes worked example should teach a real `discover` workflow,
+not a copied table of canned codes. The playbook opens the command sequence, and
+the live JSON response keeps source-labelled ontology and clinical-code labels
+visible for downstream structuring agents.
+
+```bash
+../../tools/biomcp-ci skill normalize-to-codes | mustmatch like "biomcp discover
+MONDO
+SNOMED
+ICD-10
+RxNorm"
+```
+
+```bash
+../../tools/biomcp-ci --json discover "type 2 diabetes mellitus" | mustmatch like '"primary_id": "MONDO:0005148"
+"source": "SNOMEDCT"
+"source": "ICD10CM"'
+```
+
 ## Skill Decomposition Keeps Catalog and Install Ownership Separate
 
 The behavior checks above protect the public skill output. The implementation

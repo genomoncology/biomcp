@@ -1,0 +1,22 @@
+{
+  "workflow": "normalize-to-codes",
+  "rationale": "Resolve one free-text clinical or guideline term to source-labelled ontology and clinical-code identifiers before structuring it downstream.",
+  "playbook": "biomcp skill normalize-to-codes",
+  "ladder": [
+    {
+      "step": 1,
+      "command": "biomcp discover \"type 2 diabetes mellitus\"",
+      "what_it_gives": "A human-readable resolved concept with suggested next commands and visible code labels."
+    },
+    {
+      "step": 2,
+      "command": "biomcp --json discover \"type 2 diabetes mellitus\"",
+      "what_it_gives": "Exact source-labelled identifiers for downstream extraction or normalization."
+    },
+    {
+      "step": 3,
+      "command": "biomcp discover \"metformin\"",
+      "what_it_gives": "A drug-term comparison point where RxNorm-style labels may appear when available."
+    }
+  ]
+}
