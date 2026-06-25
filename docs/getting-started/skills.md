@@ -81,14 +81,17 @@ Current builds install the full embedded reference tree into
 - `examples/`
 - `schemas/`
 
-The install payload also includes `schemas/workflow-ladder.schema.json` and
-eight routed `use-cases/<slug>.ladder.json` sidecars for workflow ladders:
-`treatment-lookup`, `article-follow-up`, `variant-pathogenicity`,
-`trial-recruitment`, `mechanism-pathway`, `pharmacogene-cumulative`,
-`mutation-catalog`, and `normalize-to-codes`. These JSON sidecars are not
-listed by `biomcp skill list`; they are runtime metadata assets paired with the
-numbered markdown playbooks. The `_TEMPLATE.*` files are authoring references,
-not routed playbooks.
+The install payload also includes `schemas/workflow-ladder.schema.json`,
+seven runtime `use-cases/<slug>.ladder.json` sidecars, and the
+`normalize-to-codes.ladder.json` worked-example sidecar. The runtime sidecars
+are `treatment-lookup`, `article-follow-up`, `variant-pathogenicity`,
+`trial-recruitment`, `mechanism-pathway`, `pharmacogene-cumulative`, and
+`mutation-catalog`; BioMCP can attach those as `_meta.workflow` /
+`_meta.ladder[]` guidance when a command matches their triggers. The
+`normalize-to-codes` sidecar is installed authoring reference material paired
+with its numbered markdown playbook, not runtime metadata. JSON sidecars are
+not listed by `biomcp skill list`. The `_TEMPLATE.*` files are authoring
+references, not routed playbooks.
 
 When a first-call JSON response matches a ladder trigger, BioMCP can emit
 `_meta.workflow` plus `_meta.ladder[]`. The ladder commands are static copies of

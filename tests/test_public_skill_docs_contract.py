@@ -56,6 +56,10 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "schemas/" in skills
     assert "workflow-ladder.schema.json" in skills
     assert "use-cases/<slug>.ladder.json" in skills
+    assert "seven runtime" in skills
+    assert "normalize-to-codes.ladder.json` worked-example sidecar" in skills
+    assert "`normalize-to-codes` sidecar is installed authoring reference material" in skills
+    assert "eight routed" not in skills
     assert "_meta.workflow" in skills
     assert "_meta.ladder[]" in skills
     assert "Current builds ship examples for treatment lookup, symptom lookup" not in skills
