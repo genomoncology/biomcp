@@ -101,6 +101,37 @@ def test_lint_reports_each_offending_public_doc_line_once(tmp_path: Path) -> Non
     assert result.stdout.count(offending_line) == 1
 
 
+def test_lint_rejects_docs_code_block_with_test_code_leak_signature(
+    tmp_path: Path,
+) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(
+        repo_root,
+        {
+            "docs/leak.md": "\n".join(
+                [
+                    "# Leaked Test",
+                    "",
+                    "```python",
+                    "from pathlib import Path",
+                    "source = Path('src/lib.rs').read_text()",
+                    "assert 'needle' in source",
+                    "```",
+                    "",
+                ]
+            ),
+            "docs/clean.md": "# Clean Docs\n\n```python\nprint('reader example')\n```\n",
+        },
+    )
+
+    result = _run_lint(repo_root)
+
+    assert result.returncode == 1
+    assert "docs/leak.md:3: code block contains" in result.stdout
+    assert "[FAIL] docs test-code leak scan" in result.stdout
+    assert "docs/clean.md" not in result.stdout
+
+
 def test_lint_requires_cargo_deny_for_rust_repos(tmp_path: Path) -> None:
     repo_root = _copy_lint_fixture(tmp_path)
     _track_files(

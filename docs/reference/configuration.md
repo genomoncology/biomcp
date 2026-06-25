@@ -1,7 +1,7 @@
 # Configuration Reference
 
-This page classifies supported runtime configuration separately from test seams
-and release/install variables.
+This page classifies supported operator runtime configuration separately from
+internal fixture overrides and release/install variables.
 
 ## Operator API Keys
 
@@ -37,10 +37,10 @@ and release/install variables.
 
 ## Test and Fixture Override Seams
 
-`BIOMCP_*_BASE`, `BIOMCP_*_URL`, and fixture process variables are test seams
-unless this page lists them in an operator section. They are used by unit tests,
-spec fixtures, and replay harnesses to redirect a source to a local server or
-fixture file. Do not treat those base-URL overrides as stable operator API.
+`BIOMCP_*_BASE`, `BIOMCP_*_URL`, and fixture process variables are internal
+fixture overrides unless this page lists them in an operator section. They let
+BioMCP's own verification harness redirect a source to a local server or fixture
+file. Do not treat those base-URL overrides as stable operator API.
 
 Known examples include `BIOMCP_PUBTATOR_BASE`, `BIOMCP_EUROPEPMC_BASE`,
 `BIOMCP_PUBMED_BASE`, `BIOMCP_S2_BASE`, `BIOMCP_MYCHEM_BASE`,

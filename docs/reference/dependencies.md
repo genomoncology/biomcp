@@ -10,10 +10,8 @@ fulltext links; NCBI EFetch retrieves PubMed/PMC records; the NCBI ID Converter
 maps between PMID, PMCID, and DOI when one identifier needs another route; PMC OA
 supplies open-access package/file discovery; Figshare supports article
 supplement and hosted-file retrieval; Semantic Scholar PDF links are optional
-PDF candidates when available. Retrieved content is normalized by Rust
-transformers: JATS XML through `src/transform/article/jats.rs`, HTML through
-`src/transform/article/html.rs`, and PDF text extraction through
-`src/transform/article/pdf.rs`.
+PDF candidates when available. Retrieved content is normalized by built-in Rust transformers for JATS XML,
+HTML, and PDF text extraction.
 
 ## Key Dependencies
 

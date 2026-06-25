@@ -55,6 +55,14 @@ biomcp get variant "BRAF V600E" predict
 Configure an MCP server entry using `biomcp serve`.
 See [Claude Desktop setup](../getting-started/claude-desktop.md).
 
+## How do I deploy BioMCP as an MCP server, and how is authentication handled?
+
+Use `biomcp serve` for local stdio clients. Use `biomcp serve-http --host <host> --port <port>` for remote Streamable HTTP deployments; the MCP endpoint is `/mcp`, with `/health`, `/readyz`, and `/` available for probes.
+
+The HTTP transport is unauthenticated by design. BioMCP does not implement user login, bearer tokens, OAuth, or per-user authorization. Put remote deployments behind your own gateway, reverse proxy, SSO/mTLS layer, VPN, or private network policy.
+
+Provider keys for built-in sources are environment variables on the BioMCP process. See the [MCP server reference](mcp-server.md) and [API keys](../getting-started/api-keys.md).
+
 ## Why are some fields missing?
 
 BioMCP returns concise defaults and depends on upstream source completeness.
