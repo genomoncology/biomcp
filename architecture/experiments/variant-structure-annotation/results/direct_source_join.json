@@ -5,10 +5,9 @@
       "accession": "P15056",
       "cancerhotspots": {
         "label": "cancerhotspots_via_cli",
-        "latency_ms": 2660,
+        "latency_ms": 165,
         "ok": true,
         "value": {
-          "latency_ms": 2659,
           "ok": true,
           "present": true,
           "value": {
@@ -22,7 +21,7 @@
       "gene": "BRAF",
       "interpro": {
         "label": "interpro",
-        "latency_ms": 28519,
+        "latency_ms": 10945,
         "ok": true,
         "value": {
           "domain_count": 11,
@@ -184,7 +183,7 @@
       "residue": 600,
       "uniprot": {
         "label": "uniprot",
-        "latency_ms": 543,
+        "latency_ms": 1533,
         "ok": true,
         "value": {
           "accession": "P15056",
@@ -234,10 +233,9 @@
       "accession": "P04637",
       "cancerhotspots": {
         "label": "cancerhotspots_via_cli",
-        "latency_ms": 3202,
+        "latency_ms": 199,
         "ok": true,
         "value": {
-          "latency_ms": 3202,
           "ok": true,
           "present": true,
           "value": {
@@ -251,7 +249,7 @@
       "gene": "TP53",
       "interpro": {
         "label": "interpro",
-        "latency_ms": 2843,
+        "latency_ms": 17315,
         "ok": true,
         "value": {
           "domain_count": 9,
@@ -374,7 +372,7 @@
       },
       "myvariant": {
         "label": "myvariant",
-        "latency_ms": 272,
+        "latency_ms": 312,
         "ok": true,
         "value": {
           "clinvar_variant_id": 12374,
@@ -426,7 +424,7 @@
       "residue": 175,
       "uniprot": {
         "label": "uniprot",
-        "latency_ms": 705,
+        "latency_ms": 709,
         "ok": true,
         "value": {
           "accession": "P04637",
@@ -476,10 +474,9 @@
       "accession": "P08922",
       "cancerhotspots": {
         "label": "cancerhotspots_via_cli",
-        "latency_ms": 2253,
+        "latency_ms": 134,
         "ok": true,
         "value": {
-          "latency_ms": 2253,
           "ok": true,
           "present": true,
           "value": {
@@ -493,7 +490,7 @@
       "gene": "ROS1",
       "interpro": {
         "label": "interpro",
-        "latency_ms": 24042,
+        "latency_ms": 17924,
         "ok": true,
         "value": {
           "domain_count": 14,
@@ -671,7 +668,7 @@
       },
       "myvariant": {
         "label": "myvariant",
-        "latency_ms": 282,
+        "latency_ms": 271,
         "ok": true,
         "value": {
           "clinvar_variant_id": null,
@@ -708,7 +705,7 @@
       "residue": 2032,
       "uniprot": {
         "label": "uniprot",
-        "latency_ms": 429,
+        "latency_ms": 440,
         "ok": true,
         "value": {
           "accession": "P08922",

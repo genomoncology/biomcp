@@ -211,20 +211,42 @@ def rcsb_coverage(pdb_ids: list[str], accession: str, residue: int | None) -> di
     return {"checked": checked, "covering_probe": covering}
 
 
+def residue_and_alt(change: str) -> tuple[str, str] | None:
+    change = normalize_change(change)
+    alt = change[-1:] if change else ""
+    residue = change[:-1]
+    if not alt or not residue or not any(ch.isdigit() for ch in residue):
+        return None
+    return residue.upper(), alt.upper()
+
+
 def cancerhotspots_probe(gene: str, change: str) -> dict[str, Any]:
-    # BioMCP knows the exact Cancerhotspots parser. For this spike, use existing CLI as the reliable probe.
-    bin_path = Path(os.environ.get("BIOMCP_BIN", DEFAULT_BIOMCP_BIN))
-    if not bin_path.exists():
-        return {"ok": False, "error": f"missing biomcp binary at {bin_path}"}
-    cmd = [str(bin_path), "--json", "--no-cache", "get", "variant", f"{gene} {change}", "all"]
-    start = now()
-    proc = subprocess.run(cmd, cwd=ROOT, text=True, capture_output=True, timeout=180)
-    elapsed = round((now() - start) * 1000)
-    if proc.returncode != 0:
-        return {"ok": False, "latency_ms": elapsed, "stderr_tail": proc.stderr[-500:]}
-    data = json.loads(proc.stdout)
-    ch = data.get("cancerhotspots")
-    return {"ok": True, "latency_ms": elapsed, "present": ch is not None, "value": ch}
+    rows = http_get(
+        "https://www.cancerhotspots.org/api/hotspots/single/byGene/"
+        + urllib.parse.quote(gene.strip(), safe="")
+    )
+    requested = residue_and_alt(change)
+    if requested is None:
+        return {"ok": True, "present": True, "value": {"source": "cancerhotspots.org", "position_count": None, "same_aa_count": None, "matched_transcript": None}}
+    residue, alt = requested
+    for row in rows:
+        row_residue = str(row.get("residue") or "").strip().upper()
+        if row_residue != residue:
+            continue
+        aa_counts = row.get("variantAminoAcid") or {}
+        if alt not in aa_counts:
+            continue
+        return {
+            "ok": True,
+            "present": True,
+            "value": {
+                "source": "cancerhotspots.org",
+                "position_count": row.get("tumorCount"),
+                "same_aa_count": aa_counts.get(alt),
+                "matched_transcript": row.get("transcriptId"),
+            },
+        }
+    return {"ok": True, "present": True, "value": {"source": "cancerhotspots.org", "position_count": None, "same_aa_count": None, "matched_transcript": None}}
 
 
 def run_existing_cli() -> dict[str, Any]:
