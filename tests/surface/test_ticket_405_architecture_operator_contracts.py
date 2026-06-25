@@ -165,14 +165,12 @@ def test_ticket_405_dependency_docs_name_article_fulltext_conversion_stack() -> 
         "PMC OA",
         "Figshare",
         "Semantic Scholar PDF",
-        "src/transform/article/jats.rs",
-        "src/transform/article/html.rs",
-        "src/transform/article/pdf.rs",
+        "built-in Rust transformers",
     ]
     missing = [marker for marker in required_markers if marker not in dependencies]
     assert not missing, (
         "docs/reference/dependencies.md must list the shipped article fulltext and "
-        f"conversion stack with each dependency role; missing {missing}"
+        f"conversion stack by capability; missing {missing}"
     )
 
 

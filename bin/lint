@@ -165,6 +165,63 @@ check_deprecated_public_doc_tokens() {
   [ "$found" -eq 0 ]
 }
 
+check_docs_test_code_leaks() {
+  local found=0
+  local file
+
+  while IFS= read -r file; do
+    [ -n "$file" ] || continue
+    [ -f "$file" ] || continue
+
+    local in_fence=0
+    local fence_start=0
+    local has_pathlib=0
+    local has_read_text=0
+    local has_assert=0
+    local line_no=0
+    local line
+
+    while IFS= read -r line || [ -n "$line" ]; do
+      line_no=$((line_no + 1))
+      if printf '%s\n' "$line" | grep -Eq '^```'; then
+        if [ "$in_fence" -eq 0 ]; then
+          in_fence=1
+          fence_start="$line_no"
+          has_pathlib=0
+          has_read_text=0
+          has_assert=0
+        else
+          if [ "$has_pathlib" -eq 1 ] && [ "$has_read_text" -eq 1 ] && [ "$has_assert" -eq 1 ]; then
+            if [ "$found" -eq 0 ]; then
+              printf 'Docs code blocks contain leaked test-code signatures:\n'
+            fi
+            printf '%s:%s: code block contains from pathlib import Path, .read_text(), and assert\n' "$file" "$fence_start"
+            found=1
+          fi
+          in_fence=0
+        fi
+        continue
+      fi
+
+      if [ "$in_fence" -eq 1 ]; then
+        printf '%s\n' "$line" | grep -Fq 'from pathlib import Path' && has_pathlib=1
+        printf '%s\n' "$line" | grep -Fq '.read_text()' && has_read_text=1
+        printf '%s\n' "$line" | grep -Eq '(^|[^[:alnum:]_])assert([^[:alnum:]_]|$)' && has_assert=1
+      fi
+    done < "$file"
+
+    if [ "$in_fence" -eq 1 ] && [ "$has_pathlib" -eq 1 ] && [ "$has_read_text" -eq 1 ] && [ "$has_assert" -eq 1 ]; then
+      if [ "$found" -eq 0 ]; then
+        printf 'Docs code blocks contain leaked test-code signatures:\n'
+      fi
+      printf '%s:%s: code block contains from pathlib import Path, .read_text(), and assert\n' "$file" "$fence_start"
+      found=1
+    fi
+  done < <(git ls-files -- 'docs/*.md' 'docs/**/*.md')
+
+  [ "$found" -eq 0 ]
+}
+
 has_tracked_files() {
   git ls-files -- "$1" | grep -q .
 }
@@ -173,6 +230,7 @@ check_credentials && pass 'credential scan' || fail 'credential scan'
 check_tbd && pass 'TBD scan' || fail 'TBD scan'
 check_pycache && pass 'stale __pycache__ scan' || fail 'stale __pycache__ scan'
 check_deprecated_public_doc_tokens && pass 'deprecated public-doc install string scan' || fail 'deprecated public-doc install string scan'
+check_docs_test_code_leaks && pass 'docs test-code leak scan' || fail 'docs test-code leak scan'
 
 if has_tracked_files '*.py'; then
   if command -v ruff >/dev/null 2>&1; then

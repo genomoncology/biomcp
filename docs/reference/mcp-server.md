@@ -1,279 +1,126 @@
 # MCP Server Reference
 
-BioMCP exposes typed `search` and `get` tools plus the raw `biomcp` escape hatch,
-and a current resource inventory centered on the help guide. This page documents
-the stable MCP contract and executes lightweight checks against the source tree.
+BioMCP can run as a local stdio MCP server or as a remote Streamable HTTP MCP server. Both transports expose the same read-only biomedical tools and resources; choose the transport based on where the MCP client runs.
 
-## Runtime Surface
+## Which server mode should I use?
 
-BioMCP exposes two MCP entrypoints:
+| Use case | Command | Transport | Notes |
+|---|---|---|---|
+| Local desktop client, such as Claude Desktop | `biomcp serve` | stdio | The MCP client starts BioMCP and talks over stdin/stdout. `biomcp mcp` is the same legacy alias. |
+| Remote or containerized deployment | `biomcp serve-http --host <host> --port <port>` | Streamable HTTP | Exposes MCP at `/mcp` and probe routes at `/health`, `/readyz`, and `/`. |
 
-- stdio: `biomcp serve`
-- remote Streamable HTTP: `biomcp serve-http`
+Manual stdio runs require an MCP client to send the initialize handshake on stdin. If `biomcp serve` or `biomcp mcp` is launched with stdin closed, the command exits non-zero and prints recovery guidance that points operators to `biomcp serve-http` for manual testing.
 
-Manual stdio runs require an MCP client to send the initialize handshake on
-stdin. If `biomcp serve` or its `biomcp mcp` alias is launched with stdin closed,
-the command exits non-zero and prints recovery guidance that points operators to
-`biomcp serve-http` for manual testing.
+## Local stdio server
 
-The canonical remote endpoint is `/mcp`. Lightweight probe routes are `/health`,
-`/readyz`, and `/`.
+Use stdio when BioMCP runs on the same machine as the MCP client:
 
-```python
-from pathlib import Path
-
-repo_root = Path.cwd()
-shell = (repo_root / "src/mcp/shell.rs").read_text()
-assert "StreamableHttpService" in shell
-assert '.nest_service("/mcp", service)' in shell
-assert '.route("/health", get(health_handler))' in shell
-assert '.route("/readyz", get(health_handler))' in shell
-assert '.route("/", get(index_handler))' in shell
+```bash
+biomcp serve
 ```
 
-## Capability Advertisement
+A desktop MCP configuration usually points directly at the installed `biomcp` binary and passes `serve` as the argument. The server writes MCP protocol messages to stdout, so do not wrap this command in scripts that print banners or other text to stdout.
 
-The server must advertise both tools and resources.
+## Remote HTTP server
 
-| Capability | Required |
-|------------|----------|
-| `tools` | enabled |
-| `resources` | enabled |
+Use Streamable HTTP when the MCP client reaches BioMCP over a network, through a container port, or behind a proxy:
 
-The tool list includes typed `search` and `get` entries whose schemas enumerate
-valid entity names, valid get section tokens, and the bounded search `limit`.
-The raw `biomcp` tool remains available for read-only commands outside the first
-typed slice.
-
-```python
-from pathlib import Path
-
-repo_root = Path.cwd()
-shell = (repo_root / "src/mcp/shell.rs").read_text()
-assert "enable_tools()" in shell
-assert "enable_resources()" in shell
+```bash
+biomcp serve-http --host 0.0.0.0 --port 8000
 ```
 
-## Tool Description Contract
+Routes:
 
-The runtime `biomcp` description is generated from
-`src/cli/list_reference.md`, but the build step emits an MCP-safe read-only
-subset and tells agents to prefer the typed `search`/`get` tools before falling
-back to raw command strings. That sanitized description keeps the catalog-only
-`study download --list` form, but it must not advertise
-`study download <study_id>` or the combined CLI syntax
-`study download [--list] [<study_id>]`. CLI-only packaging or mutating
-commands such as `skill install`, `ema sync`, `who sync`, `cvx sync`,
-`gtr sync`, `who-ivd sync`, `update`, and `uninstall`
-must not appear in the MCP tool description. CLI-only cache commands such as
-`cache path`, `cache stats`, `cache clean`, and `cache clear` reveal workstation-local paths and filesystem context, so they also stay out of the MCP tool description.
+- `/mcp` — MCP Streamable HTTP endpoint.
+- `/health` — lightweight health probe.
+- `/readyz` — readiness probe.
+- `/` — small index/help response for humans and load balancers.
 
-```python
-from pathlib import Path
+Point HTTP-capable MCP clients at the full MCP URL, for example `https://biomcp.example.org/mcp` after your gateway terminates TLS.
 
-repo_root = Path.cwd()
-build = (repo_root / "build.rs").read_text()
-tests = (repo_root / "tests/rmcp_client_contract.rs").read_text()
+## Host guard and proxies
 
-assert "MCP_SHELL_INTRO" in build
-assert "read-only biomedical MCP tool" in build
-assert "Prefer typed `search` and `get`" in build
-assert "raw `biomcp` as an escape hatch" in build
-assert "BLOCKED_MCP_DESCRIPTION_TERMS" in build
-assert "`skill install`" in build
-assert "`ema sync`" in build
-assert "`who sync`" in build
-assert "`cvx sync`" in build
-assert "`gtr sync`" in build
-assert "`who-ivd sync`" in build
-assert "`update [--check]`" in build
-assert "`uninstall`" in build
-assert "study download --list" in build
-assert "study download [--list] [<study_id>]" in build
-assert 'assert!(description.contains("study download --list"))' in tests
-assert '"study download [--list] [<study_id>]"' in tests
-assert '"who-ivd sync"' in tests
-assert '"biomcp cache stats"' in tests
-assert '"biomcp cache clean"' in tests
-assert '"biomcp cache clear"' in tests
+As of BioMCP 0.8.24, the HTTP Host guard is opt-in. If you do not pass `--allowed-hosts`, BioMCP accepts any Host header. That default is intentional so the server works behind containers, reverse proxies, service meshes, and custom domains without extra configuration. This behavior corresponds to issue #240.
+
+Use `--allowed-hosts` only when BioMCP itself should reject unexpected Host headers:
+
+```bash
+biomcp serve-http --host 0.0.0.0 --port 8000 \
+  --allowed-hosts biomcp.example.org,localhost:8000
 ```
 
-## Tool Response Content
+If a proxy rewrites Host headers, include the value BioMCP actually receives or leave the option unset and enforce host policy at the proxy.
 
-By default, the `biomcp` tool keeps non-chart calls as readable text and appends compact provenance when the CLI JSON path exposes it:
+## Authentication model
 
-- `## Sources` rolls up `_meta.section_sources` per section, using the same upstream source labels as CLI JSON.
-- `## Next commands` rolls up `_meta.next_commands` as copyable follow-up commands.
+BioMCP's HTTP MCP transport is unauthenticated by design. It does not implement user login, bearer-token validation, OAuth, session cookies, or per-user authorization.
 
-Agents that need the full structured contract can pass the tool input field `json: true`; BioMCP injects `--json` and returns CLI JSON text with `_meta.section_sources`, `_meta.evidence_urls`, `_meta.next_commands`, and `_meta.ladder`.
+For remote deployment, put BioMCP behind infrastructure you control, such as:
 
-In MCP mode, charted `study`
-commands return two success content blocks in order:
+- an API gateway,
+- a reverse proxy with SSO or mTLS,
+- a private network/VPN,
+- a platform ingress that enforces authentication before forwarding to BioMCP.
 
-- `text` with the normal markdown/table output
-- `image` with `mimeType = "image/svg+xml"` and base64-encoded SVG data
+Keep BioMCP bound to a private interface when possible, and expose only the authenticated gateway to users.
 
-MCP chart calls do not write files. If the caller supplies `--output` or `-o`,
-the tool returns a tool error instructing the caller to consume the inline image
-instead.
+## Provider API keys
 
-Alias fallback is the main exception to the usual CLI stderr contract: failed
-`get gene` / `get drug` alias suggestions are returned to MCP as structured JSON
- text content with `_meta.alias_resolution` and `_meta.next_commands` so agents
- can apply their own retry policy without parsing markdown.
+Provider keys for built-in tools are environment variables read by the BioMCP process. Configure them in the service manager, container environment, or desktop MCP configuration that launches BioMCP.
 
-Workflow ladders do not add MCP resources. MCP callers that execute BioMCP
-commands with `--json`, or pass tool input `json: true`, receive the same CLI JSON contract, so first-call
-responses can include `_meta.workflow` and `_meta.ladder[]` when a sidecar-backed
-ladder trigger matches. `_meta.next_commands` remains the dynamic one-hop
-follow-up list; `_meta.ladder[]` is the static multi-step worked example loaded
-from the installed `skills/biomcp/use-cases/<slug>.ladder.json` sidecar.
+Common keys include `ONCOKB_TOKEN`, `ALPHAGENOME_API_KEY`, `NCI_API_KEY`, `NCBI_API_KEY`, `S2_API_KEY`, `OPENFDA_API_KEY`, and `UMLS_API_KEY`. See the [API Keys guide](../getting-started/api-keys.md) for the current list and source-specific behavior.
 
-```python
-from pathlib import Path
+## MCP tools and resources
 
-repo_root = Path.cwd()
-shell = (repo_root / "src/mcp/shell.rs").read_text()
-cli = (repo_root / "src/cli/mod.rs").read_text()
+The MCP server advertises both tools and resources.
 
-assert "crate::cli::execute_mcp(args.clone())" in shell
-assert "append_default_mcp_footer" in shell
-assert "mcp_meta_footer_from_json" in shell
-assert "json: bool" in shell
-assert "CallToolResult::success" in shell
-assert 'Content::image(encoded, "image/svg+xml")' in shell
-assert "MCP chart responses do not support --output/-o" in cli
-assert 'annotations(title = "BioMCP", read_only_hint = true)' in shell
-```
+### Typed tools
 
-## Read-only Allowlist
+Prefer the typed tools when possible:
 
-The MCP `biomcp` tool accepts read-only CLI commands, including `suggest`,
-`discover`, `biomcp skill list`, `biomcp skill render`, existing embedded
-`biomcp skill <number-or-slug>` lookups, and the exact `study download --list`
-catalog lookup.
-Mutating or unknown `skill` subcommands remain blocked unless they are added to
-the positive MCP skill allowlist. Cache-family commands such as `cache path`,
-`cache stats`, `cache clean`, and `cache clear` are also rejected because they reveal workstation-local paths and filesystem context.
-In particular, `study download <study_id>` is rejected because installation
-performs network and filesystem writes into the local study directory, while
-`gtr sync` and `who-ivd sync` are rejected because they refresh local
-diagnostic runtime data under local roots. Operators should run study installs
-and local-runtime refresh commands directly via the CLI, outside MCP.
+- `search` for biomedical searches across supported entity types.
+- `get` for record lookup and sectioned detail retrieval.
 
-```python
-from pathlib import Path
+Their schemas enumerate valid entity names, valid get section tokens, and the bounded search `limit`.
 
-repo_root = Path.cwd()
-shell = (repo_root / "src/mcp/shell.rs").read_text()
-tests = (repo_root / "tests/rmcp_client_contract.rs").read_text()
-assert '"suggest" => true' in shell or '| "suggest" => true' in shell
-assert '"discover" => true' in shell or '| "discover" => true' in shell
-assert '"study" => {' in shell
-assert '"download" => args.len() == 4 && args[3] == "--list"' in shell
-assert "suggest/discover/skill" in shell or "suggest/discover/skill)." in shell
-assert 'matches!(sub.as_str(), "list" | "render")' in shell
-assert "show_use_case(&sub).is_ok()" in shell
-assert "!matches!(sub.as_str()" not in shell
-assert 'biomcp suggest \\"What drugs treat melanoma?\\"' in tests
-assert 'biomcp skill list' in tests
-assert 'biomcp skill sync' in tests
-assert 'biomcp skill install /tmp/biomcp-skills' in tests
-assert 'assert!(description.contains("study download --list"))' in tests
-assert 'biomcp study download msk_impact_2017' in tests
-assert 'biomcp gtr sync' in tests
-assert 'biomcp who-ivd sync' in tests
-assert 'READ_ONLY_MESSAGE' in tests
-assert 'biomcp cache path' in tests
-assert 'CACHE_CLI_ONLY_MESSAGE' in tests
-assert 'CACHE_FILESYSTEM_MESSAGE' in tests
-```
+### Raw command escape hatch
 
-## Resource Catalog
+The raw `biomcp` tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as `suggest`, `discover`, `biomcp skill list`, `biomcp skill render`, embedded `biomcp skill <number-or-slug>` lookups, and the catalog-only `study download --list` form.
 
-Current builds always publish the help resource and one markdown resource per embedded skill use-case. The help resource is the canonical prompt body, the
-same in-memory text returned by `biomcp skill render` over MCP. It does not
-contain repo-relative prompt links.
+Mutating or workstation-local commands are blocked in MCP mode. Examples include `skill install`, local source sync commands, `update`, `uninstall`, and `study download <study_id>`. Cache-family commands such as `cache path`, `cache stats`, `cache clean`, and `cache clear` are also rejected because they reveal workstation-local paths and filesystem context.
+
+### Resources
+
+Current builds always publish the help resource and one markdown resource per embedded skill use-case.
 
 | URI | Name | Notes |
-|-----|------|-------|
-| `biomcp://help` | BioMCP Overview | Always listed |
-| `biomcp://skill/<slug>` | Pattern: ... | Listed when the matching embedded worked example exists |
+|---|---|---|
+| `biomcp://help` | BioMCP Overview | Same in-memory help text returned by `biomcp skill render`. |
+| `biomcp://skill/<slug>` | Embedded worked example | Markdown resource for a built-in BioMCP skill use-case. |
 
-```python
-from pathlib import Path
+Workflow ladders do not add MCP resources. MCP callers that execute BioMCP commands with `--json`, or pass tool input `json: true`, receive the same CLI JSON contract, so first-call responses can include `_meta.workflow` and `_meta.ladder[]` when a sidecar-backed ladder trigger matches. `_meta.next_commands` remains the dynamic one-hop follow-up list.
 
-repo_root = Path.cwd()
-shell = (repo_root / "src/mcp/shell.rs").read_text()
-use_cases_dir = repo_root / "skills" / "use-cases"
-assert "RESOURCE_HELP_URI" in shell
-assert 'RawResource::new(RESOURCE_HELP_URI, "BioMCP Overview")' in shell
-assert "list_use_case_refs()" in shell
-assert use_cases_dir.exists()
-assert list(use_cases_dir.glob("*.md"))
-```
+## Tool responses
 
-## Resource Read Mapping
+By default, the `biomcp` tool keeps non-chart calls as readable text and appends compact provenance when CLI JSON exposes it:
 
-- `biomcp://help` maps to `show_overview()`.
-- `biomcp skill render` maps to the same canonical prompt body.
-- `biomcp://skill/<slug>` maps to `show_use_case(<slug>)` when an embedded
-  worked example exists.
-- All successful reads return `text/markdown`.
+- `## Sources` rolls up `_meta.section_sources` per section.
+- `## Next commands` rolls up `_meta.next_commands` as copyable follow-up commands.
 
-```python
-from pathlib import Path
+Agents that need the full structured contract can pass the tool input field `json: true`; BioMCP injects `--json` and returns CLI JSON text with metadata such as `_meta.section_sources`, `_meta.evidence_urls`, `_meta.next_commands`, and `_meta.ladder`.
 
-repo_root = Path.cwd()
-shell = (repo_root / "src/mcp/shell.rs").read_text()
-outcome = (repo_root / "src/cli/outcome.rs").read_text()
-tests = (repo_root / "tests/rmcp_client_contract.rs").read_text()
-assert "show_overview()" in shell
-assert "render_system_prompt()" in outcome
-assert "assert_resource_inventory_and_reads" in tests
-assert "assert_read_only_and_policy_calls" in tests
-assert 'if let Some(slug) = uri.strip_prefix("biomcp://skill/")' in shell
-assert "show_use_case(slug)" in shell
-assert 'with_mime_type("text/markdown")' in shell
-```
+In MCP mode, charted `study` commands return two success content blocks in order:
 
-## Unknown URI Behavior
+1. `text` with the normal markdown/table output.
+2. `image` with `mimeType = "image/svg+xml"` and base64-encoded SVG data.
 
-Unknown resource URIs must return an MCP resource-not-found error and include a helpful message.
+MCP chart calls do not write files. If the caller supplies `--output` or `-o`, the tool returns an error instructing the caller to consume the inline image instead.
 
-```python
-from pathlib import Path
+## Operational checklist
 
-repo_root = Path.cwd()
-shell = (repo_root / "src/mcp/shell.rs").read_text()
-assert "resource_not_found" in shell
-assert "Unknown resource:" in shell
-```
-
-## Companion Runtime Tests
-
-Protocol-level checks are implemented in Rust rmcp integration tests plus HTTP surface pytest checks:
-
-- `tests/conftest.py`
-- `tests/rmcp_client_contract.rs`
-- `tests/test_mcp_http_surface.py`
-- `examples/rmcp_streamable_http_contract.rs`
-
-These tests validate both transport modes:
-
-- `biomcp serve` stdio initialize/resource behavior,
-- stdio charted-study `text` + `image/svg+xml` responses and MCP `--output` rejection,
-- Streamable HTTP `initialize`/`tools/list`/`tools/call`,
-- Streamable HTTP charted-study `text` + `image/svg+xml` responses,
-- `GET /`, `GET /health`, and `GET /readyz`,
-- invalid URI error semantics.
-
-```python
-from pathlib import Path
-
-repo_root = Path.cwd()
-assert (repo_root / "tests/conftest.py").exists()
-assert (repo_root / "tests/rmcp_client_contract.rs").exists()
-assert (repo_root / "tests/test_mcp_http_surface.py").exists()
-assert (repo_root / "examples/rmcp_streamable_http_contract.rs").exists()
-```
+- Use `biomcp serve` for local stdio clients.
+- Use `biomcp serve-http` for remote Streamable HTTP clients and route them to `/mcp`.
+- Probe `/health`, `/readyz`, or `/` from load balancers and deployment checks.
+- Leave `--allowed-hosts` unset unless BioMCP itself should enforce Host headers.
+- Put remote HTTP deployments behind your own authentication and TLS layer.
+- Set provider keys as environment variables for the BioMCP process.

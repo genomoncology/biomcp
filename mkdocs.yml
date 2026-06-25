@@ -79,6 +79,8 @@ nav:
       - Bar: charts/bar.md
       - Stacked Bar: charts/stacked-bar.md
       - Pie: charts/pie.md
+      - Waterfall: charts/waterfall.md
+      - Scatter: charts/scatter.md
       - Heatmap: charts/heatmap.md
       - Histogram: charts/histogram.md
       - Density: charts/density.md
@@ -95,6 +97,7 @@ nav:
       - Benchmarks: reference/benchmarks.md
       - BioASQ Benchmark: reference/bioasq-benchmark.md
       - FAQ: reference/faq.md
+      - Configuration: reference/configuration.md
       - Source Versioning: reference/source-versioning.md
       - Article Keyword Search: reference/article-keyword-search.md
       - CIViC Sections: reference/civic-sections.md
@@ -104,6 +107,7 @@ nav:
       - blog/daraxonrasib-six-commands.md
       - blog/kras-g12c-treatment-landscape.md
       - blog/biomcp-charts.md
+      - blog/biomcp-kuva-charts.md
       - blog/biomcp-pubmed-articles.md
       - blog/skillbench-biomcp-skills.md
       - blog/cbioportal-study-analytics.md
