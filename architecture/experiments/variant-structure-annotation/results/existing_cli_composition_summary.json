@@ -1,0 +1,30 @@
+{
+  "approach": "existing_cli_composition",
+  "n": 3,
+  "variants": [
+    {
+      "domain_locations_exposed": false,
+      "domains_ok": true,
+      "structures_ok": true,
+      "total_latency_ms": 25866,
+      "variant": "BRAF V600E",
+      "variant_ok": true
+    },
+    {
+      "domain_locations_exposed": false,
+      "domains_ok": true,
+      "structures_ok": true,
+      "total_latency_ms": 11175,
+      "variant": "TP53 R175H",
+      "variant_ok": true
+    },
+    {
+      "domain_locations_exposed": false,
+      "domains_ok": true,
+      "structures_ok": true,
+      "total_latency_ms": 21810,
+      "variant": "ROS1 G2032R",
+      "variant_ok": true
+    }
+  ]
+}

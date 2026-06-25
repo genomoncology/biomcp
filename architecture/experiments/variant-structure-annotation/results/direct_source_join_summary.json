@@ -1,0 +1,70 @@
+{
+  "approach": "direct_source_join",
+  "n": 3,
+  "variants": [
+    {
+      "alphafold_ids": [
+        "P15056"
+      ],
+      "cancerhotspots_present": true,
+      "interpro_ok": true,
+      "myvariant_ok": true,
+      "overlap_count": 4,
+      "overlap_names": [
+        "Protein kinase domain",
+        "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+        "Protein kinase-like domain superfamily",
+        "Serine/Threonine Kinases and Pseudokinases"
+      ],
+      "pdb_count": 131,
+      "position_consistent": false,
+      "residue": 600,
+      "total_latency_ms": 15568,
+      "uniprot_ok": true,
+      "variant": "BRAF V600E"
+    },
+    {
+      "alphafold_ids": [
+        "P04637"
+      ],
+      "cancerhotspots_present": true,
+      "interpro_ok": true,
+      "myvariant_ok": true,
+      "overlap_count": 4,
+      "overlap_names": [
+        "p53 tumour suppressor family",
+        "p53-like transcription factor, DNA-binding domain superfamily",
+        "p53, DNA-binding domain",
+        "p53/RUNT-type transcription factor, DNA-binding domain superfamily"
+      ],
+      "pdb_count": 295,
+      "position_consistent": false,
+      "residue": 175,
+      "total_latency_ms": 17513,
+      "uniprot_ok": true,
+      "variant": "TP53 R175H"
+    },
+    {
+      "alphafold_ids": [
+        "P08922"
+      ],
+      "cancerhotspots_present": true,
+      "interpro_ok": true,
+      "myvariant_ok": true,
+      "overlap_count": 5,
+      "overlap_names": [
+        "Protein kinase domain",
+        "Serine-threonine/tyrosine-protein kinase, catalytic domain",
+        "Protein kinase-like domain superfamily",
+        "Tyrosine-protein kinase, catalytic domain",
+        "Receptor Tyrosine Kinase"
+      ],
+      "pdb_count": 5,
+      "position_consistent": false,
+      "residue": 2032,
+      "total_latency_ms": 19955,
+      "uniprot_ok": true,
+      "variant": "ROS1 G2032R"
+    }
+  ]
+}
