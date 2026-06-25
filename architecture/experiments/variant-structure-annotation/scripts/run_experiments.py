@@ -19,6 +19,7 @@ import re
 import subprocess
 import time
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -281,19 +282,24 @@ def run_existing_cli() -> dict[str, Any]:
 def run_direct_join(with_rcsb: bool = False) -> dict[str, Any]:
     rows = []
     for v in VARIANTS:
+        row_start = now()
         row: dict[str, Any] = {"variant": v["label"], "gene": v["gene"], "accession": v["accession"]}
-        mv = timed("myvariant", lambda v=v: myvariant_hit(v["gene"], v["change"]))
-        row["myvariant"] = mv
-        residue = None
-        if mv["ok"]:
-            residue = mv["value"].get("requested_position")
-        row["residue"] = residue
-        up = timed("uniprot", lambda v=v: uniprot_summary(uniprot_record(v["accession"])))
-        row["uniprot"] = up
-        ip = timed("interpro", lambda v=v, residue=residue: interpro_domains(v["accession"], residue))
-        row["interpro"] = ip
-        ch = timed("cancerhotspots_via_cli", lambda v=v: cancerhotspots_probe(v["gene"], v["change"]))
-        row["cancerhotspots"] = ch
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            mv_fut = pool.submit(timed, "myvariant", lambda v=v: myvariant_hit(v["gene"], v["change"]))
+            up_fut = pool.submit(timed, "uniprot", lambda v=v: uniprot_summary(uniprot_record(v["accession"])))
+            ch_fut = pool.submit(timed, "cancerhotspots", lambda v=v: cancerhotspots_probe(v["gene"], v["change"]))
+            mv = mv_fut.result()
+            row["myvariant"] = mv
+            residue = None
+            if mv["ok"]:
+                residue = mv["value"].get("requested_position")
+            row["residue"] = residue
+            ip_fut = pool.submit(timed, "interpro", lambda v=v, residue=residue: interpro_domains(v["accession"], residue))
+            up = up_fut.result()
+            row["uniprot"] = up
+            row["cancerhotspots"] = ch_fut.result()
+            ip = ip_fut.result()
+            row["interpro"] = ip
         if with_rcsb:
             pdb_ids = []
             if up["ok"]:
@@ -303,6 +309,7 @@ def run_direct_join(with_rcsb: bool = False) -> dict[str, Any]:
                 "rcsb_search_url": "https://www.rcsb.org/search?query=" + urllib.parse.quote(v["accession"]),
                 "rcsb_probe": rcsb_coverage(pdb_ids, v["accession"], residue),
             })
+        row["total_latency_ms"] = round((now() - row_start) * 1000)
         rows.append(row)
     return {"approach": "direct_source_join" + ("_with_structure_links" if with_rcsb else ""), "variants": rows}
 
@@ -335,7 +342,7 @@ def summarize(result: dict[str, Any]) -> dict[str, Any]:
                 "overlap_count": len((ip.get("value") or {}).get("overlaps") or []),
                 "overlap_names": [d.get("name") for d in ((ip.get("value") or {}).get("overlaps") or [])],
                 "cancerhotspots_present": ((row.get("cancerhotspots", {}).get("value") or {}).get("present")),
-                "total_latency_ms": sum(v.get("latency_ms", 0) for k, v in row.items() if isinstance(v, dict) and "latency_ms" in v),
+                "total_latency_ms": row.get("total_latency_ms") or sum(v.get("latency_ms", 0) for k, v in row.items() if isinstance(v, dict) and "latency_ms" in v),
             })
     return summary
 

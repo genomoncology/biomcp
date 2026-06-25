@@ -19,7 +19,7 @@
       "pdb_count": 131,
       "position_consistent": false,
       "residue": 600,
-      "total_latency_ms": 12924,
+      "total_latency_ms": 15636,
       "uniprot_ok": true,
       "variant": "BRAF V600E"
     },
@@ -40,7 +40,7 @@
       "pdb_count": 295,
       "position_consistent": false,
       "residue": 175,
-      "total_latency_ms": 18535,
+      "total_latency_ms": 14376,
       "uniprot_ok": true,
       "variant": "TP53 R175H"
     },
@@ -62,7 +62,7 @@
       "pdb_count": 5,
       "position_consistent": false,
       "residue": 2032,
-      "total_latency_ms": 18769,
+      "total_latency_ms": 7291,
       "uniprot_ok": true,
       "variant": "ROS1 G2032R"
     }

@@ -4,8 +4,8 @@
     {
       "accession": "P15056",
       "cancerhotspots": {
-        "label": "cancerhotspots_via_cli",
-        "latency_ms": 165,
+        "label": "cancerhotspots",
+        "latency_ms": 102,
         "ok": true,
         "value": {
           "ok": true,
@@ -21,7 +21,7 @@
       "gene": "BRAF",
       "interpro": {
         "label": "interpro",
-        "latency_ms": 10945,
+        "latency_ms": 15345,
         "ok": true,
         "value": {
           "domain_count": 11,
@@ -144,7 +144,7 @@
       },
       "myvariant": {
         "label": "myvariant",
-        "latency_ms": 281,
+        "latency_ms": 291,
         "ok": true,
         "value": {
           "clinvar_variant_id": 13961,
@@ -181,9 +181,10 @@
         }
       },
       "residue": 600,
+      "total_latency_ms": 15636,
       "uniprot": {
         "label": "uniprot",
-        "latency_ms": 1533,
+        "latency_ms": 547,
         "ok": true,
         "value": {
           "accession": "P15056",
@@ -232,8 +233,8 @@
     {
       "accession": "P04637",
       "cancerhotspots": {
-        "label": "cancerhotspots_via_cli",
-        "latency_ms": 199,
+        "label": "cancerhotspots",
+        "latency_ms": 124,
         "ok": true,
         "value": {
           "ok": true,
@@ -249,7 +250,7 @@
       "gene": "TP53",
       "interpro": {
         "label": "interpro",
-        "latency_ms": 17315,
+        "latency_ms": 14105,
         "ok": true,
         "value": {
           "domain_count": 9,
@@ -372,7 +373,7 @@
       },
       "myvariant": {
         "label": "myvariant",
-        "latency_ms": 312,
+        "latency_ms": 270,
         "ok": true,
         "value": {
           "clinvar_variant_id": 12374,
@@ -422,9 +423,10 @@
         }
       },
       "residue": 175,
+      "total_latency_ms": 14376,
       "uniprot": {
         "label": "uniprot",
-        "latency_ms": 709,
+        "latency_ms": 711,
         "ok": true,
         "value": {
           "accession": "P04637",
@@ -473,8 +475,8 @@
     {
       "accession": "P08922",
       "cancerhotspots": {
-        "label": "cancerhotspots_via_cli",
-        "latency_ms": 134,
+        "label": "cancerhotspots",
+        "latency_ms": 165,
         "ok": true,
         "value": {
           "ok": true,
@@ -490,7 +492,7 @@
       "gene": "ROS1",
       "interpro": {
         "label": "interpro",
-        "latency_ms": 17924,
+        "latency_ms": 7000,
         "ok": true,
         "value": {
           "domain_count": 14,
@@ -668,7 +670,7 @@
       },
       "myvariant": {
         "label": "myvariant",
-        "latency_ms": 271,
+        "latency_ms": 290,
         "ok": true,
         "value": {
           "clinvar_variant_id": null,
@@ -703,9 +705,10 @@
         }
       },
       "residue": 2032,
+      "total_latency_ms": 7291,
       "uniprot": {
         "label": "uniprot",
-        "latency_ms": 440,
+        "latency_ms": 436,
         "ok": true,
         "value": {
           "accession": "P08922",
