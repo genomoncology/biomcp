@@ -9,6 +9,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/study.md
   spec/entity/variant.md
   spec/surface/mcp.md
+  spec/surface/skills.md
   tests/surface/test_parallel_isolation_contract.py
   spec/surface/trial-action-summary.md
 )
@@ -116,6 +117,7 @@ case "$mode" in
     paths=(
       spec/entity/article.md
       spec/surface/mcp.md
+      spec/surface/skills.md
       spec/surface/trial-action-summary.md
     )
     mustmatch_path_dir="$(mustmatch_dir)"
