@@ -1,0 +1,13 @@
+[project]
+name = "variant-structure-annotation"
+version = "0.1.0"
+description = "Importable spike library for variant to protein-structure annotation experiments."
+requires-python = ">=3.12"
+dependencies = ["requests"]
+
+[tool.setuptools]
+packages = ["variant_structure_annotation"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
