@@ -85,6 +85,34 @@ Cancerhotspots'
 ../../tools/biomcp-ci --json list variant | jq -r '.commands[]' | mustmatch like 'variant structure <variant>'
 ```
 
+## Variant Structure Blog Walkthrough
+
+The public blog should teach the shipped variant-structure workflow as a real
+BRAF V600E command sequence, link readers to the reference how-to, and be wired
+into the MkDocs Blog nav.
+
+```bash
+blog="../../docs/blog/variant-structure-in-commands.md"
+test -f "$blog"
+{
+  grep -F 'blog/variant-structure-in-commands.md' ../../mkdocs.yml
+  grep -F '**TL;DR:**' "$blog"
+  grep -F 'biomcp variant structure "BRAF V600E"' "$blog"
+  grep -F '../how-to/annotate-variant-structure.md' "$blog"
+  grep -F 'InterPro' "$blog"
+  grep -F 'AlphaFold' "$blog"
+  grep -F 'Cancerhotspots' "$blog"
+  grep -F 'biomcp variant articles "BRAF V600E"' "$blog"
+} | mustmatch like 'blog/variant-structure-in-commands.md
+**TL;DR:**
+biomcp variant structure "BRAF V600E"
+../how-to/annotate-variant-structure.md
+InterPro
+AlphaFold
+Cancerhotspots
+biomcp variant articles "BRAF V600E"'
+```
+
 ## Variant Article Entity Recall
 
 Exact variant article pivots should use PubTator's normalized variant entity
