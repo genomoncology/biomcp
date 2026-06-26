@@ -169,6 +169,14 @@ pub(crate) async fn handle_command(
                 )?
             }
         }
+        VariantCommand::Structure { id } => {
+            let result = crate::entities::variant::structure(&id).await?;
+            if json {
+                crate::render::json::to_pretty(&result)?
+            } else {
+                crate::render::markdown::variant_structure_markdown(&result)
+            }
+        }
         VariantCommand::Oncokb { id } => {
             let result = crate::entities::variant::oncokb(&id).await?;
             if json {

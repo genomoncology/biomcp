@@ -261,6 +261,87 @@ pub fn variant_normalization_markdown(result: &VariantNormalizationResponse) -> 
     out
 }
 
+pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
+    let mut out = String::new();
+    out.push_str(&format!("# Variant structure: {}\n\n", result.variant));
+    out.push_str(&format!("Gene: {}\n", result.gene));
+    if let Some(position) = result.residue.position {
+        out.push_str(&format!("Residue: {position}\n"));
+    }
+    out.push_str(&format!(
+        "Position confidence: {}\n\n",
+        result.residue.position_confidence
+    ));
+
+    out.push_str("## Protein\n\n");
+    out.push_str(&format!("Accession: {}\n", result.protein.accession));
+    if let Some(entry) = result.protein.entry.as_deref() {
+        out.push_str(&format!("Entry: {entry}\n"));
+    }
+    if let Some(length) = result.protein.length {
+        out.push_str(&format!("Length: {length}\n"));
+    }
+    out.push('\n');
+
+    out.push_str("## Domains (InterPro)\n\n");
+    if result.domains.is_empty() {
+        out.push_str("No overlapping InterPro domains found for the selected residue.\n\n");
+    } else {
+        for domain in &result.domains {
+            let name = domain.name.as_deref().unwrap_or("InterPro domain");
+            out.push_str(&format!(
+                "- {} ({}) {}-{}\n",
+                name, domain.accession, domain.start, domain.end
+            ));
+        }
+        out.push('\n');
+    }
+
+    out.push_str("## Structures (PDB / AlphaFold)\n\n");
+    if result.structures.pdb.is_empty() {
+        out.push_str("No UniProt PDB cross-references returned.\n");
+    } else {
+        for row in result.structures.pdb.iter().take(10) {
+            let covered = row
+                .residue_covered
+                .map(|value| {
+                    if value {
+                        "covers residue"
+                    } else {
+                        "does not cover residue"
+                    }
+                })
+                .unwrap_or("coverage unknown");
+            out.push_str(&format!("- PDB {} ({covered})\n", row.id));
+        }
+    }
+    if let Some(alphafold) = result.structures.alphafold.as_ref() {
+        out.push_str(&format!("- AlphaFold: {}\n", alphafold.url));
+    }
+    out.push('\n');
+
+    out.push_str("## Cancerhotspots\n\n");
+    out.push_str(&format!("Source: {}\n", result.cancerhotspots.source));
+    if let Some(count) = result.cancerhotspots.position_count {
+        out.push_str(&format!("Position count: {count}\n"));
+    }
+    if let Some(count) = result.cancerhotspots.same_aa_count {
+        out.push_str(&format!("Same amino-acid count: {count}\n"));
+    }
+    out.push('\n');
+
+    if !result.warnings.is_empty() {
+        out.push_str("## Warnings\n\n");
+        for warning in &result.warnings {
+            out.push_str(&format!("- {warning}\n"));
+        }
+        out.push('\n');
+    }
+
+    out.push_str(&format_related_block(result.meta.next_commands.clone()));
+    out
+}
+
 pub fn variant_oncokb_markdown(result: &VariantOncoKbResult) -> String {
     let mut out = String::new();
     out.push_str("# OncoKB\n\n");

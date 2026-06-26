@@ -147,6 +147,7 @@ Pivot helpers allow moving between related entities without rebuilding filters:
 # Variant pivots
 biomcp variant trials "BRAF V600E" --limit 5
 biomcp variant articles "BRAF V600E"
+biomcp variant structure "BRAF V600E"
 biomcp variant normalize <service> <transcript_hgvs>
 biomcp variant normalize all NM_000248.3:c.135del
 biomcp variant normalize all NM_004448.2:c.829G>T

@@ -85,7 +85,8 @@ fn record_helpers_extract_display_function_and_structures() {
                 "id": "1UWH",
                 "properties": [
                     {"key": "Method", "value": "X-ray"},
-                    {"key": "Resolution", "value": "2.95 A"}
+                    {"key": "Resolution", "value": "2.95 A"},
+                    {"key": "Chains", "value": "A/B=448-723"}
                 ]
             },
             {"database": "PDB", "id": "1UWH"},
@@ -105,6 +106,12 @@ fn record_helpers_extract_display_function_and_structures() {
         vec!["1UWH".to_string(), "AF-P15056-F1".to_string()]
     );
     assert_eq!(record.structure_count(), 2);
+    assert_eq!(record.alphafold_ids(), vec!["AF-P15056-F1".to_string()]);
+    let pdb = record.typed_pdb_structures(Some(600));
+    assert_eq!(pdb.len(), 2);
+    assert_eq!(pdb[0].id, "1UWH");
+    assert_eq!(pdb[0].chains.as_deref(), Some("A/B=448-723"));
+    assert_eq!(pdb[0].residue_covered, Some(true));
     assert_eq!(
         record.structure_summaries(10),
         vec![

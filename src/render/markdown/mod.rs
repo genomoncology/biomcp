@@ -86,7 +86,7 @@ pub use self::variant::{
     gwas_search_markdown, gwas_search_markdown_with_footer, phenotype_search_markdown,
     phenotype_search_markdown_with_footer, variant_markdown, variant_normalization_markdown,
     variant_oncokb_markdown, variant_search_markdown, variant_search_markdown_with_context,
-    variant_search_markdown_with_footer,
+    variant_search_markdown_with_footer, variant_structure_markdown,
 };
 use std::collections::HashSet;
 use std::fmt::Write as _;
@@ -132,7 +132,7 @@ use crate::entities::study::{
 use crate::entities::trial::{Trial, TrialSearchResult};
 use crate::entities::variant::{
     Variant, VariantGwasAssociation, VariantNormalizationResponse, VariantOncoKbResult,
-    VariantPrediction, VariantSearchResult, gnomad_variant_slug,
+    VariantPrediction, VariantSearchResult, VariantStructureResult, gnomad_variant_slug,
 };
 use crate::error::BioMcpError;
 use crate::sources::nih_reporter::{NihReporterFundingSection, NihReporterGrant};

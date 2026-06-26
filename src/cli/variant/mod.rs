@@ -117,6 +117,18 @@ See also: biomcp list variant")]
         #[arg(long, default_value = "0")]
         offset: usize,
     },
+    /// Join a variant to residue, domain, PDB, AlphaFold, and Cancerhotspots context (opt-in)
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp variant structure \"BRAF V600E\"
+  biomcp --json variant structure \"BRAF V600E\"
+
+Note: Resolves the exact variant, selects the requested residue when possible, then joins InterPro domains, UniProt PDB/AlphaFold structures, and Cancerhotspots recurrence. This network-heavy helper is opt-in and does not change default get variant output.
+See also: biomcp list variant")]
+    Structure {
+        /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
+        id: String,
+    },
     /// Explicit OncoKB lookup for a variant (requires ONCOKB_TOKEN)
     #[command(after_help = "\
 EXAMPLES:
