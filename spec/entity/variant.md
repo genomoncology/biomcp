@@ -92,25 +92,27 @@ BRAF V600E command sequence, link readers to the reference how-to, and be wired
 into the MkDocs Blog nav.
 
 ```bash
-blog="../../docs/blog/variant-structure-in-commands.md"
-test -f "$blog"
-{
-  grep -F 'blog/variant-structure-in-commands.md' ../../mkdocs.yml
-  grep -F '**TL;DR:**' "$blog"
-  grep -F 'biomcp variant structure "BRAF V600E"' "$blog"
-  grep -F '../how-to/annotate-variant-structure.md' "$blog"
-  grep -F 'InterPro' "$blog"
-  grep -F 'AlphaFold' "$blog"
-  grep -F 'Cancerhotspots' "$blog"
-  grep -F 'biomcp variant articles "BRAF V600E"' "$blog"
-} | mustmatch like 'blog/variant-structure-in-commands.md
+grep -h -F \
+  -e 'blog/variant-structure-in-commands.md' \
+  -e '**TL;DR:**' \
+  -e 'biomcp get variant "BRAF V600E"' \
+  -e 'biomcp variant structure "BRAF V600E"' \
+  -e '../how-to/annotate-variant-structure.md' \
+  -e 'InterPro' \
+  -e 'AlphaFold' \
+  -e 'Cancerhotspots' \
+  -e 'biomcp variant articles "BRAF V600E"' \
+  -e '## Try it' \
+  ../../mkdocs.yml ../../docs/blog/variant-structure-in-commands.md | mustmatch like 'blog/variant-structure-in-commands.md
 **TL;DR:**
+biomcp get variant "BRAF V600E"
 biomcp variant structure "BRAF V600E"
 ../how-to/annotate-variant-structure.md
 InterPro
 AlphaFold
 Cancerhotspots
-biomcp variant articles "BRAF V600E"'
+biomcp variant articles "BRAF V600E"
+## Try it'
 ```
 
 ## Variant Article Entity Recall
