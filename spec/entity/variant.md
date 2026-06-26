@@ -66,6 +66,23 @@ the same compact gnomAD frequency story.
 The default card should still advertise typed follow-ups for downstream trial
 and article pivots even when those surfaces are covered elsewhere.
 
+## Structure Helper Discoverability
+
+The structure helper is an opt-in variant pivot for residue, domain, PDB,
+AlphaFold, and hotspot context. It should be visible in help and structured
+command listings before users try a live source join.
+
+```bash
+../../tools/biomcp-ci variant structure --help | mustmatch like 'biomcp variant structure "BRAF V600E"
+residue
+AlphaFold
+Cancerhotspots'
+```
+
+```bash
+../../tools/biomcp-ci --json list variant | jq -r '.commands[]' | mustmatch like 'variant structure <variant>'
+```
+
 ## Variant Article Entity Recall
 
 Exact variant article pivots should use PubTator's normalized variant entity
