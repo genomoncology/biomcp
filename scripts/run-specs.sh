@@ -146,7 +146,7 @@ case "$BIOMCP_BIN" in
 esac
 BIOMCP_BIN_DIR="$(cd "$(dirname "$BIOMCP_BIN")" && pwd)"
 export BIOMCP_BIN
-export PATH="$mustmatch_path_dir:$BIOMCP_BIN_DIR:$PATH"
+export PATH="$BIOMCP_BIN_DIR:$mustmatch_path_dir:$PATH"
 
 if [[ "$mode" == "verify" ]]; then
   prebuild_cargo_test_targets
