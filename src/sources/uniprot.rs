@@ -387,6 +387,20 @@ pub struct UniProtCrossReferenceProperty {
     pub value: Option<String>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct UniProtPdbStructure {
+    pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chains: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub residue_covered: Option<bool>,
+    pub source: String,
+}
+
 impl UniProtRecord {
     pub fn display_name(&self) -> String {
         if let Some(desc) = self.protein_description.as_ref() {
@@ -540,6 +554,44 @@ impl UniProtRecord {
         self.structure_ids().len()
     }
 
+    pub fn alphafold_ids(&self) -> Vec<String> {
+        self.uni_prot_kb_cross_references
+            .iter()
+            .filter_map(|x| {
+                let db = x.database.as_deref()?.trim();
+                let id = x.id.as_deref()?.trim();
+                (db == "AlphaFoldDB" && !id.is_empty()).then(|| id.to_string())
+            })
+            .collect()
+    }
+
+    pub fn typed_pdb_structures(&self, residue: Option<u32>) -> Vec<UniProtPdbStructure> {
+        self.uni_prot_kb_cross_references
+            .iter()
+            .filter_map(|x| {
+                let db = x.database.as_deref()?.trim();
+                let id = x.id.as_deref()?.trim();
+                if db != "PDB" || id.is_empty() {
+                    return None;
+                }
+                let chains = cross_ref_property(x, "Chains");
+                Some(UniProtPdbStructure {
+                    id: id.to_string(),
+                    method: cross_ref_property(x, "Method"),
+                    resolution: cross_ref_property(x, "Resolution")
+                        .filter(|v| !v.trim().is_empty() && v.trim() != "-"),
+                    residue_covered: residue.and_then(|position| {
+                        chains
+                            .as_deref()
+                            .map(|value| chain_coverage_contains(value, position))
+                    }),
+                    chains,
+                    source: "UniProt cross-reference".to_string(),
+                })
+            })
+            .collect()
+    }
+
     pub fn structure_summaries(&self, limit: usize) -> Vec<String> {
         #[derive(Debug)]
         struct PdbRow {
@@ -639,6 +691,24 @@ fn cross_ref_property(row: &UniProtCrossReference, key: &str) -> Option<String> 
             .map(str::trim)
             .filter(|v| !v.is_empty())
             .map(str::to_string)
+    })
+}
+
+fn chain_coverage_contains(value: &str, position: u32) -> bool {
+    value.split(',').any(|piece| {
+        let Some((_, ranges)) = piece.trim().split_once('=') else {
+            return false;
+        };
+        ranges.split('/').any(|range| {
+            let Some((start, end)) = range.trim().split_once('-') else {
+                return false;
+            };
+            let (Ok(start), Ok(end)) = (start.trim().parse::<u32>(), end.trim().parse::<u32>())
+            else {
+                return false;
+            };
+            start <= position && position <= end
+        })
     })
 }
 

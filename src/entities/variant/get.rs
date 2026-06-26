@@ -294,7 +294,16 @@ async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, 
     parse_variant_id(&normalized_id)
 }
 
-async fn resolve_base(id: &str) -> Result<(Variant, VariantIdFormat), BioMcpError> {
+pub(super) async fn resolve_base_with_hit(
+    id: &str,
+) -> Result<
+    (
+        Variant,
+        VariantIdFormat,
+        crate::sources::myvariant::MyVariantHit,
+    ),
+    BioMcpError,
+> {
     let id = id.trim();
     if id.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -364,6 +373,11 @@ async fn resolve_base(id: &str) -> Result<(Variant, VariantIdFormat), BioMcpErro
     };
 
     let variant = transform::variant::from_myvariant_hit(&hit);
+    Ok((variant, id_format, hit))
+}
+
+async fn resolve_base(id: &str) -> Result<(Variant, VariantIdFormat), BioMcpError> {
+    let (variant, id_format, _) = resolve_base_with_hit(id).await?;
     Ok((variant, id_format))
 }
 

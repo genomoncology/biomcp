@@ -427,7 +427,13 @@ biomcp get variant "BRAF V600E"
 biomcp get variant NM_004333.6:c.1799T>A
 biomcp get variant "BRAF V600E" predict
 biomcp get variant rs7903146 gwas
+biomcp variant structure "BRAF V600E"
 ```
+
+`variant structure <variant>` is opt-in. It joins the exact variant to selected
+residue, overlapping InterPro domain ranges, UniProt PDB/AlphaFold structures,
+Cancerhotspots recurrence, warnings, and `_meta.next_commands`; default
+`get variant` output stays unchanged.
 
 ### Drug
 
@@ -552,6 +558,7 @@ See also: `docs/reference/mcp-server.md`.
 ```bash
 biomcp variant trials "BRAF V600E"
 biomcp variant articles "BRAF V600E"
+biomcp variant structure "BRAF V600E"
 biomcp variant oncokb "BRAF V600E"
 biomcp variant normalize <service> <transcript_hgvs>
 biomcp variant normalize all NM_000248.3:c.135del

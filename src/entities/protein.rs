@@ -134,7 +134,7 @@ pub(crate) fn is_uniprot_accession(value: &str) -> bool {
     uniprot_accession_re().is_match(value.trim())
 }
 
-async fn resolve_accession(value: &str) -> Result<String, BioMcpError> {
+pub(crate) async fn resolve_accession(value: &str) -> Result<String, BioMcpError> {
     let value = value.trim();
     if is_uniprot_accession(value) {
         return Ok(value.to_string());

@@ -9,6 +9,7 @@ mod gwas;
 mod normalization;
 mod resolution;
 mod search;
+mod structure;
 #[cfg(test)]
 mod test_support;
 
@@ -24,6 +25,7 @@ pub use self::resolution::{
 };
 #[allow(unused_imports)]
 pub use self::search::{search, search_page, search_query_summary};
+pub use self::structure::{VariantStructureResult, structure};
 
 pub(crate) use self::normalization::transcript_coding_hgvs_re;
 pub(crate) use self::resolution::{gnomad_variant_slug, is_rsid, normalize_protein_change};

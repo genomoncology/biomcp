@@ -64,8 +64,10 @@ impl InterProClient {
     fn decode_domains_response(resp: InterProResponse, limit: usize) -> Vec<InterProDomain> {
         let mut out = Vec::new();
         for row in resp.results.into_iter().take(limit.clamp(1, 25)) {
-            let Some(meta) = row.metadata else { continue };
-            let Some(accession) = meta.accession.map(|v| v.trim().to_string()) else {
+            let Some(meta) = row.metadata.as_ref() else {
+                continue;
+            };
+            let Some(accession) = meta.accession.as_deref().map(|v| v.trim().to_string()) else {
                 continue;
             };
             if accession.is_empty() {
@@ -73,16 +75,19 @@ impl InterProClient {
             }
             let name = meta
                 .name
+                .as_deref()
                 .map(|v| v.trim().to_string())
                 .filter(|v| !v.is_empty());
             let domain_type = meta
                 .r#type
+                .as_deref()
                 .map(|v| v.trim().to_string())
                 .filter(|v| !v.is_empty());
             out.push(InterProDomain {
                 accession,
                 name,
                 domain_type,
+                ranges: interpro_ranges(&row),
             });
         }
 
@@ -107,6 +112,28 @@ pub struct InterProDomain {
     pub accession: String,
     pub name: Option<String>,
     pub domain_type: Option<String>,
+    pub ranges: Vec<InterProRange>,
+}
+
+#[derive(Debug, Clone)]
+pub struct InterProRange {
+    pub start: u32,
+    pub end: u32,
+}
+
+fn interpro_ranges(row: &InterProResult) -> Vec<InterProRange> {
+    let mut ranges = Vec::new();
+    for protein in &row.proteins {
+        for location in &protein.entry_protein_locations {
+            for fragment in &location.fragments {
+                let (Some(start), Some(end)) = (fragment.start, fragment.end) else {
+                    continue;
+                };
+                ranges.push(InterProRange { start, end });
+            }
+        }
+    }
+    ranges
 }
 
 #[derive(Debug, Deserialize)]
@@ -118,6 +145,8 @@ struct InterProResponse {
 #[derive(Debug, Deserialize)]
 struct InterProResult {
     metadata: Option<InterProMetadata>,
+    #[serde(default)]
+    proteins: Vec<InterProProtein>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -126,6 +155,24 @@ struct InterProMetadata {
     name: Option<String>,
     #[serde(rename = "type")]
     r#type: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct InterProProtein {
+    #[serde(default)]
+    entry_protein_locations: Vec<InterProLocation>,
+}
+
+#[derive(Debug, Deserialize)]
+struct InterProLocation {
+    #[serde(default)]
+    fragments: Vec<InterProFragment>,
+}
+
+#[derive(Debug, Deserialize)]
+struct InterProFragment {
+    start: Option<u32>,
+    end: Option<u32>,
 }
 
 #[cfg(test)]

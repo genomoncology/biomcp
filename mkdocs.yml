@@ -65,6 +65,7 @@ nav:
       - Monarch Initiative: sources/monarch-initiative.md
   - How-To:
       - Annotate Variants: how-to/annotate-variants.md
+      - Annotate Variant Structure: how-to/annotate-variant-structure.md
       - Cross-Entity Pivots: how-to/cross-entity-pivots.md
       - Find Articles: how-to/find-articles.md
       - Find Trials: how-to/find-trials.md

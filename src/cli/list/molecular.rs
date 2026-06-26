@@ -84,6 +84,7 @@ pub(super) fn list_variant() -> String {
 - `get variant <id> gwas` - GWAS trait associations
 - `get variant <id> all` - include all sections
 - `variant normalize <service> <transcript_hgvs>` - normalize explicit transcript HGVS with Mutalyzer and/or VariantValidator
+- `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
 
 ## Search filters
 
@@ -132,6 +133,7 @@ Transcript normalization examples:
 
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
 - `variant articles <id>`
+- `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
 "#
     .to_string();
 

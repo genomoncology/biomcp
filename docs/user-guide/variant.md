@@ -192,10 +192,17 @@ request `predict` explicitly when you want AlphaGenome output.
 ## Helper commands
 
 ```bash
-biomcp variant trials "BRAF V600E"   # search trials mentioning this mutation
-biomcp variant articles "BRAF V600E" # search PubMed/PubTator for this variant
-biomcp variant oncokb "BRAF V600E"   # OncoKB lookup (requires ONCOKB_TOKEN)
+biomcp variant trials "BRAF V600E"     # search trials mentioning this mutation
+biomcp variant articles "BRAF V600E"   # search PubMed/PubTator for this variant
+biomcp variant structure "BRAF V600E"  # residue/domain/PDB/AlphaFold/hotspot context
+biomcp variant oncokb "BRAF V600E"     # OncoKB lookup (requires ONCOKB_TOKEN)
 ```
+
+`variant structure` is an opt-in, network-backed helper. JSON includes the selected
+residue, matched HGVSp aliases, other MyVariant/dbNSFP positions, overlapping
+InterPro domain ranges, typed UniProt PDB rows, an AlphaFold URL,
+Cancerhotspots recurrence, warnings, and `_meta.next_commands`. It does not add
+structure data to default `get variant` output.
 
 `variant articles` uses PubTator variant annotations when BioMCP can resolve a
 confident variant entity. If annotation recall is unavailable, the output labels
@@ -245,6 +252,7 @@ biomcp --json search gwas --trait "type 2 diabetes"
 ## Related guides
 
 - [How to annotate variants](../how-to/annotate-variants.md)
+- [How to annotate variant structure context](../how-to/annotate-variant-structure.md)
 - [How to predict effects](../how-to/predict-effects.md)
 - [Gene](gene.md)
 - [Trial](trial.md)
