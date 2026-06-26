@@ -75,6 +75,8 @@ command listings before users try a live source join.
 ```bash
 ../../tools/biomcp-ci variant structure --help | mustmatch like 'biomcp variant structure "BRAF V600E"
 residue
+domain
+PDB
 AlphaFold
 Cancerhotspots'
 ```
