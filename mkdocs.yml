@@ -105,6 +105,7 @@ nav:
       - Drug Approvals & AE Summary: reference/drug-approvals-and-ae-summary.md
       - Dependencies: reference/dependencies.md
   - Blog:
+      - blog/variant-structure-in-commands.md
       - blog/daraxonrasib-six-commands.md
       - blog/kras-g12c-treatment-landscape.md
       - blog/biomcp-charts.md
