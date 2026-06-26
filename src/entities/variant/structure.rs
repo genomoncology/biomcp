@@ -98,12 +98,13 @@ pub async fn structure(id: &str) -> Result<VariantStructureResult, BioMcpError> 
     let record = uniprot.get_record(&accession).await?;
     let residue = residue_summary(&variant, &id_format, &hit);
     let position = residue.position;
+    let hotspot_change = residue.requested_change.clone();
 
     let domains_fut = async {
         let domains = InterProClient::new()?.domains(&accession, 25).await?;
         Ok::<_, BioMcpError>(domains)
     };
-    let hotspots_fut = async { cancerhotspots(&id_format).await };
+    let hotspots_fut = async { cancerhotspots(gene, hotspot_change.as_deref()).await };
     let (domains_result, hotspots_result) = tokio::join!(domains_fut, hotspots_fut);
 
     let mut warnings = Vec::new();
@@ -160,17 +161,10 @@ pub async fn structure(id: &str) -> Result<VariantStructureResult, BioMcpError> 
 }
 
 async fn cancerhotspots(
-    id_format: &VariantIdFormat,
+    gene: &str,
+    change: Option<&str>,
 ) -> Result<CancerHotspotRecurrence, BioMcpError> {
-    let VariantIdFormat::GeneProteinChange { gene, change } = id_format else {
-        return Ok(CancerHotspotRecurrence {
-            source: "cancerhotspots.org".to_string(),
-            position_count: None,
-            same_aa_count: None,
-            matched_transcript: None,
-        });
-    };
-    let Some(normalized_change) = super::normalize_protein_change(change) else {
+    let Some(normalized_change) = change.and_then(super::normalize_protein_change) else {
         return Ok(CancerHotspotRecurrence {
             source: "cancerhotspots.org".to_string(),
             position_count: None,
@@ -284,7 +278,7 @@ fn residue_summary(
             positions.insert(position);
         }
         if let Some(requested) = requested_normalized.as_deref()
-            && super::normalize_protein_change(alias).as_deref() == Some(requested)
+            && normalize_hgvsp_change(alias).as_deref() == Some(requested)
         {
             matched_hgvsp.push(alias.trim().to_string());
         }
@@ -334,9 +328,22 @@ fn requested_change(variant: &Variant, id_format: &VariantIdFormat) -> Option<St
     }
 }
 
+fn normalize_hgvsp_change(value: &str) -> Option<String> {
+    super::normalize_protein_change(protein_change_segment(value))
+}
+
+fn protein_change_segment(value: &str) -> &str {
+    let trimmed = value.trim();
+    trimmed
+        .rsplit_once(":p.")
+        .map(|(_, change)| change)
+        .unwrap_or(trimmed)
+}
+
 fn hgvsp_position(value: &str) -> Option<u32> {
+    let change = protein_change_segment(value);
     let mut digits = String::new();
-    for ch in value.chars() {
+    for ch in change.chars() {
         if ch.is_ascii_digit() {
             digits.push(ch);
         } else if !digits.is_empty() {
@@ -347,7 +354,9 @@ fn hgvsp_position(value: &str) -> Option<u32> {
 }
 
 fn change_aa(value: &str) -> Option<(Option<String>, Option<String>)> {
-    let change = value.trim().trim_start_matches("p.");
+    let change = protein_change_segment(value)
+        .trim()
+        .trim_start_matches("p.");
     let position_start = change.find(|ch: char| ch.is_ascii_digit())?;
     let position_end =
         change[position_start..].find(|ch: char| !ch.is_ascii_digit())? + position_start;
@@ -364,8 +373,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn hgvsp_position_extracts_three_letter_and_short_aliases() {
+    fn hgvsp_position_extracts_three_letter_short_and_accession_prefixed_aliases() {
         assert_eq!(hgvsp_position("p.Val600Glu"), Some(600));
         assert_eq!(hgvsp_position("p.V600E"), Some(600));
+        assert_eq!(hgvsp_position("NP_004324.2:p.Val600Glu"), Some(600));
+    }
+
+    #[test]
+    fn normalize_hgvsp_change_matches_accession_prefixed_aliases() {
+        assert_eq!(
+            normalize_hgvsp_change("NP_004324.2:p.Val600Glu").as_deref(),
+            Some("V600E")
+        );
     }
 }
