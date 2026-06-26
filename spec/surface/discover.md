@@ -124,7 +124,10 @@ biomcp get gene <symbol>'
 The normalize-to-codes worked example should teach a real `discover` workflow,
 not a copied table of canned codes. The playbook opens the command sequence, and
 the live JSON response keeps source-labelled ontology and clinical-code labels
-visible for downstream structuring agents.
+visible for downstream structuring agents. Routine operator verification must
+also prove the no-UMLS graceful-degradation path: without `UMLS_API_KEY`,
+`discover` still returns the MONDO concept and reports that UMLS enrichment is
+operator-pending instead of failing.
 
 ```bash
 ../../tools/biomcp-ci skill normalize-to-codes | mustmatch like "biomcp discover
@@ -135,9 +138,18 @@ RxNorm"
 ```
 
 ```bash
-../../tools/biomcp-ci --json discover "type 2 diabetes mellitus" | mustmatch like '"primary_id": "MONDO:0005148"
-"source": "SNOMEDCT"
+UMLS_API_KEY= "$BIOMCP_BIN" --json discover "type 2 diabetes mellitus" 2>&1 \
+  | mustmatch like '"primary_id": "MONDO:0005148"
+UMLS enrichment unavailable (set UMLS_API_KEY)'
+```
+
+```bash
+if [[ -n "${UMLS_API_KEY:-}" ]]; then
+  "$BIOMCP_BIN" --json discover "type 2 diabetes mellitus" | mustmatch like '"source": "SNOMEDCT"
 "source": "ICD10CM"'
+else
+  echo "operator-pending: set UMLS_API_KEY to run the SNOMEDCT + ICD10CM discover label canary"
+fi
 ```
 
 ## Skill Decomposition Keeps Catalog and Install Ownership Separate

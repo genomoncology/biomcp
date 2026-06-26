@@ -1243,7 +1243,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert 'verify) default_biomcp_bin="$ROOT/target/release/biomcp"' in runner
     assert '*) default_biomcp_bin="$ROOT/target/spec/biomcp"' in runner
     assert 'BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"' in runner
-    assert 'export PATH="$mustmatch_path_dir:$BIOMCP_BIN_DIR:$PATH"' in runner
+    assert 'export PATH="$BIOMCP_BIN_DIR:$mustmatch_path_dir:$PATH"' in runner
     for mode in ("spec|spec-pr", "spec-contracts"):
         mode_block = re.search(rf"  {re.escape(mode)}\)\n(?P<body>.*?)\n    ;;", runner, flags=re.DOTALL)
         assert mode_block is not None, f"runner must define {mode} mode"
