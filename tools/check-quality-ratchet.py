@@ -418,7 +418,7 @@ def check_public_flags_and_value_aliases_documented(root_dir: Path, texts: dict[
             for match in re.finditer(r'#\[value\([^\]]*alias\s*=\s*"([^"]+)"', rust_text)
         }
     )
-    corpus = f"{documented_token_corpus(texts)}\n{rust_text.lower()}"
+    corpus = documented_token_corpus(texts)
     findings = [
         {
             "token": token,

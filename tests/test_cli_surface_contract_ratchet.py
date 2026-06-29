@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import subprocess
@@ -8,6 +9,16 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WRAPPER_SCRIPT = REPO_ROOT / "tools" / "check-quality-ratchet.sh"
 EXCEPTION_REGISTRY = REPO_ROOT / "tools" / "cli-surface-contract-exceptions.json"
+QUALITY_RATCHET_TOOL = REPO_ROOT / "tools" / "check-quality-ratchet.py"
+
+
+def _load_quality_ratchet_module():
+    spec = importlib.util.spec_from_file_location("check_quality_ratchet", QUALITY_RATCHET_TOOL)
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None:
@@ -45,6 +56,27 @@ def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None
         "list_and_reference_docs_cover_public_commands",
         "json_entity_surfaces_include_next_commands_or_exception",
         "copy_paste_examples_are_shell_safe",
+    ]
+
+
+def test_cli_surface_contract_flags_must_be_documented_outside_source(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    cli_dir = root / "src" / "cli"
+    cli_dir.mkdir(parents=True)
+    (cli_dir / "demo.rs").write_text(
+        '#[arg(long = "date-to", visible_alias = "until")]\nfield: Option<String>,\n',
+        encoding="utf-8",
+    )
+
+    module = _load_quality_ratchet_module()
+    result = module.check_public_flags_and_value_aliases_documented(root, {"docs.md": ""})
+
+    assert result["status"] == "fail"
+    assert result["findings"] == [
+        {
+            "token": "until",
+            "message": "public visible/value alias is accepted by clap but absent from help/list/docs/spec evidence",
+        }
     ]
 
 
