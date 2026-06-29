@@ -127,7 +127,7 @@ Supported formats:
 Transcript normalization examples:
 - `variant normalize all NM_000248.3:c.135del`
 - `variant normalize mutalyzer NM_000248.3:c.135del`
-- `variant normalize variantvalidator NM_004448.2:c.829G>T`
+- `variant normalize variantvalidator 'NM_004448.2:c.829G>T'`
 
 ## Helpers
 

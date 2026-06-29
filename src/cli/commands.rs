@@ -24,7 +24,7 @@ pub enum Commands {
     #[command(after_help = "\
 EXAMPLES:
   biomcp variant normalize all NM_000248.3:c.135del
-  biomcp variant normalize variantvalidator NM_004448.2:c.829G>T
+  biomcp variant normalize variantvalidator 'NM_004448.2:c.829G>T'
   biomcp variant trials \"BRAF V600E\" --limit 5")]
     Variant {
         #[command(subcommand)]
@@ -545,7 +545,7 @@ EXAMPLES:
   biomcp get variant rs113488022
   biomcp get variant \"BRAF V600E\" clinvar
   biomcp get variant \"BRAF p.Val600Glu\"
-  biomcp get variant NM_004333.6:c.1799T>A
+  biomcp get variant 'NM_004333.6:c.1799T>A'
 
 Shorthand like \"PTPN22 620W\" or \"R620W\" should go through `biomcp search variant`.
 

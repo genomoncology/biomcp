@@ -35,7 +35,7 @@ def test_variant_guide_documents_transcript_normalization_proxy_boundary() -> No
 
     for phrase in (
         "biomcp variant normalize all NM_000248.3:c.135del",
-        "biomcp variant normalize all NM_004448.2:c.829G>T",
+        "biomcp variant normalize all 'NM_004448.2:c.829G>T'",
         "Mutalyzer",
         "VariantValidator",
     ):

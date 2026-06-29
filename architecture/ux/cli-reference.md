@@ -59,7 +59,7 @@ biomcp get gene BRAF all                  # everything
 biomcp get variant "BRAF V600E"              # summary card + cheap CIViC pointer
 biomcp get variant "BRAF V600E" civic        # live CIViC evidence + currency caveat
 biomcp get variant "BRAF V600E" clinvar population conservation
-biomcp get variant NM_004333.6:c.1799T>A
+biomcp get variant 'NM_004333.6:c.1799T>A'
 biomcp get article 22663011 tldr
 biomcp --json get article <id> assets
 biomcp get article <id> asset <name>
@@ -155,7 +155,7 @@ biomcp variant articles "BRAF V600E"
 biomcp variant structure "BRAF V600E"
 biomcp variant normalize <service> <transcript_hgvs>
 biomcp variant normalize all NM_000248.3:c.135del
-biomcp variant normalize all NM_004448.2:c.829G>T
+biomcp variant normalize all 'NM_004448.2:c.829G>T'
 
 # Drug pivots
 biomcp drug adverse-events pembrolizumab

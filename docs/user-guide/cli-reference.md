@@ -433,7 +433,7 @@ biomcp get trial NCT02576665 all
 
 ```bash
 biomcp get variant "BRAF V600E"
-biomcp get variant NM_004333.6:c.1799T>A
+biomcp get variant 'NM_004333.6:c.1799T>A'
 biomcp get variant "BRAF V600E" predict
 biomcp get variant rs7903146 gwas
 biomcp variant structure "BRAF V600E"
@@ -576,7 +576,7 @@ biomcp variant structure "BRAF V600E"
 biomcp variant oncokb "BRAF V600E"
 biomcp variant normalize <service> <transcript_hgvs>
 biomcp variant normalize all NM_000248.3:c.135del
-biomcp variant normalize all NM_004448.2:c.829G>T
+biomcp variant normalize all 'NM_004448.2:c.829G>T'
 biomcp drug interactions warfarin
 biomcp drug adverse-events pembrolizumab
 biomcp drug adverse-events osimertinib --count patient.reaction.reactionmeddrapt.exact

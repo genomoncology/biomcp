@@ -145,7 +145,7 @@ See also: biomcp list variant")]
 EXAMPLES:
   biomcp variant normalize all NM_000248.3:c.135del
   biomcp variant normalize mutalyzer NM_000248.3:c.135del
-  biomcp variant normalize variantvalidator NM_004448.2:c.829G>T
+  biomcp variant normalize variantvalidator 'NM_004448.2:c.829G>T'
 
 SERVICES:
   all

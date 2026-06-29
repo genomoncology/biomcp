@@ -40,6 +40,7 @@ raw bytes
 - `search article --type <review|research|case-reports|meta-analysis>`
 - `search article --date-from <YYYY|YYYY-MM|YYYY-MM-DD> --date-to <YYYY|YYYY-MM|YYYY-MM-DD>`
 - `search article --since <YYYY|YYYY-MM|YYYY-MM-DD>` - alias for `--date-from`
+- `search article --until <YYYY|YYYY-MM-DD>` - alias for `--date-to`
 - `search article --year-min <YYYY> --year-max <YYYY>` - exact year aliases for article date bounds
 - `search article --journal <name>`
 - `search article --open-access`

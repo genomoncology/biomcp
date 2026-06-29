@@ -19,6 +19,30 @@ MUSTMATCH_LINT_SKIP = "<!-- mustmatch-lint: skip -->"
 CLI_LINE_CAP = 700
 CLI_LINE_CAP_TICKET_RE = re.compile(r"^\d+(?:[-_][a-z0-9][a-z0-9-]*)?$")
 EXPERIMENT_RESULTS_GLOB = "architecture/experiments/**/results/**"
+CLI_SURFACE_CONTRACT_CHECKS = [
+    "public_flags_and_value_aliases_documented",
+    "list_and_reference_docs_cover_public_commands",
+    "json_entity_surfaces_include_next_commands_or_exception",
+    "copy_paste_examples_are_shell_safe",
+]
+CLI_SURFACE_EXCEPTION_REGISTRY = "tools/cli-surface-contract-exceptions.json"
+CLI_SURFACE_REQUIRED_EXCEPTIONS = {
+    "biomcp cache path": "plain_text_operator_path",
+    "biomcp --json list": "command_reference_payload",
+    "biomcp --json version": "release_identity_payload",
+    "biomcp --json search all --counts-only": "current_counts_only_shape",
+}
+CLI_SURFACE_DOC_PATHS = [
+    "architecture/ux/cli-reference.md",
+    "docs/user-guide/cli-reference.md",
+    "docs/user-guide/variant.md",
+    "src/cli/commands.rs",
+    "src/cli/list/clinical.rs",
+    "src/cli/list/helpers.rs",
+    "src/cli/list/literature.rs",
+    "src/cli/list/molecular.rs",
+    "spec/surface/cli.md",
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -304,6 +328,260 @@ def check_cli_line_cap(root_dir: Path, allowlist_path: Path) -> dict[str, object
         "errors": [],
     }
 
+
+
+
+def load_cli_surface_exceptions(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
+    registry_path = root_dir / CLI_SURFACE_EXCEPTION_REGISTRY
+    try:
+        payload = json.loads(registry_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        return [], [f"failed to read exception registry {CLI_SURFACE_EXCEPTION_REGISTRY}: {exc}"]
+    except json.JSONDecodeError as exc:
+        return [], [f"invalid exception registry {CLI_SURFACE_EXCEPTION_REGISTRY}: {exc}"]
+
+    errors: list[str] = []
+    if not isinstance(payload, dict):
+        return [], ["exception registry root must be a JSON object"]
+    if payload.get("schema") != "biomcp-cli-surface-contract-exceptions-v1":
+        errors.append("exception registry schema must be biomcp-cli-surface-contract-exceptions-v1")
+    entries = payload.get("entries")
+    if not isinstance(entries, list):
+        return [], errors + ["exception registry entries must be a list"]
+
+    by_command: dict[str, dict[str, object]] = {}
+    for index, entry in enumerate(entries):
+        prefix = f"entries[{index}]"
+        if not isinstance(entry, dict):
+            errors.append(f"{prefix} must be an object")
+            continue
+        command = entry.get("command")
+        exception = entry.get("exception")
+        reason = entry.get("reason")
+        owner_test = entry.get("owner_test")
+        if not isinstance(command, str) or not command.startswith("biomcp "):
+            errors.append(f"{prefix}.command must be a biomcp command string")
+            continue
+        if command in by_command:
+            errors.append(f"duplicate exception command: {command}")
+            continue
+        if not isinstance(exception, str) or not exception.strip():
+            errors.append(f"{prefix}.exception must be a non-empty string")
+        if not isinstance(reason, str) or not reason.strip():
+            errors.append(f"{prefix}.reason must be a non-empty string")
+        if not isinstance(owner_test, str) or not owner_test.startswith("tests/"):
+            errors.append(f"{prefix}.owner_test must point at a local test")
+        by_command[command] = entry
+
+    for command, exception in CLI_SURFACE_REQUIRED_EXCEPTIONS.items():
+        entry = by_command.get(command)
+        if entry is None:
+            errors.append(f"missing required CLI surface exception: {command}")
+        elif entry.get("exception") != exception:
+            errors.append(f"{command} exception must be {exception}")
+
+    return list(by_command.values()), errors
+
+
+def read_existing_text(root_dir: Path, paths: list[str]) -> tuple[dict[str, str], list[str]]:
+    texts: dict[str, str] = {}
+    errors: list[str] = []
+    for relative in paths:
+        path = root_dir / relative
+        try:
+            texts[relative] = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            errors.append(f"failed to read {relative}: {exc}")
+    return texts, errors
+
+
+def documented_token_corpus(texts: dict[str, str]) -> str:
+    return "\n".join(texts.values()).lower()
+
+
+def check_public_flags_and_value_aliases_documented(root_dir: Path, texts: dict[str, str]) -> dict[str, object]:
+    rust_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted((root_dir / "src" / "cli").glob("**/*.rs"))
+    )
+    alias_tokens = sorted(
+        {
+            match.group(1)
+            for match in re.finditer(r'visible_alias\s*=\s*"([^"]+)"', rust_text)
+        }
+        | {
+            match.group(1)
+            for match in re.finditer(r"visible_short_alias\s*=\s*'([^']+)'", rust_text)
+        }
+        | {
+            match.group(1)
+            for match in re.finditer(r'#\[value\([^\]]*alias\s*=\s*"([^"]+)"', rust_text)
+        }
+    )
+    corpus = documented_token_corpus(texts)
+    findings = [
+        {
+            "token": token,
+            "message": "public visible/value alias is accepted by clap but absent from help/list/docs/spec evidence",
+        }
+        for token in alias_tokens
+        if token.lower() not in corpus
+    ]
+    return {
+        "name": "public_flags_and_value_aliases_documented",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": ["src/cli/**/*.rs", *texts.keys()],
+        "tokens_checked": alias_tokens,
+        "findings": findings,
+    }
+
+
+def check_list_and_reference_docs_cover_public_commands(root_dir: Path, texts: dict[str, str]) -> dict[str, object]:
+    list_mod = (root_dir / "src" / "cli" / "list" / "mod.rs").read_text(encoding="utf-8")
+    commands = sorted(
+        {
+            match.group(1)
+            for match in re.finditer(r'Some\("([a-z0-9-]+)"\)\s*=>', list_mod)
+            if match.group(1) not in {"_"}
+        }
+    )
+    docs_text = "\n".join(
+        texts.get(path, "")
+        for path in ["architecture/ux/cli-reference.md", "docs/user-guide/cli-reference.md"]
+    ).lower()
+    findings: list[dict[str, object]] = []
+    for command in commands:
+        command_words = command.replace("-", " ")
+        patterns = [
+            f"biomcp list {command}",
+            f"search {command}",
+            f"search {command_words}",
+            f"get {command}",
+            f"get {command_words}",
+            f"biomcp {command}",
+            f"biomcp {command_words}",
+        ]
+        if not any(pattern in docs_text for pattern in patterns):
+            findings.append({"command": command, "surface": "CLI reference docs", "message": "command/helper is missing from reference docs"})
+    return {
+        "name": "list_and_reference_docs_cover_public_commands",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": ["src/cli/list/mod.rs", "src/cli/list/*.rs", "architecture/ux/cli-reference.md", "docs/user-guide/cli-reference.md"],
+        "commands_checked": commands,
+        "findings": findings,
+    }
+
+
+def check_json_next_commands(root_dir: Path, exceptions: list[dict[str, object]]) -> dict[str, object]:
+    shared = (root_dir / "src" / "cli" / "shared.rs").read_text(encoding="utf-8")
+    render_json = (root_dir / "src" / "render" / "json.rs").read_text(encoding="utf-8")
+    findings: list[dict[str, object]] = []
+    required_source_markers = ["SearchJsonMeta", "next_commands", "search_json_with_meta"]
+    for marker in required_source_markers:
+        if marker not in shared:
+            findings.append({"source": "src/cli/shared.rs", "marker": marker, "message": "search JSON metadata seam is missing"})
+    for marker in ["_meta", "next_commands", "to_entity_json_value", "to_discover_json"]:
+        if marker not in render_json:
+            findings.append({"source": "src/render/json.rs", "marker": marker, "message": "entity/discover JSON metadata seam is missing"})
+    return {
+        "name": "json_entity_surfaces_include_next_commands_or_exception",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": ["src/cli/shared.rs", "src/render/json.rs"],
+        "applied_exceptions": [entry for entry in exceptions if isinstance(entry.get("command"), str) and "--json" in str(entry.get("command"))],
+        "findings": findings,
+    }
+
+
+def shell_has_unquoted_redirect(line: str) -> bool:
+    in_single = False
+    in_double = False
+    escaped = False
+    for char in line:
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\" and not in_single:
+            escaped = True
+            continue
+        if char == "'" and not in_double:
+            in_single = not in_single
+            continue
+        if char == '"' and not in_single:
+            in_double = not in_double
+            continue
+        if char == ">" and not in_single and not in_double:
+            return True
+    return False
+
+
+def check_copy_paste_examples_are_shell_safe(root_dir: Path, texts: dict[str, str]) -> dict[str, object]:
+    findings: list[dict[str, object]] = []
+    for relative, text in texts.items():
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            stripped = line.strip()
+            if "biomcp " not in stripped or ">" not in stripped:
+                continue
+            if "→" in stripped or "<" in stripped:
+                continue
+            if not re.search(r'[A-Z]{2}_[0-9.]+:[cgmnpr]\.[^\s\'\"]*>', stripped):
+                continue
+            if shell_has_unquoted_redirect(stripped):
+                findings.append({
+                    "path": relative,
+                    "line": lineno,
+                    "text": stripped,
+                    "message": "copy-pasteable biomcp example contains an unquoted shell redirection metacharacter",
+                })
+    return {
+        "name": "copy_paste_examples_are_shell_safe",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": list(texts.keys()),
+        "findings": findings,
+    }
+
+
+def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
+    exceptions, errors = load_cli_surface_exceptions(root_dir)
+    texts, text_errors = read_existing_text(root_dir, CLI_SURFACE_DOC_PATHS)
+    errors.extend(text_errors)
+    if errors:
+        return {
+            "status": "error",
+            "exception_registry": CLI_SURFACE_EXCEPTION_REGISTRY,
+            "checks": CLI_SURFACE_CONTRACT_CHECKS,
+            "errors": errors,
+        }
+
+    check_payloads = [
+        check_public_flags_and_value_aliases_documented(root_dir, texts),
+        check_list_and_reference_docs_cover_public_commands(root_dir, texts),
+        check_json_next_commands(root_dir, exceptions),
+        check_copy_paste_examples_are_shell_safe(root_dir, texts),
+    ]
+    statuses = [payload["status"] for payload in check_payloads]
+    status = "pass" if all(value == "pass" for value in statuses) else "fail"
+    findings = [
+        finding
+        for payload in check_payloads
+        for finding in payload.get("findings", [])
+        if isinstance(finding, dict)
+    ]
+    return {
+        "status": status,
+        "exception_registry": CLI_SURFACE_EXCEPTION_REGISTRY,
+        "checks": CLI_SURFACE_CONTRACT_CHECKS,
+        "checked_surfaces": sorted({
+            surface
+            for payload in check_payloads
+            for surface in payload.get("checked_surfaces", [])
+            if isinstance(surface, str)
+        }),
+        "applied_exceptions": exceptions,
+        "finding_count": len(findings),
+        "findings": findings,
+        "results": check_payloads,
+        "errors": [],
+    }
 
 def make_repo_compatibility_findings(
     spec_path: Path, *, min_like_len: int = 10
@@ -600,12 +878,19 @@ def main() -> int:
         experiment_results_payload,
     )
 
+    cli_surface_payload = check_cli_surface_contract(args.root_dir)
+    write_json(
+        args.output_dir / "quality-ratchet-cli-surface-contract.json",
+        cli_surface_payload,
+    )
+
     statuses = [
         lint_payload["status"],
         mcp_payload.get("status"),
         source_payload.get("status"),
         cli_line_cap_payload.get("status"),
         experiment_results_payload.get("status"),
+        cli_surface_payload.get("status"),
     ]
     if "error" in statuses:
         summary_status = "error"
@@ -621,6 +906,7 @@ def main() -> int:
         "source_registry": {"status": source_payload.get("status")},
         "cli_line_cap": {"status": cli_line_cap_payload.get("status")},
         "experiment_results": {"status": experiment_results_payload.get("status")},
+        "cli_surface_contract": {"status": cli_surface_payload.get("status")},
     }
     write_json(args.output_dir / "quality-ratchet-summary.json", summary_payload)
     return 0 if summary_status == "pass" else 1

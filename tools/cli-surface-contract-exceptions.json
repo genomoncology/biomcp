@@ -1,0 +1,29 @@
+{
+  "schema": "biomcp-cli-surface-contract-exceptions-v1",
+  "entries": [
+    {
+      "command": "biomcp cache path",
+      "exception": "plain_text_operator_path",
+      "reason": "This operator helper intentionally prints the workstation-local cache path as plain text instead of a JSON entity envelope.",
+      "owner_test": "tests/test_cli_surface_contract_ratchet.py::test_cli_surface_contract_exception_registry_names_initial_exceptions"
+    },
+    {
+      "command": "biomcp --json list",
+      "exception": "command_reference_payload",
+      "reason": "The list command is a command-reference surface, so its JSON shape is a reference payload rather than an entity result with follow-up next commands.",
+      "owner_test": "tests/test_cli_surface_contract_ratchet.py::test_cli_surface_contract_exception_registry_names_initial_exceptions"
+    },
+    {
+      "command": "biomcp --json version",
+      "exception": "release_identity_payload",
+      "reason": "Version JSON reports release identity and build metadata, not an entity/helper result that can suggest next commands.",
+      "owner_test": "tests/test_cli_surface_contract_ratchet.py::test_cli_surface_contract_exception_registry_names_initial_exceptions"
+    },
+    {
+      "command": "biomcp --json search all --counts-only",
+      "exception": "current_counts_only_shape",
+      "reason": "Counts-only search-all currently returns a counts payload shape; this ticket records that current shape as an explicit exception instead of changing the public contract.",
+      "owner_test": "tests/test_cli_surface_contract_ratchet.py::test_cli_surface_contract_exception_registry_names_initial_exceptions"
+    }
+  ]
+}
