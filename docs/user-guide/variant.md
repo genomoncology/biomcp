@@ -75,9 +75,9 @@ string and want source-labelled output from Mutalyzer and VariantValidator:
 
 ```bash
 biomcp variant normalize all NM_000248.3:c.135del
-biomcp variant normalize all NM_004448.2:c.829G>T
+biomcp variant normalize all 'NM_004448.2:c.829G>T'
 biomcp variant normalize mutalyzer NM_000248.3:c.135del
-biomcp variant normalize variantvalidator NM_004448.2:c.829G>T
+biomcp variant normalize variantvalidator 'NM_004448.2:c.829G>T'
 ```
 
 JSON output preserves the submitted `input`, one result per service, each

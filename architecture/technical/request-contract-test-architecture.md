@@ -109,6 +109,11 @@ Current invariants:
 - Dependency-free build tickets can still run `make lint`, `make test`, and
   `make spec` successfully at every intermediate state.
 - No live public API call is required by ordinary routine proof.
+- The whole-surface CLI contract ratchet runs inside the routine quality gate
+  and compares local help/list/docs/spec/JSON metadata evidence for drift.
+- Intentional CLI surface exceptions live in
+  `tools/cli-surface-contract-exceptions.json` with a reason and owner test;
+  inline ad hoc skips are not the policy.
 - `tools/biomcp-ci` remains the executable-spec wrapper for cache roots, XDG
   roots, key stripping, and warm replay in live/operator lanes.
 - `.march/code-review-log.md` is the only tracked `.march/*` allowlist entry;
