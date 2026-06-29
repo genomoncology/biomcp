@@ -9,6 +9,13 @@ Found: {{ count }} trial(s)
 
 {% if count == 0 -%}
 No trials found matching the filters.
+{% if zero_result_broadening_hints -%}
+
+Try broadening the filtered search:
+{% for hint in zero_result_broadening_hints -%}
+- {{ hint }}
+{% endfor -%}
+{% endif -%}
 {% if show_zero_result_nickname_hint -%}
 
 Tip: ClinicalTrials.gov does not index trial nicknames. Try:

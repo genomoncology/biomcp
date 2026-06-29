@@ -27,6 +27,33 @@ fn trial_search_markdown_with_footer_omits_zero_result_nickname_hint_without_fla
 }
 
 #[test]
+fn trial_search_markdown_with_footer_shows_filtered_zero_result_broadening_hints() {
+    let hints = vec![
+        "loosen or drop `--mutation`; it is an exact free-text boolean search".to_string(),
+        "widen `--distance` or remove the geo filter".to_string(),
+        "relax `--status` to include non-recruiting or not-yet-recruiting trials".to_string(),
+        "try `--biomarker <gene>`".to_string(),
+    ];
+    let markdown = trial_search_markdown_with_footer_and_hints(
+        "condition=melanoma, mutation=BRAF V600E, status=recruiting, distance=100",
+        &[],
+        Some(0),
+        "",
+        false,
+        None,
+        &hints,
+    )
+    .expect("markdown");
+
+    assert!(markdown.contains("Try broadening the filtered search:"));
+    assert!(markdown.contains("loosen or drop `--mutation`"));
+    assert!(markdown.contains("exact free-text boolean search"));
+    assert!(markdown.contains("widen `--distance`"));
+    assert!(markdown.contains("relax `--status`"));
+    assert!(markdown.contains("try `--biomarker <gene>`"));
+}
+
+#[test]
 fn trial_search_markdown_shows_matched_intervention_column_when_present() {
     let markdown = trial_search_markdown(
         "intervention=daraxonrasib",

@@ -27,6 +27,42 @@ Query: intervention=pembrolizumab
 Matched Intervention'
 ```
 
+## Empty Filtered Search Broadening Hint
+
+A filtered trial search that returns zero rows should not silently imply that no
+trials exist. BioMCP keeps the original filters honest but prints concrete
+broadening guidance.
+
+```bash
+bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
+. ../../.cache/spec-ctgov-intervention-alias-env
+trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
+../../tools/biomcp-ci search trial -c melanoma --facility "University of Michigan" --mutation "EGFR L858R" --status recruiting --lat 42.36 --lon -71.06 --distance 100 --limit 3 | mustmatch like 'No trials found matching the filters.
+Try broadening the filtered search:
+- loosen or drop `--mutation`; it is an exact free-text boolean search
+- widen `--distance` or remove the geo filter
+- relax `--status` to include non-recruiting or not-yet-recruiting trials
+- try `--biomarker <gene>`'
+```
+
+The same empty filtered search should give JSON callers machine-readable next
+commands rather than a bare `results: []`.
+
+```bash
+bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
+. ../../.cache/spec-ctgov-intervention-alias-env
+trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
+../../tools/biomcp-ci --json search trial -c melanoma --facility "University of Michigan" --mutation "EGFR L858R" --status recruiting --lat 42.36 --lon -71.06 --distance 100 --limit 3 \
+  | jq -r '.count, .results | length, ._meta.next_commands[]?' \
+  | mustmatch like '0
+0
+biomcp search trial -c melanoma --facility "University of Michigan" -s recruiting --lat 42.36 --lon -71.06 --distance 100
+biomcp search trial -c melanoma --facility "University of Michigan" -s recruiting --mutation "EGFR L858R" --lat 42.36 --lon -71.06 --distance 200
+biomcp search trial -c melanoma --facility "University of Michigan" --mutation "EGFR L858R" --lat 42.36 --lon -71.06 --distance 100
+biomcp search trial -c melanoma --facility "University of Michigan" -s recruiting --biomarker EGFR --lat 42.36 --lon -71.06 --distance 100
+biomcp list trial'
+```
+
 ## Age-Only Count Transparency
 
 The fast count path cannot fully apply age filtering upstream, so BioMCP should

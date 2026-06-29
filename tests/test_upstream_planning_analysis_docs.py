@@ -383,6 +383,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     technical = _read_repo("architecture/technical/overview.md")
     ux = _read_repo("architecture/ux/cli-reference.md")
     article_guide = _read_repo("docs/user-guide/article.md")
+    cli_reference_guide = _read_repo("docs/user-guide/cli-reference.md")
     find_articles = _read_repo("docs/how-to/find-articles.md")
     article_keyword_reference = _read_repo("docs/reference/article-keyword-search.md")
     data_sources = _read_repo("docs/reference/data-sources.md")
@@ -397,6 +398,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     ux_ws = _normalize_ws(ux)
     example_tag = _current_release_tag_example()
     article_guide_ws = _normalize_ws(article_guide)
+    cli_reference_guide_ws = _normalize_ws(cli_reference_guide)
     find_articles_ws = _normalize_ws(find_articles)
     article_keyword_reference_ws = _normalize_ws(article_keyword_reference)
     data_sources_ws = _normalize_ws(data_sources)
@@ -692,6 +694,12 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         in ux_ws
     )
     assert "typed slots first" in ux
+    assert "`--mutation <text>` remains an exact free-text boolean" in ux
+    assert "`--biomarker <text>` is the gene-level broadening lever" in ux
+    assert "zero-result filtered trial searches do not auto-broaden" in ux
+    assert "`--mutation <text>` is an exact free-text boolean" in cli_reference_guide
+    assert "`--biomarker <text>` is a phrase search" in cli_reference_guide
+    assert "`_meta.next_commands` for JSON callers" in cli_reference_guide_ws
     assert "biomcp search all --gene BRAF --disease melanoma" in ux
     assert 'biomcp search all --keyword "checkpoint inhibitor"' in ux
     assert "biomcp search all BRAF" in ux

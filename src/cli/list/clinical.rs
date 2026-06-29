@@ -26,9 +26,9 @@ pub(super) fn list_trial() -> String {
 - `--facility <name>`
 - `--age <years>` (decimals accepted, e.g. `0.5`)
 - `--sex <female|male|all>`
-- `--mutation <text>`
+- `--mutation <text>` - CTGov exact free-text boolean over title, summary, eligibility, and keywords; brittle for a specific protein change.
 - `--criteria <text>`
-- `--biomarker <text>`
+- `--biomarker <text>` - phrase search over keyword, intervention, and condition on CTGov; prefer for gene-level broadening when `--mutation` is too specific.
 - `--sponsor-type <nih|industry|fed|other>`
 - `--prior-therapies <text>`
 - `--progression-on <drug>`
@@ -70,6 +70,7 @@ pub(super) fn list_trial() -> String {
 - `get trial --json` can include CTGov source-provided intervention alternate names; See-also and JSON next commands may prefer search/article follow-ups for investigational codes.
 - Condition-expanded trial rows may include `matched_condition_label`.
 - Alias-expanded trial rows may include `matched_intervention_label`.
+- True zero-result filtered `search trial --json` responses include broadening commands in `_meta.next_commands`, such as loosening `--mutation`, widening `--distance`, relaxing `--status`, or trying `--biomarker`.
 - Action-summary rows may include `trial_type`, `access_caveats`, and `ranked_sites` for listed CTGov sites.
 - The first follow-up drills the top result with `biomcp get trial <nct_id>`.
 - `biomcp list trial` is always included so agents can inspect the full filter surface.

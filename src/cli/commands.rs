@@ -359,6 +359,8 @@ Source-specific notes:
   - CTGov: `--intervention` auto-expands known aliases from the shared drug identity surface, unions results, and exposes `matched_intervention_label` / `Matched Intervention` when an alternate alias matched first.
   - CTGov: `--no-alias-expand` forces literal intervention matching.
   - CTGov: `--next-page` is not supported once condition or intervention expansion fans out to multiple queries; use `--offset`, `--no-condition-expand`, or `--no-alias-expand`. For intervention-only fan-out, use `--offset` or `--no-alias-expand`.
+  - CTGov: `--mutation` is an exact free-text boolean over eligibility, title, summary, and keywords; use it for loose mutation wording, not as a guaranteed protein-change matcher.
+  - CTGov: `--biomarker` is a phrase search over keyword, intervention, and condition; try it for gene-level broadening when a specific `--mutation` returns zero rows.
   - CTGov: `--phase 1/2` keeps the combined Phase 1/Phase 2 label semantics, not Phase 1 OR Phase 2.
   - NCI: `--condition` grounds to an NCI disease ID when available and otherwise falls back to CTS `keyword`.
   - NCI: `--status` accepts one mapped status at a time; comma-separated status lists are rejected.
