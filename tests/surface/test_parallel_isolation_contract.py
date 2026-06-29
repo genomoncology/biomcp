@@ -832,6 +832,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/variant.md",
     "spec/surface/mcp.md",
     "spec/surface/skills.md",
+    "spec/surface/cli-contract-ratchet.md",
     "spec/surface/trial-action-summary.md",
 )
 
@@ -870,6 +871,7 @@ def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
     routine = _runner_array_paths("SPEC_ROUTINE_PATHS")
     skills_index = routine.index("spec/surface/skills.md")
     assert routine[skills_index + 1] == "tests/surface/test_parallel_isolation_contract.py"
+    assert "spec/surface/cli-contract-ratchet.md" in routine
     assert "spec/entity/disease.md" not in routine
     assert "spec/surface/discover.md" not in routine
 

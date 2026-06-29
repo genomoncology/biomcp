@@ -11,6 +11,7 @@ SPEC_ROUTINE_PATHS=(
   spec/surface/mcp.md
   spec/surface/skills.md
   tests/surface/test_parallel_isolation_contract.py
+  spec/surface/cli-contract-ratchet.md
   spec/surface/trial-action-summary.md
 )
 
