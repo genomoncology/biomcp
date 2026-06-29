@@ -523,7 +523,7 @@ def check_copy_paste_examples_are_shell_safe(root_dir: Path, texts: dict[str, st
                 continue
             if "→" in stripped or "<" in stripped:
                 continue
-            if not re.search(r'[A-Z]{2}_[0-9.]+:[cgmnpr]\\.[^\\s\'\"]*>', stripped):
+            if not re.search(r'[A-Z]{2}_[0-9.]+:[cgmnpr]\.[^\s\'\"]*>', stripped):
                 continue
             if shell_has_unquoted_redirect(stripped):
                 findings.append({

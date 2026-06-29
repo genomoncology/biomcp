@@ -59,7 +59,7 @@ biomcp get gene BRAF all                  # everything
 biomcp get variant "BRAF V600E"              # summary card + cheap CIViC pointer
 biomcp get variant "BRAF V600E" civic        # live CIViC evidence + currency caveat
 biomcp get variant "BRAF V600E" clinvar population conservation
-biomcp get variant NM_004333.6:c.1799T>A
+biomcp get variant 'NM_004333.6:c.1799T>A'
 biomcp get article 22663011 tldr
 biomcp --json get article <id> assets
 biomcp get article <id> asset <name>

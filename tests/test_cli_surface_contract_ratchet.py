@@ -80,6 +80,33 @@ def test_cli_surface_contract_flags_must_be_documented_outside_source(tmp_path: 
     ]
 
 
+def test_cli_surface_contract_rejects_unquoted_hgvs_redirect_examples(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    root.mkdir()
+
+    module = _load_quality_ratchet_module()
+    result = module.check_copy_paste_examples_are_shell_safe(
+        root,
+        {
+            "docs.md": "\n".join(
+                [
+                    "biomcp variant normalize all 'NM_004448.2:c.829G>T'",
+                    "biomcp variant normalize all NM_004448.2:c.829G>T",
+                ]
+            ),
+        },
+    )
+
+    assert result["status"] == "fail"
+    assert result["findings"]
+    assert any(
+        finding["path"] == "docs.md"
+        and "NM_004448.2:c.829G>T" in finding["text"]
+        and "unquoted shell redirection" in finding["message"]
+        for finding in result["findings"]
+    )
+
+
 def test_cli_surface_contract_exception_registry_names_initial_exceptions() -> None:
     assert EXCEPTION_REGISTRY.exists(), (
         "whole-surface CLI contract exceptions must be source-controlled, "
