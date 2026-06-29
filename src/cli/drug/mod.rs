@@ -74,6 +74,7 @@ pub struct DrugGetArgs {
 }
 
 #[derive(Subcommand, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum DrugCommand {
     /// Search trials using this drug (best-effort)
     #[command(after_help = "\
@@ -108,23 +109,59 @@ See also: biomcp list drug")]
 EXAMPLES:
   biomcp drug adverse-events pembrolizumab --limit 5
   biomcp drug adverse-events carboplatin --serious --limit 5
+  biomcp drug adverse-events osimertinib --count patient.reaction.reactionmeddrapt.exact
 
 Note: FAERS 404 and FAERS 200-with-empty-results are reported differently. On FAERS 404,
 this helper falls back to ClinicalTrials.gov trial-reported adverse events; JSON adds
-faers_not_found and, when present, trial_adverse_events.
+faers_not_found and, when present, trial_adverse_events. FAERS filters match
+`search adverse-event`: --reaction, --outcome, --serious, --date-from/--date-to,
+--suspect-only, --sex, --age-min/--age-max, --reporter, --count, and --type.
 See also: biomcp list drug")]
     AdverseEvents {
         /// Drug name (e.g., pembrolizumab)
         name: String,
+        /// Filter by reaction term (MedDRA)
+        #[arg(long)]
+        reaction: Option<String>,
+        /// Filter by reaction outcome [values: death, hospitalization, disability]
+        #[arg(long)]
+        outcome: Option<String>,
+        /// Seriousness filter (optionally specify type: death, hospitalization, lifethreatening, disability, congenital, other)
+        #[arg(long, num_args = 0..=1, default_missing_value = "any")]
+        serious: Option<String>,
+        /// Received after year/date (YYYY or YYYY-MM-DD)
+        #[arg(long = "date-from", alias = "since")]
+        date_from: Option<String>,
+        /// Received before year/date (YYYY or YYYY-MM-DD)
+        #[arg(long = "date-to", alias = "until")]
+        date_to: Option<String>,
+        /// Restrict to suspect drugs only
+        #[arg(long = "suspect-only")]
+        suspect_only: bool,
+        /// Patient sex filter (m|f)
+        #[arg(long)]
+        sex: Option<String>,
+        /// Minimum patient age
+        #[arg(long = "age-min")]
+        age_min: Option<u32>,
+        /// Maximum patient age
+        #[arg(long = "age-max")]
+        age_max: Option<u32>,
+        /// Reporter qualification filter
+        #[arg(long)]
+        reporter: Option<String>,
+        /// Server-side count aggregation field
+        #[arg(long)]
+        count: Option<String>,
+        /// Query type: faers (default search path), recall, or device
+        #[arg(long, default_value = "faers")]
+        r#type: String,
         /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Skip the first N results
         #[arg(long, default_value = "0")]
         offset: usize,
-        /// Serious reports only
-        #[arg(long)]
-        serious: bool,
     },
     /// Review DDInter-backed drug-drug interactions for one anchor drug
     #[command(after_help = "\
@@ -147,6 +184,7 @@ See also: biomcp list drug")]
 }
 
 mod dispatch;
+mod render;
 mod workflow;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
 

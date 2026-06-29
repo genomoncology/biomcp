@@ -1,6 +1,6 @@
 //! Drug search JSON rendering tests.
 
-use super::super::dispatch::drug_search_json;
+use super::super::render::drug_search_json;
 
 #[test]
 fn drug_search_json_single_region_keeps_selected_bucket_and_who_fields() {

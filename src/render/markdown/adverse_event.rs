@@ -95,7 +95,7 @@ pub fn adverse_event_search_markdown_with_context(
         empty_state_message,
         trial_adverse_events,
         trial_adverse_event_drug,
-        "OpenFDA FAERS",
+        "OpenFDA FAERS sample",
     )
 }
 
@@ -141,7 +141,7 @@ pub fn combined_adverse_event_search_markdown(
         empty_state_message,
         &[],
         None,
-        "OpenFDA FAERS",
+        "OpenFDA FAERS sample",
     )?;
 
     if let Some(vaers) = vaers.filter(|payload| should_append_vaers_section(payload)) {
@@ -264,14 +264,21 @@ pub fn adverse_event_count_markdown(
     let mut out = String::new();
     out.push_str("# Adverse Event Counts\n");
     out.push_str(&format!("\nQuery: {query}\n"));
-    out.push_str(&format!("Count field: {count_field}\n\n"));
-    out.push_str("| Value | Count |\n");
-    out.push_str("|---|---|\n");
+    out.push_str(&format!("Count field: {count_field}\n"));
+    let counted_total = buckets.iter().map(|bucket| bucket.count).sum::<usize>();
+    out.push_str(&format!("Counted rows shown: {counted_total}\n\n"));
+    out.push_str("| Value | Count | Percent of Shown Count |\n");
+    out.push_str("|---|---|---|\n");
     if buckets.is_empty() {
-        out.push_str("| - | 0 |\n");
+        out.push_str("| - | 0 | 0.0% |\n");
     } else {
+        let denom = counted_total.max(1) as f64;
         for bucket in buckets {
-            out.push_str(&format!("| {} | {} |\n", bucket.value, bucket.count));
+            let percentage = ((bucket.count as f64 * 1000.0) / denom).round() / 10.0;
+            out.push_str(&format!(
+                "| {} | {} | {:.1}% |\n",
+                bucket.value, bucket.count, percentage
+            ));
         }
     }
     Ok(out)

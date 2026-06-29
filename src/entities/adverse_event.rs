@@ -606,6 +606,29 @@ fn round_one_decimal(value: f64) -> f64 {
     (value * 10.0).round() / 10.0
 }
 
+pub fn summarize_count_buckets(
+    total_reports: usize,
+    returned_report_count: usize,
+    buckets: &[AdverseEventCountBucket],
+) -> AdverseEventSearchSummary {
+    let denom = total_reports.max(1) as f64;
+    let top_reactions = buckets
+        .iter()
+        .take(10)
+        .map(|bucket| AdverseEventReactionSummary {
+            reaction: bucket.value.clone(),
+            count: bucket.count,
+            percentage: round_one_decimal((bucket.count as f64 * 100.0) / denom),
+        })
+        .collect::<Vec<_>>();
+
+    AdverseEventSearchSummary {
+        total_reports,
+        returned_report_count,
+        top_reactions,
+    }
+}
+
 pub fn summarize_search_results(
     total_reports: usize,
     results: &[AdverseEventSearchResult],

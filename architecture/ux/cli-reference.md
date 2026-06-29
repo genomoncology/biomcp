@@ -154,6 +154,7 @@ biomcp variant normalize all NM_004448.2:c.829G>T
 
 # Drug pivots
 biomcp drug adverse-events pembrolizumab
+biomcp drug adverse-events osimertinib --count patient.reaction.reactionmeddrapt.exact
 biomcp drug trials pembrolizumab
 
 # Disease pivots
@@ -339,7 +340,9 @@ Legacy helper JSON shapes are documented, not silently normalized in this
 release. `article batch --json` remains a bare array of compact article cards;
 helper-specific JSON such as `drug interactions --json` and `drug
 adverse-events --json` keeps helper-owned fields plus optional `_meta`
-follow-ups. `biomcp --json list` and `biomcp --json list <entity>` are command
+follow-ups. `drug adverse-events <name>` accepts the same advertised FAERS
+filters as the search footer, including `--count <field>` for server-side
+aggregate rankings. `biomcp --json list` and `biomcp --json list <entity>` are command
 reference payloads, not query result envelopes.
 
 ## See Also and Next Commands

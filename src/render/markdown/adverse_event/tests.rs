@@ -74,9 +74,58 @@ fn adverse_event_search_markdown_renders_summary_and_filters() {
 
     let markdown = adverse_event_search_markdown("ivacaftor", &results, &summary).expect("search");
     assert!(markdown.contains("# Adverse Events: ivacaftor"));
-    assert!(markdown.contains("## Summary"));
+    assert!(markdown.contains("## Summary (OpenFDA FAERS sample)"));
+    assert!(markdown.contains(
+        "Top reactions: returned-report sample only; Percent = count / returned reports, not population frequency."
+    ));
     assert!(markdown.contains("| Cough | 4 | 33.3% |"));
     assert!(markdown.contains("Use `get adverse-event <report_id>` for details."));
+}
+
+#[test]
+fn adverse_event_search_markdown_can_label_aggregate_summary() {
+    let summary = AdverseEventSearchSummary {
+        total_reports: 20,
+        returned_report_count: 1,
+        top_reactions: vec![
+            crate::entities::adverse_event::AdverseEventReactionSummary {
+                reaction: "Rash".to_string(),
+                count: 5,
+                percentage: 25.0,
+            },
+        ],
+    };
+    let results = vec![AdverseEventSearchResult {
+        report_id: "1001".to_string(),
+        drug: "ivacaftor".to_string(),
+        reactions: vec!["Cough".to_string()],
+        serious: true,
+    }];
+
+    let markdown = adverse_event_search_markdown_with_source_label(
+        "drug=ivacaftor",
+        &results,
+        &summary,
+        "",
+        None,
+        &[],
+        None,
+        "OpenFDA FAERS aggregate",
+    )
+    .expect("aggregate summary");
+
+    assert!(markdown.contains("## Summary (OpenFDA FAERS aggregate)"));
+    assert!(
+        markdown.contains("Top reactions: aggregate count query; Percent = count / total reports.")
+    );
+    assert!(markdown.contains("| Rash | 5 | 25% |") || markdown.contains("| Rash | 5 | 25.0% |"));
+    assert!(
+        markdown.contains("| Rash | 5 | 25.0% |\n\n|Report ID|")
+            || markdown.contains("| Rash | 5 | 25% |\n\n|Report ID|")
+            || markdown.contains("| Rash | 5 | 25.0% |\n\n\n|Report ID|")
+            || markdown.contains("| Rash | 5 | 25% |\n\n\n|Report ID|"),
+        "summary table should be visually separated from the per-report list: {markdown}"
+    );
 }
 
 #[test]
@@ -145,7 +194,8 @@ fn adverse_event_count_markdown_renders_bucket_rows() {
 
     assert!(markdown.contains("# Adverse Event Counts"));
     assert!(markdown.contains("Count field: reaction"));
-    assert!(markdown.contains("| Cough | 7 |"));
+    assert!(markdown.contains("Counted rows shown: 7"));
+    assert!(markdown.contains("| Cough | 7 | 100.0% |"));
 }
 
 #[test]

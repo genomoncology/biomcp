@@ -52,6 +52,19 @@ Keep this heading as the restoration anchor. Bring the behavior back only as a
 fixture-backed alias/disambiguation contract or as an explicit release/live-smoke
 canary after the ticket 371 request-contract reset reaches drug/alias surfaces.
 
+## Adverse-Event Aggregate Filter Surface
+
+The `drug adverse-events` helper must accept the FAERS filters it advertises,
+especially `--count`, instead of failing in clap before the adverse-event path
+can render aggregate rankings.
+
+```bash
+../../tools/biomcp-ci drug adverse-events --help | mustmatch like '--count <COUNT>'
+../../tools/biomcp-ci drug adverse-events --help | mustmatch like '--reaction <REACTION>'
+../../tools/biomcp-ci drug adverse-events --help | mustmatch like 'osimertinib --count patient.reaction.reactionmeddrapt.exact'
+(../../tools/biomcp-ci drug adverse-events osimertinib --type recall --count patient.reaction.reactionmeddrapt.exact 2>&1 || true) | mustmatch like '--count are only valid for --type faers'
+```
+
 ## Structured Drug Interactions
 
 When the question is explicitly about drug-drug interactions, the helper should
