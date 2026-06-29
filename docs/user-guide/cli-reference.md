@@ -333,6 +333,7 @@ biomcp search protein -q kinase --all-species --limit 5
 
 ```bash
 biomcp search adverse-event --drug pembrolizumab --source faers --serious --limit 5 --offset 0
+biomcp search adverse-event --drug osimertinib --count patient.reaction.reactionmeddrapt.exact --limit 10
 biomcp search adverse-event "COVID-19 vaccine" --source all --limit 5
 biomcp search adverse-event "MMR vaccine" --source vaers --limit 5
 biomcp search adverse-event --type device --manufacturer Medtronic --limit 5
@@ -565,6 +566,7 @@ biomcp variant normalize all NM_000248.3:c.135del
 biomcp variant normalize all NM_004448.2:c.829G>T
 biomcp drug interactions warfarin
 biomcp drug adverse-events pembrolizumab
+biomcp drug adverse-events osimertinib --count patient.reaction.reactionmeddrapt.exact
 biomcp drug trials pembrolizumab
 biomcp disease trials melanoma
 biomcp disease trials melanoma --limit 50

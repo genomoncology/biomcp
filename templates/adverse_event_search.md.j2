@@ -4,16 +4,21 @@
 {% else -%}
 Found {{ count }} report{% if count != 1 %}s{% endif %}
 
-## Summary
-- Total reports ({{ summary_source_label or "OpenFDA FAERS" }}): {{ summary.total_reports }}
+## Summary ({{ summary_source_label or "OpenFDA FAERS sample" }})
+- Total reports (OpenFDA FAERS): {{ summary.total_reports }}
 - Returned reports: {{ summary.returned_report_count }}
+{% if "aggregate" in (summary_source_label or "") -%}
+- Top reactions: aggregate count query; Percent = count / total reports.
+{% else -%}
+- Top reactions: returned-report sample only; Percent = count / returned reports, not population frequency.
+{% endif -%}
 {% if summary.top_reactions -%}
 | Reaction | Count | Percent |
 |---|---|---|
 {% for row in summary.top_reactions -%}
 | {{ row.reaction }} | {{ row.count }} | {{ row.percentage }}% |
 {% endfor -%}
-{% endif -%}
+{% endif %}
 
 |Report ID|Drug|Reactions|Serious|
 |---|---|---|---|

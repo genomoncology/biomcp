@@ -36,6 +36,128 @@ fn render_drug_interactions_help() -> String {
     String::from_utf8(help).expect("help should be utf-8")
 }
 
+fn render_drug_adverse_events_help() -> String {
+    let mut command = Cli::command();
+    let drug = command
+        .find_subcommand_mut("drug")
+        .expect("drug subcommand should exist");
+    let adverse_events = drug
+        .find_subcommand_mut("adverse-events")
+        .expect("drug adverse-events subcommand should exist");
+    let mut help = Vec::new();
+    adverse_events
+        .write_long_help(&mut help)
+        .expect("drug adverse-events help should render");
+    String::from_utf8(help).expect("help should be utf-8")
+}
+
+#[test]
+fn drug_adverse_events_parses_advertised_faers_filters() {
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "drug",
+        "adverse-events",
+        "osimertinib",
+        "--count",
+        "patient.reaction.reactionmeddrapt.exact",
+        "--reaction",
+        "Interstitial lung disease",
+        "--outcome",
+        "hospitalization",
+        "--serious",
+        "death",
+        "--date-from",
+        "2020",
+        "--date-to",
+        "2024-01-31",
+        "--suspect-only",
+        "--sex",
+        "f",
+        "--age-min",
+        "18",
+        "--age-max",
+        "90",
+        "--reporter",
+        "physician",
+        "--type",
+        "faers",
+        "--limit",
+        "5",
+    ])
+    .expect("drug adverse-events should parse advertised FAERS filters");
+
+    let Cli {
+        command:
+            Commands::Drug {
+                cmd:
+                    DrugCommand::AdverseEvents {
+                        name,
+                        count,
+                        reaction,
+                        outcome,
+                        serious,
+                        date_from,
+                        date_to,
+                        suspect_only,
+                        sex,
+                        age_min,
+                        age_max,
+                        reporter,
+                        r#type,
+                        limit,
+                        ..
+                    },
+            },
+        ..
+    } = cli
+    else {
+        panic!("expected drug adverse-events command");
+    };
+
+    assert_eq!(name, "osimertinib");
+    assert_eq!(
+        count.as_deref(),
+        Some("patient.reaction.reactionmeddrapt.exact")
+    );
+    assert_eq!(reaction.as_deref(), Some("Interstitial lung disease"));
+    assert_eq!(outcome.as_deref(), Some("hospitalization"));
+    assert_eq!(serious.as_deref(), Some("death"));
+    assert_eq!(date_from.as_deref(), Some("2020"));
+    assert_eq!(date_to.as_deref(), Some("2024-01-31"));
+    assert!(suspect_only);
+    assert_eq!(sex.as_deref(), Some("f"));
+    assert_eq!(age_min, Some(18));
+    assert_eq!(age_max, Some(90));
+    assert_eq!(reporter.as_deref(), Some("physician"));
+    assert_eq!(r#type, "faers");
+    assert_eq!(limit, 5);
+}
+
+#[test]
+fn drug_adverse_events_help_lists_count_and_filter_parity() {
+    let help = render_drug_adverse_events_help();
+
+    for expected in [
+        "--count <COUNT>",
+        "--reaction <REACTION>",
+        "--outcome <OUTCOME>",
+        "--serious [<SERIOUS>]",
+        "--date-from <DATE_FROM>",
+        "--date-to <DATE_TO>",
+        "--suspect-only",
+        "--sex <SEX>",
+        "--age-min <AGE_MIN>",
+        "--age-max <AGE_MAX>",
+        "--reporter <REPORTER>",
+        "--type <TYPE>",
+    ] {
+        assert!(help.contains(expected), "missing help filter: {expected}");
+    }
+    assert!(help.contains(
+        "biomcp drug adverse-events osimertinib --count patient.reaction.reactionmeddrapt.exact"
+    ));
+}
+
 #[test]
 fn get_drug_help_lists_region_flag_and_examples() {
     let mut command = Cli::command();

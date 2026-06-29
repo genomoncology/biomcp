@@ -1,3 +1,4 @@
+use super::render::{drug_search_json, render_drug_card_outcome};
 use super::workflow::drug_search_page_has_results;
 use super::{DrugCommand, DrugGetArgs, DrugSearchArgs, WhoProductTypeArg};
 use crate::cli::CommandOutcome;
@@ -233,9 +234,20 @@ pub(crate) async fn handle_command(
                 }
                 DrugCommand::AdverseEvents {
                     name,
+                    reaction,
+                    outcome,
+                    serious,
+                    date_from,
+                    date_to,
+                    suspect_only,
+                    sex,
+                    age_min,
+                    age_max,
+                    reporter,
+                    count,
+                    r#type,
                     limit,
                     offset,
-                    serious,
                 } => {
                     #[derive(serde::Serialize)]
                     struct SearchResponse {
@@ -249,47 +261,142 @@ pub(crate) async fn handle_command(
                             Option<Vec<crate::entities::adverse_event::TrialAdverseEventTerm>>,
                     }
 
+                    let query_type =
+                        crate::entities::adverse_event::AdverseEventQueryType::from_flag(&r#type)?;
+                    if !matches!(
+                        query_type,
+                        crate::entities::adverse_event::AdverseEventQueryType::Faers
+                    ) {
+                        let outcome = crate::cli::adverse_event::handle_search(
+                            crate::cli::adverse_event::AdverseEventSearchArgs {
+                                drug: Some(name),
+                                positional_query: None,
+                                device: None,
+                                manufacturer: None,
+                                product_code: None,
+                                reaction,
+                                outcome,
+                                serious,
+                                date_from,
+                                date_to,
+                                suspect_only,
+                                sex,
+                                age_min,
+                                age_max,
+                                reporter,
+                                count,
+                                r#type,
+                                source: "all".to_string(),
+                                classification: None,
+                                limit,
+                                offset,
+                            },
+                            json,
+                        )
+                        .await?;
+                        return Ok(outcome);
+                    }
+
                     let filters = crate::entities::adverse_event::AdverseEventSearchFilters {
                         drug: Some(name.clone()),
-                        serious: serious.then_some("any".to_string()),
-                        ..Default::default()
+                        reaction,
+                        outcome,
+                        serious,
+                        since: date_from,
+                        date_to,
+                        suspect_only,
+                        sex,
+                        age_min,
+                        age_max,
+                        reporter,
                     };
-                    let query_summary =
+                    let mut query_summary =
                         crate::entities::adverse_event::search_query_summary(&filters);
-                    let fetch_limit = super::super::paged_fetch_limit(limit, offset, 50)?;
-                    let status = crate::entities::adverse_event::search_with_status(
-                        &filters,
-                        fetch_limit,
-                        0,
-                    )
-                    .await?;
-                    match status {
-                        crate::entities::adverse_event::FaersSearchStatus::Results(response) => {
-                            let (results, observed_total) =
-                                super::super::paginate_results(response.results, offset, limit);
-                            super::super::log_pagination_truncation(
-                                observed_total,
-                                offset,
-                                results.len(),
-                            );
-                            let summary = crate::entities::adverse_event::summarize_search_results(
-                                response.summary.total_reports,
-                                &results,
-                            );
-                            if json {
-                                crate::render::json::to_pretty(&SearchResponse {
-                                    total: Some(summary.total_reports),
-                                    count: results.len(),
-                                    summary,
-                                    results,
-                                    faers_not_found: false,
-                                    trial_adverse_events: None,
-                                })?
-                            } else {
-                                let empty_state_message = results.is_empty().then_some(
+                    if let Some(count_field) =
+                        count.as_deref().map(str::trim).filter(|v| !v.is_empty())
+                    {
+                        if query_summary.is_empty() {
+                            query_summary = format!("count={count_field}");
+                        } else {
+                            query_summary = format!("{query_summary}, count={count_field}");
+                        }
+                    }
+                    if offset > 0 {
+                        query_summary = format!("{query_summary}, offset={offset}");
+                    }
+                    if let Some(count_field) = count.as_deref().map(str::trim) {
+                        let response = crate::entities::adverse_event::search_count(
+                            &filters,
+                            count_field,
+                            limit,
+                        )
+                        .await?;
+                        if json {
+                            #[derive(serde::Serialize)]
+                            struct CountResponse {
+                                query: String,
+                                count_field: String,
+                                buckets:
+                                    Vec<crate::entities::adverse_event::AdverseEventCountBucket>,
+                            }
+
+                            crate::render::json::to_pretty(&CountResponse {
+                                query: query_summary,
+                                count_field: response.count_field,
+                                buckets: response.buckets,
+                            })?
+                        } else {
+                            crate::render::markdown::adverse_event_count_markdown(
+                                &query_summary,
+                                &response.count_field,
+                                &response.buckets,
+                            )?
+                        }
+                    } else {
+                        let fetch_limit = super::super::paged_fetch_limit(limit, offset, 50)?;
+                        let status = crate::entities::adverse_event::search_with_status(
+                            &filters,
+                            fetch_limit,
+                            0,
+                        )
+                        .await?;
+                        match status {
+                            crate::entities::adverse_event::FaersSearchStatus::Results(
+                                response,
+                            ) => {
+                                let (results, observed_total) =
+                                    super::super::paginate_results(response.results, offset, limit);
+                                super::super::log_pagination_truncation(
+                                    observed_total,
+                                    offset,
+                                    results.len(),
+                                );
+                                let count_response = crate::entities::adverse_event::search_count(
+                                    &filters,
+                                    "patient.reaction.reactionmeddrapt.exact",
+                                    10,
+                                )
+                                .await?;
+                                let summary =
+                                    crate::entities::adverse_event::summarize_count_buckets(
+                                        response.summary.total_reports,
+                                        results.len(),
+                                        &count_response.buckets,
+                                    );
+                                if json {
+                                    crate::render::json::to_pretty(&SearchResponse {
+                                        total: Some(summary.total_reports),
+                                        count: results.len(),
+                                        summary,
+                                        results,
+                                        faers_not_found: false,
+                                        trial_adverse_events: None,
+                                    })?
+                                } else {
+                                    let empty_state_message = results.is_empty().then_some(
                                     "Drug found in FAERS, but no events matched your filters. Try broadening the search.",
                                 );
-                                crate::render::markdown::adverse_event_search_markdown_with_context(
+                                    crate::render::markdown::adverse_event_search_markdown_with_source_label(
                                     &query_summary,
                                     &results,
                                     &summary,
@@ -297,11 +404,12 @@ pub(crate) async fn handle_command(
                                     empty_state_message,
                                     &[],
                                     None,
+                                    "OpenFDA FAERS aggregate",
                                 )?
+                                }
                             }
-                        }
-                        crate::entities::adverse_event::FaersSearchStatus::NotFound => {
-                            let trial_adverse_events =
+                            crate::entities::adverse_event::FaersSearchStatus::NotFound => {
+                                let trial_adverse_events =
                                 match crate::entities::adverse_event::trial_adverse_events(&name)
                                     .await
                                 {
@@ -317,30 +425,30 @@ pub(crate) async fn handle_command(
                                         ));
                                     }
                                 };
-                            let summary =
-                                crate::entities::adverse_event::AdverseEventSearchSummary {
-                                    total_reports: 0,
-                                    returned_report_count: 0,
-                                    top_reactions: Vec::new(),
-                                };
-                            let results = Vec::new();
-                            if json {
-                                crate::render::json::to_pretty(&SearchResponse {
-                                    total: Some(0),
-                                    count: 0,
-                                    summary,
-                                    results,
-                                    faers_not_found: true,
-                                    trial_adverse_events,
-                                })?
-                            } else {
-                                let empty_state_message = if trial_adverse_events.is_some() {
-                                    "Drug not found in FAERS. FAERS is a post-marketing database; expect no records for investigational, newly approved, or name-variant drugs. Falling back to ClinicalTrials.gov trial-reported adverse events."
+                                let summary =
+                                    crate::entities::adverse_event::AdverseEventSearchSummary {
+                                        total_reports: 0,
+                                        returned_report_count: 0,
+                                        top_reactions: Vec::new(),
+                                    };
+                                let results = Vec::new();
+                                if json {
+                                    crate::render::json::to_pretty(&SearchResponse {
+                                        total: Some(0),
+                                        count: 0,
+                                        summary,
+                                        results,
+                                        faers_not_found: true,
+                                        trial_adverse_events,
+                                    })?
                                 } else {
-                                    "Drug not found in FAERS. FAERS is a post-marketing database; expect no records for investigational, newly approved, or name-variant drugs. Falling back to ClinicalTrials.gov trial-reported adverse events. ClinicalTrials.gov did not return posted trial adverse events for this drug."
-                                };
-                                let trial_rows = trial_adverse_events.unwrap_or_default();
-                                crate::render::markdown::adverse_event_search_markdown_with_context(
+                                    let empty_state_message = if trial_adverse_events.is_some() {
+                                        "Drug not found in FAERS. FAERS is a post-marketing database; expect no records for investigational, newly approved, or name-variant drugs. Falling back to ClinicalTrials.gov trial-reported adverse events."
+                                    } else {
+                                        "Drug not found in FAERS. FAERS is a post-marketing database; expect no records for investigational, newly approved, or name-variant drugs. Falling back to ClinicalTrials.gov trial-reported adverse events. ClinicalTrials.gov did not return posted trial adverse events for this drug."
+                                    };
+                                    let trial_rows = trial_adverse_events.unwrap_or_default();
+                                    crate::render::markdown::adverse_event_search_markdown_with_context(
                                     &query_summary,
                                     &results,
                                     &summary,
@@ -349,6 +457,7 @@ pub(crate) async fn handle_command(
                                     &trial_rows,
                                     Some(&name),
                                 )?
+                                }
                             }
                         }
                     }
@@ -481,217 +590,4 @@ pub(super) fn resolve_drug_get_region(
     } else {
         DrugRegion::Us
     }
-}
-
-pub(super) async fn render_drug_card_outcome(
-    name: &str,
-    sections: &[String],
-    region: Option<DrugRegion>,
-    raw_label: bool,
-    json_output: bool,
-    alias_suggestions_as_json: bool,
-) -> anyhow::Result<CommandOutcome> {
-    let effective_region = resolve_drug_get_region(sections, region);
-    match crate::entities::drug::get_with_region(
-        name,
-        sections,
-        effective_region,
-        region.is_some(),
-        raw_label,
-    )
-    .await
-    {
-        Ok(drug) => {
-            let text = if json_output {
-                let workflow = drug_pharmacogene_workflow(&drug, name).await?;
-                crate::render::json::to_entity_json_with_workflow(
-                    &drug,
-                    crate::render::markdown::drug_evidence_urls(&drug),
-                    crate::render::markdown::related_drug(&drug),
-                    crate::render::provenance::drug_section_sources(&drug),
-                    workflow,
-                )?
-            } else {
-                crate::render::markdown::drug_markdown_with_region(
-                    &drug,
-                    sections,
-                    effective_region,
-                    raw_label,
-                )?
-            };
-            Ok(CommandOutcome::stdout(text))
-        }
-        Err(err @ crate::error::BioMcpError::NotFound { .. }) => {
-            if let Some(outcome) = super::super::try_alias_fallback_outcome(
-                name,
-                crate::entities::discover::DiscoverType::Drug,
-                json_output || alias_suggestions_as_json,
-            )
-            .await?
-            {
-                Ok(outcome)
-            } else {
-                Err(err.into())
-            }
-        }
-        Err(err) => Err(err.into()),
-    }
-}
-
-async fn drug_pharmacogene_workflow(
-    drug: &crate::entities::drug::Drug,
-    requested_name: &str,
-) -> Result<Option<crate::workflow_ladders::WorkflowMeta>, crate::error::BioMcpError> {
-    const CPIC_GENE_THRESHOLD: usize = 3;
-
-    let has_signal = match crate::workflow_ladders::probe_workflow(
-        crate::workflow_ladders::Workflow::PharmacogeneCumulative,
-        Box::pin(async {
-            let primary_count = crate::entities::pgx::distinct_actionable_cpic_gene_count_for_drug(
-                &drug.name,
-                CPIC_GENE_THRESHOLD,
-            )
-            .await?;
-            if primary_count >= CPIC_GENE_THRESHOLD {
-                return Ok(true);
-            }
-
-            let requested = requested_name.trim();
-            if requested.is_empty() || requested.eq_ignore_ascii_case(drug.name.trim()) {
-                return Ok(false);
-            }
-
-            let requested_count =
-                crate::entities::pgx::distinct_actionable_cpic_gene_count_for_drug(
-                    requested,
-                    CPIC_GENE_THRESHOLD,
-                )
-                .await?;
-            Ok(requested_count >= CPIC_GENE_THRESHOLD)
-        }),
-    )
-    .await?
-    {
-        crate::workflow_ladders::WorkflowProbeOutcome::Triggered(meta) => Some(meta),
-        crate::workflow_ladders::WorkflowProbeOutcome::NotTriggered
-        | crate::workflow_ladders::WorkflowProbeOutcome::Unavailable => None,
-    };
-
-    Ok(has_signal)
-}
-
-#[derive(serde::Serialize)]
-pub(super) struct DrugSearchRegionBucket<T: serde::Serialize> {
-    pagination: crate::cli::PaginationMeta,
-    count: usize,
-    results: Vec<T>,
-}
-
-#[derive(Default, serde::Serialize)]
-pub(super) struct DrugSearchJsonRegions {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    us: Option<DrugSearchRegionBucket<crate::entities::drug::DrugSearchResult>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    eu: Option<DrugSearchRegionBucket<crate::entities::drug::EmaDrugSearchResult>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    who: Option<DrugSearchRegionBucket<crate::entities::drug::WhoPrequalificationSearchResult>>,
-}
-
-#[derive(serde::Serialize)]
-pub(super) struct DrugSearchJsonResponse {
-    region: &'static str,
-    regions: DrugSearchJsonRegions,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    _meta: Option<crate::cli::SearchJsonMeta>,
-}
-
-pub(super) fn bucket_from_page<T: serde::Serialize>(
-    page: crate::entities::SearchPage<T>,
-    offset: usize,
-    limit: usize,
-) -> DrugSearchRegionBucket<T> {
-    let count = page.results.len();
-    DrugSearchRegionBucket {
-        pagination: crate::cli::PaginationMeta::offset(offset, limit, count, page.total),
-        count,
-        results: page.results,
-    }
-}
-
-pub(super) fn drug_search_json(
-    page_with_region: crate::entities::drug::DrugSearchPageWithRegion,
-    requested_name: Option<&str>,
-    offset: usize,
-    limit: usize,
-    workflow: Option<crate::workflow_ladders::WorkflowMeta>,
-) -> anyhow::Result<String> {
-    let response = match page_with_region {
-        crate::entities::drug::DrugSearchPageWithRegion::Us(page) => {
-            let next_commands = crate::render::markdown::search_next_commands_drug_regions(
-                requested_name,
-                Some(&page.results),
-                None,
-                None,
-            );
-            DrugSearchJsonResponse {
-                region: crate::entities::drug::DrugRegion::Us.as_str(),
-                regions: DrugSearchJsonRegions {
-                    us: Some(bucket_from_page(page, offset, limit)),
-                    ..Default::default()
-                },
-                _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow.clone()),
-            }
-        }
-        crate::entities::drug::DrugSearchPageWithRegion::Eu(page) => {
-            let next_commands = crate::render::markdown::search_next_commands_drug_regions(
-                requested_name,
-                None,
-                Some(&page.results),
-                None,
-            );
-            DrugSearchJsonResponse {
-                region: crate::entities::drug::DrugRegion::Eu.as_str(),
-                regions: DrugSearchJsonRegions {
-                    eu: Some(bucket_from_page(page, offset, limit)),
-                    ..Default::default()
-                },
-                _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow.clone()),
-            }
-        }
-        crate::entities::drug::DrugSearchPageWithRegion::Who(page) => {
-            let next_commands = crate::render::markdown::search_next_commands_drug_regions(
-                requested_name,
-                None,
-                None,
-                Some(&page.results),
-            );
-            DrugSearchJsonResponse {
-                region: crate::entities::drug::DrugRegion::Who.as_str(),
-                regions: DrugSearchJsonRegions {
-                    who: Some(bucket_from_page(page, offset, limit)),
-                    ..Default::default()
-                },
-                _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow.clone()),
-            }
-        }
-        crate::entities::drug::DrugSearchPageWithRegion::All { us, eu, who } => {
-            let next_commands = crate::render::markdown::search_next_commands_drug_regions(
-                requested_name,
-                Some(&us.results),
-                Some(&eu.results),
-                Some(&who.results),
-            );
-            DrugSearchJsonResponse {
-                region: crate::entities::drug::DrugRegion::All.as_str(),
-                regions: DrugSearchJsonRegions {
-                    us: Some(bucket_from_page(us, offset, limit)),
-                    eu: Some(bucket_from_page(eu, offset, limit)),
-                    who: Some(bucket_from_page(who, offset, limit)),
-                },
-                _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow),
-            }
-        }
-    };
-
-    crate::render::json::to_pretty(&response).map_err(Into::into)
 }

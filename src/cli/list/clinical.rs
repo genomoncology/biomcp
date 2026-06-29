@@ -179,7 +179,7 @@ pub(super) fn list_drug() -> String {
 
 - `drug trials <name> [--no-alias-expand]`
 - `drug interactions <name>` - DDInter-backed structured drug-drug interactions with partner rows, class summaries, and helper-specific JSON follow-ups
-- `drug adverse-events <name>` - checks FAERS first, distinguishes FAERS 404 from FAERS 200+empty results, and falls back to ClinicalTrials.gov trial-reported adverse events only on FAERS 404
+- `drug adverse-events <name>` - checks FAERS first, accepts FAERS filters including `--reaction`, `--outcome`, `--serious`, `--date-from`, `--date-to`, `--suspect-only`, `--sex`, `--age-min`, `--age-max`, `--reporter`, `--count <field>`, and `--type`, distinguishes FAERS 404 from FAERS 200+empty results, and falls back to ClinicalTrials.gov trial-reported adverse events only on FAERS 404
 
 ## JSON Output
 
@@ -208,7 +208,7 @@ pub(super) fn list_drug() -> String {
 - WHO vaccine support in this ticket is search-only; `get drug <name> regulatory --region who|all` remains finished-pharma/API only.
 - `drug trials <name>` inherits CTGov intervention alias expansion, adds `Matched Intervention` / `matched_intervention_label` when an alternate alias matched first, and accepts `--no-alias-expand` for literal matching.
 - Drug interaction commands auto-download the DDInter CSV bundle into `BIOMCP_DDINTER_DIR` or the default data directory on first use; empty results stay scoped to the current DDInter bundle instead of claiming clinical safety.
-- `drug adverse-events <name>` explains when a drug is absent from FAERS versus present with no matching FAERS events; only the FAERS-404 branch queries ClinicalTrials.gov.
+- `drug adverse-events <name>` explains when a drug is absent from FAERS versus present with no matching FAERS events; only the FAERS-404 branch queries ClinicalTrials.gov. The default summary uses an OpenFDA aggregate reaction-count query; `--count <field>` renders the requested aggregate ranking directly.
 - EU regional commands auto-download the EMA human-medicines JSON feeds into `BIOMCP_EMA_DIR` or the default data directory on first use.
 - Default/EU vaccine brand lookups and explicit WHO vaccine name/brand searches can also auto-download the CDC CVX/MVX bundle into `BIOMCP_CVX_DIR` or the default data directory on first use.
 - WHO regional commands auto-download the WHO finished-pharma, API, and vaccine CSV exports into `BIOMCP_WHO_DIR` or the default data directory on first use (`who_pq.csv`, `who_api.csv`, and `who_vaccines.csv`).
