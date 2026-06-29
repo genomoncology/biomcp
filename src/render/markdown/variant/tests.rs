@@ -22,6 +22,97 @@ fn markdown_render_variant_entity() {
 }
 
 #[test]
+fn variant_markdown_default_card_renders_cached_civic_actionability_pointer() {
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr1:g.100A>T",
+        "gene": "TST",
+        "hgvs_p": "p.A1V",
+        "civic": {
+            "cached_evidence": [
+                {
+                    "id": 11,
+                    "name": "cached predictive evidence",
+                    "molecular_profile": "TST A1V",
+                    "evidence_type": "Predictive",
+                    "evidence_level": "B",
+                    "significance": "Sensitivity",
+                    "disease": "Example carcinoma",
+                    "therapies": ["exampletinib"],
+                    "status": "accepted"
+                },
+                {
+                    "id": 12,
+                    "name": "cached prognostic evidence",
+                    "molecular_profile": "TST A1V",
+                    "evidence_type": "Prognostic",
+                    "evidence_level": "C",
+                    "significance": "Poor outcome",
+                    "status": "accepted"
+                }
+            ]
+        }
+    }))
+    .expect("variant should deserialize");
+
+    let markdown = variant_markdown(&variant, &[]).expect("rendered markdown");
+    assert!(markdown.contains(
+        "Therapeutic evidence: 1 CIViC predictive item(s) / 0 assertion(s) — see `get variant \"chr1:g.100A>T\" civic`"
+    ));
+    assert!(!markdown.contains("## CIViC"));
+}
+
+#[test]
+fn variant_markdown_default_card_renders_bare_civic_pointer_without_cached_evidence() {
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr1:g.101A>T",
+        "gene": "TST",
+        "hgvs_p": "p.A2V"
+    }))
+    .expect("variant should deserialize");
+
+    let markdown = variant_markdown(&variant, &[]).expect("rendered markdown");
+    assert!(markdown.contains("Therapeutic evidence: see `get variant \"chr1:g.101A>T\" civic`"));
+    assert!(!markdown.contains("CIViC predictive item(s)"));
+}
+
+#[test]
+fn variant_markdown_civic_section_renders_currency_caveat_and_cross_checks() {
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr1:g.100A>T",
+        "gene": "TST",
+        "hgvs_p": "p.A1V"
+    }))
+    .expect("variant should deserialize");
+
+    let markdown = variant_markdown(&variant, &["civic".to_string()]).expect("rendered markdown");
+    assert!(markdown.contains(
+        "Caveat: CIViC evidence may lag current standard of care — cross-check the literature and therapy layers."
+    ));
+    assert!(markdown.contains("See also: `variant articles \"chr1:g.100A>T\"` / `gene drugs TST`"));
+}
+
+#[test]
+fn variant_markdown_next_commands_quote_variant_ids_with_spaces() {
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "BRAF V600E",
+        "gene": "BRAF",
+        "hgvs_p": "p.Val600Glu"
+    }))
+    .expect("variant should deserialize");
+
+    let default_markdown = variant_markdown(&variant, &[]).expect("rendered markdown");
+    assert!(
+        default_markdown.contains("Therapeutic evidence: see `get variant \"BRAF V600E\" civic`")
+    );
+
+    let civic_markdown =
+        variant_markdown(&variant, &["civic".to_string()]).expect("rendered markdown");
+    assert!(
+        civic_markdown.contains("See also: `variant articles \"BRAF V600E\"` / `gene drugs BRAF`")
+    );
+}
+
+#[test]
 fn variant_markdown_renders_compact_clinvar_and_population_fields() {
     let variant: Variant = serde_json::from_value(serde_json::json!({
         "id": "chr7:g.140453136A>T",

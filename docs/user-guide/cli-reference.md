@@ -431,10 +431,15 @@ biomcp get variant rs7903146 gwas
 biomcp variant structure "BRAF V600E"
 ```
 
+Default `get variant` output includes a one-line CIViC actionability pointer from
+cached MyVariant data when present, or a `get variant <id> civic` next-command
+when not. It does not make the live CIViC GraphQL call unless the `civic` section
+or `all` is requested.
+
 `variant structure <variant>` is opt-in. It joins the exact variant to selected
 residue, overlapping InterPro domain ranges, UniProt PDB/AlphaFold structures,
 Cancerhotspots recurrence, warnings, and `_meta.next_commands`; default
-`get variant` output stays unchanged.
+`get variant` output stays compact.
 
 ### Drug
 

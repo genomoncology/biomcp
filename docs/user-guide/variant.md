@@ -92,6 +92,12 @@ interpretation/clinical meaning.
 
 ## Request variant sections
 
+The default variant card includes a one-line therapeutic-evidence pointer. When
+cached MyVariant CIViC evidence is already in the fetched variant payload, the
+line reports the cached predictive-item count and points to `get variant <id>
+civic`; otherwise it prints the bare `get variant <id> civic` next-command. The
+default card does not run the live CIViC GraphQL section call.
+
 Prediction section:
 
 ```bash
@@ -127,6 +133,11 @@ CIViC section:
 ```bash
 biomcp get variant "BRAF V600E" civic
 ```
+
+The CIViC section includes cached MyVariant rows plus live GraphQL context when
+available. It also carries a currency caveat and points to literature and drug
+cross-check commands because curated CIViC evidence can lag current standard of
+care.
 
 GWAS section (trait associations from GWAS Catalog):
 

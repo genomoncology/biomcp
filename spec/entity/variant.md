@@ -21,6 +21,22 @@ contracts. The deterministic tests should cover variant search JSON
 per-service status, warnings, and genomic-description rendering without live
 MyVariant, Mutalyzer, or VariantValidator calls.
 
+Ticket 456 keeps the default variant card cheap while making CIViC actionability
+discoverable: a pure renderer test proves the cached-CIViC pointer, the bare
+fallback pointer, and the CIViC-section currency caveat without a live source
+call.
+
+```bash
+grep -h -F \
+  -e 'Therapeutic evidence: 1 CIViC predictive item(s) / 0 assertion(s)' \
+  -e 'Therapeutic evidence: see `get variant \"chr1:g.101A>T\" civic`' \
+  -e 'Caveat: CIViC evidence may lag current standard of care' \
+  ../../src/render/markdown/variant/tests.rs ../../templates/variant.md.j2 \
+  | mustmatch like 'Therapeutic evidence: 1 CIViC predictive item(s) / 0 assertion(s)
+Therapeutic evidence: see `get variant \"chr1:g.101A>T\" civic`
+Caveat: CIViC evidence may lag current standard of care'
+```
+
 ## Coordinate Genome-Build Context
 
 <!-- mustmatch-lint: skip -->

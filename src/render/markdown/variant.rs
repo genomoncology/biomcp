@@ -40,11 +40,16 @@ pub fn variant_markdown(
     let (expr_i, splice_i, chrom_i) = prediction
         .map(prediction_interpretations)
         .unwrap_or((None, None, None));
+    let civic_actionability_pointer = civic_actionability_pointer(variant);
+    let variant_command_arg = quote_arg(&variant.id);
+    let gene_command_arg = quote_arg(&variant.gene);
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&variant_label, requested_sections),
         id => &variant.id,
+        variant_command_arg => variant_command_arg,
         gene => &variant.gene,
+        gene_command_arg => gene_command_arg,
         hgvs_p => &variant.hgvs_p,
         legacy_name => &variant.legacy_name,
         hgvs_c => &variant.hgvs_c,
@@ -70,6 +75,7 @@ pub fn variant_markdown(
         cosmic_context => &variant.cosmic_context,
         cgi_associations => &variant.cgi_associations,
         civic => &variant.civic,
+        civic_actionability_pointer => civic_actionability_pointer,
         cancerhotspots => &variant.cancerhotspots,
         cancer_frequencies => &variant.cancer_frequencies,
         cancer_frequency_source => &variant.cancer_frequency_source,
@@ -94,6 +100,30 @@ pub fn variant_markdown(
         related_block => format_related_block(related_variant(variant)),
     })?;
     Ok(append_evidence_urls(body, variant_evidence_urls(variant)))
+}
+
+fn civic_actionability_pointer(variant: &Variant) -> String {
+    let command = format!("get variant {} civic", quote_arg(&variant.id));
+    let Some(civic) = variant.civic.as_ref() else {
+        return format!("Therapeutic evidence: see `{command}`");
+    };
+
+    if civic.cached_evidence.is_empty() {
+        return format!("Therapeutic evidence: see `{command}`");
+    }
+
+    let predictive_items = civic
+        .cached_evidence
+        .iter()
+        .filter(|row| row.evidence_type.trim().eq_ignore_ascii_case("predictive"))
+        .count();
+    let assertions = civic
+        .graphql
+        .as_ref()
+        .map_or(0, |context| context.assertion_total_count);
+    format!(
+        "Therapeutic evidence: {predictive_items} CIViC predictive item(s) / {assertions} assertion(s) — see `{command}`"
+    )
 }
 
 fn prediction_interpretations(
