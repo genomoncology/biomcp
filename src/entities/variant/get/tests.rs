@@ -2,6 +2,7 @@
 
 use super::super::test_support::*;
 use super::*;
+use crate::sources::civic::{CivicContext, CivicEvidenceItem};
 
 fn braf_variant_stub() -> Variant {
     Variant {
@@ -187,6 +188,39 @@ fn gwas_only_variant_stub_keeps_requested_rsid() {
     assert_eq!(variant.rsid.as_deref(), Some("rs7903146"));
     assert!(variant.gwas.is_empty());
     assert_eq!(variant.gwas_unavailable_reason, None);
+}
+
+#[test]
+fn default_section_stripping_preserves_cached_civic_but_removes_graphql_context() {
+    let mut variant = braf_variant_stub();
+    variant.civic = Some(VariantCivicSection {
+        cached_evidence: vec![CivicEvidenceItem {
+            id: 1,
+            name: "cached predictive evidence".into(),
+            molecular_profile: "BRAF X999Y".into(),
+            evidence_type: "Predictive".into(),
+            evidence_level: "B".into(),
+            significance: "Sensitivity".into(),
+            disease: None,
+            therapies: Vec::new(),
+            status: "accepted".into(),
+            citation: None,
+            source_type: None,
+            publication_year: None,
+        }],
+        graphql: Some(CivicContext {
+            evidence_total_count: 10,
+            assertion_total_count: 3,
+            evidence_items: Vec::new(),
+            assertions: Vec::new(),
+        }),
+    });
+
+    strip_civic_live_details(&mut variant);
+
+    let civic = variant.civic.expect("cached CIViC should remain");
+    assert_eq!(civic.cached_evidence.len(), 1);
+    assert!(civic.graphql.is_none());
 }
 
 #[test]

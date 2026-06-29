@@ -682,6 +682,16 @@ fn strip_clinvar_details(variant: &mut Variant) {
     variant.clinvar_review_stars = None;
 }
 
+fn strip_civic_live_details(variant: &mut Variant) {
+    let Some(civic) = variant.civic.as_mut() else {
+        return;
+    };
+    civic.graphql = None;
+    if civic.cached_evidence.is_empty() {
+        variant.civic = None;
+    }
+}
+
 pub async fn get(id: &str, sections: &[String]) -> Result<Variant, BioMcpError> {
     Ok(get_with_workflow_signals(id, sections).await?.0)
 }
@@ -737,7 +747,7 @@ pub async fn get_with_workflow_signals(
         variant.cgi_associations.clear();
     }
     if !section_flags.include_civic {
-        variant.civic = None;
+        strip_civic_live_details(&mut variant);
     }
     if !section_flags.include_cbioportal {
         variant.cancer_frequencies.clear();

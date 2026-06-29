@@ -56,6 +56,8 @@ biomcp get gene BRAF pathways             # + pathway section
 biomcp get gene BRAF civic interactions   # + multiple sections
 biomcp get gene BRAF all                  # everything
 
+biomcp get variant "BRAF V600E"              # summary card + cheap CIViC pointer
+biomcp get variant "BRAF V600E" civic        # live CIViC evidence + currency caveat
 biomcp get variant "BRAF V600E" clinvar population conservation
 biomcp get variant NM_004333.6:c.1799T>A
 biomcp get article 22663011 tldr
@@ -235,7 +237,8 @@ Source: `scripts/genegpt-demo.sh`
 # 1. Get gene summary
 biomcp --json get gene BRAF
 
-# 2. Get variant population data
+# 2. Get variant population data; default cards carry only a cheap CIViC pointer,
+#    while full CIViC evidence stays opt-in via `get variant <id> civic`.
 biomcp --json get variant "BRAF V600E" population
 
 # 3. Find trials for the variant

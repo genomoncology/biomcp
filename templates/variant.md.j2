@@ -12,6 +12,7 @@ ID: {{ id }}
 {% if cosmic_id %}COSMIC: {{ cosmic_id }}{% endif %}
 {% if significance %}Significance: {{ significance }}{% endif %}
 Source: MyVariant.info / ClinVar
+{{ civic_actionability_pointer }}
 {% endif -%}
 {% if show_prediction_section and prediction -%}
 ## AlphaGenome Prediction
@@ -114,6 +115,8 @@ No CGI drug associations reported.
 {% endif -%}
 {% if show_civic_section -%}
 ## CIViC
+Caveat: CIViC evidence may lag current standard of care — cross-check the literature and therapy layers.
+See also: `variant articles {{ variant_command_arg }}`{% if gene %} / `gene drugs {{ gene_command_arg }}`{% endif %}
 {% if civic -%}
 {% if civic.cached_evidence -%}
 ### Cached Evidence (MyVariant)
