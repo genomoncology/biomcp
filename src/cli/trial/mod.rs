@@ -69,13 +69,13 @@ pub struct TrialSearchArgs {
     /// Filter by trial status [values: recruiting, not_yet_recruiting, enrolling_by_invitation, active_not_recruiting, completed, suspended, terminated, withdrawn]
     #[arg(short = 's', long)]
     pub status: Option<String>,
-    /// Search mutation-related ClinicalTrials.gov text fields (best-effort)
+    /// CTGov exact free-text boolean over title/summary/eligibility/keywords; brittle for specific protein changes.
     #[arg(long, num_args = 1..)]
     pub mutation: Vec<String>,
     /// Search eligibility criteria with free-text terms (best-effort)
     #[arg(long, num_args = 1..)]
     pub criteria: Vec<String>,
-    /// Biomarker filter (NCI CTS; best-effort for ctgov)
+    /// Biomarker phrase search: NCI CTS native; CTGov keyword/intervention/condition. Prefer for gene-level trial broadening.
     #[arg(long, num_args = 1..)]
     pub biomarker: Vec<String>,
     /// Prior therapy mentioned in eligibility
@@ -154,6 +154,7 @@ pub struct TrialGetArgs {
 }
 
 mod dispatch;
+mod zero_result;
 pub(super) use self::dispatch::{handle_get, handle_search};
 
 #[cfg(test)]

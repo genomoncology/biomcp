@@ -76,6 +76,17 @@ fn trial_help_documents_alias_expansion_controls() {
 }
 
 #[test]
+fn trial_help_clarifies_mutation_vs_biomarker() {
+    let help = render_trial_search_long_help();
+
+    assert!(help.contains("--mutation"));
+    assert!(help.contains("exact free-text boolean"));
+    assert!(help.contains("eligibility"));
+    assert!(help.contains("--biomarker"));
+    assert!(help.contains("phrase search over keyword, intervention, and condition"));
+}
+
+#[test]
 fn trial_age_help_explains_age_only_count_is_approximate() {
     let help = render_trial_search_long_help();
 
@@ -511,6 +522,69 @@ async fn handle_search_rejects_no_alias_expand_without_intervention() {
         err.to_string()
             .contains("--no-alias-expand is only supported for CTGov intervention searches")
     );
+}
+
+#[test]
+fn zero_result_trial_next_commands_offer_filtered_broadening() {
+    let filters = crate::entities::trial::TrialSearchFilters {
+        condition: Some("lung cancer".to_string()),
+        facility: Some("Boston".to_string()),
+        status: Some("recruiting".to_string()),
+        mutation: Some("EGFR L858R".to_string()),
+        biomarker: None,
+        lat: Some(42.36),
+        lon: Some(-71.06),
+        distance: Some(100),
+        ..Default::default()
+    };
+
+    let commands = super::zero_result::zero_result_trial_next_commands(&filters);
+
+    assert!(
+        commands
+            .iter()
+            .any(|command| !command.contains("--mutation"))
+    );
+    assert!(
+        commands
+            .iter()
+            .any(|command| command.contains("--distance 200"))
+    );
+    assert!(
+        commands
+            .iter()
+            .any(|command| !command.contains(" -s recruiting"))
+    );
+    assert!(
+        commands
+            .iter()
+            .any(|command| command.contains("--biomarker EGFR"))
+    );
+    assert!(
+        commands
+            .iter()
+            .any(|command| command == "biomcp list trial")
+    );
+}
+
+#[test]
+fn zero_result_trial_broadening_hints_name_filter_relaxations() {
+    let filters = crate::entities::trial::TrialSearchFilters {
+        status: Some("recruiting".to_string()),
+        mutation: Some("EGFR L858R".to_string()),
+        lat: Some(42.36),
+        lon: Some(-71.06),
+        distance: Some(100),
+        ..Default::default()
+    };
+
+    let hints = super::zero_result::zero_result_trial_broadening_hints(&filters).join("\n");
+
+    assert!(hints.contains("loosen or drop `--mutation`"));
+    assert!(hints.contains("exact free-text boolean"));
+    assert!(hints.contains("widen `--distance`"));
+    assert!(hints.contains("relax `--status`"));
+    assert!(hints.contains("try `--biomarker <gene>`"));
 }
 
 #[tokio::test]

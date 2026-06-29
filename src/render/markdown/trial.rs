@@ -153,6 +153,26 @@ pub fn trial_search_markdown_with_footer(
     show_zero_result_nickname_hint: bool,
     nickname_query: Option<&str>,
 ) -> Result<String, BioMcpError> {
+    trial_search_markdown_with_footer_and_hints(
+        query,
+        results,
+        total,
+        pagination_footer,
+        show_zero_result_nickname_hint,
+        nickname_query,
+        &[],
+    )
+}
+
+pub fn trial_search_markdown_with_footer_and_hints(
+    query: &str,
+    results: &[TrialSearchResult],
+    total: Option<u32>,
+    pagination_footer: &str,
+    show_zero_result_nickname_hint: bool,
+    nickname_query: Option<&str>,
+    zero_result_broadening_hints: &[String],
+) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("trial_search.md.j2")?;
     let show_matched_condition_column = results
         .iter()
@@ -170,6 +190,7 @@ pub fn trial_search_markdown_with_footer(
         pagination_footer => pagination_footer,
         show_zero_result_nickname_hint => show_zero_result_nickname_hint,
         nickname_query => nickname_query,
+        zero_result_broadening_hints => zero_result_broadening_hints,
     })?;
     Ok(with_pagination_footer(body, pagination_footer))
 }

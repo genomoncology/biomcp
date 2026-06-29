@@ -1,3 +1,6 @@
+use super::zero_result::{
+    has_active_trial_filters, zero_result_trial_broadening_hints, zero_result_trial_next_commands,
+};
 use super::{TrialGetArgs, TrialSearchArgs};
 use crate::cli::CommandOutcome;
 
@@ -267,7 +270,11 @@ pub(in crate::cli) async fn handle_search(
             page.next_page_token,
         );
         if json {
-            let next_commands = crate::render::markdown::search_next_commands_trial(&results);
+            let next_commands = if results.is_empty() && has_active_trial_filters(&filters) {
+                zero_result_trial_next_commands(&filters)
+            } else {
+                crate::render::markdown::search_next_commands_trial(&results)
+            };
             return super::super::search_json_with_meta(results, pagination, next_commands)
                 .map(CommandOutcome::stdout);
         }
@@ -286,13 +293,20 @@ pub(in crate::cli) async fn handle_search(
             trial_source,
             results.len(),
         );
-        crate::render::markdown::trial_search_markdown_with_footer(
+        let zero_result_broadening_hints =
+            if results.is_empty() && has_active_trial_filters(&filters) {
+                zero_result_trial_broadening_hints(&filters)
+            } else {
+                Vec::new()
+            };
+        crate::render::markdown::trial_search_markdown_with_footer_and_hints(
             &query,
             &results,
             total,
             &footer,
             show_zero_result_nickname_hint,
             positional_trial_query.as_deref(),
+            &zero_result_broadening_hints,
         )?
     };
 

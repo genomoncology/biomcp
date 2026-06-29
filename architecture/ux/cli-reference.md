@@ -135,6 +135,9 @@ UX invariants for this target:
 
 - expansion is bounded and visible; output shows which condition/gene label matched a trial;
 - strict/literal search remains available through an opt-out flag;
+- `--mutation <text>` remains an exact free-text boolean over title, summary, eligibility, and keyword text, so it is brittle for specific protein changes;
+- `--biomarker <text>` is the gene-level broadening lever: a phrase search over CTGov keyword, intervention, and condition fields;
+- zero-result filtered trial searches do not auto-broaden; markdown and JSON `_meta.next_commands` tell callers to loosen/drop `--mutation`, widen `--distance`, relax `--status`, or try `--biomarker`;
 - `discover` may suggest a rare-disease trial plan, but it does not become the trial engine;
 - compact search remains the default; site/contact/eligibility detail stays opt-in;
 - action summaries rank and caveat only listed ClinicalTrials.gov data, and never imply unlisted pending sites.
