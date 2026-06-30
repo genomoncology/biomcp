@@ -94,6 +94,56 @@ fn json_mode_invalid_argument_error_writes_json_stdout_and_exit_2() {
 }
 
 #[test]
+fn json_mode_missing_required_arg_parse_error_writes_json_stdout_and_exit_2() {
+    let result = run_biomcp(&["--json", "get", "variant"]);
+
+    assert_json_error(&result, 2, "invalid_argument");
+    let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid json");
+    assert_eq!(value["_meta"]["not_found"], false, "json={value}");
+}
+
+#[test]
+fn short_json_flag_missing_required_arg_parse_error_writes_json_stdout_and_exit_2() {
+    let result = run_biomcp(&["-j", "get", "variant"]);
+
+    assert_json_error(&result, 2, "invalid_argument");
+}
+
+#[test]
+fn json_mode_unknown_subcommand_parse_error_writes_json_stdout_and_exit_2() {
+    let result = run_biomcp(&["--json", "get", "not-an-entity"]);
+
+    assert_json_error(&result, 2, "invalid_argument");
+}
+
+#[test]
+fn json_mode_unknown_flag_parse_error_writes_json_stdout_and_exit_2() {
+    let result = run_biomcp(&["--json", "get", "variant", "BRAF V600E", "--not-a-flag"]);
+
+    assert_json_error(&result, 2, "invalid_argument");
+}
+
+#[test]
+fn human_mode_parse_error_stays_plain_stderr() {
+    let result = run_biomcp(&["get", "variant"]);
+
+    assert_eq!(result.code, Some(2));
+    assert!(
+        result.stdout.trim().is_empty(),
+        "human parse errors should not write stdout\nstdout:\n{}",
+        result.stdout
+    );
+    assert!(
+        !result.stderr.trim().is_empty(),
+        "human parse errors should stay on stderr"
+    );
+    assert!(
+        serde_json::from_str::<serde_json::Value>(&result.stderr).is_err(),
+        "human stderr should not become JSON"
+    );
+}
+
+#[test]
 fn human_mode_error_stays_plain_stderr() {
     let result = run_biomcp(&["skill", "show", "not-a-real-skill"]);
 

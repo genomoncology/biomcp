@@ -17,6 +17,34 @@ cd ../.. && uv run --no-sync pytest tests/test_cli_surface_contract_ratchet.py -
 test_cli_surface_contract_exception_registry_names_initial_exceptions"
 ```
 
+## JSON Usage Errors Stay Parseable For Scripts
+
+Scripts that opt into `--json` should be able to parse usage mistakes the same
+way they parse command failures. A missing required argument is still invalid
+usage and exits `2`, but stdout carries the standard JSON error envelope instead
+of being empty.
+
+<!-- mustmatch-lint: skip -->
+
+```bash run id=json-usage-error exit=2
+biomcp --json get variant
+```
+
+```json expect=json-usage-error contains
+{
+  "error": {
+    "code": "invalid_argument"
+  },
+  "_meta": {
+    "not_found": false
+  }
+}
+```
+
+```text expect=json-usage-error contains
+"message":
+```
+
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
 
 The cache configuration reference promises an operator env override for the
