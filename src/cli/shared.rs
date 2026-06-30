@@ -1,4 +1,5 @@
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
+use std::io::Write;
 
 use clap::{CommandFactory, FromArgMatches, error::ErrorKind};
 use tracing::{debug, warn};
@@ -74,8 +75,28 @@ where
     Cli::from_arg_matches(&matches)
 }
 
+fn args_request_json(args: &[OsString]) -> bool {
+    args.iter()
+        .any(|arg| arg == OsStr::new("--json") || arg == OsStr::new("-j"))
+}
+
 pub fn parse_cli_from_env() -> Cli {
-    try_parse_cli(std::env::args_os()).unwrap_or_else(|err| err.exit())
+    let args: Vec<OsString> = std::env::args_os().collect();
+    match try_parse_cli(args.clone()) {
+        Ok(cli) => cli,
+        Err(err) if args_request_json(&args) => {
+            let exit_code = err.exit_code();
+            let bio_err = crate::error::BioMcpError::InvalidArgument(err.to_string());
+            let json = crate::render::json::to_error_json(&bio_err)
+                .expect("clap parse errors should render as JSON");
+            let mut stdout = std::io::stdout();
+            let _ = stdout.write_all(json.as_bytes());
+            let _ = stdout.write_all(b"\n");
+            let _ = stdout.flush();
+            std::process::exit(exit_code);
+        }
+        Err(err) => err.exit(),
+    }
 }
 
 pub(super) fn empty_sections() -> &'static [String] {

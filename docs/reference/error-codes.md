@@ -9,7 +9,8 @@ BioMCP uses process exit codes to distinguish invalid usage from command
 execution failures:
 
 - exit `2`: `clap` rejected the command before BioMCP command execution started.
-  Example: `biomcp search pathway --badflag`
+  With `--json`/`-j`, these usage errors emit the standard JSON error envelope
+  on stdout with `error.code: "invalid_argument"`. Example: `biomcp search pathway --badflag`
 - exit `2`: the command parsed, then BioMCP returned
   `BioMcpError::InvalidArgument` for invalid or inconsistent usage.
   Examples: `biomcp search pathway`, `biomcp get pathway hsa05200 events`
