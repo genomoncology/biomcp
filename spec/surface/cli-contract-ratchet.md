@@ -56,6 +56,44 @@ biomcp --json get variant
 "message":
 ```
 
+## Skill Help Documents Worked-Example Selectors
+
+The skill selector is intentionally positional: agents and humans can open a
+worked example by number or slug without an extra `show` word. Help must keep
+that runnable form visible so users do not stop at the generic `[COMMAND]`
+placeholder.
+
+```bash
+biomcp skill --help | mustmatch like "EXAMPLES:
+  biomcp skill 01
+  biomcp skill article-follow-up"
+```
+
+## Parent Help Pages Give Concrete Next Commands
+
+Parent and operator help pages should not be dead ends. Each high-value surface
+shows at least one copy-pasteable next command before users need to open longer
+documentation.
+
+```bash
+biomcp search --help | mustmatch like "EXAMPLES:
+  biomcp search gene BRAF"
+biomcp get --help | mustmatch like "EXAMPLES:
+  biomcp get gene BRAF"
+biomcp list --help | mustmatch like "EXAMPLES:
+  biomcp list gene"
+biomcp cache --help | mustmatch like "EXAMPLES:
+  biomcp cache stats"
+biomcp mcp --help | mustmatch like "EXAMPLES:
+  biomcp mcp"
+biomcp serve --help | mustmatch like "EXAMPLES:
+  biomcp serve"
+biomcp skill --help | mustmatch like "EXAMPLES:
+  biomcp skill 01"
+biomcp study --help | mustmatch like "EXAMPLES:
+  biomcp study list"
+```
+
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
 
 The cache configuration reference promises an operator env override for the
