@@ -116,6 +116,13 @@ Current invariants:
   inline ad hoc skips are not the policy.
 - `tools/biomcp-ci` remains the executable-spec wrapper for cache roots, XDG
   roots, key stripping, and warm replay in live/operator lanes.
+- `tools/biomcp-verify-live` owns source-specific live-lane classification for
+  known operator-pending states. CPIC `permission denied to set role "web_anon"`
+  auth failures and NIH Reporter funding-table/source unavailability are reported
+  as operator-pending in `make verify`; unexpected shapes, panics, parse failures,
+  and other unclassified source errors remain product-red. Deterministic request,
+  response, and renderer tests carry the product-owned proof for those relaxed
+  live outcomes.
 - `.march/code-review-log.md` is the only tracked `.march/*` allowlist entry;
   other local March artifacts stay ignored and untracked.
 

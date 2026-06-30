@@ -85,6 +85,8 @@ verify:
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci search article -g BRAF --limit 3
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci variant normalize all 'NM_000248.3:c.135del'
 	BIOMCP_BIN="$${PWD}/target/release/biomcp" bash scripts/run-specs.sh verify
+	BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-verify-live cpic -- bash scripts/run-specs.sh verify-cpic
+	BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-verify-live nih-reporter -- bash scripts/run-specs.sh verify-nih-reporter
 
 release-live-smoke:
 	$(MAKE) verify
