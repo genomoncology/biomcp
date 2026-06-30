@@ -80,9 +80,12 @@ biomcp variant normalize mutalyzer NM_000248.3:c.135del
 biomcp variant normalize variantvalidator 'NM_004448.2:c.829G>T'
 ```
 
-JSON output preserves the submitted `input`, one result per service, each
-service `status`, source-returned transcript/normalized/genomic/protein fields,
-and warnings such as VariantValidator `TranscriptVersionWarning`. Markdown
+JSON output always writes a parseable object on exit 0. It preserves the submitted
+`input`, an aggregate `status`, a `results` list of normalized forms, a `message`,
+one result per service with each service `status`, source-returned
+transcript/normalized/genomic/protein fields, warnings such as VariantValidator
+`TranscriptVersionWarning`, and `_meta.next_commands`. When no provider returns a
+normalized form, `status` is `no_result` and `results` is an empty list. Markdown
 VariantValidator genomic descriptions are labeled as GRCh38 because BioMCP calls
 VariantValidator's GRCh38 normalization endpoint.
 

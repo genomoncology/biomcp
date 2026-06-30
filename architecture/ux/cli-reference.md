@@ -156,7 +156,11 @@ biomcp variant structure "BRAF V600E"
 biomcp variant normalize <service> <transcript_hgvs>
 biomcp variant normalize all NM_000248.3:c.135del
 biomcp variant normalize all 'NM_004448.2:c.829G>T'
+```
 
+`biomcp variant normalize ... --json` always writes parseable JSON on exit 0. If no provider returns a normalized form, the payload uses `status: "no_result"`, an empty `results` list, a clear `message`, per-service details, and `_meta.next_commands`.
+
+```bash
 # Drug pivots
 biomcp drug adverse-events pembrolizumab
 biomcp drug adverse-events osimertinib --count patient.reaction.reactionmeddrapt.exact

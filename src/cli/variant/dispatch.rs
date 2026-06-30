@@ -188,7 +188,7 @@ pub(crate) async fn handle_command(
         VariantCommand::Normalize { service, variant } => {
             let result = crate::entities::variant::normalize_variant(&service, &variant).await?;
             if json {
-                crate::render::json::to_pretty(&result)?
+                super::normalization_json::render(&result)?
             } else {
                 crate::render::markdown::variant_normalization_markdown(&result)
             }
