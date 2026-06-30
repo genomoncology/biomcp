@@ -20,10 +20,13 @@ test_cli_surface_contract_exception_registry_names_initial_exceptions"
 ## Protein and Phenotype Search JSON Metadata Seam
 
 Protein and phenotype search JSON should opt into the metadata envelope instead
-of using the bare generic search helper. This local dispatch seam check keeps the
-routine gate deterministic without depending on public upstream availability.
+of using the bare generic search helper. These fixture-backed tests exercise the
+local JSON envelope and parse every emitted follow-up command, so the routine
+ratchet does not depend on public upstream availability.
 
 ```bash
-cd ../.. && rg 'search_json_with_meta' src/cli/protein/dispatch.rs src/cli/phenotype/dispatch.rs | mustmatch like "src/cli/protein/dispatch.rs:
-src/cli/phenotype/dispatch.rs:"
+cd ../..
+cargo test --locked protein_search_json_next_commands_parse --lib >/tmp/biomcp-protein-json-next-commands.log
+cargo test --locked phenotype_search_json_next_commands_parse --lib >/tmp/biomcp-phenotype-json-next-commands.log
+printf 'protein and phenotype JSON next-command fixture tests passed\n' | mustmatch like "fixture tests passed"
 ```
