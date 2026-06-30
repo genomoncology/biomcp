@@ -152,6 +152,27 @@ def test_cli_surface_contract_rejects_unquoted_hgvs_redirect_examples(tmp_path: 
     )
 
 
+def test_cli_surface_contract_rejects_entity_markdown_quoting_imports(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    entity_dir = root / "src" / "entities"
+    entity_dir.mkdir(parents=True)
+    (entity_dir / "demo.rs").write_text(
+        "use crate::render::markdown::{quote_arg, shell_quote_arg};\n"
+        "fn demo(value: &str) -> String { crate::render::markdown::quote_arg(value) }\n",
+        encoding="utf-8",
+    )
+
+    module = _load_quality_ratchet_module()
+    result = module.check_entity_markdown_quoting_dependencies(root)
+
+    assert result["status"] == "fail"
+    patterns = {finding["pattern"] for finding in result["findings"]}
+    assert patterns == {
+        "crate::render::markdown::quote_arg",
+        "crate::render::markdown::shell_quote_arg",
+    }
+
+
 def test_cli_surface_contract_exception_registry_names_initial_exceptions() -> None:
     assert EXCEPTION_REGISTRY.exists(), (
         "whole-surface CLI contract exceptions must be source-controlled, "

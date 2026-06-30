@@ -603,23 +603,28 @@ def check_copy_paste_examples_are_shell_safe(root_dir: Path, texts: dict[str, st
 
 def check_entity_markdown_quoting_dependencies(root_dir: Path) -> dict[str, object]:
     findings: list[dict[str, object]] = []
-    patterns = [
-        "crate::render::markdown::quote_arg",
-        "crate::render::markdown::shell_quote_arg",
-    ]
+    patterns = {
+        "crate::render::markdown::quote_arg": re.compile(
+            r"crate::render::markdown::quote_arg|use\s+crate::render::markdown::\{[^}]*\bquote_arg\b[^}]*\}",
+            flags=re.DOTALL,
+        ),
+        "crate::render::markdown::shell_quote_arg": re.compile(
+            r"crate::render::markdown::shell_quote_arg|use\s+crate::render::markdown::\{[^}]*\bshell_quote_arg\b[^}]*\}",
+            flags=re.DOTALL,
+        ),
+    }
     entity_root = root_dir / "src" / "entities"
     for path in sorted(entity_root.rglob("*.rs")):
         text = path.read_text(encoding="utf-8")
         relative = path.relative_to(root_dir).as_posix()
-        for lineno, line in enumerate(text.splitlines(), start=1):
-            for pattern in patterns:
-                if pattern in line:
-                    findings.append({
-                        "path": relative,
-                        "line": lineno,
-                        "pattern": pattern,
-                        "message": "entity code must build typed next commands instead of importing markdown shell quoting helpers",
-                    })
+        for pattern, regex in patterns.items():
+            for match in regex.finditer(text):
+                findings.append({
+                    "path": relative,
+                    "line": text.count("\n", 0, match.start()) + 1,
+                    "pattern": pattern,
+                    "message": "entity code must build typed next commands instead of importing markdown shell quoting helpers",
+                })
     return {
         "name": "entities_do_not_depend_on_markdown_shell_quoting",
         "status": "fail" if findings else "pass",
