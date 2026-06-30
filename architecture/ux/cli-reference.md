@@ -346,7 +346,8 @@ executable provenance/PATH diagnostic mode.
 search-wrapper family. Drug search has heterogeneous U.S./EU/WHO row schemas,
 so its stable contract uses top-level `region`, top-level `regions`, and
 per-region `pagination` / `count` / `results` buckets instead of one shared
-top-level `results` array.
+top-level `results` array. Drug `--region ema` is a public alias for the
+canonical `--region eu` value on search and get drug regional sections.
 
 Legacy helper JSON shapes are documented, not silently normalized in this
 release. `article batch --json` remains a bare array of compact article cards;

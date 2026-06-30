@@ -115,7 +115,7 @@ New to BioMCP? Try:
 - `--session <token>` is a local non-secret caller label for JSON loop-breakers.
 - Same-session article searches can suggest prior `article batch`, `discover`,
   and date-narrowing follow-ups.
-- `search drug ... --region <us|eu|who|all>`
+- `search drug ... --region <us|eu|ema|who|all>`
   - omitted `--region` checks U.S., EU, and WHO for plain name/alias lookups
   - omitted structured filters stay U.S.-only
   - `who` filters structured U.S. hits through WHO prequalification

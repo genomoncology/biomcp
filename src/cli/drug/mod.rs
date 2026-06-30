@@ -49,7 +49,7 @@ pub struct DrugSearchArgs {
     /// Skip the first N results
     #[arg(long, default_value = "0")]
     pub offset: usize,
-    /// Data region for drug regulatory context [default: all]
+    /// Data region for drug regulatory context; `ema` is accepted as an alias for `eu` [default: all]
     #[arg(long, value_enum)]
     pub region: Option<DrugRegionArg>,
     /// WHO-only product type filter; requires explicit --region who
@@ -65,7 +65,7 @@ pub struct DrugGetArgs {
     /// Drug name followed by optional sections; with --name, all positional values are sections
     #[arg(value_name = "NAME_OR_SECTION", num_args = 0..)]
     pub args: Vec<String>,
-    /// Data region for regional sections (regulatory, safety, shortage, or all)
+    /// Data region for regional sections (regulatory, safety, shortage, or all); `ema` is accepted as an alias for `eu`
     #[arg(long, value_enum)]
     pub region: Option<DrugRegionArg>,
     /// Preserve raw FDA label subsections when used with `label` or `all`
@@ -188,5 +188,7 @@ mod render;
 mod workflow;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
 
+#[cfg(test)]
+mod alias_alignment_tests;
 #[cfg(test)]
 mod tests;
