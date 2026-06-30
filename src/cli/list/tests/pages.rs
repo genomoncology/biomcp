@@ -282,6 +282,8 @@ fn list_drug_describes_omitted_region_behavior() {
     assert!(out.contains("Matched Intervention"));
     assert!(out.contains("matched_intervention_label"));
     assert!(out.contains("auto-download the EMA human-medicines JSON feeds"));
+    assert!(out.contains("search drug <query> --region <us|eu|ema|who|all>"));
+    assert!(out.contains("get drug <name> regulatory [--region <us|eu|ema|who|all>]"));
     assert!(
         out.contains(
             "search drug <query> --region who --product-type <finished_pharma|api|vaccine>"

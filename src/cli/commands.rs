@@ -394,6 +394,7 @@ EXAMPLES:
   biomcp search drug BCG --region who --product-type vaccine --limit 5
   biomcp search drug Keytruda --limit 5
   biomcp search drug Keytruda --region eu --limit 5
+  biomcp search drug \"influenza vaccine\" --region ema --limit 5
   biomcp search drug --indication malaria --region who --limit 5
   biomcp search drug -q \"kinase inhibitor\" --target EGFR --atc L01 --pharm-class kinase --limit 5
 
@@ -401,6 +402,7 @@ Note: Interaction lookups are not part of `search drug`; use `biomcp drug intera
 Omitting --region on a plain name/alias search checks U.S., EU, and WHO data.
 If you omit --region while using structured filters such as --target or --indication, BioMCP stays on the U.S. MyChem path.
 Explicit --region who filters structured U.S. hits through WHO Prequalification.
+Use --region ema as an accepted alias for the canonical --region eu value.
 WHO-only --product-type <finished_pharma|api|vaccine> requires explicit --region who.
 WHO vaccine search is plain name/brand only; structured WHO filters reject `--product-type vaccine`.
 Default WHO search excludes vaccines unless you explicitly request `--product-type vaccine`.

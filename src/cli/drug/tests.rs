@@ -21,6 +21,34 @@ fn render_drug_trials_help() -> String {
     String::from_utf8(help).expect("help should be utf-8")
 }
 
+fn render_drug_search_help() -> String {
+    let mut command = Cli::command();
+    let search = command
+        .find_subcommand_mut("search")
+        .expect("search subcommand should exist");
+    let drug = search
+        .find_subcommand_mut("drug")
+        .expect("search drug subcommand should exist");
+    let mut help = Vec::new();
+    drug.write_long_help(&mut help)
+        .expect("search drug help should render");
+    String::from_utf8(help).expect("help should be utf-8")
+}
+
+fn render_drug_get_help() -> String {
+    let mut command = Cli::command();
+    let get = command
+        .find_subcommand_mut("get")
+        .expect("get subcommand should exist");
+    let drug = get
+        .find_subcommand_mut("drug")
+        .expect("drug subcommand should exist");
+    let mut help = Vec::new();
+    drug.write_long_help(&mut help)
+        .expect("drug help should render");
+    String::from_utf8(help).expect("help should be utf-8")
+}
+
 fn render_drug_interactions_help() -> String {
     let mut command = Cli::command();
     let drug = command
@@ -160,17 +188,7 @@ fn drug_adverse_events_help_lists_count_and_filter_parity() {
 
 #[test]
 fn get_drug_help_lists_region_flag_and_examples() {
-    let mut command = Cli::command();
-    let get = command
-        .find_subcommand_mut("get")
-        .expect("get subcommand should exist");
-    let drug = get
-        .find_subcommand_mut("drug")
-        .expect("drug subcommand should exist");
-    let mut help = Vec::new();
-    drug.write_long_help(&mut help)
-        .expect("drug help should render");
-    let help = String::from_utf8(help).expect("help should be utf-8");
+    let help = render_drug_get_help();
 
     assert!(help.contains("--region <REGION>"));
     assert!(help.contains("--name <NAME>"));
@@ -190,17 +208,7 @@ fn get_drug_help_lists_region_flag_and_examples() {
 
 #[test]
 fn get_drug_help_mentions_raw_label_mode() {
-    let mut command = Cli::command();
-    let get = command
-        .find_subcommand_mut("get")
-        .expect("get subcommand should exist");
-    let drug = get
-        .find_subcommand_mut("drug")
-        .expect("drug subcommand should exist");
-    let mut help = Vec::new();
-    drug.write_long_help(&mut help)
-        .expect("drug help should render");
-    let help = String::from_utf8(help).expect("help should be utf-8");
+    let help = render_drug_get_help();
 
     assert!(help.contains("--raw"));
     assert!(help.contains("biomcp get drug pembrolizumab label --raw"));
@@ -208,17 +216,7 @@ fn get_drug_help_mentions_raw_label_mode() {
 
 #[test]
 fn search_drug_help_mentions_default_all_and_structured_filter_note() {
-    let mut command = Cli::command();
-    let search = command
-        .find_subcommand_mut("search")
-        .expect("search subcommand should exist");
-    let drug = search
-        .find_subcommand_mut("drug")
-        .expect("search drug subcommand should exist");
-    let mut help = Vec::new();
-    drug.write_long_help(&mut help)
-        .expect("search drug help should render");
-    let help = String::from_utf8(help).expect("help should be utf-8");
+    let help = render_drug_search_help();
 
     assert!(help.contains("When to use:"));
     assert!(help.contains("when you know the drug or brand name"));
@@ -235,6 +233,10 @@ fn search_drug_help_mentions_default_all_and_structured_filter_note() {
     assert!(help.contains(
         "Explicit --region who filters structured U.S. hits through WHO Prequalification."
     ));
+    assert!(help.contains("biomcp search drug \"influenza vaccine\" --region ema --limit 5"));
+    assert!(
+        help.contains("Use --region ema as an accepted alias for the canonical --region eu value.")
+    );
     assert!(help.contains("--product-type <PRODUCT_TYPE>"));
     assert!(help.contains("finished_pharma"));
     assert!(help.contains("api"));
