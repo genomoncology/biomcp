@@ -17,6 +17,27 @@ cd ../.. && uv run --no-sync pytest tests/test_cli_surface_contract_ratchet.py -
 test_cli_surface_contract_exception_registry_names_initial_exceptions"
 ```
 
+## Disease Survival Commands Exit After Rendering
+
+Disease survival cards are useful to agents only when the process exits after
+printing them. These two command forms share the same disease-survival execution
+path, so both are bounded by `timeout` and assert survival-card landmarks rather
+than exact survival percentages.
+
+```bash
+set -o pipefail
+cd ../..
+timeout 20s ./tools/biomcp-ci get disease --name "chronic myeloid leukemia" survival | mustmatch like '## Survival (SEER Explorer)
+Source: Chronic Myeloid Leukemia (CML)'
+```
+
+```bash
+set -o pipefail
+cd ../..
+timeout 20s ./tools/biomcp-ci get disease "chronic myeloid leukemia" survival | mustmatch like '## Survival (SEER Explorer)
+Source: Chronic Myeloid Leukemia (CML)'
+```
+
 ## Protein and Phenotype Search JSON Metadata Seam
 
 Protein and phenotype search JSON should opt into the metadata envelope instead
