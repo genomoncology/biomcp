@@ -294,6 +294,7 @@ impl PaginationMeta {
     }
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 #[derive(serde::Serialize)]
 struct SearchJsonResponse<T: serde::Serialize> {
     pagination: PaginationMeta,
@@ -321,6 +322,7 @@ struct SearchJsonResponseWithMeta<T: serde::Serialize> {
     _meta: Option<SearchJsonMeta>,
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub(super) fn search_json<T: serde::Serialize>(
     results: Vec<T>,
     pagination: PaginationMeta,

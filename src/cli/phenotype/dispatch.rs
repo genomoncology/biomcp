@@ -28,7 +28,8 @@ pub(in crate::cli) async fn handle_search(
     let pagination =
         super::super::PaginationMeta::offset(args.offset, args.limit, results.len(), page.total);
     let text = if json {
-        super::super::search_json(results, pagination)?
+        let next_commands = crate::render::markdown::search_next_commands_phenotype(&results);
+        super::super::search_json_with_meta(results, pagination, next_commands)?
     } else {
         let footer = super::super::pagination_footer_offset(&pagination);
         crate::render::markdown::phenotype_search_markdown_with_footer(

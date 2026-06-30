@@ -351,6 +351,14 @@ pub(crate) fn search_next_commands_diagnostic(results: &[DiagnosticSearchResult]
     related::search_next_commands_diagnostic(results)
 }
 
+pub(crate) fn search_next_commands_protein(results: &[ProteinSearchResult]) -> Vec<String> {
+    related::search_next_commands_protein(results)
+}
+
+pub(crate) fn search_next_commands_phenotype(results: &[PhenotypeSearchResult]) -> Vec<String> {
+    related::search_next_commands_phenotype(results)
+}
+
 pub(crate) fn diagnostic_zero_result_recovery_commands() -> Vec<String> {
     related::diagnostic_zero_result_recovery_commands()
 }

@@ -451,6 +451,33 @@ pub(super) fn search_next_commands_diagnostic(results: &[DiagnosticSearchResult]
     dedupe_markdown_commands(out)
 }
 
+pub(super) fn search_next_commands_protein(results: &[ProteinSearchResult]) -> Vec<String> {
+    if results.is_empty() {
+        return Vec::new();
+    }
+
+    let mut out = Vec::new();
+    if let Some(accession) = results
+        .first()
+        .map(|result| quote_arg(&result.accession))
+        .filter(|accession| !accession.is_empty())
+    {
+        out.push(format!("biomcp get protein {accession}"));
+    }
+    out.push("biomcp list protein".to_string());
+    dedupe_markdown_commands(out)
+}
+
+pub(super) fn search_next_commands_phenotype(results: &[PhenotypeSearchResult]) -> Vec<String> {
+    if results.is_empty() {
+        return Vec::new();
+    }
+
+    let mut out = related_phenotype_search_results(results);
+    out.push("biomcp list phenotype".to_string());
+    dedupe_markdown_commands(out)
+}
+
 pub(super) fn diagnostic_zero_result_recovery_commands() -> Vec<String> {
     vec!["biomcp list diagnostic".to_string()]
 }
