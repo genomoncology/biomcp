@@ -62,3 +62,14 @@ the evidence URLs that explain where the protein card came from.
 ../../tools/biomcp-ci --json get protein P15056 | jq -e '._meta.next_commands | index("biomcp get protein P15056 structures")' >/dev/null
 ../../tools/biomcp-ci --json get protein P15056 | jq -e '._provenance.evidence_urls | type == "array" and length > 0' >/dev/null
 ```
+
+## JSON Search Next Commands
+
+Protein search JSON should teach a script how to open the top UniProt result
+instead of returning only a row array and pagination metadata.
+
+```bash
+../../tools/biomcp-ci --json search protein BRAF --limit 1 | mustmatch like '"next_commands":'
+../../tools/biomcp-ci --json search protein BRAF --limit 1 | jq -e '._meta.next_commands[0] | test("^biomcp get protein .+$")' >/dev/null
+../../tools/biomcp-ci --json search protein BRAF --limit 1 | jq -e '._meta.next_commands | any(. == "biomcp list protein")' >/dev/null
+```

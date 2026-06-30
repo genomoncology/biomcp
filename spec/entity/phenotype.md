@@ -34,3 +34,15 @@ open the top disease hit with genes and phenotypes in one step.
 ../../tools/biomcp-ci search phenotype 'seizure, developmental delay' --limit 3 | mustmatch '/See also:[\s\S]*biomcp get disease ".+" genes phenotypes/'
 ../../tools/biomcp-ci search phenotype 'seizure, developmental delay' --limit 3 | mustmatch '/biomcp get disease ".+" genes phenotypes/'
 ```
+
+## JSON Search Next Commands
+
+Phenotype search JSON should teach the same disease follow-up as markdown, so
+script callers can open the top disease match without guessing a nonexistent
+`get phenotype` command.
+
+```bash
+../../tools/biomcp-ci --json search phenotype 'HP:0001250 HP:0001263' --limit 1 | mustmatch like '"next_commands":'
+../../tools/biomcp-ci --json search phenotype 'HP:0001250 HP:0001263' --limit 1 | jq -e '._meta.next_commands[0] | test("^biomcp get disease .+ genes phenotypes$")' >/dev/null
+../../tools/biomcp-ci --json search phenotype 'HP:0001250 HP:0001263' --limit 1 | jq -e '._meta.next_commands | any(. == "biomcp list phenotype")' >/dev/null
+```

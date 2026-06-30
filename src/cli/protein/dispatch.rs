@@ -99,7 +99,8 @@ pub(in crate::cli) async fn handle_search(
         page.next_page_token,
     );
     let text = if json {
-        super::super::search_json(results, pagination)?
+        let next_commands = crate::render::markdown::search_next_commands_protein(&results);
+        super::super::search_json_with_meta(results, pagination, next_commands)?
     } else {
         let footer = super::super::pagination_footer_cursor(&pagination);
         crate::render::markdown::protein_search_markdown_with_footer(

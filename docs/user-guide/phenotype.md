@@ -54,10 +54,10 @@ Phenotype is search-only. Start with `search phenotype` for HPO term sets or
 symptom phrases, then switch to disease commands once you have the right
 normalized concept. If you want to inspect candidate HPO terms first, run
 `biomcp discover "<symptom text>"` and use the suggested `HP:` IDs.
-Markdown phenotype search results now add a `See also:` block that reuses the
+Markdown phenotype search results add a `See also:` block that reuses the
 top-ranked disease match, for example `biomcp get disease "Dravet syndrome"
-genes phenotypes`. `biomcp --json search phenotype ...` remains a generic
-search response and does not add entity-style `_meta.next_commands`.
+genes phenotypes`. JSON phenotype search responses expose the same disease
+follow-up plus `biomcp list phenotype` in `_meta.next_commands`.
 
 ## JSON mode
 
