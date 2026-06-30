@@ -78,18 +78,39 @@ documentation.
 ```bash
 biomcp search --help | mustmatch like "EXAMPLES:
   biomcp search gene BRAF"
+```
+
+```bash
 biomcp get --help | mustmatch like "EXAMPLES:
   biomcp get gene BRAF"
+```
+
+```bash
 biomcp list --help | mustmatch like "EXAMPLES:
   biomcp list gene"
+```
+
+```bash
 biomcp cache --help | mustmatch like "EXAMPLES:
   biomcp cache stats"
+```
+
+```bash
 biomcp mcp --help | mustmatch like "EXAMPLES:
   biomcp mcp"
+```
+
+```bash
 biomcp serve --help | mustmatch like "EXAMPLES:
   biomcp serve"
+```
+
+```bash
 biomcp skill --help | mustmatch like "EXAMPLES:
   biomcp skill 01"
+```
+
+```bash
 biomcp study --help | mustmatch like "EXAMPLES:
   biomcp study list"
 ```
