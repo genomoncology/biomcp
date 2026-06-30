@@ -96,8 +96,7 @@ run in the live `verify` lane, not the deterministic routine gate. Disease
 survival cards are useful to agents only when the process exits after printing
 them; both command forms share the same disease-survival execution path, so each
 is bounded by `timeout` and asserts survival-card landmarks rather than exact
-percentages. (Follow-up: a deterministic SEER-mock version can restore a routine
-bounded-exit check.)
+percentages.
 
 ```bash
 set -o pipefail

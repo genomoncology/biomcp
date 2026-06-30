@@ -24,17 +24,25 @@ way they parse command failures. A missing required argument is still invalid
 usage and exits `2`, but stdout carries the standard JSON error envelope instead
 of being empty.
 
-```console mustmatch exit=2
-$ biomcp --json get variant
+<!-- mustmatch-lint: skip -->
+
+```bash run id=json-usage-error exit=2
+biomcp --json get variant
+```
+
+```json expect=json-usage-error contains
 {
   "error": {
-    "code": "invalid_argument",
-    "message": ...
+    "code": "invalid_argument"
   },
   "_meta": {
     "not_found": false
   }
 }
+```
+
+```text expect=json-usage-error contains
+"message":
 ```
 
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
