@@ -83,6 +83,7 @@ pub(crate) fn resolve_cache_config() -> Result<CacheConfig, BioMcpError> {
     let env_dir = std::env::var("BIOMCP_CACHE_DIR").ok();
     let env_max_size = std::env::var("BIOMCP_CACHE_MAX_SIZE").ok();
     let env_min_disk_free = std::env::var("BIOMCP_CACHE_MIN_DISK_FREE").ok();
+    let env_max_age = std::env::var("BIOMCP_CACHE_MAX_AGE").ok();
     let default_cache_root = default_cache_root();
     let config_path = config_file_path();
     let toml_content = match config_path.as_deref() {
@@ -94,6 +95,7 @@ pub(crate) fn resolve_cache_config() -> Result<CacheConfig, BioMcpError> {
         env_dir.as_deref(),
         env_max_size.as_deref(),
         env_min_disk_free.as_deref(),
+        env_max_age.as_deref(),
         toml_content.as_deref(),
         default_cache_root,
         config_path.as_deref(),
@@ -106,10 +108,27 @@ fn resolve_cache_config_from_parts(
     toml_content: Option<&str>,
     default_cache_root: PathBuf,
 ) -> Result<CacheConfig, BioMcpError> {
+    resolve_cache_config_from_parts_with_max_age(
+        env_dir,
+        env_max_size,
+        None,
+        toml_content,
+        default_cache_root,
+    )
+}
+
+fn resolve_cache_config_from_parts_with_max_age(
+    env_dir: Option<&str>,
+    env_max_size: Option<&str>,
+    env_max_age: Option<&str>,
+    toml_content: Option<&str>,
+    default_cache_root: PathBuf,
+) -> Result<CacheConfig, BioMcpError> {
     resolve_cache_config_with_source(
         env_dir,
         env_max_size,
         None,
+        env_max_age,
         toml_content,
         default_cache_root,
         None,
@@ -130,6 +149,7 @@ fn resolve_cache_config_with_source(
     env_dir: Option<&str>,
     env_max_size: Option<&str>,
     env_min_disk_free: Option<&str>,
+    env_max_age: Option<&str>,
     toml_content: Option<&str>,
     default_cache_root: PathBuf,
     config_path: Option<&std::path::Path>,
@@ -173,7 +193,9 @@ fn resolve_cache_config_with_source(
             (DEFAULT_MIN_DISK_FREE, ConfigOrigin::Default)
         };
 
-    let (max_age_secs, max_age_origin) = if let Some(age_secs) =
+    let (max_age_secs, max_age_origin) = if let Some(age_secs) = parse_env_max_age(env_max_age)? {
+        (age_secs, ConfigOrigin::Env)
+    } else if let Some(age_secs) =
         parse_toml_positive_u64(toml_max_age_secs, "[cache].max_age_secs", config_path)?
     {
         (age_secs, ConfigOrigin::File)
@@ -258,6 +280,26 @@ fn parse_env_min_disk_free(value: Option<&str>) -> Result<Option<DiskFreeThresho
                 "BIOMCP_CACHE_MIN_DISK_FREE {message}: got '{value}'"
             ))
         })
+}
+
+fn parse_env_max_age(value: Option<&str>) -> Result<Option<u64>, BioMcpError> {
+    let Some(value) = normalize_env_value(value) else {
+        return Ok(None);
+    };
+
+    let parsed = value.parse::<u64>().map_err(|_| {
+        BioMcpError::InvalidArgument(format!(
+            "BIOMCP_CACHE_MAX_AGE must be a positive integer number of seconds: got '{value}'"
+        ))
+    })?;
+
+    if parsed == 0 {
+        return Err(BioMcpError::InvalidArgument(
+            "BIOMCP_CACHE_MAX_AGE must be greater than 0".into(),
+        ));
+    }
+
+    Ok(Some(parsed))
 }
 
 fn parse_toml_dir(
@@ -353,7 +395,7 @@ mod tests {
     use super::{
         CacheConfig, CacheConfigOrigins, ConfigOrigin, DEFAULT_MAX_AGE_SECS, DEFAULT_MAX_SIZE,
         DEFAULT_MIN_DISK_FREE, DiskFreeThreshold, read_cache_toml, resolve_cache_config_from_parts,
-        resolve_cache_config_with_source,
+        resolve_cache_config_from_parts_with_max_age, resolve_cache_config_with_source,
     };
     use crate::error::BioMcpError;
     use crate::test_support::TempDirGuard;
@@ -459,6 +501,60 @@ mod tests {
         .expect("ok");
         assert_eq!(config.max_age, Duration::from_secs(172_800));
         assert_eq!(config.origins.max_age, ConfigOrigin::File);
+    }
+
+    #[test]
+    fn env_max_age_overrides_file_and_default() {
+        let config = resolve_cache_config_from_parts_with_max_age(
+            None,
+            None,
+            Some(" 172800 "),
+            Some("[cache]\nmax_age_secs = 7200\n"),
+            PathBuf::from("/tmp/default-cache"),
+        )
+        .expect("ok");
+        assert_eq!(config.max_age, Duration::from_secs(172_800));
+        assert_eq!(config.origins.max_age, ConfigOrigin::Env);
+    }
+
+    #[test]
+    fn blank_env_max_age_falls_through() {
+        let config = resolve_cache_config_from_parts_with_max_age(
+            None,
+            None,
+            Some("   "),
+            Some("[cache]\nmax_age_secs = 7200\n"),
+            PathBuf::from("/tmp/default-cache"),
+        )
+        .expect("ok");
+        assert_eq!(config.max_age, Duration::from_secs(7_200));
+        assert_eq!(config.origins.max_age, ConfigOrigin::File);
+    }
+
+    #[test]
+    fn invalid_env_max_age_returns_error() {
+        let err = resolve_cache_config_from_parts_with_max_age(
+            None,
+            None,
+            Some("foo"),
+            None,
+            PathBuf::from("/tmp/default"),
+        )
+        .expect_err("invalid env max age should fail");
+        assert_invalid_argument_contains(err, &["BIOMCP_CACHE_MAX_AGE", "foo"]);
+    }
+
+    #[test]
+    fn zero_env_max_age_returns_error() {
+        let err = resolve_cache_config_from_parts_with_max_age(
+            None,
+            None,
+            Some("0"),
+            None,
+            PathBuf::from("/tmp/default"),
+        )
+        .expect_err("zero env max age should fail");
+        assert_invalid_argument_contains(err, &["BIOMCP_CACHE_MAX_AGE", "greater than 0"]);
     }
 
     #[test]
@@ -606,9 +702,16 @@ mod tests {
     #[test]
     fn resolve_cache_config_uses_defaults_when_no_env_or_file() {
         let default_root = PathBuf::from("/tmp/default-cache");
-        let config =
-            resolve_cache_config_with_source(None, None, None, None, default_root.clone(), None)
-                .expect("defaults should resolve");
+        let config = resolve_cache_config_with_source(
+            None,
+            None,
+            None,
+            None,
+            None,
+            default_root.clone(),
+            None,
+        )
+        .expect("defaults should resolve");
         assert_eq!(config, default_config_with_root(default_root));
     }
 
@@ -623,6 +726,7 @@ mod tests {
         );
 
         let config = resolve_cache_config_with_source(
+            None,
             None,
             None,
             None,
@@ -656,6 +760,7 @@ mod tests {
             Some(&env_dir_value),
             Some(" 5000 "),
             None,
+            None,
             Some("[cache]\ndir = \"/file-cache\"\nmax_size = 1234\nmax_age_secs = 7200\n"),
             root.path().join("default-cache"),
             Some(&root.path().join("config-home/biomcp/cache.toml")),
@@ -682,6 +787,7 @@ mod tests {
         let config_path = root.path().join("config-home/biomcp/cache.toml");
 
         let err = resolve_cache_config_with_source(
+            None,
             None,
             None,
             None,
@@ -748,6 +854,7 @@ mod tests {
             None,
             None,
             Some("10%"),
+            None,
             Some("[cache]\nmin_disk_free = \"5G\"\n"),
             PathBuf::from("/tmp/default-cache"),
             None,
@@ -765,6 +872,7 @@ mod tests {
             None,
             Some("0%"),
             None,
+            None,
             PathBuf::from("/tmp/default-cache"),
             None,
         )
@@ -778,6 +886,7 @@ mod tests {
             None,
             None,
             Some("101%"),
+            None,
             None,
             PathBuf::from("/tmp/default-cache"),
             None,

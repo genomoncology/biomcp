@@ -38,6 +38,18 @@ timeout 20s ./tools/biomcp-ci get disease "chronic myeloid leukemia" survival | 
 Source: Chronic Myeloid Leukemia (CML)'
 ```
 
+## Cache Max-Age Env Override Is Reflected in Cache Stats
+
+The cache configuration reference promises an operator env override for the
+managed HTTP cache age limit. The local cache stats command exposes the resolved
+limit and its origin, so operators can confirm that an env override took effect
+without touching public upstream services.
+
+```bash
+BIOMCP_CACHE_MAX_AGE=172800 biomcp --json cache stats | mustmatch like '"max_age_secs": 172800
+"max_age_origin": "env"'
+```
+
 ## Protein and Phenotype Search JSON Metadata Seam
 
 Protein and phenotype search JSON should opt into the metadata envelope instead
