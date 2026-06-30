@@ -6,8 +6,16 @@ import re
 
 ROOT = Path(__file__).resolve().parents[2]
 URL_RE = re.compile(r"`(https?://[^`]+)`")
-ENV_RE = re.compile(r"\b[A-Z][A-Z0-9_]*\b")
 DOC_ENV_RE = re.compile(r"`([A-Z][A-Z0-9_]+)`")
+RUST_BIOMCP_CONST_RE = re.compile(
+    r'(?m)\b(?:pub\(crate\)\s+)?const\s+([A-Z][A-Z0-9_]*)\s*:\s*&str\s*=\s*"(BIOMCP_[A-Z0-9_]+)"'
+)
+RUST_DIRECT_ENV_READ_RE = re.compile(
+    r'(?:std::)?env::var\(\s*"(BIOMCP_[A-Z0-9_]+)"\s*\)'
+)
+RUST_INDIRECT_ENV_READ_RE = re.compile(r"(?:std::)?env::var\(\s*([A-Z][A-Z0-9_]*)\s*\)")
+RUST_OPTION_ENV_RE = re.compile(r'option_env!\(\s*"(BIOMCP_[A-Z0-9_]+)"\s*\)')
+RUST_ENV_BASE_RE = re.compile(r"env_base\([^)]*,\s*([A-Z][A-Z0-9_]*)\s*\)", re.S)
 
 PUBLIC_BIOMCP_SECTIONS = {
     "Operator Data and Cache Knobs",
@@ -38,16 +46,36 @@ def _configuration_sections() -> dict[str, set[str]]:
     return sections
 
 
-def _production_biomcp_env_names() -> set[str]:
-    names: set[str] = set()
+def _production_rust_sources() -> list[str]:
+    sources: list[str] = []
     for path in (ROOT / "src").rglob("*.rs"):
         relative = path.relative_to(ROOT)
         if "tests" in relative.parts or "test_support" in path.name:
             continue
+        sources.append(path.read_text(encoding="utf-8"))
+    return sources
+
+
+def _production_biomcp_env_names() -> set[str]:
+    sources = _production_rust_sources()
+    constants = {
+        ident: env_name
+        for source in sources
+        for ident, env_name in RUST_BIOMCP_CONST_RE.findall(source)
+    }
+    names: set[str] = set()
+    for source in sources:
+        names.update(RUST_DIRECT_ENV_READ_RE.findall(source))
+        names.update(RUST_OPTION_ENV_RE.findall(source))
         names.update(
-            name
-            for name in ENV_RE.findall(path.read_text(encoding="utf-8"))
-            if name.startswith("BIOMCP_")
+            constants[ident]
+            for ident in RUST_INDIRECT_ENV_READ_RE.findall(source)
+            if ident in constants
+        )
+        names.update(
+            constants[ident]
+            for ident in RUST_ENV_BASE_RE.findall(source)
+            if ident in constants
         )
     return names
 
@@ -57,7 +85,9 @@ def test_source_versioning_covers_data_source_urls() -> None:
     source_versioning = _read("docs/reference/source-versioning.md")
     urls = sorted(set(URL_RE.findall(data_sources)))
     missing = [url for url in urls if url not in source_versioning]
-    assert not missing, "source-versioning.md missing documented URLs: " + ", ".join(missing)
+    assert not missing, "source-versioning.md missing documented URLs: " + ", ".join(
+        missing
+    )
 
 
 def test_configuration_reference_classifies_env_var_families() -> None:
@@ -106,22 +136,29 @@ def test_biomcp_env_docs_match_runtime_reads() -> None:
 
     public_names = set().union(*(sections[name] for name in PUBLIC_BIOMCP_SECTIONS))
     unread_public = sorted(
-        name for name in public_names if name.startswith("BIOMCP_") and name not in production_names
+        name
+        for name in public_names
+        if name.startswith("BIOMCP_") and name not in production_names
     )
-    assert not unread_public, "public BIOMCP env vars documented but not read: " + ", ".join(
-        unread_public
+    assert not unread_public, (
+        "public BIOMCP env vars documented but not read: " + ", ".join(unread_public)
     )
 
     unclassified = sorted(
         production_names - set(classified_names) - set(PRODUCTION_READ_ENV_ALLOWLIST)
     )
-    assert not unclassified, "production BIOMCP env vars missing docs classification: " + ", ".join(
-        unclassified
+    assert not unclassified, (
+        "production BIOMCP env vars missing docs classification: "
+        + ", ".join(unclassified)
     )
 
     duplicates = {
-        name: sorted(locations) for name, locations in classified_names.items() if len(locations) > 1
+        name: sorted(locations)
+        for name, locations in classified_names.items()
+        if len(locations) > 1
     }
-    assert not duplicates, f"BIOMCP env vars classified in multiple sections: {duplicates}"
+    assert not duplicates, (
+        f"BIOMCP env vars classified in multiple sections: {duplicates}"
+    )
 
     assert all(PRODUCTION_READ_ENV_ALLOWLIST.values())
