@@ -6,10 +6,50 @@ import re
 
 ROOT = Path(__file__).resolve().parents[2]
 URL_RE = re.compile(r"`(https?://[^`]+)`")
+ENV_RE = re.compile(r"\b[A-Z][A-Z0-9_]*\b")
+DOC_ENV_RE = re.compile(r"`([A-Z][A-Z0-9_]+)`")
+
+PUBLIC_BIOMCP_SECTIONS = {
+    "Operator Data and Cache Knobs",
+    "Observability and Degradation",
+}
+
+PRODUCTION_READ_ENV_ALLOWLIST = {
+    "BIOMCP_BUILD_DATE": "compile-time build metadata, not runtime operator configuration",
+    "BIOMCP_BUILD_GIT_SHA": "compile-time build metadata, not runtime operator configuration",
+    "BIOMCP_BUILD_GIT_TAG": "compile-time build metadata, not runtime operator configuration",
+}
 
 
 def _read(relative: str) -> str:
     return (ROOT / relative).read_text(encoding="utf-8")
+
+
+def _configuration_sections() -> dict[str, set[str]]:
+    sections: dict[str, set[str]] = {}
+    current: str | None = None
+    for line in _read("docs/reference/configuration.md").splitlines():
+        if line.startswith("## "):
+            current = line.removeprefix("## ").strip()
+            sections.setdefault(current, set())
+            continue
+        if current is not None:
+            sections[current].update(DOC_ENV_RE.findall(line))
+    return sections
+
+
+def _production_biomcp_env_names() -> set[str]:
+    names: set[str] = set()
+    for path in (ROOT / "src").rglob("*.rs"):
+        relative = path.relative_to(ROOT)
+        if "tests" in relative.parts or "test_support" in path.name:
+            continue
+        names.update(
+            name
+            for name in ENV_RE.findall(path.read_text(encoding="utf-8"))
+            if name.startswith("BIOMCP_")
+        )
+    return names
 
 
 def test_source_versioning_covers_data_source_urls() -> None:
@@ -53,3 +93,35 @@ def test_observability_policy_names_public_status_surfaces() -> None:
     assert "`_meta.source_status`" in config
     assert "biomcp health --apis-only" in config
     assert "SourceUnavailable" in config
+
+
+def test_biomcp_env_docs_match_runtime_reads() -> None:
+    sections = _configuration_sections()
+    production_names = _production_biomcp_env_names()
+    classified_names: dict[str, list[str]] = {}
+    for section, names in sections.items():
+        for name in names:
+            if name.startswith("BIOMCP_"):
+                classified_names.setdefault(name, []).append(section)
+
+    public_names = set().union(*(sections[name] for name in PUBLIC_BIOMCP_SECTIONS))
+    unread_public = sorted(
+        name for name in public_names if name.startswith("BIOMCP_") and name not in production_names
+    )
+    assert not unread_public, "public BIOMCP env vars documented but not read: " + ", ".join(
+        unread_public
+    )
+
+    unclassified = sorted(
+        production_names - set(classified_names) - set(PRODUCTION_READ_ENV_ALLOWLIST)
+    )
+    assert not unclassified, "production BIOMCP env vars missing docs classification: " + ", ".join(
+        unclassified
+    )
+
+    duplicates = {
+        name: sorted(locations) for name, locations in classified_names.items() if len(locations) > 1
+    }
+    assert not duplicates, f"BIOMCP env vars classified in multiple sections: {duplicates}"
+
+    assert all(PRODUCTION_READ_ENV_ALLOWLIST.values())

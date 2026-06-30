@@ -47,6 +47,20 @@ These are conventions, not a fake one-size-fits-all constructor contract. The
 current repo does not require every client to share one name, one constructor
 shape, or one exact error-variant mix.
 
+## Configuration Classification
+
+`docs/reference/configuration.md` owns the source-controlled classification of
+environment variables. Public operator `BIOMCP_*` variables must be documented
+there and read by production runtime code. Production-read `BIOMCP_*` variables
+must be classified there as operator-supported, internal/measurement,
+test/fixture seams, release/install variables, or observability/degradation
+controls. Intentional exceptions belong in the docs/code parity ratchet with a
+short reason.
+
+Do not promote `BIOMCP_*_BASE` or `BIOMCP_*_URL` fixture seams to stable
+operator API unless a ticket explicitly does that. Measurement controls such as
+`BIOMCP_GENE_TIMING_PATH` are internal even when they write local files.
+
 ## Local Runtime Sources and File-Backed Assets
 
 Not every file-backed dependency participates in the same runtime lifecycle.
