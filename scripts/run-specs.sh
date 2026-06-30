@@ -32,7 +32,7 @@ SPEC_LIVE_PATHS=(
 )
 
 usage() {
-  echo "usage: scripts/run-specs.sh <spec|spec-pr|spec-contracts|verify>" >&2
+  echo "usage: scripts/run-specs.sh <spec|spec-pr|spec-contracts|verify|verify-cpic|verify-nih-reporter>" >&2
 }
 
 mustmatch_dir() {
@@ -127,7 +127,28 @@ case "$mode" in
     ;;
   verify)
     timeout_args=(--timeout 180)
-    paths=("${SPEC_LIVE_PATHS[@]}")
+    paths=(
+      spec/entity/diagnostic.md
+      spec/entity/drug.md
+      spec/entity/pathway.md
+      spec/entity/phenotype.md
+      spec/entity/protein.md
+      spec/entity/trial.md
+      spec/entity/vaers.md
+      spec/entity/variant-hotspots.md
+      spec/surface/cli.md
+      spec/surface/discover.md
+    )
+    mustmatch_path_dir="$(mustmatch_dir)"
+    ;;
+  verify-cpic)
+    timeout_args=(--timeout 180)
+    paths=(spec/entity/pgx.md)
+    mustmatch_path_dir="$(mustmatch_dir)"
+    ;;
+  verify-nih-reporter)
+    timeout_args=(--timeout 180)
+    paths=(spec/entity/disease.md spec/entity/gene.md)
     mustmatch_path_dir="$(mustmatch_dir)"
     ;;
   *)
@@ -138,6 +159,7 @@ esac
 
 case "$mode" in
   verify) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
+  verify-cpic|verify-nih-reporter) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
   *) default_biomcp_bin="$ROOT/target/spec/biomcp" ;;
 esac
 BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"
@@ -149,7 +171,7 @@ BIOMCP_BIN_DIR="$(cd "$(dirname "$BIOMCP_BIN")" && pwd)"
 export BIOMCP_BIN
 export PATH="$BIOMCP_BIN_DIR:$mustmatch_path_dir:$PATH"
 
-if [[ "$mode" == "verify" ]]; then
+if [[ "$mode" == verify* ]]; then
   prebuild_cargo_test_targets
 fi
 

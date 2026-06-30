@@ -30,7 +30,10 @@ cargo install cargo-nextest --locked
 `make lint` runs the repo lint script and the quality ratchet. `make spec` is
 the offline deterministic routine executable-spec gate. `make spec-contracts`
 is a deterministic legacy subset kept for profile compatibility. `make verify`
-is the explicit opt-in live public-upstream confidence lane; `make
+is the explicit opt-in live public-upstream confidence lane; CPIC `web_anon`
+auth/permission failures and NIH Reporter funding-source/table unavailability
+are reported there as operator-pending by `tools/biomcp-verify-live`, while
+unexpected shapes and unclassified failures remain product-red. `make
 release-live-smoke` remains a compatibility alias. `make spec-pr` remains
 available for the same offline `SPEC_ROUTINE_PATHS` as `make spec`, through
 `scripts/run-specs.sh`: routine Markdown specs use `mustmatch test --lang bash`,
