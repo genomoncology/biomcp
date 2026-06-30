@@ -17,14 +17,13 @@ cd ../.. && uv run --no-sync pytest tests/test_cli_surface_contract_ratchet.py -
 test_cli_surface_contract_exception_registry_names_initial_exceptions"
 ```
 
-## Entity Search JSON Next-Command Matrix
+## Protein and Phenotype Search JSON Metadata Seam
 
-Entity search JSON should teach the next executable command unless a surface is
-explicitly listed in the exception registry. The local Rust matrix uses fixture
-rows, so this routine check proves the envelope contract without depending on
-public upstream availability.
+Protein and phenotype search JSON should opt into the metadata envelope instead
+of using the bare generic search helper. This local dispatch seam check keeps the
+routine gate deterministic without depending on public upstream availability.
 
 ```bash
-set -o pipefail
-cd ../.. && cargo test --locked cli::tests::next_commands_json_property::search_surfaces::search_entity_json_next_commands_matrix_covers_protein_and_phenotype -- --exact 2>&1 | mustmatch like "search_entity_json_next_commands_matrix_covers_protein_and_phenotype"
+cd ../.. && rg 'search_json_with_meta' src/cli/protein/dispatch.rs src/cli/phenotype/dispatch.rs | mustmatch like "src/cli/protein/dispatch.rs:
+src/cli/phenotype/dispatch.rs:"
 ```

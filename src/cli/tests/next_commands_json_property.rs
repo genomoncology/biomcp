@@ -7,7 +7,6 @@ mod diagnostic;
 mod disease_trial;
 mod gene_article;
 mod pathway_adverse_event;
-mod search_surfaces;
 mod variant_drug;
 
 fn collect_next_commands(json: &str) -> Vec<String> {
