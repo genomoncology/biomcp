@@ -103,6 +103,13 @@ fn json_mode_missing_required_arg_parse_error_writes_json_stdout_and_exit_2() {
 }
 
 #[test]
+fn short_json_flag_missing_required_arg_parse_error_writes_json_stdout_and_exit_2() {
+    let result = run_biomcp(&["-j", "get", "variant"]);
+
+    assert_json_error(&result, 2, "invalid_argument");
+}
+
+#[test]
 fn json_mode_unknown_subcommand_parse_error_writes_json_stdout_and_exit_2() {
     let result = run_biomcp(&["--json", "get", "not-an-entity"]);
 

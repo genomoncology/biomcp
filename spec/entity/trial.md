@@ -53,7 +53,7 @@ bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
 . ../../.cache/spec-ctgov-intervention-alias-env
 trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci --json search trial -c melanoma --facility "University of Michigan" --mutation "EGFR L858R" --status recruiting --lat 42.36 --lon -71.06 --distance 100 --limit 3 \
-  | jq -r '.count, .results | length, ._meta.next_commands[]?' \
+  | jq -r '.count, (.results | length), ._meta.next_commands[]?' \
   | mustmatch like '0
 0
 biomcp search trial -c melanoma --facility "University of Michigan" -s recruiting --lat 42.36 --lon -71.06 --distance 100
