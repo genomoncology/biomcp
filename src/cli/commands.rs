@@ -11,11 +11,17 @@ use super::{
 #[allow(clippy::large_enum_variant)]
 pub enum Commands {
     /// Search for entities
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp search gene BRAF")]
     Search {
         #[command(subcommand)]
         entity: SearchEntity,
     },
     /// Get entity by ID
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp get gene BRAF")]
     Get {
         #[command(subcommand)]
         entity: GetEntity,
@@ -61,6 +67,9 @@ EXAMPLES:
         cmd: protein::ProteinCommand,
     },
     /// Local cBioPortal study analytics
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp study list")]
     Study {
         #[command(subcommand)]
         cmd: study::StudyCommand,
@@ -68,6 +77,9 @@ EXAMPLES:
     /// Check external API connectivity
     Health(system::HealthArgs),
     /// Inspect the managed HTTP cache (CLI-only; cache commands reveal workstation-local filesystem paths)
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp cache stats")]
     Cache {
         #[command(subcommand)]
         cmd: cache::CacheCommand,
@@ -121,8 +133,14 @@ EXAMPLES:
         cmd: system::WhoIvdCommand,
     },
     /// Run MCP server over stdio
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp mcp")]
     Mcp,
     /// Alias for `mcp` (Claude Desktop friendly)
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp serve")]
     Serve,
     #[command(
         about = "Run the MCP Streamable HTTP server at /mcp",
@@ -139,6 +157,8 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
   biomcp skill            # show skill overview
+  biomcp skill 01         # open a worked example by number
+  biomcp skill article-follow-up
   biomcp skill render     # print canonical agent prompt
   biomcp skill install    # install skill to your agent config")]
     Skill {
@@ -163,6 +183,9 @@ EXAMPLES:
     /// Uninstall biomcp from the current location
     Uninstall,
     /// Command reference for entities and flags
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp list gene")]
     List(system::ListArgs),
     /// Parallel get operations (comma-separated IDs, max 10)
     #[command(after_help = "\

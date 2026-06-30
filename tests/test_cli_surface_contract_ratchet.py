@@ -54,6 +54,7 @@ def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None
     assert detail["checks"] == [
         "public_flags_and_value_aliases_documented",
         "list_and_reference_docs_cover_public_commands",
+        "runnable_helpers_are_discoverable_in_list_pages",
         "json_entity_surfaces_include_next_commands_or_exception",
         "copy_paste_examples_are_shell_safe",
     ]
@@ -76,6 +77,49 @@ def test_cli_surface_contract_flags_must_be_documented_outside_source(tmp_path: 
         {
             "token": "until",
             "message": "public visible/value alias is accepted by clap but absent from help/list/docs/spec evidence",
+        }
+    ]
+
+
+def test_cli_surface_contract_catches_runnable_helper_missing_from_list_page(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    for relative in [
+        "src/cli/drug",
+        "src/cli/disease",
+        "src/cli/variant",
+        "src/cli/list",
+    ]:
+        (root / relative).mkdir(parents=True, exist_ok=True)
+    (root / "src/cli/drug/mod.rs").write_text(
+        "pub enum DrugCommand {\n    Trials { name: String },\n    Interactions { name: String },\n    External(Vec<String>),\n}\n",
+        encoding="utf-8",
+    )
+    (root / "src/cli/disease/mod.rs").write_text(
+        "pub enum DiseaseCommand {\n    Trials { name: String },\n}\n",
+        encoding="utf-8",
+    )
+    (root / "src/cli/variant/mod.rs").write_text(
+        "pub enum VariantCommand {\n    Structure { id: String },\n}\n",
+        encoding="utf-8",
+    )
+    (root / "src/cli/list/clinical.rs").write_text(
+        "- `drug trials <name>`\n- `disease trials <name>`\n",
+        encoding="utf-8",
+    )
+    (root / "src/cli/list/molecular.rs").write_text(
+        "- `variant structure <variant>`\n",
+        encoding="utf-8",
+    )
+
+    module = _load_quality_ratchet_module()
+    result = module.check_runnable_helpers_are_discoverable_in_list_pages(root)
+
+    assert result["status"] == "fail"
+    assert result["findings"] == [
+        {
+            "command": "biomcp drug interactions",
+            "surface": "biomcp list drug",
+            "message": "runnable helper command is missing from matching list page discovery text",
         }
     ]
 

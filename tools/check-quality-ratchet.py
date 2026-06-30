@@ -22,6 +22,7 @@ EXPERIMENT_RESULTS_GLOB = "architecture/experiments/**/results/**"
 CLI_SURFACE_CONTRACT_CHECKS = [
     "public_flags_and_value_aliases_documented",
     "list_and_reference_docs_cover_public_commands",
+    "runnable_helpers_are_discoverable_in_list_pages",
     "json_entity_surfaces_include_next_commands_or_exception",
     "copy_paste_examples_are_shell_safe",
 ]
@@ -472,6 +473,65 @@ def check_list_and_reference_docs_cover_public_commands(root_dir: Path, texts: d
     }
 
 
+def pascal_to_kebab(value: str) -> str:
+    return re.sub(r"(?<!^)([A-Z])", r"-\1", value).lower()
+
+
+def runnable_helper_commands(root_dir: Path) -> dict[str, list[str]]:
+    helper_files = {
+        "drug": root_dir / "src" / "cli" / "drug" / "mod.rs",
+        "disease": root_dir / "src" / "cli" / "disease" / "mod.rs",
+        "variant": root_dir / "src" / "cli" / "variant" / "mod.rs",
+    }
+    commands: dict[str, list[str]] = {}
+    for entity, path in helper_files.items():
+        text = path.read_text(encoding="utf-8")
+        enum_name = f"{entity.title()}Command"
+        match = re.search(rf"pub enum {enum_name} \{{(?P<body>.*?)\n\}}", text, re.DOTALL)
+        if match is None:
+            commands[entity] = []
+            continue
+        helpers = []
+        for variant in re.findall(r"^    ([A-Z][A-Za-z0-9]*)\b", match.group("body"), re.MULTILINE):
+            if variant == "External":
+                continue
+            helpers.append(f"{entity} {pascal_to_kebab(variant)}")
+        commands[entity] = sorted(helpers)
+    return commands
+
+
+def check_runnable_helpers_are_discoverable_in_list_pages(root_dir: Path) -> dict[str, object]:
+    list_files = {
+        "drug": root_dir / "src" / "cli" / "list" / "clinical.rs",
+        "disease": root_dir / "src" / "cli" / "list" / "clinical.rs",
+        "variant": root_dir / "src" / "cli" / "list" / "molecular.rs",
+    }
+    findings: list[dict[str, object]] = []
+    commands = runnable_helper_commands(root_dir)
+    for entity, helper_commands in commands.items():
+        list_text = list_files[entity].read_text(encoding="utf-8").lower()
+        for command in helper_commands:
+            if command.lower() not in list_text:
+                findings.append({
+                    "command": f"biomcp {command}",
+                    "surface": f"biomcp list {entity}",
+                    "message": "runnable helper command is missing from matching list page discovery text",
+                })
+    return {
+        "name": "runnable_helpers_are_discoverable_in_list_pages",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": [
+            "src/cli/drug/mod.rs",
+            "src/cli/disease/mod.rs",
+            "src/cli/variant/mod.rs",
+            "src/cli/list/clinical.rs",
+            "src/cli/list/molecular.rs",
+        ],
+        "commands_checked": commands,
+        "findings": findings,
+    }
+
+
 def check_json_next_commands(root_dir: Path, exceptions: list[dict[str, object]]) -> dict[str, object]:
     shared = (root_dir / "src" / "cli" / "shared.rs").read_text(encoding="utf-8")
     render_json = (root_dir / "src" / "render" / "json.rs").read_text(encoding="utf-8")
@@ -555,6 +615,7 @@ def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
     check_payloads = [
         check_public_flags_and_value_aliases_documented(root_dir, texts),
         check_list_and_reference_docs_cover_public_commands(root_dir, texts),
+        check_runnable_helpers_are_discoverable_in_list_pages(root_dir),
         check_json_next_commands(root_dir, exceptions),
         check_copy_paste_examples_are_shell_safe(root_dir, texts),
     ]
