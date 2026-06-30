@@ -87,3 +87,26 @@ bounded instead of implying the first page is the whole research landscape.
 
 The JSON card should keep the same executable disease follow-ups that the
 markdown card teaches to humans.
+
+## Disease Survival Commands Exit After Rendering (Live SEER)
+
+Relocated from the routine `cli-contract-ratchet.md` into the live lane: the
+survival card is sourced live from SEER Explorer, so this bounded-exit check must
+run in the live `verify` lane, not the deterministic routine gate. Disease
+survival cards are useful to agents only when the process exits after printing
+them; both command forms share the same disease-survival execution path, so each
+is bounded by `timeout` and asserts survival-card landmarks rather than exact
+percentages. (Follow-up: a deterministic SEER-mock version can restore a routine
+bounded-exit check.)
+
+```bash
+set -o pipefail
+timeout 20s ../../tools/biomcp-ci get disease --name "chronic myeloid leukemia" survival | mustmatch like '## Survival (SEER Explorer)
+Source: Chronic Myeloid Leukemia (CML)'
+```
+
+```bash
+set -o pipefail
+timeout 20s ../../tools/biomcp-ci get disease "chronic myeloid leukemia" survival | mustmatch like '## Survival (SEER Explorer)
+Source: Chronic Myeloid Leukemia (CML)'
+```
