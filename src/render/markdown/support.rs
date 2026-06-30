@@ -96,48 +96,7 @@ pub(super) fn variant_guidance_suggestion(
 }
 
 pub(super) fn shell_quote_arg(value: &str) -> String {
-    let trimmed = value.trim();
-    if trimmed.is_empty() {
-        return String::new();
-    }
-
-    let needs_quotes = trimmed.chars().any(|ch| {
-        ch.is_whitespace()
-            || matches!(
-                ch,
-                '"' | '\''
-                    | '\\'
-                    | '$'
-                    | '`'
-                    | '|'
-                    | '&'
-                    | ';'
-                    | '<'
-                    | '>'
-                    | '('
-                    | ')'
-                    | '['
-                    | ']'
-                    | '{'
-                    | '}'
-                    | '*'
-                    | '?'
-                    | '!'
-                    | '#'
-            )
-    });
-    if needs_quotes {
-        let escaped = trimmed.chars().fold(String::new(), |mut out, ch| {
-            if matches!(ch, '\\' | '"' | '$' | '`') {
-                out.push('\\');
-            }
-            out.push(ch);
-            out
-        });
-        return format!("\"{escaped}\"");
-    }
-
-    trimmed.to_string()
+    crate::next_command::shell_quote_arg(value)
 }
 
 pub(super) fn discover_try_line(query: &str, description: &str) -> String {

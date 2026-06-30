@@ -57,6 +57,7 @@ def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None
         "runnable_helpers_are_discoverable_in_list_pages",
         "json_entity_surfaces_include_next_commands_or_exception",
         "copy_paste_examples_are_shell_safe",
+        "entities_do_not_depend_on_markdown_shell_quoting",
     ]
 
 
@@ -149,6 +150,34 @@ def test_cli_surface_contract_rejects_unquoted_hgvs_redirect_examples(tmp_path: 
         and "unquoted shell redirection" in finding["message"]
         for finding in result["findings"]
     )
+
+
+def test_cli_surface_contract_rejects_entity_markdown_quoting_imports(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    entity_dir = root / "src" / "entities"
+    entity_dir.mkdir(parents=True)
+    (entity_dir / "brace.rs").write_text(
+        "use crate::render::markdown::{quote_arg, shell_quote_arg};\n"
+        "fn demo(value: &str) -> String { crate::render::markdown::quote_arg(value) }\n",
+        encoding="utf-8",
+    )
+    (entity_dir / "direct.rs").write_text(
+        "use crate::render::markdown::quote_arg;\n"
+        "use crate::render::markdown::shell_quote_arg;\n",
+        encoding="utf-8",
+    )
+
+    module = _load_quality_ratchet_module()
+    result = module.check_entity_markdown_quoting_dependencies(root)
+
+    assert result["status"] == "fail"
+    patterns = {finding["pattern"] for finding in result["findings"]}
+    assert patterns == {
+        "crate::render::markdown::quote_arg",
+        "crate::render::markdown::shell_quote_arg",
+    }
+    paths = {finding["path"] for finding in result["findings"]}
+    assert paths == {"src/entities/brace.rs", "src/entities/direct.rs"}
 
 
 def test_cli_surface_contract_exception_registry_names_initial_exceptions() -> None:

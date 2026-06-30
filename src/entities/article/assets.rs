@@ -464,6 +464,15 @@ fn figshare_provenance(figshare: &FigshareArticle, article: &Article) -> Article
     }
 }
 
+fn article_asset_command(article_id: &str, filename: &str) -> String {
+    crate::next_command::NextCommand::biomcp()
+        .args(["get", "article"])
+        .arg(article_id.trim())
+        .arg("asset")
+        .arg(filename)
+        .render_shell()
+}
+
 fn figshare_asset_entry(
     requested_id: &str,
     file: &FigshareFile,
@@ -481,11 +490,7 @@ fn figshare_asset_entry(
         reuse: reuse.clone(),
         provenance: provenance.clone(),
         jats: None,
-        handle: format!(
-            "biomcp get article {} asset {}",
-            crate::render::markdown::shell_quote_arg(requested_id.trim()),
-            crate::render::markdown::shell_quote_arg(&file.filename)
-        ),
+        handle: article_asset_command(requested_id, &file.filename),
     }
 }
 
@@ -590,11 +595,7 @@ fn asset_entry(
         reuse: reuse.clone(),
         provenance: provenance.clone(),
         jats: jats.and_then(article_asset_jats),
-        handle: format!(
-            "biomcp get article {} asset {}",
-            crate::render::markdown::shell_quote_arg(requested_id.trim()),
-            crate::render::markdown::shell_quote_arg(&entry.filename)
-        ),
+        handle: article_asset_command(requested_id, &entry.filename),
     }
 }
 
@@ -620,10 +621,9 @@ fn not_included_from_manifest(manifest: &ArticleAssetsManifest) -> ArticleNotInc
         .iter()
         .filter(|asset| asset.kind == "supplementary-file")
         .count();
-    let retrieve_with = format!(
-        "biomcp --json get article {} assets",
-        crate::render::markdown::shell_quote_arg(&manifest.article_id)
-    );
+    let retrieve_with = crate::next_command::NextCommand::biomcp()
+        .args(["--json", "get", "article", &manifest.article_id, "assets"])
+        .render_shell();
     let mut next_commands = vec![retrieve_with.clone()];
     if let Some(handle) = manifest
         .assets

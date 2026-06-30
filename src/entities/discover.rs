@@ -1585,11 +1585,17 @@ fn generate_commands(
             if let Some(gene) = top_concept_of_type(concepts, DiscoverType::Gene) {
                 commands.push(format!("biomcp get gene {}", gene.label));
                 if let Some(topic) = gene_article_topic(query, &gene.label, intent) {
-                    commands.push(format!(
-                        "biomcp search article -g {} -k {} --limit 5",
-                        gene.label,
-                        crate::render::markdown::shell_quote_arg(&topic)
-                    ));
+                    commands.push(next_command([
+                        "biomcp",
+                        "search",
+                        "article",
+                        "-g",
+                        &gene.label,
+                        "-k",
+                        &topic,
+                        "--limit",
+                        "5",
+                    ]));
                 } else {
                     commands.push(format!("biomcp search article -g {} --limit 5", gene.label));
                 }
@@ -1603,11 +1609,9 @@ fn generate_commands(
         DiscoverType::Gene if !ambiguous => {
             commands.push(format!("biomcp get gene {}", top.label));
             if let Some(topic) = gene_article_topic(query, &top.label, intent) {
-                commands.push(format!(
-                    "biomcp search article -g {} -k {} --limit 5",
-                    top.label,
-                    crate::render::markdown::shell_quote_arg(&topic)
-                ));
+                commands.push(next_command([
+                    "biomcp", "search", "article", "-g", &top.label, "-k", &topic, "--limit", "5",
+                ]));
             }
         }
         DiscoverType::Gene => commands.push(format!(
@@ -1959,21 +1963,35 @@ fn disease_command_ref(concept: &DiscoverConcept) -> Option<String> {
 }
 
 fn quote_query_term(value: &str) -> String {
-    quote_arg(value).if_empty_then(format!("\"{}\"", value.trim()))
+    crate::next_command::shell_quote_arg(value).if_empty_then(format!("\"{}\"", value.trim()))
+}
+
+fn next_command<'a>(args: impl IntoIterator<Item = &'a str>) -> String {
+    let mut values = args.into_iter();
+    let Some(program) = values.next() else {
+        return String::new();
+    };
+    crate::next_command::NextCommand::new(program)
+        .args(values)
+        .render_shell()
 }
 
 fn review_article_fallback_command(query: &str) -> String {
-    format!(
-        "biomcp search article -k {} --type review --limit 5",
-        quote_query_term(query.trim())
-    )
+    next_command([
+        "biomcp",
+        "search",
+        "article",
+        "-k",
+        query.trim(),
+        "--type",
+        "review",
+        "--limit",
+        "5",
+    ])
 }
 
 fn broad_article_fallback_command(query: &str) -> String {
-    format!(
-        "biomcp search article -k {}",
-        quote_query_term(query.trim())
-    )
+    next_command(["biomcp", "search", "article", "-k", query.trim()])
 }
 
 fn empty_results_article_fallback_note(query: &str) -> String {
@@ -2015,17 +2033,6 @@ impl StringExt for String {
         } else {
             self
         }
-    }
-}
-
-fn quote_arg(value: &str) -> String {
-    let trimmed = value.trim();
-    if trimmed.is_empty() {
-        String::new()
-    } else if trimmed.contains(char::is_whitespace) || trimmed.contains('"') {
-        format!("\"{}\"", trimmed.replace('"', "\\\""))
-    } else {
-        trimmed.to_string()
     }
 }
 
@@ -2083,11 +2090,7 @@ fn alias_sources(concept: &DiscoverConcept) -> Vec<String> {
 }
 
 fn alias_command(entity: DiscoverType, value: &str) -> Option<String> {
-    let quoted = crate::render::markdown::quote_arg(value);
-    if quoted.is_empty() {
-        return None;
-    }
-    Some(format!("biomcp get {} {quoted}", entity.cli_name()))
+    (!value.trim().is_empty()).then(|| next_command(["biomcp", "get", entity.cli_name(), value]))
 }
 
 fn alias_canonical_next_commands(entity: DiscoverType, canonical: &str) -> Vec<String> {
@@ -2095,13 +2098,12 @@ fn alias_canonical_next_commands(entity: DiscoverType, canonical: &str) -> Vec<S
 }
 
 fn alias_ambiguous_next_commands(entity: DiscoverType, query: &str) -> Vec<String> {
-    let query = crate::render::markdown::quote_arg(query);
-    if query.is_empty() {
+    if query.trim().is_empty() {
         return Vec::new();
     }
     vec![
-        format!("biomcp discover {query}"),
-        format!("biomcp search {} -q {query}", entity.cli_name()),
+        next_command(["biomcp", "discover", query]),
+        next_command(["biomcp", "search", entity.cli_name(), "-q", query]),
     ]
 }
 
