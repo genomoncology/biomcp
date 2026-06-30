@@ -25,6 +25,7 @@ CLI_SURFACE_CONTRACT_CHECKS = [
     "runnable_helpers_are_discoverable_in_list_pages",
     "json_entity_surfaces_include_next_commands_or_exception",
     "copy_paste_examples_are_shell_safe",
+    "entities_do_not_depend_on_markdown_shell_quoting",
 ]
 CLI_SURFACE_EXCEPTION_REGISTRY = "tools/cli-surface-contract-exceptions.json"
 CLI_SURFACE_REQUIRED_EXCEPTIONS = {
@@ -600,6 +601,33 @@ def check_copy_paste_examples_are_shell_safe(root_dir: Path, texts: dict[str, st
     }
 
 
+def check_entity_markdown_quoting_dependencies(root_dir: Path) -> dict[str, object]:
+    findings: list[dict[str, object]] = []
+    patterns = [
+        "crate::render::markdown::quote_arg",
+        "crate::render::markdown::shell_quote_arg",
+    ]
+    entity_root = root_dir / "src" / "entities"
+    for path in sorted(entity_root.rglob("*.rs")):
+        text = path.read_text(encoding="utf-8")
+        relative = path.relative_to(root_dir).as_posix()
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            for pattern in patterns:
+                if pattern in line:
+                    findings.append({
+                        "path": relative,
+                        "line": lineno,
+                        "pattern": pattern,
+                        "message": "entity code must build typed next commands instead of importing markdown shell quoting helpers",
+                    })
+    return {
+        "name": "entities_do_not_depend_on_markdown_shell_quoting",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": ["src/entities/**/*.rs"],
+        "findings": findings,
+    }
+
+
 def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
     exceptions, errors = load_cli_surface_exceptions(root_dir)
     texts, text_errors = read_existing_text(root_dir, CLI_SURFACE_DOC_PATHS)
@@ -618,6 +646,7 @@ def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
         check_runnable_helpers_are_discoverable_in_list_pages(root_dir),
         check_json_next_commands(root_dir, exceptions),
         check_copy_paste_examples_are_shell_safe(root_dir, texts),
+        check_entity_markdown_quoting_dependencies(root_dir),
     ]
     statuses = [payload["status"] for payload in check_payloads]
     status = "pass" if all(value == "pass" for value in statuses) else "fail"

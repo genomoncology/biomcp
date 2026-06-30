@@ -98,10 +98,11 @@ fn article_asset_request(sections: &[String]) -> Result<Option<String>, crate::e
 fn manifest_next_commands(
     manifest: &crate::entities::article::ArticleAssetsManifest,
 ) -> Vec<String> {
-    let mut commands = vec![format!(
-        "biomcp --json get article {} assets",
-        crate::render::markdown::shell_quote_arg(&manifest.article_id)
-    )];
+    let mut commands = vec![
+        crate::next_command::NextCommand::biomcp()
+            .args(["--json", "get", "article", &manifest.article_id, "assets"])
+            .render_shell(),
+    ];
     commands.extend(manifest.assets.iter().map(|asset| asset.handle.clone()));
     commands
 }

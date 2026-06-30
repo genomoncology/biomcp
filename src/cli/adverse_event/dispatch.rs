@@ -2,10 +2,13 @@ use super::{AdverseEventGetArgs, AdverseEventSearchArgs};
 use crate::cli::CommandOutcome;
 
 fn vaers_only_next_commands(query: &str) -> Vec<String> {
-    let query = crate::render::markdown::quote_arg(query);
     vec![
-        format!("biomcp search adverse-event {query} --source faers"),
-        format!("biomcp search drug {query}"),
+        crate::next_command::NextCommand::biomcp()
+            .args(["search", "adverse-event", query, "--source", "faers"])
+            .render_shell(),
+        crate::next_command::NextCommand::biomcp()
+            .args(["search", "drug", query])
+            .render_shell(),
         "biomcp health".to_string(),
         "biomcp list adverse-event".to_string(),
     ]

@@ -57,6 +57,7 @@ def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None
         "runnable_helpers_are_discoverable_in_list_pages",
         "json_entity_surfaces_include_next_commands_or_exception",
         "copy_paste_examples_are_shell_safe",
+        "entities_do_not_depend_on_markdown_shell_quoting",
     ]
 
 

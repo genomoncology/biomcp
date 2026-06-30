@@ -1062,16 +1062,18 @@ pub async fn search_with_source(
         AdverseEventSourceFilter::Vaers => {
             validate_explicit_vaers_source(filters, offset)?;
 
-            let vaers = fetch_vaers_payload(query, CvxLookupMode::AutoSync).await.map_err(|err| {
-                BioMcpError::SourceUnavailable {
+            let vaers = fetch_vaers_payload(query, CvxLookupMode::AutoSync)
+                .await
+                .map_err(|err| BioMcpError::SourceUnavailable {
                     source_name: "CDC VAERS".into(),
                     reason: err.to_string(),
                     suggestion: format!(
-                        "Try: biomcp health --apis-only or biomcp search adverse-event {} --source faers",
-                        crate::render::markdown::quote_arg(query)
+                        "Try: biomcp health --apis-only or {}",
+                        crate::next_command::NextCommand::biomcp()
+                            .args(["search", "adverse-event", query, "--source", "faers"])
+                            .render_shell()
                     ),
-                }
-            })?;
+                })?;
             Ok(AdverseEventSourceSearch {
                 source,
                 faers: None,

@@ -8,6 +8,7 @@ pub mod cli;
 pub mod error;
 mod gene;
 pub mod mcp;
+mod next_command;
 
 #[cfg_attr(not(test), allow(dead_code))]
 mod cache;
