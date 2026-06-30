@@ -156,9 +156,14 @@ def test_cli_surface_contract_rejects_entity_markdown_quoting_imports(tmp_path: 
     root = tmp_path / "repo"
     entity_dir = root / "src" / "entities"
     entity_dir.mkdir(parents=True)
-    (entity_dir / "demo.rs").write_text(
+    (entity_dir / "brace.rs").write_text(
         "use crate::render::markdown::{quote_arg, shell_quote_arg};\n"
         "fn demo(value: &str) -> String { crate::render::markdown::quote_arg(value) }\n",
+        encoding="utf-8",
+    )
+    (entity_dir / "direct.rs").write_text(
+        "use crate::render::markdown::quote_arg;\n"
+        "use crate::render::markdown::shell_quote_arg;\n",
         encoding="utf-8",
     )
 
@@ -171,6 +176,8 @@ def test_cli_surface_contract_rejects_entity_markdown_quoting_imports(tmp_path: 
         "crate::render::markdown::quote_arg",
         "crate::render::markdown::shell_quote_arg",
     }
+    paths = {finding["path"] for finding in result["findings"]}
+    assert paths == {"src/entities/brace.rs", "src/entities/direct.rs"}
 
 
 def test_cli_surface_contract_exception_registry_names_initial_exceptions() -> None:

@@ -605,11 +605,15 @@ def check_entity_markdown_quoting_dependencies(root_dir: Path) -> dict[str, obje
     findings: list[dict[str, object]] = []
     patterns = {
         "crate::render::markdown::quote_arg": re.compile(
-            r"crate::render::markdown::quote_arg|use\s+crate::render::markdown::\{[^}]*\bquote_arg\b[^}]*\}",
+            r"crate::render::markdown::quote_arg"
+            r"|use\s+crate::render::markdown::quote_arg\s*;"
+            r"|use\s+crate::render::markdown::\{[^}]*\bquote_arg\b[^}]*\}",
             flags=re.DOTALL,
         ),
         "crate::render::markdown::shell_quote_arg": re.compile(
-            r"crate::render::markdown::shell_quote_arg|use\s+crate::render::markdown::\{[^}]*\bshell_quote_arg\b[^}]*\}",
+            r"crate::render::markdown::shell_quote_arg"
+            r"|use\s+crate::render::markdown::shell_quote_arg\s*;"
+            r"|use\s+crate::render::markdown::\{[^}]*\bshell_quote_arg\b[^}]*\}",
             flags=re.DOTALL,
         ),
     }
