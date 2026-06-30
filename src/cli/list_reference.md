@@ -78,9 +78,9 @@ New to BioMCP? Try:
   - opt-in diagnostic-test pivot capped at 10 rows
 - `get disease <name_or_id> clinical_features`
   - opt-in MedlinePlus clinical-summary rows for configured diseases
-- `get drug <name> regulatory [--region <us|eu|who|all>]` - region-aware U.S./EU/WHO regulatory context
-- `get drug <name> safety|shortage [--region <us|eu|all>]` - region-aware U.S./EU drug safety and shortage context
-- `get drug <name> all [--region <us|eu|who|all>]` - include all sections plus region-aware regulatory context
+- `get drug <name> regulatory [--region <us|eu|ema|who|all>]` - region-aware U.S./EU/WHO regulatory context
+- `get drug <name> safety|shortage [--region <us|eu|ema|all>]` - region-aware U.S./EU drug safety and shortage context
+- `get drug <name> all [--region <us|eu|ema|who|all>]` - include all sections plus region-aware regulatory context
 - `ema` is accepted as an input alias for the canonical `eu` drug region value
 - Omitting `--region` on `get drug <name> regulatory` checks combined regions.
 - Other no-flag `get drug` shapes stay on the default U.S. path.

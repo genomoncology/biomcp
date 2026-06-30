@@ -1016,13 +1016,13 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
         "Data region for regional sections (regulatory, safety, shortage, or all)"
         in cli_drug_mod
     )
-    assert "get drug <name> regulatory [--region <us|eu|who|all>]" in cli_list_clinical
-    assert "get drug <name> safety [--region <us|eu|all>]" in cli_list_clinical
-    assert "get drug <name> shortage [--region <us|eu|all>]" in cli_list_clinical
+    assert "get drug <name> regulatory [--region <us|eu|ema|who|all>]" in cli_list_clinical
+    assert "get drug <name> safety [--region <us|eu|ema|all>]" in cli_list_clinical
+    assert "get drug <name> shortage [--region <us|eu|ema|all>]" in cli_list_clinical
     assert "get drug <name> approvals" in cli_list_clinical
-    assert "get drug <name> regulatory [--region <us|eu|who|all>]" in cli_list_reference
+    assert "get drug <name> regulatory [--region <us|eu|ema|who|all>]" in cli_list_reference
     assert (
-        "get drug <name> safety|shortage [--region <us|eu|all>]" in cli_list_reference
+        "get drug <name> safety|shortage [--region <us|eu|ema|all>]" in cli_list_reference
     )
     assert (
         "For `get drug`, use `--region` only with `regulatory`, `safety`, `shortage`, or `all`"

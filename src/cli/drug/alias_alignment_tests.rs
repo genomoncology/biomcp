@@ -58,6 +58,8 @@ fn public_region_aliases_are_aligned_across_parser_help_list_and_docs() {
     assert!(get_help.contains("canonical `eu` region value"));
 
     let list = crate::cli::list::render(Some("drug")).expect("list drug should render");
+    assert!(list.contains("search drug <query> --region <us|eu|ema|who|all>"));
+    assert!(list.contains("get drug <name> regulatory [--region <us|eu|ema|who|all>]"));
     assert!(list.contains("`ema` is accepted as an input alias"));
     assert!(list.contains("canonical `eu` drug region value"));
 

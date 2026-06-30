@@ -151,21 +151,21 @@ pub(super) fn list_drug() -> String {
 
 - `get drug <name>` - get by name (MyChem.info aggregation)
 - `get drug <name> label [--raw]` - compact FDA approved-indications summary by default; add `--raw` for the truncated FDA label text
-- `get drug <name> regulatory [--region <us|eu|who|all>]` - regional regulatory summary (Drugs@FDA, EMA, and/or WHO Prequalification)
-- `get drug <name> safety [--region <us|eu|all>]` - regional safety context (OpenFDA and/or EMA)
-- `get drug <name> shortage [--region <us|eu|all>]` - query current shortage status
+- `get drug <name> regulatory [--region <us|eu|ema|who|all>]` - regional regulatory summary (Drugs@FDA, EMA, and/or WHO Prequalification)
+- `get drug <name> safety [--region <us|eu|ema|all>]` - regional safety context (OpenFDA and/or EMA)
+- `get drug <name> shortage [--region <us|eu|ema|all>]` - query current shortage status
 - `get drug <name> targets` - generic targets from ChEMBL/OpenTargets plus additive CIViC variant-target annotations when available
 - `get drug <name> indications` - enrich with OpenTargets indications
 - `get drug <name> interactions` - DDInter-backed structured interaction rows plus class rollups; empty states stay scoped to the current DDInter download bundle
 - `get drug <name> civic` - CIViC therapy evidence/assertion summary
 - `get drug <name> approvals` - Drugs@FDA approval/application details (US-only legacy section)
-- `get drug <name> all [--region <us|eu|who|all>]` - include all sections
+- `get drug <name> all [--region <us|eu|ema|who|all>]` - include all sections
 
 ## Search
 
 - `search drug <query>`
 - `search drug -q <query>`
-- `search drug <query> --region <us|eu|who|all>`
+- `search drug <query> --region <us|eu|ema|who|all>`
 - `search drug <query> --region who --product-type <finished_pharma|api|vaccine>`
 - `search drug --target <gene>`
 - `search drug --indication <disease>`
