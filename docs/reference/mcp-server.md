@@ -92,7 +92,10 @@ Common keys include `ONCOKB_TOKEN`, `ALPHAGENOME_API_KEY`, `NCI_API_KEY`, `NCBI_
 
 ## MCP tools and resources
 
-The MCP server advertises both tools and resources.
+The MCP server advertises both tools and resources. Every BioMCP MCP tool is annotated
+`readOnlyHint: true`, has a human-friendly title, and has a non-empty description so
+clients and directories can present the surface as read-only. The MCP command allowlist
+still enforces that read-only boundary when a tool is called.
 
 ### Typed tools
 
