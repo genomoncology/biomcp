@@ -29,7 +29,12 @@ pub(crate) fn run(args: McpConfigArgs) -> anyhow::Result<String> {
 
 fn render(client: Option<McpClient>, command: &str) -> anyhow::Result<String> {
     Ok(match client {
-        Some(McpClient::Codex) => format!("codex mcp add {SERVER_NAME} -- {command} serve\n"),
+        Some(McpClient::Codex) => {
+            let server_command = crate::next_command::NextCommand::new(command)
+                .arg("serve")
+                .render_shell();
+            format!("codex mcp add {SERVER_NAME} -- {server_command}\n")
+        }
         Some(McpClient::ClaudeDesktop) => json_config(command)?,
         Some(McpClient::ClaudeCode) => json_config(command)?,
         Some(McpClient::Cursor) => json_config(command)?,
@@ -119,6 +124,15 @@ mod tests {
         assert_eq!(
             value["mcpServers"]["biomcp"]["args"],
             serde_json::json!(["serve"])
+        );
+    }
+
+    #[test]
+    fn codex_absolute_path_is_shell_safe() {
+        let out = render(Some(McpClient::Codex), "/tmp/Bio MCP/bin/biomcp").expect("render codex");
+        assert_eq!(
+            out,
+            "codex mcp add biomcp -- \"/tmp/Bio MCP/bin/biomcp\" serve\n"
         );
     }
 
