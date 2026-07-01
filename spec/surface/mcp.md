@@ -61,7 +61,7 @@ also advertises typed `search` and `get` tools whose schemas expose entity,
 section, and limit constraints.
 
 ```bash
-port=39091
+port="$(../../spec/fixtures/reserve-local-port)"
 ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" >/tmp/biomcp-mcp-typed-tools.log 2>&1 &
 pid=$!
 trap 'kill "$pid" 2>/dev/null || true' EXIT
@@ -83,7 +83,7 @@ The HTTP surface is intentionally tiny: two readiness probes and one root
 descriptor that advertises the streamable transport and canonical MCP path.
 
 ```bash
-port=39087
+port="$(../../spec/fixtures/reserve-local-port)"
 ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" >/tmp/biomcp-mcp-routes.log 2>&1 &
 pid=$!
 trap 'kill "$pid" 2>/dev/null || true' EXIT
@@ -106,7 +106,7 @@ Default `serve-http` should not inherit rmcp's localhost-only Host guard, while
 operators can re-enable a precise Host allowlist with `--allowed-hosts`.
 
 ```bash
-port=39089
+port="$(../../spec/fixtures/reserve-local-port)"
 body=/tmp/biomcp-mcp-host-default.body
 ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" >/tmp/biomcp-mcp-host-default.log 2>&1 &
 pid=$!
@@ -125,7 +125,7 @@ kill "$pid" 2>/dev/null || true
 wait "$pid" 2>/dev/null || true
 trap - EXIT
 
-port=39090
+port="$(../../spec/fixtures/reserve-local-port)"
 body=/tmp/biomcp-mcp-host-restricted.body
 ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" --allowed-hosts example.com >/tmp/biomcp-mcp-host-restricted.log 2>&1 &
 pid=$!
@@ -185,7 +185,7 @@ an MCP-specific summary. This routine proof owns a fixture-backed local command
 so the public streamable-HTTP demo can remain a live operator walkthrough.
 
 ```bash
-port=39088
+port="$(../../spec/fixtures/reserve-local-port)"
 ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" >/tmp/biomcp-mcp-demo.log 2>&1 &
 pid=$!
 trap 'kill "$pid" 2>/dev/null || true' EXIT
@@ -206,7 +206,7 @@ The transport should still reject CLI-only filesystem commands while returning
 ordinary study text plus inline SVG for chart-safe read-only calls.
 
 ```bash
-port=39089
+port="$(../../spec/fixtures/reserve-local-port)"
 ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" >/tmp/biomcp-mcp-boundary.log 2>&1 &
 pid=$!; trap 'kill "$pid" 2>/dev/null || true' EXIT
 for _ in $(seq 1 40); do
