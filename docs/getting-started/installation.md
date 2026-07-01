@@ -41,6 +41,22 @@ Verify:
 biomcp --version
 ```
 
+## Homebrew
+
+```bash
+brew tap genomoncology/biomcp
+brew install biomcp
+```
+
+The separate `genomoncology/homebrew-biomcp` tap repository must exist before
+these commands can work; creating that tap is a one-time release prerequisite.
+
+Verify:
+
+```bash
+biomcp --version
+```
+
 ## Option 3: Source build
 
 From a local checkout:
