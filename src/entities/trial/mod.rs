@@ -189,6 +189,7 @@ pub struct TrialSearchFilters {
     pub intervention: Option<String>,
     pub no_alias_expand: bool,
     pub no_condition_expand: bool,
+    pub no_count_total: bool,
     pub facility: Option<String>,
     pub status: Option<String>,
     pub phase: Option<String>,

@@ -383,7 +383,7 @@ async fn fetch_ctgov_filtered_page(
     page_token: Option<String>,
     page_size: usize,
 ) -> Result<CtGovFilteredPage, BioMcpError> {
-    let count_total = !filters.no_condition_expand || page_size != 1;
+    let count_total = !filters.no_count_total;
     let resp = client
         .search(&build_ctgov_search_params(
             filters,
@@ -518,7 +518,7 @@ async fn search_page_with_single_ctgov_intervention(
     next_page: Option<String>,
 ) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
     let page_size = limit.clamp(1, 100);
-    let request_total = !filters.no_condition_expand || page_size != 1;
+    let request_total = !filters.no_count_total;
     let mut state = CtGovSinglePageState::new(next_page, offset, request_total);
 
     for _ in 0..CTGOV_MAX_PAGE_FETCHES {

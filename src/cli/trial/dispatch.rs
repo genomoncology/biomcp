@@ -112,6 +112,7 @@ pub(in crate::cli) async fn handle_search(
         intervention,
         no_alias_expand: args.no_alias_expand,
         no_condition_expand: args.no_condition_expand,
+        no_count_total: false,
         facility,
         status: args.status,
         phase: args.phase,

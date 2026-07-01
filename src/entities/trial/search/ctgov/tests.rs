@@ -462,6 +462,37 @@ fn resolve_ctgov_condition_labels_honors_strict_condition_mode() {
 }
 
 #[test]
+fn user_condition_expand_opt_out_still_reports_limit_one_total() {
+    let filters = TrialSearchFilters {
+        condition: Some("Phelan-McDermid Syndrome".into()),
+        no_condition_expand: true,
+        ..Default::default()
+    };
+    let (context, worker) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(None, 0, !filters.no_count_total);
+
+    apply_ctgov_single_page(
+        &mut state,
+        &context,
+        &worker,
+        1,
+        filtered_page(
+            vec![ctgov_search_study_fixture(
+                "NCT00000470",
+                "18 Years",
+                "75 Years",
+            )],
+            None,
+            None,
+        ),
+    );
+    let page = finish_ctgov_single_page(state, &context, 1, 0);
+
+    assert_eq!(page.results.len(), 1);
+    assert_eq!(page.total, Some(1));
+}
+
+#[test]
 fn search_path_rejects_next_page_when_alias_expansion_uses_multiple_queries() {
     let err = fanout_next_page_error(false, true);
     assert!(err.to_string().contains("--next-page is not supported"));
