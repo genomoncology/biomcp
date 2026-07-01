@@ -204,6 +204,17 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
 
+      - name: Sync Docker image version from release tag
+        shell: bash
+        run: |
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          VER="${TAG#v}"
+          if [ -n "$VER" ]; then
+            sed "s/^version = \".*\"/version = \"$VER\"/" Cargo.toml > Cargo.toml.tmp
+            mv Cargo.toml.tmp Cargo.toml
+            echo "Set Cargo.toml version to $VER for Docker image build"
+          fi
+
       - uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR

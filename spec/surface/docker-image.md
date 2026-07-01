@@ -50,11 +50,19 @@ release version tag and `latest`. Versioned tags give users a stable pin, while
 `latest` keeps the simplest getting-started command current.
 
 ```bash
-sed -n '1,460p' ../../.github/workflows/release.yml | mustmatch like 'packages: write
+awk '/^  docker-publish:/{seen=1} seen && /^  [A-Za-z0-9_-]+:/{if ($1 != "docker-publish:") exit} seen {print}' ../../.github/workflows/release.yml | mustmatch like 'Sync Docker image version from release tag
+Cargo.toml
 ghcr.io/genomoncology/biomcp
 type=semver
 type=raw,value=latest
 docker/build-push-action'
+```
+
+The workflow also grants package publishing permission at the top level so the
+GHCR push can succeed when the release job runs.
+
+```bash
+sed -n '1,30p' ../../.github/workflows/release.yml | mustmatch like 'packages: write'
 ```
 
 ## Documentation Shows Docker CLI And Stdio MCP Use
