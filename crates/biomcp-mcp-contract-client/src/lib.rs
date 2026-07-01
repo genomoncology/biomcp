@@ -8,7 +8,9 @@ use std::time::Duration;
 
 use base64::Engine;
 use rmcp::ServiceExt;
-use rmcp::model::{CallToolRequestParams, RawContent, ReadResourceRequestParams, ResourceContents};
+use rmcp::model::{
+    CallToolRequestParams, RawContent, ReadResourceRequestParams, ResourceContents, Tool,
+};
 use rmcp::service::ServiceError;
 use rmcp::transport::{StreamableHttpClientTransport, TokioChildProcess};
 use serde_json::json;
@@ -47,6 +49,34 @@ const EXPECTED_HELP_RESOURCE: (&str, &str) = ("biomcp://help", "BioMCP Overview"
 const READ_ONLY_MESSAGE: &str = "BioMCP allows read-only commands only";
 const CACHE_CLI_ONLY_MESSAGE: &str = "CLI-only over MCP";
 const CACHE_FILESYSTEM_MESSAGE: &str = "workstation-local filesystem paths";
+
+fn assert_tool_metadata(tools: &[Tool]) {
+    for tool in tools {
+        let name = tool.name.as_ref();
+        let annotations = tool
+            .annotations
+            .as_ref()
+            .unwrap_or_else(|| panic!("MCP tool {name} is missing annotations"));
+        assert_eq!(
+            annotations.read_only_hint,
+            Some(true),
+            "MCP tool {name} is not marked read-only"
+        );
+        assert!(
+            annotations
+                .title
+                .as_deref()
+                .is_some_and(|title| !title.trim().is_empty()),
+            "MCP tool {name} is missing an annotation title"
+        );
+        assert!(
+            tool.description
+                .as_deref()
+                .is_some_and(|description| !description.trim().is_empty()),
+            "MCP tool {name} is missing a description"
+        );
+    }
+}
 
 pub fn text_chunks(content: &[rmcp::model::Content]) -> Vec<&str> {
     content
@@ -299,6 +329,7 @@ where
     assert!(instructions.contains("biomcp skill"));
 
     let tools = client.peer().list_tools(Default::default()).await?;
+    assert_tool_metadata(&tools.tools);
     let tool_names = tools
         .tools
         .iter()

@@ -73,6 +73,8 @@ for _ in $(seq 1 40); do
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
 cargo run --quiet --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get
+all listed MCP tools are read-only annotated
+all listed MCP tools have titles and descriptions
 search schema includes entity enum and bounded limit
 get schema includes entity and sections enum'
 ```

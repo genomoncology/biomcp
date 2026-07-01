@@ -112,6 +112,34 @@ fn json_property_contains(value: &serde_json::Value, property: &str, needle: &st
     visit(value, value, property, needle)
 }
 
+fn assert_tool_metadata(tools: &[Tool]) -> anyhow::Result<()> {
+    for tool in tools {
+        let name = tool.name.as_ref();
+        let annotations = tool
+            .annotations
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("MCP tool {name} is missing annotations"))?;
+        if annotations.read_only_hint != Some(true) {
+            anyhow::bail!("MCP tool {name} is not marked read-only");
+        }
+        if annotations
+            .title
+            .as_deref()
+            .is_none_or(|title| title.trim().is_empty())
+        {
+            anyhow::bail!("MCP tool {name} is missing an annotation title");
+        }
+        if tool
+            .description
+            .as_deref()
+            .is_none_or(|description| description.trim().is_empty())
+        {
+            anyhow::bail!("MCP tool {name} is missing a description");
+        }
+    }
+    Ok(())
+}
+
 async fn print_typed_tool_surface(
     client: &rmcp::service::RunningService<rmcp::RoleClient, impl rmcp::Service<rmcp::RoleClient>>,
 ) -> anyhow::Result<()> {
@@ -126,6 +154,8 @@ async fn print_typed_tool_surface(
             anyhow::bail!("typed MCP surface missing tool: {required}");
         }
     }
+
+    assert_tool_metadata(&tools.tools)?;
 
     let search = tools
         .tools
@@ -154,6 +184,8 @@ async fn print_typed_tool_surface(
     }
 
     println!("MCP typed tools: biomcp, search, get");
+    println!("all listed MCP tools are read-only annotated");
+    println!("all listed MCP tools have titles and descriptions");
     println!("search schema includes entity enum and bounded limit");
     println!("get schema includes entity and sections enum");
     Ok(())
