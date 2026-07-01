@@ -41,7 +41,16 @@ Verify:
 biomcp --version
 ```
 
-## Option 3: Docker image
+## Option 3: Source build
+
+From a local checkout:
+
+```bash
+make install
+"$HOME/.local/bin/biomcp" --version
+```
+
+## Option 4: Docker image
 
 Use the published GHCR image when you want BioMCP without a local Rust or Python toolchain:
 
@@ -57,15 +66,6 @@ docker run --rm -i ghcr.io/genomoncology/biomcp serve
 ```
 
 Pass provider keys from your shell when needed, for example `-e ONCOKB_TOKEN` or `-e NCBI_API_KEY`. Do not put secret values in documentation or checked-in client configs.
-
-## Option 4: Source build
-
-From a local checkout:
-
-```bash
-make install
-"$HOME/.local/bin/biomcp" --version
-```
 
 ## Post-install smoke checks
 
