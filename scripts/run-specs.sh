@@ -6,6 +6,7 @@ cd "$ROOT"
 
 SPEC_ROUTINE_PATHS=(
   spec/entity/article.md
+  spec/entity/disease-survival-fixture.md
   spec/entity/study.md
   spec/entity/variant.md
   spec/surface/mcp.md
@@ -87,6 +88,11 @@ run_ctgov_fixture() {
   source_if_present "$ROOT/.cache/spec-ctgov-intervention-alias-env"
 }
 
+run_disease_survival_fixture() {
+  bash spec/fixtures/setup-disease-survival-spec-fixture.sh "$ROOT"
+  source_if_present "$ROOT/.cache/spec-disease-survival-env"
+}
+
 run_markdown_specs() {
   if ((${#MD_PATHS[@]})); then
     mustmatch test "${MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
@@ -113,6 +119,7 @@ case "$mode" in
     run_study_fixture
     run_ddinter_fixture
     run_ctgov_fixture
+    run_disease_survival_fixture
     ;;
   spec-contracts)
     timeout_args=(--timeout 180)

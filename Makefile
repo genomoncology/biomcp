@@ -2,6 +2,7 @@
 
 SPEC_ROUTINE_PATHS = \
 	spec/entity/article.md \
+	spec/entity/disease-survival-fixture.md \
 	spec/entity/study.md \
 	spec/entity/variant.md \
 	spec/surface/mcp.md \
