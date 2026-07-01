@@ -10,14 +10,16 @@ binary-download contract.
 The repository should keep a canonical `biomcp.rb` formula or formula template
 that points at the official GitHub release assets for both supported macOS
 architectures. The formula must carry SHA256 fields so Homebrew verifies the
-archive it installs instead of rebuilding from source or downloading an
-unchecked asset.
+archive it installs, and it must install the released `biomcp` executable rather
+than rebuilding from source or downloading an unchecked asset.
 
 ```bash
-find ../.. -path '../../.git' -prune -o -name biomcp.rb -type f -print | sort | xargs -r sed -n '1,220p' | mustmatch like 'genomoncology/biomcp
+find ../.. -path '../../.git' -prune -o -name biomcp.rb -type f -print | sort | xargs -r sed -n '1,260p' | mustmatch like 'genomoncology/biomcp
 biomcp-darwin-arm64.tar.gz
 biomcp-darwin-x86_64.tar.gz
-sha256'
+sha256
+bin.install
+biomcp'
 ```
 
 ## Release Workflow Updates Or Emits The Tap Formula
@@ -28,11 +30,13 @@ exact rendered formula to commit manually instead of silently skipping the
 Homebrew channel.
 
 ```bash
-awk '/homebrew|Homebrew|brew|tap|biomcp.rb|HOMEBREW|formula/{print}' ../../.github/workflows/release.yml | mustmatch like 'genomoncology/homebrew-biomcp
+awk '/homebrew|Homebrew|brew|tap|biomcp.rb|HOMEBREW|formula|darwin|sha256|artifact|manual/{print}' ../../.github/workflows/release.yml | mustmatch like 'genomoncology/homebrew-biomcp
 HOMEBREW_TAP_TOKEN
 biomcp.rb
-sha256
-formula'
+biomcp-darwin-arm64.tar.gz.sha256
+biomcp-darwin-x86_64.tar.gz.sha256
+formula
+manual'
 ```
 
 ## Installation Docs Show The Brew Tap Path
