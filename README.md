@@ -45,6 +45,11 @@ uv tool install biomcp-cli
 # or: pip install biomcp-cli
 ```
 
+> **PyPI package warning:** install `biomcp-cli`, not `biomcp`. The `biomcp`
+> PyPI package is unrelated to this project.
+
+MCP Registry ownership marker: `mcp-name: io.github.genomoncology/biomcp`.
+
 This installs the `biomcp` binary on your PATH.
 
 ### Claude Code plugin

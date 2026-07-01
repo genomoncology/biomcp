@@ -231,6 +231,11 @@ check_tbd && pass 'TBD scan' || fail 'TBD scan'
 check_pycache && pass 'stale __pycache__ scan' || fail 'stale __pycache__ scan'
 check_deprecated_public_doc_tokens && pass 'deprecated public-doc install string scan' || fail 'deprecated public-doc install string scan'
 check_docs_test_code_leaks && pass 'docs test-code leak scan' || fail 'docs test-code leak scan'
+if [ -f scripts/check-mcp-registry-server.sh ]; then
+  run_required 'MCP registry metadata check' bash scripts/check-mcp-registry-server.sh
+else
+  skip 'MCP registry metadata check (not configured)'
+fi
 
 if has_tracked_files '*.py'; then
   if command -v ruff >/dev/null 2>&1; then
