@@ -37,15 +37,12 @@ biomcp skill install ~/.claude --force
 
 ### For Claude Desktop / Cursor / MCP clients
 
-```json
-{
-  "mcpServers": {
-    "biomcp": {
-      "command": "biomcp",
-      "args": ["serve"]
-    }
-  }
-}
+Use the [MCP clients guide](getting-started/mcp-clients.md) to add BioMCP to
+Codex, Claude Code, Claude Desktop, Cursor, Cline, VS Code, or any client that
+accepts `mcpServers` JSON.
+
+```bash
+biomcp mcp-config --client claude-desktop
 ```
 
 ### Remote HTTP server
@@ -235,6 +232,7 @@ biomcp study query --study msk_impact_2017 --gene RET --type fusion
 
 - [Installation](getting-started/installation.md)
 - [First Query](getting-started/first-query.md)
+- [MCP Clients](getting-started/mcp-clients.md)
 - [Search All Workflow](how-to/search-all-workflow.md)
 - [BioASQ Benchmark](reference/bioasq-benchmark.md)
 - [Discover](user-guide/discover.md)

@@ -12,6 +12,7 @@ nav:
   - Getting Started:
       - Installation: getting-started/installation.md
       - First Query: getting-started/first-query.md
+      - MCP Clients: getting-started/mcp-clients.md
       - Claude Desktop: getting-started/claude-desktop.md
       - Remote HTTP Server: getting-started/remote-http.md
       - API Keys: getting-started/api-keys.md
