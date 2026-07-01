@@ -47,6 +47,16 @@ def _run_version_sync_script(repo_root: Path) -> subprocess.CompletedProcess[str
     )
 
 
+def _run_registry_check(repo_root: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["bash", "scripts/check-mcp-registry-server.sh"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
 def _read_version(path: Path) -> str:
     match = VERSION_PATTERN.search(path.read_text(encoding="utf-8"))
     assert match is not None, f"missing version in {path}"
@@ -136,6 +146,46 @@ def test_version_sync_script_passes_when_all_versions_match(tmp_path: Path) -> N
     assert result.returncode == 0
     assert result.stdout.strip() == f"Versions in sync: {expected_version}"
     assert result.stderr == ""
+
+
+def test_registry_check_passes_for_current_metadata(tmp_path: Path) -> None:
+    repo_root = _copy_version_sync_fixture(tmp_path)
+    for relative_path in (
+        "README.md",
+        "docs/reference/mcp-server.md",
+        "scripts/check-mcp-registry-server.sh",
+    ):
+        source = REPO_ROOT / relative_path
+        target = repo_root / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+
+    result = _run_registry_check(repo_root)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "MCP registry metadata ok"
+    assert result.stderr == ""
+
+
+def test_registry_check_rejects_wrong_registry_package_identifier(tmp_path: Path) -> None:
+    repo_root = _copy_version_sync_fixture(tmp_path)
+    for relative_path in (
+        "README.md",
+        "docs/reference/mcp-server.md",
+        "scripts/check-mcp-registry-server.sh",
+    ):
+        source = REPO_ROOT / relative_path
+        target = repo_root / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    server = json.loads((repo_root / "server.json").read_text(encoding="utf-8"))
+    server["packages"][0]["identifier"] = "biomcp"
+    (repo_root / "server.json").write_text(json.dumps(server), encoding="utf-8")
+
+    result = _run_registry_check(repo_root)
+
+    assert result.returncode == 1
+    assert "server.json must include a pypi package entry for biomcp-cli" in result.stderr
 
 
 def test_version_sync_script_reports_pyproject_mismatch(tmp_path: Path) -> None:
