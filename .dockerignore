@@ -1,0 +1,14 @@
+.git/
+.march/
+.march-runtime/
+target/
+.cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+.DS_Store

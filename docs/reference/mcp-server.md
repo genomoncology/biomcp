@@ -41,6 +41,16 @@ biomcp serve
 
 A desktop MCP configuration usually points directly at the installed `biomcp` binary and passes `serve` as the argument. The server writes MCP protocol messages to stdout, so do not wrap this command in scripts that print banners or other text to stdout.
 
+### Docker stdio server
+
+Use the GHCR image when the MCP client can launch Docker instead of a local binary:
+
+```bash
+docker run --rm -i ghcr.io/genomoncology/biomcp serve
+```
+
+Pass provider keys through the container environment, for example with `-e ONCOKB_TOKEN`, `-e NCBI_API_KEY`, or the equivalent environment setting in your MCP client. The `-e NAME` form forwards the value from your shell without writing the secret into the command.
+
 ## Remote HTTP server
 
 Use Streamable HTTP when the MCP client reaches BioMCP over a network, through a container port, or behind a proxy:

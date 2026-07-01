@@ -10,6 +10,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/study.md
   spec/entity/variant.md
   spec/surface/mcp.md
+  spec/surface/docker-image.md
   spec/surface/skills.md
   tests/surface/test_parallel_isolation_contract.py
   spec/surface/cli-contract-ratchet.md
