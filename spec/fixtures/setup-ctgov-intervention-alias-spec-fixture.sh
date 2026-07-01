@@ -16,8 +16,10 @@ fi
 fixture_root="$(mktemp -d "$cache_dir/spec-ctgov-intervention-alias.XXXXXX")"
 ready_file="$fixture_root/base-url"
 server_log="$fixture_root/server.log"
+request_log="$fixture_root/request.log"
+: >"$request_log"
 
-uv run --no-sync python - "$ready_file" <<'PY' >"$server_log" 2>&1 &
+uv run --no-sync python - "$ready_file" "$request_log" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -255,10 +257,15 @@ def study_payload_for_request(parsed, study):
     return payload
 
 
+REQUEST_LOG = Path(sys.argv[2])
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/api/v2/studies":
+            with REQUEST_LOG.open("a", encoding="utf-8") as log:
+                log.write(f"{self.path}\n")
             query = parse_qs(parsed.query)
             requested_facility = " ".join(query.get("query.locn", [])).lower()
             if "university of michigan" in requested_facility:
@@ -303,5 +310,6 @@ printf 'export BIOMCP_CACHE_MODE=off\n' >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_PID=%q\n' "$server_pid" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_READY_FILE=%q\n' "$ready_file" >>"$env_file"
+printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
 
 printf '%s\n' "$fixture_root"
