@@ -34,16 +34,17 @@ CLI_SURFACE_REQUIRED_EXCEPTIONS = {
     "biomcp --json version": "release_identity_payload",
     "biomcp --json search all --counts-only": "current_counts_only_shape",
 }
-CLI_SURFACE_DOC_PATHS = [
-    "architecture/ux/cli-reference.md",
-    "docs/user-guide/cli-reference.md",
-    "docs/user-guide/variant.md",
+CLI_SURFACE_STATIC_TEXT_PATHS = [
     "src/cli/commands.rs",
     "src/cli/list/clinical.rs",
     "src/cli/list/helpers.rs",
     "src/cli/list/literature.rs",
     "src/cli/list/molecular.rs",
-    "spec/surface/cli.md",
+]
+CLI_SURFACE_STATIC_TEXT_GLOBS = [
+    "architecture/**/*.md",
+    "docs/**/*.md",
+    "spec/**/*.md",
 ]
 
 
@@ -385,6 +386,27 @@ def load_cli_surface_exceptions(root_dir: Path) -> tuple[list[dict[str, object]]
     return list(by_command.values()), errors
 
 
+def tracked_static_text_paths(root_dir: Path) -> tuple[list[str], list[str]]:
+    proc = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root_dir),
+            "ls-files",
+            "--",
+            *CLI_SURFACE_STATIC_TEXT_PATHS,
+            *CLI_SURFACE_STATIC_TEXT_GLOBS,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return [], [proc.stderr.strip() or "git ls-files failed"]
+
+    return sorted({line for line in proc.stdout.splitlines() if line}), []
+
+
 def read_existing_text(root_dir: Path, paths: list[str]) -> tuple[dict[str, str], list[str]]:
     texts: dict[str, str] = {}
     errors: list[str] = []
@@ -582,7 +604,7 @@ def check_copy_paste_examples_are_shell_safe(root_dir: Path, texts: dict[str, st
             stripped = line.strip()
             if "biomcp " not in stripped or ">" not in stripped:
                 continue
-            if "→" in stripped or "<" in stripped:
+            if "→" in stripped:
                 continue
             if not re.search(r'[A-Z]{2}_[0-9.]+:[cgmnpr]\.[^\s\'\"]*>', stripped):
                 continue
@@ -639,7 +661,9 @@ def check_entity_markdown_quoting_dependencies(root_dir: Path) -> dict[str, obje
 
 def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
     exceptions, errors = load_cli_surface_exceptions(root_dir)
-    texts, text_errors = read_existing_text(root_dir, CLI_SURFACE_DOC_PATHS)
+    text_paths, path_errors = tracked_static_text_paths(root_dir)
+    errors.extend(path_errors)
+    texts, text_errors = read_existing_text(root_dir, text_paths)
     errors.extend(text_errors)
     if errors:
         return {
