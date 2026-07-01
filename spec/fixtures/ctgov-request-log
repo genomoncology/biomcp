@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "usage: ctgov-request-log <run|show|clear> [command ...]" >&2
+}
+
+request_log="${BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG:-}"
+fixture_root="${BIOMCP_CTGOV_INTERVENTION_ALIAS_ROOT:-}"
+
+if [[ -z "$request_log" || -z "$fixture_root" ]]; then
+  echo "ctgov request log fixture is not configured" >&2
+  exit 2
+fi
+
+case "$request_log" in
+  "$fixture_root"/*) ;;
+  *)
+    echo "ctgov request log path is outside the fixture root" >&2
+    exit 2
+    ;;
+esac
+
+case "${1:-}" in
+  clear)
+    : >"$request_log"
+    ;;
+  show)
+    cat "$request_log"
+    ;;
+  run)
+    shift
+    if (($# == 0)); then
+      usage
+      exit 2
+    fi
+    : >"$request_log"
+    "$@"
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac
