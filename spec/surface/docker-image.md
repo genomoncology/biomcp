@@ -12,8 +12,21 @@ trust roots in the runtime layer and expose the `biomcp` binary directly as the
 entrypoint so documented `docker run` commands can pass ordinary CLI arguments.
 
 ```bash
-sed -n '1,220p' ../../Dockerfile | mustmatch like 'ca-certificates
+find ../.. -maxdepth 1 -name Dockerfile -type f -exec sed -n '1,220p' {} \; | mustmatch like 'ca-certificates
 ENTRYPOINT ["biomcp"]'
+```
+
+## Docker Context Excludes Local Artifacts
+
+The image build context should not send local build outputs, caches, March
+runtime state, or the Git database to the Docker daemon. Keeping those paths out
+prevents slow builds and avoids leaking local-only files into image layers.
+
+```bash
+find ../.. -maxdepth 1 -name .dockerignore -type f -exec sed -n '1,120p' {} \; | mustmatch like 'target/
+.cache/
+.march/
+.git/'
 ```
 
 ## Pull Request CI Builds And Smokes The Image
@@ -37,7 +50,8 @@ release version tag and `latest`. Versioned tags give users a stable pin, while
 `latest` keeps the simplest getting-started command current.
 
 ```bash
-sed -n '1,420p' ../../.github/workflows/release.yml | mustmatch like 'ghcr.io/genomoncology/biomcp
+sed -n '1,460p' ../../.github/workflows/release.yml | mustmatch like 'packages: write
+ghcr.io/genomoncology/biomcp
 type=semver
 type=raw,value=latest
 docker/build-push-action'
@@ -52,6 +66,5 @@ such as `--version` and `list`, and a stdio MCP server invocation that passes
 ```bash
 cat ../../docs/getting-started/installation.md ../../docs/reference/mcp-server.md | mustmatch like 'docker run --rm ghcr.io/genomoncology/biomcp --version
 docker run --rm ghcr.io/genomoncology/biomcp list
-ghcr.io/genomoncology/biomcp
-serve'
+docker run --rm -i ghcr.io/genomoncology/biomcp serve'
 ```
