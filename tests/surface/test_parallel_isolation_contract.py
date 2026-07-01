@@ -935,6 +935,14 @@ def test_ticket_395_mcp_spec_uses_bounded_ready_probe_instead_of_fixed_sleep() -
     assert "sleep 2" not in mcp, "serve-http specs must not use fixed sleeps before connecting"
 
 
+def test_ticket_471_mcp_spec_uses_dynamic_ports_for_http_server_blocks() -> None:
+    mcp = _read_repo("spec/surface/mcp.md")
+    assert "reserve-local-port" in mcp, "MCP serve-http specs must allocate ports dynamically"
+    assert not re.search(r"^port=[0-9]+$", mcp, flags=re.MULTILINE), (
+        "MCP serve-http specs must not depend on fixed localhost ports"
+    )
+
+
 
 def test_ticket_378_release_gate_routes_routine_specs_to_standard_gates() -> None:
     makefile = _read_repo("Makefile")
