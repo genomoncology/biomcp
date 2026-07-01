@@ -79,6 +79,7 @@ biomcp search gene -q BRAF --limit 1
 
 - Default output is markdown.
 - Use `--json` when a workflow needs structured output.
+- Add BioMCP to Codex, Claude Code, Claude Desktop, Cursor, Cline, VS Code, or another MCP client with the [MCP clients guide](mcp-clients.md).
 - Optional API keys are documented in [API keys](api-keys.md).
 
 ## Troubleshooting quick hits
