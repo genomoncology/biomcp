@@ -74,7 +74,10 @@ if package is None:
     fail("server.json must include a pypi package entry for biomcp-cli")
 if package.get("transport", {}).get("type") != "stdio":
     fail("server.json biomcp-cli package must use stdio transport")
-if {"type": "positional", "value": "serve"} not in package.get("packageArguments", []):
+package_arguments = package.get("packageArguments")
+if not isinstance(package_arguments, list):
+    fail("server.json biomcp-cli packageArguments must be a list")
+if {"type": "positional", "value": "serve"} not in package_arguments:
     fail("server.json biomcp-cli package must pass positional serve")
 
 versions = {
@@ -102,8 +105,12 @@ if "not `biomcp`" not in readme or "unrelated" not in readme:
     fail("README.md must warn that biomcp is an unrelated PyPI package")
 
 pyproject = read_text("pyproject.toml")
-if "biomcp-cli" not in pyproject or "biomcp binary" not in pyproject:
-    fail("pyproject.toml description must identify biomcp-cli as the PyPI package")
+if (
+    "biomcp-cli" not in pyproject
+    or "biomcp binary" not in pyproject
+    or "unrelated biomcp" not in pyproject
+):
+    fail("pyproject.toml description must identify biomcp-cli and disambiguate biomcp")
 
 manifest_text = read_text("manifest.json")
 if "biomcp-cli" not in manifest_text or "unrelated biomcp" not in manifest_text:

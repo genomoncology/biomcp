@@ -129,16 +129,18 @@ jobs:
             mv Cargo.toml.tmp Cargo.toml
             sed -E "0,/\"version\": \".*\"/s//\"version\": \"$VER\"/" manifest.json > manifest.json.tmp
             mv manifest.json.tmp manifest.json
-            python3 - <<PY
+            VERSION="$VER" python3 - <<'PY'
 import json
+import os
 from pathlib import Path
 
+version = os.environ["VERSION"]
 path = Path("server.json")
 server = json.loads(path.read_text(encoding="utf-8"))
-server["version"] = "$VER"
+server["version"] = version
 for package in server.get("packages", []):
     if package.get("registryType") == "pypi" and package.get("identifier") == "biomcp-cli":
-        package["version"] = "$VER"
+        package["version"] = version
 path.write_text(json.dumps(server, indent=2) + "\n", encoding="utf-8")
 PY
             echo "Set Cargo.toml, manifest.json, and server.json version to $VER"
@@ -242,16 +244,18 @@ PY
             sed "s/^version = \".*\"/version = \"$VER\"/" Cargo.toml > Cargo.toml.tmp && mv Cargo.toml.tmp Cargo.toml
             sed "s/^version = \".*\"/version = \"$VER\"/" pyproject.toml > pyproject.toml.tmp && mv pyproject.toml.tmp pyproject.toml
             sed -E "0,/\"version\": \".*\"/s//\"version\": \"$VER\"/" manifest.json > manifest.json.tmp && mv manifest.json.tmp manifest.json
-            python3 - <<PY
+            VERSION="$VER" python3 - <<'PY'
 import json
+import os
 from pathlib import Path
 
+version = os.environ["VERSION"]
 path = Path("server.json")
 server = json.loads(path.read_text(encoding="utf-8"))
-server["version"] = "$VER"
+server["version"] = version
 for package in server.get("packages", []):
     if package.get("registryType") == "pypi" and package.get("identifier") == "biomcp-cli":
-        package["version"] = "$VER"
+        package["version"] = version
 path.write_text(json.dumps(server, indent=2) + "\n", encoding="utf-8")
 PY
             echo "Set Cargo.toml, pyproject.toml, manifest.json, and server.json version to $VER"
