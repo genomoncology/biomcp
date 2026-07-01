@@ -196,6 +196,77 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  homebrew-tap:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Darwin checksum sidecars
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          mkdir -p dist/homebrew
+          gh release download "$TAG" \
+            --repo genomoncology/biomcp \
+            --pattern 'biomcp-darwin-arm64.tar.gz.sha256' \
+            --pattern 'biomcp-darwin-x86_64.tar.gz.sha256' \
+            --dir dist/homebrew
+
+      - name: Render Homebrew formula
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          VERSION="${TAG#v}"
+          ARM64_SHA256="$(awk '{print $1}' dist/homebrew/biomcp-darwin-arm64.tar.gz.sha256)"
+          X86_64_SHA256="$(awk '{print $1}' dist/homebrew/biomcp-darwin-x86_64.tar.gz.sha256)"
+          TAG="$TAG" VERSION="$VERSION" ARM64_SHA256="$ARM64_SHA256" X86_64_SHA256="$X86_64_SHA256" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          formula = Path("Formula/biomcp.rb").read_text(encoding="utf-8")
+          formula = formula.replace("__TAG__", os.environ["TAG"])
+          formula = formula.replace("__VERSION__", os.environ["VERSION"])
+          formula = formula.replace("__DARWIN_ARM64_SHA256__", os.environ["ARM64_SHA256"])
+          formula = formula.replace("__DARWIN_X86_64_SHA256__", os.environ["X86_64_SHA256"])
+          Path("dist/homebrew/biomcp.rb").write_text(formula, encoding="utf-8")
+          PY
+          cat dist/homebrew/biomcp.rb
+
+      - name: Upload manual Homebrew formula artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: biomcp.rb
+          path: dist/homebrew/biomcp.rb
+
+      - name: Update Homebrew tap or emit manual fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "HOMEBREW_TAP_TOKEN is not configured; use the uploaded manual biomcp.rb formula artifact to update genomoncology/homebrew-biomcp."
+            exit 0
+          fi
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/genomoncology/homebrew-biomcp.git" tap
+          mkdir -p tap/Formula
+          cp dist/homebrew/biomcp.rb tap/Formula/biomcp.rb
+          cd tap
+          git add Formula/biomcp.rb
+          if git diff --cached --quiet; then
+            echo "Homebrew tap formula is already current."
+            exit 0
+          fi
+          git commit -m "Update biomcp formula for ${{ github.event.release.tag_name || inputs.tag }}"
+          git push origin HEAD:main
+
   docker-publish:
     needs: validate
     runs-on: ubuntu-latest
