@@ -7,7 +7,8 @@ SPEC_ROUTINE_PATHS = \
 	spec/surface/mcp.md \
 	spec/surface/skills.md \
 	spec/surface/cli-contract-ratchet.md \
-	spec/surface/trial-action-summary.md
+	spec/surface/trial-action-summary.md \
+	spec/surface/ctgov-helper-pivots.md
 SPEC_LIVE_PATHS = \
 	spec/entity/diagnostic.md \
 	spec/entity/disease.md \

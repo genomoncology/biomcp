@@ -206,6 +206,7 @@ fn build_ctgov_search_params(
     intervention_query: Option<&str>,
     page_token: Option<String>,
     page_size: usize,
+    count_total: bool,
 ) -> CtGovSearchParams {
     CtGovSearchParams {
         condition: condition_query.map(str::to_string),
@@ -215,7 +216,7 @@ fn build_ctgov_search_params(
         agg_filters: context.agg_filters.clone(),
         query_term: context.query_term.clone(),
         fields_override: None,
-        count_total: true,
+        count_total,
         page_token,
         page_size,
         lat: filters.lat,
@@ -268,10 +269,11 @@ struct CtGovSinglePageState {
     exhausted: bool,
     page_token: Option<String>,
     remaining_skip: usize,
+    requested_total: bool,
 }
 
 impl CtGovSinglePageState {
-    fn new(next_page: Option<String>, offset: usize) -> Self {
+    fn new(next_page: Option<String>, offset: usize, requested_total: bool) -> Self {
         Self {
             rows: Vec::new(),
             total: None,
@@ -283,6 +285,7 @@ impl CtGovSinglePageState {
                 .filter(|value| !value.is_empty())
                 .map(str::to_string),
             remaining_skip: offset,
+            requested_total,
         }
     }
 }
@@ -380,6 +383,7 @@ async fn fetch_ctgov_filtered_page(
     page_token: Option<String>,
     page_size: usize,
 ) -> Result<CtGovFilteredPage, BioMcpError> {
+    let count_total = !filters.no_count_total;
     let resp = client
         .search(&build_ctgov_search_params(
             filters,
@@ -388,6 +392,7 @@ async fn fetch_ctgov_filtered_page(
             intervention_query,
             page_token,
             page_size,
+            count_total,
         ))
         .await?;
 
@@ -493,9 +498,11 @@ fn finish_ctgov_single_page(
     let returned_total = if context.uses_expensive_post_filters {
         state.exhausted.then_some(state.verified_total)
     } else {
-        state
-            .total
-            .or_else(|| Some(offset.saturating_add(state.rows.len())))
+        state.total.or_else(|| {
+            state
+                .requested_total
+                .then(|| offset.saturating_add(state.rows.len()))
+        })
     };
 
     SearchPage::cursor(state.rows, returned_total, state.page_token)
@@ -511,7 +518,8 @@ async fn search_page_with_single_ctgov_intervention(
     next_page: Option<String>,
 ) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
     let page_size = limit.clamp(1, 100);
-    let mut state = CtGovSinglePageState::new(next_page, offset);
+    let request_total = !filters.no_count_total;
+    let mut state = CtGovSinglePageState::new(next_page, offset, request_total);
 
     for _ in 0..CTGOV_MAX_PAGE_FETCHES {
         let page = fetch_ctgov_filtered_page(
@@ -847,6 +855,7 @@ pub(super) async fn count_all_with_ctgov_client(
                 raw_intervention_query(filters),
                 None,
                 1,
+                true,
             ))
             .await?;
         let total = resp.total_count.unwrap_or(0) as usize;
@@ -870,6 +879,7 @@ pub(super) async fn count_all_with_ctgov_client(
                 raw_intervention_query(filters),
                 page_token.clone(),
                 CTGOV_COUNT_PAGE_SIZE,
+                true,
             ))
             .await?;
         page_count += 1;

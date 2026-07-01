@@ -125,6 +125,7 @@ fn build_ctgov_search_params_maps_all_shared_fields() {
         raw_intervention_query(&filters),
         Some("cursor-1".into()),
         37,
+        true,
     );
 
     assert_eq!(params.condition, filters.condition);
@@ -158,6 +159,7 @@ fn build_ctgov_search_params_preserves_none_values_without_defaults() {
         raw_intervention_query(&filters),
         None,
         10,
+        true,
     );
 
     assert_eq!(params.condition, Some("melanoma".into()));
@@ -202,6 +204,7 @@ fn build_ctgov_search_params_keeps_search_and_count_call_shapes_aligned() {
         raw_intervention_query(&filters),
         Some("page-1".into()),
         25,
+        true,
     );
     let fast_count_params = build_ctgov_search_params(
         &filters,
@@ -210,6 +213,7 @@ fn build_ctgov_search_params_keeps_search_and_count_call_shapes_aligned() {
         raw_intervention_query(&filters),
         None,
         1,
+        true,
     );
     let slow_count_params = build_ctgov_search_params(
         &filters,
@@ -218,6 +222,7 @@ fn build_ctgov_search_params_keeps_search_and_count_call_shapes_aligned() {
         raw_intervention_query(&filters),
         Some("page-2".into()),
         CTGOV_COUNT_PAGE_SIZE,
+        true,
     );
 
     assert_eq!(search_page_params.condition, fast_count_params.condition);
@@ -279,7 +284,7 @@ fn age_filter_uses_native_total_semantics_across_limits() {
     let (context, worker) = single_ctgov_context_and_worker(&filters);
 
     for limit in [10, 20, 50] {
-        let mut state = CtGovSinglePageState::new(None, 0);
+        let mut state = CtGovSinglePageState::new(None, 0, true);
         apply_ctgov_single_page(
             &mut state,
             &context,
@@ -301,7 +306,7 @@ fn age_filter_uses_native_total_semantics_across_limits() {
 fn ctgov_cursor_preserves_next_page_token_after_offset_full_page_consumption() {
     let filters = age_filtered_ctgov_filters();
     let (context, worker) = single_ctgov_context_and_worker(&filters);
-    let mut state = CtGovSinglePageState::new(None, 1);
+    let mut state = CtGovSinglePageState::new(None, 1, true);
     apply_ctgov_single_page(
         &mut state,
         &context,
@@ -321,7 +326,7 @@ fn age_filter_total_returns_native_total_when_exhausted() {
     let (context, worker) = single_ctgov_context_and_worker(&filters);
 
     for (limit, first_prefix, second_prefix) in [(10, "31", "32"), (50, "41", "42")] {
-        let mut state = CtGovSinglePageState::new(None, 0);
+        let mut state = CtGovSinglePageState::new(None, 0, true);
         apply_ctgov_single_page(
             &mut state,
             &context,
@@ -454,6 +459,37 @@ fn resolve_ctgov_condition_labels_honors_strict_condition_mode() {
         resolve_ctgov_condition_labels(&filters).expect("condition labels"),
         vec!["Phelan-McDermid Syndrome".to_string()]
     );
+}
+
+#[test]
+fn user_condition_expand_opt_out_still_reports_limit_one_total() {
+    let filters = TrialSearchFilters {
+        condition: Some("Phelan-McDermid Syndrome".into()),
+        no_condition_expand: true,
+        ..Default::default()
+    };
+    let (context, worker) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(None, 0, !filters.no_count_total);
+
+    apply_ctgov_single_page(
+        &mut state,
+        &context,
+        &worker,
+        1,
+        filtered_page(
+            vec![ctgov_search_study_fixture(
+                "NCT00000470",
+                "18 Years",
+                "75 Years",
+            )],
+            None,
+            None,
+        ),
+    );
+    let page = finish_ctgov_single_page(state, &context, 1, 0);
+
+    assert_eq!(page.results.len(), 1);
+    assert_eq!(page.total, Some(1));
 }
 
 #[test]

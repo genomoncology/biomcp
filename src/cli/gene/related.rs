@@ -13,6 +13,10 @@ fn gene_trial_filters(
             trial_source,
             crate::entities::trial::TrialSource::ClinicalTrialsGov
         ) && limit == 1,
+        no_count_total: matches!(
+            trial_source,
+            crate::entities::trial::TrialSource::ClinicalTrialsGov
+        ) && limit == 1,
         ..Default::default()
     };
     if matches!(
@@ -209,6 +213,7 @@ mod tests {
             Some("Phelan-McDermid syndrome")
         );
         assert!(fast_filters.no_condition_expand);
+        assert!(fast_filters.no_count_total);
 
         let broader_filters = gene_trial_filters(
             "SHANK3",
@@ -217,11 +222,13 @@ mod tests {
         )
         .expect("SHANK3 trial filters");
         assert!(!broader_filters.no_condition_expand);
+        assert!(!broader_filters.no_count_total);
 
         let nci_filters =
             gene_trial_filters("SHANK3", crate::entities::trial::TrialSource::NciCts, 1)
                 .expect("SHANK3 NCI trial filters");
         assert_eq!(nci_filters.condition, None);
         assert!(!nci_filters.no_condition_expand);
+        assert!(!nci_filters.no_count_total);
     }
 }

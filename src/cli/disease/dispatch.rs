@@ -188,6 +188,10 @@ fn disease_trial_filters(
             trial_source,
             crate::entities::trial::TrialSource::ClinicalTrialsGov
         ) && limit == 1,
+        no_count_total: matches!(
+            trial_source,
+            crate::entities::trial::TrialSource::ClinicalTrialsGov
+        ) && limit == 1,
         ..Default::default()
     }
 }
@@ -230,6 +234,7 @@ mod workflow_tests {
             Some("Phelan-McDermid Syndrome")
         );
         assert!(fast_filters.no_condition_expand);
+        assert!(fast_filters.no_count_total);
 
         let broader_filters = disease_trial_filters(
             "Phelan-McDermid Syndrome",
@@ -237,6 +242,7 @@ mod workflow_tests {
             2,
         );
         assert!(!broader_filters.no_condition_expand);
+        assert!(!broader_filters.no_count_total);
 
         let nci_filters = disease_trial_filters(
             "Phelan-McDermid Syndrome",
@@ -244,6 +250,7 @@ mod workflow_tests {
             1,
         );
         assert!(!nci_filters.no_condition_expand);
+        assert!(!nci_filters.no_count_total);
     }
 }
 

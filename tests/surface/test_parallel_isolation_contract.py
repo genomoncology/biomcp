@@ -834,6 +834,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/surface/skills.md",
     "spec/surface/cli-contract-ratchet.md",
     "spec/surface/trial-action-summary.md",
+    "spec/surface/ctgov-helper-pivots.md",
 )
 
 LIVE_SPEC_PATHS = (
