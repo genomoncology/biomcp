@@ -27,6 +27,7 @@ def _copy_version_sync_fixture(tmp_path: Path) -> Path:
         "CITATION.cff",
         "manifest.json",
         "pyproject.toml",
+        "server.json",
         "scripts/check-version-sync.sh",
     ):
         source = REPO_ROOT / relative_path
@@ -54,6 +55,16 @@ def _read_version(path: Path) -> str:
 
 def _read_manifest_version(path: Path) -> str:
     return json.loads(path.read_text(encoding="utf-8"))["version"]
+
+
+def _read_server_versions(path: Path) -> tuple[str, str]:
+    server = json.loads(path.read_text(encoding="utf-8"))
+    package = next(
+        item
+        for item in server["packages"]
+        if item["registryType"] == "pypi" and item["identifier"] == "biomcp-cli"
+    )
+    return server["version"], package["version"]
 
 
 def _read_citation_version(path: Path) -> str:
@@ -88,6 +99,21 @@ def _replace_manifest_version(path: Path, new_version: str) -> None:
     path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 
+def _replace_server_version(path: Path, new_version: str) -> None:
+    server = json.loads(path.read_text(encoding="utf-8"))
+    server["version"] = new_version
+    path.write_text(json.dumps(server, indent=2) + "\n", encoding="utf-8")
+
+
+def _replace_server_package_version(path: Path, new_version: str) -> None:
+    server = json.loads(path.read_text(encoding="utf-8"))
+    for package in server["packages"]:
+        if package["registryType"] == "pypi" and package["identifier"] == "biomcp-cli":
+            package["version"] = new_version
+            break
+    path.write_text(json.dumps(server, indent=2) + "\n", encoding="utf-8")
+
+
 def _replace_citation_version(path: Path, new_version: str) -> None:
     updated, count = CITATION_VERSION_PATTERN.subn(
         lambda match: match.group(0).replace(match.group(1), new_version, 1),
@@ -102,6 +128,7 @@ def test_version_sync_script_passes_when_all_versions_match(tmp_path: Path) -> N
     repo_root = _copy_version_sync_fixture(tmp_path)
     expected_version = _read_version(repo_root / "Cargo.toml")
     assert _read_manifest_version(repo_root / "manifest.json") == expected_version
+    assert _read_server_versions(repo_root / "server.json") == (expected_version, expected_version)
     assert _read_citation_version(repo_root / "CITATION.cff") == expected_version
 
     result = _run_version_sync_script(repo_root)
@@ -175,21 +202,58 @@ def test_version_sync_script_reports_citation_mismatch(tmp_path: Path) -> None:
     ) in result.stderr
 
 
+def test_version_sync_script_reports_server_json_mismatch(tmp_path: Path) -> None:
+    repo_root = _copy_version_sync_fixture(tmp_path)
+    server = repo_root / "server.json"
+    current_version = _read_version(repo_root / "Cargo.toml")
+    mismatched_version = f"{current_version}-server-mismatch"
+    _replace_server_version(server, mismatched_version)
+
+    result = _run_version_sync_script(repo_root)
+
+    assert result.returncode == 1
+    assert (
+        f"Version mismatch: Cargo.toml={current_version}, "
+        f"server.json={mismatched_version}"
+    ) in result.stderr
+
+
+def test_version_sync_script_reports_server_package_mismatch(tmp_path: Path) -> None:
+    repo_root = _copy_version_sync_fixture(tmp_path)
+    server = repo_root / "server.json"
+    current_version = _read_version(repo_root / "Cargo.toml")
+    mismatched_version = f"{current_version}-server-package-mismatch"
+    _replace_server_package_version(server, mismatched_version)
+
+    result = _run_version_sync_script(repo_root)
+
+    assert result.returncode == 1
+    assert (
+        f"Version mismatch: Cargo.toml={current_version}, "
+        f"server.json biomcp-cli={mismatched_version}"
+    ) in result.stderr
+
+
 def test_version_sync_script_reports_all_mismatches_in_one_run(tmp_path: Path) -> None:
     repo_root = _copy_version_sync_fixture(tmp_path)
     pyproject = repo_root / "pyproject.toml"
     cargo_lock = repo_root / "Cargo.lock"
     manifest = repo_root / "manifest.json"
     citation = repo_root / "CITATION.cff"
+    server = repo_root / "server.json"
     current_version = _read_version(repo_root / "Cargo.toml")
     pyproject_mismatch = f"{current_version}-pyproject-mismatch"
     lock_mismatch = f"{current_version}-lock-mismatch"
     manifest_mismatch = f"{current_version}-manifest-mismatch"
     citation_mismatch = f"{current_version}-citation-mismatch"
+    server_mismatch = f"{current_version}-server-mismatch"
+    server_package_mismatch = f"{current_version}-server-package-mismatch"
     _replace_first_version(pyproject, pyproject_mismatch)
     _replace_lock_root_version(cargo_lock, lock_mismatch)
     _replace_manifest_version(manifest, manifest_mismatch)
     _replace_citation_version(citation, citation_mismatch)
+    _replace_server_version(server, server_mismatch)
+    _replace_server_package_version(server, server_package_mismatch)
 
     result = _run_version_sync_script(repo_root)
 
@@ -210,6 +274,14 @@ def test_version_sync_script_reports_all_mismatches_in_one_run(tmp_path: Path) -
         f"Version mismatch: Cargo.toml={current_version}, "
         f"CITATION.cff={citation_mismatch}"
     ) in result.stderr
+    assert (
+        f"Version mismatch: Cargo.toml={current_version}, "
+        f"server.json={server_mismatch}"
+    ) in result.stderr
+    assert (
+        f"Version mismatch: Cargo.toml={current_version}, "
+        f"server.json biomcp-cli={server_package_mismatch}"
+    ) in result.stderr
 
 
 def test_manifest_and_citation_versions_match_repo_metadata() -> None:
@@ -220,6 +292,10 @@ def test_manifest_and_citation_versions_match_repo_metadata() -> None:
     assert pyproject["project"]["version"] == "0.8.24"
     assert _read_manifest_version(REPO_ROOT / "manifest.json") == cargo["package"]["version"]
     assert _read_manifest_version(REPO_ROOT / "manifest.json") == pyproject["project"]["version"]
+    assert _read_server_versions(REPO_ROOT / "server.json") == (
+        cargo["package"]["version"],
+        pyproject["project"]["version"],
+    )
     assert _read_citation_version(REPO_ROOT / "CITATION.cff") == cargo["package"]["version"]
     assert _read_citation_version(REPO_ROOT / "CITATION.cff") == pyproject["project"]["version"]
 
