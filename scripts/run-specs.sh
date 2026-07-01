@@ -88,9 +88,14 @@ run_ctgov_fixture() {
   source_if_present "$ROOT/.cache/spec-ctgov-intervention-alias-env"
 }
 
+cleanup_disease_survival_fixture() {
+  bash spec/fixtures/cleanup-disease-survival-spec-fixture.sh "$ROOT"
+}
+
 run_disease_survival_fixture() {
   bash spec/fixtures/setup-disease-survival-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-disease-survival-env"
+  trap cleanup_disease_survival_fixture EXIT
 }
 
 run_markdown_specs() {
