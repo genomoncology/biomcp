@@ -427,6 +427,16 @@ sed -n '/mustmatch/p;/--mustmatch/p' ../../Makefile ../../pyproject.toml ../../t
 sed -n '/mustmatch/p;/--mustmatch/p' ../../Makefile ../../pyproject.toml ../../tests/test_version_sync_script.py ../../uv.lock | mustmatch not like "mustmatch-timeout"
 ```
 
+## Official MCP Registry Metadata
+
+BioMCP publishes local registry metadata for the official MCP Registry. The
+routine check validates the root `server.json`, package identity, ownership
+marker, and publish docs before a release is cut.
+
+```bash
+bash ../../scripts/check-mcp-registry-server.sh | mustmatch like "MCP registry metadata ok"
+```
+
 ## Spec Corpus Uses Robust Mustmatch Blocks
 
 BioMCP's executable specs should read like durable documentation rather than a
