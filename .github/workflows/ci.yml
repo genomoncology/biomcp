@@ -41,6 +41,17 @@ jobs:
       - uses: actions/checkout@v4
       - run: bash scripts/check-no-climb-tracked.sh
 
+  docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build --tag biomcp:ci .
+      - name: Smoke Docker image
+        run: |
+          docker run --rm biomcp:ci --version
+          docker run --rm biomcp:ci list
+
   contracts:
     runs-on: ubuntu-latest
     steps:
