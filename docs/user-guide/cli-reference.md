@@ -98,6 +98,7 @@ biomcp skill install [dir]
 biomcp skill list                 # list embedded worked examples
 biomcp mcp
 biomcp serve
+biomcp mcp-config [--client <client>] [--absolute-path]
 biomcp serve-http [--host 127.0.0.1] [--port 8080]
 biomcp update [--check] [--allow-missing-checksum]
 biomcp uninstall
@@ -560,6 +561,7 @@ biomcp batch variant "BRAF V600E","KRAS G12D" --json
 ## MCP mode
 
 - `biomcp serve` runs the stdio MCP server.
+- `biomcp mcp-config --client <codex|claude-desktop|claude-code|cursor|cline|vscode|json>` prints copy-paste local stdio MCP client config using `biomcp serve`; add `--absolute-path` when the client cannot see your shell `PATH`.
 - `biomcp serve-http` runs the MCP Streamable HTTP server.
 - Streamable HTTP clients connect to `/mcp`.
 - Probe routes: `/health`, `/readyz`, and `/`.

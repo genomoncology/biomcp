@@ -41,6 +41,27 @@ initialized request'
 done
 ```
 
+## MCP Client Config Generator Prints Local Stdio Snippets
+
+Client setup should not depend on hand-written JSON blocks drifting away from the
+installed BioMCP binary. The generator prints local stdio snippets that point MCP
+clients at `biomcp serve`; remote HTTP deployment remains a separate server mode.
+
+```bash
+biomcp mcp-config --client claude-desktop | mustmatch like '{"mcpServers":{"biomcp":{"command":"biomcp","args":["serve"]}}}'
+```
+
+When a user has not picked a client yet, the command should be a discovery page
+rather than a dead end. It names the supported clients and shows the copyable
+form for a concrete client.
+
+```bash
+biomcp mcp-config | mustmatch like "Supported MCP clients:
+codex
+claude-desktop
+biomcp mcp-config --client claude-desktop"
+```
+
 ## Streamable HTTP Help Names the Canonical Route
 
 The remote/server deployment mode should keep pointing operators at `/mcp` and

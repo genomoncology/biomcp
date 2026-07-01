@@ -16,6 +16,7 @@ BLOCKED_FAMILIES = {
     "gtr",
     "who-ivd",
     "mcp",
+    "mcp-config",
     "serve",
     "serve-http",
     "serve-sse",

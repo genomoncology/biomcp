@@ -19,6 +19,7 @@ mod gene;
 mod gwas;
 pub mod health;
 pub mod list;
+mod mcp_config;
 mod outcome;
 mod pathway;
 mod pgx;

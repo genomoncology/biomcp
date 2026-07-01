@@ -1,6 +1,6 @@
 //! Top-level CLI payloads and subcommands that stay outside the per-entity families.
 
-use clap::{Args, Subcommand};
+use clap::{Args, Subcommand, ValueEnum};
 
 #[derive(Args, Debug)]
 pub struct HealthArgs {
@@ -56,6 +56,27 @@ pub struct ServeHttpArgs {
     /// Host header values to allow (comma-separated). Empty = allow any host.
     #[arg(long, value_delimiter = ',')]
     pub allowed_hosts: Vec<String>,
+}
+
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum McpClient {
+    Codex,
+    ClaudeDesktop,
+    ClaudeCode,
+    Cursor,
+    Cline,
+    Vscode,
+    Json,
+}
+
+#[derive(Args, Debug)]
+pub struct McpConfigArgs {
+    /// Print config for one client; omit to list supported clients
+    #[arg(long, value_enum)]
+    pub client: Option<McpClient>,
+    /// Use the resolved absolute executable path instead of bare `biomcp`
+    #[arg(long)]
+    pub absolute_path: bool,
 }
 
 #[derive(Args, Debug)]

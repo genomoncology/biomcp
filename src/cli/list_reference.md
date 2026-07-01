@@ -9,6 +9,7 @@ One command grammar covers all entities.
 New to BioMCP? Try:
 
 - `skill install` - install BioMCP skill guidance to your agent
+- `mcp-config --client claude-desktop` - print local stdio MCP client config
 - `suggest "What drugs treat melanoma?"` - choose the worked-example playbook for a question
 - `get gene BRAF` - look up a gene
 - `get gene BRCA1 diagnostics` - inspect GTR diagnostic tests for a known gene
@@ -87,6 +88,7 @@ New to BioMCP? Try:
 - `get trial <nct_id> --offset <N> --limit <N> locations` - page trial locations
 - `enrich <GENE1,GENE2,...>` - gene-set enrichment via g:Profiler
 - `batch <entity> <id1,id2,...>` - parallel get operations
+- `mcp-config [--client <client>] [--absolute-path]` - print local stdio MCP client config
 - `study list|download|top-mutated|filter|query|co-occurrence|cohort|survival|compare` - local cBioPortal study analytics
 
 ## Filter Highlights
@@ -166,6 +168,9 @@ Results depend on source document wording and may vary across sources.
 
 ## Deployment Notes
 
+- Use `biomcp mcp-config --client <client>` to print copy-paste local stdio MCP config.
+  Supported clients: codex, claude-desktop, claude-code, cursor, cline, vscode, json.
+  Output uses `biomcp serve` by default; add `--absolute-path` when the client cannot see your shell `PATH`.
 - Set `NCBI_API_KEY` to increase NCBI request throughput for article annotation/full-text paths.
 - Set `S2_API_KEY` for authenticated Semantic Scholar requests at 1 req/sec; without it, BioMCP uses the shared pool at 1 req/2sec.
 - `search article --json` and `--debug-plan` expose article source status,

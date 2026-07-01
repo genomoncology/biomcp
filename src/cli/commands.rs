@@ -142,6 +142,14 @@ EXAMPLES:
 EXAMPLES:
   biomcp serve")]
     Serve,
+    /// Print MCP client configuration for local stdio BioMCP
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp mcp-config
+  biomcp mcp-config --client claude-desktop
+  biomcp mcp-config --client codex
+  biomcp mcp-config --client json --absolute-path")]
+    McpConfig(system::McpConfigArgs),
     #[command(
         about = "Run the MCP Streamable HTTP server at /mcp",
         long_about = "Run the MCP Streamable HTTP server at /mcp.\n\nThis is the canonical remote/server deployment mode.\nHealth routes: GET /health, GET /readyz, GET /."

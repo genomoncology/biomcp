@@ -450,6 +450,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     crate::cli::list::render(entity.as_deref()).map_err(Into::into)
                 }
             }
+            Commands::McpConfig(args) => crate::cli::mcp_config::run(args),
             Commands::Mcp | Commands::Serve | Commands::ServeHttp(_) | Commands::ServeSse => {
                 anyhow::bail!("MCP/serve commands should not go through CLI run()")
             }
