@@ -68,6 +68,9 @@ class Handler(BaseHTTPRequestHandler):
         with REQUEST_LOG.open("a", encoding="utf-8") as log:
             log.write(f"GET {self.path}\n")
 
+        if parsed.path == "/healthz":
+            send_json(self, 200, {"status": "ok"})
+            return
         if parsed.path == "/mydisease/query":
             send_json(self, 200, {"total": 1, "hits": [CML_HIT]})
             return
@@ -106,6 +109,34 @@ done
 
 test -s "$ready_file"
 base_url="$(cat "$ready_file")"
+
+for _ in $(seq 1 50); do
+  if uv run --no-sync python - "$base_url/healthz" <<'PY' >/dev/null 2>&1
+from urllib.request import urlopen
+import sys
+
+with urlopen(sys.argv[1], timeout=1) as response:
+    if response.status != 200:
+        raise SystemExit(1)
+PY
+  then
+    break
+  fi
+  if ! kill -0 "$server_pid" 2>/dev/null; then
+    cat "$server_log" >&2
+    exit 1
+  fi
+  sleep 0.1
+done
+
+uv run --no-sync python - "$base_url/healthz" <<'PY' >/dev/null
+from urllib.request import urlopen
+import sys
+
+with urlopen(sys.argv[1], timeout=1) as response:
+    if response.status != 200:
+        raise SystemExit(1)
+PY
 
 {
   printf 'export BIOMCP_MYDISEASE_BASE=%q\n' "$base_url/mydisease"
