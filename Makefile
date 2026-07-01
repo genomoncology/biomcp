@@ -6,6 +6,7 @@ SPEC_ROUTINE_PATHS = \
 	spec/entity/study.md \
 	spec/entity/variant.md \
 	spec/surface/mcp.md \
+	spec/surface/docker-image.md \
 	spec/surface/skills.md \
 	spec/surface/cli-contract-ratchet.md \
 	spec/surface/trial-action-summary.md \

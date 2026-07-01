@@ -1,0 +1,57 @@
+# Docker Image
+
+BioMCP ships as a container image for users who want the CLI or stdio MCP server
+without installing a local Rust or Python toolchain. The image should behave like
+the local binary: Docker supplies the executable, and users pass normal `biomcp`
+arguments after the image name.
+
+## Docker Image Uses The BioMCP Entrypoint
+
+The root Dockerfile is the source of the published image. It should keep HTTPS
+trust roots in the runtime layer and expose the `biomcp` binary directly as the
+entrypoint so documented `docker run` commands can pass ordinary CLI arguments.
+
+```bash
+sed -n '1,220p' ../../Dockerfile | mustmatch like 'ca-certificates
+ENTRYPOINT ["biomcp"]'
+```
+
+## Pull Request CI Builds And Smokes The Image
+
+Pull request CI should build the image and run the two no-network smoke commands
+that prove the entrypoint works: version output and the command-reference page.
+Keeping this in CI catches broken Dockerfiles before a release tries to publish
+an unusable image.
+
+```bash
+sed -n '1,260p' ../../.github/workflows/ci.yml | mustmatch like 'docker build
+docker run --rm
+--version
+list'
+```
+
+## Release Publishes GHCR Image Tags
+
+The release workflow should publish the official image to GHCR with both the
+release version tag and `latest`. Versioned tags give users a stable pin, while
+`latest` keeps the simplest getting-started command current.
+
+```bash
+sed -n '1,420p' ../../.github/workflows/release.yml | mustmatch like 'ghcr.io/genomoncology/biomcp
+type=semver
+type=raw,value=latest
+docker/build-push-action'
+```
+
+## Documentation Shows Docker CLI And Stdio MCP Use
+
+The user docs should show both ways people run the image: direct CLI commands
+such as `--version` and `list`, and a stdio MCP server invocation that passes
+`serve` to the same image entrypoint.
+
+```bash
+cat ../../docs/getting-started/installation.md ../../docs/reference/mcp-server.md | mustmatch like 'docker run --rm ghcr.io/genomoncology/biomcp --version
+docker run --rm ghcr.io/genomoncology/biomcp list
+ghcr.io/genomoncology/biomcp
+serve'
+```
