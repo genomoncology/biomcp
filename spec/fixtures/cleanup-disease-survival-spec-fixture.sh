@@ -12,7 +12,21 @@ fi
 
 if [[ -n "${BIOMCP_DISEASE_SURVIVAL_PID:-}" ]] && kill -0 "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null; then
   kill "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null || true
-  wait "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null || true
+  for _ in $(seq 1 50); do
+    if ! kill -0 "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null; then
+      break
+    fi
+    sleep 0.1
+  done
+  if kill -0 "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null; then
+    kill -KILL "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null || true
+    for _ in $(seq 1 50); do
+      if ! kill -0 "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null; then
+        break
+      fi
+      sleep 0.1
+    done
+  fi
 fi
 
 if [[ -n "${BIOMCP_DISEASE_SURVIVAL_ROOT:-}" ]]; then
