@@ -14,12 +14,36 @@ archive it installs, and it must install the released `biomcp` executable rather
 than rebuilding from source or downloading an unchecked asset.
 
 ```bash
-find ../.. -path '../../.git' -prune -o -name biomcp.rb -type f -print | sort | xargs -r sed -n '1,260p' | mustmatch like 'genomoncology/biomcp
+sed -n '1,260p' ../../Formula/biomcp.rb | mustmatch like 'genomoncology/biomcp
 biomcp-darwin-arm64.tar.gz
 biomcp-darwin-x86_64.tar.gz
 sha256
 bin.install
 biomcp'
+```
+
+Rendering the template for a release should replace the tag, version, and both
+architecture checksums without leaving placeholder text behind.
+
+```bash
+TAG=v9.8.7 VERSION=9.8.7 ARM64_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa X86_64_SHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb python3 - <<'PY' | mustmatch like 'version "9.8.7"
+releases/download/v9.8.7/biomcp-darwin-arm64.tar.gz
+sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+releases/download/v9.8.7/biomcp-darwin-x86_64.tar.gz
+sha256 "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+NO_PLACEHOLDERS_LEFT'
+import os
+from pathlib import Path
+
+formula = Path("../../Formula/biomcp.rb").read_text(encoding="utf-8")
+formula = formula.replace("__TAG__", os.environ["TAG"])
+formula = formula.replace("__VERSION__", os.environ["VERSION"])
+formula = formula.replace("__DARWIN_ARM64_SHA256__", os.environ["ARM64_SHA256"])
+formula = formula.replace("__DARWIN_X86_64_SHA256__", os.environ["X86_64_SHA256"])
+print(formula)
+if "__" not in formula:
+    print("NO_PLACEHOLDERS_LEFT")
+PY
 ```
 
 ## Release Workflow Updates Or Emits The Tap Formula
