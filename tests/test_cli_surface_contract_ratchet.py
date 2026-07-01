@@ -59,6 +59,9 @@ def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None
         "copy_paste_examples_are_shell_safe",
         "entities_do_not_depend_on_markdown_shell_quoting",
     ]
+    checked_surfaces = set(detail["checked_surfaces"])
+    assert "docs/user-guide/variant.md" in checked_surfaces
+    assert "spec/surface/cli-contract-ratchet.md" in checked_surfaces
 
 
 def test_cli_surface_contract_flags_must_be_documented_outside_source(tmp_path: Path) -> None:
@@ -137,6 +140,7 @@ def test_cli_surface_contract_rejects_unquoted_hgvs_redirect_examples(tmp_path: 
                 [
                     "biomcp variant normalize all 'NM_004448.2:c.829G>T'",
                     "biomcp variant normalize all NM_004448.2:c.829G>T",
+                    "biomcp variant normalize all --genome <assembly> NM_004448.2:c.829G>T",
                 ]
             ),
         },
