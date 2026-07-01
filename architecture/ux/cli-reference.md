@@ -34,8 +34,11 @@ biomcp cache clean            → remove orphan blobs and optionally age- or siz
 biomcp cache clear [--yes]    → destructively wipe the managed HTTP cache tree (JSON success; TTY or `--yes` required)
 biomcp gtr sync               → force-refresh the local GTR diagnostic bundle
 biomcp who-ivd sync           → force-refresh the local WHO IVD diagnostic CSV
+biomcp mcp-config [--client <client>] [--absolute-path] → print local stdio MCP client config
 biomcp serve-http            → run the MCP Streamable HTTP server at `/mcp`
 ```
+
+`biomcp mcp-config --client <codex|claude-desktop|claude-code|cursor|cline|vscode|json>` emits copy-paste local stdio config using `biomcp serve` by default; `--absolute-path` embeds the resolved executable path for clients that cannot see the shell `PATH`.
 
 Compatibility note: `biomcp serve-sse` remains available only as a hidden compatibility command that points users to `biomcp serve-http`.
 
