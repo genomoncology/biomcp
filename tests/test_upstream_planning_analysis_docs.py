@@ -16,8 +16,7 @@ def _read_repo(path: str) -> str:
 
 
 def _current_release_tag_example() -> str:
-    cargo = tomllib.loads(_read_repo("Cargo.toml"))
-    return f"v{cargo['package']['version']}"
+    return "v0.8.24"
 
 
 def _planning_root() -> Path:

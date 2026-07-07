@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "biomcp",
   "display_name": "BioMCP",
-  "version": "0.8.24",
+  "version": "0.8.25",
   "description": "Read-only biomedical search via the biomcp-cli PyPI distribution and biomcp command.",
   "long_description": "BioMCP packages the existing Rust CLI and MCP server as a local read-only bundle. Install biomcp-cli from PyPI; the unrelated biomcp PyPI package is not this project.",
   "author": {

@@ -3,7 +3,7 @@
   "name": "io.github.genomoncology/biomcp",
   "title": "BioMCP",
   "description": "Read-only biomedical search via the biomcp-cli PyPI package.",
-  "version": "0.8.24",
+  "version": "0.8.25",
   "websiteUrl": "https://biomcp.org",
   "repository": {
     "url": "https://github.com/genomoncology/biomcp",
@@ -13,7 +13,7 @@
     {
       "registryType": "pypi",
       "identifier": "biomcp-cli",
-      "version": "0.8.24",
+      "version": "0.8.25",
       "transport": {
         "type": "stdio"
       },
