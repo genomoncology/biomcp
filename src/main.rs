@@ -62,10 +62,7 @@ async fn main() -> std::process::ExitCode {
                         let _ = std::io::stderr().flush();
                     }
                 }
-                if output.exit_code != 0 {
-                    std::process::exit(i32::from(output.exit_code));
-                }
-                std::process::ExitCode::SUCCESS
+                std::process::exit(i32::from(output.exit_code));
             }
             Err(err) => {
                 if let Some(bio_err) = err.downcast_ref::<biomcp_cli::error::BioMcpError>() {

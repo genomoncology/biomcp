@@ -338,8 +338,8 @@ def test_manifest_and_citation_versions_match_repo_metadata() -> None:
     cargo = tomllib.loads((REPO_ROOT / "Cargo.toml").read_text(encoding="utf-8"))
     pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
-    assert cargo["package"]["version"] == "0.8.24"
-    assert pyproject["project"]["version"] == "0.8.24"
+    assert cargo["package"]["version"] == "0.8.25"
+    assert pyproject["project"]["version"] == "0.8.25"
     assert _read_manifest_version(REPO_ROOT / "manifest.json") == cargo["package"]["version"]
     assert _read_manifest_version(REPO_ROOT / "manifest.json") == pyproject["project"]["version"]
     assert _read_server_versions(REPO_ROOT / "server.json") == (
@@ -356,7 +356,7 @@ def test_uv_lock_matches_release_version_and_excludes_mustmatch_package() -> Non
     root_match = UV_LOCK_ROOT_VERSION_PATTERN.search(uv_lock)
 
     assert root_match is not None, "missing biomcp-cli package entry in uv.lock"
-    assert root_match.group(2) == "0.8.24"
+    assert root_match.group(2) == "0.8.25"
     assert 'name = "mustmatch"' not in uv_lock
     assert "mustmatch" + "==0.0.4" not in uv_lock
     assert 'specifier = "==0.0.4"' not in uv_lock

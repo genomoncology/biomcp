@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.8.25 — 2026-07-07
+
+### New features
+
+- Added Homebrew formula and tap release automation so macOS/Linuxbrew users can
+  install BioMCP from the project tap after release publication. (478)
+- Added a `biomcp mcp-config` generator and unified MCP-client setup docs so
+  users can copy local stdio config snippets for supported clients. (477)
+- Added Docker image publication with CI build and smoke coverage so releases can
+  publish `ghcr.io/genomoncology/biomcp` images. (476)
+- Published official MCP Registry metadata for `biomcp-cli`, including the PyPI
+  package distinction from the unrelated `biomcp` package. (473)
+- Annotated MCP tools with read-only hints and human-readable titles for safer
+  client presentation. (474)
+- Added opt-in variant structure annotation for residue, domain, PDB, AlphaFold,
+  and hotspot context without ddG prediction claims. (452)
+
+### Fixes
+
+- Emitted JSON usage errors for clap parse failures under `--json`, keeping CLI
+  error output machine-readable on parse errors. (466)
+- Fixed `variant normalize` JSON output so failures no longer look like silent
+  successes.
+- Normalized protein and phenotype JSON search next commands. (460)
+- Added broadening hints for zero-result filtered trial searches and clarified
+  `--mutation` versus `--biomarker` usage.
+- Surfaced the CIViC actionability pointer and currency caveat on default variant
+  cards without adding a new network call.
+- Accepted advertised `drug adverse-events --count` and clarified FAERS Summary
+  output as sample rows rather than an aggregate.
+- Bounded CLI exit latency after disease-survival and CTGov helper output, and
+  sped up CTGov alias fan-out tests. (467, 470)
+- Stabilized MCP/spec routing with dynamic reserved ports and live-lane routing
+  fixes. (468)
+
+### Docs
+
+- Added the unified "Add BioMCP to your MCP client" guide and refreshed MCP
+  deployment docs while keeping leaked internal spec text out of public docs.
+- Documented environment configuration parity with runtime behavior and added
+  ratchet coverage. (465)
+- Added shell-safe HGVS command examples and separated typed next-command
+  ownership from markdown shell quoting. (469)
+- Added the variant-structure blog walkthrough from linear sequence to 3D protein
+  context. (453)
+- Added the skill-authoring guide and normalize-to-codes worked example. (450)
+- Refreshed release-prep metadata and public release notes for v0.8.25. (479)
+
+### Internal
+
+- Added whole-surface CLI contract ratchets for help, list, docs, specs, and JSON
+  metadata. (459)
+- Completed helper and parent help discovery for helpers and skills. (463)
+- Restored deterministic routine disease-survival bounded-exit coverage with a
+  SEER fixture. (472)
+- Moved contract and release smokes to tag/release time, removed stale daily
+  release cron behavior, and repaired stale WikiPathways probe coverage.
+- Removed leaked internal working docs, retired validation profiles, and public
+  root clutter from the repo.
+
 ## 0.8.24 — 2026-06-23
 
 ### New features

@@ -460,6 +460,17 @@ marker, and publish docs before a release is cut.
 bash ../../scripts/check-mcp-registry-server.sh | mustmatch like "MCP registry metadata ok"
 ```
 
+## Release Prep Pins The Next Release Version
+
+Before publishing, the repo metadata should already be synchronized to the next
+release version. The local version-sync check is the operator's quick proof that
+Cargo, Python, MCP registry, citation, and plugin metadata all agree on the
+release being prepared.
+
+```bash
+bash ../../scripts/check-version-sync.sh | mustmatch like "Versions in sync: 0.8.25"
+```
+
 ## Spec Corpus Uses Robust Mustmatch Blocks
 
 BioMCP's executable specs should read like durable documentation rather than a

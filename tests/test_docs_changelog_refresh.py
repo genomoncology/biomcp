@@ -6,6 +6,27 @@ import tomllib
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_RELEASE_TICKETS = {
+    "0.8.25": {
+        450,
+        452,
+        453,
+        459,
+        460,
+        463,
+        465,
+        466,
+        467,
+        468,
+        469,
+        470,
+        472,
+        473,
+        474,
+        476,
+        477,
+        478,
+        479,
+    },
     "0.8.24": {
         239,
         240,
@@ -142,6 +163,44 @@ EXPECTED_RELEASE_TICKETS = {
     }
 }
 EXPECTED_RELEASE_MARKERS = {
+    "0.8.25": {
+        "fixes": [
+            "JSON usage errors",
+            "clap parse failures",
+            "variant normalize",
+            "protein and phenotype JSON search next commands",
+            "zero-result filtered trial searches",
+            "CIViC actionability pointer",
+            "drug adverse-events --count",
+            "disease-survival and CTGov helper output",
+            "dynamic reserved ports",
+        ],
+        "new_features": [
+            "Homebrew formula",
+            "`biomcp mcp-config` generator",
+            "MCP-client setup docs",
+            "Docker image publication",
+            "ghcr.io/genomoncology/biomcp",
+            "official MCP Registry metadata",
+            "read-only hints",
+            "variant structure annotation",
+        ],
+        "docs": [
+            "Add BioMCP to your MCP client",
+            "environment configuration parity",
+            "shell-safe HGVS command examples",
+            "variant-structure blog walkthrough",
+            "skill-authoring guide",
+            "v0.8.25",
+        ],
+        "internal": [
+            "whole-surface CLI contract ratchets",
+            "helper and parent help discovery",
+            "SEER fixture",
+            "contract and release smokes",
+            "retired validation profiles",
+        ],
+    },
     "0.8.24": {
         "fixes": [
             "RUSTSEC-2026-0186",
@@ -266,7 +325,7 @@ def _current_release_heading() -> str:
 
 
 def _current_release_tag_example() -> str:
-    return f"v{_current_release_version()}"
+    return "v0.8.24"
 
 
 def _markdown_section_block(text: str, heading: str) -> str:
