@@ -1081,10 +1081,10 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     ]
     expected_release_contract_runs = [
         "cargo build --release --locked",
+        "uv sync --extra dev --no-install-project",
         "make spec",
         "bash scripts/contract-smoke.sh",
         "bash scripts/release-smoke.sh",
-        "uv sync --extra dev --no-install-project",
         'uv run --no-sync pytest tests/ -v',
         "uv run --no-sync mkdocs build --strict",
     ]
@@ -1124,6 +1124,9 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     ) in ci_spec
     assert "if: steps.spec-cache.outputs.cache-hit == 'true'" in ci_spec
     assert "BIOMCP_SPEC_CACHE_HIT=1" in ci_spec
+    assert "- name: Install ripgrep" in release_validate
+    assert "run: sudo apt-get update && sudo apt-get install -y ripgrep" in release_validate
+    assert release_validate.index("Install ripgrep") < release_validate.index("make spec")
     assert _workflow_run_steps(release_validate)[-7:] == expected_release_contract_runs
     assert "- uses: actions/checkout@v4" in ci_version_sync
     assert _workflow_run_steps(ci_version_sync) == [
