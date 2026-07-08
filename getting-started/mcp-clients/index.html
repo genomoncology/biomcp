@@ -12,13 +12,13 @@
         <meta name="author" content="Ian Maurer">
       
       
-        <link rel="canonical" href="https://biomcp.org/reference/bioasq-benchmark/">
+        <link rel="canonical" href="https://biomcp.org/getting-started/mcp-clients/">
       
       
-        <link rel="prev" href="../benchmarks/">
+        <link rel="prev" href="../first-query/">
       
       
-        <link rel="next" href="../faq/">
+        <link rel="next" href="../claude-desktop/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>BioASQ Benchmark - BioMCP</title>
+        <title>MCP Clients - BioMCP</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#bioasq-benchmark" class="md-skip">
+        <a href="#add-biomcp-to-your-mcp-client" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              BioASQ Benchmark
+              MCP Clients
             
           </span>
         </div>
@@ -241,11 +241,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../getting-started/installation/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../installation/" class="md-tabs__link">
           
   
   
@@ -361,13 +363,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../quick-reference/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../reference/quick-reference/" class="md-tabs__link">
           
   
   
@@ -518,26 +518,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -555,7 +560,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -573,7 +578,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -601,7 +606,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/first-query/" class="md-nav__link">
+      <a href="../first-query/" class="md-nav__link">
         
   
   
@@ -626,10 +631,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../getting-started/mcp-clients/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Clients
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -645,6 +677,147 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fast-path-generate-the-client-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fast path: generate the client config
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choose-your-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choose your client
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#codex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Codex
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#claude-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#claude-desktop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Desktop
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cursor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cursor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vs-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VS Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generic-mcp-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generic MCP JSON
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate-before-connecting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validate before connecting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -657,7 +830,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/claude-desktop/" class="md-nav__link">
+      <a href="../claude-desktop/" class="md-nav__link">
         
   
   
@@ -685,7 +858,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/remote-http/" class="md-nav__link">
+      <a href="../remote-http/" class="md-nav__link">
         
   
   
@@ -713,7 +886,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/api-keys/" class="md-nav__link">
+      <a href="../api-keys/" class="md-nav__link">
         
   
   
@@ -741,7 +914,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/skills/" class="md-nav__link">
+      <a href="../skills/" class="md-nav__link">
         
   
   
@@ -2972,31 +3145,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -3014,7 +3182,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -3032,7 +3200,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quick-reference/" class="md-nav__link">
+      <a href="../../reference/quick-reference/" class="md-nav__link">
         
   
   
@@ -3060,7 +3228,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../data-sources/" class="md-nav__link">
+      <a href="../../reference/data-sources/" class="md-nav__link">
         
   
   
@@ -3088,7 +3256,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../source-licensing/" class="md-nav__link">
+      <a href="../../reference/source-licensing/" class="md-nav__link">
         
   
   
@@ -3116,7 +3284,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../mcp-server/" class="md-nav__link">
+      <a href="../../reference/mcp-server/" class="md-nav__link">
         
   
   
@@ -3144,7 +3312,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../error-codes/" class="md-nav__link">
+      <a href="../../reference/error-codes/" class="md-nav__link">
         
   
   
@@ -3172,7 +3340,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../benchmarks/" class="md-nav__link">
+      <a href="../../reference/benchmarks/" class="md-nav__link">
         
   
   
@@ -3197,37 +3365,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    BioASQ Benchmark
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../reference/bioasq-benchmark/" class="md-nav__link">
         
   
   
@@ -3243,136 +3384,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#two-lanes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Two lanes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#public-historical-lane" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Public historical lane
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recommended-bundle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recommended bundle
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ranking-calibration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ranking calibration
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#skill-prompt-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Skill Prompt Integration
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#provenance-and-terms" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Provenance and terms
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#validity-overlay" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Validity overlay
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#official-competition-lane" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Official competition lane
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#evidence-value-matrix" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Evidence value matrix
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#grounding-references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Grounding references
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3385,7 +3396,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../faq/" class="md-nav__link">
+      <a href="../../reference/faq/" class="md-nav__link">
         
   
   
@@ -3413,7 +3424,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+      <a href="../../reference/configuration/" class="md-nav__link">
         
   
   
@@ -3441,7 +3452,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../source-versioning/" class="md-nav__link">
+      <a href="../../reference/source-versioning/" class="md-nav__link">
         
   
   
@@ -3469,7 +3480,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../article-keyword-search/" class="md-nav__link">
+      <a href="../../reference/article-keyword-search/" class="md-nav__link">
         
   
   
@@ -3497,7 +3508,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../civic-sections/" class="md-nav__link">
+      <a href="../../reference/civic-sections/" class="md-nav__link">
         
   
   
@@ -3525,7 +3536,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../drug-approvals-and-ae-summary/" class="md-nav__link">
+      <a href="../../reference/drug-approvals-and-ae-summary/" class="md-nav__link">
         
   
   
@@ -3553,7 +3564,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dependencies/" class="md-nav__link">
+      <a href="../../reference/dependencies/" class="md-nav__link">
         
   
   
@@ -3973,10 +3984,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-lanes" class="md-nav__link">
+  <a href="#fast-path-generate-the-client-config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two lanes
+        Fast path: generate the client config
       
     </span>
   </a>
@@ -3984,10 +3995,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#public-historical-lane" class="md-nav__link">
+  <a href="#choose-your-client" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Public historical lane
+        Choose your client
       
     </span>
   </a>
@@ -3995,10 +4006,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recommended-bundle" class="md-nav__link">
+  <a href="#codex" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recommended bundle
+        Codex
       
     </span>
   </a>
@@ -4006,10 +4017,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ranking-calibration" class="md-nav__link">
+  <a href="#claude-code" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Ranking calibration
+        Claude Code
       
     </span>
   </a>
@@ -4017,10 +4028,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#skill-prompt-integration" class="md-nav__link">
+  <a href="#claude-desktop" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Skill Prompt Integration
+        Claude Desktop
       
     </span>
   </a>
@@ -4028,10 +4039,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#provenance-and-terms" class="md-nav__link">
+  <a href="#cursor" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Provenance and terms
+        Cursor
       
     </span>
   </a>
@@ -4039,10 +4050,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#validity-overlay" class="md-nav__link">
+  <a href="#cline" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Validity overlay
+        Cline
       
     </span>
   </a>
@@ -4050,10 +4061,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#official-competition-lane" class="md-nav__link">
+  <a href="#vs-code" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Official competition lane
+        VS Code
       
     </span>
   </a>
@@ -4061,10 +4072,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#evidence-value-matrix" class="md-nav__link">
+  <a href="#generic-mcp-json" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Evidence value matrix
+        Generic MCP JSON
       
     </span>
   </a>
@@ -4072,10 +4083,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#grounding-references" class="md-nav__link">
+  <a href="#validate-before-connecting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Grounding references
+        Validate before connecting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
       
     </span>
   </a>
@@ -4102,167 +4124,146 @@
   
 
 
-<h1 id="bioasq-benchmark">BioASQ Benchmark<a class="headerlink" href="#bioasq-benchmark" title="Permanent link">&para;</a></h1>
-<p>BioMCP treats BioASQ as an offline benchmark input, not as a live runtime
-source. The benchmark module under <code>benchmarks/bioasq/</code> exists so the repo can
-ingest public benchmark artifacts, preserve provenance, and document the
-official competition workflow without collapsing those two lanes together.</p>
-<h2 id="two-lanes">Two lanes<a class="headerlink" href="#two-lanes" title="Permanent link">&para;</a></h2>
-<p>BioMCP keeps a <strong>public historical benchmark lane</strong> and an
-<strong>official competition lane</strong> on purpose.</p>
-<ul>
-<li>The public historical benchmark lane supports internal regression tracking,
-  prompt iteration, and longitudinal product measurement.</li>
-<li>The official competition lane supports registered Task B participation and
-  external leaderboard claims.</li>
-</ul>
-<p>These lanes do not carry the same evidence value. Public availability does not
-turn a mirror into an official participant download.</p>
-<h2 id="public-historical-lane">Public historical lane<a class="headerlink" href="#public-historical-lane" title="Permanent link">&para;</a></h2>
-<p>The public historical lane currently has two manifest-defined bundles:</p>
-<table>
-<thead>
-<tr>
-<th>Bundle id</th>
-<th>Packaging</th>
-<th>Purpose</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>hf-public-pre2026</code></td>
-<td><code>public_mirror</code></td>
-<td>Recommended regression bundle</td>
-<td>Pinned to <code>jmhb/BioASQ</code> revision <code>8eb56db5f3f43ce7c4102169b24158ad2dc53a74</code>; deduped output count is <code>5399</code></td>
-</tr>
-<tr>
-<td><code>mirage-yesno-2024</code></td>
-<td><code>public_derived_benchmark</code></td>
-<td>Supplemental yes/no slice</td>
-<td>Pinned to the MIRAGE commit URL and normalizes <code>618</code> yes/no records</td>
-</tr>
-</tbody>
-</table>
-<p>Generate the public bundles with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>--script<span class="w"> </span>benchmarks/bioasq/ingest_public.py<span class="w"> </span>--bundle<span class="w"> </span>hf-public-pre2026
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>run<span class="w"> </span>--script<span class="w"> </span>benchmarks/bioasq/ingest_public.py<span class="w"> </span>--bundle<span class="w"> </span>mirage-yesno-2024
+<h1 id="add-biomcp-to-your-mcp-client">Add BioMCP to your MCP client<a class="headerlink" href="#add-biomcp-to-your-mcp-client" title="Permanent link">&para;</a></h1>
+<p>Use this page after installing BioMCP to connect the local <code>biomcp serve</code> stdio
+server to your MCP client.</p>
+<div class="admonition warning">
+<p class="admonition-title">Install <code>biomcp-cli</code>, not <code>biomcp</code></p>
+<p>The PyPI package for this project is <code>biomcp-cli</code>. It installs the
+<code>biomcp</code> binary used below. Do <strong>not</strong> run <code>pip install biomcp</code>; that PyPI
+package is unrelated to this project.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>--version
 </code></pre></div>
-<p>The ingester writes raw source exports under <code>benchmarks/bioasq/datasets/raw/</code>
-and canonical JSONL output under <code>benchmarks/bioasq/datasets/normalized/</code>.</p>
-<h2 id="recommended-bundle">Recommended bundle<a class="headerlink" href="#recommended-bundle" title="Permanent link">&para;</a></h2>
-<p><code>hf-public-pre2026</code> is the recommended public bundle for longitudinal BioMCP
-benchmarking. It has the broadest public coverage and produces a stable
-normalized JSONL export.</p>
-<p>The repo keeps the public versus official count mismatch explicit:</p>
-<ul>
-<li><code>hf-public-pre2026</code> normalizes to <code>5399</code> public mirror-derived questions</li>
-<li><code>official-task-b-participant-download</code> records <code>5389</code> questions from the
-  official participant download reviewed on <code>2026-03-25</code></li>
-</ul>
-<p>That mismatch is provenance to surface, not a bug to hide.</p>
-<h2 id="ranking-calibration">Ranking calibration<a class="headerlink" href="#ranking-calibration" title="Permanent link">&para;</a></h2>
-<p>Article-ranking calibration lives in the repo-local guide at
-<code>benchmarks/bioasq/ranking-calibration/README.md</code>. That guide records the
-worked-example fixture surface used for future ranking tuning, points back to
-the committed provenance files, and records the lexical-regression,
-hybrid-default, entity-only fallback, and weight-override proofs that gate
-ranking changes.</p>
-<p>This is not a new benchmark lane. The calibration surface stays in Rust tests
-and benchmark docs because live ranking-order assertions against upstream
-article responses are unstable.</p>
-<h2 id="skill-prompt-integration">Skill Prompt Integration<a class="headerlink" href="#skill-prompt-integration" title="Permanent link">&para;</a></h2>
-<p>eval runners should call <code>biomcp skill render</code> immediately before building the
-system prompt for a measurement run. That command is the canonical
-agent-facing BioMCP prompt surface and avoids pinning a stale <code>SKILL.md</code>
-snapshot in benchmark harnesses.</p>
-<p>Snapshot-based eval runners should refresh their snapshot before measurement
-with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>render<span class="w"> </span>&gt;<span class="w"> </span>&lt;snapshot-path&gt;
+</div>
+<h2 id="fast-path-generate-the-client-config">Fast path: generate the client config<a class="headerlink" href="#fast-path-generate-the-client-config" title="Permanent link">&para;</a></h2>
+<p>BioMCP can print copy-paste setup for the supported local stdio clients:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>codex
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>claude-desktop
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>claude-code
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>cursor
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>cline
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>vscode
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>json
 </code></pre></div>
-<p>This repository contains BioASQ data preparation and benchmark documentation,
-but it does not contain the external eval CLI startup path. BioMCP therefore
-ships the stable render command and documents the startup/snapshot contract; it
-does not claim that external eval startup code was switched here.</p>
-<h2 id="provenance-and-terms">Provenance and terms<a class="headerlink" href="#provenance-and-terms" title="Permanent link">&para;</a></h2>
-<p>The public bundle metadata lives in <code>benchmarks/bioasq/datasets/manifest.json</code>.
-Each normalized record carries a <code>provenance</code> object with lane, source,
-packaging, pinned source ref, and source record id.</p>
-<p>Terms and source boundaries:</p>
+<p>If your MCP client cannot see the same shell <code>PATH</code> where <code>biomcp</code> is
+installed, add <code>--absolute-path</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>claude-desktop<span class="w"> </span>--absolute-path
+</code></pre></div>
+<p>The sections below are static fallbacks you can copy directly.</p>
+<h2 id="choose-your-client">Choose your client<a class="headerlink" href="#choose-your-client" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The HF mirror bundle uses <code>jmhb/BioASQ</code> with source packaging
-  <code>public_mirror</code>. The HF card references BioASQ participation terms at
-  <a href="https://bioasq.org/participate">https://bioasq.org/participate</a>.</li>
-<li>The MIRAGE slice uses a commit-pinned public benchmark URL with source
-  packaging <code>public_derived_benchmark</code>.</li>
-<li>Neither public artifact is labeled as <code>official_download</code>.</li>
+<li><a href="#codex">Codex</a></li>
+<li><a href="#claude-code">Claude Code</a></li>
+<li><a href="#claude-desktop">Claude Desktop</a></li>
+<li><a href="#cursor">Cursor</a></li>
+<li><a href="#cline">Cline</a></li>
+<li><a href="#vs-code">VS Code</a></li>
+<li><a href="#generic-mcp-json">Generic MCP JSON</a></li>
 </ul>
-<h2 id="validity-overlay">Validity overlay<a class="headerlink" href="#validity-overlay" title="Permanent link">&para;</a></h2>
-<p>Future stale or invalid question review belongs in the validity overlay, not in
-the raw corpus. The module ships:</p>
+<h2 id="codex">Codex<a class="headerlink" href="#codex" title="Permanent link">&para;</a></h2>
+<p>Generate the command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>codex
+</code></pre></div>
+<p>Or add the server directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>codex<span class="w"> </span>mcp<span class="w"> </span>add<span class="w"> </span>biomcp<span class="w"> </span>--<span class="w"> </span>biomcp<span class="w"> </span>serve
+</code></pre></div>
+<h2 id="claude-code">Claude Code<a class="headerlink" href="#claude-code" title="Permanent link">&para;</a></h2>
+<p>For Claude Code, prefer the BioMCP plugin marketplace. Install the <code>biomcp</code>
+binary first, then run these Claude Code slash commands:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>/plugin marketplace add genomoncology/biomcp
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>/plugin install biomcp@biomcp
+</code></pre></div>
+<p>The plugin wires Claude Code to the local stdio MCP server with <code>biomcp serve</code>.
+If you need manual JSON instead, generate it with:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>claude-code
+</code></pre></div>
+<h2 id="claude-desktop">Claude Desktop<a class="headerlink" href="#claude-desktop" title="Permanent link">&para;</a></h2>
+<p>When available in your Claude Desktop build, install BioMCP from the Anthropic
+Directory or MCPB extension flow. For a local manual setup, generate the JSON:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>claude-desktop
+</code></pre></div>
+<p>Then add this server entry to your Claude Desktop config:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">&quot;biomcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;biomcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;serve&quot;</span><span class="p">]</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="p">}</span>
+</code></pre></div>
+<p>Restart Claude Desktop after changing the config.</p>
+<h2 id="cursor">Cursor<a class="headerlink" href="#cursor" title="Permanent link">&para;</a></h2>
+<p>Generate the Cursor config:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>cursor
+</code></pre></div>
+<p>Or add this to your Cursor MCP config:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="p">{</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="nt">&quot;biomcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;biomcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;serve&quot;</span><span class="p">]</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="cline">Cline<a class="headerlink" href="#cline" title="Permanent link">&para;</a></h2>
+<p>Generate the Cline config:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>cline
+</code></pre></div>
+<p>Or add this server to Cline's MCP settings:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="p">{</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="nt">&quot;biomcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;biomcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;serve&quot;</span><span class="p">]</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="vs-code">VS Code<a class="headerlink" href="#vs-code" title="Permanent link">&para;</a></h2>
+<p>Generate the VS Code config:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>vscode
+</code></pre></div>
+<p>Or add this server to your VS Code MCP configuration:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="nt">&quot;biomcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;biomcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;serve&quot;</span><span class="p">]</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="generic-mcp-json">Generic MCP JSON<a class="headerlink" href="#generic-mcp-json" title="Permanent link">&para;</a></h2>
+<p>Use the generic JSON form for any stdio MCP client that accepts an <code>mcpServers</code>
+object:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>mcp-config<span class="w"> </span>--client<span class="w"> </span>json
+</code></pre></div>
+<p>Static fallback:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="p">{</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="nt">&quot;biomcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;biomcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;serve&quot;</span><span class="p">]</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="validate-before-connecting">Validate before connecting<a class="headerlink" href="#validate-before-connecting" title="Permanent link">&para;</a></h2>
+<p>Run quick local checks before restarting your client:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>--version
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
+</code></pre></div>
+<p>If the client still cannot start BioMCP, regenerate its config with
+<code>--absolute-path</code> and paste the result into the client settings.</p>
+<h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>benchmarks/bioasq/annotations/validity.schema.json</code></li>
-<li><code>benchmarks/bioasq/annotations/validity.jsonl</code></li>
-</ul>
-<p>Join records with <code>question_id</code> plus <code>bundle_id</code>. That keeps future review
-layered on top of the normalized bundles without rewriting the source material.</p>
-<h2 id="official-competition-lane">Official competition lane<a class="headerlink" href="#official-competition-lane" title="Permanent link">&para;</a></h2>
-<p>The official competition lane is documented from the public participants-area
-page reviewed on <code>2026-03-25</code>:
-<a href="https://participants-area.bioasq.org/general_information/Task14b/">https://participants-area.bioasq.org/general_information/Task14b/</a></p>
-<p>Operational points for Task B:</p>
-<ul>
-<li>Registered users can download the <code>5389</code>-question development dataset from
-  the participant area.</li>
-<li>Teams must declare their systems in <strong>Edit Profile</strong> before uploading runs.</li>
-<li>The test set is released in four batches.</li>
-<li><strong>Phase A</strong> and <strong>Phase A+</strong> submissions are due within <code>24 hours</code> of each
-  batch's question release.</li>
-<li><strong>Phase B</strong> submissions are due within <code>24 hours</code> of the gold
-  article/snippet release for that batch.</li>
-</ul>
-<p>What a BioMCP system submission would look like:</p>
-<ol>
-<li>Register the team and system in the participants area.</li>
-<li>Download the official development set from the participant portal.</li>
-<li>Run the Task B answer-generation stack on each released batch.</li>
-<li>Package the batch answers in the official submission format and upload them
-   inside the task window.</li>
-</ol>
-<p>Official results support competition and leaderboard claims. They do not
-replace the public historical benchmark lane for product regression tracking.</p>
-<h2 id="evidence-value-matrix">Evidence value matrix<a class="headerlink" href="#evidence-value-matrix" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Lane</th>
-<th>Supports</th>
-<th>Does not support</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Public historical benchmark lane</td>
-<td>Internal regression tracking, prompt comparisons, repeatable product measurement</td>
-<td>Official leaderboard claims or claims that the bundle is an official participant archive</td>
-</tr>
-<tr>
-<td>Official competition lane</td>
-<td>Registered Task B submissions, leaderboard placement, external claims tied to BioASQ participation</td>
-<td>A stable always-available public regression corpus for every operator</td>
-</tr>
-</tbody>
-</table>
-<h2 id="grounding-references">Grounding references<a class="headerlink" href="#grounding-references" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Repo-local artifacts: <code>benchmarks/bioasq/ingest_public.py</code>,
-  <code>benchmarks/bioasq/datasets/manifest.json</code>,
-  <code>benchmarks/bioasq/annotations/validity.schema.json</code></li>
-<li>HF mirror terms link: <a href="https://bioasq.org/participate">https://bioasq.org/participate</a></li>
-<li>MIRAGE pinned source:
-  <a href="https://raw.githubusercontent.com/gzxiong/MIRAGE/3490d7b5b5fcb96288860ec74d18c3e398a56703/benchmark.json">https://raw.githubusercontent.com/gzxiong/MIRAGE/3490d7b5b5fcb96288860ec74d18c3e398a56703/benchmark.json</a></li>
-<li>Official Task B lane:
-  <a href="https://participants-area.bioasq.org/general_information/Task14b/">https://participants-area.bioasq.org/general_information/Task14b/</a></li>
+<li><a href="../installation/">Installation</a></li>
+<li><a href="../api-keys/">API keys</a></li>
+<li><a href="../../reference/mcp-server/">MCP server reference</a></li>
+<li><a href="../remote-http/">Remote HTTP Server</a></li>
 </ul>
 
 

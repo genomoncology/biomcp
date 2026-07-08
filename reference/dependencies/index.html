@@ -18,7 +18,7 @@
         <link rel="prev" href="../drug-approvals-and-ae-summary/">
       
       
-        <link rel="next" href="../../blog/daraxonrasib-six-commands/">
+        <link rel="next" href="../../blog/variant-structure-in-commands/">
       
       
         
@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
+        <a href="../../blog/variant-structure-in-commands/" class="md-tabs__link">
           
   
   
@@ -609,6 +609,34 @@
     
   
     First Query
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/mcp-clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Clients
   
 
     
@@ -2237,6 +2265,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/annotate-variant-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotate Variant Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/cross-entity-pivots/" class="md-nav__link">
         
   
@@ -2385,6 +2441,34 @@
     
   
     Search All Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/skill-authoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skill Authoring
   
 
     
@@ -2612,6 +2696,62 @@
     
   
     Pie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/waterfall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Waterfall
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/scatter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scatter
   
 
     
@@ -3116,6 +3256,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../source-versioning/" class="md-nav__link">
         
   
@@ -3500,6 +3668,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/variant-structure-in-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From BRAF V600E to 3D Protein Context in 3 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
         
   
@@ -3564,6 +3760,34 @@
     
   
     Generate Charts Easily from Study Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kuva Charting Examples
   
 
     
@@ -3943,10 +4167,8 @@ fulltext links; NCBI EFetch retrieves PubMed/PMC records; the NCBI ID Converter
 maps between PMID, PMCID, and DOI when one identifier needs another route; PMC OA
 supplies open-access package/file discovery; Figshare supports article
 supplement and hosted-file retrieval; Semantic Scholar PDF links are optional
-PDF candidates when available. Retrieved content is normalized by Rust
-transformers: JATS XML through <code>src/transform/article/jats.rs</code>, HTML through
-<code>src/transform/article/html.rs</code>, and PDF text extraction through
-<code>src/transform/article/pdf.rs</code>.</p>
+PDF candidates when available. Retrieved content is normalized by built-in Rust transformers for JATS XML,
+HTML, and PDF text extraction.</p>
 <h2 id="key-dependencies">Key Dependencies<a class="headerlink" href="#key-dependencies" title="Permanent link">&para;</a></h2>
 <h3 id="kuva-charting">Kuva — Charting<a class="headerlink" href="#kuva-charting" title="Permanent link">&para;</a></h3>
 <p><a href="https://github.com/Psy-Fer/kuva">Kuva</a> (v0.1.4) is the charting engine behind BioMCP's <code>--chart</code> flag. BioMCP currently exposes 12 chart modes (<code>bar</code>, <code>stacked-bar</code>, <code>pie</code>, <code>waterfall</code>, <code>heatmap</code>, <code>histogram</code>, <code>density</code>, <code>box</code>, <code>violin</code>, <code>ridgeline</code>, <code>scatter</code>, <code>survival</code>) backed by Kuva plots and rendered to terminal, SVG, and PNG.</p>

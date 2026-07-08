@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
+        <a href="../../blog/variant-structure-in-commands/" class="md-tabs__link">
           
   
   
@@ -609,6 +609,34 @@
     
   
     First Query
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/mcp-clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Clients
   
 
     
@@ -2366,6 +2394,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/annotate-variant-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotate Variant Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/cross-entity-pivots/" class="md-nav__link">
         
   
@@ -2514,6 +2570,34 @@
     
   
     Search All Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/skill-authoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skill Authoring
   
 
     
@@ -2741,6 +2825,62 @@
     
   
     Pie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/waterfall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Waterfall
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/scatter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scatter
   
 
     
@@ -3240,6 +3380,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/source-versioning/" class="md-nav__link">
         
   
@@ -3439,6 +3607,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/variant-structure-in-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From BRAF V600E to 3D Protein Context in 3 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
         
   
@@ -3503,6 +3699,34 @@
     
   
     Generate Charts Easily from Study Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kuva Charting Examples
   
 
     
@@ -3847,10 +4071,10 @@ or <code>get disease &lt;id&gt; phenotypes</code> when you want a normalized dis
 symptom phrases, then switch to disease commands once you have the right
 normalized concept. If you want to inspect candidate HPO terms first, run
 <code>biomcp discover "&lt;symptom text&gt;"</code> and use the suggested <code>HP:</code> IDs.
-Markdown phenotype search results now add a <code>See also:</code> block that reuses the
+Markdown phenotype search results add a <code>See also:</code> block that reuses the
 top-ranked disease match, for example <code>biomcp get disease "Dravet syndrome"
-genes phenotypes</code>. <code>biomcp --json search phenotype ...</code> remains a generic
-search response and does not add entity-style <code>_meta.next_commands</code>.</p>
+genes phenotypes</code>. JSON phenotype search responses expose the same disease
+follow-up plus <code>biomcp list phenotype</code> in <code>_meta.next_commands</code>.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250&quot;</span>
 </code></pre></div>

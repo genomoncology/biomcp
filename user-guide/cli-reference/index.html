@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
+        <a href="../../blog/variant-structure-in-commands/" class="md-tabs__link">
           
   
   
@@ -609,6 +609,34 @@
     
   
     First Query
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/mcp-clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Clients
   
 
     
@@ -2769,6 +2797,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/annotate-variant-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotate Variant Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/cross-entity-pivots/" class="md-nav__link">
         
   
@@ -2917,6 +2973,34 @@
     
   
     Search All Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/skill-authoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skill Authoring
   
 
     
@@ -3144,6 +3228,62 @@
     
   
     Pie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/waterfall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Waterfall
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/scatter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scatter
   
 
     
@@ -3643,6 +3783,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/source-versioning/" class="md-nav__link">
         
   
@@ -3842,6 +4010,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/variant-structure-in-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From BRAF V600E to 3D Protein Context in 3 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
         
   
@@ -3906,6 +4102,34 @@
     
   
     Generate Charts Easily from Study Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kuva Charting Examples
   
 
     
@@ -4625,7 +4849,7 @@
 <li><code>--json</code>: return structured JSON output</li>
 <li><code>--no-cache</code>: bypass HTTP cache for the current command</li>
 </ul>
-<p><code>--json</code> normally returns structured output, including JSON <code>error</code> objects on stdout for BioMCP command errors while preserving nonzero exit codes. <code>biomcp cache path</code> is a plain-text exception. <code>biomcp cache stats</code>, <code>biomcp cache clean</code>, and <code>biomcp cache clear</code> respect <code>--json</code> on success. <code>biomcp cache clear</code> still refuses non-TTY destructive runs with plain stderr unless you pass <code>--yes</code>.</p>
+<p><code>--json</code> normally returns structured output, including JSON <code>error</code> objects on stdout for BioMCP command errors while preserving nonzero exit codes. Parse/usage errors under <code>--json</code> also exit 2 with a JSON <code>invalid_argument</code> error on stdout. <code>biomcp cache path</code> is a plain-text exception. <code>biomcp cache stats</code>, <code>biomcp cache clean</code>, and <code>biomcp cache clear</code> respect <code>--json</code> on success. <code>biomcp cache clear</code> still refuses non-TTY destructive runs with plain stderr unless you pass <code>--yes</code>.</p>
 <h2 id="core-command-patterns">Core command patterns<a class="headerlink" href="#core-command-patterns" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp search &lt;entity&gt; [filters]
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp get &lt;entity&gt; &lt;id&gt; [section...]
@@ -4698,10 +4922,11 @@ workflow ladder when the actionable CPIC A/B pharmacogene threshold is not met.<
 <a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>biomcp skill list                 # list embedded worked examples
 <a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>biomcp mcp
 <a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>biomcp serve
-<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>biomcp serve-http [--host 127.0.0.1] [--port 8080]
-<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>biomcp update [--check] [--allow-missing-checksum]
-<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>biomcp uninstall
-<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>biomcp version [--verbose]
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>biomcp mcp-config [--client &lt;client&gt;] [--absolute-path]
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a>biomcp serve-http [--host 127.0.0.1] [--port 8080]
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>biomcp update [--check] [--allow-missing-checksum]
+<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>biomcp uninstall
+<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a>biomcp version [--verbose]
 </code></pre></div>
 <p>Worked examples are also addressable directly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp skill 01
@@ -4807,6 +5032,13 @@ same-session keywords overlap heavily.</p>
 Use <code>--no-condition-expand</code> for literal condition matching. Expanded rows can
 add a <code>Matched Condition</code> column in markdown and <code>matched_condition_label</code> in
 JSON.</p>
+<p>For molecular filters, <code>--mutation &lt;text&gt;</code> is an exact free-text boolean over
+ClinicalTrials.gov title, summary, eligibility, and keyword fields. It is useful
+for loose mutation wording but brittle for a specific protein change. On CTGov,
+<code>--biomarker &lt;text&gt;</code> is a phrase search over keyword, intervention, and
+condition fields; try it for gene-level broadening when a specific <code>--mutation</code>
+search returns zero rows. Empty filtered trial searches include broadening
+follow-ups in <code>_meta.next_commands</code> for JSON callers.</p>
 <h3 id="variant">Variant<a class="headerlink" href="#variant" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--hgvsp<span class="w"> </span>V600E<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
@@ -4864,10 +5096,11 @@ unset.</p>
 </code></pre></div>
 <h3 id="adverse-event">Adverse event<a class="headerlink" href="#adverse-event" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--source<span class="w"> </span>faers<span class="w"> </span>--serious<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;COVID-19 vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;MMR vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>vaers<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--manufacturer<span class="w"> </span>Medtronic<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--product-code<span class="w"> </span>PQP<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>osimertinib<span class="w"> </span>--count<span class="w"> </span>patient.reaction.reactionmeddrapt.exact<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;COVID-19 vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;MMR vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>vaers<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--manufacturer<span class="w"> </span>Medtronic<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--product-code<span class="w"> </span>PQP<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="get-command-families">Get command families<a class="headerlink" href="#get-command-families" title="Permanent link">&para;</a></h2>
 <h3 id="gene_1">Gene<a class="headerlink" href="#gene_1" title="Permanent link">&para;</a></h3>
@@ -4932,10 +5165,19 @@ with no conversion.</p>
 </code></pre></div>
 <h3 id="variant_1">Variant<a class="headerlink" href="#variant_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>NM_004333.6:c.1799T&gt;A
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s1">&#39;NM_004333.6:c.1799T&gt;A&#39;</span>
 <a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predict
 <a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>structure<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
 </code></pre></div>
+<p>Default <code>get variant</code> output includes a one-line CIViC actionability pointer from
+cached MyVariant data when present, or a <code>get variant &lt;id&gt; civic</code> next-command
+when not. It does not make the live CIViC GraphQL call unless the <code>civic</code> section
+or <code>all</code> is requested.</p>
+<p><code>variant structure &lt;variant&gt;</code> is opt-in. It joins the exact variant to selected
+residue, overlapping InterPro domain ranges, UniProt PDB/AlphaFold structures,
+Cancerhotspots recurrence, warnings, and <code>_meta.next_commands</code>; default
+<code>get variant</code> output stays compact.</p>
 <h3 id="drug_1">Drug<a class="headerlink" href="#drug_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>pembrolizumab
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>artesunate<span class="w"> </span>--region<span class="w"> </span>who<span class="w"> </span>--product-type<span class="w"> </span>api
@@ -5022,6 +5264,7 @@ or dbSNP rsIDs include a redirect hint to the matching <code>get protein</code>,
 <h2 id="mcp-mode">MCP mode<a class="headerlink" href="#mcp-mode" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>biomcp serve</code> runs the stdio MCP server.</li>
+<li><code>biomcp mcp-config --client &lt;codex|claude-desktop|claude-code|cursor|cline|vscode|json&gt;</code> prints copy-paste local stdio MCP client config using <code>biomcp serve</code>; add <code>--absolute-path</code> when the client cannot see your shell <code>PATH</code>.</li>
 <li><code>biomcp serve-http</code> runs the MCP Streamable HTTP server.</li>
 <li>Streamable HTTP clients connect to <code>/mcp</code>.</li>
 <li>Probe routes: <code>/health</code>, <code>/readyz</code>, and <code>/</code>.</li>
@@ -5031,36 +5274,40 @@ or dbSNP rsIDs include a redirect hint to the matching <code>get protein</code>,
 <h2 id="helper-command-families">Helper command families<a class="headerlink" href="#helper-command-families" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>&lt;service&gt;<span class="w"> </span>&lt;transcript_hgvs&gt;
-<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span>NM_000248.3:c.135del
-<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span>NM_004448.2:c.829G&gt;T
-<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>warfarin
-<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
-<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab
-<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
-<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span>
-<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
-<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
-<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
-<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
-<a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
-<a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-34-19" name="__codelineno-34-19" href="#__codelineno-34-19"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>hsa05200
-<a id="__codelineno-34-20" name="__codelineno-34-20" href="#__codelineno-34-20"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-34-21" name="__codelineno-34-21" href="#__codelineno-34-21"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
-<a id="__codelineno-34-22" name="__codelineno-34-22" href="#__codelineno-34-22"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
-<a id="__codelineno-34-23" name="__codelineno-34-23" href="#__codelineno-34-23"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
-<a id="__codelineno-34-24" name="__codelineno-34-24" href="#__codelineno-34-24"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-34-25" name="__codelineno-34-25" href="#__codelineno-34-25"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-34-26" name="__codelineno-34-26" href="#__codelineno-34-26"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>structure<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>&lt;service&gt;<span class="w"> </span>&lt;transcript_hgvs&gt;
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span>NM_000248.3:c.135del
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span><span class="s1">&#39;NM_004448.2:c.829G&gt;T&#39;</span>
+</code></pre></div>
+<p><code>biomcp variant normalize ... --json</code> always writes parseable JSON on exit 0. If no provider returns a normalized form, the payload uses <code>status: "no_result"</code>, an empty <code>results</code> list, a clear <code>message</code>, per-service details, and <code>_meta.next_commands</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>warfarin
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>osimertinib<span class="w"> </span>--count<span class="w"> </span>patient.reaction.reactionmeddrapt.exact
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>trials<span class="w"> </span>pembrolizumab
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma
+<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span>
+<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma
+<a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span>
+<a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF
+<a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF
+<a id="__codelineno-35-11" name="__codelineno-35-11" href="#__codelineno-35-11"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRCA1
+<a id="__codelineno-35-12" name="__codelineno-35-12" href="#__codelineno-35-12"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-35-13" name="__codelineno-35-13" href="#__codelineno-35-13"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-35-14" name="__codelineno-35-14" href="#__codelineno-35-14"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>drugs<span class="w"> </span>hsa05200
+<a id="__codelineno-35-15" name="__codelineno-35-15" href="#__codelineno-35-15"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>articles<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-35-16" name="__codelineno-35-16" href="#__codelineno-35-16"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
+<a id="__codelineno-35-17" name="__codelineno-35-17" href="#__codelineno-35-17"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
+<a id="__codelineno-35-18" name="__codelineno-35-18" href="#__codelineno-35-18"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-35-19" name="__codelineno-35-19" href="#__codelineno-35-19"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-35-20" name="__codelineno-35-20" href="#__codelineno-35-20"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-35-21" name="__codelineno-35-21" href="#__codelineno-35-21"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <h2 id="chart-reference">Chart reference<a class="headerlink" href="#chart-reference" title="Permanent link">&para;</a></h2>
 <p>Use <code>biomcp chart</code> to list chart families and <code>biomcp chart &lt;type&gt;</code> for the
 embedded help page for one chart type.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>biomcp<span class="w"> </span>chart
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>biomcp<span class="w"> </span>chart<span class="w"> </span>violin
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>biomcp<span class="w"> </span>chart
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>biomcp<span class="w"> </span>chart<span class="w"> </span>violin
 </code></pre></div>
 <h2 id="local-study-analytics">Local study analytics<a class="headerlink" href="#local-study-analytics" title="Permanent link">&para;</a></h2>
 <p><code>study</code> is BioMCP's local cBioPortal analytics family for downloaded
@@ -5098,18 +5345,18 @@ as if it had been analyzed.</p>
 </tbody>
 </table>
 <h3 id="study-command-examples">Study command examples<a class="headerlink" href="#study-command-examples" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>biomcp<span class="w"> </span>study<span class="w"> </span>list
-<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>--list
-<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>msk_impact_2017
-<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations
-<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>RET<span class="w"> </span>--type<span class="w"> </span>sv
-<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--chart<span class="w"> </span>bar<span class="w"> </span>--theme<span class="w"> </span>dark<span class="w"> </span>--palette<span class="w"> </span>wong<span class="w"> </span>-o<span class="w"> </span>docs/blog/images/tp53-mutation-bar.svg
-<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a>biomcp<span class="w"> </span>study<span class="w"> </span>filter<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--mutated<span class="w"> </span>TP53<span class="w"> </span>--amplified<span class="w"> </span>ERBB2<span class="w"> </span>--expression-above<span class="w"> </span>ERBB2:1.5
-<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a>biomcp<span class="w"> </span>study<span class="w"> </span>cohort<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53
-<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a>biomcp<span class="w"> </span>study<span class="w"> </span>survival<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--endpoint<span class="w"> </span>os
-<a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>expression<span class="w"> </span>--target<span class="w"> </span>ERBB2
-<a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--target<span class="w"> </span>PIK3CA
-<a id="__codelineno-36-12" name="__codelineno-36-12" href="#__codelineno-36-12"></a>biomcp<span class="w"> </span>study<span class="w"> </span>co-occurrence<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--genes<span class="w"> </span>TP53,KRAS
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>biomcp<span class="w"> </span>study<span class="w"> </span>list
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>--list
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>biomcp<span class="w"> </span>study<span class="w"> </span>download<span class="w"> </span>msk_impact_2017
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>RET<span class="w"> </span>--type<span class="w"> </span>sv
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a>biomcp<span class="w"> </span>study<span class="w"> </span>query<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--chart<span class="w"> </span>bar<span class="w"> </span>--theme<span class="w"> </span>dark<span class="w"> </span>--palette<span class="w"> </span>wong<span class="w"> </span>-o<span class="w"> </span>docs/blog/images/tp53-mutation-bar.svg
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a>biomcp<span class="w"> </span>study<span class="w"> </span>filter<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--mutated<span class="w"> </span>TP53<span class="w"> </span>--amplified<span class="w"> </span>ERBB2<span class="w"> </span>--expression-above<span class="w"> </span>ERBB2:1.5
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a>biomcp<span class="w"> </span>study<span class="w"> </span>cohort<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53
+<a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a>biomcp<span class="w"> </span>study<span class="w"> </span>survival<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--endpoint<span class="w"> </span>os
+<a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>expression<span class="w"> </span>--target<span class="w"> </span>ERBB2
+<a id="__codelineno-37-11" name="__codelineno-37-11" href="#__codelineno-37-11"></a>biomcp<span class="w"> </span>study<span class="w"> </span>compare<span class="w"> </span>--study<span class="w"> </span>brca_tcga_pan_can_atlas_2018<span class="w"> </span>--gene<span class="w"> </span>TP53<span class="w"> </span>--type<span class="w"> </span>mutations<span class="w"> </span>--target<span class="w"> </span>PIK3CA
+<a id="__codelineno-37-12" name="__codelineno-37-12" href="#__codelineno-37-12"></a>biomcp<span class="w"> </span>study<span class="w"> </span>co-occurrence<span class="w"> </span>--study<span class="w"> </span>msk_impact_2017<span class="w"> </span>--genes<span class="w"> </span>TP53,KRAS
 </code></pre></div>
 <h3 id="dataset-requirements">Dataset requirements<a class="headerlink" href="#dataset-requirements" title="Permanent link">&para;</a></h3>
 <ul>

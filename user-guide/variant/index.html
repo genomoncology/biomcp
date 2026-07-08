@@ -387,7 +387,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../blog/daraxonrasib-six-commands/" class="md-tabs__link">
+        <a href="../../blog/variant-structure-in-commands/" class="md-tabs__link">
           
   
   
@@ -609,6 +609,34 @@
     
   
     First Query
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/mcp-clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Clients
   
 
     
@@ -2421,6 +2449,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/annotate-variant-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotate Variant Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/cross-entity-pivots/" class="md-nav__link">
         
   
@@ -2569,6 +2625,34 @@
     
   
     Search All Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/skill-authoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Skill Authoring
   
 
     
@@ -2796,6 +2880,62 @@
     
   
     Pie
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/waterfall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Waterfall
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../charts/scatter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scatter
   
 
     
@@ -3295,6 +3435,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/source-versioning/" class="md-nav__link">
         
   
@@ -3494,6 +3662,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../blog/variant-structure-in-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From BRAF V600E to 3D Protein Context in 3 BioMCP Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../blog/daraxonrasib-six-commands/" class="md-nav__link">
         
   
@@ -3558,6 +3754,34 @@
     
   
     Generate Charts Easily from Study Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/biomcp-kuva-charts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kuva Charting Examples
   
 
     
@@ -3970,19 +4194,27 @@ ID. Use <code>biomcp search variant</code> for those inputs.</p>
 <p>Use the explicit normalization proxy when you already have a transcript HGVS
 string and want source-labelled output from Mutalyzer and VariantValidator:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span>NM_000248.3:c.135del
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span>NM_004448.2:c.829G&gt;T
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>all<span class="w"> </span><span class="s1">&#39;NM_004448.2:c.829G&gt;T&#39;</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>mutalyzer<span class="w"> </span>NM_000248.3:c.135del
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>variantvalidator<span class="w"> </span>NM_004448.2:c.829G&gt;T
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>normalize<span class="w"> </span>variantvalidator<span class="w"> </span><span class="s1">&#39;NM_004448.2:c.829G&gt;T&#39;</span>
 </code></pre></div>
-<p>JSON output preserves the submitted <code>input</code>, one result per service, each
-service <code>status</code>, source-returned transcript/normalized/genomic/protein fields,
-and warnings such as VariantValidator <code>TranscriptVersionWarning</code>. Markdown
+<p>JSON output always writes a parseable object on exit 0. It preserves the submitted
+<code>input</code>, an aggregate <code>status</code>, a <code>results</code> list of normalized forms, a <code>message</code>,
+one result per service with each service <code>status</code>, source-returned
+transcript/normalized/genomic/protein fields, warnings such as VariantValidator
+<code>TranscriptVersionWarning</code>, and <code>_meta.next_commands</code>. When no provider returns a
+normalized form, <code>status</code> is <code>no_result</code> and <code>results</code> is an empty list. Markdown
 VariantValidator genomic descriptions are labeled as GRCh38 because BioMCP calls
 VariantValidator's GRCh38 normalization endpoint.</p>
 <p>This helper does not parse messy report prose, does not choose, select, guess,
 or infer transcripts, and does not classify variants or provide clinical
 interpretation/clinical meaning.</p>
 <h2 id="request-variant-sections">Request variant sections<a class="headerlink" href="#request-variant-sections" title="Permanent link">&para;</a></h2>
+<p>The default variant card includes a one-line therapeutic-evidence pointer. When
+cached MyVariant CIViC evidence is already in the fetched variant payload, the
+line reports the cached predictive-item count and points to <code>get variant &lt;id&gt;
+civic</code>; otherwise it prints the bare <code>get variant &lt;id&gt; civic</code> next-command. The
+default card does not run the live CIViC GraphQL section call.</p>
 <p>Prediction section:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>predict
 </code></pre></div>
@@ -4005,6 +4237,10 @@ gnomAD AF line and appends the compact percent inline.</p>
 <p>CIViC section:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>civic
 </code></pre></div>
+<p>The CIViC section includes cached MyVariant rows plus live GraphQL context when
+available. It also carries a currency caveat and points to literature and drug
+cross-check commands because curated CIViC evidence can lag current standard of
+care.</p>
 <p>GWAS section (trait associations from GWAS Catalog):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs7903146<span class="w"> </span>gwas
 </code></pre></div>
@@ -4043,10 +4279,16 @@ Cancerhotspots.org, CIViC, CGI, COSMIC, and GWAS. It does not run the
 AlphaGenome <code>predict</code> section because that path requires <code>ALPHAGENOME_API_KEY</code>;
 request <code>predict</code> explicitly when you want AlphaGenome output.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">   </span><span class="c1"># search trials mentioning this mutation</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span><span class="c1"># search PubMed/PubTator for this variant</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">   </span><span class="c1"># OncoKB lookup (requires ONCOKB_TOKEN)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">     </span><span class="c1"># search trials mentioning this mutation</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">   </span><span class="c1"># search PubMed/PubTator for this variant</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>structure<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">  </span><span class="c1"># residue/domain/PDB/AlphaFold/hotspot context</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>biomcp<span class="w"> </span>variant<span class="w"> </span>oncokb<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w">     </span><span class="c1"># OncoKB lookup (requires ONCOKB_TOKEN)</span>
 </code></pre></div>
+<p><code>variant structure</code> is an opt-in, network-backed helper. JSON includes the selected
+residue, matched HGVSp aliases, other MyVariant/dbNSFP positions, overlapping
+InterPro domain ranges, typed UniProt PDB rows, an AlphaFold URL,
+Cancerhotspots recurrence, warnings, and <code>_meta.next_commands</code>. It does not add
+structure data to default <code>get variant</code> output.</p>
 <p><code>variant articles</code> uses PubTator variant annotations when BioMCP can resolve a
 confident variant entity. If annotation recall is unavailable, the output labels
 the route as a best-effort free-text fallback so agents know which recall path
@@ -4079,6 +4321,7 @@ Unsupported inputs are surfaced with explicit validation messages.</p>
 <h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../how-to/annotate-variants/">How to annotate variants</a></li>
+<li><a href="../../how-to/annotate-variant-structure/">How to annotate variant structure context</a></li>
 <li><a href="../../how-to/predict-effects/">How to predict effects</a></li>
 <li><a href="../gene/">Gene</a></li>
 <li><a href="../trial/">Trial</a></li>
