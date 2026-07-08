@@ -1,7 +1,7 @@
 #[path = "../build_git_watch.rs"]
 mod build_git_watch;
 
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use build_git_watch::{GitRefWatchPaths, git_ref_watch_paths};
 
@@ -37,4 +37,18 @@ fn detached_head_only_needs_head_and_packed_refs() {
         PathBuf::from("/repo/.git/worktrees/detached/HEAD")
     );
     assert_eq!(paths.packed_refs, PathBuf::from("/repo/.git/packed-refs"));
+}
+
+#[test]
+fn build_script_pins_stamped_git_sha_to_eight_hex_chars() {
+    let build_script =
+        fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("build.rs"))
+            .expect("build.rs should be readable");
+
+    assert!(
+        build_script.contains("command_output(\"git\", &[\"rev-parse\", \"--short=8\", \"HEAD\"])")
+    );
+    assert!(
+        !build_script.contains("command_output(\"git\", &[\"rev-parse\", \"--short\", \"HEAD\"])")
+    );
 }

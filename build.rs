@@ -133,7 +133,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     write_shell_description()?;
 
-    let git_sha = command_output("git", &["rev-parse", "--short", "HEAD"])
+    let git_sha = command_output("git", &["rev-parse", "--short=8", "HEAD"])
         .unwrap_or_else(|| "unknown".into());
     let git_tag = command_output("git", &["describe", "--tags", "--always"]);
     // Stamp the HEAD commit date (deterministic), not the wall-clock build time.
