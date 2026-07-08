@@ -31,16 +31,14 @@ def test_variant_normalize_json_no_result_emits_parseable_non_empty_stdout() -> 
     env = os.environ.copy()
     env["BIOMCP_MUTALYZER_BASE_URL"] = base_url
     env["BIOMCP_VARIANTVALIDATOR_BASE_URL"] = base_url
+    binary = os.environ.get("BIOMCP_BIN") or str(
+        REPO_ROOT / "target" / "release" / "biomcp"
+    )
 
     try:
         result = subprocess.run(
             [
-                "cargo",
-                "run",
-                "--quiet",
-                "--bin",
-                "biomcp",
-                "--",
+                binary,
                 "variant",
                 "normalize",
                 "all",
