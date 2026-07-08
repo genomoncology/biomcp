@@ -72,7 +72,7 @@ such as `--version` and `list`, and a stdio MCP server invocation that passes
 `serve` to the same image entrypoint.
 
 ```bash
-cat ../../docs/getting-started/installation.md ../../docs/reference/mcp-server.md | mustmatch like 'docker run --rm ghcr.io/genomoncology/biomcp --version
+cat ../../README.md ../../docs/getting-started/installation.md ../../docs/reference/mcp-server.md | mustmatch like 'docker run --rm ghcr.io/genomoncology/biomcp --version
 docker run --rm ghcr.io/genomoncology/biomcp list
 docker run --rm -i ghcr.io/genomoncology/biomcp serve'
 ```

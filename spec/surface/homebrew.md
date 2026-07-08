@@ -71,7 +71,7 @@ repository prerequisite visible so a missing tap is not confused with a BioMCP
 binary problem.
 
 ```bash
-cat ../../docs/getting-started/installation.md | mustmatch like 'brew tap genomoncology/biomcp
+cat ../../README.md ../../docs/getting-started/installation.md | mustmatch like 'brew tap genomoncology/biomcp
 brew install biomcp
 homebrew-biomcp'
 ```

@@ -52,6 +52,25 @@ MCP Registry ownership marker: `mcp-name: io.github.genomoncology/biomcp`.
 
 This installs the `biomcp` binary on your PATH.
 
+### Homebrew
+
+```bash
+brew tap genomoncology/biomcp
+brew install biomcp
+```
+
+The separate `genomoncology/homebrew-biomcp` tap repository must exist before these commands can work.
+
+### Docker
+
+```bash
+docker run --rm ghcr.io/genomoncology/biomcp --version
+docker run --rm ghcr.io/genomoncology/biomcp list
+docker run --rm -i ghcr.io/genomoncology/biomcp serve
+```
+
+Use the GHCR image for quick CLI checks or stdio MCP clients without a local install.
+
 ### Claude Code plugin
 
 Install the `biomcp` binary first, then add the hosted plugin marketplace and
