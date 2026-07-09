@@ -30,7 +30,7 @@ platform-specific notes.
 
 ```text
 biomcp search <entity> [filters]       # discovery
-biomcp suggest <question>              # choose a worked-example playbook
+biomcp skill list                      # choose a worked-example playbook
 biomcp discover <query>                # single-entity concept resolution before typed search/get
 biomcp get <entity> <id> [section...]  # focused detail
 biomcp <entity> <helper> <id>          # cross-entity pivots
@@ -77,7 +77,7 @@ biomcp search diagnostic --gene BRCA1 --limit 5
 biomcp search diagnostic --disease tuberculosis --source all --limit 5
 biomcp search all --gene BRAF --disease melanoma
 biomcp search all --keyword resistance --counts-only
-biomcp suggest "What drugs treat melanoma?"
+biomcp skill list
 biomcp discover "chest pain"           # relational or multi-entity questions may redirect to search all --keyword
 ```
 
@@ -106,7 +106,7 @@ payloads stay on stdout while errors and diagnostics stay on stderr.
 
 ```bash
 biomcp --json search gene -q BRAF --limit 3
-biomcp --json suggest "When was imatinib approved?"
+biomcp skill list
 biomcp --json discover Keytruda
 biomcp search trial -c melanoma --limit 3
 biomcp list

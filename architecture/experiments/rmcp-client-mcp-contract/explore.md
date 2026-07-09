@@ -74,7 +74,7 @@ Dependency/feature findings:
 | tool annotations title `BioMCP`, `readOnlyHint` true | Yes | Covered in prototype. |
 | tool description matches command-reference contract | Yes | Direct `tool.description` string checks in Rust. Not fully ported in prototype. |
 | `call_tool` returns text chunks and no images for a text-only command | Yes | Covered in prototype with `biomcp version`. |
-| `call_tool` read-only allowed commands (`skill list`, `suggest`, `discover`) | Yes | Same `CallToolRequestParams` and `RawContent` checks. |
+| `call_tool` read-only allowed commands (`skill list`, `discover`) | Yes | Same `CallToolRequestParams` and `RawContent` checks. |
 | blocked mutating commands return `is_error` and text message | Yes | Same `CallToolResult.is_error` and text checks. |
 | charted study call returns text then SVG image | Yes | rmcp exposes `RawContent::Image` with MIME/data. Needs fixture env port. |
 | charted output-file rejection | Yes | Same call/result checks. |

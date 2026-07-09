@@ -1,10 +1,10 @@
-# Discover, Suggest, and Skill
+# Discover and Skill
 
-These three commands form BioMCP's onboarding surface: `discover` is primarily
+These commands form BioMCP's onboarding surface: `discover` is primarily
 the single-entity resolver for free text plus a small set of already-supported
-routed prompts, `suggest` picks a worked-example playbook, and `skill` opens the
-longer guide behind that playbook. The canaries here keep that first-move
-surface focused on real routing behavior instead of incidental copy.
+routed prompts, and `skill` opens the worked-example catalog and longer guide.
+The canaries here keep that first-move surface focused on real routing behavior
+instead of incidental copy.
 
 ## Discover Request Planning Happens Before Source Calls
 
@@ -67,44 +67,15 @@ routine `make spec-pr`.
 Free text that does not resolve to a biomedical concept should still end with a
 next step rather than a dead end.
 
-## Suggest Keeps the Playbook and No-Match Contracts
-
-`suggest` is the offline first move for question routing. Matched responses
-should point to the concrete playbook, and no-match should stay successful with
-the same four-field JSON shape.
-
-```bash
-../../tools/biomcp-ci suggest "What drugs treat melanoma?" | mustmatch like 'matched_skill: `treatment-lookup`
-`biomcp skill treatment-lookup`'
-../../tools/biomcp-ci --json suggest "What is x?" | mustmatch like '"matched_skill": null'
-../../tools/biomcp-ci --json suggest "What is x?" | jq -e '.first_commands == [] and .full_skill == null' >/dev/null
-```
-
-## Suggest Decomposition Keeps the First-Move Router Review-Sized
-
-The behavior checks above protect the public playbook response. The router also
-needs its documented ownership zones so future route additions do not collapse
-back into one large catch-all module.
-
-<!-- mustmatch-lint: skip -->
-
-```bash run id=suggest-structure-contract
-cd ../.. && cargo test --test suggest_cli_structure -- --nocapture 2>&1
-```
-
-```text expect=suggest-structure-contract contains
-suggest_split_files_exist_with_doc_headers
-```
-
 ## Skill Still Opens the Longer Guide
 
-Once `suggest` points to a playbook, the user still needs both the worked-example
-index and the canonical agent guide behind `skill render`. The rendered prompt
+The user needs both the worked-example index and the canonical agent guide
+behind `skill render`. The rendered prompt
 should also carry the stricter discover framing and the relational-query
 counter-examples so installed `SKILL.md` matches the canonical prompt.
 
 ```bash
-../../tools/biomcp-ci skill | mustmatch like 'biomcp suggest "<question>"'
+../../tools/biomcp-ci skill | mustmatch like 'biomcp skill list'
 ../../tools/biomcp-ci skill list | mustmatch like '# BioMCP Worked Examples
 treatment-lookup'
 ../../tools/biomcp-ci skill render | mustmatch like '## Routing rules

@@ -437,9 +437,6 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             Commands::Enrich(args) => {
                 outcome_to_string(super::system::handle_enrich(args, json).await?)
             }
-            Commands::Suggest(super::system::SuggestArgs { question }) => {
-                crate::cli::suggest::run(crate::cli::suggest::SuggestArgs { question }, json)
-            }
             Commands::Discover(super::system::DiscoverArgs { query }) => {
                 crate::cli::discover::run(crate::cli::discover::DiscoverArgs { query }, json).await
             }

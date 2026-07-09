@@ -94,7 +94,7 @@ fn add_get_section_enum(schema: &mut schemars::Schema) {
 }
 
 const RESOURCE_HELP_URI: &str = "biomcp://help";
-const GENERIC_MCP_REJECTION_MESSAGE: &str = "Error: BioMCP allows read-only commands only. Allowed families are search/get/helpers/list/version/health/batch/enrich/discover/suggest/skill plus MCP-safe study commands (`study list`, `study download --list`, `study top-mutated`, `study query`, `study filter`, `study cohort`, `study survival`, `study compare`, `study co-occurrence`).";
+const GENERIC_MCP_REJECTION_MESSAGE: &str = "Error: BioMCP allows read-only commands only. Allowed families are search/get/helpers/list/version/health/batch/enrich/discover/skill plus MCP-safe study commands (`study list`, `study download --list`, `study top-mutated`, `study query`, `study filter`, `study cohort`, `study survival`, `study compare`, `study co-occurrence`).";
 const CACHE_FAMILY_MCP_REJECTION_MESSAGE: &str = "Error: biomcp cache commands are CLI-only over MCP because they reveal workstation-local filesystem paths.";
 
 impl BioMcpServer {
@@ -142,8 +142,7 @@ fn is_allowed_mcp_command(args: &[String]) -> bool {
 
     match cmd.as_str() {
         "search" | "get" | "variant" | "drug" | "disease" | "article" | "gene" | "pathway"
-        | "protein" | "list" | "version" | "health" | "batch" | "enrich" | "discover"
-        | "suggest" => true,
+        | "protein" | "list" | "version" | "health" | "batch" | "enrich" | "discover" => true,
         "study" => {
             let Some(sub) = args.get(2).map(|s| s.trim().to_ascii_lowercase()) else {
                 return false;
@@ -495,7 +494,7 @@ impl ServerHandler for BioMcpServer {
              (PubMed, ClinicalTrials.gov, ClinVar, gnomAD, OncoKB, Reactome, UniProt, \
              PharmGKB, OpenFDA, and more). \
              Prefer the typed `search` and `get` tools for structured entity lookup; use the raw `biomcp` command tool as an escape hatch for long-tail commands. \
-             Start with `biomcp suggest \"<question>\"` when you need the right playbook, \
+             Start with `biomcp skill list` when you need the right playbook, \
              `biomcp list` for a command reference, \
              or `biomcp skill` for guided investigation workflows."
                 .to_string(),
@@ -874,7 +873,7 @@ mod tests {
             "--gene".into(),
             "TP53".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_command(&[
             "biomcp".into(),
             "suggest".into(),
             "What drugs treat melanoma?".into()

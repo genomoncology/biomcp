@@ -67,7 +67,6 @@ workflow ladder when the actionable CPIC A/B pharmacogene threshold is not met.
 ```text
 biomcp search ...
 biomcp get ...
-biomcp suggest <question>
 biomcp discover <query>
 biomcp enrich <GENE1,GENE2,...> [--limit N]
 biomcp batch <entity> <id1,id2,...> [--sections ...] [--source ...]
@@ -152,21 +151,6 @@ release is missing its checksum sidecar, `--allow-missing-checksum` is an
 UNSAFE per-invocation override.
 
 ## Search command families
-
-## Suggest
-
-```bash
-biomcp suggest "What drugs treat melanoma?"
-biomcp --json suggest "When was imatinib approved?"
-biomcp suggest "What is x?"
-```
-
-Use `suggest` when the user has a biomedical question and needs the right
-worked-example playbook before choosing exact entity commands. A confident
-match returns `matched_skill`, a short `summary`, exactly two
-`first_commands`, and `full_skill` with the `biomcp skill <slug>` command.
-Low-confidence questions exit successfully with no match; use `discover` when
-you need entity resolution instead of playbook selection.
 
 ## Discover
 

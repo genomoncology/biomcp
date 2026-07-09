@@ -39,7 +39,6 @@ not current oversized flat-file inventory.
 |---|---|---|---|---|
 | 319 | Search-all decomposition | `src/cli/search_all.rs` | `src/cli/search_all/{mod,plan,dispatch,links,format}.rs` plus sidecar tests | `tests/search_all_cli_structure.rs`; search-all help/spec behavior preserved |
 | 320 | Health decomposition | `src/cli/health.rs` | `src/cli/health/{mod,catalog,http,local,runner}.rs` plus split tests | `tests/health_cli_structure.rs`; health output/help/local-source coverage preserved |
-| 321 | Suggest decomposition | `src/cli/suggest.rs` | `src/cli/suggest/{mod,routes,extract,patterns}.rs` plus sidecar tests | `tests/suggest_cli_structure.rs`; offline routing and parseability preserved |
 | 322 | Skill decomposition | `src/cli/skill.rs` | `src/cli/skill/{mod,assets,catalog,install}.rs` plus sidecar tests | `tests/skill_cli_structure.rs`; read-only catalog and install workflow preserved |
 | 323 | List decomposition | `src/cli/list.rs` | `src/cli/list/{mod,helpers,molecular,clinical,literature}.rs` plus sidecar tests | `tests/list_cli_structure.rs`; list/reference docs contracts preserved |
 | 324 | Article CLI test split | `src/cli/article/tests.rs` | `src/cli/article/tests/{mod,help,exact_lookup,json,filters}.rs` | `tests/article_cli_tests_structure.rs`; article CLI coverage preserved with isolated test domains |
@@ -101,7 +100,7 @@ For future behavior-preserving CLI decompositions, use the proof contract in
 Current shipped public-surface examples:
 
 - `health`, `list`, and `search all` → `spec/surface/cli.md`
-- `suggest` and `skill` → `spec/surface/discover.md`
+- `skill` → `spec/surface/discover.md`
 - list/docs alignment → `tests/test_public_search_all_docs_contract.py` and
   `tests/test_public_skill_docs_contract.py` when relevant
 

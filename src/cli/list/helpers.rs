@@ -40,31 +40,6 @@ pub(super) fn list_discover() -> String {
     .to_string()
 }
 
-pub(super) fn list_suggest() -> String {
-    r#"# suggest
-
-## Commands
-
-- `suggest <question>` - route a biomedical question to one shipped BioMCP worked-example playbook
-- `--json suggest <question>` - emit the four-field response for agents
-
-## Output fields
-
-- `matched_skill` - playbook slug, or no match
-- `summary` - short routing explanation
-- `first_commands` - exactly two starter commands on match; none on no-match
-- `full_skill` - `biomcp skill <slug>` for the full playbook, or none
-
-## When to use this surface
-
-- Use `suggest` when you know the biomedical question but not the first command sequence.
-- Matched responses are offline and deterministic; they do not call upstream APIs.
-- No-match stays successful and reports `No confident BioMCP skill match`.
-- Use `discover "<question>"` when you need entity resolution rather than playbook selection.
-"#
-    .to_string()
-}
-
 pub(super) fn list_batch() -> String {
     r#"# batch
 

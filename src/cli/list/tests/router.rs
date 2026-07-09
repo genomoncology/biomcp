@@ -21,6 +21,6 @@ fn unknown_entity_lists_new_valid_entities() {
     assert!(msg.contains("- enrich"));
     assert!(msg.contains("- batch"));
     assert!(msg.contains("- study"));
-    assert!(msg.contains("- suggest"));
+    assert!(!msg.contains("- suggest"));
     assert!(msg.contains("- discover"));
 }

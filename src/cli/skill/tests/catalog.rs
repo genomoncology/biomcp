@@ -25,7 +25,8 @@ fn embedded_skill_overview_is_routing_first_and_points_to_worked_examples()
 -> Result<(), BioMcpError> {
     let overview = show_overview()?;
 
-    assert!(overview.contains("biomcp suggest \"<question>\""));
+    assert!(overview.contains("biomcp skill list"));
+    assert!(!overview.contains("biomcp suggest"));
     assert!(overview.contains("## Routing rules"));
     assert!(overview.contains("## Section reference"));
     assert!(overview.contains("## Cross-entity pivot rules"));
@@ -54,7 +55,7 @@ fn embedded_skill_overview_is_routing_first_and_points_to_worked_examples()
             .contains("If one command already answers the question, stop searching and answer.")
     );
     assert!(overview.find("## Cross-entity pivot rules") < overview.find("## How-to reference"));
-    assert!(overview.find("biomcp suggest \"<question>\"") < overview.find("## Routing rules"));
+    assert!(overview.find("biomcp skill list") < overview.find("## Routing rules"));
     assert!(overview.find("biomcp ema sync") < overview.find("## Section reference"));
     assert!(overview.find("biomcp who sync") < overview.find("## Section reference"));
     assert!(overview.find("biomcp cvx sync") < overview.find("## Section reference"));

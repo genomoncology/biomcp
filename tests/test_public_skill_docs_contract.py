@@ -33,9 +33,9 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
 
     assert "14 guided investigation workflows are built in" not in readme
     assert "biomcp skill install ~/.claude --force" in readme
-    assert 'biomcp suggest "<question>"' in readme
+    assert 'biomcp suggest' not in readme
     assert "`biomcp skill` to read the embedded BioMCP guide" in readme
-    assert "biomcp skill list" not in readme
+    assert "biomcp skill list" in readme
     assert "biomcp skill show 03" not in readme
 
     assert "14 guided investigation workflows are built in" not in docs_index
@@ -45,7 +45,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "# Skills" in skills
     assert "biomcp skill" in skills
     assert "biomcp skill render" in skills
-    assert 'biomcp suggest "<question>"' in skills
+    assert 'biomcp suggest' not in skills
     assert "biomcp skill list" in skills
     assert "biomcp skill article-follow-up" in skills
     assert "biomcp skill variant-pathogenicity" in skills
@@ -92,7 +92,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp skill [list|install|<name>]" not in cli_reference
     assert "biomcp skill install [dir]" in cli_reference
     assert "biomcp skill render" in cli_reference
-    assert "biomcp suggest <question>" in cli_reference
+    assert "biomcp suggest" not in cli_reference
     assert "biomcp cache path" in cli_reference
     assert "biomcp cache stats" in cli_reference
     assert "biomcp cache clean" in cli_reference
@@ -134,7 +134,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "one markdown resource per embedded skill use-case" in mcp_server
     assert "biomcp://help" in mcp_server
     assert "biomcp skill render" in mcp_server
-    assert "`suggest`" in mcp_server
+    assert "`suggest`" not in mcp_server
     assert "biomcp://skill/<slug>" in mcp_server
     assert "Streamable HTTP" in mcp_server
     assert "`biomcp serve-http`" in mcp_server
@@ -166,8 +166,8 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp://skill/<slug>" in claude_desktop
 
     assert "## Routing rules" in skill_file
-    assert 'biomcp suggest "<question>"' in skill_file
-    assert skill_file.index('biomcp suggest "<question>"') < skill_file.index("## Routing rules")
+    assert 'biomcp suggest' not in skill_file
+    assert skill_file.index('biomcp skill list') < skill_file.index("## Routing rules")
     assert "## Section reference" in skill_file
     assert "## Cross-entity pivot rules" in skill_file
     assert "## How-to reference" in skill_file

@@ -278,7 +278,7 @@ EXPECTED_RELEASE_MARKERS = {
             "resistance-to-drug mechanism questions",
         ],
         "new_features": [
-            "`biomcp suggest <question>`",
+            "_meta.workflow",
             "_meta.workflow",
             "_meta.ladder[]",
             "workflow-ladder sidecars",

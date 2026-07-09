@@ -217,9 +217,7 @@
   clinical summaries, reviewed HPO phenotype mapping, source-native evidence
   URLs, and unsupported-disease empty states via
   `get disease <name> clinical_features`. (252, 253, 254)
-- Added offline routing via `biomcp suggest <question>` so worked-example
-  prompts can resolve to structured `_meta.workflow` guidance without requiring
-  a live tool call. (279)
+- Added structured `_meta.workflow` guidance for worked-example prompts. (279)
 - Added workflow-ladder sidecars and schema-backed `_meta.ladder[]` payloads
   so routed workflows can carry explicit ladder steps across the CLI/MCP
   contract. (282)
@@ -249,9 +247,9 @@
 - Repaired backtick quoting in the mustmatch study/spec contract, published
   BioASQ benchmark guidance, and made the canonical `SKILL.md` render/install
   contract explicit for agents and operators. (276, 280, 281)
-- Aligned the public landing-copy contract with the shipped `suggest` and
-  workflow landing bullets so `make test-contracts` accepts the current README
-  and docs homepage feature counts. (286)
+- Aligned the public landing-copy contract with the shipped workflow landing
+  bullets so `make test-contracts` accepts the current README and docs homepage
+  feature counts. (286)
 - Refreshed source, licensing, versioning, CLI decomposition, diagnostic,
   clinical-features, API-key, quality-bar, and staging-demo docs to match the
   shipped v0.8.22 surface and current local-runtime key expectations. (222,
@@ -262,8 +260,6 @@
 - Changed custom CLI validation failures (`BioMcpError::InvalidArgument`) to exit
   `2`, matching clap parser failures and separating bad usage from runtime
   failures. (353)
-- Fixed `suggest` so resistance-to-drug mechanism questions anchor starter
-  commands on the drug instead of filler text. (291)
 - Patched `rustls-webpki` to the safe release line and made `make check` enforce
   the cargo-deny advisory gate alongside the existing license gate. (290)
 - Fixed cargo-install compatibility, deterministic EMA freshness checks, OLS4

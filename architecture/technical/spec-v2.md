@@ -43,7 +43,7 @@ up for redesign in this document:
    record job.
 6. Keep the PR gate budget at **<=5 minutes warm** and allow a **<=15 minute
    cold** first run per release key.
-7. Fold `discover`, `suggest`, and `skill` into one `spec/surface/discover.md`.
+7. Fold `discover` and `skill` into one `spec/surface/discover.md`.
 8. Keep `ema`, `who`, `cvx`, `gtr`, and `who-ivd` out of entity coverage; they
    get one `--help` assertion each in `spec/surface/cli.md`.
 
@@ -304,8 +304,8 @@ literal `mustmatch` bytes.
    truthful and clinically modest.
 4. **Ambiguous Query Guidance** - ambiguous input produces explicit
    disambiguation hints rather than silent one-path guesses.
-5. **Suggest & Skill Routing** - `suggest` and `skill` stay part of one
-   agent-onboarding surface with a durable JSON shape.
+5. **Skill Routing** - `skill` stays part of the agent-onboarding surface with
+   durable catalog and render contracts.
 
 ## `tools/biomcp-ci` wrapper contract
 

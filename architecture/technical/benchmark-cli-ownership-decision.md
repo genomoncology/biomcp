@@ -136,7 +136,7 @@ ratchets as an internal harness rather than a shipped CLI.
 - `biomcp --help` MUST NOT list `benchmark`.
 - `biomcp benchmark --help` MUST exit with `unrecognized
   subcommand`.
-- `biomcp list`, `biomcp skill`, `biomcp suggest`, `biomcp discover`,
+- `biomcp list`, `biomcp skill`, `biomcp discover`,
   `biomcp health`, README, `docs/`, `architecture/ux/cli-reference.md`,
   and `spec/surface/cli.md` MUST NOT mention `biomcp benchmark`.
 - `architecture/technical/cli-decomposition-2026.md` MUST mention

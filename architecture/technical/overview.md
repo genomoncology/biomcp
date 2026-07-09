@@ -11,7 +11,7 @@ BioMCP is a single Rust binary (`biomcp`) with three operating modes:
   read-only allowlist rather than mirroring the full CLI: `search`, `get`,
   helper families (`gene`, `variant`, `drug`, `disease`, `article`,
   `pathway`, `protein`), `list`, `version`, `health`, `batch`, `enrich`,
-  `suggest`, `discover`, read-only `skill` lookup/list/render behavior, and MCP-safe `study`
+  `discover`, read-only `skill` lookup/list/render behavior, and MCP-safe `study`
   subcommands (`list`, `download --list`, `top-mutated`, `query`, `filter`,
   `cohort`, `survival`, `compare`, `co-occurrence`) are allowed.
   Operator-local or mutating commands such as `cache`, `update`, `serve`,

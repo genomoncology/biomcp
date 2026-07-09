@@ -211,19 +211,6 @@ See also: biomcp list batch")]
     Batch(system::BatchArgs),
     /// Gene set enrichment against g:Profiler
     Enrich(system::EnrichArgs),
-    /// Suggest the BioMCP skill/playbook for a biomedical question
-    #[command(after_help = "\
-When to use: use suggest as the first move when you have a biomedical question and do not know which BioMCP worked-example playbook fits.
-The command runs offline and returns one playbook, two starter commands, and a `biomcp skill <slug>` pointer when it has a confident match.
-No-match output is successful and reports `No confident BioMCP skill match`.
-
-EXAMPLES:
-  biomcp suggest \"What drugs treat melanoma?\"
-  biomcp --json suggest \"When was imatinib approved?\"
-  biomcp suggest \"What is x?\"
-
-See also: biomcp list suggest")]
-    Suggest(system::SuggestArgs),
     /// Resolve free-text biomedical text into a typed concept and suggested commands
     #[command(after_help = "\
 When to use: use discover when you only have a free-text biomedical phrase and need BioMCP to resolve the first entity or alias before choosing a typed command.
