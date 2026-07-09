@@ -91,7 +91,7 @@ pub struct UpdateArgs {
 
 #[derive(Args, Debug)]
 pub struct ListArgs {
-    /// Optional entity name (gene, variant, article, trial, diagnostic, drug, disease, pgx, gwas, pathway, protein, study, adverse-event, search-all, suggest)
+    /// Optional entity name (gene, variant, article, trial, diagnostic, drug, disease, pgx, gwas, pathway, protein, study, adverse-event, search-all, discover, batch, enrich, skill)
     pub entity: Option<String>,
 }
 
@@ -122,12 +122,6 @@ pub struct EnrichArgs {
 pub struct DiscoverArgs {
     /// Free-text biomedical query
     pub query: String,
-}
-
-#[derive(Args, Debug)]
-pub struct SuggestArgs {
-    /// Free-text biomedical question to route to a BioMCP playbook
-    pub question: String,
 }
 
 #[derive(Args, Debug)]

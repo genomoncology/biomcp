@@ -186,8 +186,9 @@ def test_skill_prompt_render_install_and_slug_surfaces_match(tmp_path: Path) -> 
     assert not render_stdout.endswith(b"\n\n")
 
     prompt = render_stdout.decode("utf-8")
-    assert 'biomcp suggest "<question>"' in prompt
-    assert prompt.index('biomcp suggest "<question>"') < prompt.index("## Routing rules")
+    assert "biomcp skill list" in prompt
+    assert "biomcp suggest" not in prompt
+    assert prompt.index("biomcp skill list") < prompt.index("## Routing rules")
     for marker in (
         "## Routing rules",
         "## Section reference",

@@ -11,7 +11,7 @@ fn list_root_includes_routing_table_and_quickstart() {
     assert!(out.contains("## Search-Only Entities"));
     assert_eq!(out.matches("## When to Use What").count(), 1);
     assert!(out.contains("search all --gene BRAF --disease melanoma"));
-    assert!(out.contains("suggest \"What drugs treat melanoma?\""));
+    assert!(out.contains("skill list"));
     assert!(out.contains("discover \"<free text>\""));
     assert!(out.contains("biomedical phrase and need routing"));
     assert!(out.contains("search all --keyword \"<query>\""));
@@ -19,7 +19,7 @@ fn list_root_includes_routing_table_and_quickstart() {
     assert!(out.contains("enrich <GENE1,GENE2,...>"));
     assert!(out.contains("Turn a literature question into article filters"));
     assert!(out.contains("`skill install` - install BioMCP skill guidance to your agent"));
-    assert!(out.contains("`suggest <question>`"));
+    assert!(!out.contains("`suggest <question>`"));
     assert!(out.contains("`discover <query>`"));
     assert!(out.contains("`cache path`"));
     assert!(out.contains("`cache stats`"));
@@ -85,16 +85,8 @@ fn list_discover_page_exists() {
 }
 
 #[test]
-fn list_suggest_page_exists() {
-    let out = render(Some("suggest")).expect("list suggest should render");
-    assert!(out.contains("# suggest"));
-    assert!(out.contains("suggest <question>"));
-    assert!(out.contains("--json suggest <question>"));
-    assert!(out.contains("matched_skill"));
-    assert!(out.contains("first_commands"));
-    assert!(out.contains("full_skill"));
-    assert!(out.contains("No confident BioMCP skill match"));
-    assert!(out.contains("discover \"<question>\""));
+fn list_suggest_page_is_not_valid() {
+    assert!(render(Some("suggest")).is_err());
 }
 
 #[test]

@@ -23,8 +23,8 @@ get compact, evidence-oriented results across live public data plus local study 
 - **Pivot without rework:** move from a gene, variant, drug, disease, pathway,
   protein, or article straight into the next built-in view instead of
   rebuilding filters by hand.
-- **Choose a playbook:** `biomcp suggest "<question>"` routes a biomedical
-  question to a shipped worked example and two starter commands.
+- **Choose a playbook:** `biomcp skill list` shows shipped worked examples
+  so you can open the matching `biomcp skill <slug>` workflow.
 - **Analyze studies locally:** `study` commands cover local query, cohort, survival,
   compare, and co-occurrence workflows with native terminal, SVG, and PNG
   charts for downloaded cBioPortal-style datasets.
@@ -42,7 +42,7 @@ First useful query in under 30 seconds:
 ```bash
 uv tool install biomcp-cli
 biomcp health --apis-only
-biomcp suggest "What drugs treat melanoma?"
+biomcp skill list
 biomcp list gene
 biomcp search all --gene BRAF --disease melanoma  # unified cross-entity discovery
 biomcp get gene BRAF pathways hpa
@@ -176,7 +176,7 @@ compatibility alias.
 
 ```text
 search <entity> [filters]    → discovery
-suggest <question>           → playbook routing for how-to questions
+skill list                   → playbook catalog for how-to questions
 discover <query>             → concept resolution before entity selection
 get <entity> <id> [sections] → focused detail
 <entity> <helper> <id>       → cross-entity pivots
@@ -396,13 +396,13 @@ probes are available at `GET /health`, `GET /readyz`, and `GET /`.
 
 ## Skills
 
-BioMCP ships an embedded agent guide instead of a browsable in-binary catalog.
-Use `biomcp suggest "<question>"` when you need the right worked example,
+BioMCP ships an embedded agent guide and a worked-example catalog.
+Use `biomcp skill list` when you need the right worked example,
 then use `biomcp skill` to read the embedded BioMCP guide or install it into
 your agent directory when you want local copies of the workflow references:
 
 ```bash
-biomcp suggest "Is variant rs113488022 pathogenic in melanoma?"
+biomcp skill list
 biomcp skill
 biomcp skill install ~/.claude --force
 ```

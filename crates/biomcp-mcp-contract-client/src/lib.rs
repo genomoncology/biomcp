@@ -324,8 +324,8 @@ where
     assert!(instructions.contains("leading public biomedical data sources"));
     assert!(!instructions.contains("15 sources"));
     assert!(!instructions.contains("15 biomedical sources"));
-    assert!(!instructions.contains("biomcp skill list"));
-    assert!(instructions.contains("biomcp suggest \"<question>\""));
+    assert!(instructions.contains("biomcp skill list"));
+    assert!(!instructions.contains("biomcp suggest"));
     assert!(instructions.contains("biomcp skill"));
 
     let tools = client.peer().list_tools(Default::default()).await?;
@@ -388,7 +388,7 @@ where
         "search <entity> [query|filters]",
         "search trial [filters]",
         "get <entity> <id> [section...]",
-        "suggest \"What drugs treat melanoma?\"",
+        "skill list",
         "search phenotype \"seizure, developmental delay\"",
     ];
     let article_markers = [
@@ -510,9 +510,9 @@ where
     assert!(initialize.capabilities.resources.is_some());
     let instructions = initialize.instructions.as_deref().unwrap_or_default();
     assert!(instructions.contains("leading public biomedical data sources"));
-    assert!(instructions.contains("biomcp suggest \"<question>\""));
+    assert!(instructions.contains("biomcp skill list"));
+    assert!(!instructions.contains("biomcp suggest"));
     assert!(!instructions.contains("15 sources"));
-    assert!(!instructions.contains("biomcp skill list"));
 
     let tools = client.peer().list_tools(Default::default()).await?;
     let names = tools
@@ -645,12 +645,6 @@ where
     let discover = call_biomcp(client, "biomcp discover BRCA1").await?;
     assert_eq!(discover.is_error, Some(false));
     assert!(first_text(&discover.content).contains("BRCA1"));
-
-    let suggest = call_biomcp(client, "biomcp suggest \"What drugs treat melanoma?\"").await?;
-    assert_eq!(suggest.is_error, Some(false));
-    let suggest_text = first_text(&suggest.content);
-    assert!(suggest_text.contains("treatment-lookup"));
-    assert!(suggest_text.contains("biomcp skill treatment-lookup"));
 
     for command in [
         "biomcp skill sync",

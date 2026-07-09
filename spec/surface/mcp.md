@@ -62,6 +62,25 @@ claude-desktop
 biomcp mcp-config --client claude-desktop"
 ```
 
+## MCP Guidance Uses the Skill Catalog Instead of Retired Suggest
+
+MCP clients see BioMCP instructions and a raw command escape hatch before they
+read the CLI docs. That surface should point agents at the living skill catalog
+and should not continue to allow or recommend the retired offline `suggest`
+router.
+
+```bash
+cd ../.. && uv run --no-sync python3 -c '
+from pathlib import Path
+text = Path("src/mcp/shell.rs").read_text(encoding="utf-8")
+assert "biomcp skill list" in text
+assert "biomcp suggest" not in text
+assert "discover/suggest/skill" not in text
+assert "| \"suggest\" => true" not in text
+print("MCP guidance points to skill catalog")
+' | mustmatch like "MCP guidance points to skill catalog"
+```
+
 ## Streamable HTTP Help Names the Canonical Route
 
 The remote/server deployment mode should keep pointing operators at `/mcp` and

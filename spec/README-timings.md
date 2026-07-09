@@ -59,7 +59,7 @@ run through `make test`, not the Markdown runner.
 | `spec/entity/vaers.md` | vaers canary for vaccine-first CDC aggregation, aggregate-only reporting, and explicit source limitations/combined output |
 | `spec/surface/cli.md` | CLI surface canary for top-level help/list discovery, operator commands, cache-mode exceptions, and health/admin guidance |
 | `spec/surface/mcp.md` | MCP surface canary for stdio/HTTP entrypoints, probe routes, and streamable-HTTP tool execution |
-| `spec/surface/discover.md` | onboarding-surface canary for discover resolution, suggest routing, skill guidance, and fallback behavior |
+| `spec/surface/discover.md` | onboarding-surface canary for discover resolution, skill guidance, and fallback behavior |
 
 ## Bash Mustmatch Lint Rule
 

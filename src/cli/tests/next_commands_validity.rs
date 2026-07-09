@@ -10,25 +10,6 @@ fn assert_parses(cmd: &str) {
 }
 
 #[test]
-fn suggest_command_parse() {
-    assert_parses(r#"biomcp suggest "What drugs treat melanoma?""#);
-    assert_parses(r#"biomcp --json suggest "When was imatinib approved?""#);
-
-    for example in crate::cli::suggest::route_examples() {
-        let response = crate::cli::suggest::suggest_question(example.question);
-        assert_eq!(
-            response.matched_skill.as_deref(),
-            Some(example.expected_skill),
-            "{}",
-            example.question
-        );
-        for command in response.first_commands {
-            assert_parses(&command);
-        }
-    }
-}
-
-#[test]
 fn workflow_ladder_sidecar_commands_parse() {
     for workflow in crate::workflow_ladders::Workflow::ALL {
         let ladder = crate::workflow_ladders::load(workflow).expect("sidecar should load");

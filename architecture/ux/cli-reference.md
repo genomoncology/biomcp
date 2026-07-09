@@ -10,7 +10,7 @@ documentation, and verification work — not a user manual.
 biomcp search <entity> [filters]      → discovery queries
 biomcp get <entity> <id> [sections]   → focused detail
 biomcp <entity> <helper> <id>         → cross-entity pivot
-biomcp suggest <question>             → offline question-to-playbook routing
+biomcp skill list                     → worked-example catalog
 biomcp discover <query>               → single-entity free-text resolution into typed follow-up commands
 biomcp enrich <GENE1,GENE2,...>        → gene-set enrichment
 biomcp batch <entity> <id1,id2,...>    → parallel gets
@@ -27,7 +27,6 @@ biomcp skill                  → show the embedded BioMCP agent guide
 biomcp skill render           → print the canonical agent prompt
 biomcp skill install <dir>    → install the BioMCP guide into an agent directory
 biomcp skill list             → list embedded worked examples
-biomcp suggest "<question>"   → select a worked-example playbook and two starter commands
 biomcp cache path             → print the managed HTTP cache path (plain text; ignores `--json`)
 biomcp cache stats            → show HTTP cache statistics (JSON supported)
 biomcp cache clean            → remove orphan blobs and optionally age- or size-evict the HTTP cache (JSON supported)

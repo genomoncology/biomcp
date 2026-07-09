@@ -30,7 +30,6 @@ mod search_all_command;
 mod shared;
 pub mod skill;
 mod study;
-pub(crate) mod suggest;
 mod system;
 mod trial;
 mod types;
