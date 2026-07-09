@@ -115,6 +115,20 @@ biomcp study --help | mustmatch like "EXAMPLES:
   biomcp study list"
 ```
 
+## Retired Suggest Command Is Absent From Discovery
+
+The command catalog should point agents at the living worked-example catalog,
+not at the retired offline `suggest` router. Normal discovery surfaces must not
+advertise `suggest` as a command or list page.
+
+```bash
+biomcp --help | mustmatch like "skill       BioMCP skill overview"
+biomcp --help | mustmatch not like "suggest     Suggest the BioMCP skill/playbook"
+biomcp list | mustmatch like '`skill list`'
+biomcp list | mustmatch not like '`suggest <question>`'
+biomcp list | mustmatch not like '`suggest "What drugs treat melanoma?"`'
+```
+
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
 
 The cache configuration reference promises an operator env override for the

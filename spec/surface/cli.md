@@ -13,7 +13,9 @@ documented JSON exception for cache paths.
 out="$(../../tools/biomcp-ci --help)"
 mustmatch like "leading public biomedical data sources" <<<"$out"
 mustmatch like "serve-http" <<<"$out"
-mustmatch '/suggest\s+Suggest .*biomedical question/' <<<"$out"
+mustmatch like "skill       BioMCP skill overview" <<<"$out"
+mustmatch like "discover    Resolve free-text biomedical text" <<<"$out"
+mustmatch not like "suggest     Suggest the BioMCP skill/playbook" <<<"$out"
 mustmatch like "cache path, which stays plain text" <<<"$out"
 ```
 
@@ -23,6 +25,10 @@ mustmatch like "cache path, which stays plain text" <<<"$out"
 subpages should keep teaching when to use the command, not just list flags.
 
 ```bash
+root="$(../../tools/biomcp-ci list)"
+mustmatch like '`skill list`' <<<"$root"
+mustmatch not like '`suggest <question>`' <<<"$root"
+mustmatch not like '`suggest "What drugs treat melanoma?"`' <<<"$root"
 discover="$(../../tools/biomcp-ci list discover)"
 mustmatch like '`discover <query>`' <<<"$discover"
 mustmatch like "If no biomedical entities resolve" <<<"$discover"
@@ -155,14 +161,6 @@ and paste them directly into shells. Multiword phrases, apostrophes, and
 parenthesized tokens must stay runnable when they appear inside emitted follow-up
 commands, while plain single-token anchors should stay readable without extra
 quoting.
-
-```bash
-set -e
-plain="$(../../tools/biomcp-ci suggest "What drugs treat melanoma?")"
-spaced="$(../../tools/biomcp-ci suggest "What drugs treat paclitaxel protein-bound?")"
-mustmatch like "biomcp search drug --indication melanoma" <<<"$plain"
-mustmatch like 'biomcp search drug --indication "paclitaxel protein-bound"' <<<"$spaced"
-```
 
 Discover is the brittle case because it emits commands directly from free text.
 The quoted form below is the copy-paste contract, not presentation polish.

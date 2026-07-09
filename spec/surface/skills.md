@@ -29,3 +29,14 @@ underscore template out of routing.
 normalize-to-codes"
 ../../tools/biomcp-ci skill list | mustmatch not like "_TEMPLATE"
 ```
+
+## Skill catalog is the discovery surface
+
+Agents that need a worked example should inspect the shipped skill catalog
+directly. The overview points to `biomcp skill list` and must not send users
+through the retired offline `suggest` router.
+
+```bash
+../../tools/biomcp-ci skill | mustmatch like "biomcp skill list"
+../../tools/biomcp-ci skill | mustmatch not like 'biomcp suggest "<question>"'
+```
