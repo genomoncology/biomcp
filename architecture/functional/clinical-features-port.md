@@ -1,103 +1,52 @@
 # Disease Clinical Features Architecture
 
 This document describes the shipped disease `clinical_features` section. It is
-current-state architecture for the MedlinePlus-backed clinical-summary rows
-available through BioMCP disease detail commands.
+an opt-in Monarch/HPO-backed view over the same backend phenotype annotations
+used by `get disease <name_or_id> phenotypes`.
 
-## Current Surface
+## Contract
 
-`get disease <name_or_id> clinical_features` is an explicit opt-in disease
-section. Default disease cards stay concise, and `all` excludes
-`clinical_features` so broad disease lookups do not trigger a live
-MedlinePlus search or add a clinical-summary table unexpectedly.
+`get disease <name_or_id> clinical_features` is explicit opt-in disease
+section. It is not included in `all`, so broad disease lookups do not add a
+second phenotype-style table unexpectedly.
 
-The section is separate from the HPO/Monarch phenotype section. HPO/Monarch
-phenotypes remain separate because they model ontology-backed phenotype
-associations, while `clinical_features` provides reviewed clinical-summary
-features extracted from MedlinePlus health topics for configured diseases.
+The section renders backend `DiseasePhenotype` rows directly. It does not
+reshape those rows into the former clinical-summary table shape.
 
-## Source Selection
+## Source and provenance
 
-MedlinePlus Search is the live source. BioMCP queries the NLM
-`/ws/query?db=healthTopics` endpoint with reviewed disease-specific source
-queries, then deduplicates topics by URL before feature extraction.
+The source is Monarch Initiative / HPO phenotype annotation data. The markdown
+heading is `Clinical Features (Monarch / HPO)`, row sources are the backend
+phenotype source labels, and `_meta.section_sources` reports Monarch Initiative
+and HPO.
 
-The shipped configuration intentionally covers reviewed configured diseases
-rather than attempting open-ended clinical summarization. Each configured
-disease records source queries, accepted MedlinePlus topics, reviewed feature
-labels, evidence text, and optional HPO mapping metadata.
+If the backend has no phenotype annotations for the disease, the section shows a
+truthful Monarch/HPO empty state rather than a curated substitute.
 
-An embedded fallback keeps the section deterministic when live MedlinePlus
-searches return no usable topic rows or are unavailable. The fallback uses the
-same reviewed topic and feature configuration, so offline behavior preserves
-the same source and provenance contract instead of inventing rows.
+## Runtime flow
 
-## Runtime Flow
+1. Section parsing recognizes `clinical_features` only when the caller names it.
+2. Disease enrichment computes a shared phenotype need flag for `phenotypes` or
+   `clinical_features`.
+3. That shared flag runs the existing Monarch/HPO enrichment path once:
+   `add_monarch_phenotypes` and `add_phenotypes_section`.
+4. Requested `clinical_features` receives the backend phenotype rows directly.
+5. Requested `phenotypes clinical_features` uses the same enrichment pass and
+   does not duplicate backend calls.
 
-1. `get disease` resolves the requested disease through the normal disease
-   identity path.
-2. Section parsing recognizes `clinical_features` only when the caller names
-   it explicitly.
-3. The disease enrichment path checks the reviewed disease configuration for
-   the resolved disease and the original lookup text.
-4. If a configuration matches, BioMCP queries MedlinePlus Search, deduplicates
-   candidate topics, and falls back to embedded reviewed topics when needed.
-5. Feature extraction emits only reviewed configured rows, attaches evidence
-   and source URLs, and writes rows to the disease card.
-6. Unsupported diseases leave the section empty rather than fabricating
-   symptoms or labels from the disease name.
+## Output shape
 
-## Output Contract
+Markdown uses the phenotype table columns:
 
-Clinical-feature rows are source-native MedlinePlus evidence rows. JSON exposes
-the full row contract:
+| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |
 
-- rank/order for stable display
-- feature label or name
-- source label `MedlinePlus`
-- MedlinePlus topic URL and source-native identifier when available
-- evidence text and evidence tier
-- normalized HPO ID and HPO label when reviewed mapping exists
-- HPO mapping method and confidence when available
+JSON exposes requested clinical-feature rows with the same backend phenotype row
+shape. There is no compatibility projection to `Rank | Feature | HPO |
+Confidence | Evidence | Source`.
 
-Markdown renders stable display columns for rank, feature, HPO mapping,
-confidence, evidence, and linked source only when the section is requested.
-JSON preserves requested rows under `clinical_features` and includes evidence
-URLs in the shared provenance metadata. When rows are present,
-`_meta.section_sources` includes the `clinical_features` section with the
-MedlinePlus source label.
+## Validation
 
-## Failure Behavior
-
-The section degrades by truthful omission:
-
-- Unsupported diseases produce a requested-section empty state and do not
-  fabricate clinical features.
-- Live MedlinePlus failures can still use the embedded fallback for reviewed
-  configured diseases.
-- If neither live nor embedded reviewed topics produce rows, markdown explains
-  that no configured clinical features are available.
-- The `all` section set remains unchanged; callers must ask for
-  `clinical_features` directly.
-
-## Security and Boundary Notes
-
-`clinical_features` is a read-only entity section. It does not add a local sync
-command, mutable operator workflow, API-key requirement, or MCP filesystem
-surface. The only live network dependency is the bounded MedlinePlus Search
-request, and the committed fallback is embedded in the binary with the rest of
-the disease clinical-feature fixtures.
-
-## Verification
-
-The shipped behavior is covered by focused rendering/source tests and an
-executable disease spec canary:
-
-- `spec/entity/disease.md::Clinical Features` exercises the public
-  `get disease "uterine leiomyoma" clinical_features` CLI path and checks the
-  MedlinePlus section, stable table columns, reviewed symptom row, HPO mapping,
-  and source provenance.
-- Disease rendering and provenance tests cover the MedlinePlus section heading,
-  evidence URLs, and `_meta.section_sources`.
-- The MedlinePlus source tests cover bounded request parsing and invalid input
-  handling for the live search client.
+- `spec/entity/disease.md::Clinical Features` exercises the public live CLI path
+  with a disease outside the former curated set.
+- Routine gates remain `make lint`, `make test`, and `make spec`.
+- Live/operator verification remains `make verify`.

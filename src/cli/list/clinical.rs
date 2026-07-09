@@ -228,7 +228,7 @@ pub(super) fn list_disease() -> String {
 - Use `get disease <name_or_id> funding` when the question is about NIH grant support for a disease.
 - Use `get disease <name_or_id> survival` when the question is specifically about cancer survival outcomes.
 - Use `get disease <name_or_id> phenotypes` for symptom-style questions.
-- Use `get disease <name_or_id> clinical_features` only when you need MedlinePlus clinical-summary rows for configured diseases; unsupported diseases omit fabricated rows, and the section stays opt-in.
+- Use `get disease <name_or_id> clinical_features` only when you need Monarch/HPO phenotype rows framed as clinical features; unsupported diseases return a truthful backend empty state, and the section stays opt-in.
 - Use `search article -d <disease>` when you need broader review literature or want to supplement sparse structured data.
 
 ## Commands
@@ -245,7 +245,7 @@ pub(super) fn list_disease() -> String {
 - `get disease <name_or_id> civic` - CIViC disease-context evidence
 - `get disease <name_or_id> disgenet` - DisGeNET scored disease-gene associations (requires `DISGENET_API_KEY`)
 - `get disease <name_or_id> funding` - NIH Reporter grants for the requested disease phrase, or the resolved canonical name for identifier lookups, over the most recent 5 NIH fiscal years
-- `get disease <name_or_id> clinical_features` - MedlinePlus clinical-summary rows for configured diseases; unsupported diseases omit fabricated rows
+- `get disease <name_or_id> clinical_features` - Monarch/HPO phenotype rows framed as clinical features; unsupported diseases return a truthful backend empty state
 - `get disease <name_or_id> all` - include all standard disease sections (`diagnostics`, `disgenet`, `funding`, and `clinical_features` stay opt-in)
 - `search disease <query>` - positional search by name
 - `search disease -q <query>` - search by name

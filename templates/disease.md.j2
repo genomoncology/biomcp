@@ -91,16 +91,16 @@ No phenotype annotations found for this disease.
 {% endif -%}
 {% endif -%}
 {% if show_clinical_features_section -%}
-## Clinical Features (MedlinePlus)
+## Clinical Features (Monarch / HPO)
 
 {% if clinical_features -%}
-| Rank | Feature | HPO | Confidence | Evidence | Source |
-|---|---|---|---|---|---|
+| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |
+|---|---|---|---|---|---|---|---|
 {% for row in clinical_features -%}
-| {{ row.rank }} | {{ row.label }} | {{ row.hpo }} | {{ row.confidence }} | {{ row.evidence }} | {% if row.source_url %}[{{ row.source }}]({{ row.source_url }}){% else %}{{ row.source }}{% endif %} |
+| {{ row.hpo_id }} | {{ row.name or "-" }} | {{ row.evidence or "-" }}{% if row.qualifiers %} ({{ row.qualifiers | join(", ") }}){% endif %} | {% if row.frequency_qualifier %}{{ row.frequency_qualifier }}{% elif row.frequency %}{{ row.frequency }}{% else %}-{% endif %} | {{ row.onset_qualifier or "-" }} | {{ row.sex_qualifier or "-" }} | {{ row.stage_qualifier or "-" }} | {% if row.source_url %}[{{ row.source }}]({{ row.source_url }}){% else %}{{ row.source or "-" }}{% endif %} |
 {% endfor -%}
 {% else -%}
-No MedlinePlus clinical features found for this disease.
+No Monarch/HPO phenotype annotations found for this disease.
 {% endif -%}
 {% endif -%}
 {% if show_diagnostics_section -%}

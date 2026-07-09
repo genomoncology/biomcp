@@ -60,17 +60,16 @@ render as explicit tables and admit that the diagnostic list is truncated.
 
 ## Clinical Features
 
-Clinical features are a separate opt-in MedlinePlus section for reviewed
-configured diseases. Uterine leiomyoma should render source-native symptom rows
-with reviewed HPO mappings instead of falling back to the broader phenotype
-section or a blank table.
+Clinical features are a separate opt-in Monarch/HPO-backed section. A disease
+outside the old curated answer-key set, such as melanoma, should render the
+backend phenotype rows directly instead of a MedlinePlus clinical-summary table
+or a blank curated fallback.
 
 ```bash
-../../tools/biomcp-ci get disease "uterine leiomyoma" clinical_features | mustmatch like '## Clinical Features (MedlinePlus)
-| Rank | Feature | HPO | Confidence | Evidence | Source |
-heavy menstrual bleeding
-HP:0000132 (Menorrhagia)
-[MedlinePlus](https://medlineplus.gov/uterinefibroids.html)'
+../../tools/biomcp-ci get disease melanoma clinical_features | mustmatch like '## Clinical Features (Monarch / HPO)
+| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |
+HP:
+infores:'
 ```
 
 ## NIH Funding Context

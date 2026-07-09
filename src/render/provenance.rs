@@ -609,23 +609,12 @@ pub(crate) fn disease_section_sources(disease: &Disease) -> Vec<SectionSource> {
         "Phenotypes",
         ["Monarch Initiative", "HPO"],
     );
-    let clinical_feature_sources = disease
-        .clinical_features
-        .iter()
-        .map(|row| {
-            if row.source.trim().is_empty() {
-                "MedlinePlus".to_string()
-            } else {
-                row.source.clone()
-            }
-        })
-        .collect::<Vec<_>>();
     push_section(
         &mut out,
         !disease.clinical_features.is_empty(),
         "clinical_features",
         "Clinical Features",
-        clinical_feature_sources,
+        ["Monarch Initiative", "HPO"],
     );
     if let Some(rows) = &disease.diagnostics {
         push_section(
@@ -1739,24 +1728,17 @@ mod tests {
             recruiting_trial_count: None,
             pathways: Vec::new(),
             phenotypes: Vec::new(),
-            clinical_features: vec![crate::entities::disease::DiseaseClinicalFeature {
-                rank: 1,
-                label: "heavy menstrual bleeding".to_string(),
-                feature_type: "symptom".to_string(),
-                source: "MedlinePlus".to_string(),
-                source_url: Some("https://medlineplus.gov/uterinefibroids.html".to_string()),
-                source_native_id: "uterinefibroids".to_string(),
-                evidence_tier: "clinical_summary".to_string(),
-                evidence_text: "Heavy menstrual bleeding is a common symptom.".to_string(),
-                evidence_match: "heavy menstrual bleeding".to_string(),
-                body_system: Some("reproductive".to_string()),
-                topic_title: Some("Uterine Fibroids".to_string()),
-                topic_relation: Some("direct".to_string()),
-                topic_selection_score: Some(180.0),
-                normalized_hpo_id: Some("HP:0000132".to_string()),
-                normalized_hpo_label: Some("Menorrhagia".to_string()),
-                mapping_confidence: 0.86,
-                mapping_method: "reviewed_fixture_exact_or_synonym".to_string(),
+            clinical_features: vec![crate::entities::disease::DiseasePhenotype {
+                hpo_id: "HP:0000132".to_string(),
+                name: Some("Menorrhagia".to_string()),
+                evidence: Some("IEA".to_string()),
+                frequency: None,
+                frequency_qualifier: None,
+                onset_qualifier: None,
+                sex_qualifier: None,
+                stage_qualifier: None,
+                qualifiers: Vec::new(),
+                source: Some("infores:hpo-annotations".to_string()),
             }],
             key_features: Vec::new(),
             variants: Vec::new(),
@@ -1779,7 +1761,7 @@ mod tests {
         assert!(sources.iter().any(|source| {
             source.key == "clinical_features"
                 && source.label == "Clinical Features"
-                && source.sources == vec!["MedlinePlus".to_string()]
+                && source.sources == vec!["Monarch Initiative".to_string(), "HPO".to_string()]
         }));
     }
 

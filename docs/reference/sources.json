@@ -489,10 +489,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": [
-      "discover plain-language topics",
-      "get disease <name_or_id> clinical_features"
-    ],
+    "bioMcp_surfaces": ["discover plain-language topics"],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public search API",
@@ -501,7 +498,7 @@
     "terms_url": "https://medlineplus.gov/about/using/",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP uses MedlinePlus for best-effort plain-language discover context and opt-in disease clinical-feature summaries for configured diseases."
+    "notes": "BioMCP uses MedlinePlus for best-effort plain-language discover context."
   },
   {
     "id": "litsense2",

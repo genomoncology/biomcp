@@ -570,24 +570,19 @@ SOURCE_PAGE_SPECS = {
     },
     "medlineplus.md": {
         "title": "MedlinePlus MCP Tool for Plain-Language Disease Context | BioMCP",
-        "description": "Use BioMCP to add MedlinePlus plain-language context to discover results and opt-in disease clinical-feature summaries.",
+        "description": "Use BioMCP to add MedlinePlus plain-language context to discover results.",
         "api_access": "No BioMCP API key required.",
         "official_url": "https://medlineplus.gov/",
         "required_intro_phrases": [
             "plain-language disease or symptom context",
             "supplements `biomcp discover`",
             "suppressed for gene, drug, pathway",
-            "`get disease <name_or_id> clinical_features`",
-            "embedded reviewed fixtures",
         ],
-        "exposes": [
-            "biomcp discover <query>",
-            "get disease <name_or_id> clinical_features",
-        ],
+        "exposes": ["biomcp discover <query>"],
         "example_commands": [
             "biomcp discover \"symptoms of Marfan syndrome\"",
-            "biomcp get disease \"uterine leiomyoma\" clinical_features",
-            "biomcp get disease MONDO:0007947 clinical_features",
+            "biomcp discover \"chest pain\"",
+            "biomcp discover \"Marfan syndrome\"",
         ],
     },
     "kegg.md": {

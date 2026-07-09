@@ -26,8 +26,8 @@ fn get_disease_help_includes_when_to_use_guidance() {
     assert!(help.contains("When to use:"));
     assert!(help.contains("normalized disease card"));
     assert!(help.contains("diagnostics, funding, survival, or clinical_features"));
-    assert!(help.contains("MedlinePlus clinical-summary section for configured diseases"));
-    assert!(help.contains("MedlinePlus clinical-summary rows for configured diseases"));
+    assert!(help.contains("Monarch/HPO-backed opt-in view over disease phenotype annotations"));
+    assert!(help.contains("Monarch/HPO phenotype rows framed as clinical features"));
     assert!(help.contains("remains excluded from all"));
     assert!(!help.contains("currently empty until extraction support is wired"));
     assert!(!help.contains("accepted MedlinePlus clinical-feature foundation section"));

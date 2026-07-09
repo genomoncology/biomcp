@@ -292,7 +292,7 @@ fn sections_disease_base_card_surfaces_diagnostics_before_optional_sections() {
     assert!(diagnostics < clinical_features);
     assert!(clinical_features < survival);
     assert!(block.contains("diagnostic tests for this condition from GTR and WHO IVD"));
-    assert!(block.contains("MedlinePlus clinical feature summaries"));
+    assert!(block.contains("Monarch/HPO phenotype rows as clinical features"));
     assert!(block.contains("SEER Explorer cancer survival rates"));
     assert!(!block.contains("biomcp get disease MONDO:0005105 variants"));
 }

@@ -32,7 +32,7 @@ New to BioMCP? Try:
 | Diagnostic test for a gene or disease | `get gene <symbol> diagnostics`; `get disease <id> diagnostics`; or `search diagnostic --gene <symbol>` |
 | What the 5-year survival outlook is for a cancer | `get disease <name_or_id> survival` |
 | Symptoms or phenotypes of a disease | `get disease <name_or_id> phenotypes` |
-| MedlinePlus clinical-summary rows for a configured disease | `get disease <name_or_id> clinical_features` |
+| Monarch/HPO phenotype rows framed as clinical features | `get disease <name_or_id> clinical_features` |
 | Which diseases match HPO IDs or symptom text | `search phenotype "<HP:... HP:...>"` or `search phenotype "seizure, developmental delay"` |
 | What a gene does | `get gene <symbol>` |
 | Tissue expression or localization of a gene product | `get gene <symbol> hpa` or `get gene <symbol> protein` |
@@ -77,7 +77,7 @@ New to BioMCP? Try:
 - `get disease <name_or_id> diagnostics`
   - opt-in diagnostic-test pivot capped at 10 rows
 - `get disease <name_or_id> clinical_features`
-  - opt-in MedlinePlus clinical-summary rows for configured diseases
+  - opt-in Monarch/HPO phenotype rows framed as clinical features
 - `get drug <name> regulatory [--region <us|eu|ema|who|all>]` - region-aware U.S./EU/WHO regulatory context
 - `get drug <name> safety|shortage [--region <us|eu|ema|all>]` - region-aware U.S./EU drug safety and shortage context
 - `get drug <name> all [--region <us|eu|ema|who|all>]` - include all sections plus region-aware regulatory context

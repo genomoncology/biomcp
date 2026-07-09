@@ -193,9 +193,9 @@ def test_functional_overview_repaired_source_rows_match_current_contract() -> No
     )
     assert (
         "| disease | MyDisease.info, Monarch Initiative, MONDO, OpenTargets, "
-        "Reactome, CIViC, SEER Explorer, NIH Reporter, MedlinePlus "
-        "`clinical_features`, GTR/WHO IVD diagnostics pivot | `biomcp get "
-        'disease "chronic myeloid leukemia" funding` |' in functional
+        "Reactome, CIViC, SEER Explorer, NIH Reporter, GTR/WHO IVD "
+        "diagnostics pivot | `biomcp get disease "
+        '"chronic myeloid leukemia" funding` |' in functional
     )
     assert (
         "| adverse-event | OpenFDA FAERS/MAUDE/recalls, CDC WONDER VAERS "
@@ -229,25 +229,19 @@ def test_clinical_features_architecture_doc_is_current_state() -> None:
     ):
         assert stale_phrase not in clinical_lower
 
-    assert "## Current Surface" in clinical
-    assert "## Source Selection" in clinical
-    assert "## Runtime Flow" in clinical
-    assert "## Output Contract" in clinical
-    assert "## Failure Behavior" in clinical
-    assert "## Verification" in clinical
+    assert "## Contract" in clinical
+    assert "## Source and provenance" in clinical
+    assert "## Runtime flow" in clinical
+    assert "## Output shape" in clinical
+    assert "## Validation" in clinical
     assert "`get disease <name_or_id> clinical_features`" in clinical
-    assert "MedlinePlus Search" in clinical
-    assert "reviewed configured diseases" in clinical_ws
-    assert "embedded fallback" in clinical_ws
-    assert "JSON exposes the full row contract" in clinical_ws
-    assert "Markdown renders stable display columns" in clinical_ws
+    assert "Monarch/HPO-backed" in clinical
+    assert "backend `DiseasePhenotype` rows directly" in clinical
     assert "explicit opt-in" in clinical_ws
-    assert "`all` excludes `clinical_features`" in clinical_ws
-    assert "Unsupported diseases" in clinical_ws
-    assert "evidence URLs" in clinical_ws
-    assert "HPO mapping" in clinical_ws
+    assert "not included in `all`" in clinical_ws
+    assert "truthful Monarch/HPO empty state" in clinical_ws
     assert "`_meta.section_sources`" in clinical
-    assert "HPO/Monarch phenotypes remain separate" in clinical_ws
+    assert "There is no compatibility projection" in clinical
 
 
 def test_article_fulltext_architecture_doc_is_current_state() -> None:
@@ -752,7 +746,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "13 remote entity commands" not in ux
     assert "all 13 remote entity commands" not in ux
     assert "entity command surface" in ux_ws
-    assert 'biomcp get disease "uterine leiomyoma" clinical_features' in ux
+    assert "biomcp get disease melanoma clinical_features" in ux
     assert (
         "Opt-in sections such as `clinical_features`, `diagnostics`, `disgenet`, "
         "and `funding` still require explicit naming." in ux_ws

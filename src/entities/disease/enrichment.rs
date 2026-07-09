@@ -515,7 +515,9 @@ pub(super) async fn apply_requested_sections(
     {
         warn!("Reactome unavailable for disease pathways section: {err}");
     }
-    if sections.include_phenotypes {
+    let needs_backend_phenotypes =
+        sections.include_phenotypes || sections.include_clinical_features;
+    if needs_backend_phenotypes {
         if let Err(err) = add_monarch_phenotypes(disease).await {
             warn!("Monarch unavailable for disease phenotypes section: {err}");
         }
@@ -555,19 +557,9 @@ pub(super) async fn apply_requested_sections(
     if sections.include_disgenet {
         add_disgenet_section(disease).await?;
     }
-    if sections.include_clinical_features
-        && let Err(err) =
-            super::clinical_features::add_clinical_features_section(disease, requested_lookup).await
-    {
-        warn!("MedlinePlus unavailable for disease clinical features section: {err}");
-    }
-
     if !sections.include_genes && !sections.include_pathways {
         disease.associated_genes.clear();
         disease.gene_associations.clear();
-    }
-    if !sections.include_phenotypes {
-        disease.phenotypes.clear();
     }
     if !sections.include_variants {
         disease.variants.clear();
@@ -598,8 +590,13 @@ pub(super) async fn apply_requested_sections(
     if !sections.include_disgenet {
         disease.disgenet = None;
     }
-    if !sections.include_clinical_features {
+    if sections.include_clinical_features {
+        disease.clinical_features = disease.phenotypes.clone();
+    } else {
         disease.clinical_features.clear();
+    }
+    if !sections.include_phenotypes {
+        disease.phenotypes.clear();
     }
 
     disease.key_features = transform::disease::derive_key_features(disease);

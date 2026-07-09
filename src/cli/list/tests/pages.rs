@@ -317,8 +317,8 @@ fn list_disease_mentions_opt_in_sections() {
     assert!(
         out.contains("`diagnostics`, `disgenet`, `funding`, and `clinical_features` stay opt-in")
     );
-    assert!(out.contains("MedlinePlus clinical-summary rows for configured diseases"));
-    assert!(out.contains("unsupported diseases omit fabricated rows"));
+    assert!(out.contains("Monarch/HPO phenotype rows framed as clinical features"));
+    assert!(out.contains("unsupported diseases return a truthful backend empty state"));
 }
 
 #[test]

@@ -167,7 +167,7 @@ fn disease_markdown_all_keeps_opt_in_sections_hidden() {
     assert!(!markdown.contains("## Diagnostics"));
     assert!(!markdown.contains("## Funding (NIH Reporter)"));
     assert!(!markdown.contains("## DisGeNET"));
-    assert!(!markdown.contains("## Clinical Features (MedlinePlus)"));
+    assert!(!markdown.contains("## Clinical Features (Monarch / HPO)"));
 }
 
 #[test]

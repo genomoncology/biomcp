@@ -1,26 +1,19 @@
-use super::super::DiseaseClinicalFeature;
+use super::super::DiseasePhenotype;
 use super::super::test_support::*;
 use super::*;
 
-fn clinical_feature_row(label: &str) -> DiseaseClinicalFeature {
-    DiseaseClinicalFeature {
-        rank: 1,
-        label: label.to_string(),
-        feature_type: "symptom".to_string(),
-        source: "MedlinePlus".to_string(),
-        source_url: Some("https://medlineplus.gov/example.html".to_string()),
-        source_native_id: "example".to_string(),
-        evidence_tier: "source_native".to_string(),
-        evidence_text: format!("{label} appears in the MedlinePlus topic."),
-        evidence_match: label.to_string(),
-        body_system: Some("reproductive".to_string()),
-        topic_title: Some("Example Topic".to_string()),
-        topic_relation: Some("primary".to_string()),
-        topic_selection_score: Some(1.0),
-        normalized_hpo_id: None,
-        normalized_hpo_label: None,
-        mapping_confidence: 0.8,
-        mapping_method: "pattern_match".to_string(),
+fn clinical_feature_row(hpo_id: &str) -> DiseasePhenotype {
+    DiseasePhenotype {
+        hpo_id: hpo_id.to_string(),
+        name: Some("Example phenotype".to_string()),
+        evidence: Some("IEA".to_string()),
+        frequency: None,
+        frequency_qualifier: None,
+        onset_qualifier: None,
+        sex_qualifier: None,
+        stage_qualifier: None,
+        qualifiers: Vec::new(),
+        source: Some("infores:hpo-annotations".to_string()),
     }
 }
 
@@ -127,59 +120,13 @@ async fn apply_requested_sections_clears_clinical_features_when_not_requested() 
     let mut disease = test_disease("MONDO:0005105", "melanoma");
     disease
         .clinical_features
-        .push(clinical_feature_row("heavy menstrual bleeding"));
+        .push(clinical_feature_row("HP:0000132"));
 
     apply_requested_sections(&mut disease, DiseaseSections::default(), None)
         .await
         .expect("sections should apply");
 
     assert!(disease.clinical_features.is_empty());
-}
-
-#[tokio::test]
-async fn apply_requested_sections_preserves_clinical_features_when_requested() {
-    let mut disease = test_disease("MONDO:0005105", "melanoma");
-    disease
-        .clinical_features
-        .push(clinical_feature_row("heavy menstrual bleeding"));
-    let sections = DiseaseSections {
-        include_clinical_features: true,
-        ..DiseaseSections::default()
-    };
-
-    apply_requested_sections(&mut disease, sections, None)
-        .await
-        .expect("sections should apply");
-
-    assert_eq!(disease.clinical_features.len(), 1);
-    assert_eq!(
-        disease.clinical_features[0].label,
-        "heavy menstrual bleeding"
-    );
-}
-
-#[tokio::test]
-async fn apply_requested_sections_populates_configured_clinical_features_from_fallback() {
-    let mut disease = test_disease("D007889", "uterine fibroids");
-    disease
-        .xrefs
-        .insert("MESH".to_string(), "MESH:D007889".to_string());
-    let topics = super::super::clinical_features::offline_topics_for_test("uterine_fibroid")
-        .expect("offline clinical feature topics");
-
-    super::super::clinical_features::add_clinical_features_section_from_topics(
-        &mut disease,
-        Some("uterine leiomyoma"),
-        topics,
-    );
-
-    assert!(disease.clinical_features.iter().any(|row| {
-        row.label == "heavy menstrual bleeding"
-            && row.source == "MedlinePlus"
-            && row.source_native_id == "uterinefibroids"
-            && row.evidence_tier == "clinical_summary"
-            && row.normalized_hpo_id.as_deref() == Some("HP:0000132")
-    }));
 }
 
 #[test]

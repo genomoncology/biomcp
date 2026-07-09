@@ -34,7 +34,7 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | NCBI Genetic Testing Registry | Gene-centric genetic tests, GTR diagnostic cards, and local bundle lifecycle | [NCBI Genetic Testing Registry](gtr.md) |
 | WHO Prequalified IVD | Infectious-disease diagnostic products, assay formats, and WHO product-card provenance | [WHO Prequalified IVD](who-ivd.md) |
 | CDC CVX/MVX | Vaccine brand-to-antigen bridge for EMA/default lookups and explicit WHO vaccine search | [CDC CVX/MVX](cdc-cvx.md) |
-| MedlinePlus | Plain-language disease/symptom context for `discover` and disease `clinical_features` | [MedlinePlus](medlineplus.md) |
+| MedlinePlus | Plain-language disease/symptom context for `discover` | [MedlinePlus](medlineplus.md) |
 | KEGG | KEGG pathway IDs, summary cards, and pathway genes | [KEGG](kegg.md) |
 | PharmGKB / CPIC | Pharmacogenomic recommendations, frequencies, and clinical annotations | [PharmGKB / CPIC](pharmgkb.md) |
 | Human Protein Atlas | Tissue expression, localization, and cancer-expression context | [Human Protein Atlas](human-protein-atlas.md) |
