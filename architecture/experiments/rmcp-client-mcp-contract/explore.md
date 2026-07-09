@@ -69,7 +69,7 @@ Dependency/feature findings:
 | Existing assertion area | Portable to rmcp client? | Notes |
 |---|---:|---|
 | `initialize` has tools/resources capabilities | Yes | Covered in prototype for stdio and HTTP. |
-| `instructions` contains public-source/suggest/skill text and omits old phrases | Yes | Covered in prototype core helper. |
+| `instructions` contains public-source/skill text and omits old phrases | Yes | Covered in prototype core helper. |
 | `list_tools` contains `biomcp`, omits `shell` | Yes | Covered in prototype. |
 | tool annotations title `BioMCP`, `readOnlyHint` true | Yes | Covered in prototype. |
 | tool description matches command-reference contract | Yes | Direct `tool.description` string checks in Rust. Not fully ported in prototype. |
