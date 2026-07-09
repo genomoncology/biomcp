@@ -5,8 +5,6 @@ const ARTICLE_GENE_BLOCKLIST: &[&str] = &[
     "CDS", "HIV", "HPV", "CMV", "HSV", "EBV", "HBV", "HCV",
 ];
 
-const ARTICLE_DRUG_ALLOWLIST: &[&str] = &["psoralen"];
-
 const ARTICLE_DRUG_SUFFIXES: &[&str] = &[
     "mab", "nib", "vir", "pril", "sartan", "statin", "platin", "rubicin", "taxel", "azole",
     "dipine", "parin", "tide", "cept", "olol", "afil", "semide", "idone",
@@ -175,10 +173,6 @@ fn first_article_drug_token(tokens: &[&str]) -> Option<String> {
         let normalized = token.trim().to_ascii_lowercase();
         if normalized.is_empty() {
             return None;
-        }
-
-        if ARTICLE_DRUG_ALLOWLIST.contains(&normalized.as_str()) {
-            return Some(normalized);
         }
 
         (normalized.len() >= 5
