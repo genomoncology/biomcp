@@ -78,7 +78,6 @@ fn article_search_related_results_do_not_derive_entity_get_from_keyword_tokens()
             .iter()
             .any(|command| command == "biomcp search article -g SRY -k \"Sox9 miRNA\"")
     );
-    assert!(!related.iter().any(|command| command == "biomcp get drug psoralen"));
 }
 
 #[test]
@@ -157,6 +156,18 @@ fn markdown_article_search_related_results_include_discover_for_short_vaccine_ph
     );
 
     assert!(related.contains(&"biomcp discover \"live attenuated vaccines\"".to_string()));
+}
+
+#[test]
+fn markdown_article_search_related_results_include_discover_for_psoralen_vaccine_phrase() {
+    let related = markdown_related_article_search_results(
+        &[article_search_result("22663011")],
+        &article_filters(Some("psoralen vaccines"), None, None),
+        crate::entities::article::ArticleSourceFilter::All,
+        &[],
+    );
+
+    assert!(related.contains(&"biomcp discover \"psoralen vaccines\"".to_string()));
 }
 
 #[test]
