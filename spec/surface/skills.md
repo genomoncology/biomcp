@@ -38,5 +38,5 @@ through the retired offline `suggest` router.
 
 ```bash
 ../../tools/biomcp-ci skill | mustmatch like "biomcp skill list"
-../../tools/biomcp-ci skill | mustmatch not like 'biomcp suggest "<question>"'
+../../tools/biomcp-ci skill | mustmatch not like "biomcp suggest"
 ```

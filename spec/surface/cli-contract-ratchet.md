@@ -123,10 +123,26 @@ advertise `suggest` as a command or list page.
 
 ```bash
 biomcp --help | mustmatch like "skill       BioMCP skill overview"
-biomcp --help | mustmatch not like "suggest     Suggest the BioMCP skill/playbook"
+biomcp --help | mustmatch not '/(?m)^\s*suggest\s/'
+```
+
+```bash
 biomcp list | mustmatch like '`skill list`'
-biomcp list | mustmatch not like '`suggest <question>`'
-biomcp list | mustmatch not like '`suggest "What drugs treat melanoma?"`'
+biomcp list | mustmatch not '/`suggest\b/'
+```
+
+```bash
+cd ../.. && uv run --no-sync python3 -c '
+from pathlib import Path
+paths = [Path("README.md"), *Path("docs").rglob("*.md"), *Path("skills").rglob("*.md")]
+hits = []
+for path in paths:
+    text = path.read_text(encoding="utf-8")
+    if "biomcp suggest" in text or "suggest <question>" in text:
+        hits.append(str(path))
+assert not hits, hits
+print("shipped docs omit retired suggest command")
+' | mustmatch like "shipped docs omit retired suggest command"
 ```
 
 ## Cache Max-Age Env Override Is Reflected in Cache Stats

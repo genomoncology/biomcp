@@ -10,13 +10,12 @@ The first thing a user sees still needs to teach the major surfaces and the one
 documented JSON exception for cache paths.
 
 ```bash
-out="$(../../tools/biomcp-ci --help)"
-mustmatch like "leading public biomedical data sources" <<<"$out"
-mustmatch like "serve-http" <<<"$out"
-mustmatch like "skill       BioMCP skill overview" <<<"$out"
-mustmatch like "discover    Resolve free-text biomedical text" <<<"$out"
-mustmatch not like "suggest     Suggest the BioMCP skill/playbook" <<<"$out"
-mustmatch like "cache path, which stays plain text" <<<"$out"
+../../tools/biomcp-ci --help | mustmatch like "leading public biomedical data sources"
+../../tools/biomcp-ci --help | mustmatch like "serve-http"
+../../tools/biomcp-ci --help | mustmatch like "skill       BioMCP skill overview"
+../../tools/biomcp-ci --help | mustmatch like "discover    Resolve free-text biomedical text"
+../../tools/biomcp-ci --help | mustmatch not '/(?m)^\s*suggest\s/'
+../../tools/biomcp-ci --help | mustmatch like "cache path, which stays plain text"
 ```
 
 ## Static Command Guides Stay Task-Oriented
@@ -25,16 +24,12 @@ mustmatch like "cache path, which stays plain text" <<<"$out"
 subpages should keep teaching when to use the command, not just list flags.
 
 ```bash
-root="$(../../tools/biomcp-ci list)"
-mustmatch like '`skill list`' <<<"$root"
-mustmatch not like '`suggest <question>`' <<<"$root"
-mustmatch not like '`suggest "What drugs treat melanoma?"`' <<<"$root"
-discover="$(../../tools/biomcp-ci list discover)"
-mustmatch like '`discover <query>`' <<<"$discover"
-mustmatch like "If no biomedical entities resolve" <<<"$discover"
-batch="$(../../tools/biomcp-ci list batch)"
-mustmatch like '`batch <entity> <id1,id2,...>`' <<<"$batch"
-mustmatch like "up to 10 IDs" <<<"$batch"
+../../tools/biomcp-ci list | mustmatch like '`skill list`'
+../../tools/biomcp-ci list | mustmatch not '/`suggest\b/'
+../../tools/biomcp-ci list discover | mustmatch like '`discover <query>`'
+../../tools/biomcp-ci list discover | mustmatch like "If no biomedical entities resolve"
+../../tools/biomcp-ci list batch | mustmatch like '`batch <entity> <id1,id2,...>`'
+../../tools/biomcp-ci list batch | mustmatch like "up to 10 IDs"
 ```
 
 ## List Command Documents Update Checksum Override
