@@ -65,7 +65,7 @@ SOURCE_PAGE_SPECS = {
             "get trial <nct_id> references",
         ],
         "example_commands": [
-            'biomcp search trial -c melanoma --status recruiting --limit 3',
+            "biomcp search trial -c melanoma --status recruiting --limit 3",
             'biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 3',
             "biomcp get trial NCT02576665",
             "biomcp get trial NCT02576665 eligibility",
@@ -269,7 +269,7 @@ SOURCE_PAGE_SPECS = {
             "article recommendations <id>",
         ],
         "example_commands": [
-            "biomcp search article -k \"BRAF melanoma\" --source semanticscholar --limit 5",
+            'biomcp search article -k "BRAF melanoma" --source semanticscholar --limit 5',
             "biomcp get article 22663011 tldr",
             "biomcp article citations 22663011 --limit 3",
             "biomcp article references 22663011 --limit 3",
@@ -502,7 +502,7 @@ SOURCE_PAGE_SPECS = {
         ],
         "example_commands": [
             "biomcp search diagnostic --gene BRCA1 --source gtr --limit 5",
-            "biomcp search diagnostic --disease \"hereditary breast cancer\" --source gtr --limit 5",
+            'biomcp search diagnostic --disease "hereditary breast cancer" --source gtr --limit 5',
             "biomcp get diagnostic GTR000006692.3 genes conditions methods",
             "biomcp gtr sync",
             "biomcp health",
@@ -524,15 +524,15 @@ SOURCE_PAGE_SPECS = {
             "search diagnostic --disease <name> --source who-ivd",
             "search diagnostic --type <assay_format> --source who-ivd",
             "search diagnostic --manufacturer <name> --source who-ivd",
-            "get diagnostic \"<product_code>\"",
-            "get diagnostic \"<product_code>\" conditions",
+            'get diagnostic "<product_code>"',
+            'get diagnostic "<product_code>" conditions',
             "biomcp health",
             "biomcp who-ivd sync",
         ],
         "example_commands": [
             "biomcp search diagnostic --disease HIV --source who-ivd --limit 5",
-            "biomcp get diagnostic \"<product_code>\"",
-            "biomcp get diagnostic \"<product_code>\" conditions",
+            'biomcp get diagnostic "<product_code>"',
+            'biomcp get diagnostic "<product_code>" conditions',
             "biomcp who-ivd sync",
             "biomcp health",
         ],
@@ -570,24 +570,19 @@ SOURCE_PAGE_SPECS = {
     },
     "medlineplus.md": {
         "title": "MedlinePlus MCP Tool for Plain-Language Disease Context | BioMCP",
-        "description": "Use BioMCP to add MedlinePlus plain-language context to discover results and opt-in disease clinical-feature summaries.",
+        "description": "Use BioMCP to add MedlinePlus plain-language context to discover results.",
         "api_access": "No BioMCP API key required.",
         "official_url": "https://medlineplus.gov/",
         "required_intro_phrases": [
             "plain-language disease or symptom context",
             "supplements `biomcp discover`",
             "suppressed for gene, drug, pathway",
-            "`get disease <name_or_id> clinical_features`",
-            "embedded reviewed fixtures",
         ],
-        "exposes": [
-            "biomcp discover <query>",
-            "get disease <name_or_id> clinical_features",
-        ],
+        "exposes": ["biomcp discover <query>"],
         "example_commands": [
-            "biomcp discover \"symptoms of Marfan syndrome\"",
-            "biomcp get disease \"uterine leiomyoma\" clinical_features",
-            "biomcp get disease MONDO:0007947 clinical_features",
+            'biomcp discover "symptoms of Marfan syndrome"',
+            'biomcp discover "chest pain"',
+            'biomcp discover "Marfan syndrome"',
         ],
     },
     "kegg.md": {
@@ -760,7 +755,9 @@ def _source_table_block(text: str) -> str:
 
 
 def _markdown_blocks(text: str) -> list[str]:
-    return [block.strip() for block in re.split(r"\n\s*\n", text.strip()) if block.strip()]
+    return [
+        block.strip() for block in re.split(r"\n\s*\n", text.strip()) if block.strip()
+    ]
 
 
 def _example_blocks(text: str) -> list[tuple[str, str]]:
@@ -821,7 +818,9 @@ def test_sources_overview_page_has_required_metadata_and_links() -> None:
         assert f"]({filename})" in overview
 
 
-def test_each_source_page_has_required_front_matter_headings_intro_and_examples() -> None:
+def test_each_source_page_has_required_front_matter_headings_intro_and_examples() -> (
+    None
+):
     for filename, spec in SOURCE_PAGE_SPECS.items():
         page = _read_source_page(filename)
 
@@ -843,11 +842,15 @@ def test_each_source_page_has_required_front_matter_headings_intro_and_examples(
         for phrase in spec["required_intro_phrases"]:
             assert phrase in intro, f"{filename} missing intro phrase {phrase!r}"
 
-        examples = _markdown_section_block(page, "## Example commands\n", "\n## API access")
+        examples = _markdown_section_block(
+            page, "## Example commands\n", "\n## API access"
+        )
         example_blocks = _example_blocks(examples)
         command_count = len(example_blocks)
         assert command_count == len(spec["example_commands"])
-        assert 3 <= command_count <= 5, f"{filename} has {command_count} example commands"
+        assert 3 <= command_count <= 5, (
+            f"{filename} has {command_count} example commands"
+        )
         assert examples.count("```bash\n") == command_count
 
         for command in spec["example_commands"]:
@@ -872,7 +875,9 @@ def test_each_source_page_includes_expected_surface_auth_and_official_link() -> 
         assert spec["official_url"] in page
 
         for command in spec["exposes"]:
-            assert command in source_table, f"{filename} missing source surface {command!r}"
+            assert command in source_table, (
+                f"{filename} missing source surface {command!r}"
+            )
 
         if filename == "who-ivd.md":
             assert (
@@ -900,14 +905,18 @@ def test_pubmed_source_page_fulltext_contract_matches_current_ladder() -> None:
         "NCBI ID Converter bridges PMID/DOI identifiers to PMCID before the "
         "PMCID-dependent source attempts"
     ) in page
-    assert "Semantic Scholar PDF is attempted only when the caller passes `--pdf`" in page
+    assert (
+        "Semantic Scholar PDF is attempted only when the caller passes `--pdf`" in page
+    )
     assert "biomcp get article 27083046 fulltext" in examples
     assert "`--pdf`" in examples
     assert "`Saved to:`" in examples
     assert "full text and PDFs remain governed by article-level licenses" in page
 
 
-def test_semantic_scholar_source_page_documents_auth_status_and_backoff_contract() -> None:
+def test_semantic_scholar_source_page_documents_auth_status_and_backoff_contract() -> (
+    None
+):
     page = _read_source_page("semantic-scholar.md")
     source_table = _source_table_block(page)
 
@@ -936,8 +945,12 @@ def test_each_source_page_has_three_to_four_related_doc_links_that_resolve() -> 
 
         page_dir = REPO_ROOT / "docs" / "sources"
         for link in links:
-            assert "://" not in link, f"{filename} related docs should be internal links"
-            assert link.endswith(".md"), f"{filename} related docs should point to markdown"
+            assert "://" not in link, (
+                f"{filename} related docs should be internal links"
+            )
+            assert link.endswith(".md"), (
+                f"{filename} related docs should point to markdown"
+            )
             resolved = (page_dir / link).resolve()
             assert resolved.exists(), f"{filename} related doc does not exist: {link}"
 

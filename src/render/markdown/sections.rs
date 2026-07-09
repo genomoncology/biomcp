@@ -121,7 +121,7 @@ pub(super) fn section_description(entity: &str, section: &str) -> &'static str {
         ("disease", "pathways") => "pathways from associated genes",
         ("disease", "phenotypes") => "HPO phenotype annotations",
         ("disease", "diagnostics") => "diagnostic tests for this condition from GTR and WHO IVD",
-        ("disease", "clinical_features") => "MedlinePlus clinical feature summaries",
+        ("disease", "clinical_features") => "Monarch/HPO phenotype rows as clinical features",
         ("disease", "variants") => "disease-associated variants",
         ("disease", "models") => "model-organism evidence",
         ("disease", "prevalence") => "prevalence and epidemiology context",

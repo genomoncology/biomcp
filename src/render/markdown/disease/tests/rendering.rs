@@ -276,13 +276,12 @@ fn disease_markdown_renders_clinical_features_section() {
     let markdown =
         disease_markdown(&disease, &["clinical_features".to_string()]).expect("markdown");
 
-    assert!(markdown.contains("## Clinical Features (MedlinePlus)"));
-    assert!(markdown.contains("| Rank | Feature | HPO | Confidence | Evidence | Source |"));
-    assert!(markdown.contains("heavy menstrual bleeding"));
-    assert!(markdown.contains("HP:0000132 (Menorrhagia)"));
-    assert!(markdown.contains("0.860"));
-    assert!(markdown.contains("[MedlinePlus](https://medlineplus.gov/uterinefibroids.html)"));
-    assert!(markdown.contains("...heavy menstrual bleeding..."));
+    assert!(markdown.contains("## Clinical Features (Monarch / HPO)"));
+    assert!(markdown.contains("| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |"));
+    assert!(markdown.contains("HP:0000132"));
+    assert!(markdown.contains("Menorrhagia"));
+    assert!(markdown.contains("Frequent"));
+    assert!(markdown.contains("infores:hpo-annotations"));
 }
 
 #[test]
@@ -292,9 +291,9 @@ fn disease_markdown_clinical_features_empty_state_is_truthful() {
     let markdown =
         disease_markdown(&disease, &["clinical_features".to_string()]).expect("markdown");
 
-    assert!(markdown.contains("## Clinical Features (MedlinePlus)"));
-    assert!(markdown.contains("No MedlinePlus clinical features found for this disease."));
-    assert!(!markdown.contains("| Rank | Feature | HPO | Confidence | Evidence | Source |"));
+    assert!(markdown.contains("## Clinical Features (Monarch / HPO)"));
+    assert!(markdown.contains("No Monarch/HPO phenotype annotations found for this disease."));
+    assert!(!markdown.contains("| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |"));
 }
 
 #[test]

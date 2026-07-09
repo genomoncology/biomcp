@@ -108,7 +108,8 @@ use crate::entities::article::{
 use crate::entities::diagnostic::{Diagnostic, DiagnosticRegulatoryRecord, DiagnosticSearchResult};
 use crate::entities::discover::{DiscoverResult, DiscoverType};
 use crate::entities::disease::{
-    Disease, DiseaseAssociationScoreSummary, DiseaseSearchResult, PhenotypeSearchResult,
+    Disease, DiseaseAssociationScoreSummary, DiseasePhenotype, DiseaseSearchResult,
+    PhenotypeSearchResult,
 };
 use crate::entities::drug::{
     Drug, DrugApproval, DrugInteractionReport, DrugRegion, DrugSearchResult, EmaDrugSearchResult,

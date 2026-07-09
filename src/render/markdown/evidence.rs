@@ -1,7 +1,5 @@
 //! Evidence-link helpers and entity-specific evidence URL builders for markdown outputs.
 
-use std::collections::HashSet;
-
 use super::*;
 
 pub(super) fn source_matches(source: Option<&str>, needle: &str) -> bool {
@@ -295,28 +293,6 @@ pub(super) fn disease_evidence_urls(disease: &Disease) -> Vec<(String, String)> 
         })
     {
         urls.push(("MGI".to_string(), url));
-    }
-    let mut seen_clinical_urls = HashSet::new();
-    for row in &disease.clinical_features {
-        let Some(url) = row
-            .source_url
-            .as_deref()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-        else {
-            continue;
-        };
-        if !seen_clinical_urls.insert(url.to_string()) {
-            continue;
-        }
-        let label = row
-            .topic_title
-            .as_deref()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(|title| format!("MedlinePlus: {title}"))
-            .unwrap_or_else(|| "MedlinePlus".to_string());
-        urls.push((label, url.to_string()));
     }
     urls
 }

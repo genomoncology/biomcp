@@ -41,9 +41,14 @@ def test_readme_teaches_search_all_as_unified_entry_point() -> None:
     )
 
     assert "batch <entity> <id1,id2,...> → parallel gets" in grammar
-    assert "search all [slot filters]    → counts-first cross-entity orientation" in grammar
+    assert (
+        "search all [slot filters]    → counts-first cross-entity orientation"
+        in grammar
+    )
     assert "across all entities" not in grammar
-    assert grammar.index("batch <entity> <id1,id2,...> → parallel gets") < grammar.index(
+    assert grammar.index(
+        "batch <entity> <id1,id2,...> → parallel gets"
+    ) < grammar.index(
         "search all [slot filters]    → counts-first cross-entity orientation"
     )
 
@@ -71,9 +76,14 @@ def test_docs_index_teaches_search_all_as_unified_entry_point() -> None:
     )
 
     assert "batch <entity> <id1,id2,...> → parallel gets" in grammar
-    assert "search all [slot filters]    → counts-first cross-entity orientation" in grammar
+    assert (
+        "search all [slot filters]    → counts-first cross-entity orientation"
+        in grammar
+    )
     assert "across all entities" not in grammar
-    assert grammar.index("batch <entity> <id1,id2,...> → parallel gets") < grammar.index(
+    assert grammar.index(
+        "batch <entity> <id1,id2,...> → parallel gets"
+    ) < grammar.index(
         "search all [slot filters]    → counts-first cross-entity orientation"
     )
 
@@ -84,7 +94,7 @@ def test_entities_and_sources_tables_list_current_source_expansion_rows() -> Non
             "| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen, NIH Reporter, DisGeNET, GTR-backed diagnostics pivot | `biomcp get gene BRAF pathways hpa` |",
             "| diagnostic | NCBI Genetic Testing Registry local bulk bundle + WHO IVD local CSV + optional OpenFDA device overlay | `biomcp get diagnostic GTR000006692.3 regulatory` |",
             "| drug | MyChem.info, DDInter local bundle, EMA local batch, WHO Prequalification local exports, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA labels/shortages/approvals/FAERS/MAUDE/recalls, CIViC | `biomcp drug interactions warfarin` |",
-            '| disease | MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC, SEER Explorer, NIH Reporter, DisGeNET, MedlinePlus `clinical_features`, GTR/WHO IVD diagnostics pivot | `biomcp get disease "Lynch syndrome" genes` |',
+            '| disease | MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC, SEER Explorer, NIH Reporter, DisGeNET, GTR/WHO IVD diagnostics pivot | `biomcp get disease "Lynch syndrome" genes` |',
             "| pathway | Reactome, KEGG, WikiPathways, g:Profiler, Enrichr-backed enrichment sections | `biomcp get pathway hsa05200 genes` |",
             "| adverse-event | OpenFDA FAERS/MAUDE/recalls plus CDC WONDER VAERS aggregate vaccine search | `biomcp search adverse-event --drug pembrolizumab` |",
         ],
@@ -92,7 +102,7 @@ def test_entities_and_sources_tables_list_current_source_expansion_rows() -> Non
             "| gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen, NIH Reporter, DisGeNET, GTR-backed diagnostics pivot | `biomcp get gene ERBB2 funding` |",
             "| diagnostic | NCBI Genetic Testing Registry local bulk bundle + WHO IVD local CSV + optional OpenFDA device overlay | `biomcp get diagnostic GTR000006692.3 regulatory` |",
             "| drug | MyChem.info, DDInter local bundle, EMA local batch, WHO Prequalification local exports, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA labels/shortages/approvals/FAERS/MAUDE/recalls, CIViC | `biomcp drug interactions warfarin` |",
-            '| disease | MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC, SEER Explorer, NIH Reporter, DisGeNET, MedlinePlus `clinical_features`, GTR/WHO IVD diagnostics pivot | `biomcp get disease "chronic myeloid leukemia" funding` |',
+            '| disease | MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC, SEER Explorer, NIH Reporter, DisGeNET, GTR/WHO IVD diagnostics pivot | `biomcp get disease "chronic myeloid leukemia" funding` |',
             "| pathway | Reactome, KEGG, WikiPathways, g:Profiler, Enrichr-backed enrichment sections | `biomcp get pathway hsa05200 genes` |",
             "| adverse-event | OpenFDA FAERS/MAUDE/recalls plus CDC WONDER VAERS aggregate vaccine search | `biomcp search adverse-event --drug pembrolizumab` |",
         ],
@@ -146,7 +156,9 @@ def test_search_all_workflow_guide_teaches_typed_slots_before_compatibility() ->
     )
 
 
-def test_search_all_workflow_guide_distinguishes_markdown_and_json_counts_only() -> None:
+def test_search_all_workflow_guide_distinguishes_markdown_and_json_counts_only() -> (
+    None
+):
     guide = _read("docs/how-to/search-all-workflow.md")
     counts_only = _markdown_section_block(
         guide,
@@ -162,7 +174,9 @@ def test_search_all_workflow_guide_distinguishes_markdown_and_json_counts_only()
     assert "biomcp --json search all --gene BRAF --counts-only" in counts_only
 
 
-def test_cli_reference_links_search_all_workflow_guide_from_cross_entity_block() -> None:
+def test_cli_reference_links_search_all_workflow_guide_from_cross_entity_block() -> (
+    None
+):
     cli_reference = _read("docs/user-guide/cli-reference.md")
     all_block = _markdown_section_block(
         cli_reference,
@@ -170,13 +184,12 @@ def test_cli_reference_links_search_all_workflow_guide_from_cross_entity_block()
         "\n### Gene",
     )
 
-    assert (
-        "[Search All Workflow](../how-to/search-all-workflow.md)"
-        in all_block
-    )
+    assert "[Search All Workflow](../how-to/search-all-workflow.md)" in all_block
 
 
-def test_docs_index_links_search_all_workflow_guide_from_documentation_section() -> None:
+def test_docs_index_links_search_all_workflow_guide_from_documentation_section() -> (
+    None
+):
     docs_index = _read("docs/index.md")
     documentation = _markdown_section_block(
         docs_index,
@@ -198,7 +211,9 @@ def test_readme_links_search_all_workflow_guide_from_documentation_section() -> 
     assert "[Search All Workflow](docs/how-to/search-all-workflow.md)" in documentation
 
 
-def test_quick_reference_links_search_all_workflow_guide_near_search_all_examples() -> None:
+def test_quick_reference_links_search_all_workflow_guide_near_search_all_examples() -> (
+    None
+):
     quick_reference = _read("docs/reference/quick-reference.md")
     common_searches = _markdown_section_block(
         quick_reference,
@@ -207,10 +222,7 @@ def test_quick_reference_links_search_all_workflow_guide_near_search_all_example
     )
 
     assert "biomcp search all --gene BRAF --disease melanoma" in common_searches
-    assert (
-        "[Search All Workflow](../how-to/search-all-workflow.md)"
-        in common_searches
-    )
+    assert "[Search All Workflow](../how-to/search-all-workflow.md)" in common_searches
 
 
 def test_mkdocs_nav_contains_search_all_workflow_under_how_to() -> None:

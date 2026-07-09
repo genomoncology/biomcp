@@ -355,7 +355,7 @@ biomcp get gene BRAF all
 biomcp get disease melanoma
 biomcp get disease MONDO:0005105 genes phenotypes
 biomcp get disease tuberculosis diagnostics
-biomcp get disease "uterine leiomyoma" clinical_features
+biomcp get disease melanoma clinical_features
 biomcp get disease MONDO:0005105 variants models
 biomcp get disease MONDO:0005105 pathways prevalence civic survival
 biomcp get disease "chronic myeloid leukemia" funding

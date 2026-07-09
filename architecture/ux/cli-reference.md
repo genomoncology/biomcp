@@ -71,7 +71,7 @@ biomcp get drug pembrolizumab label targets civic approvals
 biomcp get drug --name "tepotinib hydrochloride" label
 biomcp get disease "Lynch syndrome" genes phenotypes variants
 biomcp get disease --name "chronic myeloid leukemia" survival
-biomcp get disease "uterine leiomyoma" clinical_features
+biomcp get disease melanoma clinical_features
 biomcp get trial NCT02576665 eligibility locations outcomes
 # target rare-disease trial detail contract (ticket 412):
 biomcp get trial NCT... locations contacts eligibility

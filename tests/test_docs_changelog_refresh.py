@@ -160,7 +160,7 @@ EXPECTED_RELEASE_TICKETS = {
         366,
         367,
         370,
-    }
+    },
 }
 EXPECTED_RELEASE_MARKERS = {
     "0.8.25": {
@@ -300,7 +300,7 @@ EXPECTED_RELEASE_MARKERS = {
             "deferred work",
             "runtime wiring shipped",
         ],
-    }
+    },
 }
 
 
@@ -384,7 +384,9 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     assert "## [Unreleased]" not in changelog
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
-    assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
+    assert changelog.index(current_release_heading) < changelog.index(
+        "## 0.8.21 — 2026-04-16"
+    )
     assert "## 0.8.20 — 2026-03-30" in changelog
     assert "## 0.8.19 — 2026-03-26" in changelog
     assert "## 0.8.18 — 2026-03-25" in changelog
@@ -406,9 +408,10 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     assert "biomcp ema sync" in previous_new_features_block
     assert _ticket_references(previous_release_block) == {182, *range(193, 214), 221}
 
-    assert _ticket_references(latest_release_block) == EXPECTED_RELEASE_TICKETS[
-        current_release_version
-    ]
+    assert (
+        _ticket_references(latest_release_block)
+        == EXPECTED_RELEASE_TICKETS[current_release_version]
+    )
     for marker in EXPECTED_RELEASE_MARKERS[current_release_version]["fixes"]:
         assert marker in latest_fixes_block
     for marker in EXPECTED_RELEASE_MARKERS[current_release_version]["new_features"]:
@@ -541,7 +544,7 @@ def test_diagnostic_docs_and_count_language_are_current() -> None:
             in text
         )
         assert "GTR-backed diagnostics pivot" in text
-        assert "MedlinePlus `clinical_features`" in text
+        assert "MedlinePlus `clinical_features`" not in text
         assert "GTR/WHO IVD diagnostics pivot" in text
         assert (
             "OpenFDA FAERS/MAUDE/recalls plus CDC WONDER VAERS aggregate vaccine search"
@@ -555,7 +558,7 @@ def test_diagnostic_docs_and_count_language_are_current() -> None:
     assert "WHO IVD local data" in cli_reference
     assert "matches complete disease words or phrases at boundaries" in cli_reference
     assert "Disease diagnostic cards are capped at" in cli_reference
-    assert 'biomcp get disease "uterine leiomyoma" clinical_features' in cli_reference
+    assert "biomcp get disease melanoma clinical_features" in cli_reference
     assert (
         "`clinical_features`, `diagnostics`, `disgenet`, and `funding` stay opt-in"
         in cli_reference
@@ -572,12 +575,12 @@ def test_diagnostic_docs_and_count_language_are_current() -> None:
         "| diagnostic | NCBI Genetic Testing Registry local bulk exports, WHO IVD local CSV, optional OpenFDA device 510(k)/PMA overlay |"
         in functional
     )
-    assert "MedlinePlus `clinical_features`" in functional
+    assert "MedlinePlus `clinical_features`" not in functional
     assert "CDC WONDER VAERS aggregate vaccine search" in functional
 
     assert "biomcp gtr sync" in ux_reference
     assert "biomcp who-ivd sync" in ux_reference
-    assert 'biomcp get disease "uterine leiomyoma" clinical_features' in ux_reference
+    assert "biomcp get disease melanoma clinical_features" in ux_reference
     assert "all 13 remote entity commands" not in ux_reference
     assert "13 remote entity commands" not in ux_reference
     assert "all 12 entity types" not in ux_reference
@@ -872,7 +875,9 @@ def test_data_sources_reference_covers_new_gene_and_article_sources() -> None:
         in data_sources
     )
     assert "| Article enrichment and graph helpers | Semantic Scholar |" in data_sources
-    assert "PubTator3 + Europe PMC + PubMed for default federated search" in data_sources
+    assert (
+        "PubTator3 + Europe PMC + PubMed for default federated search" in data_sources
+    )
     assert "1 request / second" in data_sources
 
 

@@ -1,25 +1,18 @@
 use super::*;
-use crate::entities::disease::{DiseaseClinicalFeature, DiseaseVariantAssociation};
+use crate::entities::disease::{DiseasePhenotype, DiseaseVariantAssociation};
 
-fn clinical_feature_row() -> DiseaseClinicalFeature {
-    DiseaseClinicalFeature {
-        rank: 1,
-        label: "heavy menstrual bleeding".to_string(),
-        feature_type: "symptom".to_string(),
-        source: "MedlinePlus".to_string(),
-        source_url: Some("https://medlineplus.gov/uterinefibroids.html".to_string()),
-        source_native_id: "uterinefibroids".to_string(),
-        evidence_tier: "clinical_summary".to_string(),
-        evidence_text: "...heavy menstrual bleeding...".to_string(),
-        evidence_match: "heavy menstrual bleeding".to_string(),
-        body_system: Some("reproductive".to_string()),
-        topic_title: Some("Uterine Fibroids".to_string()),
-        topic_relation: Some("direct".to_string()),
-        topic_selection_score: Some(180.0),
-        normalized_hpo_id: Some("HP:0000132".to_string()),
-        normalized_hpo_label: Some("Menorrhagia".to_string()),
-        mapping_confidence: 0.86,
-        mapping_method: "reviewed_fixture_exact_or_synonym".to_string(),
+fn clinical_feature_row() -> DiseasePhenotype {
+    DiseasePhenotype {
+        hpo_id: "HP:0000132".to_string(),
+        name: Some("Menorrhagia".to_string()),
+        evidence: Some("IEA".to_string()),
+        frequency: None,
+        frequency_qualifier: Some("Frequent".to_string()),
+        onset_qualifier: None,
+        sex_qualifier: Some("Female".to_string()),
+        stage_qualifier: None,
+        qualifiers: Vec::new(),
+        source: Some("infores:hpo-annotations".to_string()),
     }
 }
 

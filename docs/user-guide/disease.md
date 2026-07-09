@@ -57,18 +57,16 @@ When BioMCP can extract a reliable disease summary, the phenotype section render
 `key_features[]` in `--json` output. The table remains the comprehensive phenotype
 annotation list, and the existing completeness note still applies.
 
-Clinical features (MedlinePlus clinical-summary rows):
+Clinical features (Monarch/HPO phenotype rows):
 
 ```bash
 biomcp get disease <name_or_id> clinical_features
 ```
 
-This opt-in section is currently available for the reviewed configured disease
-set: uterine leiomyoma / uterine fibroid, endometriosis, and chronic venous
-insufficiency. Rows are source-native MedlinePlus clinical-summary statements
-with auditable HPO mapping metadata. Unsupported diseases omit the
-`clinical_features` field rather than fabricating rows, and the section is not
-included in `biomcp get disease <name_or_id> all`.
+This opt-in section reuses the Monarch/HPO phenotype backend and exposes those
+backend rows directly as clinical features. Unsupported diseases return a
+truthful Monarch/HPO empty state rather than fabricated rows, and the section is
+not included in `biomcp get disease <name_or_id> all`.
 
 Variants (CIViC disease-associated variants):
 
