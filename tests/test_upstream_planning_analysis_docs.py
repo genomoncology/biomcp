@@ -408,14 +408,8 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "`search article --source all` plans PubTator3 plus Europe PMC plus PubMed"
         in article_validation_section
     )
-    assert (
-        "Keyword-bearing queries keep that default source set"
-        in article_validation_section
-    )
-    assert (
-        "Semantic Scholar and LitSense2 are available through explicit `--source semanticscholar` and `--source litsense2`"
-        in article_validation_section
-    )
+    assert "Keyword-bearing queries keep that default source set" in article_validation_section
+    assert "Semantic Scholar and LitSense2 are available through explicit `--source semanticscholar` and `--source litsense2`" in article_validation_section
     assert "Semantic Scholar remains an optional compatible search leg" in (
         article_validation_section
     )
@@ -588,21 +582,14 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "`check` (`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`)"
         in technical_ws
     )
-    assert (
-        "The canonical local gates are `make lint`, `make test`, and `make spec`"
-        in technical_ws
-    )
-    assert (
-        "`make lint` runs the repo lint script plus the quality ratchet" in technical_ws
-    )
-    assert (
-        "`cargo deny check licenses` plus `cargo deny check advisories`" in technical_ws
-    )
+    assert "The canonical local gates are `make lint`, `make test`, and `make spec`" in technical_ws
+    assert "`make lint` runs the repo lint script plus the quality ratchet" in technical_ws
+    assert "`cargo deny check licenses` plus `cargo deny check advisories`" in technical_ws
     assert "`version-sync` (`bash scripts/check-version-sync.sh`)" in technical
     assert "`climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`)" in technical
     assert (
         "`contracts` (`cargo build --release --locked`, `uv sync --extra dev --no-install-project`, "
-        "`uv run --no-sync pytest tests/ -v`, "
+        '`uv run --no-sync pytest tests/ -v`, '
         "`uv run --no-sync mkdocs build --strict`)" in technical_ws
     )
     assert (
@@ -627,10 +614,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "`make release-gate` is the single local routine release-blocking signal; it runs `make lint`, `make test`, and `make spec` directly."
         in technical_ws
     )
-    assert (
-        "Live public-upstream confidence is opt-in through `make verify`"
-        in technical_ws
-    )
+    assert "Live public-upstream confidence is opt-in through `make verify`" in technical_ws
     assert (
         "The semver tag is the canonical release/version authority."
         in release_pipeline_section
@@ -1022,19 +1006,13 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
         "Data region for regional sections (regulatory, safety, shortage, or all)"
         in cli_drug_mod
     )
-    assert (
-        "get drug <name> regulatory [--region <us|eu|ema|who|all>]" in cli_list_clinical
-    )
+    assert "get drug <name> regulatory [--region <us|eu|ema|who|all>]" in cli_list_clinical
     assert "get drug <name> safety [--region <us|eu|ema|all>]" in cli_list_clinical
     assert "get drug <name> shortage [--region <us|eu|ema|all>]" in cli_list_clinical
     assert "get drug <name> approvals" in cli_list_clinical
+    assert "get drug <name> regulatory [--region <us|eu|ema|who|all>]" in cli_list_reference
     assert (
-        "get drug <name> regulatory [--region <us|eu|ema|who|all>]"
-        in cli_list_reference
-    )
-    assert (
-        "get drug <name> safety|shortage [--region <us|eu|ema|all>]"
-        in cli_list_reference
+        "get drug <name> safety|shortage [--region <us|eu|ema|all>]" in cli_list_reference
     )
     assert (
         "For `get drug`, use `--region` only with `regulatory`, `safety`, `shortage`, or `all`"
@@ -1089,7 +1067,7 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     expected_ci_contract_runs = [
         "cargo build --release --locked",
         "uv sync --extra dev --no-install-project",
-        "uv run --no-sync pytest tests/ -v",
+        'uv run --no-sync pytest tests/ -v',
         "uv run --no-sync mkdocs build --strict",
     ]
     expected_release_contract_runs = [
@@ -1097,7 +1075,7 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
         "uv sync --extra dev --no-install-project",
         "make spec",
         "bash scripts/contract-smoke.sh",
-        "uv run --no-sync pytest tests/ -v",
+        'uv run --no-sync pytest tests/ -v',
         "uv run --no-sync mkdocs build --strict",
     ]
 
@@ -1137,17 +1115,9 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
     assert "if: steps.spec-cache.outputs.cache-hit == 'true'" in ci_spec
     assert "BIOMCP_SPEC_CACHE_HIT=1" in ci_spec
     assert "- name: Install ripgrep" in release_validate
-    assert (
-        "run: sudo apt-get update && sudo apt-get install -y ripgrep"
-        in release_validate
-    )
-    assert release_validate.index("Install ripgrep") < release_validate.index(
-        "make spec"
-    )
-    assert (
-        _workflow_run_steps(release_validate)[-len(expected_release_contract_runs) :]
-        == expected_release_contract_runs
-    )
+    assert "run: sudo apt-get update && sudo apt-get install -y ripgrep" in release_validate
+    assert release_validate.index("Install ripgrep") < release_validate.index("make spec")
+    assert _workflow_run_steps(release_validate)[-len(expected_release_contract_runs) :] == expected_release_contract_runs
     assert "- uses: actions/checkout@v4" in ci_version_sync
     assert _workflow_run_steps(ci_version_sync) == [
         "bash scripts/check-version-sync.sh"
@@ -1211,32 +1181,23 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     )
     assert not re.search(r"^check:", makefile, flags=re.MULTILINE)
     assert re.search(
-        r"^\[profile\.release\]\n"
+        r'^\[profile\.release\]\n'
         r'lto = "thin"\n'
-        r"codegen-units = 1\n"
+        r'codegen-units = 1\n'
         r'panic = "abort"\n'
-        r"strip = true\n\n"
-        r"^\[profile\.spec\]\n"
+        r'strip = true\n\n'
+        r'^\[profile\.spec\]\n'
         r'inherits = "release"\n'
-        r"lto = false\n"
-        r"codegen-units = 16$",
+        r'lto = false\n'
+        r'codegen-units = 16$',
         cargo_toml,
         flags=re.MULTILINE,
     )
     assert "SPEC_PROFILE ?= spec" in makefile
     assert "SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp" in makefile
-    assert (
-        'SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)'
-        in makefile
-    )
-    assert (
-        "SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))"
-        in makefile
-    )
-    assert (
-        "SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE))"
-        in makefile
-    )
+    assert 'SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)' in makefile
+    assert "SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))" in makefile
+    assert "SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE))" in makefile
     assert re.search(
         r"^release-gate: lint test\n"
         r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"$',
@@ -1278,17 +1239,13 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "prepare_mcp_markdown_deps()" not in runner
     assert "uv sync --extra dev --no-install-project" not in runner
     assert "tests/surface/test_parallel_isolation_contract.py" in runner
-    assert re.findall(r"tests/surface/\S+\.py", runner) == [
-        "tests/surface/test_parallel_isolation_contract.py"
-    ]
+    assert re.findall(r"tests/surface/\S+\.py", runner) == ["tests/surface/test_parallel_isolation_contract.py"]
     assert 'verify) default_biomcp_bin="$ROOT/target/release/biomcp"' in runner
     assert '*) default_biomcp_bin="$ROOT/target/spec/biomcp"' in runner
     assert 'BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"' in runner
     assert 'export PATH="$BIOMCP_BIN_DIR:$mustmatch_path_dir:$PATH"' in runner
     for mode in ("spec|spec-pr", "spec-contracts"):
-        mode_block = re.search(
-            rf"  {re.escape(mode)}\)\n(?P<body>.*?)\n    ;;", runner, flags=re.DOTALL
-        )
+        mode_block = re.search(rf"  {re.escape(mode)}\)\n(?P<body>.*?)\n    ;;", runner, flags=re.DOTALL)
         assert mode_block is not None, f"runner must define {mode} mode"
         assert "run_markdown_specs" in runner
     assert "PY_PATHS" in runner and "run_python_contracts" in runner
@@ -1296,7 +1253,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         r"^test-contracts:\n"
         r"\tcargo build --release --locked\n"
         r"\t\$\(MAKE\) sync-python-dev\n"
-        r"\tuv run --no-sync pytest tests/ -v\n"
+        r'\tuv run --no-sync pytest tests/ -v\n'
         r"\tuv run --no-sync mkdocs build --strict$",
         makefile,
         flags=re.MULTILINE,
@@ -1320,26 +1277,11 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     )
 
     assert "cargo install cargo-nextest --locked" in contributing
-    assert (
-        "`make test` uses `cargo nextest run` plus the Python/docs contract lane"
-        in contributing_ws
-    )
-    assert (
-        "Use `make lint`, `make test`, and `make spec` as the canonical local gates"
-        in contributing_ws
-    )
-    assert (
-        "`make release-gate` is the single routine release-readiness command"
-        in contributing_ws
-    )
-    assert (
-        "`make spec-contracts` is a deterministic legacy subset kept for profile compatibility"
-        in contributing_ws
-    )
-    assert (
-        "`make verify` is the explicit opt-in live public-upstream confidence lane"
-        in contributing_ws
-    )
+    assert "`make test` uses `cargo nextest run` plus the Python/docs contract lane" in contributing_ws
+    assert "Use `make lint`, `make test`, and `make spec` as the canonical local gates" in contributing_ws
+    assert "`make release-gate` is the single routine release-readiness command" in contributing_ws
+    assert "`make spec-contracts` is a deterministic legacy subset kept for profile compatibility" in contributing_ws
+    assert "`make verify` is the explicit opt-in live public-upstream confidence lane" in contributing_ws
     assert (
         "`make spec-pr` remains available for the same offline `SPEC_ROUTINE_PATHS` as `make spec`"
         in contributing_ws
@@ -1382,20 +1324,14 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`mustmatch test`" in runbook_ws
     assert "single routine release-readiness signal" in runbook_ws
     assert "it runs `lint test spec` directly" in runbook_ws
-    assert (
-        "`make release-live-smoke` is a compatibility alias for that operator lane"
-        in runbook_ws
-    )
+    assert "`make release-live-smoke` is a compatibility alias for that operator lane" in runbook_ws
     assert "`--lang bash`" in runbook_ws
     assert "`tools/biomcp-ci`" in runbook_ws
     assert "`.cache/biomcp-specs/`" in runbook_ws
     assert "`BIOMCP_SPEC_CACHE_HIT=1`" in runbook_ws
     assert "`make spec-smoke`" not in runbook_ws
 
-    assert (
-        "run the standard gates directly: `make lint`, `make test`, and `make spec`"
-        in readme_source
-    )
+    assert "run the standard gates directly: `make lint`, `make test`, and `make spec`" in readme_source
     assert "`make release-gate` composes `lint test spec`" in readme_source
     assert "There is no supported `make check` command" in readme_source
     assert "`cargo nextest run`" in technical_gate_section
@@ -1407,14 +1343,8 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`spec/entity/study.md`" in technical_spec_section
     assert "`spec/entity/variant.md`" in technical_spec_section
     assert "`spec/surface/mcp.md`" in technical_spec_section
-    assert (
-        "Python/static surface contracts live under `tests/surface/`"
-        in technical_spec_section
-    )
-    assert (
-        "plus gene, drug, diagnostic, trial, PGx, VAERS, and CLI/discover surfaces"
-        in technical_spec_section
-    )
+    assert "Python/static surface contracts live under `tests/surface/`" in technical_spec_section
+    assert "plus gene, drug, diagnostic, trial, PGx, VAERS, and CLI/discover surfaces" in technical_spec_section
     assert "`tools/biomcp-ci`" in technical_spec_section
     assert "`make spec-smoke`" not in technical_spec_section
 
@@ -1425,9 +1355,7 @@ def test_spec_lane_timing_report_is_documented_and_aligned_with_makefile() -> No
     runbook = _read_repo("RUN.md")
     technical = _read_repo("architecture/technical/overview.md")
 
-    lane_contract_section = _normalize_ws(
-        _markdown_section(report, "Canary Lane Contract")
-    )
+    lane_contract_section = _normalize_ws(_markdown_section(report, "Canary Lane Contract"))
     active_corpus_section = _markdown_section(report, "Active Corpus")
     audit_method_section = _normalize_ws(_markdown_section(report, "Audit Method"))
     warm_timing_section = _normalize_ws(_markdown_section(report, "Warm Timing Record"))
@@ -1459,10 +1387,7 @@ def test_spec_lane_timing_report_is_documented_and_aligned_with_makefile() -> No
     assert "spec/surface/" in lane_contract_section
     assert ".cache/biomcp-specs/" in lane_contract_section
     assert "`BIOMCP_SPEC_CACHE_HIT=1`" in lane_contract_section
-    assert (
-        "spec-http-${runner.os}-${biomcp-version}-${spec-cache-schema-version}"
-        in audit_method_section
-    )
+    assert "spec-http-${runner.os}-${biomcp-version}-${spec-cache-schema-version}" in audit_method_section
     assert "`spec-only` validation-profile comment" in warm_timing_section
     assert active_corpus_rows[0] == ["Path", "Purpose"]
     active_corpus_paths = {row[0] for row in active_corpus_rows[1:]}
@@ -1498,9 +1423,7 @@ def test_mustmatch_binary_is_not_a_python_dependency() -> None:
 
     dev_dependencies = pyproject["project"]["optional-dependencies"]["dev"]
 
-    assert all(
-        not dependency.startswith("mustmatch") for dependency in dev_dependencies
-    )
+    assert all(not dependency.startswith("mustmatch") for dependency in dev_dependencies)
     assert 'name = "mustmatch"' not in uv_lock
     assert "mustmatch" + "==0.0.4" not in uv_lock
     assert 'specifier = "==0.0.4"' not in uv_lock
@@ -1527,7 +1450,10 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     )
     assert "./scripts/contract-smoke.sh --fast" in staging_demo
     assert "uv sync --extra dev --no-install-project" in staging_demo
-    assert "cargo nextest run --test rmcp_client_contract" in staging_demo
+    assert (
+        'cargo nextest run --test rmcp_client_contract'
+        in staging_demo
+    )
     assert "ONCOKB_TOKEN" in staging_demo
     assert (
         "./target/release/biomcp serve-http --host 127.0.0.1 --port 8080"
@@ -1546,7 +1472,10 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "./target/release/biomcp serve" in runbook
     assert "./target/release/biomcp serve-http --host 127.0.0.1 --port 8080" in runbook
     assert "uv sync --extra dev --no-install-project" in runbook
-    assert "cargo nextest run --test rmcp_client_contract" in runbook
+    assert (
+        'cargo nextest run --test rmcp_client_contract'
+        in runbook
+    )
     assert "curl http://127.0.0.1:8080/health" in runbook
     assert "curl http://127.0.0.1:8080/readyz" in runbook
     assert "curl http://127.0.0.1:8080/" in runbook
@@ -1558,7 +1487,7 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "./target/release/biomcp article citations 22663011 --limit 3" in runbook
     assert (
         "`make test-contracts` runs `cargo build --release --locked`, "
-        "`uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, "
+        '`uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, '
         "and `uv run --no-sync mkdocs build --strict` - the same Python/docs steps that `make test` and PR CI `contracts` require."
         in runbook
     )
@@ -1645,11 +1574,5 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "`.march/` remains ignored by `.gitignore`" in march_profiles
     assert "Python cleanup contract" in march_profiles
     assert "pre-commit helper" in march_profiles
-    assert (
-        "standard repo gates are `make lint`, `make test`, and `make spec`"
-        in march_profiles
-    )
-    assert (
-        "Live public-upstream proof moved to the explicit opt-in `make verify`"
-        in march_profiles
-    )
+    assert "standard repo gates are `make lint`, `make test`, and `make spec`" in march_profiles
+    assert "Live public-upstream proof moved to the explicit opt-in `make verify`" in march_profiles

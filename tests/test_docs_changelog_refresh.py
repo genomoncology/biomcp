@@ -160,7 +160,7 @@ EXPECTED_RELEASE_TICKETS = {
         366,
         367,
         370,
-    },
+    }
 }
 EXPECTED_RELEASE_MARKERS = {
     "0.8.25": {
@@ -300,7 +300,7 @@ EXPECTED_RELEASE_MARKERS = {
             "deferred work",
             "runtime wiring shipped",
         ],
-    },
+    }
 }
 
 
@@ -384,9 +384,7 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     assert "## [Unreleased]" not in changelog
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
-    assert changelog.index(current_release_heading) < changelog.index(
-        "## 0.8.21 — 2026-04-16"
-    )
+    assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
     assert "## 0.8.20 — 2026-03-30" in changelog
     assert "## 0.8.19 — 2026-03-26" in changelog
     assert "## 0.8.18 — 2026-03-25" in changelog
@@ -408,10 +406,9 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
     assert "biomcp ema sync" in previous_new_features_block
     assert _ticket_references(previous_release_block) == {182, *range(193, 214), 221}
 
-    assert (
-        _ticket_references(latest_release_block)
-        == EXPECTED_RELEASE_TICKETS[current_release_version]
-    )
+    assert _ticket_references(latest_release_block) == EXPECTED_RELEASE_TICKETS[
+        current_release_version
+    ]
     for marker in EXPECTED_RELEASE_MARKERS[current_release_version]["fixes"]:
         assert marker in latest_fixes_block
     for marker in EXPECTED_RELEASE_MARKERS[current_release_version]["new_features"]:
@@ -875,9 +872,7 @@ def test_data_sources_reference_covers_new_gene_and_article_sources() -> None:
         in data_sources
     )
     assert "| Article enrichment and graph helpers | Semantic Scholar |" in data_sources
-    assert (
-        "PubTator3 + Europe PMC + PubMed for default federated search" in data_sources
-    )
+    assert "PubTator3 + Europe PMC + PubMed for default federated search" in data_sources
     assert "1 request / second" in data_sources
 
 

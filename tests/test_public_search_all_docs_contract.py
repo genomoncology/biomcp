@@ -41,14 +41,9 @@ def test_readme_teaches_search_all_as_unified_entry_point() -> None:
     )
 
     assert "batch <entity> <id1,id2,...> → parallel gets" in grammar
-    assert (
-        "search all [slot filters]    → counts-first cross-entity orientation"
-        in grammar
-    )
+    assert "search all [slot filters]    → counts-first cross-entity orientation" in grammar
     assert "across all entities" not in grammar
-    assert grammar.index(
-        "batch <entity> <id1,id2,...> → parallel gets"
-    ) < grammar.index(
+    assert grammar.index("batch <entity> <id1,id2,...> → parallel gets") < grammar.index(
         "search all [slot filters]    → counts-first cross-entity orientation"
     )
 
@@ -76,14 +71,9 @@ def test_docs_index_teaches_search_all_as_unified_entry_point() -> None:
     )
 
     assert "batch <entity> <id1,id2,...> → parallel gets" in grammar
-    assert (
-        "search all [slot filters]    → counts-first cross-entity orientation"
-        in grammar
-    )
+    assert "search all [slot filters]    → counts-first cross-entity orientation" in grammar
     assert "across all entities" not in grammar
-    assert grammar.index(
-        "batch <entity> <id1,id2,...> → parallel gets"
-    ) < grammar.index(
+    assert grammar.index("batch <entity> <id1,id2,...> → parallel gets") < grammar.index(
         "search all [slot filters]    → counts-first cross-entity orientation"
     )
 
@@ -156,9 +146,7 @@ def test_search_all_workflow_guide_teaches_typed_slots_before_compatibility() ->
     )
 
 
-def test_search_all_workflow_guide_distinguishes_markdown_and_json_counts_only() -> (
-    None
-):
+def test_search_all_workflow_guide_distinguishes_markdown_and_json_counts_only() -> None:
     guide = _read("docs/how-to/search-all-workflow.md")
     counts_only = _markdown_section_block(
         guide,
@@ -174,9 +162,7 @@ def test_search_all_workflow_guide_distinguishes_markdown_and_json_counts_only()
     assert "biomcp --json search all --gene BRAF --counts-only" in counts_only
 
 
-def test_cli_reference_links_search_all_workflow_guide_from_cross_entity_block() -> (
-    None
-):
+def test_cli_reference_links_search_all_workflow_guide_from_cross_entity_block() -> None:
     cli_reference = _read("docs/user-guide/cli-reference.md")
     all_block = _markdown_section_block(
         cli_reference,
@@ -184,12 +170,13 @@ def test_cli_reference_links_search_all_workflow_guide_from_cross_entity_block()
         "\n### Gene",
     )
 
-    assert "[Search All Workflow](../how-to/search-all-workflow.md)" in all_block
+    assert (
+        "[Search All Workflow](../how-to/search-all-workflow.md)"
+        in all_block
+    )
 
 
-def test_docs_index_links_search_all_workflow_guide_from_documentation_section() -> (
-    None
-):
+def test_docs_index_links_search_all_workflow_guide_from_documentation_section() -> None:
     docs_index = _read("docs/index.md")
     documentation = _markdown_section_block(
         docs_index,
@@ -211,9 +198,7 @@ def test_readme_links_search_all_workflow_guide_from_documentation_section() -> 
     assert "[Search All Workflow](docs/how-to/search-all-workflow.md)" in documentation
 
 
-def test_quick_reference_links_search_all_workflow_guide_near_search_all_examples() -> (
-    None
-):
+def test_quick_reference_links_search_all_workflow_guide_near_search_all_examples() -> None:
     quick_reference = _read("docs/reference/quick-reference.md")
     common_searches = _markdown_section_block(
         quick_reference,
@@ -222,7 +207,10 @@ def test_quick_reference_links_search_all_workflow_guide_near_search_all_example
     )
 
     assert "biomcp search all --gene BRAF --disease melanoma" in common_searches
-    assert "[Search All Workflow](../how-to/search-all-workflow.md)" in common_searches
+    assert (
+        "[Search All Workflow](../how-to/search-all-workflow.md)"
+        in common_searches
+    )
 
 
 def test_mkdocs_nav_contains_search_all_workflow_under_how_to() -> None:
