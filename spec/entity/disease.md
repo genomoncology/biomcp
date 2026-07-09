@@ -68,9 +68,8 @@ or a blank curated fallback.
 ```bash
 ../../tools/biomcp-ci get disease melanoma clinical_features | mustmatch like '## Clinical Features (Monarch / HPO)
 | HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |
-HP:0007716
-Uveal melanoma
-infores:omim'
+HP:
+infores:'
 ```
 
 ## NIH Funding Context
