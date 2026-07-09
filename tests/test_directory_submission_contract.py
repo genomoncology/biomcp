@@ -280,8 +280,9 @@ def test_readme_is_directory_review_complete() -> None:
     readme = _read("README.md")
 
     required_sections = [
-        "## Description",
+        "## What is BioMCP?",
         "## Features",
+        "## Quick start",
         "## Installation",
         "## Configuration",
         "## Usage Examples",
@@ -296,7 +297,7 @@ def test_readme_is_directory_review_complete() -> None:
     assert positions == sorted(positions)
 
     installation = _markdown_section_block(
-        readme, "## Installation", "\n## Quick start"
+        readme, "## Installation", "\n## Command grammar"
     )
     assert "### Claude Desktop extension (.mcpb)" in installation
     assert "Anthropic Directory" in installation

@@ -2,7 +2,12 @@
 
 One binary. One grammar. Evidence from the biomedical sources you already trust.
 
-## Description
+## What is BioMCP?
+
+BioMCP is one CLI binary over a single command grammar that reaches ~30 trusted
+biomedical sources (PubMed, ClinVar, ClinicalTrials.gov, OncoKB, Reactome, and
+more). It is also an MCP (Model Context Protocol) server, so the same tools are
+available to AI agents such as Claude Code, Codex, and Claude Desktop.
 
 BioMCP cuts through the usual biomedical data maze: one query reaches the
 sources that normally live behind different APIs, identifiers, and search
@@ -29,6 +34,19 @@ get compact, evidence-oriented results across live public data plus local study 
 - **Enrich and batch:** use `biomcp enrich` for top-level g:Profiler
   enrichment and `biomcp batch` for up to 10 focused `get` calls in one
   command.
+
+## Quick start
+
+First useful query in under 30 seconds:
+
+```bash
+uv tool install biomcp-cli
+biomcp health --apis-only
+biomcp suggest "What drugs treat melanoma?"
+biomcp list gene
+biomcp search all --gene BRAF --disease melanoma  # unified cross-entity discovery
+biomcp get gene BRAF pathways hpa
+```
 
 ## Installation
 
@@ -153,19 +171,6 @@ Python/docs contract lane, while `make release-gate` composes `lint test spec`.
 There is no supported `make check` command. Use `make verify` only for opt-in
 live public-upstream confidence; `make release-live-smoke` remains a
 compatibility alias.
-
-## Quick start
-
-First useful query in under 30 seconds:
-
-```bash
-uv tool install biomcp-cli
-biomcp health --apis-only
-biomcp suggest "What drugs treat melanoma?"
-biomcp list gene
-biomcp search all --gene BRAF --disease melanoma  # unified cross-entity discovery
-biomcp get gene BRAF pathways hpa
-```
 
 ## Command grammar
 
