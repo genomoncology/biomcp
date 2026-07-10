@@ -7,6 +7,7 @@ cd "$ROOT"
 SPEC_ROUTINE_PATHS=(
   spec/entity/article.md
   spec/entity/disease-survival-fixture.md
+  spec/entity/drug-interactions.md
   spec/entity/study.md
   spec/entity/variant.md
   spec/surface/mcp.md
@@ -112,6 +113,11 @@ run_ddinter_fixture() {
   source_if_present "$ROOT/.cache/spec-ddinter-env"
 }
 
+run_live_ddinter_root() {
+  export BIOMCP_DDINTER_DIR="$ROOT/.cache/verify-ddinter-live"
+  rm -rf "$BIOMCP_DDINTER_DIR"
+}
+
 cleanup_ctgov_fixture() {
   bash spec/fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh "$ROOT"
 }
@@ -177,6 +183,7 @@ case "$mode" in
     paths=(
       spec/entity/diagnostic.md
       spec/entity/drug.md
+      spec/entity/ddinter-live.md
       spec/entity/pathway.md
       spec/entity/phenotype.md
       spec/entity/protein.md
@@ -187,6 +194,7 @@ case "$mode" in
       spec/surface/discover.md
     )
     mustmatch_path_dir="$(mustmatch_dir)"
+    run_live_ddinter_root
     ;;
   verify-cpic)
     timeout_args=(--timeout 180)

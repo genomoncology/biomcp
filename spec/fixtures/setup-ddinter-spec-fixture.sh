@@ -17,6 +17,12 @@ DDInterW,Warfarin,DDInterCLO,Clopidogrel,Major
 DDInterI,Imatinib,DDInterCYP,CYP3A4 inhibitor,Major
 EOF
 
+# A page boundary large enough to prove the 25-row default and a final page.
+for number in $(seq -w 1 24); do
+  printf 'DDInterW,Warfarin,DDInterP%s,Partner %s,Major\n' "$number" "$number" \
+    >>"$ddinter_root/ddinter_downloads_code_A.csv"
+done
+
 for code in B D H L P R V; do
   printf '%s\n' "$header" >"$ddinter_root/ddinter_downloads_code_${code}.csv"
 done

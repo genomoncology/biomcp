@@ -3,6 +3,7 @@
 SPEC_ROUTINE_PATHS = \
 	spec/entity/article.md \
 	spec/entity/disease-survival-fixture.md \
+	spec/entity/drug-interactions.md \
 	spec/entity/study.md \
 	spec/entity/variant.md \
 	spec/surface/mcp.md \
@@ -13,6 +14,7 @@ SPEC_ROUTINE_PATHS = \
 	spec/surface/trial-retirement.md \
 	spec/surface/ctgov-helper-pivots.md
 SPEC_LIVE_PATHS = \
+	spec/entity/ddinter-live.md \
 	spec/entity/diagnostic.md \
 	spec/entity/disease.md \
 	spec/entity/drug.md \
