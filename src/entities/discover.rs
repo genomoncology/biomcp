@@ -1500,9 +1500,13 @@ fn generate_commands(
 
     match intent {
         DiscoverIntent::TrialSearch => {
-            let condition = top_concept_of_type(concepts, DiscoverType::Disease)
-                .or_else(|| top_concept_of_type(concepts, DiscoverType::Symptom))
-                .filter(|concept| query_mentions_label(query, &concept.label));
+            let condition = [DiscoverType::Disease, DiscoverType::Symptom]
+                .into_iter()
+                .find_map(|kind| {
+                    concepts.iter().find(|concept| {
+                        concept.primary_type == kind && query_mentions_label(query, &concept.label)
+                    })
+                });
             if let Some(condition) = condition {
                 commands.push(format!(
                     "biomcp search trial -c {} --limit 5",
@@ -2655,6 +2659,39 @@ mod tests {
             commands.iter().any(|command| command
                 == "biomcp search trial -c \"Phelan-McDermid Syndrome\" --limit 5"),
             "mixed trial-intent queries should use the mentioned disease even when it is not the top concept: {commands:?}"
+        );
+    }
+
+    #[test]
+    fn trial_intent_uses_a_mentioned_symptom_after_unmentioned_disease_noise() {
+        let commands = generate_commands(
+            "ataxia SHANK3 clinical trial",
+            &[
+                test_concept(
+                    "Unrelated disease",
+                    DiscoverType::Disease,
+                    DiscoverConfidence::CanonicalId,
+                ),
+                test_concept(
+                    "Ataxia",
+                    DiscoverType::Symptom,
+                    DiscoverConfidence::CanonicalId,
+                ),
+                test_concept(
+                    "SHANK3",
+                    DiscoverType::Gene,
+                    DiscoverConfidence::CanonicalId,
+                ),
+            ],
+            false,
+            DiscoverIntent::TrialSearch,
+        );
+
+        assert!(
+            commands
+                .iter()
+                .any(|command| command == "biomcp search trial -c Ataxia --limit 5"),
+            "trial intent should search every resolved condition type for a label mentioned in the query: {commands:?}"
         );
     }
 
