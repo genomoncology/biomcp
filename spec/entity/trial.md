@@ -22,8 +22,8 @@ A bounded melanoma search should return an NCI trial rather than entering any
 condition-planning path.
 
 ```bash
-../../tools/biomcp-ci --json search trial -c melanoma --source nci --limit 1 \
-  | jq -r '(.count >= 1) and (.results[0].nct_id | startswith("NCI-"))' \
+../../target/release/biomcp --json search trial -c melanoma --source nci --limit 1 \
+  | jq -r '(.count >= 1) and (.results[0].nct_id | startswith("NCT")) and (.results[0].title | length > 0)' \
   | mustmatch 'true'
 ```
 
