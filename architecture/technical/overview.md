@@ -242,12 +242,16 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 The semver tag is the canonical release/version authority. PR CI enforces
 version parity before release via the `version-sync` job and
 `scripts/check-version-sync.sh`. The release workflow builds binaries,
-publishes PyPI wheels, and deploys docs from the tagged source, while
-`install.sh` resolves the latest release with platform assets, not the latest
-merge to `main`. The existing `### Post-tag public proof` block is the live
-verification step for tag-to-binary and tag-to-docs parity.
-`workflow_dispatch` can replay a specified tag, but only as an explicit-tag
-rebuild path, not a second source of release truth.
+publishes PyPI wheels, and deploys docs from the tagged source. It resolves
+that tag once and pins every source-consuming job to the resulting commit, so
+native binaries, PyPI wheels, Homebrew inputs, the Docker context, and deployed
+docs all originate from one revision. Before packaging, each native binary's
+embedded eight-character git SHA is checked against that commit. `install.sh`
+resolves the latest release with platform assets, not the latest merge to
+`main`. The existing `### Post-tag public proof` block is the live verification
+step for tag-to-binary and tag-to-docs parity. `workflow_dispatch` can replay a
+specified tag, but only as an explicit-tag rebuild path, not a second source of
+release truth.
 
 1. Update version in `Cargo.toml`, `Cargo.lock`, `pyproject.toml`,
    `manifest.json`, `CITATION.cff`, and `CHANGELOG.md`
