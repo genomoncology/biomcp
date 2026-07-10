@@ -23,14 +23,14 @@ Tip: ClinicalTrials.gov does not index trial nicknames. Try:
   biomcp search article "{{ nickname_query }}" to find the NCT ID
 {% endif -%}
 {% else -%}
-|NCT ID|Title|Status|Phase|Conditions{% if show_matched_condition_column %}|Matched Condition{% endif %}{% if show_matched_intervention_column %}|Matched Intervention{% endif %}|
-|---|---|---|---|---{% if show_matched_condition_column %}|---{% endif %}{% if show_matched_intervention_column %}|---{% endif %}|
+|NCT ID|Title|Status|Phase|Conditions{% if show_matched_intervention_column %}|Matched Intervention{% endif %}|
+|---|---|---|---|---{% if show_matched_intervention_column %}|---{% endif %}|
 {% for t in results -%}
-|{{ t.nct_id }}|{{ t.title | truncate(25) }}|{{ t.status }}|{{ t.phase | default("-") | phase_short }}|{{ t.conditions | conditions_short }}{% if show_matched_condition_column %}|{{ t.matched_condition_label | default("-") }}{% endif %}{% if show_matched_intervention_column %}|{{ t.matched_intervention_label | default("-") }}{% endif %}|
+|{{ t.nct_id }}|{{ t.title | truncate(25) }}|{{ t.status }}|{{ t.phase | default("-") | phase_short }}|{{ t.conditions | conditions_short }}{% if show_matched_intervention_column %}|{{ t.matched_intervention_label | default("-") }}{% endif %}|
 {% endfor %}
 
 Use `get trial <nct_id>` for details.
-Filters: -c <condition>, --no-condition-expand, -i <intervention>, --facility <name>, --age <years>, --sex <female|male|all>, -s <status>, -p <phase>, --mutation <text>, --criteria <text>, --sponsor-type <nih|industry|fed|other>, --lat <N> --lon <N> --distance <mi>, --results-available, --count-only
+Filters: -c <condition>, -i <intervention>, --facility <name>, --age <years>, --sex <female|male|all>, -s <status>, -p <phase>, --mutation <text>, --criteria <text>, --sponsor-type <nih|industry|fed|other>, --lat <N> --lon <N> --distance <mi>, --results-available, --count-only
 {% if pagination_footer %}
 
 {{ pagination_footer }}

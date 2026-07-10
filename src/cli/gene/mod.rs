@@ -63,10 +63,10 @@ See also: biomcp list gene"
     #[command(after_help = "\
 EXAMPLES:
   biomcp gene trials BRAF --limit 5
-  biomcp gene trials SHANK3 --limit 5
+  biomcp gene trials TP53 --limit 5
   biomcp gene trials EGFR --source nci --limit 5
 
-Note: CTGov uses a bounded rare-disease condition plan for supported genes such as SHANK3; other genes and sources keep the literal gene search. Results depend on source document wording.
+The supplied symbol is sent as a literal biomarker. Results depend on source document wording.
 See also: biomcp list gene")]
     Trials {
         /// HGNC gene symbol (e.g., BRAF)

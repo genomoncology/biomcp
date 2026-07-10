@@ -150,16 +150,14 @@ biomcp get gene BRAF funding
 
 ```bash
 biomcp gene trials BRAF --limit 5
-biomcp gene trials SHANK3 --limit 5
+biomcp gene trials TP53 --limit 5
 biomcp gene drugs BRAF --limit 5
 biomcp gene pathways BRAF
 biomcp gene articles BRAF
 biomcp gene definition BRAF
 ```
 
-For CTGov, supported rare-disease genes such as `SHANK3` reuse the shared
-trial plan so the search can include the associated condition expansion. Other
-genes and non-CTGov sources keep the literal gene trial search.
+Gene trial pivots send the supplied symbol as a biomarker.
 
 ## Common workflows
 

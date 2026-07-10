@@ -358,8 +358,7 @@ See also: biomcp list article")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp search trial -c melanoma -s recruiting
-  biomcp search trial -c \"Phelan-McDermid Syndrome\" --limit 20
-  biomcp search trial -c \"Phelan-McDermid Syndrome\" --no-condition-expand --limit 20
+  biomcp search trial -c \"Rett Syndrome\" --limit 20
   biomcp search trial -p 3 -i pembrolizumab
   biomcp search trial -i daraxonrasib --limit 20
   biomcp search trial -i daraxonrasib --no-alias-expand --limit 20
@@ -372,11 +371,10 @@ EXAMPLES:
 Trial search is filter-based (no free-text query).
 
 Source-specific notes:
-  - CTGov: `--condition` auto-expands bounded rare-disease labels, unions results, and exposes `matched_condition_label` / `Matched Condition` when an expanded label matched.
-  - CTGov: `--no-condition-expand` forces literal condition matching.
+  - CTGov: `--condition` sends the supplied condition literally.
   - CTGov: `--intervention` auto-expands known aliases from the shared drug identity surface, unions results, and exposes `matched_intervention_label` / `Matched Intervention` when an alternate alias matched first.
   - CTGov: `--no-alias-expand` forces literal intervention matching.
-  - CTGov: `--next-page` is not supported once condition or intervention expansion fans out to multiple queries; use `--offset`, `--no-condition-expand`, or `--no-alias-expand`. For intervention-only fan-out, use `--offset` or `--no-alias-expand`.
+  - CTGov: `--next-page` is not supported when intervention alias expansion fans out to multiple queries; use `--offset` or `--no-alias-expand`.
   - CTGov: `--mutation` is an exact free-text boolean over eligibility, title, summary, and keywords; use it for loose mutation wording, not as a guaranteed protein-change matcher.
   - CTGov: `--biomarker` is a phrase search over keyword, intervention, and condition; try it for gene-level broadening when a specific `--mutation` returns zero rows.
   - CTGov: `--phase 1/2` keeps the combined Phase 1/Phase 2 label semantics, not Phase 1 OR Phase 2.

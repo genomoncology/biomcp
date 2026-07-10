@@ -171,7 +171,6 @@ fn recruiting_trial_filters(disease_name: &str) -> crate::entities::trial::Trial
         condition: Some(disease_name.to_string()),
         status: Some("recruiting".to_string()),
         source: crate::entities::trial::TrialSource::ClinicalTrialsGov,
-        no_condition_expand: true,
         ..Default::default()
     }
 }
@@ -184,10 +183,6 @@ fn disease_trial_filters(
     crate::entities::trial::TrialSearchFilters {
         condition: Some(name.to_string()),
         source: trial_source,
-        no_condition_expand: matches!(
-            trial_source,
-            crate::entities::trial::TrialSource::ClinicalTrialsGov
-        ) && limit == 1,
         no_count_total: matches!(
             trial_source,
             crate::entities::trial::TrialSource::ClinicalTrialsGov
@@ -216,14 +211,10 @@ mod workflow_tests {
             trial_filters.source,
             crate::entities::trial::TrialSource::ClinicalTrialsGov
         ));
-        assert!(
-            trial_filters.no_condition_expand,
-            "workflow recruiting-trial probe must not fan out CTGov condition aliases"
-        );
     }
 
     #[test]
-    fn disease_trials_limit_one_disables_ctgov_condition_fanout() {
+    fn disease_trials_limit_one_avoids_ctgov_total_count() {
         let fast_filters = disease_trial_filters(
             "Phelan-McDermid Syndrome",
             crate::entities::trial::TrialSource::ClinicalTrialsGov,
@@ -233,7 +224,6 @@ mod workflow_tests {
             fast_filters.condition.as_deref(),
             Some("Phelan-McDermid Syndrome")
         );
-        assert!(fast_filters.no_condition_expand);
         assert!(fast_filters.no_count_total);
 
         let broader_filters = disease_trial_filters(
@@ -241,7 +231,6 @@ mod workflow_tests {
             crate::entities::trial::TrialSource::ClinicalTrialsGov,
             2,
         );
-        assert!(!broader_filters.no_condition_expand);
         assert!(!broader_filters.no_count_total);
 
         let nci_filters = disease_trial_filters(
@@ -249,7 +238,6 @@ mod workflow_tests {
             crate::entities::trial::TrialSource::NciCts,
             1,
         );
-        assert!(!nci_filters.no_condition_expand);
         assert!(!nci_filters.no_count_total);
     }
 }

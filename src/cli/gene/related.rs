@@ -6,38 +6,15 @@ fn gene_trial_filters(
     trial_source: crate::entities::trial::TrialSource,
     limit: usize,
 ) -> Result<crate::entities::trial::TrialSearchFilters, crate::error::BioMcpError> {
-    let mut filters = crate::entities::trial::TrialSearchFilters {
+    Ok(crate::entities::trial::TrialSearchFilters {
         biomarker: Some(symbol.to_string()),
         source: trial_source,
-        no_condition_expand: matches!(
-            trial_source,
-            crate::entities::trial::TrialSource::ClinicalTrialsGov
-        ) && limit == 1,
         no_count_total: matches!(
             trial_source,
             crate::entities::trial::TrialSource::ClinicalTrialsGov
         ) && limit == 1,
         ..Default::default()
-    };
-    if matches!(
-        trial_source,
-        crate::entities::trial::TrialSource::ClinicalTrialsGov
-    ) {
-        let plan = crate::entities::trial::planning::plan_rare_disease_trials(
-            crate::entities::trial::planning::RareDiseaseTrialRequest {
-                raw_query: Some(symbol.to_string()),
-                condition: None,
-                gene: Some(symbol.to_string()),
-                sponsor: None,
-                strict_condition: false,
-                mode: crate::entities::trial::planning::TrialPlanningMode::Search,
-            },
-        )?;
-        if let Some(condition) = plan.primary_condition_labels.first() {
-            filters.condition = Some(condition.label.clone());
-        }
-    }
-    Ok(filters)
+    })
 }
 
 pub(super) async fn handle_related_command(
@@ -200,7 +177,7 @@ mod tests {
     use super::gene_trial_filters;
 
     #[test]
-    fn gene_trials_limit_one_disables_ctgov_condition_fanout() {
+    fn gene_trials_use_literal_biomarker_and_avoid_limit_one_count() {
         let fast_filters = gene_trial_filters(
             "SHANK3",
             crate::entities::trial::TrialSource::ClinicalTrialsGov,
@@ -208,11 +185,7 @@ mod tests {
         )
         .expect("SHANK3 trial filters");
         assert_eq!(fast_filters.biomarker.as_deref(), Some("SHANK3"));
-        assert_eq!(
-            fast_filters.condition.as_deref(),
-            Some("Phelan-McDermid syndrome")
-        );
-        assert!(fast_filters.no_condition_expand);
+        assert_eq!(fast_filters.condition, None);
         assert!(fast_filters.no_count_total);
 
         let broader_filters = gene_trial_filters(
@@ -221,14 +194,15 @@ mod tests {
             2,
         )
         .expect("SHANK3 trial filters");
-        assert!(!broader_filters.no_condition_expand);
+        assert_eq!(broader_filters.biomarker.as_deref(), Some("SHANK3"));
+        assert_eq!(broader_filters.condition, None);
         assert!(!broader_filters.no_count_total);
 
         let nci_filters =
             gene_trial_filters("SHANK3", crate::entities::trial::TrialSource::NciCts, 1)
                 .expect("SHANK3 NCI trial filters");
+        assert_eq!(nci_filters.biomarker.as_deref(), Some("SHANK3"));
         assert_eq!(nci_filters.condition, None);
-        assert!(!nci_filters.no_condition_expand);
         assert!(!nci_filters.no_count_total);
     }
 }

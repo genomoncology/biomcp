@@ -73,8 +73,6 @@ biomcp get disease "Lynch syndrome" genes phenotypes variants
 biomcp get disease --name "chronic myeloid leukemia" survival
 biomcp get disease melanoma clinical_features
 biomcp get trial NCT02576665 eligibility locations outcomes
-# target rare-disease trial detail contract (ticket 412):
-biomcp get trial NCT... locations contacts eligibility
 ```
 
 The trial detail surface includes a `contacts` section for ClinicalTrials.gov
@@ -107,44 +105,16 @@ healthy sources and reports the degraded source. Markdown includes source-status
 notes, JSON includes `_meta.source_status`, and `--debug-plan` includes the same
 per-source status in the article leg.
 
-## Rare-Disease Trial Search Target
+## Trial Search
 
-Ticket 412 identified a gap in rare-disease trial search: users may know a
-syndrome name, a chromosomal-deletion label, a gene handle, a sponsor, or only a
-mixed free-text question. The target UX keeps ordinary `search trial` compact,
-but adds a shared rare-disease trial plan beneath `discover`, `search trial`,
-`gene trials`, and `disease trials`.
-
-Target command flow:
-
-```bash
-# orient from mixed free text and suggest typed trial commands
-biomcp discover "Phelan-McDermid Syndrome SHANK3 clinical trial"
-
-# search with bounded condition/gene expansion and visible matched labels
-biomcp search trial -c "Phelan-McDermid Syndrome" --limit 20
-biomcp search trial -c "Phelan-McDermid Syndrome" --no-condition-expand --limit 20
-biomcp gene trials SHANK3 --limit 20
-
-# inspect action-critical detail through progressive disclosure
-biomcp get trial NCT... locations contacts eligibility
-
-# target opt-in action-summary shape; exact command name will be fixed by the build ticket
-biomcp search trial -c "Phelan-McDermid Syndrome" --action-summary --state MI --limit 20
-```
-
-UX invariants for this target:
-
-- expansion is bounded and visible; output shows which condition/gene label matched a trial;
-- strict/literal search remains available through an opt-out flag;
-- `--mutation <text>` remains an exact free-text boolean over title, summary, eligibility, and keyword text, so it is brittle for specific protein changes;
-- `--biomarker <text>` is the gene-level broadening lever: a phrase search over CTGov keyword, intervention, and condition fields;
-- zero-result filtered trial searches do not auto-broaden; markdown and JSON `_meta.next_commands` tell callers to loosen/drop `--mutation`, widen `--distance`, relax `--status`, or try `--biomarker`;
-- `discover` may suggest a rare-disease trial plan, but it does not become the trial engine;
-- compact search remains the default; site/contact/eligibility detail stays opt-in;
-- action summaries rank and caveat only listed ClinicalTrials.gov data, and never imply unlisted pending sites.
-
-See `architecture/functional/rare-disease-trial-workflow.md` for target module boundaries, plan types, and fixture contracts.
+Trial condition filters are literal. CTGov intervention filters may expand known
+drug aliases, while `--no-alias-expand` forces literal intervention matching.
+`--mutation <text>` remains an exact free-text boolean over title, summary,
+eligibility, and keyword text. `--biomarker <text>` is the gene-level broadening lever
+when mutation wording is too specific; zero-result filtered trial searches do not auto-broaden;
+markdown and JSON `_meta.next_commands` suggest which
+filters to relax. Trial details such as contacts, locations, and eligibility
+remain opt-in through `get trial` sections.
 
 ## Cross-Entity Pivot Pattern
 

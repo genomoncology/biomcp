@@ -22,18 +22,11 @@ Add intervention and phase filters:
 biomcp search trial -c melanoma -i pembrolizumab --phase 3 --limit 5
 ```
 
-On the default CTGov path, `--condition` auto-expands bounded rare-disease
-labels, unions the matching trials, and shows which expanded label matched each
-returned row.
+Condition searches send the supplied label literally.
 
 ```bash
-biomcp search trial -c "Phelan-McDermid Syndrome" --limit 20
-biomcp search trial -c "Phelan-McDermid Syndrome" --no-condition-expand --limit 20
+biomcp search trial -c "Rett Syndrome" --limit 20
 ```
-
-When an expanded condition label wins, markdown adds a `Matched Condition`
-column and JSON adds `matched_condition_label`. `--no-condition-expand` forces
-strict literal condition matching.
 
 On the default CTGov path, `--intervention` auto-expands known drug aliases
 from the shared drug identity surface, unions the matching trials, and shows
@@ -46,9 +39,9 @@ biomcp search trial -i daraxonrasib --no-alias-expand --limit 20
 
 When an alternate alias wins, markdown adds a `Matched Intervention` column and
 JSON adds `matched_intervention_label`. `--no-alias-expand` forces strict
-literal intervention matching. If condition or intervention expansion fans out
-to multiple CTGov queries, `--next-page` is unavailable; use `--offset`,
-`--no-condition-expand`, or `--no-alias-expand`.
+literal intervention matching. If intervention expansion fans out to multiple
+CTGov queries, `--next-page` is unavailable; use `--offset` or
+`--no-alias-expand`.
 
 Add biomarker filters:
 
@@ -64,19 +57,6 @@ biomcp search trial -c melanoma --lat 42.36 --lon -71.06 --distance 50 --limit 5
 ```
 
 When geo filters are set, the search query summary includes `lat`, `lon`, and `distance`.
-
-## Rare-disease action summaries
-
-Use `--action-summary` when a rare-disease trial search needs practical CTGov detail instead of compact rows:
-
-```bash
-biomcp search trial -c "Phelan-McDermid Syndrome" --action-summary --facility "University of Michigan" --limit 5
-biomcp --json search trial -c "Phelan-McDermid Syndrome" --action-summary --facility "University of Michigan" --limit 5
-```
-
-Action summaries fetch full ClinicalTrials.gov records for selected candidate NCT IDs. Facility and geo flags are ranking hints against listed CTGov sites only; BioMCP reports when no listed site matches and does not infer pending or unlisted availability.
-
-JSON action-summary rows include stable `trial_type`, `access_caveats`, `ranked_sites`, `contacts`, and `eligibility` fields for agent workflows.
 
 Prior-therapy filters:
 
@@ -199,10 +179,7 @@ This keeps repeated lookups responsive.
 ```bash
 biomcp --json get trial NCT02576665
 biomcp --json search trial -i daraxonrasib --limit 20
-biomcp --json search trial -c "Phelan-McDermid Syndrome" --action-summary --limit 5
 ```
-
-Action-summary JSON includes `trial_type`, `access_caveats`, `ranked_sites`, `contacts`, and `eligibility`.
 
 ## Practical tips
 

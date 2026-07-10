@@ -31,9 +31,7 @@ fn single_ctgov_context_and_worker(
     let normalized = validate_trial_search(filters).expect("filters should validate");
     let context = prepare_ctgov_search_context(filters, &normalized).expect("context should build");
     let worker = ctgov_workers(
-        &raw_condition_query(filters)
-            .map(|value| vec![value.to_string()])
-            .unwrap_or_default(),
+        raw_condition_query(filters),
         &raw_intervention_query(filters)
             .map(|value| vec![value.to_string()])
             .unwrap_or_default(),
@@ -383,59 +381,40 @@ fn count_all_returns_unknown_when_expensive_post_filter_hits_page_cap() {
 
 #[test]
 fn alias_expansion_next_page_error_is_actionable() {
-    let err = fanout_next_page_error(false, true);
-    assert!(
-        err.to_string()
-            .contains("--next-page is not supported when CTGov expansion uses multiple queries")
-    );
+    let err = fanout_next_page_error();
+    assert!(err.to_string().contains(
+        "--next-page is not supported when CTGov intervention alias expansion uses multiple queries"
+    ));
     assert!(err.to_string().contains("--no-alias-expand"));
 }
 
 #[test]
-fn ctgov_workers_label_condition_and_intervention_fanout() {
+fn ctgov_workers_keep_literal_condition_during_intervention_fanout() {
     let workers = ctgov_workers(
-        &[
-            "Phelan-McDermid Syndrome".into(),
-            "22q13 deletion syndrome".into(),
-        ],
+        Some("Rett Syndrome"),
         &["ticket-415-requested".into(), "ticket-415-alternate".into()],
     );
 
-    assert_eq!(workers.len(), 4);
-    assert_eq!(
-        workers[0].condition_query.as_deref(),
-        Some("Phelan-McDermid Syndrome")
-    );
+    assert_eq!(workers.len(), 2);
+    assert_eq!(workers[0].condition_query.as_deref(), Some("Rett Syndrome"));
     assert_eq!(
         workers[0].intervention_query.as_deref(),
         Some("ticket-415-requested")
     );
-    assert_eq!(workers[0].matched_condition_label, None);
     assert_eq!(
         workers[0].matched_intervention_label.as_deref(),
         Some("ticket-415-requested")
     );
+    assert_eq!(workers[1].condition_query.as_deref(), Some("Rett Syndrome"));
     assert_eq!(
-        workers[3].condition_query.as_deref(),
-        Some("22q13 deletion syndrome")
-    );
-    assert_eq!(
-        workers[3].intervention_query.as_deref(),
-        Some("ticket-415-alternate")
-    );
-    assert_eq!(
-        workers[3].matched_condition_label.as_deref(),
-        Some("22q13 deletion syndrome")
-    );
-    assert_eq!(
-        workers[3].matched_intervention_label.as_deref(),
+        workers[1].matched_intervention_label.as_deref(),
         Some("ticket-415-alternate")
     );
 }
 
 #[test]
 fn ctgov_workers_do_not_label_literal_single_intervention() {
-    let workers = ctgov_workers(&[], &["pembrolizumab".into()]);
+    let workers = ctgov_workers(None, &["pembrolizumab".into()]);
 
     assert_eq!(workers.len(), 1);
     assert_eq!(workers[0].condition_query, None);
@@ -443,29 +422,13 @@ fn ctgov_workers_do_not_label_literal_single_intervention() {
         workers[0].intervention_query.as_deref(),
         Some("pembrolizumab")
     );
-    assert_eq!(workers[0].matched_condition_label, None);
     assert_eq!(workers[0].matched_intervention_label, None);
 }
 
 #[test]
-fn resolve_ctgov_condition_labels_honors_strict_condition_mode() {
+fn literal_condition_search_still_reports_limit_one_total() {
     let filters = TrialSearchFilters {
-        condition: Some("Phelan-McDermid Syndrome".into()),
-        no_condition_expand: true,
-        ..Default::default()
-    };
-
-    assert_eq!(
-        resolve_ctgov_condition_labels(&filters).expect("condition labels"),
-        vec!["Phelan-McDermid Syndrome".to_string()]
-    );
-}
-
-#[test]
-fn user_condition_expand_opt_out_still_reports_limit_one_total() {
-    let filters = TrialSearchFilters {
-        condition: Some("Phelan-McDermid Syndrome".into()),
-        no_condition_expand: true,
+        condition: Some("Rett Syndrome".into()),
         ..Default::default()
     };
     let (context, worker) = single_ctgov_context_and_worker(&filters);
@@ -494,7 +457,7 @@ fn user_condition_expand_opt_out_still_reports_limit_one_total() {
 
 #[test]
 fn search_path_rejects_next_page_when_alias_expansion_uses_multiple_queries() {
-    let err = fanout_next_page_error(false, true);
+    let err = fanout_next_page_error();
     assert!(err.to_string().contains("--next-page is not supported"));
     assert!(err.to_string().contains("--no-alias-expand"));
 }
@@ -548,106 +511,4 @@ fn alias_union_count_returns_exact_unique_total_when_exhausted() {
 fn alias_union_count_returns_unknown_when_page_cap_is_hit() {
     assert!(!ctgov_count_page_cap_would_be_exceeded(48, 2));
     assert!(ctgov_count_page_cap_would_be_exceeded(50, 2));
-}
-
-#[test]
-fn ticket_415_rare_disease_trial_search_condition_expansion_fans_out_and_dedupes_ncts() {
-    let workers = ctgov_workers(
-        &[
-            "Phelan-McDermid Syndrome".to_string(),
-            "22q13 deletion syndrome".to_string(),
-        ],
-        &[],
-    );
-    let mut rows = Vec::new();
-    let mut index = std::collections::HashMap::new();
-
-    push_ctgov_union_rows(
-        &mut rows,
-        &mut index,
-        &workers[0],
-        vec![
-            serde_json::from_value(ctgov_search_study_fixture(
-                "NCT00000415",
-                "18 Years",
-                "75 Years",
-            ))
-            .expect("study"),
-            serde_json::from_value(ctgov_search_study_fixture(
-                "NCT00000416",
-                "18 Years",
-                "75 Years",
-            ))
-            .expect("study"),
-        ],
-    );
-    push_ctgov_union_rows(
-        &mut rows,
-        &mut index,
-        &workers[1],
-        vec![
-            serde_json::from_value(ctgov_search_study_fixture(
-                "NCT00000416",
-                "18 Years",
-                "75 Years",
-            ))
-            .expect("study"),
-            serde_json::from_value(ctgov_search_study_fixture(
-                "NCT00000417",
-                "18 Years",
-                "75 Years",
-            ))
-            .expect("study"),
-        ],
-    );
-
-    let nct_ids: Vec<&str> = rows.iter().map(|row| row.nct_id.as_str()).collect();
-    assert_eq!(nct_ids, vec!["NCT00000415", "NCT00000416", "NCT00000417"]);
-    assert_eq!(
-        rows[2].matched_condition_label.as_deref(),
-        Some("22q13 deletion syndrome")
-    );
-    assert_eq!(rows.len(), 3);
-}
-
-#[test]
-fn ticket_415_rare_disease_trial_search_count_dedupes_expanded_condition_ncts() {
-    let mut unique_nct_ids = std::collections::HashSet::new();
-
-    add_unique_ctgov_nct_ids(
-        &mut unique_nct_ids,
-        vec![
-            serde_json::from_value(ctgov_search_study_fixture(
-                "NCT00000415",
-                "18 Years",
-                "75 Years",
-            ))
-            .expect("study"),
-            serde_json::from_value(ctgov_search_study_fixture(
-                "NCT00000416",
-                "18 Years",
-                "75 Years",
-            ))
-            .expect("study"),
-        ],
-    );
-    add_unique_ctgov_nct_ids(
-        &mut unique_nct_ids,
-        vec![
-            serde_json::from_value(ctgov_search_study_fixture(
-                "NCT00000416",
-                "18 Years",
-                "75 Years",
-            ))
-            .expect("study"),
-            serde_json::from_value(ctgov_search_study_fixture(
-                "NCT00000417",
-                "18 Years",
-                "75 Years",
-            ))
-            .expect("study"),
-        ],
-    );
-
-    assert_eq!(unique_nct_ids.len(), 3);
 }

@@ -112,9 +112,6 @@ fn trial_search_command(filters: &TrialSearchFilters) -> String {
         "trial".to_string(),
     ];
     push_text_flag(&mut command, "-c", filters.condition.as_deref());
-    if filters.no_condition_expand {
-        command.push("--no-condition-expand".to_string());
-    }
     push_text_flag(&mut command, "-i", filters.intervention.as_deref());
     if filters.no_alias_expand {
         command.push("--no-alias-expand".to_string());

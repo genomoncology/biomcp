@@ -72,79 +72,6 @@ pub fn trial_search_markdown(
     trial_search_markdown_with_footer(query, results, total, "", false, None)
 }
 
-pub fn trial_action_summary_markdown(
-    summary: &crate::entities::trial::TrialActionSummary,
-) -> Result<String, BioMcpError> {
-    let mut out = String::from("# Trial Action Summaries\n\n");
-    out.push_str(
-        "Uses listed CTGov sites only; BioMCP does not infer pending or unlisted sites.\n",
-    );
-
-    for item in &summary.results {
-        out.push_str(&format!("\n## {} — {}\n\n", item.nct_id, item.title));
-        out.push_str(&format!("- Status: {}\n", item.status));
-        if let Some(trial_type) = item.trial_type.as_deref() {
-            out.push_str(&format!(
-                "- Trial type: {}\n",
-                crate::entities::trial::trial_type_label(trial_type)
-            ));
-        }
-        if !item.access_caveats.is_empty() {
-            out.push_str("- Access caveats:\n");
-            for caveat in &item.access_caveats {
-                out.push_str(&format!("  - {}\n", caveat.label));
-            }
-        }
-        if let Some(eligibility) = &item.eligibility {
-            if let Some(sex) = eligibility.sex.as_deref() {
-                out.push_str(&format!("- Sex: {sex}\n"));
-            }
-            match (
-                eligibility.minimum_age.as_deref(),
-                eligibility.maximum_age.as_deref(),
-            ) {
-                (Some(min), Some(max)) => {
-                    out.push_str(&format!("- Eligible Ages: {min} to {max}\n"))
-                }
-                (Some(min), None) => out.push_str(&format!("- Eligible Ages: {min} to Any age\n")),
-                (None, Some(max)) => out.push_str(&format!("- Eligible Ages: Any age to {max}\n")),
-                (None, None) => {}
-            }
-        }
-        if !item.contacts.is_empty() {
-            out.push_str("- Contacts:\n");
-            for contact in &item.contacts {
-                out.push_str(&format!("  - {}", contact.name));
-                if let Some(email) = contact.email.as_deref() {
-                    out.push_str(&format!(" <{email}>"));
-                }
-                out.push('\n');
-            }
-        }
-        if !item.ranked_sites.is_empty() {
-            out.push_str("- Ranked listed sites:\n");
-            for site in &item.ranked_sites {
-                out.push_str(&format!("  - {}, {}", site.facility, site.city));
-                if let Some(state) = site.state.as_deref() {
-                    out.push_str(&format!(", {state}"));
-                }
-                out.push_str(&format!(" ({})", site.match_status));
-                if let Some(distance) = site.distance_miles {
-                    out.push_str(&format!(" — {:.1} miles", distance));
-                }
-                if site.match_status == "no_listed_facility_match"
-                    && let Some(requested) = site.requested_facility.as_deref()
-                {
-                    out.push_str(&format!(" — No listed CTGov site matched: {requested}"));
-                }
-                out.push('\n');
-            }
-        }
-    }
-
-    Ok(out)
-}
-
 pub fn trial_search_markdown_with_footer(
     query: &str,
     results: &[TrialSearchResult],
@@ -174,9 +101,6 @@ pub fn trial_search_markdown_with_footer_and_hints(
     zero_result_broadening_hints: &[String],
 ) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("trial_search.md.j2")?;
-    let show_matched_condition_column = results
-        .iter()
-        .any(|result| result.matched_condition_label.is_some());
     let show_matched_intervention_column = results
         .iter()
         .any(|result| result.matched_intervention_label.is_some());
@@ -185,7 +109,6 @@ pub fn trial_search_markdown_with_footer_and_hints(
         count => results.len(),
         total => total,
         results => results,
-        show_matched_condition_column => show_matched_condition_column,
         show_matched_intervention_column => show_matched_intervention_column,
         pagination_footer => pagination_footer,
         show_zero_result_nickname_hint => show_zero_result_nickname_hint,
