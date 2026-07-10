@@ -27,6 +27,26 @@ cargo test --lib ticket_377_discover_renderer_envelope_contracts -- --nocapture 
   | mustmatch like 'ticket_377_discover_renderer_envelope_contracts'
 ```
 
+## Trial Suggestions Preserve Resolved Gene Intent
+
+<!-- mustmatch-lint: skip -->
+
+When trial-oriented free text resolves to a gene, `discover` should suggest a
+literal biomarker trial search. It must not replace that gene with a curated
+disease condition.
+
+```bash run id=discover-gene-trial
+../../tools/biomcp-ci discover "SHANK3 clinical trials"
+```
+
+```text expect=discover-gene-trial contains
+biomcp search trial --biomarker SHANK3 --limit 5
+```
+
+```text expect=discover-gene-trial not-contains
+Phelan-McDermid
+```
+
 ## Alias-Like Free Text Still Resolves to Typed Follow-Ups
 
 When the query is a familiar alias rather than a canonical gene symbol,

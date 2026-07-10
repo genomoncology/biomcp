@@ -65,5 +65,9 @@ true'
 ```
 
 ```bash
+../../spec/fixtures/ctgov-request-log show | mustmatch like 'query.cond=Phelan-McDermid+Syndrome'
+```
+
+```bash
 ../../spec/fixtures/ctgov-request-log show | mustmatch not like '22q13+deletion+syndrome'
 ```
