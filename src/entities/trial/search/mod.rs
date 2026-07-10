@@ -16,7 +16,6 @@ use self::ctgov::validate_location;
 use self::ctgov::{
     count_all_with_ctgov_client, ctgov_agg_filters, ctgov_query_term, search_page_with_ctgov_client,
 };
-pub(super) use self::eligibility::haversine_miles;
 use self::eligibility::{
     collect_eligibility_keywords, verify_age_eligibility, verify_eligibility_criteria,
     verify_facility_geo,

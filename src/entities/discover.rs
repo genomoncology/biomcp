@@ -1500,14 +1500,33 @@ fn generate_commands(
 
     match intent {
         DiscoverIntent::TrialSearch => {
-            if let Some(condition) = planned_trial_condition(query, concepts) {
+            let condition = [DiscoverType::Disease, DiscoverType::Symptom]
+                .into_iter()
+                .find_map(|kind| {
+                    concepts.iter().find(|concept| {
+                        concept.primary_type == kind && query_mentions_label(query, &concept.label)
+                    })
+                });
+            if let Some(condition) = condition {
                 commands.push(format!(
                     "biomcp search trial -c {} --limit 5",
-                    quote_query_term(&condition)
+                    quote_query_term(&condition.label)
                 ));
                 commands.push(format!(
                     "biomcp search article -k {} --limit 5",
-                    quote_query_term(&condition)
+                    quote_query_term(&condition.label)
+                ));
+            } else if let Some(gene) = top_concept_of_type(concepts, DiscoverType::Gene)
+                .map(|concept| concept.label.clone())
+                .or_else(|| query.split_whitespace().find_map(gene_symbol_token))
+            {
+                commands.push(format!(
+                    "biomcp search trial --biomarker {} --limit 5",
+                    quote_query_term(&gene)
+                ));
+                commands.push(format!(
+                    "biomcp search article -g {} --limit 5",
+                    quote_query_term(&gene)
                 ));
             }
             return dedupe_strings(commands);
@@ -1701,33 +1720,6 @@ fn top_concept_of_type(
     kind: DiscoverType,
 ) -> Option<&DiscoverConcept> {
     concepts.iter().find(|concept| concept.primary_type == kind)
-}
-
-fn planned_trial_condition(query: &str, concepts: &[DiscoverConcept]) -> Option<String> {
-    let condition = top_concept_of_type(concepts, DiscoverType::Disease)
-        .or_else(|| top_concept_of_type(concepts, DiscoverType::Symptom))
-        .filter(|concept| query_mentions_label(query, &concept.label))
-        .map(|concept| concept.label.clone());
-    let gene = top_concept_of_type(concepts, DiscoverType::Gene)
-        .map(|concept| concept.label.clone())
-        .or_else(|| query.split_whitespace().find_map(gene_symbol_token));
-
-    let plan = crate::entities::trial::planning::plan_rare_disease_trials(
-        crate::entities::trial::planning::RareDiseaseTrialRequest {
-            raw_query: Some(query.trim().to_string()),
-            condition,
-            gene,
-            sponsor: None,
-            strict_condition: false,
-            mode: crate::entities::trial::planning::TrialPlanningMode::Search,
-        },
-    )
-    .ok()?;
-
-    plan.primary_condition_labels
-        .into_iter()
-        .next()
-        .map(|label| label.label)
 }
 
 fn gene_symbol_token(token: &str) -> Option<String> {
@@ -2644,7 +2636,7 @@ mod tests {
     }
 
     #[test]
-    fn ticket_416_rare_disease_trial_pivots_discover_mixed_query_uses_planned_trial_commands() {
+    fn trial_intent_prefers_a_mentioned_disease_over_a_gene() {
         let commands = generate_commands(
             "Phelan-McDermid Syndrome SHANK3 clinical trial",
             &[
@@ -2666,18 +2658,45 @@ mod tests {
         assert!(
             commands.iter().any(|command| command
                 == "biomcp search trial -c \"Phelan-McDermid Syndrome\" --limit 5"),
-            "mixed trial-intent discover queries should not depend on the disease being the top concept: {commands:?}"
-        );
-        assert!(
-            commands
-                .iter()
-                .all(|command| !command.contains("SHANK1") && !command.contains("SHANK2")),
-            "mixed rare-disease trial suggestions should not introduce unsupported SHANK-family commands: {commands:?}"
+            "mixed trial-intent queries should use the mentioned disease even when it is not the top concept: {commands:?}"
         );
     }
 
     #[test]
-    fn ticket_416_rare_disease_trial_pivots_discover_ignores_unmentioned_trial_noise_concepts() {
+    fn trial_intent_uses_a_mentioned_symptom_after_unmentioned_disease_noise() {
+        let commands = generate_commands(
+            "ataxia SHANK3 clinical trial",
+            &[
+                test_concept(
+                    "Unrelated disease",
+                    DiscoverType::Disease,
+                    DiscoverConfidence::CanonicalId,
+                ),
+                test_concept(
+                    "Ataxia",
+                    DiscoverType::Symptom,
+                    DiscoverConfidence::CanonicalId,
+                ),
+                test_concept(
+                    "SHANK3",
+                    DiscoverType::Gene,
+                    DiscoverConfidence::CanonicalId,
+                ),
+            ],
+            false,
+            DiscoverIntent::TrialSearch,
+        );
+
+        assert!(
+            commands
+                .iter()
+                .any(|command| command == "biomcp search trial -c Ataxia --limit 5"),
+            "trial intent should search every resolved condition type for a label mentioned in the query: {commands:?}"
+        );
+    }
+
+    #[test]
+    fn trial_intent_uses_gene_when_other_resolved_labels_are_unmentioned() {
         let commands = generate_commands(
             "Phelan-McDermid Syndrome SHANK3 clinical trial",
             &[
@@ -2697,9 +2716,10 @@ mod tests {
         );
 
         assert!(
-            commands.iter().any(|command| command
-                == "biomcp search trial -c \"Phelan-McDermid syndrome\" --limit 5"),
-            "unmentioned generic trial-noise concepts should not outrank the bounded SHANK3 plan: {commands:?}"
+            commands
+                .iter()
+                .any(|command| command == "biomcp search trial --biomarker SHANK3 --limit 5"),
+            "an unmentioned symptom concept should not replace the resolved gene: {commands:?}"
         );
         assert!(
             commands

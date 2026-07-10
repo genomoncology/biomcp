@@ -15,6 +15,18 @@ Query: condition=melanoma, status=recruiting
 |NCT ID|Title|Status|Phase|Conditions|'
 ```
 
+## NCI Condition Search
+
+The NCI source keeps ordinary condition lookup available independently of CTGov.
+A bounded melanoma search should return an NCI trial rather than entering any
+condition-planning path.
+
+```bash
+../../target/release/biomcp --json search trial -c melanoma --source nci --limit 1 \
+  | jq -r '(.count >= 1) and (.results[0].nct_id | startswith("NCT")) and (.results[0].title | length > 0)' \
+  | mustmatch 'true'
+```
+
 ## Alias-Normalized Intervention Search
 
 Brand-name intervention searches should normalize to the same shared drug

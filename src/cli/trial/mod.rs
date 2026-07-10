@@ -3,8 +3,6 @@
 use clap::Args;
 
 #[derive(Args, Debug)]
-#[command(after_help = "\
-ACTION SUMMARY:\n  --action-summary fetches full CTGov records using listed CTGov sites only.\n  JSON fields: trial_type\n  access_caveats\n  ranked_sites")]
 pub struct TrialSearchArgs {
     /// Filter by condition/disease
     #[arg(short = 'c', long, num_args = 1..)]
@@ -20,19 +18,9 @@ pub struct TrialSearchArgs {
     /// literal matching.
     #[arg(short = 'i', long, num_args = 1..)]
     pub intervention: Vec<String>,
-    /// Disable ClinicalTrials.gov rare-disease condition expansion and preserve literal condition matching.
-    #[arg(long = "no-condition-expand")]
-    pub no_condition_expand: bool,
     /// Disable ClinicalTrials.gov intervention alias expansion and force literal matching.
     #[arg(long = "no-alias-expand")]
     pub no_alias_expand: bool,
-    /// Fetch full CTGov records and render rare-disease trial action summaries.
-    ///
-    /// Uses listed CTGov sites only, treats facility/geo flags as post-hydration
-    /// ranking hints, and exposes JSON fields: trial_type, access_caveats,
-    /// ranked_sites, contacts, and eligibility.
-    #[arg(long = "action-summary")]
-    pub action_summary: bool,
     /// Filter by institution/facility name (text-search mode by default).
     ///
     /// Without `--lat`/`--lon`/`--distance`, this uses cheap CTGov
@@ -125,9 +113,8 @@ pub struct TrialSearchArgs {
     pub offset: usize,
     /// Cursor token from a previous response.
     ///
-    /// When CTGov condition expansion or intervention alias expansion fans out
-    /// to multiple queries, `--next-page` is unavailable; use `--offset`,
-    /// `--no-condition-expand`, or `--no-alias-expand`.
+    /// When CTGov intervention alias expansion fans out to multiple queries,
+    /// `--next-page` is unavailable; use `--offset` or `--no-alias-expand`.
     #[arg(long = "next-page")]
     pub next_page: Option<String>,
     /// Maximum results, 1-50 (default: 10)

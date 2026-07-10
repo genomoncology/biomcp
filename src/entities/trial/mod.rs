@@ -4,19 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
 
-mod action_summary;
 mod get;
-#[cfg_attr(not(test), allow(dead_code))]
-pub(crate) mod planning;
-#[cfg(test)]
-mod planning_contract_tests;
 mod search;
 #[cfg(test)]
 mod test_support;
 
-pub use self::action_summary::{
-    ActionSummaryHints, TrialActionSummary, action_summary, trial_type_label,
-};
 pub use self::get::get;
 pub use self::search::{count_all, search, search_page};
 
@@ -178,8 +170,6 @@ pub struct TrialSearchResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sponsor: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub matched_condition_label: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub matched_intervention_label: Option<String>,
 }
 
@@ -188,7 +178,6 @@ pub struct TrialSearchFilters {
     pub condition: Option<String>,
     pub intervention: Option<String>,
     pub no_alias_expand: bool,
-    pub no_condition_expand: bool,
     pub no_count_total: bool,
     pub facility: Option<String>,
     pub status: Option<String>,

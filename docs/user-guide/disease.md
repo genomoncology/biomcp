@@ -147,13 +147,12 @@ biomcp get disease MONDO:0005105 all
 
 ```bash
 biomcp disease trials melanoma --limit 5
-biomcp disease trials "Phelan-McDermid Syndrome" --limit 5
+biomcp disease trials "Rett Syndrome" --limit 5
 biomcp disease drugs melanoma --limit 5
 biomcp disease articles "Lynch syndrome" --limit 5
 ```
 
-CTGov disease trial pivots reuse the same bounded condition expansion as
-`biomcp search trial -c`, while preserving the literal disease label.
+Disease trial pivots send the supplied disease label literally.
 
 ## Phenotype-to-disease search
 

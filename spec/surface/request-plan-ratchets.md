@@ -44,60 +44,6 @@ The post-migration spec runner keeps routine specs Markdown-only. The static
 ratchets around spec quality and fixture realism live under `tests/surface/`,
 where `make test` runs them without calling public services.
 
-## Rare-Disease Trial Planning Keeps Expansion Bounded
-
-Rare-disease trial planning should be a deterministic request contract before
-any ClinicalTrials.gov or ontology execution. The Rust seam tests prove the
-Phelan-McDermid / SHANK3 / 22q13 plan carries bounded condition and biomarker
-terms, records provenance, rejects broad noisy labels, and exposes strict
-condition mode as data.
-
-## Rare-Disease Trial Search Executes Bounded Condition Expansion
-
-Rare-disease trial search should consume the deterministic plan before any live
-ClinicalTrials.gov call. The Rust request-contract tests prove the CTGov search
-execution fans out accepted Phelan-McDermid condition labels, dedupes repeated
-NCT IDs, records matched-condition provenance, keeps strict mode literal, and
-labels combined condition/intervention fan-out workers.
-
-## Rare-Disease Trial Pivots Reuse the Shared Plan
-
-Discover, gene trial pivots, and disease trial pivots should enter the same
-rare-disease trial plan as `search trial`. These no-network seam tests keep the
-mixed Phelan-McDermid / SHANK3 first move, the SHANK3 gene pivot, the disease
-pivot, and unsupported noisy text from drifting back to top-concept-only or
-biomarker-only routing.
-
-## Trial Search Documents Condition Expansion Controls
-
-The strict/literal opt-out and matched-condition provenance are user-facing
-search behavior, so the rendered help, list page, and user docs should teach the
-same contract as the execution path.
-
-```bash
-../../tools/biomcp-ci search trial --help | mustmatch like "--no-condition-expand
-matched_condition_label
-Matched Condition"
-```
-
-```bash
-../../tools/biomcp-ci list trial | mustmatch like "--no-condition-expand
-matched_condition_label
-Matched Condition"
-```
-
-```bash
-grep -h "no-condition-expand\|matched_condition_label\|Matched Condition" ../../docs/user-guide/trial.md | mustmatch like "--no-condition-expand
-matched_condition_label
-Matched Condition"
-```
-
-```bash
-grep -h "no-condition-expand\|matched_condition_label\|Matched Condition" ../../docs/user-guide/cli-reference.md | mustmatch like "--no-condition-expand
-matched_condition_label
-Matched Condition"
-```
-
 ## Ticket 405 Architecture and Operator Contracts
 
 Current repo docs must describe the shipped BioMCP architecture and operator

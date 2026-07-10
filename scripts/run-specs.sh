@@ -15,7 +15,7 @@ SPEC_ROUTINE_PATHS=(
   spec/surface/skills.md
   tests/surface/test_parallel_isolation_contract.py
   spec/surface/cli-contract-ratchet.md
-  spec/surface/trial-action-summary.md
+  spec/surface/trial-retirement.md
   spec/surface/ctgov-helper-pivots.md
 )
 
@@ -134,7 +134,7 @@ case "$mode" in
       spec/entity/article.md
       spec/surface/mcp.md
       spec/surface/skills.md
-      spec/surface/trial-action-summary.md
+      spec/surface/trial-retirement.md
     )
     mustmatch_path_dir="$(mustmatch_dir)"
     run_study_fixture

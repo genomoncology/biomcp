@@ -78,8 +78,8 @@ pub use self::study::{
 };
 #[allow(unused_imports)]
 pub use self::trial::{
-    trial_action_summary_markdown, trial_markdown, trial_search_markdown,
-    trial_search_markdown_with_footer, trial_search_markdown_with_footer_and_hints,
+    trial_markdown, trial_search_markdown, trial_search_markdown_with_footer,
+    trial_search_markdown_with_footer_and_hints,
 };
 #[allow(unused_imports)]
 pub use self::variant::{

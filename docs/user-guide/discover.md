@@ -22,7 +22,7 @@ biomcp discover ERBB1
 biomcp discover Keytruda
 biomcp discover "chest pain"
 biomcp discover "developmental delay"
-biomcp discover "Phelan-McDermid Syndrome SHANK3 clinical trial"
+biomcp discover "SHANK3 clinical trial"
 biomcp --json discover diabetes
 ```
 
@@ -35,8 +35,8 @@ biomcp --json discover diabetes
   resolve to HPO-backed IDs.
 - Keeps the existing discover-specific routed flows for symptom-of-disease,
   HPO symptom, treatment, gene+disease, and unambiguous gene-plus-topic prompts.
-- For supported rare-disease trial prompts, suggests executable trial follow-up
-  commands from the shared trial plan without running a trial search itself.
+- For trial prompts, suggests a literal disease/symptom condition search when
+  present, otherwise a literal gene biomarker search.
 - Relational or multi-entity questions may redirect to
   `biomcp search all --keyword "<query>"` through `notes` and
   `_meta.next_commands` when only weak single-entity residue remains.

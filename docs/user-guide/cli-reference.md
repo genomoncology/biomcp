@@ -232,13 +232,10 @@ same-session keywords overlap heavily.
 
 ```bash
 biomcp search trial -c melanoma --status recruiting --source ctgov --limit 5 --offset 0
-biomcp search trial -c "Phelan-McDermid Syndrome" --no-condition-expand --limit 20
+biomcp search trial -c "Rett Syndrome" --limit 20
 ```
 
-CTGov condition searches auto-expand bounded rare-disease labels by default.
-Use `--no-condition-expand` for literal condition matching. Expanded rows can
-add a `Matched Condition` column in markdown and `matched_condition_label` in
-JSON.
+CTGov condition searches send the supplied condition literally.
 
 For molecular filters, `--mutation <text>` is an exact free-text boolean over
 ClinicalTrials.gov title, summary, eligibility, and keyword fields. It is useful
