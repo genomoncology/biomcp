@@ -21,5 +21,5 @@ A read after synchronization reports the installed bundle's freshness and its
 bounded page size instead of performing another maintenance operation.
 
 ```bash
-../../tools/biomcp-ci --json drug interactions warfarin | jq -c '{bundle_freshness, returned: .pagination.count, limit: .pagination.limit}' | mustmatch like '{"bundle_freshness":{"status":"fresh"},"limit":25}'
+../../tools/biomcp-ci --json drug interactions warfarin | jq -c '{bundle_freshness, returned: .pagination.count, limit: .pagination.limit}' | mustmatch like '{"bundle_freshness":{"status":"fresh"},"returned":25,"limit":25}'
 ```

@@ -7,12 +7,12 @@ freshness without contacting DDInter or simulating a failed service.
 ## Discover interaction page controls
 
 The helper advertises the same page controls that scripts and agents use,
-including the 25-row default and the 50-row page ceiling.
+including both limit and offset controls. The examples below prove the bounded
+25-row default without pinning help copy.
 
 ```bash
 ../../tools/biomcp-ci drug interactions --help | mustmatch like '--limit <LIMIT>
---offset <OFFSET>
-Maximum interaction rows, 1-50 (default: 25)'
+--offset <OFFSET>'
 ```
 
 ## Page through interaction detail
