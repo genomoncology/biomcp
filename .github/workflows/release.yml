@@ -16,10 +16,43 @@ permissions:
   packages: write
 
 jobs:
+  release-ref:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      sha: ${{ steps.resolve.outputs.sha }}
+    steps:
+      - name: Check out requested release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+
+      - name: Resolve requested release tag
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          SHA="$(git rev-parse HEAD)"
+          TAG_SHA="$(git rev-parse "refs/tags/$TAG^{commit}")"
+          test "$SHA" = "$TAG_SHA"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
   validate:
+    needs: release-ref
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-ref.outputs.sha }}
+
+      - name: Verify checkout matches requested tag commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ needs.release-ref.outputs.sha }}"
 
       - name: Cache protoc
         uses: actions/cache@v4
@@ -65,7 +98,7 @@ jobs:
       - run: uv run --no-sync mkdocs build --strict
 
   build:
-    needs: validate
+    needs: [validate, release-ref]
     strategy:
       fail-fast: false
       matrix:
@@ -91,6 +124,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-ref.outputs.sha }}
 
       - name: Cache protoc
         uses: actions/cache@v4
@@ -153,6 +188,25 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
+      - name: Verify binary embeds checkout SHA (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bin="target/${{ matrix.target }}/release/biomcp"
+          expected="${{ needs.release-ref.outputs.sha }}"
+          expected="${expected:0:8}"
+          "$bin" version | grep -F "(git $expected,"
+
+      - name: Verify binary embeds checkout SHA (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $bin = "target\${{ matrix.target }}\release\biomcp.exe"
+          $expected = "${{ needs.release-ref.outputs.sha }}".Substring(0, 8)
+          $version = & $bin version
+          if ($version -notmatch "\(git $expected,") { throw "Binary SHA mismatch: $version" }
+
       - name: Package (tar.gz)
         if: runner.os != 'Windows'
         shell: bash
@@ -200,12 +254,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   homebrew-tap:
-    needs: build
+    needs: [build, release-ref]
     runs-on: ubuntu-latest
     env:
       HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-ref.outputs.sha }}
 
       - name: Download Darwin checksum sidecars
         env:
@@ -271,12 +327,12 @@ jobs:
           git push origin HEAD:main
 
   docker-publish:
-    needs: validate
+    needs: [validate, release-ref]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          ref: ${{ needs.release-ref.outputs.sha }}
 
       - name: Sync Docker image version from release tag
         shell: bash
@@ -316,7 +372,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   pypi-build:
-    needs: validate
+    needs: [validate, release-ref]
     strategy:
       fail-fast: false
       matrix:
@@ -334,6 +390,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-ref.outputs.sha }}
 
       - name: Cache protoc
         uses: actions/cache@v4
@@ -412,13 +470,14 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
 
   deploy-docs:
-    needs: validate
+    needs: [validate, release-ref]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.release-ref.outputs.sha }}
           fetch-depth: 0
 
       - name: Cache protoc
