@@ -75,6 +75,33 @@ source_if_present() {
   fi
 }
 
+CLEANUP_FUNCTIONS=()
+
+register_cleanup() {
+  CLEANUP_FUNCTIONS+=("$1")
+}
+
+cleanup_all() {
+  local exit_status=$?
+  local cleanup_function
+  set +e
+  for cleanup_function in "${CLEANUP_FUNCTIONS[@]}"; do
+    "$cleanup_function"
+  done
+  trap - EXIT
+  exit "$exit_status"
+}
+
+handle_signal() {
+  local signal_number="$1"
+  exit "$((128 + signal_number))"
+}
+
+trap cleanup_all EXIT
+trap 'handle_signal 2' INT
+trap 'handle_signal 15' TERM
+trap 'handle_signal 1' HUP
+
 run_study_fixture() {
   bash spec/fixtures/setup-study-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-study-env"
@@ -85,9 +112,14 @@ run_ddinter_fixture() {
   source_if_present "$ROOT/.cache/spec-ddinter-env"
 }
 
+cleanup_ctgov_fixture() {
+  bash spec/fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh "$ROOT"
+}
+
 run_ctgov_fixture() {
   bash spec/fixtures/setup-ctgov-intervention-alias-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-ctgov-intervention-alias-env"
+  register_cleanup cleanup_ctgov_fixture
 }
 
 cleanup_disease_survival_fixture() {
@@ -97,7 +129,7 @@ cleanup_disease_survival_fixture() {
 run_disease_survival_fixture() {
   bash spec/fixtures/setup-disease-survival-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-disease-survival-env"
-  trap cleanup_disease_survival_fixture EXIT
+  register_cleanup cleanup_disease_survival_fixture
 }
 
 run_markdown_specs() {
@@ -171,6 +203,15 @@ case "$mode" in
     exit 2
     ;;
 esac
+
+if [[ -n "${BIOMCP_SPEC_RUNNER_READY_FILE:-}" ]]; then
+  : >"$BIOMCP_SPEC_RUNNER_READY_FILE"
+fi
+if [[ "${BIOMCP_SPEC_RUNNER_HOLD:-0}" == 1 ]]; then
+  while :; do
+    sleep 1
+  done
+fi
 
 case "$mode" in
   verify) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
