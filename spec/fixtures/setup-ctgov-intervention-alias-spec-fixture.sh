@@ -15,15 +15,29 @@ fi
 
 fixture_root="$(mktemp -d "$cache_dir/spec-ctgov-intervention-alias.XXXXXX")"
 ready_file="$fixture_root/base-url"
+server_pid_file="$fixture_root/server-pid"
 server_log="$fixture_root/server.log"
 request_log="$fixture_root/request.log"
+fixture_pgid=""
 : >"$request_log"
 
-uv run --no-sync python - "$ready_file" "$request_log" <<'PY' >"$server_log" 2>&1 &
+cleanup_incomplete_setup() {
+  if [ -n "$fixture_pgid" ]; then
+    kill -TERM -- "-$fixture_pgid" 2>/dev/null || true
+  fi
+  rm -rf "$fixture_root"
+}
+trap cleanup_incomplete_setup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+
+setsid uv run --no-sync python - "$ready_file" "$request_log" "$server_pid_file" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 import json
+import os
 import sys
 
 
@@ -121,6 +135,7 @@ CONTACTS_ELIGIBILITY_STUDY = {
             "studyType": "Interventional",
             "enrollmentInfo": {"count": 24},
         },
+        "armsInterventionsModule": {"interventions": [], "armGroups": []},
         "eligibilityModule": {
             "minimumAge": "2 Years",
             "maximumAge": "18 Years",
@@ -157,92 +172,11 @@ CONTACTS_ELIGIBILITY_STUDY = {
     }
 }
 
-ACTION_SUMMARY_STUDY = {
-    "protocolSection": {
-        "identificationModule": {
-            "nctId": "NCT41700001",
-            "briefTitle": "Open-label Extension for Phelan-McDermid Syndrome",
-        },
-        "statusModule": {"overallStatus": "RECRUITING"},
-        "descriptionModule": {
-            "briefSummary": "Open-label extension study for participants who completed the antecedent randomized study."
-        },
-        "conditionsModule": {"conditions": ["Phelan-McDermid Syndrome", "22q13 deletion syndrome"]},
-        "designModule": {
-            "phases": ["PHASE2"],
-            "studyType": "Interventional",
-            "enrollmentInfo": {"count": 18},
-        },
-        "armsInterventionsModule": {
-            "interventions": [
-                {
-                    "type": "DRUG",
-                    "name": "Fixture therapy",
-                    "description": "Supportive investigational treatment in the extension phase.",
-                    "armGroupLabels": ["Open-label extension"],
-                    "otherNames": [],
-                }
-            ],
-            "armGroups": [
-                {
-                    "label": "Open-label extension",
-                    "type": "EXPERIMENTAL",
-                    "description": "Participants receive fixture therapy after completing the antecedent study.",
-                    "interventionNames": ["Fixture therapy"],
-                }
-            ],
-        },
-        "eligibilityModule": {
-            "minimumAge": "2 Years",
-            "maximumAge": "18 Years",
-            "sex": "ALL",
-            "eligibilityCriteria": "Key inclusion: confirmed SHANK3-related neurodevelopmental disorder. Participants must have completed antecedent Study ABC-101 before enrolling in this open-label extension."
-        },
-        "contactsLocationsModule": {
-            "centralContacts": [
-                {
-                    "name": "Central Coordinator",
-                    "role": "CONTACT",
-                    "phone": "555-0417",
-                    "email": "central-action@example.test",
-                }
-            ],
-            "locations": [
-                {
-                    "facility": "Rare Disease Center",
-                    "city": "Ann Arbor",
-                    "state": "Michigan",
-                    "country": "United States",
-                    "status": "RECRUITING",
-                    "contacts": [
-                        {
-                            "name": "Action Site Coordinator",
-                            "role": "CONTACT",
-                            "phone": "555-4170",
-                            "email": "site-action@example.test",
-                        }
-                    ],
-                    "geoPoint": {"lat": 42.2808, "lon": -83.7430},
-                },
-                {
-                    "facility": "Chicago Rare Disease Clinic",
-                    "city": "Chicago",
-                    "state": "Illinois",
-                    "country": "United States",
-                    "status": "RECRUITING",
-                    "contacts": [],
-                    "geoPoint": {"lat": 41.8781, "lon": -87.6298},
-                }
-            ],
-        },
-    }
-}
 
 STUDIES = {
     "nct02136914": NCT02136914_STUDY,
     "nct35700001": SHELL_SAFE_STUDY,
     "nct41300001": CONTACTS_ELIGIBILITY_STUDY,
-    "nct41700001": ACTION_SUMMARY_STUDY,
 }
 
 
@@ -258,6 +192,8 @@ def study_payload_for_request(parsed, study):
 
 
 REQUEST_LOG = Path(sys.argv[2])
+SERVER_PID_FILE = Path(sys.argv[3])
+SERVER_PID_FILE.write_text(f"{os.getpid()}\n", encoding="utf-8")
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -271,7 +207,7 @@ class Handler(BaseHTTPRequestHandler):
             if "university of michigan" in requested_facility:
                 send_json(self, 200, {"studies": [], "totalCount": 0})
                 return
-            send_json(self, 200, {"studies": [study_payload_for_request(parsed, ACTION_SUMMARY_STUDY)], "totalCount": 1})
+            send_json(self, 200, {"studies": [study_payload_for_request(parsed, CONTACTS_ELIGIBILITY_STUDY)], "totalCount": 1})
             return
         if parsed.path.startswith("/api/v2/studies/"):
             nct_id = parsed.path.rsplit("/", 1)[-1].lower()
@@ -289,13 +225,13 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 ready_path.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-8")
 server.serve_forever()
 PY
-server_pid=$!
+fixture_pgid=$!
 
 for _ in $(seq 1 50); do
   if [ -s "$ready_file" ]; then
     break
   fi
-  if ! kill -0 "$server_pid" 2>/dev/null; then
+  if ! kill -0 "$fixture_pgid" 2>/dev/null; then
     cat "$server_log" >&2
     exit 1
   fi
@@ -303,13 +239,18 @@ for _ in $(seq 1 50); do
 done
 
 test -s "$ready_file"
+test -s "$server_pid_file"
 base_url="$(cat "$ready_file")"
+server_pid="$(cat "$server_pid_file")"
 
 printf 'export BIOMCP_CTGOV_BASE=%q\n' "$base_url/api/v2" >"$env_file"
 printf 'export BIOMCP_CACHE_MODE=off\n' >>"$env_file"
-printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_PID=%q\n' "$server_pid" >>"$env_file"
+printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_PID=%q\n' "$fixture_pgid" >>"$env_file"
+printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_PGID=%q\n' "$fixture_pgid" >>"$env_file"
+printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_SERVER_PID=%q\n' "$server_pid" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
 
+trap - EXIT INT TERM HUP
 printf '%s\n' "$fixture_root"
