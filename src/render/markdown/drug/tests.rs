@@ -122,6 +122,7 @@ fn drug_interaction_report_markdown_renders_not_in_coverage_signal() {
     let markdown = drug_interaction_report_markdown(&report).expect("markdown");
 
     assert!(markdown.contains("current DDInter download bundle has no matching rows"));
+    assert!(markdown.contains("Page: offset 0, limit 25"));
     assert!(markdown.contains("not_in_ddinter_coverage"));
     assert!(markdown.contains("source coverage miss"));
 }

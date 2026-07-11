@@ -105,9 +105,11 @@ pub fn drug_interaction_report_markdown(
     }
     let _ = writeln!(
         out,
-        "Returned: {} of {}\n\nDDInter bundle freshness: {}\n",
+        "Returned: {} of {}\n\nPage: offset {}, limit {}\n\nDDInter bundle freshness: {}\n",
         report.pagination.count,
         report.pagination.total,
+        report.pagination.offset,
+        report.pagination.limit,
         report.bundle_freshness.status.as_str(),
     );
     if !report.interactions.is_empty() {
