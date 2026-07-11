@@ -102,9 +102,6 @@ When the XML ladder misses, BioMCP should fall back to the PMC HTML article page
 and still keep the saved-file contract on stdout.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 rm -rf ../../.cache/biomcp-specs/downloads
 mkdir -p ../../.cache/biomcp-specs/downloads
 ../../tools/biomcp-ci get article 22663012 fulltext | mustmatch like '## Full Text (PMC HTML)
@@ -118,9 +115,6 @@ Semantic Scholar PDF is a last resort, not the default resolver order. The same
 fixture-backed article should fail cleanly without `--pdf` and succeed with it.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci get article 22663013 fulltext | mustmatch like "XML and HTML sources did not return full text"
 ../../tools/biomcp-ci get article 22663013 fulltext | mustmatch not like "Semantic Scholar PDF"
 rm -rf ../../.cache/biomcp-specs/downloads
@@ -181,9 +175,6 @@ records whether the representation has useful structure, and separates known
 license context from unknown reuse state.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 jats_json="$(../../tools/biomcp-ci --json get article 22663011 fulltext)"
 mustmatch like '"full_text_source"' <<<"$jats_json"
 ARTICLE_JSON="$jats_json" uv run --no-sync python3 - <<'PY'
@@ -214,9 +205,6 @@ than source XML and can lack article-level license context. Unknown reuse state
 must stay explicit instead of serializing as a safe or blank license.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 html_json="$(../../tools/biomcp-ci --json get article 22663012 fulltext)"
 mustmatch like '"full_text_source"' <<<"$html_json"
 ARTICLE_JSON="$html_json" uv run --no-sync python3 - <<'PY'
@@ -246,9 +234,6 @@ agent can decide whether PDF conversion is adequate for evidence ingestion and
 can carry any license fact returned by Semantic Scholar.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 pdf_json="$(../../tools/biomcp-ci --json get article 22663013 fulltext --pdf)"
 mustmatch like '"full_text_source"' <<<"$pdf_json"
 ARTICLE_JSON="$pdf_json" uv run --no-sync python3 - <<'PY'
@@ -278,9 +263,6 @@ into a generic XML winner. The package URL, license, and retraction fact are
 machine-readable provenance for downstream reuse decisions.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci --json get article 22663016 fulltext | uv run --no-sync python3 -c '
 import json, sys
 
@@ -310,9 +292,6 @@ byte-level grounding and retrieval handles for downstream converters without
 parsing or inlining the assets.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci --json get article 22663011 assets | uv run --no-sync python3 -c '
 import json, re, sys
 
@@ -359,9 +338,6 @@ the canonical fetcher here; conversion of CSV, XLSX, DOC, PDF, or image assets
 belongs downstream.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci get article 22663011 asset traces-s1.csv | mustmatch like "time,value
 0,1"
 ```
@@ -375,9 +351,6 @@ transient provider URL, so downstream tools can retrieve bytes through one stabl
 article-asset grammar.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci --json get article 22663015 assets | uv run --no-sync python3 -c '
 import json, re, sys
 
@@ -422,9 +395,6 @@ current file bytes without conversion. A supplemental PDF remains an asset, not 
 fulltext substitute or parsed text source.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci get article 22663015 asset figshare-supplement.pdf | mustmatch like "%PDF-1.4
 Figshare supplemental fixture bytes"
 ```
@@ -437,9 +407,6 @@ merge same-paper sibling files into the stable BioMCP handle list so downstream
 agents do not have to rediscover provider records themselves.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci --json get article 22663015 assets | uv run --no-sync python3 -c '
 import json, sys
 
@@ -468,9 +435,6 @@ Sibling table bytes remain raw provider bytes; BioMCP does not parse workbook
 contents.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci get article 22663015 asset supplementary-table-s1.xlsx | mustmatch like "S1 workbook fixture bytes"
 ```
 
@@ -481,9 +445,7 @@ file is being staged. A BioMCP asset handle should wait through that bounded
 staging state and still stream the final provider bytes.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
+bash ../fixtures/reset-article-fulltext-source-fixture.sh cold-storage
 ../../tools/biomcp-ci get article 22663017 asset cold-storage-supplement.pdf | mustmatch like "Figshare cold-storage fixture bytes"
 ```
 
@@ -494,9 +456,6 @@ bytes were not inlined and how to retrieve them. The summary is structured so a
 consumer can branch without scraping prose.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci --json get article 22663011 fulltext | uv run --no-sync python3 -c '
 import json, sys
 
@@ -520,9 +479,6 @@ Markdown carries the retrieval command as a pointer instead of embedding the
 JSON manifest or listing individual package members.
 
 ```bash
-bash ../fixtures/setup-article-fulltext-source-fixture.sh ../..
-. ../../.cache/spec-article-fulltext-source-env
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
 ../../tools/biomcp-ci get article 22663011 fulltext | mustmatch like "biomcp --json get article 22663011 assets"
 ../../tools/biomcp-ci get article 22663011 fulltext | mustmatch not like "figure-floats.png
 traces-s1.csv
