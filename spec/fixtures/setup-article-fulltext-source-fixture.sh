@@ -11,18 +11,7 @@ mkdir -p "$cache_dir"
 exec 9>"$lock_file"
 flock 9
 
-if [ -f "$env_file" ]; then
-  # shellcheck disable=SC1090
-  . "$env_file"
-  if [ -n "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" ] \
-    && kill -0 "$BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID" 2>/dev/null; then
-    kill "$BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID" 2>/dev/null || true
-  fi
-  if [ -n "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_ROOT:-}" ] \
-    && [ -d "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_ROOT:-}" ]; then
-    rm -rf "$BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_ROOT"
-  fi
-fi
+bash "$repo_root/spec/fixtures/cleanup-article-fulltext-source-fixture.sh" "$workspace_root"
 
 fixture_root="$(mktemp -d "$cache_dir/spec-article-fulltext-source.XXXXXX")"
 ready_file="$fixture_root/base-url"
@@ -30,7 +19,7 @@ server_log="$fixture_root/server.log"
 request_log="$fixture_root/request-log.txt"
 : > "$request_log"
 
-python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" <<'PY' >"$server_log" 2>&1 &
+python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" 9>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -551,6 +540,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if decoded_path == "/v2/articles/22474830":
+            with COLD_STORAGE_LOCK:
+                COLD_STORAGE_HITS.pop("/figshare/files/39926330/cold-storage-supplement.pdf", None)
             send_json(self, 200, {
                 "id": 22474830,
                 "title": "Figshare cold storage asset winner",
@@ -643,6 +634,12 @@ ready_path.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-
 server.serve_forever()
 PY
 server_pid=$!
+cleanup_failed_setup() {
+  kill "$server_pid" 2>/dev/null || true
+  rm -rf "$fixture_root"
+  rm -f "$env_file"
+}
+trap cleanup_failed_setup EXIT
 
 for _ in $(seq 1 50); do
   if [ -s "$ready_file" ]; then
@@ -673,4 +670,5 @@ printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_ROOT=%q\n' "$fixture_root"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
 
+trap - EXIT
 printf '%s\n' "$fixture_root"

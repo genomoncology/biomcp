@@ -42,10 +42,16 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
     fixtures.mkdir(parents=True)
     shutil.copy2(REPO_ROOT / "scripts" / "run-specs.sh", workspace / "scripts")
     for name in (
+        "setup-article-fulltext-source-fixture.sh",
+        "cleanup-article-fulltext-source-fixture.sh",
         "setup-ctgov-intervention-alias-spec-fixture.sh",
         "cleanup-ctgov-intervention-alias-spec-fixture.sh",
     ):
         shutil.copy2(REPO_ROOT / "spec" / "fixtures" / name, fixtures / name)
+    shutil.copytree(
+        REPO_ROOT / "tests" / "fixtures" / "article" / "fulltext",
+        workspace / "tests" / "fixtures" / "article" / "fulltext",
+    )
 
     for name in ("setup-study-spec-fixture.sh",):
         script = fixtures / name

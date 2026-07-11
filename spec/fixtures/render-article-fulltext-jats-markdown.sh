@@ -5,10 +5,13 @@ workspace_root="${1:-../..}"
 repo_root="$(git -C "$workspace_root" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$workspace_root")"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-bash "$script_dir/setup-article-fulltext-source-fixture.sh" "$repo_root" >/dev/null
+env_file="$repo_root/.cache/spec-article-fulltext-source-env"
+if [[ ! -f "$env_file" ]]; then
+  bash "$script_dir/setup-article-fulltext-source-fixture.sh" "$repo_root" >/dev/null
+  trap 'bash "$script_dir/cleanup-article-fulltext-source-fixture.sh" "$repo_root"' EXIT
+fi
 # shellcheck disable=SC1091
-. "$repo_root/.cache/spec-article-fulltext-source-env"
-trap 'kill "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}" 2>/dev/null || true' EXIT
+. "$env_file"
 
 cache_dir="$repo_root/.cache/spec-article-fulltext-jats-cache"
 rm -rf "$cache_dir"

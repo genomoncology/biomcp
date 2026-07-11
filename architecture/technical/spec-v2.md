@@ -85,7 +85,7 @@ CDC WONDER VAERS aggregate lane in `spec/entity/vaers.md`; there is no implied
 6. **Every migrated ticket leaves `make lint`, `make test`, and `make spec`
    healthy with the active spec lane executable.**
 7. **Live upstream behavior is not routine proof once a deterministic replacement exists.** Source request shape, fixture response/status mapping, entity orchestration, and renderer/envelope output belong in routine gates; public upstream availability belongs in an explicit release/live-smoke lane.
-8. **Runner-started fixtures are runner-owned.** The shared runner composes fixture teardown in one cleanup registry and invokes it on normal exit and catchable `INT`, `TERM`, and `HUP` interruption. Multi-process fixtures record an isolated process group so teardown removes the supervisor and server without matching processes from another worktree.
+8. **Runner-started fixtures are runner-owned.** The shared runner composes fixture teardown in one cleanup registry and invokes it on normal exit and catchable `INT`, `TERM`, and `HUP` interruption. Multi-process fixtures record an isolated process group so teardown removes the supervisor and server without matching processes from another worktree. Routine article specs share one local source fixture per runner invocation; fixture-owned metadata resets the one cold-storage download counter that affects scenario outcomes, while Markdown owns neither process lifecycle nor reset commands.
 
 ## Per-file outlines
 

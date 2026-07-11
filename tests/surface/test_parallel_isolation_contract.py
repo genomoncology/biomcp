@@ -693,11 +693,17 @@ def test_ticket_376_article_variant_specs_document_deterministic_or_live_smoke_c
             f"{path} must classify irreducible public-upstream checks as release/live-smoke-only"
         )
 
-    for heading in ("Full-Text HTML Fallback", "PDF Fallback Is Opt-In"):
-        section = _markdown_heading_body("spec/entity/article.md", 2, heading)
-        assert "setup-article-fulltext-source-fixture.sh" in section, (
-            f"spec/entity/article.md::{heading} must preserve the existing fixture-backed fulltext pattern"
-        )
+    article = _read_repo("spec/entity/article.md")
+    runner = _read_repo("scripts/run-specs.sh")
+    assert "run_article_fixture" in runner
+    assert "register_cleanup cleanup_article_fixture" in runner
+    for fragment in (
+        "setup-article-fulltext-source-fixture.sh",
+        "spec-article-fulltext-source-env",
+        "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID",
+    ):
+        assert fragment not in article, f"article Markdown must not own fixture process plumbing: {fragment}"
+    assert not re.search(r"trap[^\n]+(?:EXIT|INT|TERM|HUP)", article)
 
 
 def test_ticket_377_renderer_envelope_fixture_contracts_exist() -> None:
