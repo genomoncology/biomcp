@@ -202,6 +202,27 @@ inspection and keep local-runtime admin help truthful about what each sync owns.
 health="$(../../tools/biomcp-ci health --apis-only)"
 mustmatch like "# BioMCP Health Check" <<<"$health"
 mustmatch like "| API | Status | Latency | Affects |" <<<"$health"
+
+empty_data="$(mktemp -d)"
+trap 'rm -rf "$empty_data"' EXIT
+health_json="$(
+  BIOMCP_EMA_DIR="$empty_data" \
+  BIOMCP_CVX_DIR="$empty_data" \
+  BIOMCP_WHO_DIR="$empty_data" \
+  BIOMCP_GTR_DIR="$empty_data" \
+  BIOMCP_WHO_IVD_DIR="$empty_data" \
+    ../../tools/biomcp-ci --json health
+)"
+jq -e '
+  (.error | type) == "number" and
+  .error >= 1 and
+  any(.rows[]; .status | startswith("error")) and
+  (.healthy + .warning + .excluded + .error == .total) and
+  (.rows | length == .total)
+' <<<"$health_json" >/dev/null
+mustmatch like "health JSON summary reconciles an explicit error row" \
+  <<<"health JSON summary reconciles an explicit error row"
+
 whoivd="$(../../tools/biomcp-ci who-ivd sync --help)"
 mustmatch like "WHO Prequalified IVD diagnostic CSV export" <<<"$whoivd"
 mustmatch like "Usage: biomcp who-ivd sync" <<<"$whoivd"

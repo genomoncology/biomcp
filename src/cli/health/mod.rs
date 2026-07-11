@@ -23,21 +23,19 @@ pub struct HealthReport {
     pub healthy: usize,
     pub warning: usize,
     pub excluded: usize,
+    pub error: usize,
     pub total: usize,
     pub rows: Vec<HealthRow>,
 }
 
 impl HealthReport {
     pub fn all_healthy(&self) -> bool {
-        self.healthy + self.warning + self.excluded == self.total
+        self.error == 0
     }
 
     pub fn to_markdown(&self) -> String {
         let mut out = String::new();
         let show_affects = self.rows.iter().any(|row| row.affects.is_some());
-        let errors = self
-            .total
-            .saturating_sub(self.healthy + self.warning + self.excluded);
 
         out.push_str("# BioMCP Health Check\n\n");
         if show_affects {
@@ -62,7 +60,7 @@ impl HealthReport {
 
         out.push_str(&format!(
             "\nStatus: {} ok, {} error, {} excluded",
-            self.healthy, errors, self.excluded
+            self.healthy, self.error, self.excluded
         ));
         if self.warning > 0 {
             out.push_str(&format!(", {} warning", self.warning));

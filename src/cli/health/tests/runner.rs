@@ -17,6 +17,7 @@ fn markdown_shows_affects_column_when_present() {
         healthy: 1,
         warning: 0,
         excluded: 0,
+        error: 1,
         total: 2,
         rows: vec![
             HealthRow {
@@ -46,6 +47,7 @@ fn markdown_omits_affects_column_when_all_healthy() {
         healthy: 2,
         warning: 0,
         excluded: 0,
+        error: 0,
         total: 2,
         rows: vec![
             HealthRow {
@@ -75,6 +77,7 @@ fn markdown_decorates_keyed_success_rows_without_changing_status() {
         healthy: 1,
         warning: 0,
         excluded: 0,
+        error: 0,
         total: 1,
         rows: vec![HealthRow {
             api: "OncoKB".into(),
@@ -96,6 +99,7 @@ fn markdown_decorates_keyed_error_rows_without_changing_status() {
         healthy: 0,
         warning: 0,
         excluded: 0,
+        error: 1,
         total: 1,
         rows: vec![HealthRow {
             api: "OncoKB".into(),
@@ -154,6 +158,7 @@ fn all_healthy_includes_warning_and_excluded_rows() {
         healthy: 1,
         warning: 1,
         excluded: 1,
+        error: 0,
         total: 3,
         rows: vec![
             HealthRow {
@@ -181,6 +186,10 @@ fn all_healthy_includes_warning_and_excluded_rows() {
     };
 
     assert!(report.all_healthy());
+    assert_eq!(
+        report.healthy + report.warning + report.excluded + report.error,
+        report.total
+    );
 }
 
 #[test]
@@ -189,6 +198,7 @@ fn markdown_summary_reports_ok_error_excluded_and_warning_counts() {
         healthy: 1,
         warning: 1,
         excluded: 1,
+        error: 1,
         total: 4,
         rows: vec![
             HealthRow {
@@ -228,6 +238,17 @@ fn markdown_summary_reports_ok_error_excluded_and_warning_counts() {
 }
 
 #[test]
+fn empty_report_counts_reconcile() {
+    let report = report_from_outcomes(Vec::new());
+
+    assert_eq!(report.healthy, 0);
+    assert_eq!(report.warning, 0);
+    assert_eq!(report.excluded, 0);
+    assert_eq!(report.error, 0);
+    assert_eq!(report.total, 0);
+}
+
+#[test]
 fn report_counts_use_probe_class_not_status_prefixes() {
     let report = report_from_outcomes(vec![
         ProbeOutcome {
@@ -260,12 +281,31 @@ fn report_counts_use_probe_class_not_status_prefixes() {
             },
             class: ProbeClass::Warning,
         },
+        ProbeOutcome {
+            row: HealthRow {
+                api: "OpenFDA".into(),
+                status: "error".into(),
+                latency: "timeout".into(),
+                affects: Some("adverse-event search".into()),
+                key_configured: None,
+            },
+            class: ProbeClass::Error,
+        },
     ]);
 
     assert_eq!(report.healthy, 1);
     assert_eq!(report.warning, 1);
     assert_eq!(report.excluded, 1);
-    assert_eq!(report.total, 3);
+    assert_eq!(report.error, 1);
+    assert_eq!(report.total, 4);
+    assert_eq!(
+        report.healthy + report.warning + report.excluded + report.error,
+        report.total
+    );
+    assert!(!report.all_healthy());
+
+    let value = serde_json::to_value(&report).expect("serialize health report");
+    assert_eq!(value["error"], 1);
 }
 
 #[test]
