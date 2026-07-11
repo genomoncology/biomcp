@@ -445,7 +445,6 @@ file is being staged. A BioMCP asset handle should wait through that bounded
 staging state and still stream the final provider bytes.
 
 ```bash
-bash ../fixtures/reset-article-fulltext-source-fixture.sh cold-storage
 ../../tools/biomcp-ci get article 22663017 asset cold-storage-supplement.pdf | mustmatch like "Figshare cold-storage fixture bytes"
 ```
 
