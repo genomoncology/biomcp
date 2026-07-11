@@ -108,7 +108,7 @@ pub(crate) async fn interaction_report_from_base(
     let identity = DdinterIdentity::with_aliases(&requested_name, Some(&anchor_name), &brand_names);
     let rows = client.interactions(&identity);
     let in_ddinter_coverage = client.contains_identity(&identity);
-    let mut interactions = aggregate_rows(&rows, &identity)?
+    let interactions = aggregate_rows(&rows, &identity)?
         .into_iter()
         .map(|interaction| DrugInteraction {
             description: interaction_description(&legacy_descriptions, &interaction.drug),
@@ -117,20 +117,11 @@ pub(crate) async fn interaction_report_from_base(
             partner_classes: Vec::new(),
         })
         .collect::<Vec<_>>();
-    interactions.sort_by(|a, b| {
-        severity_rank(b.level.as_deref())
-            .cmp(&severity_rank(a.level.as_deref()))
-            .then_with(|| a.drug.cmp(&b.drug))
-    });
-    let (interactions, total) = crate::cli::paginate_results(interactions, offset, limit);
+    let (interactions, total) = interaction_page(interactions, offset, limit);
     let count = interactions.len();
     let next_offset = offset.saturating_add(count);
-    let next_command = (next_offset < total).then(|| {
-        format!(
-            "biomcp drug interactions {} --limit {limit} --offset {next_offset}",
-            anchor_name.to_ascii_lowercase()
-        )
-    });
+    let next_command =
+        (next_offset < total).then(|| interaction_next_command(&anchor_name, limit, next_offset));
     let coverage_status = if in_ddinter_coverage {
         DrugInteractionCoverageStatus::InDdinterCoverage
     } else {
@@ -231,6 +222,33 @@ fn interaction_description(
     descriptions.get(&key).cloned()
 }
 
+fn interaction_page(
+    mut interactions: Vec<DrugInteraction>,
+    offset: usize,
+    limit: usize,
+) -> (Vec<DrugInteraction>, usize) {
+    interactions.sort_by(|a, b| {
+        severity_rank(b.level.as_deref())
+            .cmp(&severity_rank(a.level.as_deref()))
+            .then_with(|| a.drug.cmp(&b.drug))
+    });
+    crate::cli::paginate_results(interactions, offset, limit)
+}
+
+fn interaction_next_command(anchor_name: &str, limit: usize, offset: usize) -> String {
+    crate::next_command::NextCommand::biomcp()
+        .args([
+            "drug".to_string(),
+            "interactions".to_string(),
+            anchor_name.to_ascii_lowercase(),
+            "--limit".to_string(),
+            limit.to_string(),
+            "--offset".to_string(),
+            offset.to_string(),
+        ])
+        .render_shell()
+}
+
 fn severity_rank(level: Option<&str>) -> usize {
     match level
         .map(str::trim)
@@ -249,6 +267,43 @@ fn severity_rank(level: Option<&str>) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn interaction_pages_reconstruct_the_sorted_rows() {
+        let rows = [
+            ("Zulu", "Minor"),
+            ("Alpha", "Major"),
+            ("Beta", "Moderate"),
+            ("Gamma", "Major"),
+        ]
+        .into_iter()
+        .map(|(drug, level)| DrugInteraction {
+            drug: drug.to_string(),
+            level: Some(level.to_string()),
+            description: Some(format!("{drug} evidence")),
+            partner_classes: Vec::new(),
+        })
+        .collect::<Vec<_>>();
+
+        let (expected, _) = interaction_page(rows.clone(), 0, rows.len());
+        let (mut reconstructed, _) = interaction_page(rows.clone(), 0, 2);
+        reconstructed.extend(interaction_page(rows, 2, 2).0);
+
+        assert_eq!(
+            serde_json::to_value(reconstructed).expect("serialize reconstructed page"),
+            serde_json::to_value(expected).expect("serialize full sorted rows")
+        );
+    }
+
+    #[test]
+    fn interaction_next_command_quotes_multi_word_anchor() {
+        let command = interaction_next_command("Vitamin K", 25, 25);
+
+        assert_eq!(
+            command,
+            "biomcp drug interactions \"vitamin k\" --limit 25 --offset 25"
+        );
+    }
 
     #[test]
     fn interaction_description_uses_legacy_partner_narrative() {

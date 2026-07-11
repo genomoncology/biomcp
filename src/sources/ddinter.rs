@@ -240,6 +240,18 @@ fn load_index(root: &Path) -> Result<DdinterIndex, BioMcpError> {
 
 fn parse_csv_rows(file_name: &str, body: &[u8]) -> Result<Vec<DdinterInteractionRow>, BioMcpError> {
     let mut reader = ReaderBuilder::new().trim(csv::Trim::All).from_reader(body);
+    let headers = reader.headers().map_err(|source| BioMcpError::Api {
+        api: DDINTER_API.to_string(),
+        message: format!("{file_name} could not be parsed: {source}"),
+    })?;
+    for required in ["DDInterID_A", "Drug_A", "DDInterID_B", "Drug_B", "Level"] {
+        if !headers.iter().any(|header| header == required) {
+            return Err(BioMcpError::Api {
+                api: DDINTER_API.to_string(),
+                message: format!("{file_name} is missing required column {required}"),
+            });
+        }
+    }
     let mut out = Vec::new();
     for row in reader.deserialize::<DdinterCsvRow>() {
         let row = row.map_err(|source| BioMcpError::Api {
