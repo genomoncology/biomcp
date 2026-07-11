@@ -1249,6 +1249,8 @@ mod tests {
             indications: Vec::new(),
             interactions: Vec::new(),
             interaction_text: None,
+            interaction_pagination: None,
+            interaction_bundle_freshness: None,
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             faers_query: None,
@@ -1295,6 +1297,8 @@ mod tests {
             indications: Vec::new(),
             interactions: Vec::new(),
             interaction_text: None,
+            interaction_pagination: None,
+            interaction_bundle_freshness: None,
             pharm_classes: Vec::new(),
             top_adverse_events: Vec::new(),
             faers_query: None,
@@ -1362,6 +1366,8 @@ mod tests {
             indications: Vec::new(),
             interactions: Vec::new(),
             interaction_text: None,
+            interaction_pagination: None,
+            interaction_bundle_freshness: None,
             pharm_classes: vec!["PD-1 inhibitors".to_string()],
             top_adverse_events: Vec::new(),
             faers_query: None,
@@ -1393,7 +1399,18 @@ mod tests {
                 description: Some("May increase bleeding risk.".to_string()),
                 partner_classes: vec!["antiplatelets".to_string()],
             }],
-            class_summaries: Vec::new(),
+            pagination: crate::entities::drug::interactions::DrugInteractionPagination {
+                total: 1,
+                count: 1,
+                offset: 0,
+                limit: 25,
+                next_command: None,
+            },
+            bundle_freshness:
+                crate::entities::drug::interactions::DrugInteractionBundleFreshness {
+                    status:
+                        crate::entities::drug::interactions::DrugInteractionFreshnessStatus::Fresh,
+                },
             coverage_status:
                 crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage,
             source_note: None,

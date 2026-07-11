@@ -105,6 +105,11 @@ DDInter, EMA, WHO Prequalification, CDC CVX/MVX, GTR, and WHO IVD are local runt
 
 DDInter, EMA, WHO Prequalification, and WHO IVD use a 72-hour stale window;
 CDC CVX/MVX uses a 30-day refresh window; GTR uses a 7-day stale window.
+DDInter reads are distinct from maintenance: they load a complete local bundle
+immediately and report fresh/stale state without downloading. Only `biomcp
+ddinter sync` downloads DDInter data, staging and validating the complete bundle
+before publication. Interaction detail is sorted and deduplicated locally before
+bounded paging, with no per-partner enrichment calls or name-based class inference.
 
 This keeps local runtime readiness grounded in `src/cli/health/local.rs` and
 `src/sources/ddinter.rs` / `src/sources/ema.rs` / `src/sources/who_pq.rs` /

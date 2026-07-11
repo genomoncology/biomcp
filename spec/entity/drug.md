@@ -65,31 +65,6 @@ can render aggregate rankings.
 (../../tools/biomcp-ci drug adverse-events osimertinib --type recall --count patient.reaction.reactionmeddrapt.exact 2>&1 || true) | mustmatch like '--count are only valid for --type faers'
 ```
 
-## Structured Drug Interactions
-
-When the question is explicitly about drug-drug interactions, the helper should
-surface a dedicated DDInter-backed report instead of asking the operator to
-infer partner classes from a generic drug card.
-
-```bash
-../../tools/biomcp-ci drug interactions warfarin | mustmatch like '# warfarin
-## Interacting Drug Classes
-anti-infectives
-antiplatelets
-| statins |'
-```
-
-## Oncology Interaction Class Rollups
-
-The same helper should stay useful for oncology drugs, where class-level
-grouping is often more actionable than a long flat list of partner rows.
-
-```bash
-../../tools/biomcp-ci drug interactions imatinib | mustmatch like '# imatinib
-## Interacting Drug Classes
-| CYP3A4 |'
-```
-
 ## Indication Structured Search
 
 A structured indication miss is still informative. BioMCP should say that the
@@ -110,18 +85,6 @@ columns operators need for procurement and regulatory review.
 ../../tools/biomcp-ci get drug trastuzumab regulatory --region who | mustmatch like '## Regulatory (WHO Prequalification)
 | WHO ID | Type | Presentation / INN |
 Samsung Bioepis NL B.V.'
-```
-
-## Section Parity for Interaction Detail
-
-`get drug <name> interactions` should render the same DDInter-backed interaction
-contract as the helper instead of falling back to a separate low-fidelity
-interaction section.
-
-```bash
-../../tools/biomcp-ci get drug warfarin interactions | mustmatch like '## Interactions (DDInter)
-## Interacting Drug Classes
-anti-infectives'
 ```
 
 ## Targets & Trial Pivots

@@ -618,6 +618,8 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
         indications,
         interactions,
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes,
         top_adverse_events: Vec::new(),
         faers_query: None,

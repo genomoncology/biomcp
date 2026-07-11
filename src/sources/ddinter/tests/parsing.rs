@@ -33,6 +33,13 @@ fn parse_csv_rows_reads_expected_shape() {
 }
 
 #[test]
+fn parse_csv_rows_rejects_missing_required_columns() {
+    let err = parse_csv_rows("fixture.csv", b"garbage\n").unwrap_err();
+
+    assert!(err.to_string().contains("missing required column"));
+}
+
+#[test]
 fn parse_csv_rows_rejects_incomplete_rows() {
     let err = parse_csv_rows(
         "fixture.csv",
@@ -60,6 +67,7 @@ fn client_lookup_matches_both_sides_without_duplicates() {
 
     let client = DdinterClient {
         index: Arc::new(index),
+        freshness: DdinterBundleFreshness::Fresh,
     };
     let identity = DdinterIdentity::with_aliases("Warfarin", None, &["warfarin".to_string()]);
     let matches = client.interactions(&identity);
@@ -87,6 +95,7 @@ fn client_coverage_status_distinguishes_absent_drug_from_empty_matches() {
 
     let client = DdinterClient {
         index: Arc::new(index),
+        freshness: DdinterBundleFreshness::Fresh,
     };
     let uncovered = DdinterIdentity::with_aliases("dabigatran", None, &[]);
 

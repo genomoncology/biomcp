@@ -598,12 +598,16 @@ async fn populate_common_sections(
             requested_name.to_string(),
             drug.clone(),
             label_response.cloned(),
+            super::interactions::DEFAULT_INTERACTION_LIMIT,
+            0,
         )
         .await?;
         super::apply_interaction_report(drug, &report);
     } else {
         drug.interactions.clear();
         drug.interaction_text = None;
+        drug.interaction_pagination = None;
+        drug.interaction_bundle_freshness = None;
     }
 
     if section_flags.include_targets {

@@ -316,11 +316,11 @@ searches do not use the CVX root.
 
 ## 16) DDInter local data not available
 
-Drug interaction commands depend on the local DDInter CSV bundle. BioMCP
-auto-downloads the eight ATC-sliced DDInter files on first use for
-`biomcp drug interactions <name>` and `get drug <name> interactions`, but full
-`biomcp health` is still the right readiness surface when you need to debug the
-local DDInter state:
+`biomcp drug interactions <name>` and `get drug <name> interactions` depend on
+an installed local DDInter CSV bundle. Normal reads do not download or refresh
+it. Run `biomcp ddinter sync` explicitly
+to install or replace all eight ATC-sliced files. Full `biomcp health` is the
+readiness surface for debugging local DDInter state:
 
 ```bash
 biomcp health
@@ -335,7 +335,7 @@ Interpret the DDInter row like this:
 - `not configured`: no complete DDInter root was found at the default path, so DDInter-backed interaction rows are currently unavailable but the install is not considered broken
 - `error (missing: ...)`: BioMCP found a partial DDInter root or unreadable file; install the missing files or point `BIOMCP_DDINTER_DIR` at a complete bundle
 
-If a refresh fails, retry explicitly with `biomcp ddinter sync`:
+If an explicit refresh fails, the prior complete bundle remains usable. Retry with:
 
 ```bash
 biomcp ddinter sync

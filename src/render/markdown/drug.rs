@@ -64,7 +64,8 @@ pub fn drug_markdown_with_region(
         indications => &drug.indications,
         interactions => &drug.interactions,
         interaction_text => &drug.interaction_text,
-        interaction_class_summaries => crate::entities::drug::interaction_class_summaries(&drug.interactions),
+        interaction_pagination => &drug.interaction_pagination,
+        interaction_bundle_freshness => drug.interaction_bundle_freshness.as_ref().map(|value| value.status.as_str()),
         label => &drug.label,
         raw_label => raw_label,
         civic => &drug.civic,
@@ -102,24 +103,15 @@ pub fn drug_interaction_report_markdown(
     if let Some(note) = report.coverage_note.as_deref() {
         let _ = writeln!(out, "{note}\n");
     }
-    if !report.class_summaries.is_empty() {
-        out.push_str("## Interacting Drug Classes\n\n");
-        out.push_str("| Class | Interactions | Highest Level |\n");
-        out.push_str("|---|---|---|\n");
-        for row in &report.class_summaries {
-            let _ = writeln!(
-                out,
-                "| {} | {} | {} |",
-                markdown_cell(&row.class_name),
-                row.interaction_count,
-                row.highest_level
-                    .as_deref()
-                    .map(markdown_cell)
-                    .unwrap_or_else(|| "-".to_string()),
-            );
-        }
-        out.push('\n');
-    }
+    let _ = writeln!(
+        out,
+        "Returned: {} of {}\n\nPage: offset {}, limit {}\n\nDDInter bundle freshness: {}\n",
+        report.pagination.count,
+        report.pagination.total,
+        report.pagination.offset,
+        report.pagination.limit,
+        report.bundle_freshness.status.as_str(),
+    );
     if !report.interactions.is_empty() {
         out.push_str("## Interacting Drugs\n\n");
         out.push_str("| Interacting Drug | Level | Classes | Description |\n");
@@ -145,6 +137,9 @@ pub fn drug_interaction_report_markdown(
             );
         }
         out.push('\n');
+    }
+    if let Some(next_command) = report.pagination.next_command.as_deref() {
+        let _ = writeln!(out, "Continue with `{next_command}`.\n");
     }
     if let Some(label_text) = report.label_interaction_text.as_deref() {
         out.push_str("## Additive Label Text (OpenFDA)\n\n");

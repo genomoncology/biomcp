@@ -829,6 +829,7 @@ def test_ticket_377_renderer_envelope_specs_document_deterministic_coverage() ->
 ROUTINE_SPEC_PATHS = (
     "spec/entity/article.md",
     "spec/entity/disease-survival-fixture.md",
+    "spec/entity/drug-interactions.md",
     "spec/entity/study.md",
     "spec/entity/variant.md",
     "spec/surface/mcp.md",
@@ -841,6 +842,7 @@ ROUTINE_SPEC_PATHS = (
 )
 
 LIVE_SPEC_PATHS = (
+    "spec/entity/ddinter-live.md",
     "spec/entity/diagnostic.md",
     "spec/entity/disease.md",
     "spec/entity/drug.md",

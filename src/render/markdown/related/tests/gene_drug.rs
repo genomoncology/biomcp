@@ -163,6 +163,8 @@ fn related_drug_includes_pgx_search() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,

@@ -128,9 +128,10 @@ Interactions (DDInter-backed structured report with additive label text when ava
 biomcp get drug warfarin interactions
 ```
 
-This section now renders DDInter-backed partner rows, source-provided severity
-levels, and class rollups from the current local DDInter bundle. When the
-current bundle has no matching rows, BioMCP says that truthfully and does not
+This section renders up to 25 DDInter-backed partner rows, source-provided
+severity levels, total/returned counts, and fresh/stale state from the current
+local bundle. When more rows exist it points to `drug interactions` for paging.
+When the bundle has no matching rows, BioMCP says that truthfully and does not
 claim the drug has no clinical interactions.
 
 CIViC evidence and Drugs@FDA approvals:
@@ -269,9 +270,10 @@ CDC row meanings:
 
 Drug interaction commands read DDInter local data from `BIOMCP_DDINTER_DIR`
 first, then the platform data directory (`~/.local/share/biomcp/ddinter` on
-typical Linux systems). On first use, BioMCP auto-downloads the eight public
-DDInter CSV files into that root and refreshes stale files after 72 hours. Use
-`biomcp ddinter sync` to force a refresh at any time. DDInter's own terms warn
+typical Linux systems). Reads never download or refresh files, including when
+the installed bundle is older than 72 hours. Use `biomcp ddinter sync` for
+explicit maintenance. It validates all eight downloaded files before replacing
+the prior complete bundle. DDInter's own terms warn
 that absence from the database does not prove no interaction exists, so BioMCP
 keeps empty interaction results scoped to the current local bundle.
 
@@ -314,15 +316,17 @@ Interaction pivot:
 
 ```bash
 biomcp drug interactions warfarin
-biomcp drug interactions imatinib
-biomcp --json drug interactions warfarin | jq '._meta.next_commands'
+biomcp drug interactions warfarin --limit 25 --offset 25
+biomcp --json drug interactions warfarin | jq '{pagination, bundle_freshness}'
 ```
 
-`drug interactions <name>` resolves the anchor drug first, reports DDInter-backed
-partner rows plus class summaries, and uses helper-specific next commands for
-`biomcp get drug <canonical> safety` and
-`biomcp search article --drug <canonical> --limit 5`. `get drug <name>
-interactions` renders the same interaction report inside the standard drug card.
+`drug interactions <name>` resolves the anchor drug first, sorts and deduplicates
+the complete local match set, and returns 25 rows by default. `--limit` requests
+above 50 are capped at 50; `--offset` selects later pages. JSON and Markdown
+report total and returned counts, effective offset/limit, bundle freshness, and
+a continuation command when more rows exist. `get drug <name>
+interactions` renders the first 25 rows inside the standard drug card and points
+to the page-able helper when more rows exist.
 When the current DDInter download bundle has no matching rows, BioMCP says so
 without turning that source empty into a safety claim.
 
@@ -364,7 +368,8 @@ single-region wrapper fields `pagination`, `count`, and `results`.
 - Omitted `--region` on a plain name/alias search and explicit `--region all`
   include all three buckets under `regions`.
 - `biomcp --json drug interactions <name>` returns one canonical-anchor
-  interaction report with `interactions`, `class_summaries`, and the standard
+  interaction report with bounded `interactions`, `pagination`,
+  `bundle_freshness`, and the standard
   `_meta.evidence_urls`, `_meta.section_sources`, and helper-specific
   `_meta.next_commands`.
 
@@ -372,7 +377,7 @@ single-region wrapper fields `pagination`, `count`, and `results`.
 
 - Start with base `get` before requesting heavy sections.
 - Use `drug interactions <name>` when the question is explicitly about
-  interacting drugs or interaction classes for a known medication.
+  interacting drugs for a known medication.
 - Use target filters to narrow crowded drug classes.
 - Use `regulatory` with `--region who|all` when you need WHO Prequalification context.
 - Use `regulatory`, `safety`, or `shortage` with `--region eu|all` when you need EMA context; `ema` is accepted as an input alias for `eu`.

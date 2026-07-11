@@ -423,8 +423,17 @@ fn drug_interactions_parse_anchor_name() {
 
     match cli.command {
         Commands::Drug {
-            cmd: DrugCommand::Interactions { name },
-        } => assert_eq!(name, "warfarin"),
+            cmd:
+                DrugCommand::Interactions {
+                    name,
+                    limit,
+                    offset,
+                },
+        } => {
+            assert_eq!(name, "warfarin");
+            assert_eq!(limit, 25);
+            assert_eq!(offset, 0);
+        }
         other => panic!("unexpected command: {other:?}"),
     }
 }

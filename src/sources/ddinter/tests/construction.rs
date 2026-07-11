@@ -1,23 +1,17 @@
-//! Tier 2 - local-data construction. Pure: checks the DDInter sync/download
-//! plan and identity terms without network.
+//! Tier 2 - local-data construction. Pure: checks DDInter bundle state and
+//! identity terms without network.
 
 use super::super::*;
 
 #[test]
-fn sync_plan_downloads_missing_and_stale_files() {
+fn bundle_freshness_requires_all_files_to_be_fresh() {
     let root = tempfile::tempdir().expect("tempdir");
-    std::fs::write(root.path().join(DDINTER_REQUIRED_FILES[0]), b"ok").expect("write");
+    assert_eq!(bundle_freshness(root.path()), DdinterBundleFreshness::Stale);
 
-    let auto_plan = sync_plan(root.path(), DdinterSyncMode::Auto);
-    assert_eq!(auto_plan.len(), DDINTER_REQUIRED_FILES.len() - 1);
-    assert!(
-        !auto_plan
-            .iter()
-            .any(|(file_name, _)| *file_name == DDINTER_REQUIRED_FILES[0])
-    );
-
-    let force_plan = sync_plan(root.path(), DdinterSyncMode::Force);
-    assert_eq!(force_plan.len(), DDINTER_REQUIRED_FILES.len());
+    for file_name in DDINTER_REQUIRED_FILES {
+        std::fs::write(root.path().join(file_name), b"ok").expect("write");
+    }
+    assert_eq!(bundle_freshness(root.path()), DdinterBundleFreshness::Fresh);
 }
 
 #[test]

@@ -469,7 +469,7 @@ pub(super) fn paged_fetch_limit_for(
     Ok(limit.saturating_add(offset).min(max_limit))
 }
 
-pub(super) fn paginate_results<T>(rows: Vec<T>, offset: usize, limit: usize) -> (Vec<T>, usize) {
+pub(crate) fn paginate_results<T>(rows: Vec<T>, offset: usize, limit: usize) -> (Vec<T>, usize) {
     let total = rows.len();
     let paged = rows.into_iter().skip(offset).take(limit).collect();
     (paged, total)

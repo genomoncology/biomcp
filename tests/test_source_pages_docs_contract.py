@@ -127,7 +127,7 @@ SOURCE_PAGE_SPECS = {
     },
     "ddinter.md": {
         "title": "DDInter MCP Tool for Drug-Drug Interactions | BioMCP",
-        "description": "Use BioMCP to query DDInter-backed drug-drug interactions, severity levels, and class summaries through the local DDInter CSV bundle.",
+        "description": "Use BioMCP to query bounded DDInter-backed drug-drug interactions and severity levels through an installed local CSV bundle.",
         "api_access": "No BioMCP API key required.",
         "official_url": "https://ddinter.scbdd.com/download/",
         "required_intro_phrases": [
