@@ -393,7 +393,7 @@ make -C ../.. -n spec 2>&1 | mustmatch like "scripts/run-specs.sh"
 make -C ../.. -n spec-pr 2>&1 | mustmatch like "scripts/run-specs.sh"
 make -C ../.. -n spec-contracts 2>&1 | mustmatch like "scripts/run-specs.sh"
 make -C ../.. -n verify 2>&1 | mustmatch like "scripts/run-specs.sh"
-find ../../scripts -maxdepth 1 -name run-specs.sh -type f -exec sed -n '1,240p' {} \; | mustmatch like 'mustmatch test
+find ../../scripts -maxdepth 1 -name run-specs.sh -type f -exec sed -n '1,260p' {} \; | mustmatch like 'mustmatch test
 --lang bash
 --timeout 180
 SPEC_ROUTINE_PATHS
