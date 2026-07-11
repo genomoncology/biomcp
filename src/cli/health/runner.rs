@@ -277,6 +277,10 @@ pub(in crate::cli::health) fn report_from_outcomes(outcomes: Vec<ProbeOutcome>) 
         .iter()
         .filter(|outcome| outcome.class == ProbeClass::Excluded)
         .count();
+    let error = outcomes
+        .iter()
+        .filter(|outcome| outcome.class == ProbeClass::Error)
+        .count();
     let rows = outcomes
         .into_iter()
         .map(|outcome| outcome.row)
@@ -286,6 +290,7 @@ pub(in crate::cli::health) fn report_from_outcomes(outcomes: Vec<ProbeOutcome>) 
         healthy,
         warning,
         excluded,
+        error,
         total: rows.len(),
         rows,
     }

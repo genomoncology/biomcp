@@ -419,6 +419,9 @@ inventory ledger.
   local-data row, the CDC CVX/MVX local-data row, the GTR local-data row, the
   WHO IVD local-data row, the cache-writability row, and the cache-limits row
   because none of these are upstream API checks.
+- Both JSON and Markdown summaries use explicit `healthy`, `warning`, `excluded`,
+  and `error` counts. These categories reconcile with the report invariant
+  `healthy + warning + excluded + error == total`.
 - Partial upstream failures remain visible in the rendered report.
 - Current CLI behavior is report-first: the command exits `0` when the report
   renders, even if some upstream rows are failing.
