@@ -273,8 +273,19 @@ runtime layer can report a silent green.
 
 ```bash
 make -C ../.. -n test 2>&1 | mustmatch like 'cargo nextest run
-uv run --no-sync pytest tests/ -v
-uv run --no-sync mkdocs build --strict'
+cargo build --locked --profile spec
+/target/spec/biomcp" uv run --no-sync pytest tests/ -v
+/target/spec/biomcp" uv run --no-sync mkdocs build --strict'
+```
+
+## Routine Markdown Helpers Reuse The Selected Cargo Profile
+
+The local MCP client example is part of the executable-contract surface. It
+should use the gate's selected Cargo profile rather than silently compiling the
+BioMCP library again under Cargo's default debug profile.
+
+```bash
+rg -n '[c]argo run[^\n]*--example' ../../spec/entity ../../spec/surface | mustmatch ""
 ```
 
 ## Repository Lint Keeps The Quality Ratchet
@@ -298,7 +309,9 @@ spec subset from replacing the standard `lint`, `test`, and release-profile
 
 ```bash
 make -C ../.. -n release-gate 2>&1 | mustmatch like 'cargo nextest run
-cargo build --release --locked
+cargo build --locked --profile release
+/target/release/biomcp" uv run --no-sync pytest tests/ -v
+/target/release/biomcp" uv run --no-sync mkdocs build --strict
 make spec SPEC_PROFILE=release SPEC_BIN='
 ```
 
