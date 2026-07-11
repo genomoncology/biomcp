@@ -285,7 +285,7 @@ should use the gate's selected Cargo profile rather than silently compiling the
 BioMCP library again under Cargo's default debug profile.
 
 ```bash
-rg -n '[c]argo run[^\n]*--example' ../../spec/entity ../../spec/surface | mustmatch ""
+rg -nP '[c]argo run(?![^\n]*--profile)[^\n]*--example' ../../spec/entity ../../spec/surface | mustmatch ""
 ```
 
 ## Repository Lint Keeps The Quality Ratchet
