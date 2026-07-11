@@ -272,7 +272,7 @@ run the Rust unit suite and the Python CLI/MCP/docs contract lane so neither
 runtime layer can report a silent green.
 
 ```bash
-env -u BIOMCP_BIN make -C ../.. -n test 2>&1 | mustmatch like 'cargo nextest run
+env -u BIOMCP_BIN -u SPEC_PROFILE make -C ../.. -n test 2>&1 | mustmatch like 'cargo nextest run
 cargo build --locked --profile spec
 /target/spec/biomcp" uv run --no-sync pytest tests/ -v
 /target/spec/biomcp" uv run --no-sync mkdocs build --strict'
@@ -308,7 +308,7 @@ spec subset from replacing the standard `lint`, `test`, and release-profile
 `spec` gate.
 
 ```bash
-env -u BIOMCP_BIN make -C ../.. -n release-gate 2>&1 | mustmatch like 'cargo nextest run
+env -u BIOMCP_BIN -u SPEC_PROFILE make -C ../.. -n release-gate 2>&1 | mustmatch like 'cargo nextest run
 cargo build --locked --profile release
 /target/release/biomcp" uv run --no-sync pytest tests/ -v
 /target/release/biomcp" uv run --no-sync mkdocs build --strict
