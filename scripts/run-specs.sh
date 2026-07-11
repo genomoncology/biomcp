@@ -118,6 +118,16 @@ run_live_ddinter_root() {
   rm -rf "$BIOMCP_DDINTER_DIR"
 }
 
+cleanup_article_fixture() {
+  bash spec/fixtures/cleanup-article-fulltext-source-fixture.sh "$ROOT"
+}
+
+run_article_fixture() {
+  bash spec/fixtures/setup-article-fulltext-source-fixture.sh "$ROOT"
+  register_cleanup cleanup_article_fixture
+  source_if_present "$ROOT/.cache/spec-article-fulltext-source-env"
+}
+
 cleanup_ctgov_fixture() {
   bash spec/fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh "$ROOT"
 }
@@ -161,6 +171,7 @@ case "$mode" in
     timeout_args=(--timeout 180)
     paths=("${SPEC_ROUTINE_PATHS[@]}")
     mustmatch_path_dir="$(mustmatch_dir)"
+    run_article_fixture
     run_study_fixture
     run_ddinter_fixture
     run_ctgov_fixture
@@ -175,6 +186,7 @@ case "$mode" in
       spec/surface/trial-retirement.md
     )
     mustmatch_path_dir="$(mustmatch_dir)"
+    run_article_fixture
     run_study_fixture
     run_ctgov_fixture
     ;;

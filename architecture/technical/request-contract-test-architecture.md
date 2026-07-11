@@ -117,10 +117,15 @@ Current invariants:
 - `tools/biomcp-ci` remains the executable-spec wrapper for cache roots, XDG
   roots, key stripping, and warm replay in live/operator lanes.
 - Fixture-backed routine specs may stand up local HTTP sources through existing
-  `BIOMCP_*_BASE` seams when the shipped CLI path is HTTP-native. The disease
-  survival fixture uses `BIOMCP_MYDISEASE_BASE` for deterministic CML grounding
-  and `BIOMCP_SEER_BASE` for canned SEER catalog/survival payloads, preserving
-  the real request/response path without public upstream dependency.
+  `BIOMCP_*_BASE` seams when the shipped CLI path is HTTP-native. The shared
+  runner owns setup and composed cleanup on success, failure, and catchable
+  signals; executable Markdown owns only BioMCP commands and assertions. The
+  article fixture is shared once per routine invocation and resets its
+  assertion-relevant cold-storage download counter at the fixed article metadata
+  boundary, leaving unrelated fixture state intact. The disease survival fixture
+  uses `BIOMCP_MYDISEASE_BASE` for deterministic CML grounding and
+  `BIOMCP_SEER_BASE` for canned SEER catalog/survival payloads, preserving the
+  real request/response path without public upstream dependency.
 - `tools/biomcp-verify-live` owns source-specific live-lane classification for
   known operator-pending states. CPIC `permission denied to set role "web_anon"`
   auth failures and NIH Reporter funding-table/source unavailability are reported
