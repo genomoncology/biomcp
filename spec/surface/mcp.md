@@ -112,7 +112,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get
+cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
 search schema includes entity enum and bounded limit
@@ -238,7 +238,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --example rmcp_streamable_http_contract -- remote-workflow "$port" | mustmatch like 'Command: biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
+cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- remote-workflow "$port" | mustmatch like 'Command: biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
 # Study Mutation Frequency: TP53 (msk_impact_2017)'
 ```
 
@@ -258,7 +258,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --example rmcp_streamable_http_contract -- boundaries "$port" | mustmatch like 'CLI-only over MCP
+cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- boundaries "$port" | mustmatch like 'CLI-only over MCP
 workstation-local filesystem paths
 BioMCP allows read-only commands only
 # Study Mutation Frequency: TP53 (msk_impact_2017)

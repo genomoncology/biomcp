@@ -1197,9 +1197,10 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp" in makefile
     assert 'SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)' in makefile
     assert "SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))" in makefile
-    assert "SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE))" in makefile
+    assert "SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE) --bin biomcp --example rmcp_streamable_http_contract)" in makefile
     assert re.search(
-        r"^release-gate: lint test\n"
+        r"^release-gate: lint\n"
+        r'\t\$\(MAKE\) test SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"\n'
         r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"$',
         makefile,
         flags=re.MULTILINE,
@@ -1217,14 +1218,14 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^spec:\n"
         r"\t\$\(SPEC_BUILD\)\n"
-        r'\tBIOMCP_BIN="\$\(SPEC_RUN_BIN\)" bash scripts/run-specs\.sh spec$',
+        r'\tSPEC_PROFILE="\$\(SPEC_PROFILE\)" BIOMCP_BIN="\$\(SPEC_RUN_BIN\)" bash scripts/run-specs\.sh spec$',
         makefile,
         flags=re.MULTILINE,
     ), "spec: must run through scripts/run-specs.sh with the selected binary"
     assert re.search(
         r"^spec-pr:\n"
         r"\t\$\(SPEC_BUILD\)\n"
-        r'\tBIOMCP_BIN="\$\(SPEC_RUN_BIN\)" bash scripts/run-specs\.sh spec-pr$',
+        r'\tSPEC_PROFILE="\$\(SPEC_PROFILE\)" BIOMCP_BIN="\$\(SPEC_RUN_BIN\)" bash scripts/run-specs\.sh spec-pr$',
         makefile,
         flags=re.MULTILINE,
     ), "spec-pr: must run through scripts/run-specs.sh with the selected binary"
@@ -1251,10 +1252,10 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "PY_PATHS" in runner and "run_python_contracts" in runner
     assert re.search(
         r"^test-contracts:\n"
-        r"\tcargo build --release --locked\n"
+        r"\t\$\(SPEC_BUILD\)\n"
         r"\t\$\(MAKE\) sync-python-dev\n"
-        r'\tuv run --no-sync pytest tests/ -v\n'
-        r"\tuv run --no-sync mkdocs build --strict$",
+        r'\tBIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync pytest tests/ -v\n'
+        r'\tBIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync mkdocs build --strict$',
         makefile,
         flags=re.MULTILINE,
     )
@@ -1485,12 +1486,9 @@ def test_runtime_contract_docs_and_scripts_align_on_release_target() -> None:
     assert "make test-contracts" in runbook
     assert "S2_API_KEY" in runbook
     assert "./target/release/biomcp article citations 22663011 --limit 3" in runbook
-    assert (
-        "`make test-contracts` runs `cargo build --release --locked`, "
-        '`uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, '
-        "and `uv run --no-sync mkdocs build --strict` - the same Python/docs steps that `make test` and PR CI `contracts` require."
-        in runbook
-    )
+    assert "`make test-contracts` builds the selected contract profile" in runbook
+    assert "Routine `make test` and `make spec` therefore share `target/spec/biomcp`" in runbook
+    assert "`make release-gate` explicitly selects `target/release/biomcp`" in runbook
     assert "docs/user-guide/cli-reference.md" in runbook
     assert "docs/reference/mcp-server.md" in runbook
 

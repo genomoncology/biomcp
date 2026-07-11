@@ -9,7 +9,7 @@
 | `make release-live-smoke` | compatibility alias for operators that still use the old live-lane name | n/a | delegates to `make verify` | not part of routine gates |
 | `make spec-pr` | PR CI canary and repo-local debugging of the offline executable corpus | `180s` per heading | explicit `SPEC_ROUTINE_PATHS`: local/fixture-backed CLI/MCP Markdown specs plus the parallel-isolation pytest canary | CI restores `.cache/biomcp-specs/`; cache hits export `BIOMCP_SPEC_CACHE_HIT=1`, which makes `tools/biomcp-ci` replay the warm HTTP cache with `BIOMCP_CACHE_MODE=infinite` |
 | `make spec` | repo-local routine spec gate and spec debugging | `180s` per heading | the same offline `SPEC_ROUTINE_PATHS` set as `make spec-pr` | uses the same wrapper/cache root; it should pass with external network blocked while local mock servers remain reachable |
-| `make test-contracts` | PR contracts lane and local docs/Python validation | n/a | Rust release build plus Python/docs contract checks | independent of the executable-spec wrapper |
+| `make test-contracts` | PR contracts lane and local docs/Python validation | n/a | selected contract build plus Python/docs contract checks | routine runs share `target/spec/biomcp` with `make spec`; `release-gate` selects `target/release/biomcp` for both consumers |
 
 Routine validation now uses offline/deterministic lanes: `make spec` and
 `make spec-pr` run only explicit `SPEC_ROUTINE_PATHS`, and `make spec-contracts`
@@ -108,6 +108,26 @@ on `2026-05-23` for the legacy deterministic subset and in the `spec-only`
 validation-profile comment. After this cleanup, `/usr/bin/time -p make
 spec-contracts` in this worktree recorded `real 337.47`, `user 2.51`, and `sys
 5.92` on 2026-06-17.
+
+## Contract Profile Timing Record
+
+Timing is observational rather than a gate. On beelink on 2026-07-11, the
+pre-change cold `make spec` run spent `114s` compiling the spec profile and
+`704.28s` wall-clock overall; that baseline did not expose separate nextest,
+Python, or MkDocs timings. Post-change observations on the same machine were:
+
+| Phase | Cold observation | Warm observation |
+|---|---:|---:|
+| selected `spec` compile, including the MCP example | `95s` | `0.20s` Cargo freshness |
+| nextest | not separately captured | `14.85s` |
+| Python contracts | not separately captured | `28.28s` |
+| strict MkDocs | not separately captured | `1.36s` |
+| mustmatch routine corpus | not separately captured | about `579s` after subtracting the `95s` compile from the `673.69s` gate |
+| selected `release` compile, including the MCP example | `313s` | not separately captured |
+
+The complete warm routine `make test` was `46.06s`. Missing cold phase values
+are recorded as unavailable rather than inferred from aggregate runs. These
+observations make compile reuse visible without introducing a timing SLA.
 
 ## Per-Section Warm Ceilings
 

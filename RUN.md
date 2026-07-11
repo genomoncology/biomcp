@@ -116,7 +116,8 @@ Use `make lint`, `make test`, and `make spec` for the canonical local gates.
 `cargo nextest run` plus the Python/docs contract lane, so landing-copy,
 Python, and strict-docs regressions fail the same local test gate. Use
 `make release-gate` for the single routine release-readiness signal; it runs
-`lint test spec` directly. There is no supported `make check` command. Use
+`lint test spec` directly, with the release profile selected for both
+executable-contract consumers. There is no supported `make check` command. Use
 `make verify` only as an explicit opt-in live public-upstream confidence lane;
 `make release-live-smoke` is a compatibility alias for that operator lane.
 `make spec-pr` remains available for the offline executable-spec corpus by
@@ -139,7 +140,7 @@ to rerun just the Python/docs contract lane. Repo-root Ruff still runs through
 scratch experiment scripts do not block the production Python lint gate. Use
 `git commit --no-verify` to skip the hook for a one-off commit.
 
-`make test-contracts` runs `cargo build --release --locked`, `uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, and `uv run --no-sync mkdocs build --strict` - the same Python/docs steps that `make test` and PR CI `contracts` require. The `--no-install-project`/`--no-sync` split is intentional: Python/docs lanes install only Python dev tooling and exercise the already-built `target/release/biomcp` binary instead of rebuilding the maturin package into `.venv`. `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
+`make test-contracts` builds the selected contract profile, then runs `uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, and `uv run --no-sync mkdocs build --strict` with its absolute binary path in `BIOMCP_BIN`. Routine `make test` and `make spec` therefore share `target/spec/biomcp`; `make release-gate` explicitly selects `target/release/biomcp` for both lanes. The `--no-install-project`/`--no-sync` split is intentional: Python/docs lanes install only Python dev tooling and exercise the selected binary instead of rebuilding the maturin package into `.venv`. `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
 
 ## Smoke Checks
 
