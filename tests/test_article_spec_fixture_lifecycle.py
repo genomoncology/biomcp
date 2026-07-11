@@ -226,6 +226,15 @@ def test_concurrent_workspaces_have_distinct_article_fixture_ownership(tmp_path:
             host, port_text = item["BIOMCP_FIGSHARE_BASE"].removeprefix("http://").split(":")
             with socket.create_connection((host, int(port_text)), timeout=1):
                 pass
+        subprocess.run(
+            ["bash", "spec/fixtures/cleanup-article-fulltext-source-fixture.sh", str(workspaces[0])],
+            cwd=workspaces[0],
+            check=True,
+        )
+        first_pid = exports[0]["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
+        second_pid = exports[1]["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
+        assert not Path(f"/proc/{first_pid}").exists()
+        assert Path(f"/proc/{second_pid}").exists()
     finally:
         for workspace in workspaces:
             subprocess.run(
