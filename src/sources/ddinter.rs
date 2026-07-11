@@ -64,7 +64,6 @@ const DDINTER_MAX_BODY_BYTES: usize = 8 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DdinterSyncMode {
-    Auto,
     Force,
 }
 
@@ -105,9 +104,16 @@ pub(crate) struct DdinterInteractionRow {
     pub level: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DdinterBundleFreshness {
+    Fresh,
+    Stale,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct DdinterClient {
     index: Arc<DdinterIndex>,
+    freshness: DdinterBundleFreshness,
 }
 
 #[derive(Debug, Default)]
@@ -131,14 +137,11 @@ struct DdinterCsvRow {
 }
 
 impl DdinterClient {
-    pub(crate) async fn ready(mode: DdinterSyncMode) -> Result<Self, BioMcpError> {
+    pub(crate) async fn ready() -> Result<Self, BioMcpError> {
         let root = resolve_ddinter_root();
-        let refreshed = sync_ddinter_root(&root, mode).await?;
-        if refreshed {
-            evict_cached_index(&root);
-        }
         let index = cached_index_for_root(&root)?;
-        Ok(Self { index })
+        let freshness = bundle_freshness(&root);
+        Ok(Self { index, freshness })
     }
 
     pub(crate) async fn sync(mode: DdinterSyncMode) -> Result<(), BioMcpError> {
@@ -170,6 +173,10 @@ impl DdinterClient {
             .terms()
             .iter()
             .any(|term| self.index.by_name.contains_key(term))
+    }
+
+    pub(crate) fn freshness(&self) -> DdinterBundleFreshness {
+        self.freshness
     }
 }
 
@@ -265,28 +272,17 @@ fn file_is_stale(path: &Path, stale_after: Duration) -> bool {
         .ok()
         .and_then(|metadata| metadata.modified().ok())
         .and_then(|modified| std::time::SystemTime::now().duration_since(modified).ok())
-        .is_some_and(|age| age >= stale_after)
+        .is_none_or(|age| age >= stale_after)
 }
 
-fn sync_plan(root: &Path, mode: DdinterSyncMode) -> Vec<(&'static str, &'static str)> {
-    DDINTER_BUNDLE
+fn bundle_freshness(root: &Path) -> DdinterBundleFreshness {
+    if DDINTER_REQUIRED_FILES
         .iter()
-        .copied()
-        .filter(|(file_name, _)| {
-            matches!(mode, DdinterSyncMode::Force)
-                || !root.join(file_name).is_file()
-                || file_is_stale(&root.join(file_name), DDINTER_STALE_AFTER)
-        })
-        .collect()
-}
-
-fn sync_intro(plan_len: usize, mode: DdinterSyncMode) -> &'static str {
-    if matches!(mode, DdinterSyncMode::Force) {
-        "Refreshing"
-    } else if plan_len == DDINTER_BUNDLE.len() {
-        "Downloading"
+        .any(|file_name| file_is_stale(&root.join(file_name), DDINTER_STALE_AFTER))
+    {
+        DdinterBundleFreshness::Stale
     } else {
-        "Updating"
+        DdinterBundleFreshness::Fresh
     }
 }
 
@@ -297,62 +293,62 @@ fn write_stderr_line(line: &str) -> Result<(), BioMcpError> {
 }
 
 async fn sync_ddinter_root(root: &Path, mode: DdinterSyncMode) -> Result<bool, BioMcpError> {
-    let plan = sync_plan(root, mode);
-    if plan.is_empty() {
-        return Ok(false);
-    }
+    let parent = root.parent().unwrap_or_else(|| Path::new("."));
+    tokio::fs::create_dir_all(parent).await?;
+    let root_name = root
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("ddinter");
+    let stage = parent.join(format!(".{root_name}.stage-{}", std::process::id()));
+    let backup = parent.join(format!(".{root_name}.backup-{}", std::process::id()));
+    let _ = tokio::fs::remove_dir_all(&stage).await;
+    let _ = tokio::fs::remove_dir_all(&backup).await;
+    tokio::fs::create_dir(&stage).await?;
 
-    tokio::fs::create_dir_all(root).await?;
-    write_stderr_line(&format!(
-        "{} DDInter data (eight DDInter CSV files)...",
-        sync_intro(plan.len(), mode)
-    ))?;
+    write_stderr_line("Refreshing DDInter data (eight DDInter CSV files)...")?;
 
-    let mut fatal_errors = Vec::new();
-    let mut refreshed_any = false;
-    for (file_name, url) in plan {
-        if let Err(err) = sync_export(root, file_name, url, mode).await {
-            let path = root.join(file_name);
-            if path.is_file() {
-                write_stderr_line(&format!(
-                    "Warning: DDInter refresh failed for {file_name}: {err}. Using existing data."
-                ))?;
-                continue;
-            }
-            fatal_errors.push(format!("{file_name}: {err}"));
-        } else {
-            refreshed_any = true;
+    for (file_name, url) in DDINTER_BUNDLE {
+        if let Err(err) = sync_export(&stage, file_name, url, mode).await {
+            let _ = tokio::fs::remove_dir_all(&stage).await;
+            return Err(ddinter_sync_error(root, format!("{file_name}: {err}")));
         }
     }
-
-    let missing = ddinter_missing_files(root, DDINTER_REQUIRED_FILES);
-    if missing.is_empty() {
-        return Ok(refreshed_any);
+    if let Err(err) = load_index(&stage) {
+        let _ = tokio::fs::remove_dir_all(&stage).await;
+        return Err(err);
     }
 
-    let detail = if fatal_errors.is_empty() {
-        format!("Missing required DDInter file(s): {}", missing.join(", "))
-    } else {
-        format!(
-            "{} Missing required DDInter file(s): {}",
-            fatal_errors.join("; "),
-            missing.join(", ")
-        )
-    };
-    Err(ddinter_sync_error(root, detail))
+    let had_live_bundle = root.exists();
+    if had_live_bundle {
+        tokio::fs::rename(root, &backup).await?;
+    }
+    if let Err(err) = tokio::fs::rename(&stage, root).await {
+        if had_live_bundle {
+            let _ = tokio::fs::rename(&backup, root).await;
+        }
+        let _ = tokio::fs::remove_dir_all(&stage).await;
+        return Err(ddinter_sync_error(
+            root,
+            format!("Could not publish bundle: {err}"),
+        ));
+    }
+    if had_live_bundle {
+        let _ = tokio::fs::remove_dir_all(&backup).await;
+    }
+    Ok(true)
 }
 
 async fn sync_export(
     root: &Path,
     file_name: &str,
     url: &str,
-    mode: DdinterSyncMode,
+    _mode: DdinterSyncMode,
 ) -> Result<(), BioMcpError> {
     let client = crate::sources::shared_client()?;
-    let mut request = client.get(url).with_extension(CacheMode::NoStore);
-    if matches!(mode, DdinterSyncMode::Force) {
-        request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
-    }
+    let request = client
+        .get(url)
+        .with_extension(CacheMode::NoStore)
+        .header(reqwest::header::CACHE_CONTROL, "no-cache");
 
     let response = request.send().await?;
     let status = response.status();

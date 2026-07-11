@@ -55,7 +55,7 @@ Examples:
 ```bash
 biomcp search drug --indication "myasthenia gravis" --limit 5 --json
 biomcp get drug warfarin --json
-biomcp drug interactions warfarin --json
+biomcp drug interactions warfarin --limit 25 --offset 0 --json
 biomcp get drug aspirin --json
 ```
 
@@ -565,7 +565,7 @@ biomcp variant normalize all 'NM_004448.2:c.829G>T'
 `biomcp variant normalize ... --json` always writes parseable JSON on exit 0. If no provider returns a normalized form, the payload uses `status: "no_result"`, an empty `results` list, a clear `message`, per-service details, and `_meta.next_commands`.
 
 ```bash
-biomcp drug interactions warfarin
+biomcp drug interactions warfarin --limit 25 --offset 25
 biomcp drug adverse-events pembrolizumab
 biomcp drug adverse-events osimertinib --count patient.reaction.reactionmeddrapt.exact
 biomcp drug trials pembrolizumab

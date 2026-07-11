@@ -21,6 +21,8 @@ fn related_drug_suggests_review_when_label_and_indications_are_sparse() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,

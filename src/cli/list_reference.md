@@ -130,8 +130,8 @@ New to BioMCP? Try:
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
 - `variant articles <id>`
 - `drug trials <name>`
-- `drug interactions <name>` - DDInter-backed drug-drug interactions
-  - `--json` adds class summaries and helper follow-ups
+- `drug interactions <name> [--limit <N>] [--offset <N>]` - bounded local DDInter-backed drug-drug interactions
+  - defaults to 25 rows, caps pages at 50, and reports fresh/stale bundle state
 - `drug adverse-events <name>` - FAERS-first adverse-event lookup
   - FAERS 404 falls back to ClinicalTrials.gov trial-reported adverse events
 - `disease trials <name>`

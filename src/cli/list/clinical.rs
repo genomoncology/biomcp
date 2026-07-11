@@ -144,7 +144,7 @@ pub(super) fn list_drug() -> String {
 - `get drug <name> shortage [--region <us|eu|ema|all>]` - query current shortage status
 - `get drug <name> targets` - generic targets from ChEMBL/OpenTargets plus additive CIViC variant-target annotations when available
 - `get drug <name> indications` - enrich with OpenTargets indications
-- `get drug <name> interactions` - DDInter-backed structured interaction rows plus class rollups; empty states stay scoped to the current DDInter download bundle
+- `get drug <name> interactions` - the first 25 local DDInter-backed rows with totals, freshness, and helper continuation guidance; empty states stay scoped to the current bundle
 - `get drug <name> civic` - CIViC therapy evidence/assertion summary
 - `get drug <name> approvals` - Drugs@FDA approval/application details (US-only legacy section)
 - `get drug <name> all [--region <us|eu|ema|who|all>]` - include all sections
@@ -167,7 +167,7 @@ pub(super) fn list_drug() -> String {
 ## Helpers
 
 - `drug trials <name> [--no-alias-expand]`
-- `drug interactions <name>` - DDInter-backed structured drug-drug interactions with partner rows, class summaries, and helper-specific JSON follow-ups
+- `drug interactions <name> [--limit <N>] [--offset <N>]` - DDInter-backed local interaction pages; defaults to 25 rows, caps pages at 50, and reports bundle freshness
 - `drug adverse-events <name>` - checks FAERS first, accepts FAERS filters including `--reaction`, `--outcome`, `--serious`, `--date-from`, `--date-to`, `--suspect-only`, `--sex`, `--age-min`, `--age-max`, `--reporter`, `--count <field>`, and `--type`, distinguishes FAERS 404 from FAERS 200+empty results, and falls back to ClinicalTrials.gov trial-reported adverse events only on FAERS 404
 
 ## JSON Output
@@ -180,7 +180,7 @@ pub(super) fn list_drug() -> String {
 - Structured indication searches with matching results can also include `_meta.workflow` and `_meta.ladder[]` for the `treatment-lookup` workflow.
 - Non-vaccine searches keep `biomcp get drug <name>` as the preferred follow-up; WHO vaccine-only results stay search-only and omit broken `get drug` guidance.
 - `biomcp list drug` is always included so agents can inspect the full filter surface.
-- `biomcp --json drug interactions <name>` returns the canonical anchor drug, interaction rows, class summaries, and helper-specific `_meta.next_commands` for `biomcp get drug <canonical> safety` plus `biomcp search article --drug <canonical> --limit 5`.
+- `biomcp --json drug interactions <name>` returns the canonical anchor drug, bounded interaction rows, `pagination`, `bundle_freshness`, and helper-specific `_meta.next_commands` for safety and literature follow-ups.
 - `biomcp --json drug adverse-events <name>` keeps the FAERS `summary` / `results` / `count` fields, adds `faers_not_found`, and includes `trial_adverse_events` only when the ClinicalTrials.gov fallback returns posted trial adverse-event terms.
 
 ## Notes
@@ -196,7 +196,7 @@ pub(super) fn list_drug() -> String {
 - Omitting `--region` on `get drug <name> regulatory` is the one implicit combined-region get path; other no-flag `get drug` shapes stay on the default U.S. path.
 - WHO vaccine support in this ticket is search-only; `get drug <name> regulatory --region who|all` remains finished-pharma/API only.
 - `drug trials <name>` inherits CTGov intervention alias expansion, adds `Matched Intervention` / `matched_intervention_label` when an alternate alias matched first, and accepts `--no-alias-expand` for literal matching.
-- Drug interaction commands auto-download the DDInter CSV bundle into `BIOMCP_DDINTER_DIR` or the default data directory on first use; empty results stay scoped to the current DDInter bundle instead of claiming clinical safety.
+- Drug interaction reads use the installed DDInter CSV bundle without downloading or refreshing it; run `biomcp ddinter sync` explicitly for maintenance. Empty results stay scoped to the current bundle instead of claiming clinical safety.
 - `drug adverse-events <name>` explains when a drug is absent from FAERS versus present with no matching FAERS events; only the FAERS-404 branch queries ClinicalTrials.gov. The default summary uses an OpenFDA aggregate reaction-count query; `--count <field>` renders the requested aggregate ranking directly.
 - EU regional commands auto-download the EMA human-medicines JSON feeds into `BIOMCP_EMA_DIR` or the default data directory on first use.
 - Default/EU vaccine brand lookups and explicit WHO vaccine name/brand searches can also auto-download the CDC CVX/MVX bundle into `BIOMCP_CVX_DIR` or the default data directory on first use.

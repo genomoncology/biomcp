@@ -13,8 +13,8 @@ mod test_support;
 pub use self::get::{get, get_with_region};
 pub(crate) use self::get::{resolve_trial_aliases, resolve_trial_canonical_name};
 pub(crate) use self::interactions::{
-    DrugInteractionReport, apply_interaction_report, interaction_class_summaries,
-    interaction_report, interaction_report_from_base,
+    DrugInteractionReport, apply_interaction_report, interaction_report,
+    interaction_report_from_base,
 };
 pub use self::query::search_query_summary;
 #[allow(unused_imports)]
@@ -74,6 +74,10 @@ pub struct Drug {
     pub interactions: Vec<DrugInteraction>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub interaction_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interaction_pagination: Option<interactions::DrugInteractionPagination>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interaction_bundle_freshness: Option<interactions::DrugInteractionBundleFreshness>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pharm_classes: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

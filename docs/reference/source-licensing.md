@@ -745,12 +745,12 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - BioMCP surfaces: `biomcp drug interactions <name>; get drug <name> interactions; biomcp health; biomcp ddinter sync`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
-- Provider access / registration: on-demand local download by BioMCP on first interaction use, or manual preseed via `BIOMCP_DDINTER_DIR`
+- Provider access / registration: explicit local download with `biomcp ddinter sync`, or manual preseed via `BIOMCP_DDINTER_DIR`
 - License / terms summary: CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists
 - Redistribution / reuse summary: reuse requires attribution, non-commercial use, and ShareAlike treatment; do not turn missing rows into safety claims or assume commercial redistribution rights
 - Official terms URL: <https://ddinter.scbdd.com/terms/>
 - Reviewed on: `2026-04-25`
-- Notes: BioMCP auto-downloads `ddinter_downloads_code_A.csv`, `ddinter_downloads_code_B.csv`, `ddinter_downloads_code_D.csv`, `ddinter_downloads_code_H.csv`, `ddinter_downloads_code_L.csv`, `ddinter_downloads_code_P.csv`, `ddinter_downloads_code_R.csv`, and `ddinter_downloads_code_V.csv` into `BIOMCP_DDINTER_DIR` or the default data directory on first use, refreshes stale files after 72 hours, supports explicit refresh via `biomcp ddinter sync`, and phrases empties as current-bundle misses instead of clinical absence.
+- Notes: BioMCP reads the eight required DDInter CSV files from `BIOMCP_DDINTER_DIR` or the default data directory without automatic maintenance. `biomcp ddinter sync` explicitly downloads, validates, and publishes a complete replacement bundle. Reads report fresh/stale state, and empties remain current-bundle misses instead of clinical absence.
 
 ### gnomAD
 

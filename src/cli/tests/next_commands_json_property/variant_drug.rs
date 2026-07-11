@@ -73,6 +73,8 @@ fn drug_json_next_commands_parse() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -104,7 +106,16 @@ fn drug_interaction_report_json_next_commands_include_helper_follow_ups() {
         drugbank_id: Some("DB00682".to_string()),
         chembl_id: Some("CHEMBL88".to_string()),
         interactions: Vec::new(),
-        class_summaries: Vec::new(),
+        pagination: crate::entities::drug::interactions::DrugInteractionPagination {
+            total: 0,
+            count: 0,
+            offset: 0,
+            limit: 25,
+            next_command: None,
+        },
+        bundle_freshness: crate::entities::drug::interactions::DrugInteractionBundleFreshness {
+            status: crate::entities::drug::interactions::DrugInteractionFreshnessStatus::Fresh,
+        },
         coverage_status:
             crate::entities::drug::interactions::DrugInteractionCoverageStatus::InDdinterCoverage,
         source_note: Some(

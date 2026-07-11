@@ -23,6 +23,8 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: Some("DRUG INTERACTIONS\n\nWarfarin interacts with aspirin.".to_string()),
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -67,6 +69,8 @@ fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -97,7 +101,16 @@ fn drug_interaction_report_markdown_renders_not_in_coverage_signal() {
         drugbank_id: None,
         chembl_id: None,
         interactions: Vec::new(),
-        class_summaries: Vec::new(),
+        pagination: crate::entities::drug::interactions::DrugInteractionPagination {
+            total: 0,
+            count: 0,
+            offset: 0,
+            limit: 25,
+            next_command: None,
+        },
+        bundle_freshness: crate::entities::drug::interactions::DrugInteractionBundleFreshness {
+            status: crate::entities::drug::interactions::DrugInteractionFreshnessStatus::Fresh,
+        },
         coverage_status: crate::entities::drug::interactions::DrugInteractionCoverageStatus::NotInDdinterCoverage,
         source_note: Some(
             "The current DDInter download bundle has no matching rows for this drug. DDInter warns that missing rows do not prove no interaction exists.".to_string(),
@@ -111,56 +124,6 @@ fn drug_interaction_report_markdown_renders_not_in_coverage_signal() {
     assert!(markdown.contains("current DDInter download bundle has no matching rows"));
     assert!(markdown.contains("not_in_ddinter_coverage"));
     assert!(markdown.contains("source coverage miss"));
-}
-
-#[test]
-fn drug_markdown_renders_interaction_class_summaries_without_overloading_anchor_classes() {
-    let drug = Drug {
-        name: "warfarin".to_string(),
-        drugbank_id: Some("DB00682".to_string()),
-        chembl_id: None,
-        unii: None,
-        drug_type: None,
-        mechanism: None,
-        mechanisms: Vec::new(),
-        approval_date: None,
-        approval_date_raw: None,
-        approval_date_display: None,
-        approval_summary: None,
-        brand_names: Vec::new(),
-        route: None,
-        targets: Vec::new(),
-        variant_targets: Vec::new(),
-        target_family: None,
-        target_family_name: None,
-        indications: Vec::new(),
-        interactions: vec![crate::entities::drug::DrugInteraction {
-            drug: "aspirin".to_string(),
-            level: Some("Major".to_string()),
-            description: Some("May increase bleeding risk.".to_string()),
-            partner_classes: vec!["P2Y12 Receptor Antagonists".to_string()],
-        }],
-        interaction_text: None,
-        pharm_classes: vec!["Vitamin K antagonists".to_string()],
-        top_adverse_events: Vec::new(),
-        faers_query: None,
-        label: None,
-        label_set_id: None,
-        shortage: None,
-        approvals: None,
-        us_safety_warnings: None,
-        ema_regulatory: None,
-        ema_safety: None,
-        ema_shortage: None,
-        who_prequalification: None,
-        civic: None,
-    };
-
-    let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
-    assert!(markdown.contains("## Interacting Drug Classes"));
-    assert!(markdown.contains("| antiplatelets | 1 | Major |"));
-    assert!(!markdown.contains("Vitamin K antagonists"));
-    assert!(markdown.contains("May increase bleeding risk."));
 }
 
 #[test]
@@ -190,6 +153,8 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -233,6 +198,8 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -277,6 +244,8 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -321,6 +290,8 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: vec!["Rash".to_string()],
         faers_query: None,
@@ -426,6 +397,8 @@ fn drug_markdown_with_region_who_renders_regulatory_block() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,
@@ -591,6 +564,8 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: vec!["Fatigue".to_string(), "Rash".to_string()],
         faers_query: None,
@@ -660,6 +635,8 @@ fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
         indications: Vec::new(),
         interactions: Vec::new(),
         interaction_text: None,
+        interaction_pagination: None,
+        interaction_bundle_freshness: None,
         pharm_classes: Vec::new(),
         top_adverse_events: Vec::new(),
         faers_query: None,

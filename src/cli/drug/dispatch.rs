@@ -462,8 +462,22 @@ pub(crate) async fn handle_command(
                         }
                     }
                 }
-                DrugCommand::Interactions { name } => {
-                    let report = crate::entities::drug::interaction_report(name).await?;
+                DrugCommand::Interactions {
+                    name,
+                    limit,
+                    offset,
+                } => {
+                    if limit == 0 {
+                        return Err(crate::error::BioMcpError::InvalidArgument(
+                            "--limit for drug interactions must be at least 1".into(),
+                        )
+                        .into());
+                    }
+                    let effective_limit =
+                        limit.min(crate::entities::drug::interactions::MAX_INTERACTION_LIMIT);
+                    let report =
+                        crate::entities::drug::interaction_report(name, effective_limit, offset)
+                            .await?;
                     if json {
                         crate::render::json::to_entity_json(
                             &report,

@@ -136,6 +136,7 @@ biomcp variant normalize all 'NM_004448.2:c.829G>T'
 # Drug pivots
 biomcp drug adverse-events pembrolizumab
 biomcp drug adverse-events osimertinib --count patient.reaction.reactionmeddrapt.exact
+biomcp drug interactions warfarin --limit 25 --offset 25
 biomcp drug trials pembrolizumab
 
 # Disease pivots

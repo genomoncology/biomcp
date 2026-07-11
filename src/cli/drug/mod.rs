@@ -167,6 +167,7 @@ See also: biomcp list drug")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp drug interactions warfarin
+  biomcp drug interactions warfarin --limit 25 --offset 25
   biomcp drug interactions imatinib
 
 Note: This helper reads the DDInter local download bundle from `BIOMCP_DDINTER_DIR`
@@ -178,6 +179,12 @@ See also: biomcp list drug")]
     Interactions {
         /// Drug name (e.g., warfarin)
         name: String,
+        /// Maximum rows to return (default: 25; requests above 50 are capped)
+        #[arg(long, default_value = "25")]
+        limit: usize,
+        /// Skip the first N rows
+        #[arg(long, default_value = "0")]
+        offset: usize,
     },
     #[command(external_subcommand)]
     External(Vec<String>),
