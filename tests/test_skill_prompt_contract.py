@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -8,7 +9,7 @@ from pathlib import Path
 import jsonschema
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-RELEASE_BIN = REPO_ROOT / "target" / "release" / "biomcp"
+RELEASE_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "release" / "biomcp"))
 LADDER_WORKFLOW_SLUGS = [
     "treatment-lookup",
     "article-follow-up",

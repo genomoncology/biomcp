@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-RELEASE_BIN = REPO_ROOT / "target" / "release" / "biomcp"
+RELEASE_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "release" / "biomcp"))
 
 
 @pytest.mark.parametrize("command", ["mcp", "serve"])

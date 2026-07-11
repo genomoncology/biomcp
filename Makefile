@@ -33,7 +33,7 @@ SPEC_PROFILE ?= spec
 SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp
 SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)
 SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
-SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE))
+SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE) --bin biomcp --example rmcp_streamable_http_contract)
 
 sync-python-dev:
 	uv sync --extra dev --no-install-project
@@ -46,16 +46,17 @@ test:
 	$(MAKE) test-contracts
 
 test-contracts:
-	cargo build --release --locked
+	$(SPEC_BUILD)
 	$(MAKE) sync-python-dev
-	uv run --no-sync pytest tests/ -v
-	uv run --no-sync mkdocs build --strict
+	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v
+	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
 
 lint:
 	./bin/lint
 	tools/check-quality-ratchet.sh
 
-release-gate: lint test
+release-gate: lint
+	$(MAKE) test SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
 	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
 
 check-quality-ratchet:
@@ -74,15 +75,15 @@ install:
 
 spec:
 	$(SPEC_BUILD)
-	BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec
+	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec
 
 spec-pr:
 	$(SPEC_BUILD)
-	BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec-pr
+	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec-pr
 
 spec-contracts:
 	$(SPEC_BUILD)
-	BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec-contracts
+	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec-contracts
 
 verify:
 	cargo build --release --locked

@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-RELEASE_BIN = REPO_ROOT / "target" / "release" / "biomcp"
+RELEASE_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "release" / "biomcp"))
 GTR_FIXTURE_DIR = REPO_ROOT / "spec" / "fixtures" / "gtr"
 GTR_TEST_VERSION_FILE = "test_version.gz"
 GTR_CONDITION_GENE_FILE = "test_condition_gene.txt"

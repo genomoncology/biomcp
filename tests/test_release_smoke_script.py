@@ -161,6 +161,7 @@ exit 0
 
 def _run_release_smoke(repo_root: Path, fake_bin: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
+    env.pop("BIOMCP_BIN", None)
     env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
     return subprocess.run(
         ["bash", "scripts/release-smoke.sh", *args],

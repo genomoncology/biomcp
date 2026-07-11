@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-RELEASE_BIN = REPO_ROOT / "target" / "release" / "biomcp"
+RELEASE_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "release" / "biomcp"))
 
 
 def _run_json(*args: str) -> dict[str, Any]:

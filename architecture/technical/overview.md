@@ -325,14 +325,17 @@ BioMCP has six distinct verification and operator-inspection surfaces.
   `cargo deny check advisories`, and still rejects deprecated install strings
   in `README.md` and `docs/`.
 - Repo-local `make test` runs `cargo nextest run` plus the Python/docs contract
-  lane; the CI `check` job still uses the raw `cargo fmt --check`,
+  lane against `target/spec/biomcp`. Routine `make spec` shares that selected
+  binary; the CI `check` job still uses the raw `cargo fmt --check`,
   `cargo clippy -- -D warnings`, and `cargo test` sequence directly.
 - CI in `.github/workflows/ci.yml` runs the broader repo baseline in parallel:
   `check`, `version-sync`, `climb-hygiene`, `contracts`, and `spec-stable`.
 - Docs-site validation and Python contract tests now run under `make test`;
   CI still keeps that lane in the separate `contracts` job for parallelism.
 - `make release-gate` is the single local routine release-blocking signal; it
-  runs `make lint`, `make test`, and `make spec` directly. Live public-upstream
+  runs `make lint`, `make test`, and `make spec` directly. Both
+  executable-contract consumers are explicitly routed to
+  `target/release/biomcp`. Live public-upstream
   confidence is opt-in through `make verify` (`make release-live-smoke` aliases it).
 - The grounding implementation surfaces for this split are `Makefile`,
   `.github/workflows/ci.yml`, and `.github/workflows/contracts.yml`.

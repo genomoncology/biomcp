@@ -112,7 +112,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get
+cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
 search schema includes entity enum and bounded limit
@@ -238,7 +238,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --example rmcp_streamable_http_contract -- remote-workflow "$port" | mustmatch like 'Command: biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
+cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- remote-workflow "$port" | mustmatch like 'Command: biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
 # Study Mutation Frequency: TP53 (msk_impact_2017)'
 ```
 
@@ -258,7 +258,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --example rmcp_streamable_http_contract -- boundaries "$port" | mustmatch like 'CLI-only over MCP
+cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- boundaries "$port" | mustmatch like 'CLI-only over MCP
 workstation-local filesystem paths
 BioMCP allows read-only commands only
 # Study Mutation Frequency: TP53 (msk_impact_2017)
@@ -272,9 +272,20 @@ run the Rust unit suite and the Python CLI/MCP/docs contract lane so neither
 runtime layer can report a silent green.
 
 ```bash
-make -C ../.. -n test 2>&1 | mustmatch like 'cargo nextest run
-uv run --no-sync pytest tests/ -v
-uv run --no-sync mkdocs build --strict'
+env -u BIOMCP_BIN make -C ../.. -n test SPEC_PROFILE=spec SPEC_BIN="$(realpath ../../target/spec/biomcp)" 2>&1 | mustmatch like 'cargo nextest run
+cargo build --locked --profile spec
+/target/spec/biomcp" uv run --no-sync pytest tests/ -v
+/target/spec/biomcp" uv run --no-sync mkdocs build --strict'
+```
+
+## Routine Markdown Helpers Reuse The Selected Cargo Profile
+
+The local MCP client example is part of the executable-contract surface. It
+should use the gate's selected Cargo profile rather than silently compiling the
+BioMCP library again under Cargo's default debug profile.
+
+```bash
+rg -nP '[c]argo run(?![^\n]*--profile)[^\n]*--example' ../../spec/entity ../../spec/surface | mustmatch ""
 ```
 
 ## Repository Lint Keeps The Quality Ratchet
@@ -297,8 +308,10 @@ spec subset from replacing the standard `lint`, `test`, and release-profile
 `spec` gate.
 
 ```bash
-make -C ../.. -n release-gate 2>&1 | mustmatch like 'cargo nextest run
-cargo build --release --locked
+env -u BIOMCP_BIN -u SPEC_PROFILE make -C ../.. -n release-gate 2>&1 | mustmatch like 'cargo nextest run
+cargo build --locked --profile release
+/target/release/biomcp" uv run --no-sync pytest tests/ -v
+/target/release/biomcp" uv run --no-sync mkdocs build --strict
 make spec SPEC_PROFILE=release SPEC_BIN='
 ```
 
