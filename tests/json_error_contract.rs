@@ -1,4 +1,8 @@
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -9,8 +13,13 @@ struct CommandResult {
 }
 
 fn run_biomcp(args: &[&str]) -> CommandResult {
+    run_biomcp_with_env(args, &[])
+}
+
+fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
     let mut child = Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(args)
+        .envs(env.iter().copied())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -39,6 +48,120 @@ fn run_biomcp(args: &[&str]) -> CommandResult {
         }
         thread::sleep(Duration::from_millis(25));
     }
+}
+
+struct MyGeneFixture {
+    base_url: String,
+    request_rx: mpsc::Receiver<Result<String, String>>,
+    stop: Arc<AtomicBool>,
+    thread: Option<thread::JoinHandle<()>>,
+}
+
+impl MyGeneFixture {
+    fn start() -> Self {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind MyGene fixture");
+        listener
+            .set_nonblocking(true)
+            .expect("make MyGene fixture nonblocking");
+        let base_url = format!("http://{}", listener.local_addr().expect("fixture address"));
+        let (request_tx, request_rx) = mpsc::channel();
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread_stop = Arc::clone(&stop);
+        let thread = thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(5);
+            loop {
+                if thread_stop.load(Ordering::Relaxed) {
+                    return;
+                }
+                match listener.accept() {
+                    Ok((stream, _)) => {
+                        let result = serve_mygene_request(stream);
+                        let failed = result.is_err();
+                        let _ = request_tx.send(result);
+                        if failed {
+                            return;
+                        }
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        if Instant::now() >= deadline {
+                            let _ = request_tx
+                                .send(Err("fixture received no request within 5s".into()));
+                            return;
+                        }
+                        thread::sleep(Duration::from_millis(10));
+                    }
+                    Err(error) => {
+                        let _ = request_tx.send(Err(format!("fixture accept failed: {error}")));
+                        return;
+                    }
+                }
+            }
+        });
+        Self {
+            base_url,
+            request_rx,
+            stop,
+            thread: Some(thread),
+        }
+    }
+
+    fn received_request(&self) -> String {
+        self.request_rx
+            .recv_timeout(Duration::from_secs(5))
+            .expect("fixture request result within 5s")
+            .expect("fixture should serve a valid request")
+    }
+}
+
+impl Drop for MyGeneFixture {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
+        if let Some(thread) = self.thread.take() {
+            thread.join().expect("join MyGene fixture thread");
+        }
+    }
+}
+
+fn serve_mygene_request(mut stream: TcpStream) -> Result<String, String> {
+    stream
+        .set_read_timeout(Some(Duration::from_secs(2)))
+        .map_err(|error| format!("set fixture read timeout: {error}"))?;
+    stream
+        .set_write_timeout(Some(Duration::from_secs(2)))
+        .map_err(|error| format!("set fixture write timeout: {error}"))?;
+
+    let mut request = Vec::new();
+    let mut buffer = [0_u8; 1024];
+    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+        let read = stream
+            .read(&mut buffer)
+            .map_err(|error| format!("read fixture request: {error}"))?;
+        if read == 0 || request.len() + read > 16 * 1024 {
+            return Err("fixture request ended early or exceeded 16 KiB".into());
+        }
+        request.extend_from_slice(&buffer[..read]);
+    }
+
+    let request = String::from_utf8(request).map_err(|error| format!("request UTF-8: {error}"))?;
+    let request_target = request
+        .lines()
+        .next()
+        .and_then(|line| line.strip_prefix("GET "))
+        .and_then(|line| line.strip_suffix(" HTTP/1.1"))
+        .ok_or_else(|| format!("unexpected fixture request line: {request:?}"))?
+        .to_owned();
+
+    let body = r#"{"total":0,"hits":[]}"#;
+    write!(
+        stream,
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    )
+    .map_err(|error| format!("write fixture response: {error}"))?;
+    stream
+        .flush()
+        .map_err(|error| format!("flush fixture response: {error}"))?;
+    Ok(request_target)
 }
 
 fn assert_json_error(result: &CommandResult, expected_exit: i32, expected_code: &str) {
@@ -77,8 +200,29 @@ fn json_mode_not_found_error_writes_json_stdout_and_exit_1() {
 
 #[test]
 fn json_mode_gene_not_found_error_writes_json_stdout_and_exit_1() {
-    let result = run_biomcp(&["--json", "get", "gene", "ZZZNOTAREALGENE"]);
+    let fixture = MyGeneFixture::start();
+    let result = run_biomcp_with_env(
+        &["--json", "get", "gene", "ZZZNOTAREALGENE"],
+        &[("BIOMCP_MYGENE_BASE", &fixture.base_url)],
+    );
+    let request_target = fixture.received_request();
 
+    assert!(
+        request_target.starts_with("/query?"),
+        "request={request_target}"
+    );
+    assert!(
+        request_target.contains("q=symbol%3A%22ZZZNOTAREALGENE%22"),
+        "request={request_target}"
+    );
+    assert!(
+        request_target.contains("species=human"),
+        "request={request_target}"
+    );
+    assert!(
+        request_target.contains("size=1"),
+        "request={request_target}"
+    );
     assert_json_error(&result, 1, "not_found");
     let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid json");
     assert_eq!(value["_meta"]["not_found"], true, "json={value}");
