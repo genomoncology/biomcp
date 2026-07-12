@@ -50,6 +50,8 @@ fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
     }
 }
 
+const POST_CHILD_FIXTURE_RESULT_TIMEOUT: Duration = Duration::from_secs(1);
+
 struct MyGeneFixture {
     base_url: String,
     request_rx: mpsc::Receiver<Result<String, String>>,
@@ -68,7 +70,6 @@ impl MyGeneFixture {
         let stop = Arc::new(AtomicBool::new(false));
         let thread_stop = Arc::clone(&stop);
         let thread = thread::spawn(move || {
-            let deadline = Instant::now() + Duration::from_secs(5);
             loop {
                 if thread_stop.load(Ordering::Relaxed) {
                     return;
@@ -83,11 +84,6 @@ impl MyGeneFixture {
                         }
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        if Instant::now() >= deadline {
-                            let _ = request_tx
-                                .send(Err("fixture received no request within 5s".into()));
-                            return;
-                        }
                         thread::sleep(Duration::from_millis(10));
                     }
                     Err(error) => {
@@ -107,8 +103,8 @@ impl MyGeneFixture {
 
     fn received_request(&self) -> String {
         self.request_rx
-            .recv_timeout(Duration::from_secs(5))
-            .expect("fixture request result within 5s")
+            .recv_timeout(POST_CHILD_FIXTURE_RESULT_TIMEOUT)
+            .expect("fixture result should be available after biomcp exits")
             .expect("fixture should serve a valid request")
     }
 }
@@ -196,6 +192,12 @@ fn json_mode_not_found_error_writes_json_stdout_and_exit_1() {
     assert_json_error(&result, 1, "not_found");
     let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid json");
     assert_eq!(value["_meta"]["not_found"], true, "json={value}");
+}
+
+#[test]
+fn mygene_fixture_without_request_stops_on_drop() {
+    let fixture = MyGeneFixture::start();
+    drop(fixture);
 }
 
 #[test]
