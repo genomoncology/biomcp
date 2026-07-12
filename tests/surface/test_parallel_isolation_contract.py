@@ -888,6 +888,22 @@ def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
     assert "spec/surface/discover.md" not in routine
 
 
+def test_ticket_504_shell_quoting_ratchet_uses_only_focused_rust_test() -> None:
+    spec = _read_repo("spec/surface/cli-contract-ratchet.md")
+    match = re.search(
+        r"(?ms)^## Runtime next commands quote shell metacharacters\n(?P<section>.*?)(?=^## )",
+        spec,
+    )
+    assert match is not None, "missing runtime shell-metacharacter section"
+    section = match.group("section")
+    assert "biomcp --json discover" not in section
+    assert (
+        "cargo test --lib "
+        "entities::discover::tests::empty_discover_result_quotes_shell_metacharacters_in_json_next_command "
+        "-- --exact"
+    ) in section
+
+
 def test_ticket_395_routine_and_live_spec_variables_are_disjoint_and_complete() -> None:
     routine = _make_variable_paths("SPEC_ROUTINE_PATHS")
     live = _make_variable_paths("SPEC_LIVE_PATHS")

@@ -2126,6 +2126,7 @@ mod tests {
     use crate::sources::medlineplus::MedlinePlusTopic;
     use crate::sources::ols4::OlsDoc;
     use crate::sources::umls::{UmlsConcept, UmlsXref};
+    use std::process::Command;
 
     #[test]
     fn discover_request_records_command_intent_before_clients() {
@@ -2385,6 +2386,49 @@ mod tests {
         );
         assert_eq!(commands.len(), 4);
         assert!(!commands[0].contains("HP:0002376"));
+    }
+
+    #[test]
+    fn empty_discover_result_quotes_shell_metacharacters_in_json_next_command() {
+        const QUERY: &str = "NM_000248.3:c.1799T>A";
+        const COMMAND: &str =
+            "biomcp search article -k \"NM_000248.3:c.1799T>A\" --type review --limit 5";
+
+        let result = build_result(QUERY, &[], &[], &[], Vec::new());
+        let json = crate::render::json::to_discover_json(&result).expect("discover JSON");
+        let value: serde_json::Value = serde_json::from_str(&json).expect("valid discover JSON");
+        assert_eq!(
+            value["_meta"]["next_commands"],
+            serde_json::json!([COMMAND])
+        );
+
+        let arguments = COMMAND
+            .strip_prefix("biomcp search article ")
+            .expect("expected article-search command");
+        let temp_dir = tempfile::tempdir().expect("temporary shell directory");
+        let output = Command::new("bash")
+            .args([
+                "-c",
+                &format!("set -- {arguments}; printf '<%s>\\n' \"$@\""),
+            ])
+            .current_dir(temp_dir.path())
+            .output()
+            .expect("bash should parse the rendered arguments");
+
+        assert!(output.status.success(), "bash failed: {output:?}");
+        assert_eq!(
+            String::from_utf8(output.stdout).expect("UTF-8 shell output"),
+            "<-k>\n<NM_000248.3:c.1799T>A>\n<--type>\n<review>\n<--limit>\n<5>\n"
+        );
+        assert_eq!(
+            temp_dir
+                .path()
+                .read_dir()
+                .expect("temporary directory")
+                .count(),
+            0,
+            "shell parsing must not redirect output"
+        );
     }
 
     #[test]

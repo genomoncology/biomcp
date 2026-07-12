@@ -158,13 +158,14 @@ BIOMCP_CACHE_MAX_AGE=172800 biomcp --json cache stats | mustmatch like '"max_age
 ```
 
 ## Runtime next commands quote shell metacharacters
+<!-- mustmatch-lint: skip -->
 
 Runtime next commands are meant to be copied into a shell. When a local fallback
 command carries a transcript-HGVS-shaped value with `>`, BioMCP should render the
 argument as one quoted value instead of exposing a redirection operator.
 
 ```bash
-biomcp --json discover 'NM_000248.3:c.1799T>A' | jq -r '._meta.next_commands[]?' | mustmatch like 'biomcp search article -k "NM_000248.3:c.1799T>A" --type review --limit 5'
+cargo test --lib entities::discover::tests::empty_discover_result_quotes_shell_metacharacters_in_json_next_command -- --exact
 ```
 
 ## Protein and Phenotype Search JSON Metadata Seam
