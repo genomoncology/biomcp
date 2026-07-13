@@ -7,7 +7,6 @@ cd "$ROOT"
 SPEC_ROUTINE_PATHS=(
   spec/entity/article.md
   spec/entity/disease-survival-fixture.md
-  spec/entity/disgenet-credential-fixture.md
   spec/entity/drug-interactions.md
   spec/entity/study.md
   spec/entity/variant.md
@@ -150,16 +149,6 @@ run_disease_survival_fixture() {
   register_cleanup cleanup_disease_survival_fixture
 }
 
-cleanup_disgenet_credential_fixture() {
-  bash spec/fixtures/cleanup-disgenet-credential-spec-fixture.sh "$ROOT"
-}
-
-run_disgenet_credential_fixture() {
-  bash spec/fixtures/setup-disgenet-credential-spec-fixture.sh "$ROOT"
-  source_if_present "$ROOT/.cache/spec-disgenet-credential-env"
-  register_cleanup cleanup_disgenet_credential_fixture
-}
-
 run_article_markdown_specs() {
   if ((${#ARTICLE_MD_PATHS[@]})); then
     (
@@ -197,7 +186,6 @@ case "$mode" in
     run_ddinter_fixture
     run_ctgov_fixture
     run_disease_survival_fixture
-    run_disgenet_credential_fixture
     ;;
   spec-contracts)
     timeout_args=(--timeout 180)
