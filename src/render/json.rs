@@ -311,6 +311,7 @@ pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> 
         BioMcpError::NotFound { .. } => "not_found",
         BioMcpError::InvalidArgument(_) => "invalid_argument",
         BioMcpError::ApiKeyRequired { .. } => "api_key_required",
+        BioMcpError::ApiKeyRejected { .. } => "api_key_rejected",
         BioMcpError::SourceUnavailable { .. } => "source_unavailable",
         BioMcpError::Template(_) => "template",
         BioMcpError::Json(_) => "json",
