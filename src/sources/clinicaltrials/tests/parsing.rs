@@ -81,6 +81,29 @@ fn get_response_maps_not_found_to_trial_not_found() {
 }
 
 #[test]
+fn decode_json_classifies_only_intervention_parser_bad_requests() {
+    let signature = b"Error parsing query in Intervention / treatment: invalid expression";
+    let err = ClinicalTrialsClient::decode_json_response::<CtGovSearchResponse>(
+        StatusCode::BAD_REQUEST,
+        signature,
+    )
+    .unwrap_err();
+    assert!(matches!(
+        err,
+        BioMcpError::CtGovInterventionQueryRejected { .. }
+    ));
+
+    for (status, body) in [
+        (StatusCode::BAD_REQUEST, b"unrelated bad request".as_slice()),
+        (StatusCode::INTERNAL_SERVER_ERROR, signature.as_slice()),
+    ] {
+        let err = ClinicalTrialsClient::decode_json_response::<CtGovSearchResponse>(status, body)
+            .unwrap_err();
+        assert!(matches!(err, BioMcpError::Api { .. }));
+    }
+}
+
+#[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = ClinicalTrialsClient::decode_json_response::<CtGovSearchResponse>(
         StatusCode::INTERNAL_SERVER_ERROR,

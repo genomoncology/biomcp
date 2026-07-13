@@ -101,39 +101,121 @@ fn validate_raw_usage_allows_raw_with_label_section() {
     validate_raw_usage(&flags, true).expect("raw label should be valid");
 }
 
-#[test]
-fn trial_alias_filter_rejects_formulation_strength_variants() {
-    assert!(looks_like_trial_formulation_variant("Keytruda 25 mg/mL"));
-    assert!(looks_like_trial_formulation_variant(
-        "Pembrolizumab injection"
-    ));
+fn trial_alias(label: &str, source: TrialAliasSource) -> TrialAlias {
+    TrialAlias {
+        label: label.into(),
+        source,
+    }
+}
+
+fn trial_alias_labels(aliases: &[TrialAlias]) -> Vec<&str> {
+    aliases.iter().map(|alias| alias.label.as_str()).collect()
 }
 
 #[test]
-fn trial_alias_filter_keeps_sponsor_codes() {
-    assert!(!looks_like_trial_formulation_variant("RMC-6236"));
+fn drugbank_trial_alias_policy_keeps_codes_and_simple_names() {
+    for alias in [
+        "ABT-199",
+        "RMC-6236",
+        "HRS 4642",
+        "Venclexta",
+        "O'Brien-2",
+        "ééééééééééééééééééééééééééééééééé",
+    ] {
+        assert!(eligible_drugbank_trial_alias(alias), "should keep {alias}");
+    }
 }
 
 #[test]
-fn build_trial_aliases_preserves_requested_canonical_and_brand_order() {
+fn drugbank_trial_alias_policy_rejects_systematic_and_descriptor_names() {
+    for alias in [
+        "4-[4-[[2-(4-chlorophenyl)-4,4-dimethylcyclohex-1-enyl]methyl]piperazin-1-yl]benzoic acid",
+        "ABT-199 (venetoclax free base)",
+        "venetoclax free base",
+        "venetoclax free   base",
+        "venetoclax free\tbase",
+        "venetoclax free-base",
+        "ABT-199-free-base",
+        "alpha,beta compound",
+        "one two three four five",
+    ] {
+        assert!(
+            !eligible_drugbank_trial_alias(alias),
+            "should reject {alias}"
+        );
+    }
+}
+
+#[test]
+fn build_trial_aliases_preserves_authorities_then_source_order_and_cap() {
     let aliases = build_trial_aliases(
         "RMC-6236",
         Some("daraxonrasib"),
         &[
-            "RMC-6236".to_string(),
-            "Keytruda 25 mg/mL".to_string(),
-            "RMC-6236".to_string(),
-            "daraxonrasib".to_string(),
-            "RMC-9805".to_string(),
+            trial_alias("Zeta", TrialAliasSource::DrugBankSynonym),
+            trial_alias("Venclexta", TrialAliasSource::OpenFdaBrand),
+            trial_alias(" alpha ", TrialAliasSource::OpenFdaBrand),
+            trial_alias("rmc-6236", TrialAliasSource::DrugBankSynonym),
+            trial_alias("Beta", TrialAliasSource::DrugBankSynonym),
         ],
     );
 
-    assert_eq!(aliases, vec!["RMC-6236", "daraxonrasib", "RMC-9805"]);
+    assert_eq!(
+        trial_alias_labels(&aliases),
+        vec!["RMC-6236", "daraxonrasib", "alpha", "Venclexta", "Beta"]
+    );
+    assert_eq!(aliases[2].source, TrialAliasSource::OpenFdaBrand);
+}
+
+#[test]
+fn trial_alias_candidates_keep_untruncated_source_provenance() {
+    let hit: crate::sources::mychem::MyChemHit = serde_json::from_value(serde_json::json!({
+        "_id": "DB11581",
+        "_score": 1.0,
+        "openfda": {"brand_name": ["Venclexta", "Venclyxto"]},
+        "drugbank": {"id": "DB11581", "name": "venetoclax", "synonyms": ["ABT-199", "chemical [name]"]}
+    }))
+    .expect("valid MyChem hit");
+    let candidates = trial_alias_candidates_from_hits(&[&hit]);
+
+    assert_eq!(candidates.len(), 4);
+    assert_eq!(
+        candidates[0],
+        trial_alias("Venclexta", TrialAliasSource::OpenFdaBrand)
+    );
+    assert_eq!(
+        candidates[3],
+        trial_alias("chemical [name]", TrialAliasSource::DrugBankSynonym)
+    );
 }
 
 #[test]
 fn trial_alias_cache_key_normalizes_requested_name() {
     assert_eq!(trial_alias_cache_key(" Daraxonrasib "), "daraxonrasib");
+}
+
+#[tokio::test]
+async fn cached_trial_alias_resolution_refreshes_worker_zero_label() {
+    let cache_key = "ticket-510-cache-case";
+    trial_alias_cache().lock().expect("cache lock").insert(
+        cache_key.into(),
+        TrialAliasResolution {
+            canonical_name: "canonical".into(),
+            aliases: vec![trial_alias(
+                "Ticket-510-Cache-Case",
+                TrialAliasSource::Requested,
+            )],
+        },
+    );
+
+    let resolution = resolve_trial_alias_resolution("ticket-510-cache-case")
+        .await
+        .expect("cached resolution");
+    assert_eq!(resolution.aliases[0].label, "ticket-510-cache-case");
+    trial_alias_cache()
+        .lock()
+        .expect("cache lock")
+        .remove(cache_key);
 }
 
 #[test]
@@ -146,19 +228,19 @@ fn trial_alias_resolution_does_not_cache_transient_lookup_failure() {
             message: "HTTP 500".into(),
         }),
     );
-    assert_eq!(fallback.aliases, vec![requested.to_string()]);
+    assert_eq!(trial_alias_labels(&fallback.aliases), vec![requested]);
     assert!(!fallback_cacheable);
 
     let (resolved, resolved_cacheable) = trial_alias_resolution_from_lookup_result(
         requested,
         Ok(TrialAliasLookup {
             canonical_name: requested.into(),
-            brand_names: vec!["RMC-6236".into()],
+            candidates: vec![trial_alias("RMC-6236", TrialAliasSource::DrugBankSynonym)],
         }),
     );
     assert_eq!(
-        resolved.aliases,
-        vec![requested.to_string(), "RMC-6236".to_string()]
+        trial_alias_labels(&resolved.aliases),
+        vec![requested, "RMC-6236"]
     );
     assert!(resolved_cacheable);
 }
@@ -170,11 +252,14 @@ fn trial_alias_resolution_keeps_generic_requests_canonical() {
         requested,
         Ok(TrialAliasLookup {
             canonical_name: requested.into(),
-            brand_names: vec!["Keytruda".into()],
+            candidates: vec![trial_alias("Keytruda", TrialAliasSource::OpenFdaBrand)],
         }),
     );
 
     assert_eq!(resolved.canonical_name, requested);
-    assert_eq!(resolved.aliases, vec!["pembrolizumab", "Keytruda"]);
+    assert_eq!(
+        trial_alias_labels(&resolved.aliases),
+        vec!["pembrolizumab", "Keytruda"]
+    );
     assert!(cacheable);
 }

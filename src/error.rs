@@ -20,6 +20,9 @@ pub enum BioMcpError {
         source: serde_json::Error,
     },
 
+    #[error("ClinicalTrials.gov intervention query rejected: {reason}")]
+    CtGovInterventionQueryRejected { reason: String },
+
     #[error("{entity} '{id}' not found.\n\n{suggestion}")]
     NotFound {
         entity: String,

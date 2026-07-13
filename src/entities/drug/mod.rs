@@ -10,8 +10,11 @@ mod targets;
 #[cfg(test)]
 mod test_support;
 
+pub(crate) use self::get::{
+    TrialAlias, TrialAliasSource, resolve_trial_aliases, resolve_trial_aliases_with_sources,
+    resolve_trial_canonical_name,
+};
 pub use self::get::{get, get_with_region};
-pub(crate) use self::get::{resolve_trial_aliases, resolve_trial_canonical_name};
 pub(crate) use self::interactions::{
     DrugInteractionReport, apply_interaction_report, interaction_report,
     interaction_report_from_base,

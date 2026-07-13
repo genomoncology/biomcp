@@ -12,13 +12,14 @@ pub struct TrialSearchArgs {
     pub positional_query: Option<String>,
     /// Filter by intervention/drug.
     ///
-    /// On `--source ctgov`, BioMCP auto-expands known aliases from the shared
-    /// drug identity surface, unions the matching trials, and records which
-    /// alias matched each returned row. Use `--no-alias-expand` to force
-    /// literal matching.
+    /// On `--source ctgov`, BioMCP sends each intervention as one quoted
+    /// literal and expands only plausible trade names and investigational
+    /// codes. A rejected expanded alias preserves successful requested-name
+    /// results but makes the exact total unknown. Use `--no-alias-expand` for
+    /// one literal request.
     #[arg(short = 'i', long, num_args = 1..)]
     pub intervention: Vec<String>,
-    /// Disable ClinicalTrials.gov intervention alias expansion and force literal matching.
+    /// Disable ClinicalTrials.gov intervention alias expansion and send one literal request.
     #[arg(long = "no-alias-expand")]
     pub no_alias_expand: bool,
     /// Filter by institution/facility name (text-search mode by default).

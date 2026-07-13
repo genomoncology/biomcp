@@ -42,9 +42,11 @@ pub(super) fn list_trial() -> String {
 ## CTGov alias expansion
 
 - `--condition` sends the supplied condition literally.
-- `--intervention` auto-expands known aliases from the shared drug identity surface on the default CTGov path.
+- Every `--intervention` worker is sent to CTGov as one quoted literal.
+- `--intervention` auto-expands known aliases selected by a trial-safe policy: plausible trade names and investigational codes are included, while systematic chemical synonyms are excluded.
 - Expanded rows add `Matched Intervention` in markdown and `matched_intervention_label` in JSON when an alternate alias matched first.
-- `--no-alias-expand` forces literal intervention matching.
+- A rejected expanded alias does not discard successful requested-name results, but leaves the exact total unknown.
+- `--no-alias-expand` performs one literal request for the supplied name.
 - `--next-page` is not supported when intervention alias expansion fans out to multiple queries; use `--offset` or `--no-alias-expand`.
 
 ## NCI source notes

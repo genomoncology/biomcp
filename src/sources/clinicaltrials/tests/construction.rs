@@ -26,7 +26,7 @@ fn get_fields_contacts_preserve_site_context_and_eligibility_sex() {
 fn search_plan_builds_expected_params() {
     let plan = ClinicalTrialsClient::search_plan(&CtGovSearchParams {
         condition: Some(" melanoma ".into()),
-        intervention: Some(" pembrolizumab ".into()),
+        intervention: Some(" \"pembrolizumab\" ".into()),
         facility: None,
         status: Some(" RECRUITING ".into()),
         agg_filters: None,
@@ -43,7 +43,7 @@ fn search_plan_builds_expected_params() {
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "studies");
     assert_eq!(plan.query_value("query.cond"), Some("melanoma"));
-    assert_eq!(plan.query_value("query.intr"), Some("pembrolizumab"));
+    assert_eq!(plan.query_value("query.intr"), Some("\"pembrolizumab\""));
     assert_eq!(plan.query_value("filter.overallStatus"), Some("RECRUITING"));
     assert_eq!(plan.query_value("query.term"), Some("AREA[Phase]PHASE2"));
     assert_eq!(plan.query_value("countTotal"), Some("true"));

@@ -50,6 +50,15 @@ def send_json(handler, status, payload):
     handler.wfile.write(body)
 
 
+def send_text(handler, status, payload):
+    body = payload.encode("utf-8")
+    handler.send_response(status)
+    handler.send_header("Content-Type", "text/plain; charset=utf-8")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
 NCT02136914_STUDY = {
     "protocolSection": {
         "identificationModule": {
@@ -117,6 +126,71 @@ SHELL_SAFE_STUDY = {
             "armGroups": [],
         },
     }
+}
+
+VENETOCLAX_STUDY = {
+    "protocolSection": {
+        "identificationModule": {
+            "nctId": "NCT51000001",
+            "briefTitle": "Literal Venetoclax Trial",
+        },
+        "statusModule": {"overallStatus": "RECRUITING"},
+        "descriptionModule": {"briefSummary": "Fixture result for the requested intervention."},
+        "conditionsModule": {"conditions": ["Chronic Lymphocytic Leukemia"]},
+        "designModule": {
+            "phases": ["PHASE2"],
+            "studyType": "Interventional",
+            "enrollmentInfo": {"count": 20},
+        },
+        "armsInterventionsModule": {
+            "interventions": [{"type": "DRUG", "name": "venetoclax"}],
+            "armGroups": [],
+        },
+    }
+}
+
+VENCLEXTA_STUDY = {
+    "protocolSection": {
+        "identificationModule": {
+            "nctId": "NCT51000002",
+            "briefTitle": "Venclexta Alias Trial",
+        },
+        "statusModule": {"overallStatus": "RECRUITING"},
+        "descriptionModule": {"briefSummary": "Fixture result for a plausible trade alias."},
+        "conditionsModule": {"conditions": ["Acute Myeloid Leukemia"]},
+        "designModule": {
+            "phases": ["PHASE2"],
+            "studyType": "Interventional",
+            "enrollmentInfo": {"count": 18},
+        },
+        "armsInterventionsModule": {
+            "interventions": [{"type": "DRUG", "name": "Venclexta"}],
+            "armGroups": [],
+        },
+    }
+}
+
+VENETOCLAX_MYCHEM_RESPONSE = {
+    "total": 1,
+    "hits": [
+        {
+            "_id": "DB11581",
+            "_score": 42.0,
+            "drugbank": {
+                "id": "DB11581",
+                "name": "venetoclax",
+                "synonyms": [
+                    "Venclexta",
+                    "4-[4-[[2-(4-chlorophenyl)-4,4-dimethylcyclohex-1-enyl]methyl]piperazin-1-yl]benzoic acid",
+                    "ABT-199 (venetoclax free base)",
+                ],
+            },
+            "openfda": {
+                "generic_name": ["venetoclax"],
+                "brand_name": ["Parser Trap", "Venclexta"],
+            },
+        }
+    ],
 }
 
 CONTACTS_ELIGIBILITY_STUDY = {
@@ -199,10 +273,36 @@ SERVER_PID_FILE.write_text(f"{os.getpid()}\n", encoding="utf-8")
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
+        query = parse_qs(parsed.query)
+        if parsed.path == "/v1/query":
+            if " ".join(query.get("q", [])).strip().lower() == "venetoclax":
+                send_json(self, 200, VENETOCLAX_MYCHEM_RESPONSE)
+            else:
+                send_json(self, 200, {"total": 0, "hits": []})
+            return
         if parsed.path == "/api/v2/studies":
             with REQUEST_LOG.open("a", encoding="utf-8") as log:
                 log.write(f"{self.path}\n")
-            query = parse_qs(parsed.query)
+            intervention = " ".join(query.get("query.intr", [])).strip()
+            is_quoted_literal = (
+                len(intervention) >= 2
+                and intervention.startswith('"')
+                and intervention.endswith('"')
+            )
+            literal_intervention = intervention[1:-1] if is_quoted_literal else intervention
+            if is_quoted_literal and literal_intervention == "venetoclax":
+                send_json(self, 200, {"studies": [VENETOCLAX_STUDY], "totalCount": 1})
+                return
+            if is_quoted_literal and literal_intervention == "Venclexta":
+                send_json(self, 200, {"studies": [VENCLEXTA_STUDY], "totalCount": 1})
+                return
+            if intervention:
+                send_text(
+                    self,
+                    400,
+                    "Error parsing query in Intervention / treatment: invalid expression",
+                )
+                return
             requested_facility = " ".join(query.get("query.locn", [])).lower()
             if "university of michigan" in requested_facility:
                 send_json(self, 200, {"studies": [], "totalCount": 0})
@@ -244,6 +344,7 @@ base_url="$(cat "$ready_file")"
 server_pid="$(cat "$server_pid_file")"
 
 printf 'export BIOMCP_CTGOV_BASE=%q\n' "$base_url/api/v2" >"$env_file"
+printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE=%q\n' "$base_url/v1" >>"$env_file"
 printf 'export BIOMCP_CACHE_MODE=off\n' >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_PID=%q\n' "$fixture_pgid" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_PGID=%q\n' "$fixture_pgid" >>"$env_file"

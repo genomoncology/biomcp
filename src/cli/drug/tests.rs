@@ -401,7 +401,8 @@ fn drug_bare_name_parses_as_external_subcommand() {
 fn drug_trials_help_mentions_alias_expansion_and_opt_out() {
     let help = render_drug_trials_help();
 
-    assert!(help.contains("inherits intervention alias expansion"));
+    assert!(help.contains("inherits the quoted-literal, trial-safe alias policy"));
+    assert!(help.contains("one literal request"));
     assert!(help.contains("Matched Intervention"));
     assert!(help.contains("matched_intervention_label"));
     assert!(help.contains("--no-alias-expand"));

@@ -3,9 +3,10 @@
 use std::collections::{HashMap, HashSet};
 
 use futures::future::join_all;
+use tracing::warn;
 
 use crate::entities::SearchPage;
-use crate::entities::drug::resolve_trial_aliases;
+use crate::entities::drug::{TrialAlias, TrialAliasSource, resolve_trial_aliases_with_sources};
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovSearchParams, CtGovStudy};
 use crate::transform;
@@ -14,10 +15,9 @@ use crate::utils::date::validate_since;
 use super::super::{TrialCount, TrialSearchFilters, TrialSearchResult, TrialSource};
 use super::{
     CtGovSearchContext, build_essie_fragments, essie_escape, essie_escape_boolean_expression,
-    normalize_intervention_query, normalize_sex, normalize_sponsor_type,
-    prepare_ctgov_search_context, sort_trials_by_status_priority, validate_search_page_args,
-    validate_trial_search, verify_age_eligibility, verify_eligibility_criteria,
-    verify_facility_geo,
+    normalize_sex, normalize_sponsor_type, prepare_ctgov_search_context, quote_essie_literal,
+    sort_trials_by_status_priority, validate_search_page_args, validate_trial_search,
+    verify_age_eligibility, verify_eligibility_criteria, verify_facility_geo,
 };
 
 pub(super) const CTGOV_COUNT_PAGE_SIZE: usize = 1000;
@@ -207,7 +207,7 @@ fn build_ctgov_search_params(
 ) -> CtGovSearchParams {
     CtGovSearchParams {
         condition: condition_query.map(str::to_string),
-        intervention: intervention_query.map(normalize_intervention_query),
+        intervention: intervention_query.map(str::trim).map(quote_essie_literal),
         facility: context.facility.clone(),
         status: context.normalized_status.clone(),
         agg_filters: context.agg_filters.clone(),
@@ -252,6 +252,7 @@ struct CtGovFilteredPage {
 struct CtGovWorkerState {
     condition_query: Option<String>,
     intervention_query: Option<String>,
+    intervention_source: &'static str,
     matched_intervention_label: Option<String>,
     next_page_token: Option<String>,
     exhausted: bool,
@@ -304,10 +305,15 @@ fn raw_intervention_query(filters: &TrialSearchFilters) -> Option<&str> {
 
 async fn resolve_ctgov_intervention_aliases(
     filters: &TrialSearchFilters,
-) -> Result<Vec<String>, BioMcpError> {
+) -> Result<Vec<TrialAlias>, BioMcpError> {
     if !matches!(filters.source, TrialSource::ClinicalTrialsGov) || filters.no_alias_expand {
         return Ok(raw_intervention_query(filters)
-            .map(|value| vec![value.to_string()])
+            .map(|value| {
+                vec![TrialAlias {
+                    label: value.to_string(),
+                    source: TrialAliasSource::Requested,
+                }]
+            })
             .unwrap_or_default());
     }
 
@@ -315,7 +321,7 @@ async fn resolve_ctgov_intervention_aliases(
         return Ok(Vec::new());
     };
 
-    resolve_trial_aliases(intervention_query).await
+    resolve_trial_aliases_with_sources(intervention_query).await
 }
 
 fn fanout_next_page_error() -> BioMcpError {
@@ -359,6 +365,27 @@ async fn fetch_ctgov_filtered_page(
         next_page_token: resp.next_page_token,
         raw_study_count,
     })
+}
+
+fn handle_ctgov_worker_outcome(
+    worker_index: usize,
+    worker: &CtGovWorkerState,
+    result: Result<CtGovFilteredPage, BioMcpError>,
+) -> Result<Option<CtGovFilteredPage>, BioMcpError> {
+    match result {
+        Ok(page) => Ok(Some(page)),
+        Err(BioMcpError::CtGovInterventionQueryRejected { reason }) if worker_index > 0 => {
+            warn!(
+                alias = worker.intervention_query.as_deref().unwrap_or_default(),
+                worker_index,
+                source = worker.intervention_source,
+                reason,
+                "Skipping expanded CTGov intervention alias rejected by the query parser"
+            );
+            Ok(None)
+        }
+        Err(err) => Err(err),
+    }
 }
 
 fn apply_ctgov_single_page(
@@ -493,23 +520,28 @@ async fn search_page_with_single_ctgov_intervention(
 
 fn ctgov_workers(
     condition_query: Option<&str>,
-    intervention_labels: &[String],
+    intervention_aliases: &[TrialAlias],
 ) -> Vec<CtGovWorkerState> {
-    let has_intervention_fanout = intervention_labels.len() > 1;
-    let interventions: Vec<Option<String>> = if intervention_labels.is_empty() {
-        vec![None]
-    } else {
-        intervention_labels.iter().cloned().map(Some).collect()
-    };
-
-    interventions
-        .into_iter()
-        .map(|intervention_query| CtGovWorkerState {
+    let has_intervention_fanout = intervention_aliases.len() > 1;
+    if intervention_aliases.is_empty() {
+        return vec![CtGovWorkerState {
             condition_query: condition_query.map(str::to_string),
-            matched_intervention_label: intervention_query
-                .clone()
-                .filter(|_| has_intervention_fanout),
-            intervention_query,
+            intervention_query: None,
+            intervention_source: "none",
+            matched_intervention_label: None,
+            next_page_token: None,
+            exhausted: false,
+            pages_fetched: 0,
+        }];
+    }
+
+    intervention_aliases
+        .iter()
+        .map(|alias| CtGovWorkerState {
+            condition_query: condition_query.map(str::to_string),
+            intervention_query: Some(alias.label.clone()),
+            intervention_source: alias.source.as_str(),
+            matched_intervention_label: has_intervention_fanout.then(|| alias.label.clone()),
             next_page_token: None,
             exhausted: false,
             pages_fetched: 0,
@@ -557,20 +589,47 @@ fn ctgov_count_from_native_total(total: usize, has_age_filter: bool) -> TrialCou
     }
 }
 
+fn ctgov_union_total(
+    degraded_coverage: bool,
+    traversal_capped: bool,
+    workers: &[CtGovWorkerState],
+    merged_row_count: usize,
+) -> Option<usize> {
+    if degraded_coverage
+        || traversal_capped
+        || workers
+            .iter()
+            .any(|worker| !worker.exhausted || worker.next_page_token.is_some())
+    {
+        None
+    } else {
+        Some(merged_row_count)
+    }
+}
+
+fn completed_ctgov_union_count(degraded_coverage: bool, unique_count: usize) -> TrialCount {
+    if degraded_coverage {
+        TrialCount::Unknown
+    } else {
+        TrialCount::Exact(unique_count)
+    }
+}
+
 async fn search_page_with_ctgov_union(
     client: &ClinicalTrialsClient,
     filters: &TrialSearchFilters,
     context: &CtGovSearchContext,
     condition_query: Option<&str>,
-    intervention_labels: &[String],
+    intervention_aliases: &[TrialAlias],
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
     let page_size = offset.saturating_add(limit).clamp(1, 100);
-    let mut workers = ctgov_workers(condition_query, intervention_labels);
+    let mut workers = ctgov_workers(condition_query, intervention_aliases);
     let mut merged_rows: Vec<TrialSearchResult> = Vec::new();
     let mut merged_index: HashMap<String, usize> = HashMap::new();
     let mut traversal_capped = false;
+    let mut degraded_coverage = false;
 
     loop {
         let active_indices: Vec<usize> = workers
@@ -597,7 +656,12 @@ async fn search_page_with_ctgov_union(
         .await;
 
         for (index, page_result) in active_indices.into_iter().zip(pages) {
-            let page = page_result?;
+            let Some(page) = handle_ctgov_worker_outcome(index, &workers[index], page_result)?
+            else {
+                workers[index].exhausted = true;
+                degraded_coverage = true;
+                continue;
+            };
             let worker = &mut workers[index];
             worker.pages_fetched += 1;
 
@@ -629,15 +693,12 @@ async fn search_page_with_ctgov_union(
         sort_trials_by_status_priority(&mut merged_rows);
     }
 
-    let total = if traversal_capped
-        || workers
-            .iter()
-            .any(|worker| !worker.exhausted || worker.next_page_token.is_some())
-    {
-        None
-    } else {
-        Some(merged_rows.len())
-    };
+    let total = ctgov_union_total(
+        degraded_coverage,
+        traversal_capped,
+        &workers,
+        merged_rows.len(),
+    );
 
     let rows = merged_rows.into_iter().skip(offset).take(limit).collect();
     Ok(SearchPage::cursor(rows, total, None))
@@ -703,11 +764,12 @@ async fn count_all_with_ctgov_union(
     filters: &TrialSearchFilters,
     context: &CtGovSearchContext,
     condition_query: Option<&str>,
-    intervention_labels: &[String],
+    intervention_aliases: &[TrialAlias],
 ) -> Result<TrialCount, BioMcpError> {
-    let mut workers = ctgov_workers(condition_query, intervention_labels);
+    let mut workers = ctgov_workers(condition_query, intervention_aliases);
     let mut unique_nct_ids: HashSet<String> = HashSet::new();
     let mut fetched_pages = 0usize;
+    let mut degraded_coverage = false;
 
     loop {
         let active_indices: Vec<usize> = workers
@@ -716,7 +778,10 @@ async fn count_all_with_ctgov_union(
             .filter_map(|(index, worker)| (!worker.exhausted).then_some(index))
             .collect();
         if active_indices.is_empty() {
-            return Ok(TrialCount::Exact(unique_nct_ids.len()));
+            return Ok(completed_ctgov_union_count(
+                degraded_coverage,
+                unique_nct_ids.len(),
+            ));
         }
 
         if ctgov_count_page_cap_would_be_exceeded(fetched_pages, active_indices.len()) {
@@ -739,7 +804,12 @@ async fn count_all_with_ctgov_union(
         fetched_pages = fetched_pages.saturating_add(active_indices.len());
 
         for (index, page_result) in active_indices.into_iter().zip(pages) {
-            let page = page_result?;
+            let Some(page) = handle_ctgov_worker_outcome(index, &workers[index], page_result)?
+            else {
+                workers[index].exhausted = true;
+                degraded_coverage = true;
+                continue;
+            };
             let worker = &mut workers[index];
             worker.pages_fetched += 1;
 

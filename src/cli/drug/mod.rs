@@ -84,9 +84,9 @@ EXAMPLES:
   biomcp drug trials daraxonrasib --no-alias-expand --limit 20
   biomcp drug trials osimertinib --source nci --limit 5
 
-Note: On `--source ctgov`, this helper inherits intervention alias expansion from `search trial`,
-adds `Matched Intervention` / `matched_intervention_label` when an alternate alias matched first,
-and supports `--no-alias-expand` for literal matching.
+Note: On `--source ctgov`, this helper inherits the quoted-literal, trial-safe alias policy from
+`search trial`, adds `Matched Intervention` / `matched_intervention_label` when an alternate alias
+matched first, and supports `--no-alias-expand` for one literal request.
 See also: biomcp list drug")]
     Trials {
         /// Drug name (e.g., pembrolizumab)
@@ -100,7 +100,7 @@ See also: biomcp list drug")]
         /// Trial data source (ctgov or nci)
         #[arg(long, default_value = "ctgov")]
         source: String,
-        /// Disable ClinicalTrials.gov intervention alias expansion and force literal matching.
+        /// Disable ClinicalTrials.gov intervention alias expansion and send one literal request.
         #[arg(long = "no-alias-expand")]
         no_alias_expand: bool,
     },
