@@ -273,7 +273,7 @@ runtime layer can report a silent green.
 
 ```bash
 env MAKEFLAGS=' -- BIOMCP_BIN=/bin/true' MAKEOVERRIDES=BIOMCP_BIN \
-  sh -c 'env -u BIOMCP_BIN make -C ../.. -n test SPEC_PROFILE=spec' \
+  env -u BIOMCP_BIN make -C ../.. -n test SPEC_PROFILE=spec \
   2>&1 | mustmatch like 'cargo nextest run
 cargo build --locked --profile spec
 /target/spec/biomcp" uv run --no-sync pytest tests/ -v
@@ -312,7 +312,7 @@ spec subset from replacing the standard `lint`, `test`, and release-profile
 ```bash
 env MAKEFLAGS=' -- BIOMCP_BIN=/bin/true SPEC_PROFILE=spec' \
   MAKEOVERRIDES='BIOMCP_BIN SPEC_PROFILE' \
-  sh -c 'env -u BIOMCP_BIN -u SPEC_PROFILE make -C ../.. -n release-gate' \
+  env -u BIOMCP_BIN -u SPEC_PROFILE make -C ../.. -n release-gate \
   2>&1 | mustmatch like 'cargo nextest run
 cargo build --locked --profile release
 /target/release/biomcp" uv run --no-sync pytest tests/ -v
@@ -413,11 +413,16 @@ When March or a release gate already built BioMCP, the routine spec target
 should reuse that binary instead of rebuilding `target/spec/biomcp`. The dry-run
 recipe keeps this contract visible without executing the binary.
 
-```bash
-tmp_bin="$(mktemp)"
-trap 'rm -f "$tmp_bin"' EXIT
-chmod +x "$tmp_bin"
-env BIOMCP_BIN="$tmp_bin" make -C ../.. -n spec 2>&1 | mustmatch not like "cargo build --locked --profile"
+```bash run id=caller-provided-spec-binary
+make -C ../.. -n spec BIOMCP_BIN=/bin/true 2>&1
+```
+
+```text expect=caller-provided-spec-binary contains
+BIOMCP_BIN="/bin/true" bash scripts/run-specs.sh spec
+```
+
+```text expect=caller-provided-spec-binary not-contains
+cargo build --locked --profile
 ```
 
 If the provided value is missing or not executable, `make spec` should keep the
@@ -426,8 +431,8 @@ to run a bad caller value.
 
 ```bash
 env MAKEFLAGS=' -- BIOMCP_BIN=/bin/true' MAKEOVERRIDES=BIOMCP_BIN \
-  sh -c 'env BIOMCP_BIN=/tmp/biomcp-missing-for-spec-contract make -C ../.. -n spec' \
-  2>&1 | mustmatch like "cargo build --locked --profile"
+  env BIOMCP_BIN=/tmp/biomcp-missing-for-spec-contract make -C ../.. -n spec \
+  2>&1 | mustmatch like "cargo build --locked --profile spec"
 ```
 
 ## Routine Spec Runner Keeps One Python Canary
