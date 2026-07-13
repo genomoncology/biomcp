@@ -129,6 +129,35 @@ The complete warm routine `make test` was `46.06s`. Missing cold phase values
 are recorded as unavailable rather than inferred from aggregate runs. These
 observations make compile reuse visible without introducing a timing SLA.
 
+## Ticket 507 Explicit-Fixture Pacing Result
+
+On beelink on 2026-07-13, the parent binary at `e62b45066d931480b8d4fd38df09ab4216af266b`
+and candidate binary at `14a8ec05f4f6716ecbaaca6c79600582542aee70` were each built once before
+timing. Each repetition removed the worktree-local routine HTTP cache, started a fresh shared
+article fixture, ran the candidate revision's article document, and cleaned up the fixture.
+Compilation was excluded.
+
+| Article binary | Cold inclusive samples | Min / median / max | Median setup / command / cleanup | Result |
+|---|---:|---:|---:|---|
+| Parent | `341693`, `341685`, `343642` ms | `341685 / 341693 / 343642` ms | `117 / 341462 / 113` ms | retained assertions: 23 passed, 3 skipped; the new run and expectation timed out |
+| Candidate | `19652`, `20790`, `20670` ms | `19652 / 20670 / 20790` ms | `116 / 20441 / 111` ms | 25 passed, 3 skipped, including the new run and expectation |
+
+The candidate median is 93.95% below the same-harness parent and 93.79% below ticket 505's
+`332983` ms inclusive reference median. Existing expected command exits stayed green; the only
+parent/candidate exit difference was the deliberately red five-second assertion becoming green.
+The candidate median is below the `133193` ms acceptance cap.
+
+Three complete cold candidate routines took `60.62`, `61.92`, and `54.06` seconds: min `54.06`,
+median `60.62`, and max `61.92` seconds. Every run reported 25 passed/3 skipped for article,
+110 passed/3 skipped for the remaining Markdown, and 30 passed for the Python isolation canary.
+The median is below the `584.238` second cap and 89.31% below ticket 505's `567.221` second
+pre-regression reference median.
+
+`BIOMCP_TEST_UNPACED_ORIGIN` is an internal fixture-only signal. The runner sources the shared
+article fixture's source bases and signal only inside the article mustmatch subshell; later
+Markdown and the Python canary retain the caller environment instead of inheriting article
+overrides.
+
 ## Per-Section Warm Ceilings
 
 | Section | Lane | Ceiling | Why |
