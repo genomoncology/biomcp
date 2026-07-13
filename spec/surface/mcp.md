@@ -272,7 +272,9 @@ run the Rust unit suite and the Python CLI/MCP/docs contract lane so neither
 runtime layer can report a silent green.
 
 ```bash
-env -u BIOMCP_BIN make -C ../.. -n test SPEC_PROFILE=spec SPEC_BIN="$(realpath ../../target/spec/biomcp)" 2>&1 | mustmatch like 'cargo nextest run
+env MAKEFLAGS=' -- BIOMCP_BIN=/bin/true' MAKEOVERRIDES=BIOMCP_BIN \
+  sh -c 'env -u BIOMCP_BIN make -C ../.. -n test SPEC_PROFILE=spec' \
+  2>&1 | mustmatch like 'cargo nextest run
 cargo build --locked --profile spec
 /target/spec/biomcp" uv run --no-sync pytest tests/ -v
 /target/spec/biomcp" uv run --no-sync mkdocs build --strict'
@@ -308,7 +310,10 @@ spec subset from replacing the standard `lint`, `test`, and release-profile
 `spec` gate.
 
 ```bash
-env -u BIOMCP_BIN -u SPEC_PROFILE make -C ../.. -n release-gate 2>&1 | mustmatch like 'cargo nextest run
+env MAKEFLAGS=' -- BIOMCP_BIN=/bin/true SPEC_PROFILE=spec' \
+  MAKEOVERRIDES='BIOMCP_BIN SPEC_PROFILE' \
+  sh -c 'env -u BIOMCP_BIN -u SPEC_PROFILE make -C ../.. -n release-gate' \
+  2>&1 | mustmatch like 'cargo nextest run
 cargo build --locked --profile release
 /target/release/biomcp" uv run --no-sync pytest tests/ -v
 /target/release/biomcp" uv run --no-sync mkdocs build --strict
@@ -420,7 +425,9 @@ standalone local path safe by building the spec-profile binary instead of trying
 to run a bad caller value.
 
 ```bash
-env BIOMCP_BIN="/tmp/biomcp-missing-for-spec-contract" make -C ../.. -n spec 2>&1 | mustmatch like "cargo build --locked --profile"
+env MAKEFLAGS=' -- BIOMCP_BIN=/bin/true' MAKEOVERRIDES=BIOMCP_BIN \
+  sh -c 'env BIOMCP_BIN=/tmp/biomcp-missing-for-spec-contract make -C ../.. -n spec' \
+  2>&1 | mustmatch like "cargo build --locked --profile"
 ```
 
 ## Routine Spec Runner Keeps One Python Canary
