@@ -153,10 +153,11 @@ median `60.62`, and max `61.92` seconds. Every run reported 25 passed/3 skipped 
 The median is below the `584.238` second cap and 89.31% below ticket 505's `567.221` second
 pre-regression reference median.
 
-`BIOMCP_TEST_UNPACED_ORIGIN` is an internal fixture-only signal. The runner sources the shared
-article fixture's source bases and signal only inside the article mustmatch subshell; later
-Markdown and the Python canary retain the caller environment instead of inheriting article
-overrides.
+`BIOMCP_TEST_UNPACED_ORIGIN` is an internal fixture-only signal. Only requests to its validated
+exact loopback origin skip pacing, and redirects cannot leave that origin unpaced. The runner
+sources the shared article fixture's source bases and signal only inside the article mustmatch
+subshell; later Markdown and the Python canary retain the caller environment instead of
+inheriting article overrides.
 
 ## Per-Section Warm Ceilings
 

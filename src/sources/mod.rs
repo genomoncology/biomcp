@@ -508,6 +508,7 @@ fn build_http_client_with_config(
         .connect_timeout(Duration::from_secs(10))
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .default_headers(default_headers)
+        .redirect(rate_limit::redirect_policy())
         .build()
         .map_err(BioMcpError::HttpClientInit)?;
 
@@ -615,6 +616,7 @@ pub(crate) fn streaming_http_client() -> Result<reqwest::Client, BioMcpError> {
         .timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(10))
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
+        .redirect(rate_limit::redirect_policy())
         .build()
         .map_err(BioMcpError::HttpClientInit)?;
 

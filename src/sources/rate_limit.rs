@@ -25,6 +25,12 @@ struct UnpacedOrigin {
 }
 
 impl UnpacedOrigin {
+    fn from_env() -> Option<Self> {
+        std::env::var("BIOMCP_TEST_UNPACED_ORIGIN")
+            .ok()
+            .and_then(|raw| Self::parse_signal(&raw))
+    }
+
     fn parse_signal(raw: &str) -> Option<Self> {
         if raw.contains('\\')
             || raw
@@ -165,10 +171,11 @@ impl RateLimiter {
                 Duration::from_millis(334),
             ),
         ];
-        let unpaced_origin = std::env::var("BIOMCP_TEST_UNPACED_ORIGIN")
-            .ok()
-            .and_then(|raw| UnpacedOrigin::parse_signal(&raw));
-        Self::new(policies, Duration::from_millis(100), unpaced_origin)
+        Self::new(
+            policies,
+            Duration::from_millis(100),
+            UnpacedOrigin::from_env(),
+        )
     }
 
     fn new(
@@ -278,6 +285,26 @@ fn policy(
 
 static GLOBAL_RATE_LIMITER: OnceLock<Arc<RateLimiter>> = OnceLock::new();
 
+pub(crate) fn redirect_policy() -> reqwest::redirect::Policy {
+    redirect_policy_for(global_limiter().unpaced_origin.clone())
+}
+
+fn redirect_policy_for(unpaced_origin: Option<UnpacedOrigin>) -> reqwest::redirect::Policy {
+    let default_policy = reqwest::redirect::Policy::default();
+    reqwest::redirect::Policy::custom(move |attempt| {
+        let leaves_unpaced_origin = attempt.previous().last().is_some_and(|source| {
+            unpaced_origin
+                .as_ref()
+                .is_some_and(|origin| origin.matches(source) && !origin.matches(attempt.url()))
+        });
+        if leaves_unpaced_origin {
+            attempt.error("fixture request cannot redirect outside its unpaced origin")
+        } else {
+            default_policy.redirect(attempt)
+        }
+    })
+}
+
 pub(crate) fn global_limiter() -> Arc<RateLimiter> {
     GLOBAL_RATE_LIMITER
         .get_or_init(|| Arc::new(RateLimiter::from_env()))
@@ -319,6 +346,10 @@ pub(crate) async fn wait_for_url_str(raw: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpListener;
+    use tokio::task::JoinHandle;
+    use tokio::time::timeout;
 
     fn test_policy(key: &'static str, prefix: &str, ms: u64) -> RateLimitPolicy {
         RateLimitPolicy {
@@ -352,6 +383,128 @@ mod tests {
                 "signal should fail closed: {raw}"
             );
         }
+    }
+
+    fn spawn_http_responses(listener: TcpListener, responses: Vec<String>) -> JoinHandle<bool> {
+        tokio::spawn(async move {
+            let mut received_request = false;
+            for response in responses {
+                let Ok(Ok((mut socket, _))) =
+                    timeout(Duration::from_millis(500), listener.accept()).await
+                else {
+                    break;
+                };
+                received_request = true;
+                let mut request = [0_u8; 2048];
+                let _ = socket.read(&mut request).await;
+                socket.write_all(response.as_bytes()).await.unwrap();
+            }
+            received_request
+        })
+    }
+
+    fn ok_response() -> String {
+        "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok".to_string()
+    }
+
+    fn redirect_response(location: &str) -> String {
+        format!(
+            "HTTP/1.1 302 Found\r\nLocation: {location}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        )
+    }
+
+    #[tokio::test]
+    async fn fixture_redirects_stay_within_the_unpaced_origin() {
+        let same_origin_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let same_origin_addr = same_origin_listener.local_addr().unwrap();
+        let same_origin_server = spawn_http_responses(
+            same_origin_listener,
+            vec![
+                redirect_response(&format!("http://{same_origin_addr}/final")),
+                ok_response(),
+            ],
+        );
+        let client = reqwest::Client::builder()
+            .redirect(redirect_policy_for(UnpacedOrigin::parse_signal(&format!(
+                "http://{same_origin_addr}"
+            ))))
+            .build()
+            .unwrap();
+
+        let response = client
+            .get(format!("http://{same_origin_addr}/start"))
+            .send()
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), reqwest::StatusCode::OK);
+        assert!(same_origin_server.await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn fixture_redirects_cannot_escape_to_another_origin() {
+        let target_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let target_addr = target_listener.local_addr().unwrap();
+        let target_server = spawn_http_responses(target_listener, vec![ok_response()]);
+        let fixture_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let fixture_addr = fixture_listener.local_addr().unwrap();
+        let fixture_server = spawn_http_responses(
+            fixture_listener,
+            vec![redirect_response(&format!("http://{target_addr}/outside"))],
+        );
+        let client = reqwest::Client::builder()
+            .redirect(redirect_policy_for(UnpacedOrigin::parse_signal(&format!(
+                "http://{fixture_addr}"
+            ))))
+            .build()
+            .unwrap();
+
+        let error = client
+            .get(format!("http://{fixture_addr}/start"))
+            .send()
+            .await
+            .expect_err("cross-origin fixture redirect must fail closed");
+
+        assert!(error.is_redirect());
+        assert!(fixture_server.await.unwrap());
+        assert!(!target_server.await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn ordinary_cross_origin_redirects_remain_enabled() {
+        let target_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let target_addr = target_listener.local_addr().unwrap();
+        let target_server = spawn_http_responses(target_listener, vec![ok_response()]);
+        let source_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let source_addr = source_listener.local_addr().unwrap();
+        let source_server = spawn_http_responses(
+            source_listener,
+            vec![redirect_response(&format!("http://{target_addr}/final"))],
+        );
+        let client = reqwest::Client::builder()
+            .redirect(redirect_policy_for(None))
+            .build()
+            .unwrap();
+
+        let response = client
+            .get(format!("http://{source_addr}/start"))
+            .send()
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), reqwest::StatusCode::OK);
+        assert!(source_server.await.unwrap());
+        assert!(target_server.await.unwrap());
+    }
+
+    #[test]
+    fn unpaced_origin_match_requires_exact_scheme_ip_and_effective_port() {
+        let origin = UnpacedOrigin::parse_signal("http://[::1]:8123").unwrap();
+
+        assert!(origin.matches(&Url::parse("http://[::1]:8123/resource").unwrap()));
+        assert!(!origin.matches(&Url::parse("https://[::1]:8123/resource").unwrap()));
+        assert!(!origin.matches(&Url::parse("http://127.0.0.1:8123/resource").unwrap()));
+        assert!(!origin.matches(&Url::parse("http://[::1]:8124/resource").unwrap()));
     }
 
     #[tokio::test]
@@ -494,12 +647,40 @@ mod tests {
     }
 
     #[test]
-    fn semantic_scholar_urls_resolve_to_semantic_scholar_policy() {
+    fn article_source_urls_keep_their_live_pacing_policies() {
         let limiter = RateLimiter::from_env();
-        let key = limiter
-            .resolve_key_for_str("https://api.semanticscholar.org/graph/v1/paper/PMID%3A22663011")
-            .expect("semantic scholar URL should parse");
-        assert_eq!(key, "policy:semantic-scholar");
+        for (raw, expected_key, expected_interval) in [
+            (
+                "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=22663011",
+                "policy:pubtator",
+                pubtator_min_interval(crate::sources::ncbi_api_key().is_some()),
+            ),
+            (
+                "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC123",
+                "policy:pmc-oa",
+                Duration::from_millis(334),
+            ),
+            (
+                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=BRAF",
+                "policy:pubmed-eutils",
+                pubmed_eutils_min_interval(crate::sources::ncbi_api_key().is_some()),
+            ),
+            (
+                "https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles?ids=22663011",
+                "policy:ncbi-idconv",
+                Duration::from_millis(334),
+            ),
+            (
+                "https://api.semanticscholar.org/graph/v1/paper/PMID%3A22663011",
+                "policy:semantic-scholar",
+                s2_min_interval(crate::sources::s2_api_key().is_some()),
+            ),
+        ] {
+            let url = Url::parse(raw).unwrap();
+            let (key, interval) = limiter.resolve_key_and_interval(&url);
+            assert_eq!(key, expected_key);
+            assert_eq!(interval, expected_interval);
+        }
     }
 
     #[test]
@@ -509,17 +690,6 @@ mod tests {
             .resolve_key_for_str("https://rest.kegg.jp/find/pathway/MAPK")
             .expect("kegg URL should parse");
         assert_eq!(key, "policy:kegg");
-    }
-
-    #[test]
-    fn pubmed_eutils_urls_resolve_to_pubmed_policy() {
-        let limiter = RateLimiter::from_env();
-        let key = limiter
-            .resolve_key_for_str(
-                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=BRAF",
-            )
-            .expect("pubmed E-utilities URL should parse");
-        assert_eq!(key, "policy:pubmed-eutils");
     }
 
     #[test]
