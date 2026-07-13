@@ -37,7 +37,7 @@ pub(super) fn essie_escape(value: &str) -> String {
     out
 }
 
-fn quote_essie_literal(value: &str) -> String {
+pub(super) fn quote_essie_literal(value: &str) -> String {
     format!("\"{}\"", essie_escape(value))
 }
 

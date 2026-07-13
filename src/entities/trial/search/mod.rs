@@ -23,12 +23,12 @@ use self::eligibility::{
 use self::essie::has_essie_filters;
 use self::essie::{
     build_essie_fragments, essie_escape, essie_escape_boolean_expression, has_boolean_operators,
+    quote_essie_literal,
 };
 use self::nci::search_page_with_nci_clients;
 use self::normalization::{
-    normalize_intervention_query, normalize_sex, normalize_sponsor_type,
-    normalized_facility_filter, normalized_phase_filter, normalized_status_filter,
-    sort_trials_by_status_priority,
+    normalize_sex, normalize_sponsor_type, normalized_facility_filter, normalized_phase_filter,
+    normalized_status_filter, sort_trials_by_status_priority,
 };
 
 use super::{TrialCount, TrialSearchFilters, TrialSearchResult, TrialSource};

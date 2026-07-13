@@ -1,6 +1,8 @@
 //! Trial search normalization helpers shared across search backends.
 
+#[cfg(test)]
 use regex::Regex;
+#[cfg(test)]
 use std::sync::OnceLock;
 
 use crate::error::BioMcpError;
@@ -218,6 +220,7 @@ pub(super) fn normalized_phase_filter(
         .transpose()
 }
 
+#[cfg(test)]
 pub(super) fn normalize_intervention_query(value: &str) -> String {
     static RE: OnceLock<Regex> = OnceLock::new();
     let re = RE.get_or_init(|| Regex::new(r"([A-Za-z]{2,})\s+(\d{2,})").expect("valid regex"));

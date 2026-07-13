@@ -28,9 +28,10 @@ Condition searches send the supplied label literally.
 biomcp search trial -c "Rett Syndrome" --limit 20
 ```
 
-On the default CTGov path, `--intervention` auto-expands known drug aliases
-from the shared drug identity surface, unions the matching trials, and shows
-which alias matched each returned row.
+On the default CTGov path, every `--intervention` worker is sent as one quoted
+literal. BioMCP can expand the name with plausible trade names and
+investigational codes, excludes systematic chemical synonyms, unions the
+matching trials, and shows which alias matched each returned row.
 
 ```bash
 biomcp search trial -i daraxonrasib --limit 20
@@ -38,8 +39,8 @@ biomcp search trial -i daraxonrasib --no-alias-expand --limit 20
 ```
 
 When an alternate alias wins, markdown adds a `Matched Intervention` column and
-JSON adds `matched_intervention_label`. `--no-alias-expand` forces strict
-literal intervention matching. If intervention expansion fans out to multiple
+JSON adds `matched_intervention_label`. `--no-alias-expand` performs one
+literal request for the supplied name. If intervention expansion fans out to multiple
 CTGov queries, `--next-page` is unavailable; use `--offset` or
 `--no-alias-expand`.
 

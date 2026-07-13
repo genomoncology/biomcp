@@ -100,6 +100,9 @@ New to BioMCP? Try:
 - `search gene ... --region --pathway --go` (use GO IDs like `GO:0004672`; search output includes Coordinates (GRCh38)/UniProt/OMIM)
 - `search protein ... --reviewed --disease --existence` (default reviewed mode)
 - `search trial ... --mutation --criteria --study-type --has-results --date-from --date-to`
+  - CTGov intervention workers are quoted literals.
+  - Expansion uses plausible trade names and investigational codes while excluding systematic chemical synonyms.
+  - `--no-alias-expand` performs one literal request.
 - `search article ... --date-from --date-to --year-min --year-max --journal`
   - add `--source <all, pubtator, europepmc, pubmed, semanticscholar, litsense2>`
   - add `--max-per-source <N>` or `--session <token>` when needed
@@ -129,7 +132,7 @@ New to BioMCP? Try:
 
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
 - `variant articles <id>`
-- `drug trials <name>`
+- `drug trials <name>` - uses the same trial-safe CTGov literal and alias policy as `search trial`
 - `drug interactions <name> [--limit <N>] [--offset <N>]` - bounded local DDInter-backed drug-drug interactions
   - defaults to 25 rows, caps pages at 50, and reports fresh/stale bundle state
 - `drug adverse-events <name>` - FAERS-first adverse-event lookup

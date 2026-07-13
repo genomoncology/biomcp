@@ -9,6 +9,8 @@ use crate::sources::{RequestPlan, request_from_plan};
 const CTGOV_BASE: &str = "https://clinicaltrials.gov/api/v2";
 const CTGOV_API: &str = "clinicaltrials.gov";
 const CTGOV_BASE_ENV: &str = "BIOMCP_CTGOV_BASE";
+const CTGOV_INTERVENTION_QUERY_ERROR_PREFIX: &str =
+    "Error parsing query in Intervention / treatment:";
 
 const CTGOV_SEARCH_FIELDS: &str = "NCTId,BriefTitle,OverallStatus,Phase,StudyType,Condition,InterventionName,LeadSponsorName,EnrollmentCount,BriefSummary,StartDate,CompletionDate,MinimumAge,MaximumAge";
 pub const CTGOV_ADVERSE_EVENT_SEARCH_FIELDS: &str = "protocolSection.identificationModule.nctId,protocolSection.identificationModule.briefTitle,hasResults,resultsSection.adverseEventsModule";
@@ -176,6 +178,14 @@ impl ClinicalTrialsClient {
         status: reqwest::StatusCode,
         bytes: &[u8],
     ) -> Result<T, BioMcpError> {
+        let body = String::from_utf8_lossy(bytes);
+        if status == reqwest::StatusCode::BAD_REQUEST
+            && body.starts_with(CTGOV_INTERVENTION_QUERY_ERROR_PREFIX)
+        {
+            return Err(BioMcpError::CtGovInterventionQueryRejected {
+                reason: body.chars().take(256).collect(),
+            });
+        }
         crate::sources::decode_json(CTGOV_API, status, None, bytes, false)
     }
 

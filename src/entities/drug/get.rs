@@ -9,6 +9,7 @@ use tracing::warn;
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::ema::{EmaClient, EmaSyncMode};
+use crate::sources::mychem::MyChemHit;
 use crate::sources::openfda::OpenFdaClient;
 use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
 use crate::transform;
@@ -236,6 +237,7 @@ async fn add_approvals_section(drug: &mut Drug) {
 pub(super) struct ResolvedDrugBase {
     pub(super) drug: Drug,
     pub(super) label_response: Option<serde_json::Value>,
+    trial_alias_candidates: Vec<TrialAlias>,
 }
 
 enum SparseDrugDiscoverRescue {
@@ -289,15 +291,40 @@ async fn discover_sparse_drug_rescue(name: &str) -> SparseDrugDiscoverRescue {
     SparseDrugDiscoverRescue::AliasFallback
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TrialAliasSource {
+    Requested,
+    Canonical,
+    OpenFdaBrand,
+    DrugBankSynonym,
+}
+
+impl TrialAliasSource {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Requested => "requested",
+            Self::Canonical => "canonical",
+            Self::OpenFdaBrand => "openfda_brand",
+            Self::DrugBankSynonym => "drugbank_synonym",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct TrialAlias {
+    pub(crate) label: String,
+    pub(crate) source: TrialAliasSource,
+}
+
 #[derive(Clone)]
 struct TrialAliasResolution {
     canonical_name: String,
-    aliases: Vec<String>,
+    aliases: Vec<TrialAlias>,
 }
 
 struct TrialAliasLookup {
     canonical_name: String,
-    brand_names: Vec<String>,
+    candidates: Vec<TrialAlias>,
 }
 
 static TRIAL_ALIAS_CACHE: OnceLock<Mutex<HashMap<String, TrialAliasResolution>>> = OnceLock::new();
@@ -310,63 +337,128 @@ fn trial_alias_cache_key(name: &str) -> String {
     name.trim().to_ascii_lowercase()
 }
 
-fn looks_like_trial_formulation_variant(alias: &str) -> bool {
-    static STRENGTH_RE: OnceLock<Regex> = OnceLock::new();
-    static FORMULATION_RE: OnceLock<Regex> = OnceLock::new();
-
-    let strength_re = STRENGTH_RE.get_or_init(|| {
-        Regex::new(r"(?i)\b\d+(?:\.\d+)?\s*(?:mg|g|mcg|μg|ug|ml)(?:\s*/\s*(?:ml|l))?\b")
-            .expect("valid strength regex")
-    });
-    if strength_re.is_match(alias) {
-        return true;
-    }
-
-    FORMULATION_RE
+fn is_investigational_code(alias: &str) -> bool {
+    static CODE_RE: OnceLock<Regex> = OnceLock::new();
+    CODE_RE
         .get_or_init(|| {
-            Regex::new(r"(?i)\b(tablet|capsule|injection|solution|suspension)\b")
-                .expect("valid formulation regex")
+            Regex::new(r"(?i)^[a-z]+[ -]\d{2}[a-z0-9-]*$")
+                .expect("valid investigational code regex")
         })
         .is_match(alias)
 }
 
+fn is_simple_trial_name(alias: &str) -> bool {
+    let lower = alias.to_ascii_lowercase();
+    alias.chars().count() <= 64
+        && alias.split_whitespace().count() <= 4
+        && !lower.contains("free base")
+        && alias
+            .chars()
+            .all(|ch| ch.is_alphanumeric() || ch.is_whitespace() || matches!(ch, '\'' | '-'))
+}
+
+fn eligible_drugbank_trial_alias(alias: &str) -> bool {
+    is_investigational_code(alias) || is_simple_trial_name(alias)
+}
+
 fn push_trial_alias(
-    aliases: &mut Vec<String>,
+    aliases: &mut Vec<TrialAlias>,
     seen: &mut HashSet<String>,
     alias: &str,
-    filter_formulation_variant: bool,
+    source: TrialAliasSource,
 ) {
     let alias = alias.trim();
     if alias.is_empty() {
         return;
     }
-    if filter_formulation_variant && looks_like_trial_formulation_variant(alias) {
-        return;
-    }
-
-    let key = alias.to_ascii_lowercase();
-    if seen.insert(key) {
-        aliases.push(alias.to_string());
+    if seen.insert(alias.to_ascii_lowercase()) {
+        aliases.push(TrialAlias {
+            label: alias.to_string(),
+            source,
+        });
     }
 }
 
 fn build_trial_aliases(
     requested_name: &str,
     canonical_name: Option<&str>,
-    brand_names: &[String],
-) -> Vec<String> {
+    candidates: &[TrialAlias],
+) -> Vec<TrialAlias> {
     let mut aliases = Vec::new();
     let mut seen = HashSet::new();
 
-    push_trial_alias(&mut aliases, &mut seen, requested_name, false);
+    push_trial_alias(
+        &mut aliases,
+        &mut seen,
+        requested_name,
+        TrialAliasSource::Requested,
+    );
     if let Some(canonical_name) = canonical_name {
-        push_trial_alias(&mut aliases, &mut seen, canonical_name, false);
+        push_trial_alias(
+            &mut aliases,
+            &mut seen,
+            canonical_name,
+            TrialAliasSource::Canonical,
+        );
     }
-    for brand_name in brand_names {
-        push_trial_alias(&mut aliases, &mut seen, brand_name, true);
+
+    let mut provider_aliases = 0;
+    for source in [
+        TrialAliasSource::OpenFdaBrand,
+        TrialAliasSource::DrugBankSynonym,
+    ] {
+        let mut source_candidates = candidates
+            .iter()
+            .filter(|candidate| candidate.source == source)
+            .filter(|candidate| {
+                source == TrialAliasSource::OpenFdaBrand
+                    || eligible_drugbank_trial_alias(candidate.label.trim())
+            })
+            .collect::<Vec<_>>();
+        source_candidates.sort_by(|left, right| {
+            left.label
+                .trim()
+                .to_ascii_lowercase()
+                .cmp(&right.label.trim().to_ascii_lowercase())
+                .then_with(|| left.label.trim().cmp(right.label.trim()))
+        });
+        for candidate in source_candidates {
+            if provider_aliases >= 3 {
+                break;
+            }
+            let previous_len = aliases.len();
+            push_trial_alias(&mut aliases, &mut seen, &candidate.label, candidate.source);
+            provider_aliases += usize::from(aliases.len() > previous_len);
+        }
     }
 
     aliases
+}
+
+fn trial_alias_candidates_from_hits(hits: &[&MyChemHit]) -> Vec<TrialAlias> {
+    let mut candidates = Vec::new();
+    for hit in hits {
+        if let Some(openfda) = &hit.openfda {
+            candidates.extend(
+                openfda
+                    .brand_name
+                    .clone()
+                    .into_vec()
+                    .into_iter()
+                    .map(|label| TrialAlias {
+                        label,
+                        source: TrialAliasSource::OpenFdaBrand,
+                    }),
+            );
+        }
+        if let Some(drugbank) = &hit.drugbank {
+            candidates.extend(drugbank.synonyms.iter().cloned().map(|label| TrialAlias {
+                label,
+                source: TrialAliasSource::DrugBankSynonym,
+            }));
+        }
+    }
+    candidates
 }
 
 fn trial_alias_resolution_from_lookup_result(
@@ -380,7 +472,7 @@ fn trial_alias_resolution_from_lookup_result(
                 aliases: build_trial_aliases(
                     requested_name,
                     Some(&resolved.canonical_name),
-                    &resolved.brand_names,
+                    &resolved.candidates,
                 ),
             },
             true,
@@ -388,7 +480,10 @@ fn trial_alias_resolution_from_lookup_result(
         Err(BioMcpError::NotFound { .. }) => (
             TrialAliasResolution {
                 canonical_name: requested_name.to_string(),
-                aliases: vec![requested_name.to_string()],
+                aliases: vec![TrialAlias {
+                    label: requested_name.to_string(),
+                    source: TrialAliasSource::Requested,
+                }],
             },
             true,
         ),
@@ -400,7 +495,10 @@ fn trial_alias_resolution_from_lookup_result(
             (
                 TrialAliasResolution {
                     canonical_name: requested_name.to_string(),
-                    aliases: vec![requested_name.to_string()],
+                    aliases: vec![TrialAlias {
+                        label: requested_name.to_string(),
+                        source: TrialAliasSource::Requested,
+                    }],
                 },
                 false,
             )
@@ -420,14 +518,18 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
     if let Ok(cache) = trial_alias_cache().lock()
         && let Some(cached) = cache.get(&cache_key)
     {
-        return Ok(cached.clone());
+        let mut resolution = cached.clone();
+        if let Some(requested_alias) = resolution.aliases.first_mut() {
+            requested_alias.label = requested_name.to_string();
+        }
+        return Ok(resolution);
     }
 
     let lookup = resolve_drug_base(requested_name, false, false)
         .await
         .map(|resolved| TrialAliasLookup {
             canonical_name: resolved.drug.name,
-            brand_names: resolved.drug.brand_names,
+            candidates: resolved.trial_alias_candidates,
         });
     let (resolution, cacheable) = trial_alias_resolution_from_lookup_result(requested_name, lookup);
 
@@ -439,6 +541,17 @@ async fn resolve_trial_alias_resolution(name: &str) -> Result<TrialAliasResoluti
 }
 
 pub(crate) async fn resolve_trial_aliases(name: &str) -> Result<Vec<String>, BioMcpError> {
+    Ok(resolve_trial_alias_resolution(name)
+        .await?
+        .aliases
+        .into_iter()
+        .map(|alias| alias.label)
+        .collect())
+}
+
+pub(crate) async fn resolve_trial_aliases_with_sources(
+    name: &str,
+) -> Result<Vec<TrialAlias>, BioMcpError> {
     Ok(resolve_trial_alias_resolution(name).await?.aliases)
 }
 
@@ -568,9 +681,11 @@ pub(super) async fn resolve_drug_base(
         drug.label_set_id = extract_label_set_id(label_response);
     }
 
+    let trial_alias_candidates = trial_alias_candidates_from_hits(&selected);
     Ok(ResolvedDrugBase {
         drug,
         label_response: label_response_opt,
+        trial_alias_candidates,
     })
 }
 
