@@ -2,6 +2,9 @@
 
 BioMCP exposes structured internal error variants through human-readable CLI messages.
 This reference maps each `BioMcpError` variant to likely causes and practical recovery steps.
+JSON output renders variant names as stable snake-case `error.code` values; for example,
+missing credentials use `api_key_required`, while configured credentials rejected by a
+provider use `api_key_rejected`.
 
 ## Process exit codes
 
