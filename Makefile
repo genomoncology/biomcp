@@ -5,6 +5,7 @@ SPEC_ROUTINE_PATHS = \
 	spec/entity/disease-survival-fixture.md \
 	spec/entity/drug-interactions.md \
 	spec/entity/study.md \
+	spec/entity/trial-intervention-aliases.md \
 	spec/entity/variant.md \
 	spec/surface/mcp.md \
 	spec/surface/docker-image.md \

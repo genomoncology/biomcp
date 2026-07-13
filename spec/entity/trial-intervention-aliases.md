@@ -1,0 +1,18 @@
+# Trial Intervention Aliases
+
+Intervention search can broaden a known drug name through useful identity aliases
+without letting upstream synonym punctuation change ClinicalTrials.gov grammar.
+The requested name remains authoritative while trade names add relevant trials.
+
+## Literal, trial-safe intervention aliases
+
+ClinicalTrials.gov intervention searches treat the requested drug and useful
+trade names as literal names. Systematic chemical synonyms from identity data
+must not turn one valid drug search into invalid CTGov query grammar.
+
+```bash
+../../spec/fixtures/ctgov-request-log run-with-mychem ../../tools/biomcp-ci --json search trial --intervention venetoclax --source ctgov --limit 5 \
+  | jq -r '.results[] | .matched_intervention_label' \
+  | mustmatch like 'venetoclax
+Venclexta'
+```
