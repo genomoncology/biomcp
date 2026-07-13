@@ -26,6 +26,22 @@ struct UnpacedOrigin {
 
 impl UnpacedOrigin {
     fn parse_signal(raw: &str) -> Option<Self> {
+        if raw.contains('\\')
+            || raw
+                .chars()
+                .any(|character| character.is_whitespace() || character.is_control())
+        {
+            return None;
+        }
+        let (_, authority_and_suffix) = raw.split_once("://")?;
+        let suffix_start = authority_and_suffix
+            .find(['/', '?', '#'])
+            .unwrap_or(authority_and_suffix.len());
+        let (authority, suffix) = authority_and_suffix.split_at(suffix_start);
+        if authority.contains('@') || !matches!(suffix, "" | "/") {
+            return None;
+        }
+
         let url = Url::parse(raw).ok()?;
         if !url.username().is_empty()
             || url.password().is_some()
@@ -319,11 +335,15 @@ mod tests {
 
         for raw in [
             "not a url",
+            r"http:\127.0.0.1:8123",
             "http://localhost:8123",
             "http://192.0.2.1:8123",
+            "http://@127.0.0.1:8123",
             "http://user@127.0.0.1:8123",
             "http://user:pass@127.0.0.1:8123",
             "http://127.0.0.1:8123/path",
+            "http://127.0.0.1:8123/foo/..",
+            "http://127.0.0.1:8123/%2e%2e",
             "http://127.0.0.1:8123?query=yes",
             "http://127.0.0.1:8123#fragment",
         ] {
