@@ -39,6 +39,22 @@ binary, and runs the lone `tests/surface/test_parallel_isolation_contract.py`
 pytest canary. Other Python static contracts live under `tests/surface/` and
 run through `make test`, not the Markdown runner.
 
+After the spec artifact exists, the complete caller-provided-binary proof is:
+
+```console
+make spec BIOMCP_BIN="$(pwd)/target/spec/biomcp"
+```
+
+After a release artifact exists, the stronger distinct-path reuse proof is:
+
+```console
+make spec BIOMCP_BIN="$(pwd)/target/release/biomcp"
+```
+
+`spec/surface/mcp.md` owns the nested dry-run contracts that inspect default
+profile selection. Those dry runs clear recursive Make command-line propagation
+locally; the outer routine keeps and executes the caller-provided artifact.
+
 ## Active Corpus
 
 | Path | Purpose |
