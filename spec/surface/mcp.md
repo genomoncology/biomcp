@@ -272,8 +272,8 @@ run the Rust unit suite and the Python CLI/MCP/docs contract lane so neither
 runtime layer can report a silent green.
 
 ```bash
-env MAKEFLAGS=' -- BIOMCP_BIN=/bin/true' MAKEOVERRIDES=BIOMCP_BIN \
-  env -u BIOMCP_BIN make -C ../.. -n test SPEC_PROFILE=spec \
+env -u BIOMCP_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
+  make -C ../.. -n test SPEC_PROFILE=spec \
   2>&1 | mustmatch like 'cargo nextest run
 cargo build --locked --profile spec
 /target/spec/biomcp" uv run --no-sync pytest tests/ -v
@@ -310,9 +310,8 @@ spec subset from replacing the standard `lint`, `test`, and release-profile
 `spec` gate.
 
 ```bash
-env MAKEFLAGS=' -- BIOMCP_BIN=/bin/true SPEC_PROFILE=spec' \
-  MAKEOVERRIDES='BIOMCP_BIN SPEC_PROFILE' \
-  env -u BIOMCP_BIN -u SPEC_PROFILE make -C ../.. -n release-gate \
+env -u BIOMCP_BIN -u SPEC_PROFILE -u MAKEFLAGS -u MAKEOVERRIDES \
+  make -C ../.. -n release-gate \
   2>&1 | mustmatch like 'cargo nextest run
 cargo build --locked --profile release
 /target/release/biomcp" uv run --no-sync pytest tests/ -v
@@ -430,8 +429,8 @@ standalone local path safe by building the spec-profile binary instead of trying
 to run a bad caller value.
 
 ```bash
-env MAKEFLAGS=' -- BIOMCP_BIN=/bin/true' MAKEOVERRIDES=BIOMCP_BIN \
-  env BIOMCP_BIN=/tmp/biomcp-missing-for-spec-contract make -C ../.. -n spec \
+env -u MAKEFLAGS -u MAKEOVERRIDES \
+  BIOMCP_BIN=/tmp/biomcp-missing-for-spec-contract make -C ../.. -n spec \
   2>&1 | mustmatch like "cargo build --locked --profile spec"
 ```
 
