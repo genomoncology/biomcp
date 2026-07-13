@@ -50,6 +50,15 @@ def send_json(handler, status, payload):
     handler.wfile.write(body)
 
 
+def send_text(handler, status, payload):
+    body = payload.encode("utf-8")
+    handler.send_response(status)
+    handler.send_header("Content-Type", "text/plain; charset=utf-8")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
 NCT02136914_STUDY = {
     "protocolSection": {
         "identificationModule": {
@@ -176,6 +185,10 @@ VENETOCLAX_MYCHEM_RESPONSE = {
                     "ABT-199 (venetoclax free base)",
                 ],
             },
+            "openfda": {
+                "generic_name": ["venetoclax"],
+                "brand_name": ["Venclexta"],
+            },
         }
     ],
 }
@@ -271,19 +284,24 @@ class Handler(BaseHTTPRequestHandler):
             with REQUEST_LOG.open("a", encoding="utf-8") as log:
                 log.write(f"{self.path}\n")
             intervention = " ".join(query.get("query.intr", [])).strip()
-            literal_intervention = (
-                intervention[1:-1]
-                if len(intervention) >= 2 and intervention.startswith('"') and intervention.endswith('"')
-                else intervention
+            is_quoted_literal = (
+                len(intervention) >= 2
+                and intervention.startswith('"')
+                and intervention.endswith('"')
             )
-            if literal_intervention == "venetoclax":
+            literal_intervention = intervention[1:-1] if is_quoted_literal else intervention
+            if is_quoted_literal and literal_intervention == "venetoclax":
                 send_json(self, 200, {"studies": [VENETOCLAX_STUDY], "totalCount": 1})
                 return
-            if literal_intervention == "Venclexta":
+            if is_quoted_literal and literal_intervention == "Venclexta":
                 send_json(self, 200, {"studies": [VENCLEXTA_STUDY], "totalCount": 1})
                 return
             if intervention:
-                send_json(self, 400, {"error": "invalid query.intr expression"})
+                send_text(
+                    self,
+                    400,
+                    "Error parsing query in Intervention / treatment: invalid expression",
+                )
                 return
             requested_facility = " ".join(query.get("query.locn", [])).lower()
             if "university of michigan" in requested_facility:

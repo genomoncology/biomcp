@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: ctgov-request-log <run|run-with-mychem|show|clear> [command ...]" >&2
+  echo "usage: ctgov-request-log <run|run-with-mychem|show|show-interventions|clear> [command ...]" >&2
 }
 
 request_log="${BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG:-}"
@@ -28,6 +28,17 @@ case "${1:-}" in
     ;;
   show)
     cat "$request_log"
+    ;;
+  show-interventions)
+    uv run --no-sync python - "$request_log" <<'PY'
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+import sys
+
+for request in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
+    for intervention in parse_qs(urlparse(request).query).get("query.intr", []):
+        print(intervention)
+PY
     ;;
   run)
     shift

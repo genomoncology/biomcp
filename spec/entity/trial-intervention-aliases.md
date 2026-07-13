@@ -16,3 +16,19 @@ must not turn one valid drug search into invalid CTGov query grammar.
   | mustmatch like 'venetoclax
 Venclexta'
 ```
+
+The requested name and useful trade alias are sent as quoted literal queries.
+
+```bash
+../../spec/fixtures/ctgov-request-log show-interventions \
+  | mustmatch like '"venetoclax"
+"Venclexta"'
+```
+
+Systematic source synonyms do not become additional trial-search workers.
+
+```bash
+../../spec/fixtures/ctgov-request-log show-interventions \
+  | mustmatch not like 'benzoic acid
+free base'
+```
