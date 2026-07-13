@@ -2,6 +2,9 @@
 
 BioMCP exposes structured internal error variants through human-readable CLI messages.
 This reference maps each `BioMcpError` variant to likely causes and practical recovery steps.
+JSON output renders variant names as stable snake-case `error.code` values; for example,
+missing credentials use `api_key_required`, while configured credentials rejected by a
+provider use `api_key_rejected`.
 
 ## Process exit codes
 
@@ -32,6 +35,7 @@ execution failures:
 | `NotFound` | Requested entity ID was not found | Verify identifier format; run `search` before `get` when unsure |
 | `InvalidArgument` | Command arguments are invalid or inconsistent | Re-run with `--help` and correct flag values/section names |
 | `ApiKeyRequired` | Source requires an API key that is not set | Export the listed environment variable and retry |
+| `ApiKeyRejected` | Provider rejected the configured API key or the account lacks access | Check the credential is valid and that the account has provider access |
 | `SourceUnavailable` | Requested source could not be used | Switch sources if possible or retry later |
 | `Template` | Markdown/templating render failed | Report issue (rendering bug) |
 | `Json` | Local JSON serialization/deserialization failed | Retry; if persistent, report issue with command and payload context |

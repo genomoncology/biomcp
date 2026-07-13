@@ -190,6 +190,13 @@ def test_architecture_api_key_table_documents_credential_runtime_contracts() -> 
         assert phrase in normalized_api_keys
 
 
+def test_error_code_docs_distinguish_missing_and_rejected_credentials() -> None:
+    error_codes = _read("docs/reference/error-codes.md")
+
+    assert "`api_key_required`" in error_codes
+    assert "`api_key_rejected`" in error_codes
+
+
 def _assert_heading_order(text: str, headings: list[str]) -> None:
     positions = [text.index(heading) for heading in headings]
     assert positions == sorted(positions)

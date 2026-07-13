@@ -48,7 +48,9 @@ biomcp search trial -c melanoma --source nci
 
 Required for DisGeNET scored association sections on genes and diseases.
 Without the key, those DisGeNET sections are unavailable and report the
-required environment variable.
+required environment variable. A configured key may still be rejected if it is
+invalid or if the account's plan lacks access; check the credential and account
+access rather than exporting the variable again.
 
 Register at: <https://www.disgenet.com/>
 

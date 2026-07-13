@@ -64,8 +64,8 @@ impl DisgenetClient {
         headers: &HeaderMap,
         bytes: &[u8],
     ) -> Result<T, BioMcpError> {
-        if status == StatusCode::FORBIDDEN {
-            return Err(BioMcpError::ApiKeyRequired {
+        if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
+            return Err(BioMcpError::ApiKeyRejected {
                 api: DISGENET_API.to_string(),
                 env_var: DISGENET_API_KEY_ENV.to_string(),
                 docs_url: DISGENET_DOCS_URL.to_string(),

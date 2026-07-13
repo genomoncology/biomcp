@@ -39,6 +39,15 @@ pub enum BioMcpError {
         docs_url: String,
     },
 
+    #[error(
+        "API key rejected: {api} rejected the configured {env_var} credential or the account lacks access.\n\nCheck the credential validity and account access.\n\nMore info: {docs_url}"
+    )]
+    ApiKeyRejected {
+        api: String,
+        env_var: String,
+        docs_url: String,
+    },
+
     #[error("Source unavailable: {source_name} is not available. {reason}\n\nTry: {suggestion}")]
     SourceUnavailable {
         source_name: String,
@@ -84,6 +93,21 @@ mod tests {
         let msg = err.to_string();
         assert!(msg.contains("NCI_API_KEY"));
         assert!(msg.contains("https://clinicaltrialsapi.cancer.gov/"));
+    }
+
+    #[test]
+    fn api_key_rejected_display_includes_recovery_guidance() {
+        let err = BioMcpError::ApiKeyRejected {
+            api: "disgenet".to_string(),
+            env_var: "DISGENET_API_KEY".to_string(),
+            docs_url: "https://www.disgenet.com/".to_string(),
+        };
+
+        let msg = err.to_string();
+        assert!(msg.contains("DISGENET_API_KEY"));
+        assert!(msg.contains("rejected"));
+        assert!(msg.contains("access"));
+        assert!(msg.contains("https://www.disgenet.com/"));
     }
 
     #[test]

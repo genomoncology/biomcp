@@ -83,27 +83,35 @@ fn disease_resolution_returns_source_unavailable_when_resolution_fails() {
     assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
 }
 
-#[test]
-fn forbidden_response_returns_api_key_required_before_content_type_check() {
+fn assert_rejected_credential_status(status: StatusCode) {
+    const PROVIDER_BODY: &[u8] = b"<html><body>rejected-response-must-not-be-echoed</body></html>";
+
     let err = DisgenetClient::decode_json_response::<serde_json::Value>(
-        StatusCode::FORBIDDEN,
+        status,
         &HeaderMap::new(),
-        b"<html><body>Unauthorized</body></html>",
+        PROVIDER_BODY,
     )
     .unwrap_err();
+    let json = crate::render::json::to_error_json(&err).expect("JSON error");
+    let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON error");
+    let message = value["error"]["message"].as_str().expect("error message");
 
-    assert!(
-        matches!(
-            err,
-            BioMcpError::ApiKeyRequired { ref env_var, .. } if env_var == "DISGENET_API_KEY"
-        ),
-        "expected ApiKeyRequired, got {err:?}"
-    );
-    let message = err.to_string();
+    assert_eq!(value["error"]["code"], "api_key_rejected");
+    assert_eq!(value["_meta"]["not_found"], false);
     assert!(message.contains("DISGENET_API_KEY"));
-    assert!(message.contains("export DISGENET_API_KEY"));
-    assert!(!message.contains("Unauthorized"));
-    assert!(!message.contains("403 Forbidden"));
+    assert!(message.contains("rejected"));
+    assert!(message.contains("access"));
+    assert!(!message.contains("rejected-response-must-not-be-echoed"));
+}
+
+#[test]
+fn unauthorized_response_reports_rejected_credential() {
+    assert_rejected_credential_status(StatusCode::UNAUTHORIZED);
+}
+
+#[test]
+fn forbidden_response_reports_rejected_credential() {
+    assert_rejected_credential_status(StatusCode::FORBIDDEN);
 }
 
 #[test]
