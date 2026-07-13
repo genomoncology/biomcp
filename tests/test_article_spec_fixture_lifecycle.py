@@ -50,7 +50,9 @@ def _copy_article_fixture(workspace: Path, *, include_data: bool = True) -> None
         )
 
 
-def _runner_workspace(tmp_path: Path, mustmatch_exit: int = 0) -> tuple[Path, dict[str, str]]:
+def _runner_workspace(
+    tmp_path: Path, fail_mustmatch_call: int = 0
+) -> tuple[Path, dict[str, str]]:
     workspace = tmp_path / "workspace"
     (workspace / "scripts").mkdir(parents=True)
     shutil.copy2(REPO_ROOT / "scripts" / "run-specs.sh", workspace / "scripts")
@@ -70,9 +72,16 @@ def _runner_workspace(tmp_path: Path, mustmatch_exit: int = 0) -> tuple[Path, di
     cleanup = fixtures / "cleanup-ctgov-intervention-alias-spec-fixture.sh"
     cleanup.write_text("#!/usr/bin/env bash\nexit 0\n")
     cleanup.chmod(0o755)
-    surface_contract = workspace / "tests" / "surface" / "test_parallel_isolation_contract.py"
+    surface_contract = (
+        workspace / "tests" / "surface" / "test_parallel_isolation_contract.py"
+    )
     surface_contract.parent.mkdir(parents=True, exist_ok=True)
-    surface_contract.write_text("def test_placeholder():\n    pass\n")
+    surface_contract.write_text(
+        "import os\n\n"
+        "def test_placeholder():\n"
+        '    assert os.environ["BIOMCP_PUBTATOR_BASE"] == "caller-pubtator"\n'
+        '    assert os.environ["BIOMCP_TEST_UNPACED_ORIGIN"] == "http://127.0.0.1:9999"\n'
+    )
 
     bin_dir = workspace / "bin"
     bin_dir.mkdir()
@@ -83,20 +92,32 @@ def _runner_workspace(tmp_path: Path, mustmatch_exit: int = 0) -> tuple[Path, di
     mustmatch.write_text(
         "#!/usr/bin/env bash\n"
         'if [ "${1:-}" = --version ]; then echo "mustmatch 1.0.0"; exit 0; fi\n'
-        'printf "%s\\n" "$BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID" >>"$ARTICLE_SETUP_LOG"\n'
-        f"exit {mustmatch_exit}\n"
+        'printf "%s|%s|%s\\n" "$*" "${BIOMCP_PUBTATOR_BASE-}" '
+        '"${BIOMCP_TEST_UNPACED_ORIGIN-}" >>"$MUSTMATCH_INVOCATION_LOG"\n'
+        'if [ -n "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID-}" ]; then\n'
+        '  printf "%s\\n" "$BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID" >>"$ARTICLE_SETUP_LOG"\n'
+        "fi\n"
+        'call="$(wc -l <"$MUSTMATCH_INVOCATION_LOG")"\n'
+        'if [ "$call" -eq "${FAIL_MUSTMATCH_CALL:-0}" ]; then exit 7; fi\n'
+        "exit 0\n"
     )
     mustmatch.chmod(0o755)
     env = os.environ | {
         "BIOMCP_BIN": str(biomcp),
         "MUSTMATCH_BIN": str(mustmatch),
         "ARTICLE_SETUP_LOG": str(workspace / "article-setup-log"),
+        "MUSTMATCH_INVOCATION_LOG": str(workspace / "mustmatch-invocation-log"),
+        "FAIL_MUSTMATCH_CALL": str(fail_mustmatch_call),
+        "BIOMCP_PUBTATOR_BASE": "caller-pubtator",
+        "BIOMCP_TEST_UNPACED_ORIGIN": "http://127.0.0.1:9999",
     }
     return workspace, env
 
 
 @pytest.mark.parametrize("mode", ["spec", "spec-pr", "spec-contracts"])
-def test_runner_starts_one_article_fixture_and_cleans_it(mode: str, tmp_path: Path) -> None:
+def test_runner_starts_one_article_fixture_and_cleans_it(
+    mode: str, tmp_path: Path
+) -> None:
     workspace, env = _runner_workspace(tmp_path)
     result = subprocess.run(
         ["bash", "scripts/run-specs.sh", mode], cwd=workspace, env=env, check=False
@@ -105,13 +126,32 @@ def test_runner_starts_one_article_fixture_and_cleans_it(mode: str, tmp_path: Pa
     pids = (workspace / "article-setup-log").read_text().splitlines()
     assert len(pids) == 1
     assert not Path(f"/proc/{pids[0]}").exists()
+    invocations = [
+        line.split("|", 2)
+        for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
+    ]
+    assert len(invocations) == 2
+    article_args, article_base, article_origin = invocations[0]
+    rest_args, rest_base, rest_origin = invocations[1]
+    assert "spec/entity/article.md" in article_args
+    assert "spec/entity/article.md" not in rest_args
+    assert article_base.startswith("http://127.0.0.1:")
+    assert article_origin == article_base
+    assert rest_base == "caller-pubtator"
+    assert rest_origin == "http://127.0.0.1:9999"
     assert not (workspace / ".cache" / "spec-article-fulltext-source-env").exists()
 
 
-def test_runner_cleans_article_fixture_after_child_failure(tmp_path: Path) -> None:
-    workspace, env = _runner_workspace(tmp_path, mustmatch_exit=7)
+@pytest.mark.parametrize("fail_mustmatch_call", [1, 2])
+def test_runner_cleans_article_fixture_after_child_failure(
+    fail_mustmatch_call: int, tmp_path: Path
+) -> None:
+    workspace, env = _runner_workspace(tmp_path, fail_mustmatch_call)
     result = subprocess.run(
-        ["bash", "scripts/run-specs.sh", "spec-contracts"], cwd=workspace, env=env, check=False
+        ["bash", "scripts/run-specs.sh", "spec-contracts"],
+        cwd=workspace,
+        env=env,
+        check=False,
     )
     assert result.returncode != 0
     pid = (workspace / "article-setup-log").read_text().strip()
@@ -119,7 +159,9 @@ def test_runner_cleans_article_fixture_after_child_failure(tmp_path: Path) -> No
     assert not (workspace / ".cache" / "spec-article-fulltext-source-env").exists()
 
 
-@pytest.mark.parametrize("termination_signal", [signal.SIGINT, signal.SIGTERM, signal.SIGHUP])
+@pytest.mark.parametrize(
+    "termination_signal", [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]
+)
 def test_runner_signal_cleans_article_fixture(
     termination_signal: signal.Signals, tmp_path: Path
 ) -> None:
@@ -135,7 +177,9 @@ def test_runner_signal_cleans_article_fixture(
     fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
     try:
         _wait_until(lambda: ready.exists() and fixture_env.exists())
-        pid = int(_read_exports(fixture_env)["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"])
+        pid = int(
+            _read_exports(fixture_env)["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
+        )
         os.kill(runner.pid, termination_signal)
         assert runner.wait(timeout=10) == 128 + termination_signal
         _wait_until(lambda: not Path(f"/proc/{pid}").exists())
@@ -150,7 +194,11 @@ def test_setup_failure_cleans_started_process_and_root(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     _copy_article_fixture(workspace, include_data=False)
     result = subprocess.run(
-        ["bash", "spec/fixtures/setup-article-fulltext-source-fixture.sh", str(workspace)],
+        [
+            "bash",
+            "spec/fixtures/setup-article-fulltext-source-fixture.sh",
+            str(workspace),
+        ],
         cwd=workspace,
         text=True,
         capture_output=True,
@@ -177,37 +225,70 @@ def test_metadata_resets_only_cold_storage_download_state(tmp_path: Path) -> Non
     workspace = tmp_path / "workspace"
     _copy_article_fixture(workspace)
     subprocess.run(
-        ["bash", "spec/fixtures/setup-article-fulltext-source-fixture.sh", str(workspace)],
+        [
+            "bash",
+            "spec/fixtures/setup-article-fulltext-source-fixture.sh",
+            str(workspace),
+        ],
         cwd=workspace,
         check=True,
     )
     fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
     exports = _read_exports(fixture_env)
     base = exports["BIOMCP_FIGSHARE_BASE"]
+    assert exports["BIOMCP_TEST_UNPACED_ORIGIN"] == base
     request_log = Path(exports["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG"])
     try:
         for _ in range(2):
             assert _status(f"{base}/v2/articles/22474830") == 200
-            assert _status(f"{base}/figshare/files/39926330/cold-storage-supplement.pdf") == 202
-            assert _status(f"{base}/figshare/files/39926330/cold-storage-supplement.pdf") == 200
+            assert (
+                _status(f"{base}/figshare/files/39926330/cold-storage-supplement.pdf")
+                == 202
+            )
+            assert (
+                _status(f"{base}/figshare/files/39926330/cold-storage-supplement.pdf")
+                == 200
+            )
         before = request_log.read_text()
         assert _status(f"{base}/v2/articles/99999999") == 200
         assert request_log.read_text() == before
     finally:
         subprocess.run(
-            ["bash", "spec/fixtures/cleanup-article-fulltext-source-fixture.sh", str(workspace)],
+            [
+                "bash",
+                "spec/fixtures/cleanup-article-fulltext-source-fixture.sh",
+                str(workspace),
+            ],
             cwd=workspace,
             check=True,
         )
 
 
-def test_concurrent_workspaces_have_distinct_article_fixture_ownership(tmp_path: Path) -> None:
+def test_only_owned_article_fixtures_export_unpaced_origin() -> None:
+    exporters = {
+        path.name
+        for path in (REPO_ROOT / "spec" / "fixtures").glob("*.sh")
+        if "BIOMCP_TEST_UNPACED_ORIGIN" in path.read_text()
+    }
+    assert exporters == {
+        "run-variant-article-entity-fixture.sh",
+        "setup-article-fulltext-source-fixture.sh",
+    }
+
+
+def test_concurrent_workspaces_have_distinct_article_fixture_ownership(
+    tmp_path: Path,
+) -> None:
     workspaces = [tmp_path / "one", tmp_path / "two"]
     for workspace in workspaces:
         _copy_article_fixture(workspace)
     setups = [
         subprocess.Popen(
-            ["bash", "spec/fixtures/setup-article-fulltext-source-fixture.sh", str(workspace)],
+            [
+                "bash",
+                "spec/fixtures/setup-article-fulltext-source-fixture.sh",
+                str(workspace),
+            ],
             cwd=workspace,
         )
         for workspace in workspaces
@@ -223,11 +304,17 @@ def test_concurrent_workspaces_have_distinct_article_fixture_ownership(tmp_path:
     assert len(roots) == len(pids) == len(bases) == 2
     try:
         for item in exports:
-            host, port_text = item["BIOMCP_FIGSHARE_BASE"].removeprefix("http://").split(":")
+            host, port_text = (
+                item["BIOMCP_FIGSHARE_BASE"].removeprefix("http://").split(":")
+            )
             with socket.create_connection((host, int(port_text)), timeout=1):
                 pass
         subprocess.run(
-            ["bash", "spec/fixtures/cleanup-article-fulltext-source-fixture.sh", str(workspaces[0])],
+            [
+                "bash",
+                "spec/fixtures/cleanup-article-fulltext-source-fixture.sh",
+                str(workspaces[0]),
+            ],
             cwd=workspaces[0],
             check=True,
         )
@@ -238,7 +325,11 @@ def test_concurrent_workspaces_have_distinct_article_fixture_ownership(tmp_path:
     finally:
         for workspace in workspaces:
             subprocess.run(
-                ["bash", "spec/fixtures/cleanup-article-fulltext-source-fixture.sh", str(workspace)],
+                [
+                    "bash",
+                    "spec/fixtures/cleanup-article-fulltext-source-fixture.sh",
+                    str(workspace),
+                ],
                 cwd=workspace,
                 check=True,
             )

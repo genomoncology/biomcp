@@ -152,6 +152,7 @@ binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
 
 export BIOMCP_CACHE_MODE=off
 export BIOMCP_CACHE_DIR="$fixture_root/cache"
+export BIOMCP_TEST_UNPACED_ORIGIN="$base_url"
 export BIOMCP_PUBTATOR_BASE="$base_url"
 export BIOMCP_EUROPEPMC_BASE="$base_url"
 export BIOMCP_PUBMED_BASE="$base_url/entrez/eutils"

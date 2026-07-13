@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::net::IpAddr;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 
@@ -16,10 +17,56 @@ pub(crate) struct RateLimitPolicy {
     pub min_interval: Duration,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct UnpacedOrigin {
+    scheme: String,
+    host: IpAddr,
+    port: u16,
+}
+
+impl UnpacedOrigin {
+    fn parse_signal(raw: &str) -> Option<Self> {
+        let url = Url::parse(raw).ok()?;
+        if !url.username().is_empty()
+            || url.password().is_some()
+            || url.path() != "/"
+            || url.query().is_some()
+            || url.fragment().is_some()
+        {
+            return None;
+        }
+
+        let host = url.host_str()?.trim_matches(['[', ']']).parse().ok()?;
+        if !IpAddr::is_loopback(&host) {
+            return None;
+        }
+
+        Some(Self {
+            scheme: url.scheme().to_string(),
+            host,
+            port: url.port_or_known_default()?,
+        })
+    }
+
+    fn matches(&self, url: &Url) -> bool {
+        let Some(host) = url.host_str().and_then(|host| {
+            host.trim_matches(['[', ']'].as_ref())
+                .parse::<IpAddr>()
+                .ok()
+        }) else {
+            return false;
+        };
+        self.scheme == url.scheme()
+            && self.host == host
+            && Some(self.port) == url.port_or_known_default()
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct RateLimiter {
     policies: Vec<RateLimitPolicy>,
     default_min_interval: Duration,
+    unpaced_origin: Option<UnpacedOrigin>,
     last_seen: Mutex<HashMap<String, Instant>>,
 }
 
@@ -102,13 +149,21 @@ impl RateLimiter {
                 Duration::from_millis(334),
             ),
         ];
-        Self::new(policies, Duration::from_millis(100))
+        let unpaced_origin = std::env::var("BIOMCP_TEST_UNPACED_ORIGIN")
+            .ok()
+            .and_then(|raw| UnpacedOrigin::parse_signal(&raw));
+        Self::new(policies, Duration::from_millis(100), unpaced_origin)
     }
 
-    pub(crate) fn new(policies: Vec<RateLimitPolicy>, default_min_interval: Duration) -> Self {
+    fn new(
+        policies: Vec<RateLimitPolicy>,
+        default_min_interval: Duration,
+        unpaced_origin: Option<UnpacedOrigin>,
+    ) -> Self {
         Self {
             policies,
             default_min_interval,
+            unpaced_origin,
             last_seen: Mutex::new(HashMap::new()),
         }
     }
@@ -134,6 +189,14 @@ impl RateLimiter {
     }
 
     pub(crate) async fn wait_for_url(&self, url: &Url) {
+        if self
+            .unpaced_origin
+            .as_ref()
+            .is_some_and(|origin| origin.matches(url))
+        {
+            return;
+        }
+
         let (key, min_interval) = self.resolve_key_and_interval(url);
         loop {
             let now = Instant::now();
@@ -249,11 +312,77 @@ mod tests {
         }
     }
 
+    #[test]
+    fn unpaced_origin_accepts_only_complete_ip_loopback_origins() {
+        assert!(UnpacedOrigin::parse_signal("http://127.0.0.1:8123").is_some());
+        assert!(UnpacedOrigin::parse_signal("http://[::1]:8123").is_some());
+
+        for raw in [
+            "not a url",
+            "http://localhost:8123",
+            "http://192.0.2.1:8123",
+            "http://user@127.0.0.1:8123",
+            "http://user:pass@127.0.0.1:8123",
+            "http://127.0.0.1:8123/path",
+            "http://127.0.0.1:8123?query=yes",
+            "http://127.0.0.1:8123#fragment",
+        ] {
+            assert!(
+                UnpacedOrigin::parse_signal(raw).is_none(),
+                "signal should fail closed: {raw}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn exact_unpaced_origin_skips_waiting_and_state_updates() {
+        let limiter = RateLimiter::new(
+            Vec::new(),
+            Duration::from_millis(100),
+            UnpacedOrigin::parse_signal("http://127.0.0.1:8123"),
+        );
+        let url = Url::parse("http://127.0.0.1:8123/resource").unwrap();
+
+        limiter.wait_for_url(&url).await;
+        limiter.wait_for_url(&url).await;
+
+        assert!(limiter.last_seen.lock().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn unpaced_origin_keeps_other_ports_paced() {
+        let limiter = RateLimiter::new(
+            Vec::new(),
+            Duration::from_millis(80),
+            UnpacedOrigin::parse_signal("http://127.0.0.1:8123"),
+        );
+        let url = Url::parse("http://127.0.0.1:8124/resource").unwrap();
+        let start = Instant::now();
+
+        limiter.wait_for_url(&url).await;
+        limiter.wait_for_url(&url).await;
+
+        assert!(start.elapsed() >= Duration::from_millis(65));
+    }
+
+    #[tokio::test]
+    async fn unsignaled_loopback_origin_remains_paced() {
+        let limiter = RateLimiter::new(Vec::new(), Duration::from_millis(80), None);
+        let url = Url::parse("http://127.0.0.1:8123/resource").unwrap();
+        let start = Instant::now();
+
+        limiter.wait_for_url(&url).await;
+        limiter.wait_for_url(&url).await;
+
+        assert!(start.elapsed() >= Duration::from_millis(65));
+    }
+
     #[tokio::test]
     async fn rate_limit_blocks_second_request_for_same_prefix() {
         let limiter = RateLimiter::new(
             vec![test_policy("strict", "https://api.example.org/strict", 120)],
             Duration::from_millis(1),
+            None,
         );
 
         let url = Url::parse("https://api.example.org/strict/resource").unwrap();
@@ -275,6 +404,7 @@ mod tests {
                 test_policy("b", "https://www.ebi.ac.uk/chembl/api/data", 100),
             ],
             Duration::from_millis(1),
+            None,
         );
 
         let url_a = Url::parse("https://www.ebi.ac.uk/europepmc/webservices/rest/search").unwrap();
@@ -292,7 +422,7 @@ mod tests {
 
     #[tokio::test]
     async fn rate_limit_uses_default_policy_for_unknown_prefix() {
-        let limiter = RateLimiter::new(Vec::new(), Duration::from_millis(80));
+        let limiter = RateLimiter::new(Vec::new(), Duration::from_millis(80), None);
         let url = Url::parse("https://unknown.example.org/path").unwrap();
 
         let start = Instant::now();
@@ -313,6 +443,7 @@ mod tests {
                 test_policy("long", "https://example.org/api/v1", 10),
             ],
             Duration::from_millis(1),
+            None,
         );
 
         let key = limiter
