@@ -66,6 +66,22 @@ contracts. The deterministic tests should cover article JSON `_meta.next_command
 anchors without live PubMed, Europe PMC, PubTator, LitSense2, or Semantic Scholar
 calls.
 
+## Explicit Fixtures Do Not Inherit Live-Source Pacing
+<!-- mustmatch-lint: skip -->
+
+A fixture-backed full-text request can traverse its normal multi-source resolver
+without waiting between requests as though it were calling live providers. The
+five-second bound still requires a successful Europe PMC XML result, so a fast
+error or empty response cannot satisfy the contract.
+
+```bash run id=unpaced-fixture-fulltext timeout=5 exit=0
+../../tools/biomcp-ci get article 22663011 fulltext
+```
+
+```text expect=unpaced-fixture-fulltext contains
+## Full Text (Europe PMC XML)
+```
+
 ## MYD88 Protein-Alias Article Precision
 
 <!-- mustmatch-lint: skip -->

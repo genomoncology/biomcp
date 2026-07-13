@@ -56,11 +56,13 @@ mustmatch_dir() {
 }
 
 partition_paths() {
+  ARTICLE_MD_PATHS=()
   MD_PATHS=()
   PY_PATHS=()
   local path
   for path in "$@"; do
     case "$path" in
+      spec/entity/article.md) ARTICLE_MD_PATHS+=("$path") ;;
       *.md) MD_PATHS+=("$path") ;;
       *.py) PY_PATHS+=("$path") ;;
       *) echo "unsupported spec path extension: $path" >&2; return 1 ;;
@@ -125,7 +127,6 @@ cleanup_article_fixture() {
 run_article_fixture() {
   bash spec/fixtures/setup-article-fulltext-source-fixture.sh "$ROOT"
   register_cleanup cleanup_article_fixture
-  source_if_present "$ROOT/.cache/spec-article-fulltext-source-env"
 }
 
 cleanup_ctgov_fixture() {
@@ -146,6 +147,15 @@ run_disease_survival_fixture() {
   bash spec/fixtures/setup-disease-survival-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-disease-survival-env"
   register_cleanup cleanup_disease_survival_fixture
+}
+
+run_article_markdown_specs() {
+  if ((${#ARTICLE_MD_PATHS[@]})); then
+    (
+      source_if_present "$ROOT/.cache/spec-article-fulltext-source-env"
+      mustmatch test "${ARTICLE_MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
+    )
+  fi
 }
 
 run_markdown_specs() {
@@ -252,5 +262,6 @@ if [[ "$mode" == verify* ]]; then
 fi
 
 partition_paths "${paths[@]}"
+run_article_markdown_specs
 run_markdown_specs
 run_python_contracts
