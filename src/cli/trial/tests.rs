@@ -68,7 +68,11 @@ fn trial_help_documents_nci_source_specific_notes() {
 fn trial_help_documents_alias_expansion_controls() {
     let help = render_trial_search_long_help();
 
-    assert!(help.contains("auto-expands known aliases"));
+    assert!(help.contains("one quoted literal"));
+    assert!(help.contains("plausible trade names and investigational codes"));
+    assert!(help.contains("excluding systematic chemical synonyms"));
+    assert!(help.contains("rejected expanded alias preserves successful requested-name results"));
+    assert!(help.contains("exact total unknown"));
     assert!(help.contains("--no-alias-expand"));
     assert!(help.contains("matched_intervention_label"));
     assert!(help.contains("Matched Intervention"));

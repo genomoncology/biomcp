@@ -39,10 +39,11 @@ biomcp search trial -i daraxonrasib --no-alias-expand --limit 20
 ```
 
 When an alternate alias wins, markdown adds a `Matched Intervention` column and
-JSON adds `matched_intervention_label`. `--no-alias-expand` performs one
-literal request for the supplied name. If intervention expansion fans out to multiple
-CTGov queries, `--next-page` is unavailable; use `--offset` or
-`--no-alias-expand`.
+JSON adds `matched_intervention_label`. If CTGov rejects only an expanded alias,
+BioMCP keeps successful requested-name results and leaves the exact total unknown.
+`--no-alias-expand` performs one literal request for the supplied name. If
+intervention expansion fans out to multiple CTGov queries, `--next-page` is
+unavailable; use `--offset` or `--no-alias-expand`.
 
 Add biomarker filters:
 

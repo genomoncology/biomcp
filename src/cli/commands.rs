@@ -372,8 +372,10 @@ Trial search is filter-based (no free-text query).
 
 Source-specific notes:
   - CTGov: `--condition` sends the supplied condition literally.
-  - CTGov: `--intervention` auto-expands known aliases from the shared drug identity surface, unions results, and exposes `matched_intervention_label` / `Matched Intervention` when an alternate alias matched first.
-  - CTGov: `--no-alias-expand` forces literal intervention matching.
+  - CTGov: every `--intervention` worker is one quoted literal; expansion uses plausible trade names and investigational codes while excluding systematic chemical synonyms.
+  - CTGov: expanded rows expose `matched_intervention_label` / `Matched Intervention` when an alternate alias matched first.
+  - CTGov: a rejected expanded alias preserves successful requested-name results and makes the exact total unknown.
+  - CTGov: `--no-alias-expand` sends one literal request.
   - CTGov: `--next-page` is not supported when intervention alias expansion fans out to multiple queries; use `--offset` or `--no-alias-expand`.
   - CTGov: `--mutation` is an exact free-text boolean over eligibility, title, summary, and keywords; use it for loose mutation wording, not as a guaranteed protein-change matcher.
   - CTGov: `--biomarker` is a phrase search over keyword, intervention, and condition; try it for gene-level broadening when a specific `--mutation` returns zero rows.

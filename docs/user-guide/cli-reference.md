@@ -242,7 +242,9 @@ biomcp search trial -c "Rett Syndrome" --limit 20
 CTGov condition searches send the supplied condition literally. Every
 intervention worker is also sent as one quoted literal. Alias expansion uses
 plausible trade names and investigational codes while excluding systematic
-chemical synonyms; `--no-alias-expand` performs one literal request.
+chemical synonyms. A rejected expanded alias does not discard successful
+requested-name results, but leaves the exact total unknown. `--no-alias-expand`
+performs one literal request.
 
 For molecular filters, `--mutation <text>` is an exact free-text boolean over
 ClinicalTrials.gov title, summary, eligibility, and keyword fields. It is useful

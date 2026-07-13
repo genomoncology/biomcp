@@ -187,7 +187,7 @@ VENETOCLAX_MYCHEM_RESPONSE = {
             },
             "openfda": {
                 "generic_name": ["venetoclax"],
-                "brand_name": ["Venclexta"],
+                "brand_name": ["Parser Trap", "Venclexta"],
             },
         }
     ],

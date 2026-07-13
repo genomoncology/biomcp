@@ -107,8 +107,11 @@ per-source status in the article leg.
 
 ## Trial Search
 
-Trial condition filters are literal. CTGov intervention filters may expand known
-drug aliases, while `--no-alias-expand` forces literal intervention matching.
+Trial condition filters are literal. Every CTGov intervention worker is sent as
+one quoted literal. Expansion uses plausible trade names and investigational
+codes while excluding systematic chemical synonyms. A rejected expanded alias
+preserves successful requested-name results and makes the exact total unknown;
+`--no-alias-expand` performs one literal request for the supplied name.
 `--mutation <text>` remains an exact free-text boolean over title, summary,
 eligibility, and keyword text. `--biomarker <text>` is the gene-level broadening lever
 when mutation wording is too specific; zero-result filtered trial searches do not auto-broaden;

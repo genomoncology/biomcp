@@ -102,6 +102,7 @@ New to BioMCP? Try:
 - `search trial ... --mutation --criteria --study-type --has-results --date-from --date-to`
   - CTGov intervention workers are quoted literals.
   - Expansion uses plausible trade names and investigational codes while excluding systematic chemical synonyms.
+  - A rejected expanded alias preserves successful requested-name results and makes the exact total unknown.
   - `--no-alias-expand` performs one literal request.
 - `search article ... --date-from --date-to --year-min --year-max --journal`
   - add `--source <all, pubtator, europepmc, pubmed, semanticscholar, litsense2>`

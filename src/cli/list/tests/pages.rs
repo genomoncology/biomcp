@@ -334,7 +334,11 @@ fn list_trial_and_article_include_missing_flags() {
     assert!(trial.contains("--biomarker <text>"));
     assert!(trial.contains("--no-alias-expand"));
     assert!(trial.contains("## CTGov alias expansion"));
-    assert!(trial.contains("auto-expands known aliases"));
+    assert!(trial.contains("one quoted literal"));
+    assert!(trial.contains("plausible trade names and investigational codes"));
+    assert!(trial.contains("systematic chemical synonyms are excluded"));
+    assert!(trial.contains("rejected expanded alias"));
+    assert!(trial.contains("exact total unknown"));
     assert!(trial.contains("Matched Intervention"));
     assert!(trial.contains("matched_intervention_label"));
     assert!(trial.contains("use `--offset` or `--no-alias-expand`"));
