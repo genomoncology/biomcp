@@ -59,6 +59,14 @@ def send_text(handler, status, payload):
     handler.wfile.write(body)
 
 
+def send_bytes(handler, status, payload, content_type="application/octet-stream"):
+    handler.send_response(status)
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Length", str(len(payload)))
+    handler.end_headers()
+    handler.wfile.write(payload)
+
+
 NCT02136914_STUDY = {
     "protocolSection": {
         "identificationModule": {
@@ -193,6 +201,50 @@ VENETOCLAX_MYCHEM_RESPONSE = {
     ],
 }
 
+KARMMA_DOCUMENT_BYTES = (
+    b"%PDF-1.7\nBioMCP CTGov protocol fixture.\n\x00\xff\r\n%%EOF\n"
+)
+
+KARMMA_STUDY = {
+    "protocolSection": {
+        "identificationModule": {
+            "nctId": "NCT03361748",
+            "briefTitle": "KarMMa-1 Document Fixture",
+        },
+        "statusModule": {"overallStatus": "COMPLETED"},
+        "conditionsModule": {"conditions": ["Multiple Myeloma"]},
+        "designModule": {
+            "phases": ["PHASE2"],
+            "studyType": "Interventional",
+            "enrollmentInfo": {"count": 149},
+        },
+        "armsInterventionsModule": {"interventions": [], "armGroups": []},
+        "eligibilityModule": {
+            "minimumAge": "18 Years",
+            "maximumAge": "N/A",
+            "sex": "ALL",
+            "eligibilityCriteria": "Inadequate organ function",
+        },
+    },
+    "documentSection": {
+        "largeDocumentModule": {
+            "largeDocs": [
+                {
+                    "typeAbbrev": "Prot_SAP",
+                    "hasProtocol": True,
+                    "hasSap": True,
+                    "hasIcf": False,
+                    "label": "Study Protocol and Statistical Analysis Plan",
+                    "date": "2019-07-18",
+                    "uploadDate": "2024-12-12T10:49",
+                    "filename": "Prot_SAP_000.pdf",
+                    "size": len(KARMMA_DOCUMENT_BYTES),
+                }
+            ]
+        }
+    },
+}
+
 CONTACTS_ELIGIBILITY_STUDY = {
     "protocolSection": {
         "identificationModule": {
@@ -249,6 +301,7 @@ CONTACTS_ELIGIBILITY_STUDY = {
 
 STUDIES = {
     "nct02136914": NCT02136914_STUDY,
+    "nct03361748": KARMMA_STUDY,
     "nct35700001": SHELL_SAFE_STUDY,
     "nct41300001": CONTACTS_ELIGIBILITY_STUDY,
 }
@@ -274,6 +327,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         query = parse_qs(parsed.query)
+        if parsed.path == "/large-docs/48/NCT03361748/Prot_SAP_000.pdf":
+            send_bytes(self, 200, KARMMA_DOCUMENT_BYTES, "application/pdf")
+            return
         if parsed.path == "/v1/query":
             if " ".join(query.get("q", [])).strip().lower() == "venetoclax":
                 send_json(self, 200, VENETOCLAX_MYCHEM_RESPONSE)
@@ -344,6 +400,7 @@ base_url="$(cat "$ready_file")"
 server_pid="$(cat "$server_pid_file")"
 
 printf 'export BIOMCP_CTGOV_BASE=%q\n' "$base_url/api/v2" >"$env_file"
+printf 'export BIOMCP_CTGOV_CDN_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE=%q\n' "$base_url/v1" >>"$env_file"
 printf 'export BIOMCP_CACHE_MODE=off\n' >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_PID=%q\n' "$fixture_pgid" >>"$env_file"
