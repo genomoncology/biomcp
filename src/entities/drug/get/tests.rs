@@ -132,6 +132,10 @@ fn drugbank_trial_alias_policy_rejects_systematic_and_descriptor_names() {
         "4-[4-[[2-(4-chlorophenyl)-4,4-dimethylcyclohex-1-enyl]methyl]piperazin-1-yl]benzoic acid",
         "ABT-199 (venetoclax free base)",
         "venetoclax free base",
+        "venetoclax free   base",
+        "venetoclax free\tbase",
+        "venetoclax free-base",
+        "ABT-199-free-base",
         "alpha,beta compound",
         "one two three four five",
     ] {
@@ -151,7 +155,7 @@ fn build_trial_aliases_preserves_authorities_then_source_order_and_cap() {
             trial_alias("Zeta", TrialAliasSource::DrugBankSynonym),
             trial_alias("Venclexta", TrialAliasSource::OpenFdaBrand),
             trial_alias(" alpha ", TrialAliasSource::OpenFdaBrand),
-            trial_alias("RMC-6236", TrialAliasSource::DrugBankSynonym),
+            trial_alias("rmc-6236", TrialAliasSource::DrugBankSynonym),
             trial_alias("Beta", TrialAliasSource::DrugBankSynonym),
         ],
     );

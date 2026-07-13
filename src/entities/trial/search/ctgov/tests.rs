@@ -458,6 +458,28 @@ fn ctgov_worker_outcome_skips_only_expanded_parser_rejections() {
         ),
         Err(BioMcpError::Api { .. })
     ));
+
+    let json_error = serde_json::from_str::<serde_json::Value>("{").unwrap_err();
+    assert!(matches!(
+        handle_ctgov_worker_outcome(
+            1,
+            &workers[1],
+            Err(BioMcpError::ApiJson {
+                api: "clinicaltrials.gov".into(),
+                source: json_error,
+            }),
+        ),
+        Err(BioMcpError::ApiJson { .. })
+    ));
+
+    let transport_error = reqwest::Client::new()
+        .get("http://[::1")
+        .build()
+        .unwrap_err();
+    assert!(matches!(
+        handle_ctgov_worker_outcome(1, &workers[1], Err(BioMcpError::Http(transport_error)),),
+        Err(BioMcpError::Http(_))
+    ));
 }
 
 #[test]
@@ -501,6 +523,36 @@ fn ctgov_workers_do_not_label_literal_single_intervention() {
         Some("pembrolizumab")
     );
     assert_eq!(workers[0].matched_intervention_label, None);
+}
+
+#[tokio::test]
+async fn no_alias_expand_builds_one_literal_requested_name_worker() {
+    let filters = TrialSearchFilters {
+        intervention: Some("HRS 4642".into()),
+        source: TrialSource::ClinicalTrialsGov,
+        no_alias_expand: true,
+        ..Default::default()
+    };
+    let aliases = resolve_ctgov_intervention_aliases(&filters)
+        .await
+        .expect("no-expand resolution");
+    let workers = ctgov_workers(None, &aliases);
+    let normalized = validate_trial_search(&filters).expect("filters should validate");
+    let context =
+        prepare_ctgov_search_context(&filters, &normalized).expect("context should build");
+    let params = build_ctgov_search_params(
+        &filters,
+        &context,
+        None,
+        workers[0].intervention_query.as_deref(),
+        None,
+        10,
+        true,
+    );
+
+    assert_eq!(workers.len(), 1);
+    assert_eq!(workers[0].intervention_source, "requested");
+    assert_eq!(params.intervention.as_deref(), Some("\"HRS 4642\""));
 }
 
 #[test]
@@ -589,4 +641,23 @@ fn alias_union_count_returns_exact_unique_total_when_exhausted() {
 fn alias_union_count_returns_unknown_when_page_cap_is_hit() {
     assert!(!ctgov_count_page_cap_would_be_exceeded(48, 2));
     assert!(ctgov_count_page_cap_would_be_exceeded(50, 2));
+}
+
+#[test]
+fn skipped_expanded_worker_makes_search_and_count_totals_unknown() {
+    let mut workers = ctgov_workers(
+        None,
+        &[
+            trial_alias("requested", TrialAliasSource::Requested),
+            trial_alias("expanded", TrialAliasSource::DrugBankSynonym),
+        ],
+    );
+    for worker in &mut workers {
+        worker.exhausted = true;
+    }
+
+    assert_eq!(ctgov_union_total(false, false, &workers, 2), Some(2));
+    assert_eq!(ctgov_union_total(true, false, &workers, 2), None);
+    assert_eq!(completed_ctgov_union_count(false, 2), TrialCount::Exact(2));
+    assert_eq!(completed_ctgov_union_count(true, 2), TrialCount::Unknown);
 }

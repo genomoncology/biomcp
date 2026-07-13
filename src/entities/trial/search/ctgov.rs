@@ -589,6 +589,32 @@ fn ctgov_count_from_native_total(total: usize, has_age_filter: bool) -> TrialCou
     }
 }
 
+fn ctgov_union_total(
+    degraded_coverage: bool,
+    traversal_capped: bool,
+    workers: &[CtGovWorkerState],
+    merged_row_count: usize,
+) -> Option<usize> {
+    if degraded_coverage
+        || traversal_capped
+        || workers
+            .iter()
+            .any(|worker| !worker.exhausted || worker.next_page_token.is_some())
+    {
+        None
+    } else {
+        Some(merged_row_count)
+    }
+}
+
+fn completed_ctgov_union_count(degraded_coverage: bool, unique_count: usize) -> TrialCount {
+    if degraded_coverage {
+        TrialCount::Unknown
+    } else {
+        TrialCount::Exact(unique_count)
+    }
+}
+
 async fn search_page_with_ctgov_union(
     client: &ClinicalTrialsClient,
     filters: &TrialSearchFilters,
@@ -667,16 +693,12 @@ async fn search_page_with_ctgov_union(
         sort_trials_by_status_priority(&mut merged_rows);
     }
 
-    let total = if degraded_coverage
-        || traversal_capped
-        || workers
-            .iter()
-            .any(|worker| !worker.exhausted || worker.next_page_token.is_some())
-    {
-        None
-    } else {
-        Some(merged_rows.len())
-    };
+    let total = ctgov_union_total(
+        degraded_coverage,
+        traversal_capped,
+        &workers,
+        merged_rows.len(),
+    );
 
     let rows = merged_rows.into_iter().skip(offset).take(limit).collect();
     Ok(SearchPage::cursor(rows, total, None))
@@ -756,11 +778,10 @@ async fn count_all_with_ctgov_union(
             .filter_map(|(index, worker)| (!worker.exhausted).then_some(index))
             .collect();
         if active_indices.is_empty() {
-            return Ok(if degraded_coverage {
-                TrialCount::Unknown
-            } else {
-                TrialCount::Exact(unique_nct_ids.len())
-            });
+            return Ok(completed_ctgov_union_count(
+                degraded_coverage,
+                unique_nct_ids.len(),
+            ));
         }
 
         if ctgov_count_page_cap_would_be_exceeded(fetched_pages, active_indices.len()) {

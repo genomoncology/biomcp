@@ -347,18 +347,26 @@ fn is_investigational_code(alias: &str) -> bool {
         .is_match(alias)
 }
 
+fn has_free_base_descriptor(alias: &str) -> bool {
+    static FREE_BASE_RE: OnceLock<Regex> = OnceLock::new();
+    FREE_BASE_RE
+        .get_or_init(|| {
+            Regex::new(r"(?i)\bfree(?:\s+|-+)base\b").expect("valid free-base descriptor regex")
+        })
+        .is_match(alias)
+}
+
 fn is_simple_trial_name(alias: &str) -> bool {
-    let lower = alias.to_ascii_lowercase();
     alias.chars().count() <= 64
         && alias.split_whitespace().count() <= 4
-        && !lower.contains("free base")
         && alias
             .chars()
             .all(|ch| ch.is_alphanumeric() || ch.is_whitespace() || matches!(ch, '\'' | '-'))
 }
 
 fn eligible_drugbank_trial_alias(alias: &str) -> bool {
-    is_investigational_code(alias) || is_simple_trial_name(alias)
+    !has_free_base_descriptor(alias)
+        && (is_investigational_code(alias) || is_simple_trial_name(alias))
 }
 
 fn push_trial_alias(

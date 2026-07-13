@@ -178,13 +178,11 @@ impl ClinicalTrialsClient {
         status: reqwest::StatusCode,
         bytes: &[u8],
     ) -> Result<T, BioMcpError> {
-        let body = String::from_utf8_lossy(bytes);
         if status == reqwest::StatusCode::BAD_REQUEST
-            && body.starts_with(CTGOV_INTERVENTION_QUERY_ERROR_PREFIX)
+            && bytes.starts_with(CTGOV_INTERVENTION_QUERY_ERROR_PREFIX.as_bytes())
         {
-            return Err(BioMcpError::CtGovInterventionQueryRejected {
-                reason: body.chars().take(256).collect(),
-            });
+            let reason = String::from_utf8_lossy(&bytes[..bytes.len().min(256)]).into_owned();
+            return Err(BioMcpError::CtGovInterventionQueryRejected { reason });
         }
         crate::sources::decode_json(CTGOV_API, status, None, bytes, false)
     }
