@@ -1,0 +1,1144 @@
+{
+  "suite_summary": {
+    "baseline:article": {
+      "samples": [
+        335081,
+        335354,
+        334645
+      ],
+      "min_ms": 334645,
+      "median_ms": 335081,
+      "max_ms": 335354
+    },
+    "baseline:full": {
+      "samples": [
+        589386,
+        567221,
+        542915
+      ],
+      "min_ms": 542915,
+      "median_ms": 567221,
+      "max_ms": 589386
+    },
+    "candidate:article": {
+      "samples": [
+        334246,
+        332757,
+        332394
+      ],
+      "min_ms": 332394,
+      "median_ms": 332757,
+      "max_ms": 334246
+    },
+    "candidate:full": {
+      "samples": [
+        883224,
+        707933,
+        705556
+      ],
+      "min_ms": 705556,
+      "median_ms": 707933,
+      "max_ms": 883224
+    },
+    "article_percentage_change": -0.6935636458050398,
+    "full_percentage_change": 24.807262072455003
+  },
+  "sample_accounting": [
+    {
+      "revision": "baseline",
+      "suite": "article",
+      "repetition": 1,
+      "diagnostic": 0,
+      "wall_ms": 335081,
+      "fixture_setup_ms": 0,
+      "fixture_cleanup_ms": 17,
+      "exit_status": 0,
+      "command_count": 26,
+      "command_sum_ms": 331306.602,
+      "article_command_sum_ms": 331306.602,
+      "later_command_sum_ms": 0.0,
+      "harness_remainder_ms": 3774.398
+    },
+    {
+      "revision": "candidate",
+      "suite": "article",
+      "repetition": 1,
+      "diagnostic": 0,
+      "wall_ms": 334246,
+      "fixture_setup_ms": 116,
+      "fixture_cleanup_ms": 113,
+      "exit_status": 0,
+      "command_count": 26,
+      "command_sum_ms": 332905.291,
+      "article_command_sum_ms": 332905.291,
+      "later_command_sum_ms": 0.0,
+      "harness_remainder_ms": 1340.709
+    },
+    {
+      "revision": "baseline",
+      "suite": "article",
+      "repetition": 2,
+      "diagnostic": 0,
+      "wall_ms": 335354,
+      "fixture_setup_ms": 0,
+      "fixture_cleanup_ms": 18,
+      "exit_status": 0,
+      "command_count": 26,
+      "command_sum_ms": 331660.974,
+      "article_command_sum_ms": 331660.974,
+      "later_command_sum_ms": 0.0,
+      "harness_remainder_ms": 3693.026
+    },
+    {
+      "revision": "candidate",
+      "suite": "article",
+      "repetition": 2,
+      "diagnostic": 0,
+      "wall_ms": 332757,
+      "fixture_setup_ms": 117,
+      "fixture_cleanup_ms": 109,
+      "exit_status": 0,
+      "command_count": 26,
+      "command_sum_ms": 331472.616,
+      "article_command_sum_ms": 331472.616,
+      "later_command_sum_ms": 0.0,
+      "harness_remainder_ms": 1284.384
+    },
+    {
+      "revision": "baseline",
+      "suite": "article",
+      "repetition": 3,
+      "diagnostic": 0,
+      "wall_ms": 334645,
+      "fixture_setup_ms": 0,
+      "fixture_cleanup_ms": 19,
+      "exit_status": 0,
+      "command_count": 26,
+      "command_sum_ms": 330881.474,
+      "article_command_sum_ms": 330881.474,
+      "later_command_sum_ms": 0.0,
+      "harness_remainder_ms": 3763.526
+    },
+    {
+      "revision": "candidate",
+      "suite": "article",
+      "repetition": 3,
+      "diagnostic": 0,
+      "wall_ms": 332394,
+      "fixture_setup_ms": 118,
+      "fixture_cleanup_ms": 112,
+      "exit_status": 0,
+      "command_count": 26,
+      "command_sum_ms": 331083.53,
+      "article_command_sum_ms": 331083.53,
+      "later_command_sum_ms": 0.0,
+      "harness_remainder_ms": 1310.47
+    },
+    {
+      "revision": "baseline",
+      "suite": "full",
+      "repetition": 1,
+      "diagnostic": 0,
+      "wall_ms": 589386,
+      "fixture_setup_ms": 0,
+      "fixture_cleanup_ms": 31,
+      "exit_status": 0,
+      "command_count": 90,
+      "command_sum_ms": 577435.98,
+      "article_command_sum_ms": 333082.686,
+      "later_command_sum_ms": 244353.294,
+      "harness_remainder_ms": 11950.02
+    },
+    {
+      "revision": "candidate",
+      "suite": "full",
+      "repetition": 1,
+      "diagnostic": 0,
+      "wall_ms": 883224,
+      "fixture_setup_ms": 0,
+      "fixture_cleanup_ms": 5,
+      "exit_status": 0,
+      "command_count": 90,
+      "command_sum_ms": 695913.94,
+      "article_command_sum_ms": 332117.036,
+      "later_command_sum_ms": 363796.904,
+      "harness_remainder_ms": 187310.06
+    },
+    {
+      "revision": "baseline",
+      "suite": "full",
+      "repetition": 2,
+      "diagnostic": 0,
+      "wall_ms": 567221,
+      "fixture_setup_ms": 0,
+      "fixture_cleanup_ms": 32,
+      "exit_status": 0,
+      "command_count": 90,
+      "command_sum_ms": 555492.397,
+      "article_command_sum_ms": 331862.1,
+      "later_command_sum_ms": 223630.297,
+      "harness_remainder_ms": 11728.603
+    },
+    {
+      "revision": "candidate",
+      "suite": "full",
+      "repetition": 2,
+      "diagnostic": 0,
+      "wall_ms": 707933,
+      "fixture_setup_ms": 0,
+      "fixture_cleanup_ms": 5,
+      "exit_status": 0,
+      "command_count": 90,
+      "command_sum_ms": 698502.348,
+      "article_command_sum_ms": 331188.926,
+      "later_command_sum_ms": 367313.422,
+      "harness_remainder_ms": 9430.652
+    },
+    {
+      "revision": "baseline",
+      "suite": "full",
+      "repetition": 3,
+      "diagnostic": 0,
+      "wall_ms": 542915,
+      "fixture_setup_ms": 0,
+      "fixture_cleanup_ms": 31,
+      "exit_status": 0,
+      "command_count": 90,
+      "command_sum_ms": 531325.389,
+      "article_command_sum_ms": 330834.436,
+      "later_command_sum_ms": 200490.953,
+      "harness_remainder_ms": 11589.611
+    },
+    {
+      "revision": "candidate",
+      "suite": "full",
+      "repetition": 3,
+      "diagnostic": 0,
+      "wall_ms": 705556,
+      "fixture_setup_ms": 0,
+      "fixture_cleanup_ms": 5,
+      "exit_status": 0,
+      "command_count": 90,
+      "command_sum_ms": 696043.932,
+      "article_command_sum_ms": 330843.106,
+      "later_command_sum_ms": 365200.827,
+      "harness_remainder_ms": 9512.068
+    }
+  ],
+  "rankings": {
+    "baseline": {
+      "total_group_contribution_ms": 331303.611,
+      "through_80_percent": [
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663011",
+            "fulltext"
+          ],
+          "count_per_sample": 11,
+          "median_duration_ms": 10015.505,
+          "median_connections": 6,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 110170.555,
+          "cumulative_percent": 33.254
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663015",
+            "assets"
+          ],
+          "count_per_sample": 2,
+          "median_duration_ms": 22022.569,
+          "median_connections": 12.0,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 44045.138,
+          "cumulative_percent": 46.548
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663013",
+            "fulltext"
+          ],
+          "count_per_sample": 2,
+          "median_duration_ms": 16020.123,
+          "median_connections": 9.0,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 32040.246,
+          "cumulative_percent": 56.219
+        },
+        {
+          "argv": [
+            "search",
+            "article",
+            "-k",
+            "BRAF melanoma",
+            "--source",
+            "all",
+            "--debug-plan",
+            "--limit",
+            "3"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18319.908,
+          "median_connections": 13,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18319.908,
+          "cumulative_percent": 61.749
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663013",
+            "fulltext",
+            "--pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18021.241,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18021.241,
+          "cumulative_percent": 67.188
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663015",
+            "asset",
+            "supplementary-table-s1.xlsx"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18021.048,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18021.048,
+          "cumulative_percent": 72.628
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663017",
+            "asset",
+            "cold-storage-supplement.pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18019.355,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18019.355,
+          "cumulative_percent": 78.067
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663015",
+            "asset",
+            "figshare-supplement.pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18018.372,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18018.372,
+          "cumulative_percent": 83.505
+        }
+      ],
+      "all": [
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663011",
+            "fulltext"
+          ],
+          "count_per_sample": 11,
+          "median_duration_ms": 10015.505,
+          "median_connections": 6,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 110170.555,
+          "cumulative_percent": 33.254
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663015",
+            "assets"
+          ],
+          "count_per_sample": 2,
+          "median_duration_ms": 22022.569,
+          "median_connections": 12.0,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 44045.138,
+          "cumulative_percent": 46.548
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663013",
+            "fulltext"
+          ],
+          "count_per_sample": 2,
+          "median_duration_ms": 16020.123,
+          "median_connections": 9.0,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 32040.246,
+          "cumulative_percent": 56.219
+        },
+        {
+          "argv": [
+            "search",
+            "article",
+            "-k",
+            "BRAF melanoma",
+            "--source",
+            "all",
+            "--debug-plan",
+            "--limit",
+            "3"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18319.908,
+          "median_connections": 13,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18319.908,
+          "cumulative_percent": 61.749
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663013",
+            "fulltext",
+            "--pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18021.241,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18021.241,
+          "cumulative_percent": 67.188
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663015",
+            "asset",
+            "supplementary-table-s1.xlsx"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18021.048,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18021.048,
+          "cumulative_percent": 72.628
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663017",
+            "asset",
+            "cold-storage-supplement.pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18019.355,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18019.355,
+          "cumulative_percent": 78.067
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663015",
+            "asset",
+            "figshare-supplement.pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18018.372,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18018.372,
+          "cumulative_percent": 83.505
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663012",
+            "fulltext"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 16018.867,
+          "median_connections": 9,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 16018.867,
+          "cumulative_percent": 88.34
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663016",
+            "fulltext"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 16016.426,
+          "median_connections": 9,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 16016.426,
+          "cumulative_percent": 93.175
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663011",
+            "fulltext"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 10015.143,
+          "median_connections": 6,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 10015.143,
+          "cumulative_percent": 96.198
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663011",
+            "assets"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 6012.087,
+          "median_connections": 4,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 6012.087,
+          "cumulative_percent": 98.012
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663011",
+            "asset",
+            "traces-s1.csv"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 6010.462,
+          "median_connections": 4,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 6010.462,
+          "cumulative_percent": 99.827
+        },
+        {
+          "argv": [
+            "--json",
+            "search",
+            "article",
+            "-k",
+            "BRAF melanoma",
+            "--source",
+            "semanticscholar",
+            "--debug-plan",
+            "--limit",
+            "1"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 574.763,
+          "median_connections": 5,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 574.763,
+          "cumulative_percent": 100.0
+        }
+      ]
+    },
+    "candidate": {
+      "total_group_contribution_ms": 331483.264,
+      "through_80_percent": [
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663011",
+            "fulltext"
+          ],
+          "count_per_sample": 11,
+          "median_duration_ms": 10015.984,
+          "median_connections": 6,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 110175.824,
+          "cumulative_percent": 33.237
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663015",
+            "assets"
+          ],
+          "count_per_sample": 2,
+          "median_duration_ms": 22021.126,
+          "median_connections": 12.0,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 44042.252,
+          "cumulative_percent": 46.524
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663013",
+            "fulltext"
+          ],
+          "count_per_sample": 2,
+          "median_duration_ms": 16019.42,
+          "median_connections": 9.0,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 32038.84,
+          "cumulative_percent": 56.189
+        },
+        {
+          "argv": [
+            "search",
+            "article",
+            "-k",
+            "BRAF melanoma",
+            "--source",
+            "all",
+            "--debug-plan",
+            "--limit",
+            "3"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18252.723,
+          "median_connections": 14,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18252.723,
+          "cumulative_percent": 61.695
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663013",
+            "fulltext",
+            "--pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18020.732,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18020.732,
+          "cumulative_percent": 67.132
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663017",
+            "asset",
+            "cold-storage-supplement.pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18019.283,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18019.283,
+          "cumulative_percent": 72.568
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663015",
+            "asset",
+            "figshare-supplement.pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18017.529,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18017.529,
+          "cumulative_percent": 78.003
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663015",
+            "asset",
+            "supplementary-table-s1.xlsx"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18017.515,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18017.515,
+          "cumulative_percent": 83.439
+        }
+      ],
+      "all": [
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663011",
+            "fulltext"
+          ],
+          "count_per_sample": 11,
+          "median_duration_ms": 10015.984,
+          "median_connections": 6,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 110175.824,
+          "cumulative_percent": 33.237
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663015",
+            "assets"
+          ],
+          "count_per_sample": 2,
+          "median_duration_ms": 22021.126,
+          "median_connections": 12.0,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 44042.252,
+          "cumulative_percent": 46.524
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663013",
+            "fulltext"
+          ],
+          "count_per_sample": 2,
+          "median_duration_ms": 16019.42,
+          "median_connections": 9.0,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 32038.84,
+          "cumulative_percent": 56.189
+        },
+        {
+          "argv": [
+            "search",
+            "article",
+            "-k",
+            "BRAF melanoma",
+            "--source",
+            "all",
+            "--debug-plan",
+            "--limit",
+            "3"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18252.723,
+          "median_connections": 14,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18252.723,
+          "cumulative_percent": 61.695
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663013",
+            "fulltext",
+            "--pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18020.732,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18020.732,
+          "cumulative_percent": 67.132
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663017",
+            "asset",
+            "cold-storage-supplement.pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18019.283,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18019.283,
+          "cumulative_percent": 72.568
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663015",
+            "asset",
+            "figshare-supplement.pdf"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18017.529,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18017.529,
+          "cumulative_percent": 78.003
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663015",
+            "asset",
+            "supplementary-table-s1.xlsx"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 18017.515,
+          "median_connections": 10,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 18017.515,
+          "cumulative_percent": 83.439
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663016",
+            "fulltext"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 16017.37,
+          "median_connections": 9,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 16017.37,
+          "cumulative_percent": 88.271
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663012",
+            "fulltext"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 16016.705,
+          "median_connections": 9,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 16016.705,
+          "cumulative_percent": 93.102
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663011",
+            "fulltext"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 10014.602,
+          "median_connections": 6,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 10014.602,
+          "cumulative_percent": 96.124
+        },
+        {
+          "argv": [
+            "--json",
+            "get",
+            "article",
+            "22663011",
+            "assets"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 6012.899,
+          "median_connections": 4,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 6012.899,
+          "cumulative_percent": 97.937
+        },
+        {
+          "argv": [
+            "get",
+            "article",
+            "22663011",
+            "asset",
+            "traces-s1.csv"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 6012.199,
+          "median_connections": 4,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 6012.199,
+          "cumulative_percent": 99.751
+        },
+        {
+          "argv": [
+            "--json",
+            "search",
+            "article",
+            "-k",
+            "BRAF melanoma",
+            "--source",
+            "semanticscholar",
+            "--debug-plan",
+            "--limit",
+            "1"
+          ],
+          "count_per_sample": 1,
+          "median_duration_ms": 824.791,
+          "median_connections": 5,
+          "diagnostic_exit_statuses": [
+            0
+          ],
+          "normal_exit_statuses": [
+            0
+          ],
+          "median_contribution_ms": 824.791,
+          "cumulative_percent": 100.0
+        }
+      ]
+    }
+  },
+  "diagnostic_counts": {
+    "baseline": 26,
+    "candidate": 26
+  }
+}
