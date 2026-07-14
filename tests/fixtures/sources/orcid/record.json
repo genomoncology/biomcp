@@ -6,7 +6,7 @@
       "given-names": {"value": "Atul Janardhan"},
       "family-name": {"value": "Butte"},
       "credit-name": {"value": "Atul J. Butte"},
-      "visibility": "PUBLIC",
+      "visibility": "public",
       "source": {
         "source-orcid": {"path": "0000-0002-7433-2740"},
         "source-name": {"value": "Atul J. Butte"},
@@ -16,7 +16,7 @@
       "created-date": {"value": 1500000000000},
       "last-modified-date": {"value": 1720000000000}
     },
-    "emails": {"email": [{"email": "excluded@example.org", "visibility": "PUBLIC"}]},
+    "emails": {"email": [{"email": "excluded@example.org", "visibility": "public"}]},
     "researcher-urls": {"researcher-url": [{"url": {"value": "https://excluded.example"}}]},
     "biography": {"content": "excluded biography"},
     "keywords": {"keyword": [{"content": "excluded keyword"}]},
@@ -42,14 +42,14 @@
             "assertion-origin-name": {"value": "UCSF"}
           },
           "put-code": 1576165,
-          "visibility": "PUBLIC",
+          "visibility": "public",
           "created-date": {"value": 1501000000000},
           "last-modified-date": {"value": 1721000000000}
         }}]},
         {"summaries": [{"employment-summary": {
           "organization": {"name": "Private Employer"},
           "put-code": 999,
-          "visibility": "PRIVATE"
+          "visibility": "private"
         }}]}
       ]
     }

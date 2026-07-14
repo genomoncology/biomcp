@@ -23,8 +23,9 @@ ORCID distinguishes the anonymous/registered Public API from member access. The
 says it retrieves public record data; private and trusted data are outside this
 contract. The [record schema](https://info.orcid.org/documentation/integration-guide/orcid-record/)
 documents item visibility, put codes, source fields, and public/private behavior.
-BioMCP maps only entries whose visibility is exactly `PUBLIC` and only the narrow
-professional fields required by the author-identity architecture.
+BioMCP maps only entries whose visibility is exactly `public`, matching the v3
+JSON representation, and only the narrow professional fields required by the
+author-identity architecture.
 
 Record and works plans use v3.0 paths and
 `Accept: application/vnd.orcid+json`. The official
@@ -37,8 +38,8 @@ documented in [Structure of the ORCID Identifier](https://support.orcid.org/hc/e
 Deprecated/merged IDs can return 301 and a canonical `Location`; ORCID's
 [API error documentation](https://github.com/ORCID/ORCID-Source/blob/development/orcid-api-web/tutorial/api_errors.md)
 documents that behavior. BioMCP follows only same-origin redirects, retains both
-requested and canonical IDs, and requires the final URL and decoded record ID to
-agree.
+requested and canonical IDs, and requires the final URL to agree with the
+decoded record ID or top-level works path.
 
 ## Bounds, paging, and status truth
 

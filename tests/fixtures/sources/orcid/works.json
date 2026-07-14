@@ -1,4 +1,5 @@
 {
+  "path": "/0000-0002-7433-2740/works",
   "last-modified-date": {"value": 1720915200000},
   "group": [{
     "external-ids": {"external-id": [{
@@ -14,7 +15,7 @@
         "type": "JOURNAL_ARTICLE",
         "external-ids": {"external-id": [{"external-id-type": "pmid", "external-id-value": "12345", "external-id-relationship": "SELF"}]},
         "put-code": 11,
-        "visibility": "PUBLIC",
+        "visibility": "public",
         "created-date": {"value": 1600000000000},
         "last-modified-date": {"value": 1700000000000},
         "source": {"source-orcid": {"path": "0000-0002-7433-2740"}, "source-name": {"value": "Researcher"}, "assertion-origin-orcid": {"path": "0000-0001-5109-3700"}, "assertion-origin-name": {"value": "Crossref"}}
@@ -24,13 +25,13 @@
         "type": "JOURNAL_ARTICLE",
         "external-ids": {"external-id": [{"external-id-type": "doi", "external-id-value": "10.1000/example", "external-id-relationship": "SELF"}]},
         "put-code": 12,
-        "visibility": "PUBLIC",
+        "visibility": "public",
         "source": {"source-name": {"value": "DataCite"}}
       },
       {
         "title": {"title": {"value": "Private assertion"}},
         "put-code": 13,
-        "visibility": "PRIVATE"
+        "visibility": "private"
       }
     ]
   }, {
@@ -38,7 +39,7 @@
     "work-summary": [{
       "title": {"title": {"value": "Private-only assertion"}},
       "put-code": 14,
-      "visibility": "PRIVATE"
+      "visibility": "private"
     }]
   }]
 }

@@ -417,6 +417,14 @@ fn decode_works_with_base(
         source,
     })?;
     let canonical_orcid = final_orcid(final_url, base, "works")?;
+    let decoded_orcid = works_path_orcid(
+        wire.path
+            .as_deref()
+            .ok_or_else(|| malformed("works response omitted path"))?,
+    )?;
+    if decoded_orcid != canonical_orcid {
+        return Err(malformed("final URL and decoded works ORCID disagree"));
+    }
     let data = map_works(wire);
     Ok(success_outcome(requested_orcid, canonical_orcid, data))
 }
@@ -511,6 +519,21 @@ fn final_orcid(final_url: &str, base: &str, operation: &str) -> Result<String, B
     Ok(orcid.to_string())
 }
 
+fn works_path_orcid(path: &str) -> Result<&str, BioMcpError> {
+    let mut segments = path
+        .strip_prefix('/')
+        .ok_or_else(|| malformed("works response path was invalid"))?
+        .split('/');
+    let orcid = segments
+        .next()
+        .ok_or_else(|| malformed("works response path was invalid"))?;
+    if segments.next() != Some("works") || segments.next().is_some() {
+        return Err(malformed("works response path was invalid"));
+    }
+    validate_orcid(orcid)?;
+    Ok(orcid)
+}
+
 fn malformed(message: &str) -> BioMcpError {
     BioMcpError::Api {
         api: ORCID_API.into(),
@@ -519,7 +542,7 @@ fn malformed(message: &str) -> BioMcpError {
 }
 
 fn public(visibility: Option<&str>) -> bool {
-    visibility == Some("PUBLIC")
+    visibility == Some("public")
 }
 
 fn map_record(wire: RecordWire) -> OrcidRecord {
@@ -789,6 +812,7 @@ struct DisambiguatedOrganizationWire {
 }
 #[derive(Debug, Deserialize)]
 struct WorksWire {
+    path: Option<String>,
     #[serde(default)]
     group: Vec<WorkGroupWire>,
 }

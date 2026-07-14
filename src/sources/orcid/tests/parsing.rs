@@ -49,7 +49,7 @@ fn maps_public_record_professional_fields_provenance_and_partial_dates() {
     let name = &data.names[0];
     assert_eq!(name.given_names.as_deref(), Some("Atul Janardhan"));
     assert_eq!(name.family_name.as_deref(), Some("Butte"));
-    assert_eq!(name.visibility, "PUBLIC");
+    assert_eq!(name.visibility, "public");
     let source = name.source.as_ref().unwrap();
     assert_eq!(source.source_orcid.as_deref(), Some(ORCID));
     assert_eq!(source.source_name.as_deref(), Some("Atul J. Butte"));
@@ -81,7 +81,7 @@ fn maps_public_record_professional_fields_provenance_and_partial_dates() {
         employment.organization.disambiguation_source.as_deref(),
         Some("ROR")
     );
-    assert_eq!(employment.visibility, "PUBLIC");
+    assert_eq!(employment.visibility, "public");
     let employment_source = employment.source.as_ref().unwrap();
     assert_eq!(employment_source.source_orcid.as_deref(), Some(ORCID));
     assert_eq!(
@@ -133,7 +133,7 @@ fn mapped_record_serialization_excludes_private_profile_and_demographic_fields()
 #[test]
 fn non_public_name_is_filtered_instead_of_assumed_public() {
     let mut value: serde_json::Value = serde_json::from_slice(RECORD).unwrap();
-    value["person"]["name"]["visibility"] = serde_json::json!("LIMITED");
+    value["person"]["name"]["visibility"] = serde_json::json!("limited");
     let body = serde_json::to_vec(&value).unwrap();
     let OrcidFetchOutcome::Available { data, .. } = decode_record(
         ORCID,
@@ -186,7 +186,7 @@ fn works_preserve_group_ids_multiple_public_assertions_and_no_continuation() {
     );
     assert_eq!(group.summaries.len(), 2);
     assert_eq!(group.summaries[0].put_code, Some(11));
-    assert_eq!(group.summaries[0].visibility, "PUBLIC");
+    assert_eq!(group.summaries[0].visibility, "public");
     assert_eq!(group.summaries[0].created_date, Some(1_600_000_000_000));
     assert_eq!(group.summaries[0].modified_date, Some(1_700_000_000_000));
     assert_eq!(group.summaries[1].put_code, Some(12));
@@ -318,6 +318,35 @@ fn malformed_wrong_media_and_inconsistent_identity_are_distinct_errors() {
     )
     .unwrap_err();
     assert!(mismatch.to_string().contains("disagree"));
+
+    let mut mismatched_works: serde_json::Value = serde_json::from_slice(WORKS).unwrap();
+    mismatched_works["path"] = serde_json::json!("/0000-0002-1825-0097/works");
+    let mismatch = decode_works(
+        ORCID,
+        &url(ORCID, "works"),
+        StatusCode::OK,
+        &headers(Some(ORCID_MEDIA_TYPE)),
+        &serde_json::to_vec(&mismatched_works).unwrap(),
+    )
+    .unwrap_err();
+    assert!(mismatch.to_string().contains("works ORCID disagree"));
+
+    for invalid_path in [
+        serde_json::Value::Null,
+        serde_json::json!("not-a-works-path"),
+    ] {
+        let mut invalid_works: serde_json::Value = serde_json::from_slice(WORKS).unwrap();
+        invalid_works["path"] = invalid_path;
+        let error = decode_works(
+            ORCID,
+            &url(ORCID, "works"),
+            StatusCode::OK,
+            &headers(Some(ORCID_MEDIA_TYPE)),
+            &serde_json::to_vec(&invalid_works).unwrap(),
+        )
+        .unwrap_err();
+        assert!(matches!(error, BioMcpError::Api { .. }));
+    }
 
     let wrong_base_path = decode_record_with_base(
         ORCID,
