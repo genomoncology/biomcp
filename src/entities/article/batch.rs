@@ -86,6 +86,10 @@ pub(super) fn article_batch_item_from_article(
         pmcid: trimmed_opt(article.pmcid.as_deref()),
         doi: trimmed_opt(article.doi.as_deref()),
         title: article_batch_title(article, requested_id),
+        authors: article.authors.clone(),
+        author_count: article.author_count,
+        author_completeness: article.author_completeness,
+        author_source: article.author_source,
         journal: trimmed_opt(article.journal.as_deref()),
         year: article_batch_year(article),
         entity_summary: article

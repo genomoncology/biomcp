@@ -1,4 +1,5 @@
 use super::*;
+use crate::entities::article::{ArticleAuthorCompleteness, ArticleSource};
 use crate::error::BioMcpError;
 
 #[tokio::test]
@@ -89,6 +90,30 @@ fn parse_article_id_publisher_pii_is_invalid() {
         parse_article_id("S1535610826000103"),
         ArticleIdType::Invalid
     ));
+}
+
+#[test]
+fn europepmc_fallback_keeps_authorship_provenance_and_flag() {
+    let hit: crate::sources::europepmc::EuropePmcResult =
+        serde_json::from_value(serde_json::json!({
+            "id": "22663011",
+            "authorString": "First Author, Middle Author, Last Author"
+        }))
+        .expect("valid Europe PMC hit");
+
+    let article = article_from_europepmc_fallback(&hit);
+
+    assert_eq!(
+        article.authors,
+        vec!["First Author", "Middle Author", "Last Author"]
+    );
+    assert_eq!(article.author_count, article.authors.len());
+    assert_eq!(
+        article.author_completeness,
+        ArticleAuthorCompleteness::SourceLimited
+    );
+    assert_eq!(article.author_source, ArticleSource::EuropePmc);
+    assert!(article.pubtator_fallback);
 }
 
 #[test]

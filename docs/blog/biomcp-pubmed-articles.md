@@ -41,6 +41,20 @@ Type: research support, non-u.s. gov't
 Open Access: No
 ```
 
+BioMCP returns every author name supplied by the selected source in source
+order. For example, a three-name structured source response renders as:
+
+```
+## Authors (PubTator3)
+
+Ada First, Ben Second, Cyra Third
+Authorship: complete (3 returned; PubTator3)
+```
+
+JSON also reports the returned `author_count`, `author_completeness`, and
+`author_source`; Europe PMC display-string authorship is labelled
+`source_limited` rather than presented as a proven complete list.
+
 BioMCP auto-generates follow-up commands for every gene, drug, disease, and mutation mentioned in the abstract. You don't have to know the identifiers — they're extracted for you.
 
 ## 3. AI Summary (TLDR)
@@ -158,19 +172,35 @@ Compare multiple papers side by side: TLDRs, citation counts, influence metrics,
 $ biomcp article batch 12068308 21639808 22663011
 
 ## 1. Mutations of the BRAF gene in human cancer.
-PMID: 12068308 | Nature | 2002
+PMID: 12068308
+Journal: Nature
+Year: 2002
 TLDR: BRAF somatic missense mutations in 66% of malignant melanomas,
 V599E accounting for 80%.
 Citations: 10,599 (influential: 532)
 
 ## 2. Improved survival with vemurafenib in melanoma with BRAF V600E mutation.
-PMID: 21639808 | N Engl J Med | 2011
+PMID: 21639808
+Journal: N Engl J Med
+Year: 2011
 TLDR: Vemurafenib produced improved rates of overall and progression-free
 survival in a phase 3 randomized clinical trial.
 Citations: 6,756 (influential: 175)
 ```
 
-Pass any number of PMIDs, PMCIDs, or DOIs. Useful for triage: run a search, pick your candidates, then batch them to compare TLDRs and citation metrics before deciding which papers to read in full.
+Each card also carries its source-ordered authorship. A three-name structured
+list appears as:
+
+```
+Authors: Ada First, Ben Second, Cyra Third
+Authorship: complete (3 returned; PubTator3)
+```
+
+Pass up to 20 PMIDs, PMCIDs, or DOIs. The JSON result remains a bare array in
+request order, and each card includes every author supplied by its selected
+source plus returned count, completeness, and source. Useful for triage: run a
+search, pick your candidates, then batch them to compare authorship, TLDRs, and
+citation metrics before deciding which papers to read in full.
 
 ## API Keys
 

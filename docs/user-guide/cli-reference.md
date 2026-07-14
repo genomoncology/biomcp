@@ -397,6 +397,13 @@ biomcp get article 22663011 tldr
 biomcp article batch 22663011 24200969
 ```
 
+Article detail and batch return every author supplied by the selected source in
+source order. JSON carries `authors`, returned `author_count`,
+`author_completeness` (`complete`, `source_limited`, or `unavailable`), and
+`author_source` (`pubtator` or `europepmc`). Europe PMC display-string lists are
+source-limited. Batch keeps its bare-array JSON envelope and request order, and
+Markdown cards show authorship plus its status.
+
 `S2_API_KEY` is optional. With it, BioMCP sends authenticated Semantic Scholar
 requests at 1 req/sec for `search article`, `get article`, `get article ... tldr`,
 `article batch`, and the explicit `article citations|references|recommendations`

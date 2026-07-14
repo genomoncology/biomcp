@@ -36,15 +36,3 @@ fn truncate_abstract_keeps_full_text_until_limit() {
     let out = truncate_abstract(text);
     assert_eq!(out, text);
 }
-
-#[test]
-fn truncate_authors_first_last() {
-    let authors = vec![
-        "A".to_string(),
-        "B".to_string(),
-        "C".to_string(),
-        "D".to_string(),
-        "E".to_string(),
-    ];
-    assert_eq!(truncate_authors(&authors), vec!["A", "E"]);
-}

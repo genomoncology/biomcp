@@ -14,10 +14,17 @@
 {% if pmid %}[PubMed](https://pubmed.ncbi.nlm.nih.gov/{{ pmid }}/){% endif %}
 Source: PubMed / Europe PMC
 
-{% if authors -%}
-## Authors (PubMed / Europe PMC)
+## Authors ({{ author_source }})
 
+{% if authors -%}
 {{ authors | join(", ") }}
+{% endif -%}
+{% if author_completeness == "complete" -%}
+Authorship: complete ({{ author_count }} returned; {{ author_source }})
+{% elif author_completeness == "source_limited" -%}
+Authorship: source-limited ({{ author_count }} returned; {{ author_source }})
+{% else -%}
+Authorship: unavailable (no author list supplied by {{ author_source }})
 {% endif -%}
 {% if abstract_text -%}
 ## Abstract (PubMed / Europe PMC)

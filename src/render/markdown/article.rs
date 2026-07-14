@@ -52,6 +52,9 @@ pub fn article_markdown(
         doi => &article.doi,
         title => &article.title,
         authors => &article.authors,
+        author_count => article.author_count,
+        author_completeness => &article.author_completeness,
+        author_source => article.author_source.display_name(),
         journal => &article.journal,
         date => &article.date,
         citation_count => &article.citation_count,
@@ -200,6 +203,25 @@ pub fn article_batch_markdown(items: &[ArticleBatchItem]) -> Result<String, BioM
         }
         if let Some(year) = item.year {
             out.push_str(&format!("Year: {}\n", year));
+        }
+        if !item.authors.is_empty() {
+            out.push_str(&format!("Authors: {}\n", item.authors.join(", ")));
+        }
+        match item.author_completeness {
+            ArticleAuthorCompleteness::Complete => out.push_str(&format!(
+                "Authorship: complete ({} returned; {})\n",
+                item.author_count,
+                item.author_source.display_name()
+            )),
+            ArticleAuthorCompleteness::SourceLimited => out.push_str(&format!(
+                "Authorship: source-limited ({} returned; {})\n",
+                item.author_count,
+                item.author_source.display_name()
+            )),
+            ArticleAuthorCompleteness::Unavailable => out.push_str(&format!(
+                "Authorship: unavailable (no author list supplied by {})\n",
+                item.author_source.display_name()
+            )),
         }
         if let Some(entities) = article_batch_entities(item.entity_summary.as_ref()) {
             out.push_str(&format!("Entities: {}\n", entities));

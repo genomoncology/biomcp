@@ -82,6 +82,85 @@ error or empty response cannot satisfy the contract.
 ## Full Text (Europe PMC XML)
 ```
 
+## Article Detail Preserves Complete Source-Ordered Authors
+
+Article detail returns every author supplied by the selected source, in source
+order. The count and completeness/source fields let JSON consumers distinguish
+a complete structured list from unavailable or source-limited authorship without
+mistaking a shortened list for the full collaboration.
+
+```bash
+../../tools/biomcp-ci --json get article 22663011 | mustmatch like '{
+  "authors": [
+    "Ada First",
+    "Ben Second",
+    "Cyra Middle",
+    "Dev Fourth",
+    "Eli Fifth",
+    "Fay Last"
+  ],
+  "author_count": 6,
+  "author_completeness": "complete",
+  "author_source": "pubtator"
+}'
+```
+
+## Article Detail Markdown Shows the Complete Author List
+
+Human-readable detail keeps the source order in one authorship line, including
+middle collaborators instead of replacing the list with first and last names.
+
+```bash
+../../tools/biomcp-ci get article 22663011 | mustmatch like 'Ada First, Ben Second, Cyra Middle, Dev Fourth, Eli Fifth, Fay Last
+Authorship: complete'
+```
+
+## Article Batch Keeps Its Array and Carries Authorship
+
+Batch retrieval keeps its compact bare-array response and input order while
+including the same source-ordered authorship contract on each card. A caller can
+therefore confirm a middle author without making a second detail request.
+
+```bash
+../../tools/biomcp-ci --json article batch 22663011 22663012 | mustmatch like '[
+  {
+    "requested_id": "22663011",
+    "authors": [
+      "Ada First",
+      "Ben Second",
+      "Cyra Middle",
+      "Dev Fourth",
+      "Eli Fifth",
+      "Fay Last"
+    ],
+    "author_count": 6,
+    "author_completeness": "complete",
+    "author_source": "pubtator"
+  },
+  {
+    "requested_id": "22663012"
+  }
+]'
+```
+
+## Article Batch Markdown Keeps Input Order and Authors
+
+Human-readable batch cards remain in request order and include full authorship
+on the matching card without hiding middle collaborators.
+
+```bash
+../../tools/biomcp-ci article batch 22663011 22663012 | mustmatch like '## 1. Europe full text winner
+...
+PMID: 22663011
+...
+Authors: Ada First, Ben Second, Cyra Middle, Dev Fourth, Eli Fifth, Fay Last
+...
+## 2. PMC HTML fallback winner
+...
+PMID: 22663012
+...'
+```
+
 ## MYD88 Protein-Alias Article Precision
 
 <!-- mustmatch-lint: skip -->

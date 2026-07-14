@@ -322,6 +322,10 @@ fn related_article_uses_article_entities_helper_command() {
         doi: None,
         title: "Improved survival with MEK inhibition in BRAF-mutated melanoma.".to_string(),
         authors: Vec::new(),
+        author_count: 0,
+        author_completeness:
+            crate::entities::article::ArticleAuthorCompleteness::Unavailable,
+        author_source: crate::entities::article::ArticleSource::PubTator,
         journal: None,
         date: None,
         citation_count: None,
