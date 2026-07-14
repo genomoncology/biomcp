@@ -16,7 +16,7 @@ Search by a researcher's name when separate Semantic Scholar candidates are usef
   "providers": [{
     "source": "semantic_scholar",
     "results": [
-      {"identity": {"kind": "exact_provider", "id": "semanticscholar:2269573451"}, "display_name": "Louis S. Williams"},
+      {"identity": {"kind": "exact_provider", "id": "semanticscholar:2269573451"}, "display_name": "Louis S. Williams", "warnings": [{"code": "orcid_link_not_established"}]},
       {"identity": {"kind": "exact_provider", "id": "semanticscholar:1994488914"}, "display_name": "Louis S. Williams"}
     ],
     "status": "available"
@@ -39,9 +39,17 @@ next step without inventing a BioMCP author identifier.
 
 Provider responses may grow fields, but public author results remain limited to professional identity evidence. In particular, successful JSON does not expose private-profile or inferred-demographic keys.
 
-```bash
-set -o pipefail
-../../tools/biomcp-ci --json search author -q "Louis Williams" --source semanticscholar --limit 5 | mustmatch not '/"(email|homepage|private[_-]?profile|gender|race|ethnicity)"\s*:/i'
+```text expect=author-search not-contains
+"email":
+"homepage":
+"private_profile":
+"gender":
+"race":
+"ethnicity":
+private-author@example.invalid
+https://private.example.invalid/author
+fixture-private-profile
+fixture-inferred-demographic
 ```
 
 ## Exact provider detail preserves identity and uncertainty
@@ -58,18 +66,28 @@ Use the qualified ID from search to retrieve exactly that Semantic Scholar recor
   "display_name": "A. Butte",
   "provider_records": [{"id": "semanticscholar:1716151", "status": "available"}],
   "conflicts": [],
+  "warnings": [{"code": "orcid_link_not_established"}],
   "_meta": {
     "source_status": [{"source": "semantic_scholar", "status": "available"}],
-    "evidence_urls": [{"url": "https://www.semanticscholar.org/author/1716151"}]
+    "evidence_urls": [{"url": "https://www.semanticscholar.org/author/1716151"}],
+    "next_commands": []
   }
 }
 ```
 
 The allowlisted detail projection applies the same privacy boundary as search.
 
-```bash
-set -o pipefail
-../../tools/biomcp-ci --json get author semanticscholar:1716151 | mustmatch not '/"(email|homepage|private[_-]?profile|gender|race|ethnicity)"\s*:/i'
+```text expect=author-detail not-contains
+"email":
+"homepage":
+"private_profile":
+"gender":
+"race":
+"ethnicity":
+private-author@example.invalid
+https://private.example.invalid/author
+fixture-private-profile
+fixture-inferred-demographic
 ```
 
 ## Markdown and discovery explain the S2-only boundary
