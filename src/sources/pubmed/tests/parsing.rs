@@ -222,11 +222,11 @@ fn citation_without_mesh_is_available_empty() {
 #[test]
 fn citation_parser_rejects_misses_errors_and_invalid_required_shape() {
     let empty = parse_citation_xml("1", "<PubmedArticleSet />").unwrap_err();
-    assert!(empty.to_string().contains("not found"));
+    assert!(matches!(empty, BioMcpError::NotFound { .. }));
 
     let provider_error =
         parse_citation_xml("1", "<eFetchResult><ERROR>bad id</ERROR></eFetchResult>").unwrap_err();
-    assert!(provider_error.to_string().contains("not found"));
+    assert!(matches!(provider_error, BioMcpError::NotFound { .. }));
 
     let bad_author = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><Article><AuthorList><Author><ForeName>Nameless</ForeName></Author></AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"#;
     assert!(

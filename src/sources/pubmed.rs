@@ -731,7 +731,11 @@ fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, BioMcpErr
         .filter(|node| node.is_element() && node.tag_name().name() == "PubmedArticle")
         .filter_map(|article| element_children(article, "MedlineCitation").next())
         .find(|citation| child_text(*citation, "PMID") == Some(pmid))
-        .ok_or_else(|| pubmed_api_error(format!("PubMed citation not found for PMID {pmid}")))?;
+        .ok_or_else(|| BioMcpError::NotFound {
+            entity: "PubMed citation".into(),
+            id: pmid.to_string(),
+            suggestion: "The record may be missing or deleted in PubMed.".into(),
+        })?;
 
     let authors = element_children(citation, "Article")
         .next()
