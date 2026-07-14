@@ -90,18 +90,19 @@ a complete structured list from unavailable or source-limited authorship without
 mistaking a shortened list for the full collaboration.
 
 ```bash
-../../tools/biomcp-ci --json get article 22663011 | mustmatch like '"author_completeness": "complete",
-"author_count": 6,
-"author_source": "pubtator",
-"authors": [
-  "Ada First",
-  "Ben Second",
-  "Cyra Middle",
-  "Dev Fourth",
-  "Eli Fifth",
-  "Fay Last"
-]
-...'
+../../tools/biomcp-ci --json get article 22663011 | mustmatch like '{
+  "authors": [
+    "Ada First",
+    "Ben Second",
+    "Cyra Middle",
+    "Dev Fourth",
+    "Eli Fifth",
+    "Fay Last"
+  ],
+  "author_count": 6,
+  "author_completeness": "complete",
+  "author_source": "pubtator"
+}'
 ```
 
 ## Article Detail Markdown Shows the Complete Author List
@@ -110,7 +111,8 @@ Human-readable detail keeps the source order in one authorship line, including
 middle collaborators instead of replacing the list with first and last names.
 
 ```bash
-../../tools/biomcp-ci get article 22663011 | mustmatch like 'Ada First, Ben Second, Cyra Middle, Dev Fourth, Eli Fifth, Fay Last'
+../../tools/biomcp-ci get article 22663011 | mustmatch like 'Ada First, Ben Second, Cyra Middle, Dev Fourth, Eli Fifth, Fay Last
+Authorship: complete'
 ```
 
 ## Article Batch Keeps Its Array and Carries Authorship
@@ -121,23 +123,24 @@ therefore confirm a middle author without making a second detail request.
 
 ```bash
 ../../tools/biomcp-ci --json article batch 22663011 22663012 | mustmatch like '[
-...
-"requested_id": "22663011",
-...
-"authors": [
-  "Ada First",
-  "Ben Second",
-  "Cyra Middle",
-  "Dev Fourth",
-  "Eli Fifth",
-  "Fay Last"
-],
-"author_count": 6,
-"author_completeness": "complete",
-"author_source": "pubtator"
-...
-"requested_id": "22663012",
-...'
+  {
+    "requested_id": "22663011",
+    "authors": [
+      "Ada First",
+      "Ben Second",
+      "Cyra Middle",
+      "Dev Fourth",
+      "Eli Fifth",
+      "Fay Last"
+    ],
+    "author_count": 6,
+    "author_completeness": "complete",
+    "author_source": "pubtator"
+  },
+  {
+    "requested_id": "22663012"
+  }
+]'
 ```
 
 ## Article Batch Markdown Keeps Input Order and Authors

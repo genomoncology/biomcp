@@ -334,10 +334,12 @@ top-level `results` array. Drug `--region ema` is a public alias for the
 canonical `--region eu` value on search and get drug regional sections.
 
 Legacy helper JSON shapes are documented, not silently normalized in this
-release. `article batch --json` remains a bare array of compact article cards;
-helper-specific JSON such as `drug interactions --json` and `drug
-adverse-events --json` keeps helper-owned fields plus optional `_meta`
-follow-ups. `drug adverse-events <name>` accepts the same advertised FAERS
+release. `article batch --json` remains a bare array of compact article cards in
+request order. Article detail and batch cards carry every author supplied by the
+selected source plus returned count, completeness, and source; Europe PMC
+display-string authorship is explicitly source-limited. Helper-specific JSON
+such as `drug interactions --json` and `drug adverse-events --json` keeps
+helper-owned fields plus optional `_meta` follow-ups. `drug adverse-events <name>` accepts the same advertised FAERS
 filters as the search footer, including `--count <field>` for server-side
 aggregate rankings. `biomcp --json list` and `biomcp --json list <entity>` are command
 reference payloads, not query result envelopes.
