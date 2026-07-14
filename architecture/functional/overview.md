@@ -55,6 +55,17 @@ does not fold the local `study` analytics family into the entity list.
 This table is a high-level shipped source map; section-specific constraints and
 transport details live in the technical architecture docs.
 
+### Target author entity
+
+BioMCP does not yet ship an author entity. The additive target is an
+evidence-backed, provider-qualified author surface for identity candidates,
+publications, coauthors, and indexed topics. It explicitly preserves ambiguity
+instead of treating a normalized name as a person. See
+[Author Identity and Publication Surface](author-identity.md) for the current
+problem, exact target contracts, invariants, and migration boundaries. The
+shipped entity table above must not add `author` until the first public author
+build lands.
+
 ## Study Command Family
 
 `study` is a separate local analytics surface for downloaded cBioPortal-style

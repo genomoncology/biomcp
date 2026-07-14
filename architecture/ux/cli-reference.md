@@ -103,6 +103,29 @@ Opt-in sections such as
 `clinical_features`, `diagnostics`, `disgenet`, and `funding` still require
 explicit naming.
 
+## Target Author Identity UX
+
+BioMCP does not yet ship these commands. The additive target follows the same
+entity/helper grammar:
+
+```bash
+biomcp search author -q "Louis S Williams" --affiliation "Cleveland Clinic"
+biomcp get author semanticscholar:2269573451
+biomcp author publications semanticscholar:2269573451 --limit 20
+biomcp author coauthors semanticscholar:2269573451 --max-publications 100 --offset 0
+biomcp author topics orcid:0000-0002-7433-2740 --source pubmed --max-publications 100 --offset 0
+```
+
+Author IDs are always provider-qualified (`semanticscholar:` or `orcid:`);
+BioMCP does not mint a global person ID. PubMed name/affiliation matches remain
+name-only candidates because PubMed has no author entity identifier. Search and
+detail distinguish exact provider records, evidence-linked identities,
+ambiguous candidates, and name-only results. Publication output is grouped into
+independently paged provider corpora, and coauthor/topic output names its bounded
+supporting publication set. See
+`architecture/functional/author-identity.md` for exact JSON shapes, evidence
+rules, source degradation, privacy boundaries, and the incremental build order.
+
 ## Article Search Source UX
 
 `biomcp search article` defaults to `--source all` for recall. The compatible
