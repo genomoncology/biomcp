@@ -158,6 +158,14 @@ ARTICLES = {
         "pmcid": "PMC123456",
         "title": "Europe full text winner",
         "abstract": "Abstract text.",
+        "authors": [
+            "Ada First",
+            "Ben Second",
+            "Cyra Middle",
+            "Dev Fourth",
+            "Eli Fifth",
+            "Fay Last",
+        ],
         "paper_id": "paper-1",
     },
     "22663012": {
@@ -235,6 +243,7 @@ def pubtator_payload(pmid):
     article = ARTICLES[pmid]
     record = {
         "pmid": int(pmid),
+        "authors": article.get("authors", []),
         "passages": [
             {"infons": {"type": "title"}, "text": article["title"]},
             {"infons": {"type": "abstract"}, "text": article["abstract"]},

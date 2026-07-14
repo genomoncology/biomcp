@@ -82,6 +82,53 @@ error or empty response cannot satisfy the contract.
 ## Full Text (Europe PMC XML)
 ```
 
+## Article Detail Preserves Complete Source-Ordered Authors
+
+Article detail returns every author supplied by the selected source, in source
+order. The count and completeness/source fields let JSON consumers distinguish
+a complete structured list from unavailable or source-limited authorship without
+mistaking a shortened list for the full collaboration.
+
+```bash
+../../tools/biomcp-ci --json get article 22663011 | mustmatch like '"authors": [
+  "Ada First",
+  "Ben Second",
+  "Cyra Middle",
+  "Dev Fourth",
+  "Eli Fifth",
+  "Fay Last"
+],
+"author_count": 6,
+"author_completeness": "complete",
+"author_source": "pubtator"
+...'
+```
+
+## Article Batch Keeps Its Array and Carries Authorship
+
+Batch retrieval keeps its compact bare-array response and input order while
+including the same source-ordered authorship contract on each card. A caller can
+therefore confirm a middle author without making a second detail request.
+
+```bash
+../../tools/biomcp-ci --json article batch 22663011 | mustmatch like '[
+...
+"requested_id": "22663011",
+...
+"authors": [
+  "Ada First",
+  "Ben Second",
+  "Cyra Middle",
+  "Dev Fourth",
+  "Eli Fifth",
+  "Fay Last"
+],
+"author_count": 6,
+"author_completeness": "complete",
+"author_source": "pubtator"
+...'
+```
+
 ## MYD88 Protein-Alias Article Precision
 
 <!-- mustmatch-lint: skip -->
