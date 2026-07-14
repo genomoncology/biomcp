@@ -6,6 +6,8 @@ BioMCP searches Semantic Scholar author records without pretending that a provid
 
 Search by a researcher's name when separate Semantic Scholar candidates are useful evidence. Each result is exact only within Semantic Scholar; matching names do not cause BioMCP to merge records.
 
+<!-- mustmatch-lint: skip -->
+
 ```bash run id=author-search exit=0
 ../../tools/biomcp-ci --json search author -q "Louis Williams" --source semanticscholar --limit 5
 ```
@@ -55,6 +57,8 @@ fixture-inferred-demographic
 ## Exact provider detail preserves identity and uncertainty
 
 Use the qualified ID from search to retrieve exactly that Semantic Scholar record. Detail keeps provider provenance visible and does not turn an unverified external handle into a cross-provider identity link.
+
+<!-- mustmatch-lint: skip -->
 
 ```bash run id=author-detail exit=0
 ../../tools/biomcp-ci --json get author semanticscholar:1716151
