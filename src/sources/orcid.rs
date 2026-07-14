@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 
 use reqwest::StatusCode;
-use reqwest::header::{CONTENT_TYPE, HeaderMap, RETRY_AFTER};
+use reqwest::header::{CONTENT_TYPE, HeaderMap, LOCATION, RETRY_AFTER};
 use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
@@ -14,6 +14,7 @@ const ORCID_BASE_ENV: &str = "BIOMCP_ORCID_BASE";
 const ORCID_API: &str = "orcid";
 const ORCID_MEDIA_TYPE: &str = "application/vnd.orcid+json";
 const RETRY_AFTER_MAX_CHARS: usize = 128;
+const MAX_REDIRECTS: usize = 10;
 
 #[derive(Clone)]
 pub(crate) struct OrcidClient {
@@ -44,9 +45,7 @@ impl OrcidClient {
         orcid: &str,
     ) -> Result<OrcidFetchOutcome<OrcidRecord>, BioMcpError> {
         let plan = Self::record_plan(orcid)?;
-        let response = apply_no_store(request_from_plan(&self.client, &self.base, &plan))
-            .send()
-            .await?;
+        let response = self.send(&plan).await?;
         self.decode_record_response(orcid, response).await
     }
 
@@ -55,10 +54,43 @@ impl OrcidClient {
         orcid: &str,
     ) -> Result<OrcidFetchOutcome<OrcidWorks>, BioMcpError> {
         let plan = Self::works_plan(orcid)?;
-        let response = apply_no_store(request_from_plan(&self.client, &self.base, &plan))
+        let response = self.send(&plan).await?;
+        self.decode_works_response(orcid, response).await
+    }
+
+    async fn send(&self, plan: &RequestPlan) -> Result<reqwest::Response, BioMcpError> {
+        let mut response = apply_no_store(request_from_plan(&self.client, &self.base, plan))
             .send()
             .await?;
-        self.decode_works_response(orcid, response).await
+        let origin = response.url().clone();
+        let mut redirects = 0;
+
+        while follows_redirect(response.status()) {
+            let Some(location) = response.headers().get(LOCATION) else {
+                break;
+            };
+            if redirects == MAX_REDIRECTS {
+                return Err(malformed("ORCID redirect limit exceeded"));
+            }
+            let location = location
+                .to_str()
+                .map_err(|_| malformed("ORCID redirect Location was invalid"))?;
+            let target = response
+                .url()
+                .join(location)
+                .map_err(|_| malformed("ORCID redirect Location was invalid"))?;
+            if !same_origin(&origin, &target) {
+                return Err(malformed("ORCID redirect cannot leave the original origin"));
+            }
+
+            drop(response);
+            response = apply_no_store(self.client.get(target).header("Accept", ORCID_MEDIA_TYPE))
+                .send()
+                .await?;
+            redirects += 1;
+        }
+
+        Ok(response)
     }
 
     async fn decode_record_response(
@@ -249,6 +281,23 @@ pub(crate) struct OrcidExternalId {
     pub external_id_relationship: Option<String>,
     pub normalized_value: Option<String>,
     pub normalized_url: Option<String>,
+}
+
+fn follows_redirect(status: StatusCode) -> bool {
+    matches!(
+        status,
+        StatusCode::MOVED_PERMANENTLY
+            | StatusCode::FOUND
+            | StatusCode::SEE_OTHER
+            | StatusCode::TEMPORARY_REDIRECT
+            | StatusCode::PERMANENT_REDIRECT
+    )
+}
+
+fn same_origin(origin: &reqwest::Url, target: &reqwest::Url) -> bool {
+    origin.scheme() == target.scheme()
+        && origin.host_str() == target.host_str()
+        && origin.port_or_known_default() == target.port_or_known_default()
 }
 
 fn validate_orcid(orcid: &str) -> Result<&str, BioMcpError> {

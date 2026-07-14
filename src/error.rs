@@ -20,7 +20,7 @@ pub enum BioMcpError {
         source: serde_json::Error,
     },
 
-    #[error("Response body exceeded {max_bytes} bytes for {source_name}")]
+    #[error("API error from {source_name}: Response body exceeded {max_bytes} bytes")]
     BodyLimit {
         source_name: String,
         max_bytes: usize,

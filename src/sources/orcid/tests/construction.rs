@@ -9,7 +9,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::time::{Duration, timeout};
+use tokio::time::{Duration, Instant, timeout};
 
 const RECORD: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -101,6 +101,33 @@ async fn apply_no_store_overrides_force_cache_before_middleware_execution() {
     assert!(observed.load(Ordering::SeqCst));
 }
 
+#[tokio::test]
+async fn record_execution_applies_no_store_to_the_production_send_path() {
+    let (listener, base) = bind_server().await;
+    let body = String::from_utf8(RECORD.to_vec()).unwrap();
+    let server = tokio::spawn(async move {
+        let (mut stream, _) = listener.accept().await.unwrap();
+        read_request(&mut stream).await;
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: {ORCID_MEDIA_TYPE}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        stream.write_all(response.as_bytes()).await.unwrap();
+    });
+    let observed = Arc::new(AtomicBool::new(false));
+    let client = OrcidClient {
+        client: reqwest_middleware::ClientBuilder::new(reqwest::Client::new())
+            .with(CaptureNoStore(observed.clone()))
+            .build(),
+        base: Cow::Owned(base),
+    };
+
+    client.record("0000-0002-7433-2740").await.unwrap();
+
+    server.await.unwrap();
+    assert!(observed.load(Ordering::SeqCst));
+}
+
 async fn bind_server() -> (tokio::net::TcpListener, String) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
@@ -128,8 +155,14 @@ fn fixture_client(base: String, redirect: reqwest::redirect::Policy) -> OrcidCli
         .redirect(redirect)
         .build()
         .unwrap();
+    let rate_limit = crate::sources::rate_limit::RateLimitMiddleware::for_test(
+        base.clone(),
+        Duration::from_millis(100),
+    );
     OrcidClient {
-        client: reqwest_middleware::ClientBuilder::new(raw).build(),
+        client: reqwest_middleware::ClientBuilder::new(raw)
+            .with(rate_limit)
+            .build(),
         base: Cow::Owned(base),
     }
 }
@@ -143,6 +176,7 @@ async fn plans_are_consumed_and_same_origin_canonical_redirect_is_preserved() {
     let server_base = base.clone();
     let server = tokio::spawn(async move {
         let (mut first, _) = listener.accept().await.unwrap();
+        let first_at = Instant::now();
         let first_request = read_request(&mut first).await;
         let redirect = format!(
             "HTTP/1.1 301 Moved Permanently\r\nLocation: {server_base}/{canonical}/record\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
@@ -150,13 +184,18 @@ async fn plans_are_consumed_and_same_origin_canonical_redirect_is_preserved() {
         first.write_all(redirect.as_bytes()).await.unwrap();
 
         let (mut second, _) = listener.accept().await.unwrap();
+        let second_at = Instant::now();
         let second_request = read_request(&mut second).await;
         let response = format!(
             "HTTP/1.1 200 OK\r\nContent-Type: {ORCID_MEDIA_TYPE};charset=UTF-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{response_body}",
             response_body.len()
         );
         second.write_all(response.as_bytes()).await.unwrap();
-        (first_request, second_request)
+        (
+            first_request,
+            second_request,
+            second_at.duration_since(first_at),
+        )
     });
 
     let client = fixture_client(base, crate::sources::rate_limit::orcid_redirect_policy());
@@ -172,8 +211,12 @@ async fn plans_are_consumed_and_same_origin_canonical_redirect_is_preserved() {
         }
         other => panic!("unexpected outcome: {other:?}"),
     }
-    let (first, second) = server.await.unwrap();
+    let (first, second, redirect_interval) = server.await.unwrap();
     assert!(first.starts_with(&format!("GET /{requested}/record HTTP/1.1")));
+    assert!(
+        redirect_interval >= Duration::from_millis(80),
+        "redirect hop bypassed rate middleware: {redirect_interval:?}"
+    );
     assert!(second.starts_with(&format!("GET /{canonical}/record HTTP/1.1")));
     assert!(
         first

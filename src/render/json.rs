@@ -308,7 +308,7 @@ pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> 
         BioMcpError::HttpMiddleware(_) => "http_middleware",
         BioMcpError::Api { .. } => "api",
         BioMcpError::ApiJson { .. } => "api_json",
-        BioMcpError::BodyLimit { .. } => "body_limit",
+        BioMcpError::BodyLimit { .. } => "api",
         BioMcpError::CtGovInterventionQueryRejected { .. } => "api",
         BioMcpError::NotFound { .. } => "not_found",
         BioMcpError::InvalidArgument(_) => "invalid_argument",
@@ -539,7 +539,7 @@ mod tests {
     use super::{
         to_alias_suggestion_json, to_discover_json, to_entity_json, to_entity_json_value,
         to_entity_json_value_with_suggestions_and_workflow, to_entity_json_with_suggestions,
-        to_pretty, to_variant_guidance_json,
+        to_error_json, to_pretty, to_variant_guidance_json,
     };
     use crate::entities::discover::{
         AliasCanonicalMatch, AliasFallbackDecision, ConceptSource, ConceptXref, DiscoverConcept,
@@ -548,6 +548,7 @@ mod tests {
     };
     use crate::entities::drug::Drug;
     use crate::entities::gene::Gene;
+    use crate::error::BioMcpError;
     use crate::render::provenance::SectionSource;
     use serde::Serialize;
 
@@ -567,6 +568,19 @@ mod tests {
         assert!(json.contains('\n'));
         assert!(json.contains("\"symbol\": \"BRAF\""));
         assert!(json.contains("\"score\": 0.98"));
+    }
+
+    #[test]
+    fn typed_body_limit_preserves_legacy_api_error_code_and_message() {
+        let error = BioMcpError::BodyLimit {
+            source_name: "example".to_string(),
+            max_bytes: 42,
+        };
+        let json = to_error_json(&error).unwrap();
+
+        assert!(json.contains("\"code\": \"api\""));
+        assert!(json.contains("API error from example: Response body exceeded 42 bytes"));
+        assert!(!json.contains("body_limit"));
     }
 
     #[test]

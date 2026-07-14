@@ -81,6 +81,17 @@ fn maps_public_record_professional_fields_provenance_and_partial_dates() {
         employment.organization.disambiguation_source.as_deref(),
         Some("ROR")
     );
+    assert_eq!(employment.visibility, "PUBLIC");
+    let employment_source = employment.source.as_ref().unwrap();
+    assert_eq!(employment_source.source_orcid.as_deref(), Some(ORCID));
+    assert_eq!(
+        employment_source.assertion_origin_orcid.as_deref(),
+        Some("0000-0001-5109-3700")
+    );
+    assert_eq!(
+        employment_source.assertion_origin_name.as_deref(),
+        Some("UCSF")
+    );
     assert!(employment.created_date.is_some());
     assert!(employment.modified_date.is_some());
 }
@@ -158,6 +169,14 @@ fn works_preserve_group_ids_multiple_public_assertions_and_no_continuation() {
         Some("10.1000/example")
     );
     assert_eq!(
+        group.external_ids[0].external_id_type.as_deref(),
+        Some("doi")
+    );
+    assert_eq!(
+        group.external_ids[0].external_id_relationship.as_deref(),
+        Some("SELF")
+    );
+    assert_eq!(
         group.external_ids[0].normalized_value.as_deref(),
         Some("10.1000/example")
     );
@@ -167,6 +186,9 @@ fn works_preserve_group_ids_multiple_public_assertions_and_no_continuation() {
     );
     assert_eq!(group.summaries.len(), 2);
     assert_eq!(group.summaries[0].put_code, Some(11));
+    assert_eq!(group.summaries[0].visibility, "PUBLIC");
+    assert_eq!(group.summaries[0].created_date, Some(1_600_000_000_000));
+    assert_eq!(group.summaries[0].modified_date, Some(1_700_000_000_000));
     assert_eq!(group.summaries[1].put_code, Some(12));
     assert_eq!(
         group.summaries[0].external_ids[0]

@@ -296,21 +296,8 @@ pub(crate) fn redirect_policy() -> reqwest::redirect::Policy {
 }
 
 pub(crate) fn orcid_redirect_policy() -> reqwest::redirect::Policy {
-    let default_policy = reqwest::redirect::Policy::default();
-    reqwest::redirect::Policy::custom(move |attempt| {
-        let Some(origin) = attempt.previous().first() else {
-            return default_policy.redirect(attempt);
-        };
-        let target = attempt.url();
-        let same_origin = origin.scheme() == target.scheme()
-            && origin.host_str() == target.host_str()
-            && origin.port_or_known_default() == target.port_or_known_default();
-        if same_origin {
-            default_policy.redirect(attempt)
-        } else {
-            attempt.error("ORCID redirect cannot leave the original origin")
-        }
-    })
+    // OrcidClient follows redirects itself so every hop re-enters middleware.
+    reqwest::redirect::Policy::none()
 }
 
 fn redirect_policy_for(unpaced_origin: Option<UnpacedOrigin>) -> reqwest::redirect::Policy {
@@ -344,6 +331,21 @@ impl RateLimitMiddleware {
     pub(crate) fn new() -> Self {
         Self {
             limiter: global_limiter(),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_test(prefix: String, min_interval: Duration) -> Self {
+        Self {
+            limiter: Arc::new(RateLimiter::new(
+                vec![RateLimitPolicy {
+                    key: "test",
+                    prefix: Cow::Owned(prefix),
+                    min_interval,
+                }],
+                min_interval,
+                None,
+            )),
         }
     }
 }

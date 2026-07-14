@@ -118,6 +118,16 @@ fn decode_json_response_maps_bad_status_and_content_type_to_source_unavailable()
 }
 
 #[test]
+fn body_limit_error_remains_source_unavailable() {
+    let err = remap_seer_error(BioMcpError::BodyLimit {
+        source_name: SEER_API.to_string(),
+        max_bytes: crate::sources::DEFAULT_MAX_BODY_BYTES,
+    });
+
+    assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
+}
+
+#[test]
 fn decode_double_encoded_survival_payload_and_filter_all_ages() {
     let catalog = test_catalog();
     let payload =

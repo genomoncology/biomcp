@@ -618,7 +618,10 @@ fn remap_seer_error(err: BioMcpError) -> BioMcpError {
         BioMcpError::Http(_) | BioMcpError::HttpMiddleware(_) => {
             seer_unavailable("SEER Explorer is temporarily unavailable.")
         }
-        BioMcpError::Api { .. } | BioMcpError::ApiJson { .. } | BioMcpError::Json(_) => {
+        BioMcpError::Api { .. }
+        | BioMcpError::ApiJson { .. }
+        | BioMcpError::BodyLimit { .. }
+        | BioMcpError::Json(_) => {
             seer_unavailable("SEER Explorer returned data BioMCP could not decode.")
         }
         other => other,
