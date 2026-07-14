@@ -30,9 +30,5 @@ a mutable live filename, count, size, timestamp, or hash.
 ```
 
 ```bash run id=live-europepmc-first-asset uses=live-europepmc-assets exit=0
-../../tools/biomcp-ci --no-cache get article 38821914 asset "{{live-europepmc-assets.assets.0.filename}}" | wc -c
-```
-
-```text expect=live-europepmc-first-asset
-/^[1-9][0-9]*$/
+../../tools/biomcp-ci --no-cache get article 38821914 asset "{{live-europepmc-assets.assets.0.filename}}" | wc -c | mustmatch "/^[1-9][0-9]*$/"
 ```
