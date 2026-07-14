@@ -42,6 +42,46 @@ fn planner_routes_semantic_scholar_to_semantic_scholar_only() {
 }
 
 #[test]
+fn planner_routes_all_with_author_to_author_capable_backends() {
+    let mut filters = empty_filters();
+    filters.author = Some("Williams LS".into());
+
+    let plan = plan_backends(&filters, ArticleSourceFilter::All).expect("planner should work");
+    assert_eq!(plan, BackendPlan::TypeCapable);
+}
+
+#[test]
+fn planner_routes_all_with_author_and_no_preprints_to_europe_only() {
+    let mut filters = empty_filters();
+    filters.author = Some("Williams LS".into());
+    filters.no_preprints = true;
+
+    let plan = plan_backends(&filters, ArticleSourceFilter::All).expect("planner should work");
+    assert_eq!(plan, BackendPlan::EuropeOnly);
+}
+
+#[test]
+fn planner_rejects_author_on_incapable_explicit_sources() {
+    for source in [
+        ArticleSourceFilter::PubTator,
+        ArticleSourceFilter::SemanticScholar,
+        ArticleSourceFilter::LitSense2,
+    ] {
+        let mut filters = empty_filters();
+        filters.author = Some("Williams LS".into());
+
+        let err = plan_backends(&filters, source).expect_err("source should reject --author");
+        let message = err.to_string();
+        assert!(message.contains("--author"), "{source:?}: {message}");
+        assert!(
+            message.contains("--source europepmc"),
+            "{source:?}: {message}"
+        );
+        assert!(message.contains("--source pubmed"), "{source:?}: {message}");
+    }
+}
+
+#[test]
 fn planner_routes_all_with_type_to_type_capable() {
     let mut filters = empty_filters();
     filters.gene = Some("BRAF".into());
@@ -215,11 +255,36 @@ fn semantic_scholar_search_is_enabled_for_federated_queries() {
 }
 
 #[test]
+fn semantic_scholar_search_is_disabled_for_author_filter() {
+    let mut filters = empty_filters();
+    filters.author = Some("Williams LS".into());
+
+    assert!(!semantic_scholar_search_enabled(
+        &filters,
+        ArticleSourceFilter::All
+    ));
+}
+
+#[test]
 fn semantic_scholar_search_is_enabled_for_explicit_semantic_scholar_source() {
     assert!(semantic_scholar_search_enabled(
         &empty_filters(),
         ArticleSourceFilter::SemanticScholar
     ));
+}
+
+#[test]
+fn summarize_debug_plan_reports_only_author_capable_sources() {
+    let mut filters = empty_filters();
+    filters.author = Some("Williams LS".into());
+
+    let summary = summarize_debug_plan(&filters, ArticleSourceFilter::All, &[]).expect("summary");
+
+    assert_eq!(summary.routing, vec!["planner=type_capable".to_string()]);
+    assert_eq!(
+        summary.sources,
+        vec!["Europe PMC".to_string(), "PubMed".to_string()]
+    );
 }
 
 #[test]

@@ -26,6 +26,62 @@ request shape, status mapping, and redacted auth behavior locally.
 Europe PMC, PubMed, and compatible Semantic Scholar. LitSense2 remains
 individually selectable for callers who explicitly ask for it.
 
+## Author Filtering Uses Author-Capable Sources
+
+An author filter is an authorship constraint, not a free-text relevance hint. On
+the default route, BioMCP searches the Europe PMC and PubMed author fields and
+does not admit lexical matches from backends without an author-field contract.
+The fixture gives each capable source one byline match and gives the other
+sources tempting Williams syndrome false positives.
+
+```bash run id=author-capable-sources
+../../tools/biomcp-ci --json search article --author "Williams LS" --debug-plan --limit 10
+```
+
+```json expect=author-capable-sources contains
+{
+  "debug_plan": {
+    "legs": [{
+      "sources": ["Europe PMC", "PubMed"]
+    }]
+  }
+}
+```
+
+```text expect=author-capable-sources contains
+Williams LS Europe PMC byline match
+Williams LS PubMed byline match
+```
+
+```text expect=author-capable-sources not-contains
+Williams syndrome PubTator lexical false positive
+Williams syndrome Semantic Scholar lexical false positive
+```
+
+Direct capable-source selection keeps the same authorship contract. Each
+fixture row is returned only when BioMCP sends that provider's native author
+query to the selected source.
+
+| backend | expected_title |
+|---|---|
+| europepmc | Williams LS Europe PMC byline match |
+| pubmed | Williams LS PubMed byline match |
+
+```bash run id=direct-author-source each_row="Author Filtering Uses Author-Capable Sources"
+biomcp --json search article --source {{backend}} --author "Williams LS" --limit 10
+```
+
+```json expect=direct-author-source contains each_row="Author Filtering Uses Author-Capable Sources"
+{"results":[{"title":"{{expected_title}}","source":"{{backend}}"}]}
+```
+
+The built-in article reference exposes the author filter, so an agent can
+find the exact search form before issuing it.
+
+```bash
+biomcp list article | mustmatch like "search article -a <author>"
+```
+
 ## Semantic Scholar Is Individually Selectable
 
 `--source semanticscholar` should use the same Semantic Scholar search client as

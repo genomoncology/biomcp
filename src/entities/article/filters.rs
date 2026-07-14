@@ -42,6 +42,66 @@ fn normalized_date_bound(
         .transpose()
 }
 
+#[derive(Clone, Copy)]
+enum NativeKeywordField {
+    Author,
+    Journal,
+    Affiliation,
+}
+
+fn native_keyword_field(keyword: &str) -> Option<NativeKeywordField> {
+    const SUFFIX_FIELDS: [(&str, NativeKeywordField); 5] = [
+        ("[author]", NativeKeywordField::Author),
+        ("[au]", NativeKeywordField::Author),
+        ("[ad]", NativeKeywordField::Affiliation),
+        ("[journal]", NativeKeywordField::Journal),
+        ("[jour]", NativeKeywordField::Journal),
+    ];
+    const PREFIX_FIELDS: [(&str, NativeKeywordField); 3] = [
+        ("AUTH:", NativeKeywordField::Author),
+        ("AFFILIATION:", NativeKeywordField::Affiliation),
+        ("JOURNAL:", NativeKeywordField::Journal),
+    ];
+
+    for (tag, field) in SUFFIX_FIELDS {
+        for (start, _) in keyword.match_indices('[') {
+            let end = start + tag.len();
+            if keyword
+                .get(start..end)
+                .is_some_and(|candidate| candidate.eq_ignore_ascii_case(tag))
+                && keyword[..start].chars().any(|ch| !ch.is_whitespace())
+                && keyword.get(end..).is_some_and(|remainder| {
+                    remainder
+                        .chars()
+                        .next()
+                        .is_none_or(|next| next.is_whitespace() || matches!(next, '(' | ')'))
+                })
+            {
+                return Some(field);
+            }
+        }
+    }
+
+    for (prefix, field) in PREFIX_FIELDS {
+        for (start, _) in keyword.char_indices() {
+            let end = start + prefix.len();
+            if keyword
+                .get(start..end)
+                .is_some_and(|candidate| candidate.eq_ignore_ascii_case(prefix))
+                && (start == 0
+                    || keyword[..start]
+                        .chars()
+                        .next_back()
+                        .is_some_and(|previous| previous.is_whitespace() || previous == '('))
+            {
+                return Some(field);
+            }
+        }
+    }
+
+    None
+}
+
 pub(super) fn validate_search_filter_values(
     filters: &ArticleSearchFilters,
 ) -> Result<(), BioMcpError> {
@@ -52,6 +112,18 @@ pub(super) fn validate_search_filter_values(
         .filter(|value| !value.is_empty())
     {
         normalize_article_type(article_type)?;
+    }
+    if let Some(field) = filters.keyword.as_deref().and_then(native_keyword_field) {
+        let guidance = match field {
+            NativeKeywordField::Author => "Use --author for author searches.",
+            NativeKeywordField::Journal => "Use --journal for journal searches.",
+            NativeKeywordField::Affiliation => {
+                "Remove the provider field wrapper and use ordinary unfielded -k/--keyword text."
+            }
+        };
+        return Err(BioMcpError::InvalidArgument(format!(
+            "-k/--keyword is provider-neutral and does not accept PubMed or Europe PMC field syntax. {guidance}"
+        )));
     }
     Ok(())
 }
@@ -95,6 +167,14 @@ pub(super) fn normalized_date_bounds(
 pub(super) fn has_article_type_filter(filters: &ArticleSearchFilters) -> bool {
     filters
         .article_type
+        .as_deref()
+        .map(str::trim)
+        .is_some_and(|value| !value.is_empty())
+}
+
+pub(super) fn has_author_filter(filters: &ArticleSearchFilters) -> bool {
+    filters
+        .author
         .as_deref()
         .map(str::trim)
         .is_some_and(|value| !value.is_empty())

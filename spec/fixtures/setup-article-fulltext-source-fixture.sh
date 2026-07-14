@@ -47,6 +47,25 @@ FIGSHARE_COLD_STORAGE = b"%PDF-1.4\nFigshare cold-storage fixture bytes\n%%EOF\n
 COLD_STORAGE_LOCK = threading.Lock()
 COLD_STORAGE_HITS = {}
 
+AUTHOR_SEARCH = {
+    "europepmc": {
+        "pmid": "51300001",
+        "title": "Williams LS Europe PMC byline match",
+    },
+    "pubmed": {
+        "pmid": "51300002",
+        "title": "Williams LS PubMed byline match",
+    },
+    "pubtator": {
+        "pmid": "51300003",
+        "title": "Williams syndrome PubTator lexical false positive",
+    },
+    "semanticscholar": {
+        "pmid": "51300004",
+        "title": "Williams syndrome Semantic Scholar lexical false positive",
+    },
+}
+
 
 ARTICLE_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
   <front>
@@ -349,7 +368,89 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, pubtator_payload(pmids[0]))
             return
 
+        if decoded_path == "/search/" and query.get("text") == ["Williams LS"]:
+            row = AUTHOR_SEARCH["pubtator"]
+            send_json(self, 200, {
+                "results": [{
+                    "_id": f"pmid:{row['pmid']}",
+                    "pmid": row["pmid"],
+                    "title": row["title"],
+                    "journal": "Lexical Fixture Journal",
+                    "date": "2025-01-03",
+                    "score": 99.0,
+                }],
+                "count": 1,
+                "total_pages": 1,
+                "current": 1,
+                "page_size": 100,
+            })
+            return
+
         search_query = query.get("query")
+        if (
+            decoded_path == "/search"
+            and search_query
+            and query.get("format") == ["json"]
+            and any("AUTH:" in value and "Williams LS" in value for value in search_query)
+        ):
+            row = AUTHOR_SEARCH["europepmc"]
+            send_json(self, 200, {
+                "hitCount": 1,
+                "resultList": {"result": [{
+                    "id": row["pmid"],
+                    "pmid": row["pmid"],
+                    "title": row["title"],
+                    "journalTitle": "Byline Fixture Journal",
+                    "firstPublicationDate": "2025-01-01",
+                    "authorString": "Williams LS, Exact Coauthor",
+                }]},
+            })
+            return
+
+        if decoded_path == "/esearch.fcgi" and any(
+            "Williams LS" in value and "[author]" in value.lower()
+            for value in query.get("term", [])
+        ):
+            row = AUTHOR_SEARCH["pubmed"]
+            send_json(self, 200, {
+                "esearchresult": {"count": "1", "idlist": [row["pmid"]]},
+            })
+            return
+
+        if decoded_path == "/esummary.fcgi" and query.get("id") == [AUTHOR_SEARCH["pubmed"]["pmid"]]:
+            row = AUTHOR_SEARCH["pubmed"]
+            send_json(self, 200, {
+                "result": {
+                    "uids": [row["pmid"]],
+                    row["pmid"]: {
+                        "uid": row["pmid"],
+                        "title": row["title"],
+                        "sortpubdate": "2025/01/02 00:00",
+                        "pubdate": "2025 Jan 2",
+                        "fulljournalname": "Byline Fixture Journal",
+                        "source": "Byline Fixture Journal",
+                    },
+                },
+            })
+            return
+
+        if decoded_path == "/graph/v1/paper/search" and query.get("query") == ["Williams LS"]:
+            row = AUTHOR_SEARCH["semanticscholar"]
+            send_json(self, 200, {
+                "total": 1,
+                "data": [{
+                    "paperId": "author-lexical-false-positive",
+                    "externalIds": {"PubMed": row["pmid"]},
+                    "title": row["title"],
+                    "venue": "Lexical Fixture Journal",
+                    "year": 2025,
+                    "citationCount": 50,
+                    "influentialCitationCount": 5,
+                    "abstract": "Williams syndrome lexical match without the requested byline.",
+                }],
+            })
+            return
+
         if (
             decoded_path == "/search"
             and search_query

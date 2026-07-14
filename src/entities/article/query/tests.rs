@@ -63,6 +63,30 @@ fn build_search_query_excludes_retracted_when_requested() {
 }
 
 #[test]
+fn native_query_builders_share_keyword_field_validation() {
+    let mut filters = empty_filters();
+    filters.keyword = Some("Williams LS[Author]".into());
+
+    assert!(build_search_query(&filters).is_err());
+    assert!(build_pubmed_search_term(&filters).is_err());
+}
+
+#[test]
+fn native_query_builders_keep_unrecognized_keyword_punctuation_literal() {
+    let mut filters = empty_filters();
+    filters.keyword = Some("BRAF[variant] protein:protein".into());
+
+    assert_eq!(
+        build_search_query(&filters).expect("Europe PMC query should build"),
+        "BRAF\\[variant\\] protein\\:protein"
+    );
+    assert_eq!(
+        build_pubmed_search_term(&filters).expect("PubMed query should build"),
+        "BRAF[variant] protein:protein"
+    );
+}
+
+#[test]
 fn build_search_query_rejects_unknown_article_type() {
     let mut filters = empty_filters();
     filters.gene = Some("BRAF".into());
@@ -155,6 +179,16 @@ fn build_pubmed_search_term_cleans_unfielded_clauses_only() {
         term,
         "genes regulated EWS FLI AND incidence cystic fibrosis caucasian population AND drug treatment spinal epidural hematoma AND BRAF regulate melanoma AND \"Alice Smith\"[author] AND \"Nature Reviews\"[journal] AND review[pt] NOT retracted publication[pt]"
     );
+}
+
+#[test]
+fn build_pubmed_search_term_keeps_quoted_author_input_inside_author_field() {
+    let mut filters = empty_filters();
+    filters.author = Some("Smith\" OR cancer[title] OR \"Doe".into());
+
+    let term = build_pubmed_search_term(&filters).expect("PubMed term should build");
+
+    assert_eq!(term, "\"Smith  OR cancer[title] OR  Doe\"[author]");
 }
 
 #[test]

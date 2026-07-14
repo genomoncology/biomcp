@@ -104,12 +104,13 @@ New to BioMCP? Try:
   - Expansion uses plausible trade names and investigational codes while excluding systematic chemical synonyms.
   - A rejected expanded alias preserves successful requested-name results and makes the exact total unknown.
   - `--no-alias-expand` performs one literal request.
-- `search article ... --date-from --date-to --year-min --year-max --journal`
+- `search article ... -a <author> --date-from --date-to --year-min --year-max --journal`
   - add `--source <all, pubtator, europepmc, pubmed, semanticscholar, litsense2>`
   - add `--max-per-source <N>` or `--session <token>` when needed
 - known gene/disease/drug anchors go in `-g/-d/--drug`; free-text concepts go in `-k`
+- known authors go in `-a/--author`; default candidate search uses Europe PMC + compatible PubMed
 - For article search, keep known gene/disease/drug anchors in `-g/-d/--drug`.
-- Put mechanisms, phenotypes, outcomes, and datasets in `-k/--keyword`.
+- Put mechanisms, phenotypes, outcomes, and datasets in provider-neutral `-k/--keyword`; use `--author` or `--journal` instead of provider field syntax.
 - PubMed ESearch cleans question-format terms provider-locally.
 - Direct and compatible federated PubMed ESearch cleans question-format terms
   provider-locally; non-PubMed sources keep the original wording.
@@ -184,10 +185,15 @@ Results depend on source document wording and may vary across sources.
 - Set `S2_API_KEY` for authenticated Semantic Scholar requests at 1 req/sec; without it, BioMCP uses the shared pool at 1 req/2sec.
 - `search article --json` and `--debug-plan` expose article source status,
   including federated degradation and redacted Semantic Scholar auth/availability.
-- On default `search article --source all`, typed anchors use compatible federated
-  sources and Semantic Scholar remains automatic.
-- Add `-k/--keyword` for mechanisms, phenotypes, datasets, and free-text concepts;
-  the default source set stays PubTator3 + Europe PMC + PubMed + Semantic Scholar.
+- On default `search article --source all`, `-a/--author` limits candidate search
+  to Europe PMC + compatible PubMed; stricter filters may narrow further. Explicit
+  PubTator3, Semantic Scholar, or LitSense2 author searches are rejected instead
+  of becoming free text.
+- Other compatible typed anchors remain federated and Semantic Scholar remains automatic.
+- Add provider-neutral `-k/--keyword` for mechanisms, phenotypes, datasets, and
+  free-text concepts; use `--author` or `--journal` instead of provider field syntax.
+  Ordinary biomedical bracket and colon notation remains literal. The compatible
+  default source set stays PubTator3 + Europe PMC + PubMed + Semantic Scholar.
 - Use `--source semanticscholar` explicitly to query Semantic Scholar alone.
 - Use `--source litsense2` explicitly to query LitSense2.
 - Keyword-bearing article queries default to hybrid ranking.
