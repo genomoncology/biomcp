@@ -4,6 +4,8 @@ use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovLargeDocument, C
 const CTGOV_CDN_BASE: &str = "https://cdn.clinicaltrials.gov";
 const CTGOV_CDN_BASE_ENV: &str = "BIOMCP_CTGOV_CDN_BASE";
 const DOCUMENT_MAX_BYTES: usize = 32 * 1024 * 1024;
+const DOCUMENT_CONNECT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+const DOCUMENT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 const CTGOV_CDN_API: &str = "ClinicalTrials.gov document CDN";
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -56,7 +58,15 @@ pub async fn trial_documents_manifest(nct_id: &str) -> Result<TrialDocumentsMani
 
 pub async fn trial_document_bytes(nct_id: &str, filename: &str) -> Result<Vec<u8>, BioMcpError> {
     let manifest = trial_documents_manifest(nct_id).await?;
-    if !is_advertised(&manifest, filename) {
+    document_bytes_from_manifest(&manifest, filename, approved_cdn_base()?).await
+}
+
+async fn document_bytes_from_manifest(
+    manifest: &TrialDocumentsManifest,
+    filename: &str,
+    base: reqwest::Url,
+) -> Result<Vec<u8>, BioMcpError> {
+    if !is_advertised(manifest, filename) {
         return Err(BioMcpError::NotFound {
             entity: "trial document".into(),
             id: filename.to_string(),
@@ -67,7 +77,7 @@ pub async fn trial_document_bytes(nct_id: &str, filename: &str) -> Result<Vec<u8
         });
     }
     validate_filename(filename)?;
-    download_document(&manifest.nct_id, filename).await
+    download_document_from_base(base, &manifest.nct_id, filename).await
 }
 
 pub(super) fn eligibility_provenance(
@@ -200,10 +210,6 @@ fn download_url(base: &reqwest::Url, nct_id: &str, filename: &str) -> reqwest::U
     url
 }
 
-async fn download_document(nct_id: &str, filename: &str) -> Result<Vec<u8>, BioMcpError> {
-    download_document_from_base(approved_cdn_base()?, nct_id, filename).await
-}
-
 async fn download_document_from_base(
     base: reqwest::Url,
     nct_id: &str,
@@ -211,6 +217,8 @@ async fn download_document_from_base(
 ) -> Result<Vec<u8>, BioMcpError> {
     let approved_origin = base.clone();
     let client = reqwest::Client::builder()
+        .connect_timeout(DOCUMENT_CONNECT_TIMEOUT)
+        .timeout(DOCUMENT_REQUEST_TIMEOUT)
         .gzip(false)
         .redirect(reqwest::redirect::Policy::custom(move |attempt| {
             if !same_origin(&approved_origin, attempt.url()) {
@@ -379,6 +387,27 @@ mod tests {
             download_url(&base, "NCT03361748", "Protocol 1%.pdf").as_str(),
             "https://cdn.clinicaltrials.gov/large-docs/48/NCT03361748/Protocol%201%25.pdf"
         );
+    }
+
+    #[tokio::test]
+    async fn reported_oversize_remains_listable_and_actual_small_body_is_retrievable() {
+        let study = study_with_documents(serde_json::json!([{
+            "filename": "reported-oversize.pdf",
+            "size": 33554433
+        }]));
+        let manifest = manifest_from_study("NCT03361748", &study);
+        assert_eq!(manifest.documents[0].size_bytes, Some(33_554_433));
+
+        let router = Router::new().route(
+            "/large-docs/48/NCT03361748/reported-oversize.pdf",
+            get(|| async { b"small actual body".to_vec() }),
+        );
+        let (base, task) = serve(router).await;
+        let body = document_bytes_from_manifest(&manifest, "reported-oversize.pdf", base)
+            .await
+            .unwrap();
+        assert_eq!(body, b"small actual body");
+        task.abort();
     }
 
     #[tokio::test]

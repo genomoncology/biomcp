@@ -70,10 +70,17 @@ All HTTP-based sources share a common client with:
 - Retry-After: numeric 429 hints are honored only within a 5-second per-attempt cap and 15-second total retry-sleep budget
 - Disk cache: `<cache_root>/http` under the resolved cache root (`~/.cache/biomcp/http` on Linux)
 
-cBioPortal DataHub study archive downloads are the exception: archive downloads do
-not use a total request timeout, so large files can keep downloading while bytes
-arrive. They do use an idle/no-progress timeout; if a stalled archive sends no bytes
-or progress within that window, the download fails clearly.
+Two raw-download paths use dedicated clients rather than the shared cached/retrying
+API client:
+
+- cBioPortal DataHub study archive downloads do not use a total request timeout, so
+  large files can keep downloading while bytes arrive. They use an idle/no-progress
+  timeout; if a stalled archive sends no bytes or progress within that window, the
+  download fails clearly.
+- CTGov posted-document retrieval uses the standard 10-second connect and 30-second
+  request timeouts, but does not retry or cache the raw bytes. Its dedicated client
+  preserves provider bytes without transparent decompression and rejects redirects
+  that leave the approved CDN origin.
 
 Run `biomcp cache path` to print the managed HTTP cache directory on the current
 machine without creating or migrating cache directories.

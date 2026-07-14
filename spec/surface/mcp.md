@@ -272,7 +272,7 @@ run the Rust unit suite and the Python CLI/MCP/docs contract lane so neither
 runtime layer can report a silent green.
 
 ```bash
-env -u BIOMCP_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
+env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
   make -C ../.. -n test SPEC_PROFILE=spec \
   2>&1 | mustmatch like 'cargo nextest run
 cargo build --locked --profile spec
@@ -429,7 +429,7 @@ standalone local path safe by building the spec-profile binary instead of trying
 to run a bad caller value.
 
 ```bash
-env -u MAKEFLAGS -u MAKEOVERRIDES \
+env -u SPEC_PROFILE -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
   BIOMCP_BIN=/tmp/biomcp-missing-for-spec-contract make -C ../.. -n spec \
   2>&1 | mustmatch like "cargo build --locked --profile spec"
 ```

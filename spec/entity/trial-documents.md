@@ -83,3 +83,14 @@ set -o pipefail
   | jq -er 'select((.eligibility_provenance | has("documents_handle")) | not) | [.eligibility_text, .eligibility_provenance.source_kind, .eligibility_provenance.source, .eligibility_provenance.posted_documents_available] | @tsv' \
   | mustmatch 'Key inclusion: confirmed SHANK3-related neurodevelopmental disorder.	registry	ClinicalTrials.gov registry	false'
 ```
+
+## Omit document follow-up when none are posted
+
+The human-readable registry criteria stay useful without advertising a document
+workflow that has no files behind it.
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci get trial NCT41300001 eligibility \
+  | mustmatch not like 'Posted trial documents'
+```
