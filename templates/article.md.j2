@@ -101,6 +101,10 @@ No MeSH headings supplied.
 {% endif -%}
 {% else -%}
 PubMed citation indexing metadata is unavailable.
+{% if indexing.failure -%}
+Failure code: {{ indexing.failure.code }}
+{{ indexing.failure.message }}
+{% endif -%}
 {% endif -%}
 {% endif -%}
 {% if show_semantic_scholar_section and semantic_scholar -%}

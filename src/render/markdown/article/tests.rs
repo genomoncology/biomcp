@@ -98,6 +98,7 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
                 }],
             }],
         }],
+        failure: None,
         mesh_headings: vec![crate::entities::article::ArticleMeshHeading {
             descriptor: crate::entities::article::ArticleMeshTerm {
                 text: "Melanoma".into(),
@@ -133,11 +134,31 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
         source: ArticleSource::PubMed,
         authors: Vec::new(),
         mesh_headings: Vec::new(),
+        failure: Some(crate::entities::article::ArticleIndexingFailure {
+            code: crate::entities::article::ArticleIndexingFailureCode::ParseError,
+            message: "PubMed indexing response could not be parsed.".into(),
+        }),
     });
     let unavailable = article_markdown(&article, &["indexing".to_string()])
         .expect("unavailable indexing should render");
-    assert!(unavailable.contains("Status: unavailable"));
-    assert!(unavailable.contains("indexing metadata is unavailable"));
+    for expected in [
+        "Status: unavailable",
+        "indexing metadata is unavailable",
+        "Failure code: parse_error",
+        "PubMed indexing response could not be parsed.",
+    ] {
+        assert!(
+            unavailable.contains(expected),
+            "missing {expected:?}: {unavailable}"
+        );
+    }
+    for sentinel in [
+        "raw-body-sentinel",
+        "api_key=secret-sentinel",
+        "parser-internal-sentinel",
+    ] {
+        assert!(!unavailable.contains(sentinel));
+    }
 }
 
 #[test]

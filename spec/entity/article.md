@@ -219,7 +219,9 @@ was available and identifies its source in the standard provenance envelope.
         {"text": "Precision Oncology Unit, Fixture University", "identifiers": [{"source": "ROR", "value": "https://ror.org/03yrm5c26"}]},
         {"text": "Translational Genomics Center, Fixture Hospital", "identifiers": [{"source": "GRID", "value": "grid.fixture.200"}]}
       ]},
-      {"name": "Ben Second", "affiliations": [{"text": "Precision Oncology Unit, Fixture University", "identifiers": [{"source": "ROR", "value": "https://ror.org/03yrm5c26"}]}]}
+      {"name": "Ben Second", "affiliations": [{"text": "Precision Oncology Unit, Fixture University", "identifiers": [{"source": "ROR", "value": "https://ror.org/03yrm5c26"}]}]},
+      {"name": "Jürgen Becker", "affiliations": []},
+      {"name": "Fixture Study Group", "affiliations": []}
     ],
     "mesh_headings": [{"descriptor": {"text": "Melanoma", "ui": "D008545", "major_topic": true}, "qualifiers": [{"text": "genetics", "ui": "Q000235", "major_topic": false}, {"text": "metabolism", "ui": "Q000401", "major_topic": true}]}]
   },
@@ -239,6 +241,8 @@ PubMed
 Ada First
 0000-0002-1825-0097
 Precision Oncology Unit, Fixture University
+Jürgen Becker
+Fixture Study Group
 Melanoma
 D008545
 genetics
@@ -261,7 +265,7 @@ The descriptor identifier is a stable marker that the PubMed citation payload,
 not just the ordinary article card, was retrieved.
 
 ```bash
-../../tools/biomcp-ci --json get article 22663011 all | mustmatch like '{"indexing":{"status":"available","mesh_headings":[{"descriptor":{"ui":"D008545"}}]}}'
+../../tools/biomcp-ci --json get article 22663011 all | mustmatch like '{"indexing":{"status":"available","authors":[{"name":"Jürgen Becker"}],"mesh_headings":[{"descriptor":{"ui":"D008545"}}]}}'
 ```
 
 ## Article Batch Keeps Its Array and Carries Authorship

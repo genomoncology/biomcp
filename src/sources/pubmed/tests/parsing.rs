@@ -175,7 +175,9 @@ fn esummary_strictly_validates_uids_and_entries() {
 
 #[test]
 fn parses_citation_authors_affiliations_orcid_and_mesh() {
-    let xml = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation>
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle//EN" "https://example.invalid/pubmed.dtd">
+<PubmedArticleSet><PubmedArticle><MedlineCitation>
       <PMID>22663011</PMID><Article><AuthorList>
         <Author><LastName>First</LastName><ForeName>Ada</ForeName>
           <Identifier Source="ORCID">HTTPS://ORCID.ORG/0000-0002-1825-0097</Identifier>
@@ -185,6 +187,7 @@ fn parses_citation_authors_affiliations_orcid_and_mesh() {
         <Author><CollectiveName>Fixture Consortium</CollectiveName>
           <AffiliationInfo><Affiliation>First Institution</Affiliation><Identifier Source="ROR">shared</Identifier></AffiliationInfo>
         </Author>
+        <Author><LastName>Becker</LastName><ForeName>J&#252;rgen</ForeName></Author>
       </AuthorList></Article><MeshHeadingList><MeshHeading>
         <DescriptorName UI="D008545" MajorTopicYN="Y">Melanoma</DescriptorName>
         <QualifierName UI="Q000235" MajorTopicYN="N">genetics</QualifierName>
@@ -199,6 +202,8 @@ fn parses_citation_authors_affiliations_orcid_and_mesh() {
     );
     assert_eq!(citation.authors[0].affiliations.len(), 2);
     assert_eq!(citation.authors[1].name, "Fixture Consortium");
+    assert_eq!(citation.authors[2].name, "Jürgen Becker");
+    assert!(citation.authors[2].affiliations.is_empty());
     assert_eq!(
         citation.authors[0].affiliations[0].identifiers,
         citation.authors[1].affiliations[0].identifiers
@@ -221,41 +226,66 @@ fn citation_without_mesh_is_available_empty() {
 
 #[test]
 fn citation_parser_rejects_misses_errors_and_invalid_required_shape() {
-    let empty = parse_citation_xml("1", "<PubmedArticleSet />").unwrap_err();
-    assert!(matches!(empty, BioMcpError::NotFound { .. }));
+    for xml in [
+        "<PubmedArticleSet />",
+        "<eFetchResult><ERROR>bad id</ERROR></eFetchResult>",
+    ] {
+        assert_eq!(
+            parse_citation_xml("1", xml),
+            Err(PubMedCitationErrorKind::NotFound)
+        );
+    }
 
-    let provider_error =
-        parse_citation_xml("1", "<eFetchResult><ERROR>bad id</ERROR></eFetchResult>").unwrap_err();
-    assert!(matches!(provider_error, BioMcpError::NotFound { .. }));
+    for xml in [
+        r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><Article><AuthorList><Author><ForeName>Nameless</ForeName></Author></AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"#,
+        r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><MeshHeadingList><MeshHeading><DescriptorName MajorTopicYN="Maybe">Term</DescriptorName></MeshHeading></MeshHeadingList></MedlineCitation></PubmedArticle></PubmedArticleSet>"#,
+        r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><Article><AuthorList><Author><LastName>Author</LastName><AffiliationInfo><Affiliation>Institution</Affiliation><Identifier Source="ROR"> </Identifier></AffiliationInfo></Author></AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"#,
+        "<PubmedArticleSet>",
+    ] {
+        assert_eq!(
+            parse_citation_xml("1", xml),
+            Err(PubMedCitationErrorKind::Parse)
+        );
+    }
+}
 
-    let bad_author = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><Article><AuthorList><Author><ForeName>Nameless</ForeName></Author></AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"#;
-    assert!(
-        parse_citation_xml("1", bad_author)
-            .unwrap_err()
-            .to_string()
-            .contains("name")
+#[test]
+fn citation_parser_enforces_node_and_entity_limits() {
+    let mut over_limit = String::from("<PubmedArticleSet>");
+    for _ in 0..PUBMED_CITATION_NODE_LIMIT {
+        over_limit.push_str("<Node />");
+    }
+    over_limit.push_str("</PubmedArticleSet>");
+    assert_eq!(
+        parse_citation_xml("1", &over_limit),
+        Err(PubMedCitationErrorKind::Parse)
     );
 
-    let bad_major = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><MeshHeadingList><MeshHeading><DescriptorName MajorTopicYN="Maybe">Term</DescriptorName></MeshHeading></MeshHeadingList></MedlineCitation></PubmedArticle></PubmedArticleSet>"#;
-    assert!(
-        parse_citation_xml("1", bad_major)
-            .unwrap_err()
-            .to_string()
-            .contains("MajorTopicYN")
-    );
+    let entity_loop = r#"<!DOCTYPE root [<!ENTITY a "&b;"><!ENTITY b "&a;">]><root>&a;</root>"#;
+    let entity_amplification = r#"<!DOCTYPE root [
+      <!ENTITY a "lol">
+      <!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">
+      <!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">
+      <!ENTITY d "&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;">
+    ]><root>&d;</root>"#;
+    for xml in [entity_loop, entity_amplification] {
+        assert_eq!(
+            parse_citation_xml("1", xml),
+            Err(PubMedCitationErrorKind::Parse)
+        );
+    }
 
-    let bad_identifier = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><Article><AuthorList><Author><LastName>Author</LastName><AffiliationInfo><Affiliation>Institution</Affiliation><Identifier Source="ROR"> </Identifier></AffiliationInfo></Author></AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"#;
-    assert!(
-        parse_citation_xml("1", bad_identifier)
-            .unwrap_err()
-            .to_string()
-            .contains("identifier")
+    let entity_value = "x".repeat(1_024);
+    let entity_references = "&flat;".repeat(1_000);
+    let flat_entity_expansion = format!(
+        "<!DOCTYPE PubmedArticleSet [<!ENTITY flat \"{entity_value}\">]>\
+         <PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID>\
+         <Article><AuthorList><Author><LastName>{entity_references}</LastName></Author>\
+         </AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"
     );
-    assert!(
-        parse_citation_xml("1", "<PubmedArticleSet>")
-            .unwrap_err()
-            .to_string()
-            .contains("failed to parse")
+    assert_eq!(
+        parse_citation_xml("1", &flat_entity_expansion),
+        Err(PubMedCitationErrorKind::Parse)
     );
 }
 
@@ -280,33 +310,70 @@ fn citation_decoder_accepts_xml_media_types_and_hides_bodies() {
         .is_ok()
     );
 
-    assert!(
+    assert_eq!(
         PubMedClient::decode_citation_response(
             StatusCode::OK,
             Some(&HeaderValue::from_static("application/xml")),
             vec![0xff],
-        )
-        .unwrap_err()
-        .to_string()
-        .contains("UTF-8")
+        ),
+        Err(PubMedCitationErrorKind::InvalidResponse)
     );
 
-    for error in [
-        PubMedClient::decode_citation_response(
-            StatusCode::BAD_GATEWAY,
-            Some(&HeaderValue::from_static("text/plain")),
-            b"raw-body-sentinel".to_vec(),
-        )
-        .unwrap_err(),
+    for (status, expected) in [
+        (
+            StatusCode::TOO_MANY_REQUESTS,
+            PubMedCitationErrorKind::RateLimited,
+        ),
+        (StatusCode::NOT_FOUND, PubMedCitationErrorKind::NotFound),
+        (StatusCode::GONE, PubMedCitationErrorKind::NotFound),
+        (StatusCode::BAD_GATEWAY, PubMedCitationErrorKind::Http),
+    ] {
+        assert_eq!(
+            PubMedClient::decode_citation_response(
+                status,
+                Some(&HeaderValue::from_static("text/plain")),
+                b"raw-body-sentinel".to_vec(),
+            ),
+            Err(expected)
+        );
+    }
+    assert_eq!(
         PubMedClient::decode_citation_response(
             StatusCode::OK,
             Some(&HeaderValue::from_static("text/html")),
             b"raw-body-sentinel".to_vec(),
-        )
-        .unwrap_err(),
-    ] {
-        assert!(!error.to_string().contains("raw-body-sentinel"));
-    }
+        ),
+        Err(PubMedCitationErrorKind::InvalidResponse)
+    );
+}
+
+#[test]
+fn citation_request_errors_are_payload_free_and_total() {
+    let http = reqwest::Client::new().get("://").build().unwrap_err();
+    assert_eq!(
+        PubMedClient::citation_request_error(BioMcpError::Http(http)),
+        PubMedCitationErrorKind::Network
+    );
+    let middleware = reqwest_middleware::Error::middleware(std::io::Error::other(
+        "https://example.test/?api_key=secret-sentinel",
+    ));
+    assert_eq!(
+        PubMedClient::citation_request_error(BioMcpError::HttpMiddleware(middleware)),
+        PubMedCitationErrorKind::Network
+    );
+    assert_eq!(
+        PubMedClient::citation_request_error(BioMcpError::BodyLimit {
+            source_name: "raw-body-sentinel".into(),
+            max_bytes: 1,
+        }),
+        PubMedCitationErrorKind::ResponseTooLarge
+    );
+    assert_eq!(
+        PubMedClient::citation_request_error(BioMcpError::InvalidArgument(
+            "parser-internal-sentinel".into(),
+        )),
+        PubMedCitationErrorKind::InvalidResponse
+    );
 }
 
 #[test]

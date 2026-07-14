@@ -278,8 +278,14 @@ This opt-in section fetches PubMed citation XML and keeps each author's name,
 optional ORCID, and source-associated affiliations together. MeSH descriptors
 and qualifiers retain their UIs and independent major-topic flags. The explicit
 `available` or `unavailable` status distinguishes a complete empty author/MeSH
-list from metadata BioMCP could not retrieve. Ordinary detail, search, and batch
-do not make this extra request; `get article <id> all` includes it.
+list from metadata BioMCP could not retrieve. BioMCP accepts PubMed's normal
+external `DOCTYPE` without downloading the DTD, while retaining the 8 MiB body
+limit and a 100,000-node XML limit. When indexing is unavailable, JSON and
+Markdown include a sanitized `failure` code and static message (for example,
+`rate_limited`, `parse_error`, or `timeout`) without upstream bodies, URLs,
+credentials, or parser details. The base article still succeeds. Ordinary detail,
+search, and batch do not make this extra request; `get article <id> all` includes
+it.
 
 Annotation section:
 

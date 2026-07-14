@@ -1,6 +1,34 @@
 use super::*;
 use crate::entities::article::{ArticleAuthorCompleteness, ArticleSource};
 use crate::error::BioMcpError;
+use std::sync::{Arc, Mutex};
+use tracing::field::{Field, Visit};
+use tracing::{Event, Subscriber};
+use tracing_subscriber::layer::{Context, Layer};
+use tracing_subscriber::prelude::*;
+
+#[derive(Clone, Default)]
+struct CapturingLayer(Arc<Mutex<Vec<String>>>);
+
+impl<S: Subscriber> Layer<S> for CapturingLayer {
+    fn on_event(&self, event: &Event<'_>, _ctx: Context<'_, S>) {
+        struct Visitor<'a>(&'a mut Vec<String>);
+
+        impl Visit for Visitor<'_> {
+            fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+                self.0.push(format!("{}={value:?}", field.name()));
+            }
+
+            fn record_str(&mut self, field: &Field, value: &str) {
+                self.0.push(format!("{}={value}", field.name()));
+            }
+        }
+
+        event.record(&mut Visitor(
+            &mut self.0.lock().expect("capture indexing warning"),
+        ));
+    }
+}
 
 #[tokio::test]
 async fn get_rejects_pdf_without_fulltext_section() {
@@ -77,6 +105,7 @@ fn maps_pubmed_citation_to_available_indexing_without_flattening() {
 
     assert_eq!(indexing.status, ArticleIndexingStatus::Available);
     assert_eq!(indexing.source, ArticleSource::PubMed);
+    assert!(indexing.failure.is_none());
     assert_eq!(
         indexing.authors[0].affiliations[0].identifiers[0].source,
         "ROR"
@@ -86,32 +115,122 @@ fn maps_pubmed_citation_to_available_indexing_without_flattening() {
 }
 
 #[test]
-fn unavailable_indexing_is_explicit_and_empty() {
-    let indexing = unavailable_indexing();
-    assert_eq!(indexing.status, ArticleIndexingStatus::Unavailable);
-    assert_eq!(indexing.source, ArticleSource::PubMed);
-    assert!(indexing.authors.is_empty());
-    assert!(indexing.mesh_headings.is_empty());
+fn unavailable_indexing_maps_every_cause_to_a_static_failure() {
+    let cases = [
+        (
+            IndexingUnavailableCause::MissingPmid,
+            ArticleIndexingFailureCode::MissingPmid,
+            "This article has no PMID for PubMed indexing.",
+        ),
+        (
+            IndexingUnavailableCause::Client,
+            ArticleIndexingFailureCode::ClientError,
+            "PubMed indexing could not initialize its client.",
+        ),
+        (
+            IndexingUnavailableCause::PubMed(PubMedCitationErrorKind::Network),
+            ArticleIndexingFailureCode::NetworkError,
+            "PubMed indexing could not reach PubMed.",
+        ),
+        (
+            IndexingUnavailableCause::PubMed(PubMedCitationErrorKind::Http),
+            ArticleIndexingFailureCode::HttpError,
+            "PubMed returned an unsuccessful response for indexing.",
+        ),
+        (
+            IndexingUnavailableCause::PubMed(PubMedCitationErrorKind::RateLimited),
+            ArticleIndexingFailureCode::RateLimited,
+            "PubMed indexing was rate limited.",
+        ),
+        (
+            IndexingUnavailableCause::PubMed(PubMedCitationErrorKind::InvalidResponse),
+            ArticleIndexingFailureCode::InvalidResponse,
+            "PubMed returned an invalid indexing response.",
+        ),
+        (
+            IndexingUnavailableCause::PubMed(PubMedCitationErrorKind::ResponseTooLarge),
+            ArticleIndexingFailureCode::ResponseTooLarge,
+            "PubMed indexing response exceeded the size limit.",
+        ),
+        (
+            IndexingUnavailableCause::PubMed(PubMedCitationErrorKind::Parse),
+            ArticleIndexingFailureCode::ParseError,
+            "PubMed indexing response could not be parsed.",
+        ),
+        (
+            IndexingUnavailableCause::PubMed(PubMedCitationErrorKind::NotFound),
+            ArticleIndexingFailureCode::NotFound,
+            "PubMed indexing metadata was not found for this article.",
+        ),
+        (
+            IndexingUnavailableCause::Timeout,
+            ArticleIndexingFailureCode::Timeout,
+            "PubMed indexing timed out.",
+        ),
+    ];
+
+    for (cause, code, message) in cases {
+        let indexing = unavailable_indexing(cause);
+        assert_eq!(indexing.status, ArticleIndexingStatus::Unavailable);
+        assert_eq!(indexing.source, ArticleSource::PubMed);
+        assert!(indexing.authors.is_empty());
+        assert!(indexing.mesh_headings.is_empty());
+        assert_eq!(
+            indexing.failure,
+            Some(ArticleIndexingFailure {
+                code,
+                message: message.into(),
+            })
+        );
+    }
     assert_eq!(ARTICLE_INDEXING_TIMEOUT, std::time::Duration::from_secs(10));
+}
+
+#[test]
+fn indexing_warning_contains_only_typed_cause_and_pmid() {
+    let capture = CapturingLayer::default();
+    let events = Arc::clone(&capture.0);
+    tracing::subscriber::with_default(tracing_subscriber::registry().with(capture), || {
+        warn_indexing_unavailable(
+            IndexingUnavailableCause::PubMed(PubMedCitationErrorKind::Parse),
+            "22663011",
+        );
+    });
+
+    let event = events.lock().expect("captured warning").join(" ");
+    assert!(event.contains("PubMed article indexing unavailable"));
+    assert!(event.contains("PubMed(Parse)"));
+    assert!(event.contains("22663011"));
+    for sentinel in [
+        "raw-body-sentinel",
+        "api_key=secret-sentinel",
+        "parser-internal-sentinel",
+    ] {
+        assert!(!event.contains(sentinel));
+    }
 }
 
 #[tokio::test]
 async fn indexing_timeout_and_missing_pmid_become_unavailable() {
     let timeout = citation_with_timeout(
         std::time::Duration::ZERO,
-        std::future::pending::<Result<crate::sources::pubmed::PubMedCitation, BioMcpError>>(),
+        std::future::pending::<
+            Result<crate::sources::pubmed::PubMedCitation, PubMedCitationErrorKind>,
+        >(),
     )
     .await
     .expect_err("pending citation should time out");
-    assert!(timeout.to_string().contains("timed out"));
+    assert_eq!(timeout, IndexingUnavailableCause::Timeout);
 
     let hit = serde_json::from_value(serde_json::json!({"title": "No PMID"}))
         .expect("Europe PMC fixture");
     let mut article = article_from_europepmc_fallback(&hit);
     enrich_article_with_indexing(&mut article).await;
+    let indexing = article.indexing.expect("requested indexing");
+    assert_eq!(indexing.status, ArticleIndexingStatus::Unavailable);
     assert_eq!(
-        article.indexing.expect("requested indexing").status,
-        ArticleIndexingStatus::Unavailable
+        indexing.failure.expect("unavailable failure").code,
+        ArticleIndexingFailureCode::MissingPmid
     );
 }
 

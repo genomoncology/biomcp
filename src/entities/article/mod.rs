@@ -100,6 +100,8 @@ pub struct ArticleIndexing {
     pub source: ArticleSource,
     pub authors: Vec<ArticleIndexingAuthor>,
     pub mesh_headings: Vec<ArticleMeshHeading>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure: Option<ArticleIndexingFailure>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -107,6 +109,62 @@ pub struct ArticleIndexing {
 pub enum ArticleIndexingStatus {
     Available,
     Unavailable,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleIndexingFailureCode {
+    MissingPmid,
+    ClientError,
+    NetworkError,
+    HttpError,
+    RateLimited,
+    InvalidResponse,
+    ResponseTooLarge,
+    ParseError,
+    NotFound,
+    Timeout,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleIndexingFailure {
+    pub code: ArticleIndexingFailureCode,
+    pub message: String,
+}
+
+impl ArticleIndexingFailure {
+    pub(super) fn from_code(code: ArticleIndexingFailureCode) -> Self {
+        let message = match code {
+            ArticleIndexingFailureCode::MissingPmid => {
+                "This article has no PMID for PubMed indexing."
+            }
+            ArticleIndexingFailureCode::ClientError => {
+                "PubMed indexing could not initialize its client."
+            }
+            ArticleIndexingFailureCode::NetworkError => "PubMed indexing could not reach PubMed.",
+            ArticleIndexingFailureCode::HttpError => {
+                "PubMed returned an unsuccessful response for indexing."
+            }
+            ArticleIndexingFailureCode::RateLimited => "PubMed indexing was rate limited.",
+            ArticleIndexingFailureCode::InvalidResponse => {
+                "PubMed returned an invalid indexing response."
+            }
+            ArticleIndexingFailureCode::ResponseTooLarge => {
+                "PubMed indexing response exceeded the size limit."
+            }
+            ArticleIndexingFailureCode::ParseError => {
+                "PubMed indexing response could not be parsed."
+            }
+            ArticleIndexingFailureCode::NotFound => {
+                "PubMed indexing metadata was not found for this article."
+            }
+            ArticleIndexingFailureCode::Timeout => "PubMed indexing timed out.",
+        };
+        Self {
+            code,
+            message: message.to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

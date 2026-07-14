@@ -422,8 +422,12 @@ Markdown cards show authorship plus its status.
 `get article <id> indexing` adds PubMed citation authors with nested
 source-associated affiliations and optional ORCID plus structured MeSH
 headings. Its status distinguishes available-empty from unavailable metadata.
-The section is opt-in except that `all` includes it, so ordinary detail, search,
-and batch avoid the extra PubMed request.
+Unavailable JSON and Markdown retain the base article and add a sanitized
+`failure.code` plus static message; provider bodies, request URLs, credentials,
+and parser internals are never included. PubMed's normal external `DOCTYPE` is
+accepted without fetching the DTD, under the existing 8 MiB body bound and a
+100,000-node XML bound. The section is opt-in except that `all` includes it, so
+ordinary detail, search, and batch avoid the extra PubMed request.
 
 `S2_API_KEY` is optional. With it, BioMCP sends authenticated Semantic Scholar
 requests at 1 req/sec for `search article`, `get article`, `get article ... tldr`,
