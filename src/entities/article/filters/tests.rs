@@ -14,6 +14,7 @@ fn native_keyword_fields_are_rejected_with_typed_guidance() {
     for (keyword, guidance) in [
         ("Williams LS[Author]", "--author"),
         ("Williams LS[au] AND melanoma", "--author"),
+        ("Williams LS[author]\u{a0}AND melanoma", "--author"),
         ("Smith[Ad]", "ordinary unfielded -k/--keyword text"),
         ("Nature[journal]", "--journal"),
         ("Nature[jour])", "--journal"),

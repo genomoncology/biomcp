@@ -148,8 +148,9 @@ Entity-oriented filters retain phrase quoting behavior:
 - `--gene`
 - `--disease`
 - `--drug`
-- `--author` (the default route narrows to author-capable Europe PMC and PubMed;
-  explicit PubTator3, Semantic Scholar, and LitSense2 author searches are rejected)
+- `--author` (the default candidate search uses Europe PMC and compatible PubMed;
+  stricter filters may narrow further, and explicit PubTator3, Semantic Scholar,
+  and LitSense2 author searches are rejected)
 
 Example:
 

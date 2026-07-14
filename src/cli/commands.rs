@@ -300,7 +300,7 @@ EXAMPLES:
 
 See also: biomcp list gwas")]
     Gwas(gwas::GwasSearchArgs),
-    /// Search articles by gene, disease, drug, keyword, or author (author filters use Europe PMC + PubMed; other compatible searches federate more broadly)
+    /// Search articles by gene, disease, drug, keyword, or author (author candidate search uses compatible author-capable sources)
     #[command(after_help = "\
 When to use: use keyword search to scan a topic before you know the entities. Add -g/--gene when you already know the molecular anchor. Prefer --type review for synthesis questions.
 
@@ -341,7 +341,7 @@ SESSION LOOP BREAKER:
 QUERY FORMULATION:
   - Known gene/disease/drug anchors belong in `-g/--gene`, `-d/--disease`, or `--drug`.
   - Use provider-neutral `-k/--keyword` for mechanisms, phenotypes, datasets, outcomes, and other free-text concepts; use `--author` or `--journal` instead of provider field syntax.
-  - `-a/--author` narrows the default route to author-capable Europe PMC + PubMed; select either source directly when needed.
+  - `-a/--author` limits default candidate search to author-capable sources (Europe PMC + PubMed when compatible); other filters may narrow further.
   - PubMed ESearch cleans question-format gene/disease/drug/keyword terms provider-locally; query echoes and non-PubMed sources keep the original wording.
   - Unknown-entity questions should stay keyword-first or start with `discover`.
   - Keyword-only result pages can suggest typed `get gene`, `get drug`, or `get disease` follow-ups when the whole `-k/--keyword` exactly matches a vocabulary label or alias.

@@ -104,11 +104,12 @@ explicit naming.
 `biomcp search article` defaults to `--source all` for recall. The compatible
 federated article path fans out across PubTator3, Europe PMC, PubMed, and
 Semantic Scholar with a 12-second per-source latency bound. `-a/--author` is a
-capability constraint: it narrows the default plan to Europe PMC and PubMed,
-which have native author fields. Explicit PubTator3, Semantic Scholar, and
-LitSense2 author searches fail before network work rather than degrading the
-name to free text. Direct Europe PMC and PubMed author searches remain
-available. LitSense2 is not part of the default fan-out; use `--source
+capability constraint: it limits default candidate search to Europe PMC and,
+when the other selected filters are compatible, PubMed. `--open-access` or
+`--no-preprints` can narrow further to Europe PMC. Explicit PubTator3, Semantic
+Scholar, and LitSense2 author searches fail before network work rather than
+degrading the name to free text. Direct Europe PMC and PubMed author searches
+remain available. LitSense2 is not part of the default fan-out; use `--source
 litsense2` explicitly for provider-neutral keyword searches.
 
 `-k/--keyword` is provider-neutral text, not raw backend grammar. Recognized

@@ -468,7 +468,7 @@ fn list_article_page_documents_exact_author_filtering() {
     let article = render(Some("article")).expect("list article should render");
 
     assert!(article.contains("search article -a <author>"));
-    assert!(article.contains("author-capable Europe PMC + PubMed"));
+    assert!(article.contains("default candidate search uses Europe PMC + compatible PubMed"));
     assert!(article.contains("`-k/--keyword` is provider-neutral"));
 }
 

@@ -55,13 +55,13 @@ fn search_article_help_includes_query_formulation_guidance() {
         "Use provider-neutral `-k/--keyword` for mechanisms, phenotypes, datasets, outcomes, and other free-text concepts"
     ));
     assert!(
+        help.contains("`-a/--author` limits default candidate search to author-capable sources")
+    );
+    assert!(
         help.contains(
-            "`-a/--author` narrows the default route to author-capable Europe PMC + PubMed"
+            "Filter by author name (default search uses compatible author-capable sources)"
         )
     );
-    assert!(help.contains(
-        "Filter by author name (default search uses author-capable Europe PMC and PubMed)"
-    ));
     assert!(help.contains(
         "PubMed ESearch cleans question-format gene/disease/drug/keyword terms provider-locally; query echoes and non-PubMed sources keep the original wording."
     ));

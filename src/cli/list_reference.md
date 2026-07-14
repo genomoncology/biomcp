@@ -108,7 +108,7 @@ New to BioMCP? Try:
   - add `--source <all, pubtator, europepmc, pubmed, semanticscholar, litsense2>`
   - add `--max-per-source <N>` or `--session <token>` when needed
 - known gene/disease/drug anchors go in `-g/-d/--drug`; free-text concepts go in `-k`
-- known authors go in `-a/--author`; the default route narrows to Europe PMC + PubMed
+- known authors go in `-a/--author`; default candidate search uses Europe PMC + compatible PubMed
 - For article search, keep known gene/disease/drug anchors in `-g/-d/--drug`.
 - Put mechanisms, phenotypes, outcomes, and datasets in provider-neutral `-k/--keyword`; use `--author` or `--journal` instead of provider field syntax.
 - PubMed ESearch cleans question-format terms provider-locally.
@@ -185,9 +185,10 @@ Results depend on source document wording and may vary across sources.
 - Set `S2_API_KEY` for authenticated Semantic Scholar requests at 1 req/sec; without it, BioMCP uses the shared pool at 1 req/2sec.
 - `search article --json` and `--debug-plan` expose article source status,
   including federated degradation and redacted Semantic Scholar auth/availability.
-- On default `search article --source all`, `-a/--author` narrows execution to
-  author-capable Europe PMC + PubMed. Explicit PubTator3, Semantic Scholar, or
-  LitSense2 author searches are rejected instead of becoming free text.
+- On default `search article --source all`, `-a/--author` limits candidate search
+  to Europe PMC + compatible PubMed; stricter filters may narrow further. Explicit
+  PubTator3, Semantic Scholar, or LitSense2 author searches are rejected instead
+  of becoming free text.
 - Other compatible typed anchors remain federated and Semantic Scholar remains automatic.
 - Add provider-neutral `-k/--keyword` for mechanisms, phenotypes, datasets, and
   free-text concepts; use `--author` or `--journal` instead of provider field syntax.

@@ -229,9 +229,11 @@ biomcp --json search article -k "Oncotype DX review" --session lit-review-1 --li
 ```
 
 `-a/--author` is an authorship filter. On the default `--source all` route it
-narrows execution to author-capable Europe PMC and PubMed. Select either source
-directly when needed; PubTator3, Semantic Scholar, and LitSense2 reject author
-filters rather than interpreting the name as free text.
+limits candidate search to author-capable Europe PMC and, when the other filters
+are compatible, PubMed. `--open-access` or `--no-preprints` may narrow further
+to Europe PMC. Select either capable source directly when needed; PubTator3,
+Semantic Scholar, and LitSense2 reject author filters rather than interpreting
+the name as free text.
 
 `-k/--keyword` is provider-neutral text, not raw PubMed or Europe PMC grammar.
 Use `--author` or `--journal` for those fields. Recognized provider field

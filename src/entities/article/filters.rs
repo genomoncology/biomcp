@@ -70,10 +70,12 @@ fn native_keyword_field(keyword: &str) -> Option<NativeKeywordField> {
                 .get(start..end)
                 .is_some_and(|candidate| candidate.eq_ignore_ascii_case(tag))
                 && keyword[..start].chars().any(|ch| !ch.is_whitespace())
-                && keyword
-                    .as_bytes()
-                    .get(end)
-                    .is_none_or(|next| next.is_ascii_whitespace() || matches!(next, b'(' | b')'))
+                && keyword.get(end..).is_some_and(|remainder| {
+                    remainder
+                        .chars()
+                        .next()
+                        .is_none_or(|next| next.is_whitespace() || matches!(next, '(' | ')'))
+                })
             {
                 return Some(field);
             }

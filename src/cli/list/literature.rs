@@ -35,7 +35,7 @@ raw bytes
 - `search article -g <gene>` - gene filter (PubTator autocomplete)
 - `search article -d <disease>` - disease filter (PubTator autocomplete)
 - `search article --drug <name>` - chemical/drug filter (PubTator autocomplete)
-- `search article -a <author>` - author filter (default route narrows to author-capable Europe PMC + PubMed)
+- `search article -a <author>` - author filter (default candidate search uses Europe PMC + compatible PubMed)
 - `search article <query>` - positional provider-neutral free text keyword
 - `search article -k <keyword>` (or `-q <keyword>`) - provider-neutral free text; use `--author` or `--journal` for fields
 - `search article --type <review|research|case-reports|meta-analysis>`
@@ -64,7 +64,7 @@ raw bytes
 | Question shape | How to map it |
 |---|---|
 | Known gene/disease/drug already identified | Put the anchor in `-g/--gene`, `-d/--disease`, or `--drug` |
-| Known author | Put the name in `-a/--author`; the default route uses Europe PMC + PubMed |
+| Known author | Put the name in `-a/--author`; default candidate search uses Europe PMC + compatible PubMed |
 | Known anchor plus mechanism, phenotype, process, or outcome | Keep the anchor typed and put the free-text concept in `-k/--keyword` |
 | Keyword-only topic, dataset, or method question | Use `-k/--keyword`; add `--type review` for synthesis or survey questions |
 | Unknown gene/disease/drug; identify it from symptoms, mechanisms, or evidence first | Do not invent `-g/-d/--drug`; stay keyword-first or start with `discover` |
@@ -82,7 +82,7 @@ Entity-only quick start:
 
 Routing note:
 
-- On the default `search article --source all` route, `-a/--author` narrows execution to author-capable Europe PMC + PubMed; PubTator3, Semantic Scholar, and LitSense2 are not searched as free text.
+- On the default `search article --source all` route, `-a/--author` limits candidate search to Europe PMC + compatible PubMed; stricter filters may narrow further, and PubTator3, Semantic Scholar, and LitSense2 are not searched as free text.
 - On other compatible default searches, typed gene/disease/drug anchors participate in PubTator3 + Europe PMC + PubMed; Semantic Scholar is still automatic.
 - Add `-k/--keyword` for mechanisms, phenotypes, datasets, and other free-text concepts; the default source set remains PubTator3 + Europe PMC + PubMed + Semantic Scholar, and the default relevance mode becomes hybrid instead of lexical. Use `--source semanticscholar` or `--source litsense2` explicitly when you want one of those sources alone.
 - `-k/--keyword` is provider-neutral: use `--author` or `--journal` instead of PubMed/Europe PMC field syntax. Ordinary biomedical brackets and colons remain literal keyword text.
@@ -124,7 +124,7 @@ Worked examples:
 - `get article <id> asset <name>` streams provider bytes without conversion; handles stay as BioMCP commands and downstream tools parse CSV, XLSX, DOC, PDF, or images.
 - Add `--pdf` only with `fulltext` to extend that ladder with Semantic Scholar PDF as the last resort.
 - `--pdf` requires the `fulltext` section and is rejected for other article requests.
-- On the default `search article --source all` route, `-a/--author` narrows execution to author-capable Europe PMC + PubMed; incapable explicit sources reject `--author` instead of treating it as free text.
+- On the default `search article --source all` route, `-a/--author` limits candidate search to Europe PMC + compatible PubMed; stricter filters may narrow further, and incapable explicit sources reject `--author` instead of treating it as free text.
 - Other compatible default searches remain broader PubTator3 + Europe PMC + PubMed + Semantic Scholar federation.
 - Add provider-neutral `-k/--keyword` for mechanisms, phenotypes, datasets, and other free-text concepts; use `--author` or `--journal` instead of provider field syntax. Use `--source semanticscholar` or `--source litsense2` explicitly when you want one of those sources alone.
 - Direct and compatible federated PubMed ESearch cleans question-format gene/disease/drug/keyword terms provider-locally; query echoes and non-PubMed sources keep the original wording.

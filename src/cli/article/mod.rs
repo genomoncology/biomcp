@@ -20,7 +20,7 @@ pub struct ArticleSearchArgs {
     /// Filter by drug/chemical name
     #[arg(long, num_args = 1..)]
     pub drug: Vec<String>,
-    /// Filter by author name (default search uses author-capable Europe PMC and PubMed)
+    /// Filter by author name (default search uses compatible author-capable sources)
     #[arg(short = 'a', long, num_args = 1..)]
     pub author: Vec<String>,
     /// Provider-neutral free text (alias: -q, --query; use --author/--journal for fields)

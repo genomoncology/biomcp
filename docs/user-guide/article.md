@@ -30,10 +30,12 @@ biomcp search article -a "Williams LS" --limit 5
 ```
 
 Author filtering is an authorship constraint. The default `--source all` route
-narrows to Europe PMC and PubMed because those backends provide native author
-fields. You can select `--source europepmc` or `--source pubmed` directly;
-PubTator3, Semantic Scholar, and LitSense2 reject `--author` instead of treating
-the name as free text.
+limits candidate search to backends with native author fields: Europe PMC and,
+when the other selected filters are compatible, PubMed. Filters such as
+`--open-access` or `--no-preprints` can narrow the plan further to Europe PMC.
+You can select `--source europepmc` or `--source pubmed` directly; PubTator3,
+Semantic Scholar, and LitSense2 reject `--author` instead of treating the name
+as free text.
 
 Tune keyword-bearing relevance:
 
@@ -124,8 +126,9 @@ Article search fans out to PubTator3, Europe PMC, and PubMed by default when
 the filter set is compatible. Known gene, disease, drug, and keyword queries
 participate in that route. Semantic Scholar can still join the same query when
 the filter set is compatible. An author filter is intentionally narrower: the
-default route executes only Europe PMC and PubMed, whose native author fields
-make every returned candidate an authorship match rather than a lexical match.
+default route limits candidate search to Europe PMC and compatible PubMed,
+whose native author fields make every returned candidate an authorship match
+rather than a lexical match.
 Semantic Scholar and LitSense2 are also available as explicit single-source
 routes with `--source semanticscholar` and
 `--source litsense2`. BioMCP merges duplicates across PMID,
