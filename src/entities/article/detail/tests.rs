@@ -23,16 +23,96 @@ async fn get_rejects_pdf_without_fulltext_section() {
 }
 
 #[test]
-fn parse_sections_supports_tldr_and_all() {
+fn parse_sections_supports_tldr_indexing_and_all() {
     let tldr_only = parse_sections(&["tldr".to_string()]).expect("tldr should parse");
     assert!(tldr_only.include_tldr);
     assert!(!tldr_only.include_annotations);
     assert!(!tldr_only.include_fulltext);
+    assert!(!tldr_only.include_indexing);
+
+    let indexing = parse_sections(&["indexing".to_string()]).expect("indexing should parse");
+    assert!(indexing.include_indexing);
+    assert!(!indexing.include_annotations);
+    assert!(!indexing.include_fulltext);
 
     let all = parse_sections(&["all".to_string()]).expect("all should parse");
     assert!(all.include_tldr);
     assert!(all.include_annotations);
     assert!(all.include_fulltext);
+    assert!(all.include_indexing);
+}
+
+#[test]
+fn maps_pubmed_citation_to_available_indexing_without_flattening() {
+    use crate::sources::pubmed::{
+        PubMedAffiliation, PubMedAffiliationIdentifier, PubMedCitation, PubMedCitationAuthor,
+        PubMedMeshHeading, PubMedMeshTerm,
+    };
+
+    let indexing = article_indexing_from_citation(PubMedCitation {
+        authors: vec![PubMedCitationAuthor {
+            name: "Ada First".into(),
+            orcid: Some("0000-0002-1825-0097".into()),
+            affiliations: vec![PubMedAffiliation {
+                text: "Fixture University".into(),
+                identifiers: vec![PubMedAffiliationIdentifier {
+                    source: "ROR".into(),
+                    value: "shared".into(),
+                }],
+            }],
+        }],
+        mesh_headings: vec![PubMedMeshHeading {
+            descriptor: PubMedMeshTerm {
+                text: "Melanoma".into(),
+                ui: Some("D008545".into()),
+                major_topic: true,
+            },
+            qualifiers: vec![PubMedMeshTerm {
+                text: "genetics".into(),
+                ui: Some("Q000235".into()),
+                major_topic: false,
+            }],
+        }],
+    });
+
+    assert_eq!(indexing.status, ArticleIndexingStatus::Available);
+    assert_eq!(indexing.source, ArticleSource::PubMed);
+    assert_eq!(
+        indexing.authors[0].affiliations[0].identifiers[0].source,
+        "ROR"
+    );
+    assert!(indexing.mesh_headings[0].descriptor.major_topic);
+    assert!(!indexing.mesh_headings[0].qualifiers[0].major_topic);
+}
+
+#[test]
+fn unavailable_indexing_is_explicit_and_empty() {
+    let indexing = unavailable_indexing();
+    assert_eq!(indexing.status, ArticleIndexingStatus::Unavailable);
+    assert_eq!(indexing.source, ArticleSource::PubMed);
+    assert!(indexing.authors.is_empty());
+    assert!(indexing.mesh_headings.is_empty());
+    assert_eq!(ARTICLE_INDEXING_TIMEOUT, std::time::Duration::from_secs(10));
+}
+
+#[tokio::test]
+async fn indexing_timeout_and_missing_pmid_become_unavailable() {
+    let timeout = citation_with_timeout(
+        std::time::Duration::ZERO,
+        std::future::pending::<Result<crate::sources::pubmed::PubMedCitation, BioMcpError>>(),
+    )
+    .await
+    .expect_err("pending citation should time out");
+    assert!(timeout.to_string().contains("timed out"));
+
+    let hit = serde_json::from_value(serde_json::json!({"title": "No PMID"}))
+        .expect("Europe PMC fixture");
+    let mut article = article_from_europepmc_fallback(&hit);
+    enrich_article_with_indexing(&mut article).await;
+    assert_eq!(
+        article.indexing.expect("requested indexing").status,
+        ArticleIndexingStatus::Unavailable
+    );
 }
 
 #[test]

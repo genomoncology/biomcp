@@ -700,6 +700,7 @@ mod tests {
             europepmc_license: None,
             europepmc_retracted: None,
             annotations: None,
+            indexing: None,
             semantic_scholar: None,
             pubtator_fallback: false,
         }

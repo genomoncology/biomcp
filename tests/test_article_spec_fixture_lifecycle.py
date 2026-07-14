@@ -264,6 +264,87 @@ def test_metadata_resets_only_cold_storage_download_state(tmp_path: Path) -> Non
         )
 
 
+def test_article_indexing_request_is_opt_in_and_all_includes_it(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    _copy_article_fixture(workspace)
+    subprocess.run(
+        [
+            "bash",
+            "spec/fixtures/setup-article-fulltext-source-fixture.sh",
+            str(workspace),
+        ],
+        cwd=workspace,
+        check=True,
+    )
+    fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
+    exports = _read_exports(fixture_env)
+    request_log = Path(exports["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG"])
+    binary = Path(os.environ["BIOMCP_BIN"])
+
+    def run(*args: str, cache_name: str) -> None:
+        env = os.environ | exports | {
+            "BIOMCP_CACHE_DIR": str(tmp_path / cache_name),
+        }
+        subprocess.run([binary, *args], env=env, check=True, capture_output=True)
+
+    try:
+        run("--json", "get", "article", "22663011", cache_name="detail-cache")
+        run(
+            "--json",
+            "search",
+            "article",
+            "-a",
+            "Williams LS",
+            "--source",
+            "pubmed",
+            "--limit",
+            "1",
+            cache_name="search-cache",
+        )
+        run(
+            "--json",
+            "article",
+            "batch",
+            "22663011",
+            cache_name="batch-cache",
+        )
+        assert "indexing:xml:pubmed-efetch" not in request_log.read_text()
+
+        run(
+            "--json",
+            "get",
+            "article",
+            "22663011",
+            "indexing",
+            cache_name="indexing-cache",
+        )
+        assert request_log.read_text().splitlines().count(
+            "indexing:xml:pubmed-efetch"
+        ) == 1
+
+        run(
+            "--json",
+            "get",
+            "article",
+            "22663011",
+            "all",
+            cache_name="all-cache",
+        )
+        assert request_log.read_text().splitlines().count(
+            "indexing:xml:pubmed-efetch"
+        ) == 2
+    finally:
+        subprocess.run(
+            [
+                "bash",
+                "spec/fixtures/cleanup-article-fulltext-source-fixture.sh",
+                str(workspace),
+            ],
+            cwd=workspace,
+            check=True,
+        )
+
+
 def test_only_owned_article_fixtures_export_unpaced_origin() -> None:
     exporters = {
         path.name

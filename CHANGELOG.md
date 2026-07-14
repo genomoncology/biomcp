@@ -4,6 +4,9 @@
 
 ### New features
 
+- Added opt-in PubMed article indexing with associated author affiliations,
+  ORCID, structured MeSH descriptors/qualifiers, explicit availability, and
+  inclusion under `get article <id> all`.
 - Added Homebrew formula and tap release automation so macOS/Linuxbrew users can
   install BioMCP from the project tap after release publication. (478)
 - Added a `biomcp mcp-config` generator and unified MCP-client setup docs so

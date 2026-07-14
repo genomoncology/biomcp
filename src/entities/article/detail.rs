@@ -2,6 +2,7 @@
 
 use crate::error::BioMcpError;
 use crate::sources::europepmc::{EuropePmcClient, EuropePmcResult, EuropePmcSearchResponse};
+use crate::sources::pubmed::{PubMedCitation, PubMedClient};
 use crate::sources::pubtator::PubTatorClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 use crate::transform;
@@ -9,10 +10,14 @@ use tracing::warn;
 
 use super::{
     ARTICLE_SECTION_ALL, ARTICLE_SECTION_ANNOTATIONS, ARTICLE_SECTION_ASSET,
-    ARTICLE_SECTION_ASSETS, ARTICLE_SECTION_FULLTEXT, ARTICLE_SECTION_NAMES, ARTICLE_SECTION_TLDR,
-    Article, ArticleGetOptions, ArticleSemanticScholar, ArticleSemanticScholarPdf,
-    INVALID_ARTICLE_ID_MSG, fulltext,
+    ARTICLE_SECTION_ASSETS, ARTICLE_SECTION_FULLTEXT, ARTICLE_SECTION_INDEXING,
+    ARTICLE_SECTION_NAMES, ARTICLE_SECTION_TLDR, Article, ArticleAffiliation,
+    ArticleAffiliationIdentifier, ArticleGetOptions, ArticleIndexing, ArticleIndexingAuthor,
+    ArticleIndexingStatus, ArticleMeshHeading, ArticleMeshTerm, ArticleSemanticScholar,
+    ArticleSemanticScholarPdf, ArticleSource, INVALID_ARTICLE_ID_MSG, fulltext,
 };
+
+const ARTICLE_INDEXING_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
 pub(super) fn is_doi(id: &str) -> bool {
     let id = id.trim();
@@ -99,6 +104,7 @@ pub(super) struct ArticleSections {
     pub(super) include_annotations: bool,
     pub(super) include_fulltext: bool,
     pub(super) include_tldr: bool,
+    pub(super) include_indexing: bool,
     pub(super) include_all: bool,
     pub(super) include_assets: bool,
     pub(super) asset_name: Option<String>,
@@ -123,6 +129,7 @@ pub(super) fn parse_sections(sections: &[String]) -> Result<ArticleSections, Bio
             ARTICLE_SECTION_ANNOTATIONS => out.include_annotations = true,
             ARTICLE_SECTION_FULLTEXT => out.include_fulltext = true,
             ARTICLE_SECTION_TLDR => out.include_tldr = true,
+            ARTICLE_SECTION_INDEXING => out.include_indexing = true,
             ARTICLE_SECTION_ASSETS => out.include_assets = true,
             ARTICLE_SECTION_ASSET => {
                 let Some(name) = sections
@@ -152,6 +159,7 @@ pub(super) fn parse_sections(sections: &[String]) -> Result<ArticleSections, Bio
         out.include_annotations = true;
         out.include_fulltext = true;
         out.include_tldr = true;
+        out.include_indexing = true;
     }
 
     Ok(out)
@@ -348,6 +356,102 @@ pub(super) async fn get_article_base(id: &str) -> Result<Article, BioMcpError> {
     get_article_base_with_clients(id, &pubtator, &europe).await
 }
 
+fn unavailable_indexing() -> ArticleIndexing {
+    ArticleIndexing {
+        status: ArticleIndexingStatus::Unavailable,
+        source: ArticleSource::PubMed,
+        authors: Vec::new(),
+        mesh_headings: Vec::new(),
+    }
+}
+
+fn article_indexing_from_citation(citation: PubMedCitation) -> ArticleIndexing {
+    ArticleIndexing {
+        status: ArticleIndexingStatus::Available,
+        source: ArticleSource::PubMed,
+        authors: citation
+            .authors
+            .into_iter()
+            .map(|author| ArticleIndexingAuthor {
+                name: author.name,
+                orcid: author.orcid,
+                affiliations: author
+                    .affiliations
+                    .into_iter()
+                    .map(|affiliation| ArticleAffiliation {
+                        text: affiliation.text,
+                        identifiers: affiliation
+                            .identifiers
+                            .into_iter()
+                            .map(|identifier| ArticleAffiliationIdentifier {
+                                source: identifier.source,
+                                value: identifier.value,
+                            })
+                            .collect(),
+                    })
+                    .collect(),
+            })
+            .collect(),
+        mesh_headings: citation
+            .mesh_headings
+            .into_iter()
+            .map(|heading| ArticleMeshHeading {
+                descriptor: ArticleMeshTerm {
+                    text: heading.descriptor.text,
+                    ui: heading.descriptor.ui,
+                    major_topic: heading.descriptor.major_topic,
+                },
+                qualifiers: heading
+                    .qualifiers
+                    .into_iter()
+                    .map(|qualifier| ArticleMeshTerm {
+                        text: qualifier.text,
+                        ui: qualifier.ui,
+                        major_topic: qualifier.major_topic,
+                    })
+                    .collect(),
+            })
+            .collect(),
+    }
+}
+
+async fn citation_with_timeout<F>(
+    timeout: std::time::Duration,
+    future: F,
+) -> Result<PubMedCitation, BioMcpError>
+where
+    F: std::future::Future<Output = Result<PubMedCitation, BioMcpError>>,
+{
+    tokio::time::timeout(timeout, future)
+        .await
+        .map_err(|_| BioMcpError::Api {
+            api: "pubmed-eutils".into(),
+            message: "PubMed article indexing timed out".into(),
+        })?
+}
+
+async fn enrich_article_with_indexing(article: &mut Article) {
+    let Some(pmid) = article.pmid.as_deref() else {
+        article.indexing = Some(unavailable_indexing());
+        return;
+    };
+    let client = match PubMedClient::new() {
+        Ok(client) => client,
+        Err(_error) => {
+            warn!(pmid, "PubMed article indexing client failed");
+            article.indexing = Some(unavailable_indexing());
+            return;
+        }
+    };
+    match citation_with_timeout(ARTICLE_INDEXING_TIMEOUT, client.citation(pmid)).await {
+        Ok(citation) => article.indexing = Some(article_indexing_from_citation(citation)),
+        Err(_error) => {
+            warn!(pmid, "PubMed article indexing unavailable");
+            article.indexing = Some(unavailable_indexing());
+        }
+    }
+}
+
 pub(super) async fn enrich_article_with_semantic_scholar(
     article: &mut Article,
 ) -> Result<(), BioMcpError> {
@@ -385,6 +489,10 @@ pub async fn get(
     }
     let section_only = is_section_only_request(sections, section_flags.include_all);
     let mut article = get_article_base(id).await?;
+
+    if section_flags.include_indexing {
+        enrich_article_with_indexing(&mut article).await;
+    }
 
     enrich_article_with_semantic_scholar(&mut article).await?;
 

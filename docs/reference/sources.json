@@ -642,7 +642,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["get article <id> fulltext"],
+    "bioMcp_surfaces": ["get article <id> indexing", "get article <id> fulltext"],
     "bioMcp_auth": "optional_env",
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public E-utilities endpoint; optional My NCBI API key improves throughput",
@@ -651,7 +651,7 @@
     "terms_url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-04-10",
-    "notes": "BioMCP uses PMC `efetch` as one XML full-text fallback when Europe PMC does not serve the article; PMC OA and PMC article HTML are separate later fallback surfaces. `NCBI_API_KEY` raises the baseline NCBI E-utilities budget but is not required."
+    "notes": "BioMCP uses PubMed citation `efetch` for the opt-in indexing section and PMC `efetch` as one XML full-text fallback when Europe PMC does not serve the article; PMC OA and PMC article HTML are separate later fallback surfaces. `NCBI_API_KEY` raises the baseline NCBI E-utilities budget but is not required."
   },
   {
     "id": "gtr",
@@ -863,7 +863,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["search article", "get article <id>"],
+    "bioMcp_surfaces": ["search article", "get article <id>", "get article <id> indexing"],
     "bioMcp_auth": "optional_env",
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public search/metadata service; optional My NCBI API key improves throughput",
@@ -872,7 +872,7 @@
     "terms_url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-04-10",
-    "notes": "BioMCP uses PubMed as a first-class article search source while keeping separate rows for PubTator3 annotations, NCBI E-utilities/PMC OA XML full text, NCBI ID Converter bridging, and Semantic Scholar PDF metadata; PMC article HTML is documented as a PMC web fallback in the data-source matrix."
+    "notes": "BioMCP uses PubMed as a first-class article search source and fetches citation XML for opt-in indexing with associated affiliations, ORCID, and structured MeSH. It keeps separate rows for PubTator3 annotations, NCBI E-utilities/PMC OA XML full text, NCBI ID Converter bridging, and Semantic Scholar PDF metadata; PMC article HTML is documented as a PMC web fallback in the data-source matrix."
   },
   {
     "id": "quickgo",

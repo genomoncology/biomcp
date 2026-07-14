@@ -66,6 +66,43 @@ Assets not inlined; retrieve the JSON manifest with `{{ not_included.figure_imag
 {{ full_text_note }}
 {% endif -%}
 {% endif -%}
+{% if show_indexing_section and indexing -%}
+## Article Indexing
+
+Status: {{ indexing.status }}
+Source: PubMed
+{% if indexing.status == "available" -%}
+### Authors
+
+{% if indexing.authors -%}
+{% for author in indexing.authors -%}
+- {{ author.name }}{% if author.orcid %} (ORCID: {{ author.orcid }}){% endif %}
+{% for affiliation in author.affiliations -%}
+  - {{ affiliation.text }}
+{% for identifier in affiliation.identifiers -%}
+    - {{ identifier.source }}: {{ identifier.value }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% else -%}
+No citation authors supplied.
+{% endif -%}
+### MeSH Headings
+
+{% if indexing.mesh_headings -%}
+{% for heading in indexing.mesh_headings -%}
+- {{ heading.descriptor.text }}{% if heading.descriptor.ui %} ({{ heading.descriptor.ui }}){% endif %}; major topic: {% if heading.descriptor.major_topic %}yes{% else %}no{% endif %}
+{% for qualifier in heading.qualifiers -%}
+  - {{ qualifier.text }}{% if qualifier.ui %} ({{ qualifier.ui }}){% endif %}; major topic: {% if qualifier.major_topic %}yes{% else %}no{% endif %}
+{% endfor -%}
+{% endfor -%}
+{% else -%}
+No MeSH headings supplied.
+{% endif -%}
+{% else -%}
+PubMed citation indexing metadata is unavailable.
+{% endif -%}
+{% endif -%}
 {% if show_semantic_scholar_section and semantic_scholar -%}
 ## Semantic Scholar
 

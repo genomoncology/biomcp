@@ -129,7 +129,7 @@ Key cross-entity pivot examples:
 - `biomcp pathway drugs R-HSA-5673001` — drugs in a pathway
 
 Progressive disclosure: every `get` command returns a summary card by default.
-Named sections extend the output: `biomcp get gene BRAF pathways civic all`.
+Named sections extend the output: `biomcp get gene BRAF pathways civic all`. Article `indexing` is an opt-in PubMed citation XML section with associated affiliations and structured MeSH; article `all` includes it.
 
 ## Done-Enough Criteria
 

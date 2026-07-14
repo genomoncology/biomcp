@@ -7,7 +7,7 @@ Use article commands for literature retrieval by disease, gene, drug, and identi
 1. search a topic,
 2. choose an identifier,
 3. retrieve default summary,
-4. request full text or annotations only when needed.
+4. request indexing, full text, or annotations only when needed.
 
 ## Search articles
 
@@ -268,6 +268,19 @@ final fallback and labels the winner as `Semantic Scholar PDF`. `--pdf` is only
 valid with the `fulltext` section; `biomcp get article 22663011 --pdf` is
 rejected instead of silently doing nothing.
 
+Indexing section:
+
+```bash
+biomcp get article 22663011 indexing
+```
+
+This opt-in section fetches PubMed citation XML and keeps each author's name,
+optional ORCID, and source-associated affiliations together. MeSH descriptors
+and qualifiers retain their UIs and independent major-topic flags. The explicit
+`available` or `unavailable` status distinguishes a complete empty author/MeSH
+list from metadata BioMCP could not retrieve. Ordinary detail, search, and batch
+do not make this extra request; `get article <id> all` includes it.
+
 Annotation section:
 
 ```bash
@@ -346,6 +359,7 @@ so callers can map results back to the original input order.
 - Start with narrow `--limit` values.
 - Add a disease term when gene-only search is too broad.
 - Use section requests to avoid oversized responses.
+- Use `biomcp get article <id> indexing` for PubMed author-affiliation and MeSH indexing metadata.
 - Use `biomcp get article <id> tldr` when you want only the optional Semantic Scholar section.
 
 ## Related guides

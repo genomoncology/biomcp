@@ -58,6 +58,7 @@ fn article_batch_item_projection_keeps_requested_id_year_and_top_entities() {
                 count: 3,
             }],
         }),
+        indexing: None,
         semantic_scholar: Some(ArticleSemanticScholar {
             paper_id: Some("paper-1".to_string()),
             tldr: Some("BRAF inhibitor benefit in melanoma.".to_string()),

@@ -148,6 +148,8 @@ New to BioMCP? Try:
   - completeness is `complete`, `source_limited`, or `unavailable`
   - source is `pubtator` or `europepmc`
 - Article detail carries the same authorship contract.
+- `get article <id> indexing` adds PubMed citation authors with associated affiliations/ORCID and structured MeSH headings; `all` includes it.
+- Indexing status distinguishes available-empty metadata from unavailable PubMed citation metadata.
 - Europe PMC display-string authorship is source-limited.
 - `article citations <id> --limit <N>` (optional auth; shared pool without `S2_API_KEY`)
 - `article references <id> --limit <N>` (optional auth; shared pool without `S2_API_KEY`)
@@ -181,7 +183,7 @@ Results depend on source document wording and may vary across sources.
 - Use `biomcp mcp-config --client <client>` to print copy-paste local stdio MCP config.
   Supported clients: codex, claude-desktop, claude-code, cursor, cline, vscode, json.
   Output uses `biomcp serve` by default; add `--absolute-path` when the client cannot see your shell `PATH`.
-- Set `NCBI_API_KEY` to increase NCBI request throughput for article annotation/full-text paths.
+- Set `NCBI_API_KEY` to increase NCBI request throughput for article annotation, indexing, and full-text paths.
 - Set `S2_API_KEY` for authenticated Semantic Scholar requests at 1 req/sec; without it, BioMCP uses the shared pool at 1 req/2sec.
 - `search article --json` and `--debug-plan` expose article source status,
   including federated degradation and redacted Semantic Scholar auth/availability.

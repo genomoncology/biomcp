@@ -374,6 +374,7 @@ fn related_article_uses_article_entities_helper_command() {
             }],
             mutations: Vec::new(),
         }),
+        indexing: None,
         semantic_scholar: None,
         pubtator_fallback: false,
     };

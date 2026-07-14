@@ -129,6 +129,7 @@ fn article_base_merge_fills_abstract_when_semantic_scholar_has_none() {
         europepmc_license: None,
         europepmc_retracted: None,
         annotations: None,
+        indexing: None,
         semantic_scholar: None,
         pubtator_fallback: false,
     };

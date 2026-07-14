@@ -87,9 +87,60 @@ pub struct Article {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations: Option<ArticleAnnotations>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub indexing: Option<ArticleIndexing>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub semantic_scholar: Option<ArticleSemanticScholar>,
     #[serde(default)]
     pub pubtator_fallback: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleIndexing {
+    pub status: ArticleIndexingStatus,
+    pub source: ArticleSource,
+    pub authors: Vec<ArticleIndexingAuthor>,
+    pub mesh_headings: Vec<ArticleMeshHeading>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ArticleIndexingStatus {
+    Available,
+    Unavailable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleIndexingAuthor {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub orcid: Option<String>,
+    pub affiliations: Vec<ArticleAffiliation>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleAffiliation {
+    pub text: String,
+    pub identifiers: Vec<ArticleAffiliationIdentifier>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleAffiliationIdentifier {
+    pub source: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleMeshHeading {
+    pub descriptor: ArticleMeshTerm,
+    pub qualifiers: Vec<ArticleMeshTerm>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleMeshTerm {
+    pub text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ui: Option<String>,
+    pub major_topic: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -686,6 +737,7 @@ pub struct ArticleSearchFilters {
 const ARTICLE_SECTION_ANNOTATIONS: &str = "annotations";
 const ARTICLE_SECTION_FULLTEXT: &str = "fulltext";
 const ARTICLE_SECTION_TLDR: &str = "tldr";
+const ARTICLE_SECTION_INDEXING: &str = "indexing";
 const ARTICLE_SECTION_ASSETS: &str = "assets";
 const ARTICLE_SECTION_ASSET: &str = "asset";
 const ARTICLE_SECTION_ALL: &str = "all";
@@ -694,6 +746,7 @@ pub const ARTICLE_SECTION_NAMES: &[&str] = &[
     ARTICLE_SECTION_ANNOTATIONS,
     ARTICLE_SECTION_FULLTEXT,
     ARTICLE_SECTION_TLDR,
+    ARTICLE_SECTION_INDEXING,
     ARTICLE_SECTION_ASSETS,
     ARTICLE_SECTION_ASSET,
     ARTICLE_SECTION_ALL,

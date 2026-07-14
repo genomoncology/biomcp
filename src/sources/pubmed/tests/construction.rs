@@ -24,6 +24,50 @@ fn params(term: &str) -> PubMedESearchParams {
 }
 
 #[test]
+fn citation_plan_sets_required_query_params_and_api_key() {
+    let plan = PubMedClient::citation_plan(" 22663011 ", Some(" test-key ")).unwrap();
+
+    assert_eq!(plan.method, HttpMethod::Get);
+    assert_eq!(plan.path, "efetch.fcgi");
+    assert_eq!(plan.query_value("db"), Some("pubmed"));
+    assert_eq!(plan.query_value("retmode"), Some("xml"));
+    assert_eq!(plan.query_value("id"), Some("22663011"));
+    assert_eq!(plan.query_value("api_key"), Some("test-key"));
+}
+
+#[test]
+fn citation_diagnostic_plan_redacts_key_and_reports_cache_mode() {
+    let keyed = client_with_api_key(Some("super-secret-ncbi"));
+    let plan = keyed
+        .citation_request_plan("22663011")
+        .expect("citation plan");
+    assert_eq!(plan.path, "/efetch.fcgi");
+    assert_eq!(plan.content_type_expectation, "xml");
+    assert_eq!(plan.cache_mode, "auth");
+    assert_eq!(plan.auth_mode, "authenticated");
+    assert!(
+        !plan
+            .query_params
+            .iter()
+            .any(|(_, value)| value.contains("super-secret"))
+    );
+
+    let keyless = client_with_api_key(None)
+        .citation_request_plan("22663011")
+        .expect("keyless citation plan");
+    assert_eq!(keyless.cache_mode, "default");
+    assert_eq!(keyless.auth_mode, "keyless");
+}
+
+#[test]
+fn citation_plan_rejects_non_numeric_pmid() {
+    assert!(matches!(
+        PubMedClient::citation_plan("PMC123", None),
+        Err(BioMcpError::InvalidArgument(_))
+    ));
+}
+
+#[test]
 fn esearch_plan_sets_required_query_params_and_api_key() {
     let mut request = params(" BRAF melanoma ");
     request.retstart = 5;

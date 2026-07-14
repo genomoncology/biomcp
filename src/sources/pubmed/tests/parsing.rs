@@ -174,6 +174,142 @@ fn esummary_strictly_validates_uids_and_entries() {
 }
 
 #[test]
+fn parses_citation_authors_affiliations_orcid_and_mesh() {
+    let xml = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation>
+      <PMID>22663011</PMID><Article><AuthorList>
+        <Author><LastName>First</LastName><ForeName>Ada</ForeName>
+          <Identifier Source="ORCID">HTTPS://ORCID.ORG/0000-0002-1825-0097</Identifier>
+          <AffiliationInfo><Affiliation>First Institution</Affiliation><Identifier Source="ROR">shared</Identifier></AffiliationInfo>
+          <AffiliationInfo><Affiliation>Second Institution</Affiliation><Identifier Source="GRID">grid.2</Identifier></AffiliationInfo>
+        </Author>
+        <Author><CollectiveName>Fixture Consortium</CollectiveName>
+          <AffiliationInfo><Affiliation>First Institution</Affiliation><Identifier Source="ROR">shared</Identifier></AffiliationInfo>
+        </Author>
+      </AuthorList></Article><MeshHeadingList><MeshHeading>
+        <DescriptorName UI="D008545" MajorTopicYN="Y">Melanoma</DescriptorName>
+        <QualifierName UI="Q000235" MajorTopicYN="N">genetics</QualifierName>
+      </MeshHeading></MeshHeadingList>
+    </MedlineCitation></PubmedArticle></PubmedArticleSet>"#;
+
+    let citation = parse_citation_xml("22663011", xml).unwrap();
+    assert_eq!(citation.authors[0].name, "Ada First");
+    assert_eq!(
+        citation.authors[0].orcid.as_deref(),
+        Some("0000-0002-1825-0097")
+    );
+    assert_eq!(citation.authors[0].affiliations.len(), 2);
+    assert_eq!(citation.authors[1].name, "Fixture Consortium");
+    assert_eq!(
+        citation.authors[0].affiliations[0].identifiers,
+        citation.authors[1].affiliations[0].identifiers
+    );
+    assert_eq!(
+        citation.mesh_headings[0].descriptor.ui.as_deref(),
+        Some("D008545")
+    );
+    assert!(citation.mesh_headings[0].descriptor.major_topic);
+    assert!(!citation.mesh_headings[0].qualifiers[0].major_topic);
+}
+
+#[test]
+fn citation_without_mesh_is_available_empty() {
+    let xml = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><Article /></MedlineCitation></PubmedArticle></PubmedArticleSet>"#;
+    let citation = parse_citation_xml("1", xml).unwrap();
+    assert!(citation.authors.is_empty());
+    assert!(citation.mesh_headings.is_empty());
+}
+
+#[test]
+fn citation_parser_rejects_misses_errors_and_invalid_required_shape() {
+    let empty = parse_citation_xml("1", "<PubmedArticleSet />").unwrap_err();
+    assert!(empty.to_string().contains("not found"));
+
+    let provider_error =
+        parse_citation_xml("1", "<eFetchResult><ERROR>bad id</ERROR></eFetchResult>").unwrap_err();
+    assert!(provider_error.to_string().contains("not found"));
+
+    let bad_author = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><Article><AuthorList><Author><ForeName>Nameless</ForeName></Author></AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"#;
+    assert!(
+        parse_citation_xml("1", bad_author)
+            .unwrap_err()
+            .to_string()
+            .contains("name")
+    );
+
+    let bad_major = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><MeshHeadingList><MeshHeading><DescriptorName MajorTopicYN="Maybe">Term</DescriptorName></MeshHeading></MeshHeadingList></MedlineCitation></PubmedArticle></PubmedArticleSet>"#;
+    assert!(
+        parse_citation_xml("1", bad_major)
+            .unwrap_err()
+            .to_string()
+            .contains("MajorTopicYN")
+    );
+
+    let bad_identifier = r#"<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID><Article><AuthorList><Author><LastName>Author</LastName><AffiliationInfo><Affiliation>Institution</Affiliation><Identifier Source="ROR"> </Identifier></AffiliationInfo></Author></AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"#;
+    assert!(
+        parse_citation_xml("1", bad_identifier)
+            .unwrap_err()
+            .to_string()
+            .contains("identifier")
+    );
+    assert!(
+        parse_citation_xml("1", "<PubmedArticleSet>")
+            .unwrap_err()
+            .to_string()
+            .contains("failed to parse")
+    );
+}
+
+#[test]
+fn citation_decoder_accepts_xml_media_types_and_hides_bodies() {
+    let body = b"<PubmedArticleSet />".to_vec();
+    assert_eq!(
+        PubMedClient::decode_citation_response(
+            StatusCode::OK,
+            Some(&HeaderValue::from_static("application/xml; charset=utf-8")),
+            body.clone(),
+        )
+        .unwrap(),
+        "<PubmedArticleSet />"
+    );
+    assert!(
+        PubMedClient::decode_citation_response(
+            StatusCode::OK,
+            Some(&HeaderValue::from_static("text/xml")),
+            body,
+        )
+        .is_ok()
+    );
+
+    assert!(
+        PubMedClient::decode_citation_response(
+            StatusCode::OK,
+            Some(&HeaderValue::from_static("application/xml")),
+            vec![0xff],
+        )
+        .unwrap_err()
+        .to_string()
+        .contains("UTF-8")
+    );
+
+    for error in [
+        PubMedClient::decode_citation_response(
+            StatusCode::BAD_GATEWAY,
+            Some(&HeaderValue::from_static("text/plain")),
+            b"raw-body-sentinel".to_vec(),
+        )
+        .unwrap_err(),
+        PubMedClient::decode_citation_response(
+            StatusCode::OK,
+            Some(&HeaderValue::from_static("text/html")),
+            b"raw-body-sentinel".to_vec(),
+        )
+        .unwrap_err(),
+    ] {
+        assert!(!error.to_string().contains("raw-body-sentinel"));
+    }
+}
+
+#[test]
 fn decode_json_maps_http_and_content_type_errors() {
     let http = PubMedClient::decode_esearch_response(
         StatusCode::INTERNAL_SERVER_ERROR,

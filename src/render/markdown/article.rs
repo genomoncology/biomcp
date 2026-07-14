@@ -38,6 +38,7 @@ pub fn article_markdown(
     let has_requested = |name: &str| requested.iter().any(|s| s.eq_ignore_ascii_case(name));
     let show_annotations_section = include_all || has_requested("annotations");
     let show_fulltext_section = include_all || has_requested("fulltext");
+    let show_indexing_section = include_all || has_requested("indexing");
     let show_semantic_scholar_section = !section_only || include_all || has_requested("tldr");
     let article_label = if article.title.trim().is_empty() {
         "Article"
@@ -66,10 +67,12 @@ pub fn article_markdown(
         full_text_source => &article.full_text_source,
         not_included => &article.not_included,
         annotations => &article.annotations,
+        indexing => &article.indexing,
         semantic_scholar => &article.semantic_scholar,
         pubtator_fallback => article.pubtator_fallback,
         show_annotations_section => show_annotations_section,
         show_fulltext_section => show_fulltext_section,
+        show_indexing_section => show_indexing_section,
         show_semantic_scholar_section => show_semantic_scholar_section,
         sections_block => format_sections_block("article", article.pmid.as_deref().or(article.pmcid.as_deref()).or(article.doi.as_deref()).unwrap_or(""), sections_article(article, requested_sections)),
         related_block => format_related_block(related_article(article)),
