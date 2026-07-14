@@ -235,7 +235,7 @@ PUBMED_INDEXING_XML = """<?xml version="1.0" encoding="UTF-8"?>
         <AuthorList CompleteYN="Y">
           <Author ValidYN="Y">
             <LastName>First</LastName><ForeName>Ada</ForeName><Initials>AF</Initials>
-            <Identifier Source="ORCID">0000-0002-1825-0097</Identifier>
+            <Identifier Source="ORCID">https://orcid.org/0000-0002-1825-0097</Identifier>
             <AffiliationInfo>
               <Affiliation>Precision Oncology Unit, Fixture University</Affiliation>
               <Identifier Source="ROR">https://ror.org/03yrm5c26</Identifier>
@@ -768,7 +768,11 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if decoded_path == "/efetch.fcgi":
-            if query.get("db") == ["pubmed"] and query.get("id") == ["22663011"]:
+            if (
+                query.get("db") == ["pubmed"]
+                and query.get("retmode") == ["xml"]
+                and query.get("id") == ["22663011"]
+            ):
                 append_request_log("indexing:xml:pubmed-efetch")
                 send_text(self, 200, PUBMED_INDEXING_XML, "application/xml")
                 return

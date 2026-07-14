@@ -116,7 +116,8 @@ cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_ht
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
 search schema includes entity enum and bounded limit
-get schema includes entity and sections enum'
+get schema includes entity and sections enum
+indexing'
 ```
 
 ## Probe Routes Stay Lightweight

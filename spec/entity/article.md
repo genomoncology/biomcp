@@ -192,8 +192,35 @@ was available and identifies its source in the standard provenance envelope.
     ],
     "mesh_headings": [{"descriptor": {"text": "Melanoma", "ui": "D008545", "major_topic": true}, "qualifiers": [{"text": "genetics", "ui": "Q000235", "major_topic": false}, {"text": "metabolism", "ui": "Q000401", "major_topic": true}]}]
   },
-  "_meta": {"section_sources": [{"key": "indexing", "label": "Article Indexing", "sources": ["PubMed"]}]}
+  "_meta": {"section_sources": [{"key": "indexing", "sources": ["PubMed"]}]}
 }'
+```
+
+## Article Indexing Markdown Preserves Researcher Metadata
+
+Human-readable indexing keeps the same author associations and MeSH identifiers
+without requiring JSON.
+
+```bash
+../../tools/biomcp-ci get article 22663011 indexing | mustmatch like 'Article Indexing
+available
+PubMed
+Ada First
+0000-0002-1825-0097
+Precision Oncology Unit, Fixture University
+Melanoma
+D008545
+genetics
+Q000235'
+```
+
+## Article Indexing Is Discoverable
+
+The article reference advertises the opt-in command so agents can discover it
+before retrieving the extra PubMed citation payload.
+
+```bash
+../../tools/biomcp-ci list article | mustmatch like 'get article <id> indexing'
 ```
 
 ## All Includes PubMed Article Indexing
