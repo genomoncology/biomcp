@@ -33,8 +33,8 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
 }
 
 #[test]
-fn article_markdown_renders_semantic_scholar_section() {
-    let article = Article {
+fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
+    let mut article = Article {
         pmid: Some("22663011".to_string()),
         pmcid: None,
         doi: Some("10.1000/example".to_string()),
@@ -57,6 +57,7 @@ fn article_markdown_renders_semantic_scholar_section() {
         europepmc_license: None,
         europepmc_retracted: None,
         annotations: None,
+        indexing: None,
         semantic_scholar: Some(crate::entities::article::ArticleSemanticScholar {
             paper_id: Some("paper-1".to_string()),
             tldr: Some("A concise summary.".to_string()),
@@ -82,6 +83,61 @@ fn article_markdown_renders_semantic_scholar_section() {
 
     let detail = article_markdown(&article, &[]).expect("detail markdown should render");
     assert!(detail.contains("Authorship: unavailable (no author list supplied by PubTator3)"));
+
+    article.indexing = Some(crate::entities::article::ArticleIndexing {
+        status: crate::entities::article::ArticleIndexingStatus::Available,
+        source: ArticleSource::PubMed,
+        authors: vec![crate::entities::article::ArticleIndexingAuthor {
+            name: "Ada First".into(),
+            orcid: Some("0000-0002-1825-0097".into()),
+            affiliations: vec![crate::entities::article::ArticleAffiliation {
+                text: "Fixture University".into(),
+                identifiers: vec![crate::entities::article::ArticleAffiliationIdentifier {
+                    source: "ROR".into(),
+                    value: "shared".into(),
+                }],
+            }],
+        }],
+        mesh_headings: vec![crate::entities::article::ArticleMeshHeading {
+            descriptor: crate::entities::article::ArticleMeshTerm {
+                text: "Melanoma".into(),
+                ui: Some("D008545".into()),
+                major_topic: true,
+            },
+            qualifiers: vec![crate::entities::article::ArticleMeshTerm {
+                text: "genetics".into(),
+                ui: Some("Q000235".into()),
+                major_topic: false,
+            }],
+        }],
+    });
+    let indexing = article_markdown(&article, &["indexing".to_string()])
+        .expect("indexing markdown should render");
+    for expected in [
+        "## Article Indexing",
+        "Status: available",
+        "Source: PubMed",
+        "Ada First",
+        "Fixture University",
+        "Melanoma (D008545); major topic: yes",
+        "genetics (Q000235); major topic: no",
+    ] {
+        assert!(
+            indexing.contains(expected),
+            "missing {expected:?}: {indexing}"
+        );
+    }
+
+    article.indexing = Some(crate::entities::article::ArticleIndexing {
+        status: crate::entities::article::ArticleIndexingStatus::Unavailable,
+        source: ArticleSource::PubMed,
+        authors: Vec::new(),
+        mesh_headings: Vec::new(),
+    });
+    let unavailable = article_markdown(&article, &["indexing".to_string()])
+        .expect("unavailable indexing should render");
+    assert!(unavailable.contains("Status: unavailable"));
+    assert!(unavailable.contains("indexing metadata is unavailable"));
 }
 
 #[test]
@@ -120,6 +176,7 @@ fn article_markdown_renders_resolved_fulltext_source_label() {
         europepmc_license: None,
         europepmc_retracted: None,
         annotations: None,
+        indexing: None,
         semantic_scholar: None,
         pubtator_fallback: false,
     };

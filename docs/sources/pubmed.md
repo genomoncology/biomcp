@@ -15,7 +15,7 @@ filters are PubMed-compatible. Direct PubMed search and the compatible
 federated PubMed leg clean question-format unfielded article terms before
 ESearch; BioMCP keeps the raw gene, disease, drug, or keyword wording in
 markdown and JSON query echoes, and other article sources keep their existing
-query behavior. Full-text resolution uses Europe PMC, NCBI E-utilities, PMC OA, NCBI ID Converter, PMC HTML, and opt-in Semantic Scholar PDF metadata; full text and PDFs remain governed by article-level licenses.
+query behavior. The opt-in `indexing` section uses PubMed citation EFetch XML for associated author affiliations, ORCID, and structured MeSH headings; `all` includes it while ordinary detail/search/batch do not. Full-text resolution uses Europe PMC, NCBI E-utilities, PMC OA, NCBI ID Converter, PMC HTML, and opt-in Semantic Scholar PDF metadata; full text and PDFs remain governed by article-level licenses.
 Semantic Scholar TLDR, citation, reference, and recommendation helpers belong
 on the [Semantic Scholar](semantic-scholar.md) page because they come from a
 different provider surface.
@@ -27,6 +27,7 @@ different provider surface.
 | `search article` | PMID-ranked literature search results with typed filters | Direct `--source pubmed` route plus default compatible federation with PubTator3 and Europe PMC |
 | `get article <id>` | Article summary card with identifiers, journal, and abstract context | Uses Europe PMC metadata with BioMCP normalization |
 | `get article <id> annotations` | PubTator entity annotations for a paper | PubTator3-only section |
+| `get article <id> indexing` | Associated citation authors/affiliations/ORCID and structured MeSH headings | Opt-in PubMed citation XML; explicit status separates available-empty from unavailable; included by `all` |
 | `get article <id> fulltext` | Open-access full-text handoff with saved Markdown path and rendered references when available | Uses Europe PMC, NCBI E-utilities, PMC OA, PMC HTML, and opt-in Semantic Scholar PDF fallbacks; NCBI ID Converter bridges PMID/DOI identifiers to PMCID before the PMCID-dependent source attempts |
 | `article entities <pmid>` | Entity-grouped follow-up view for a PMID | Derived from PubTator3 annotation output |
 
@@ -49,6 +50,10 @@ biomcp get article 22663011 annotations
 ```
 
 Returns a PubTator annotation section with entity groups and counts.
+
+Use `biomcp get article 22663011 indexing` for PubMed citation indexing metadata
+that preserves author-affiliation associations and MeSH descriptor/qualifier
+flags.
 
 ```bash
 biomcp article entities 22663011

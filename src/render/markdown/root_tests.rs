@@ -248,6 +248,7 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
             chemicals: Vec::new(),
             mutations: Vec::new(),
         }),
+        indexing: None,
         semantic_scholar: Some(crate::entities::article::ArticleSemanticScholar {
             paper_id: Some("paper-1".to_string()),
             tldr: Some("TLDR".to_string()),

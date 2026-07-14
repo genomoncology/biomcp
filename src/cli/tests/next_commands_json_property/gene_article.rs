@@ -265,6 +265,7 @@ fn article_json_next_commands_parse() {
             }],
             mutations: Vec::new(),
         }),
+        indexing: None,
         semantic_scholar: None,
         pubtator_fallback: false,
     };

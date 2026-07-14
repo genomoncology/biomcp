@@ -71,6 +71,7 @@ pub fn from_pubtator_document(doc: &PubTatorDocument) -> Article {
         europepmc_license: None,
         europepmc_retracted: None,
         annotations: None,
+        indexing: None,
         semantic_scholar: None,
         pubtator_fallback: false,
     }
@@ -263,6 +264,7 @@ pub fn from_europepmc_result(hit: &EuropePmcResult) -> Article {
             .filter(|s| !s.is_empty()),
         europepmc_retracted: retraction_status(hit),
         annotations: None,
+        indexing: None,
         semantic_scholar: None,
         pubtator_fallback: false,
     }

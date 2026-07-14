@@ -402,6 +402,8 @@ biomcp get pgx warfarin annotations
 
 ```bash
 biomcp get article 22663011
+biomcp get article 22663011 indexing
+biomcp get article 22663011 all
 biomcp get article 22663011 fulltext
 biomcp get article 22663011 fulltext --pdf
 biomcp --json get article <id> assets
@@ -416,6 +418,12 @@ source order. JSON carries `authors`, returned `author_count`,
 `author_source` (`pubtator` or `europepmc`). Europe PMC display-string lists are
 source-limited. Batch keeps its bare-array JSON envelope and request order, and
 Markdown cards show authorship plus its status.
+
+`get article <id> indexing` adds PubMed citation authors with nested
+source-associated affiliations and optional ORCID plus structured MeSH
+headings. Its status distinguishes available-empty from unavailable metadata.
+The section is opt-in except that `all` includes it, so ordinary detail, search,
+and batch avoid the extra PubMed request.
 
 `S2_API_KEY` is optional. With it, BioMCP sends authenticated Semantic Scholar
 requests at 1 req/sec for `search article`, `get article`, `get article ... tldr`,

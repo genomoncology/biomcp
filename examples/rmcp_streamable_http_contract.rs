@@ -182,12 +182,16 @@ async fn print_typed_tool_surface(
     if !json_property_contains(&get_schema, "sections", "pathways") {
         anyhow::bail!("get sections schema missing pathways enum");
     }
+    if !json_property_contains(&get_schema, "sections", "indexing") {
+        anyhow::bail!("get sections schema missing indexing enum");
+    }
 
     println!("MCP typed tools: biomcp, search, get");
     println!("all listed MCP tools are read-only annotated");
     println!("all listed MCP tools have titles and descriptions");
     println!("search schema includes entity enum and bounded limit");
     println!("get schema includes entity and sections enum");
+    println!("indexing");
     Ok(())
 }
 

@@ -124,7 +124,7 @@ pub struct ArticleGetArgs {
     /// Allow Semantic Scholar PDF as a final fulltext fallback (requires fulltext section)
     #[arg(long)]
     pub pdf: bool,
-    /// Sections to include (annotations, fulltext, tldr, assets, asset <name>, all)
+    /// Sections to include (annotations, indexing, fulltext, tldr, assets, asset <name>, all)
     #[arg(trailing_var_arg = true)]
     pub sections: Vec<String>,
 }

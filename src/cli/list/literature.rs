@@ -15,6 +15,7 @@ pub(super) fn list_article() -> String {
 - `get article <id>` - get by PMID/PMCID/DOI
 - `get article <id> tldr` - Semantic Scholar TLDR/influence section (optional auth; shared pool without `S2_API_KEY`)
 - `get article <id> annotations` - PubTator entity mentions
+- `get article <id> indexing` - opt-in PubMed citation authors, affiliations, ORCID, and MeSH headings
 - `get article <id> fulltext` - download/cache full text via XML -> PMC HTML
 - `get article <id> fulltext --pdf` - allow Semantic Scholar PDF after XML and PMC HTML miss
 - `get article <id> assets` - JSON-only article asset manifest (PMC OA first, Figshare fallback with same-paper siblings discovered by DOI/title)
@@ -23,7 +24,7 @@ pub(super) fn list_article() -> String {
 get article <id> assets
 get article <id> asset <name>
 raw bytes
-- `get article <id> all` - include all article sections
+- `get article <id> all` - include all article sections, including PubMed indexing
 - `article entities <pmid> --limit <N>` - annotated entities with next commands
 - `article batch <id> [<id>...]` - compact multi-article summary cards
 - `article citations <id> --limit <N>` - citation graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)

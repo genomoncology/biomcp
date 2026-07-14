@@ -822,6 +822,13 @@ pub(crate) fn article_section_sources(article: &Article) -> Vec<SectionSource> {
         "PubTator Annotations",
         ["PubTator3"],
     );
+    push_section(
+        &mut out,
+        article.indexing.is_some(),
+        "indexing",
+        "Article Indexing",
+        ["PubMed"],
+    );
     if let Some(full_text_source) = article.full_text_source.as_ref() {
         push_section(
             &mut out,
@@ -1833,8 +1840,8 @@ mod tests {
     }
 
     #[test]
-    fn article_section_sources_uses_resolved_fulltext_provider() {
-        let article = Article {
+    fn article_section_sources_uses_resolved_fulltext_and_indexing_providers() {
+        let mut article = Article {
             pmid: Some("22663011".to_string()),
             pmcid: Some("PMC123456".to_string()),
             doi: Some("10.1000/example".to_string()),
@@ -1861,6 +1868,7 @@ mod tests {
             europepmc_license: None,
             europepmc_retracted: None,
             annotations: None,
+            indexing: None,
             semantic_scholar: None,
             pubtator_fallback: false,
         };
@@ -1873,6 +1881,19 @@ mod tests {
         }));
         assert!(sources.iter().any(|source| {
             source.key == "authors" && source.sources == vec!["Europe PMC".to_string()]
+        }));
+
+        article.indexing = Some(crate::entities::article::ArticleIndexing {
+            status: crate::entities::article::ArticleIndexingStatus::Unavailable,
+            source: ArticleSource::PubMed,
+            authors: Vec::new(),
+            mesh_headings: Vec::new(),
+        });
+        let sources = article_section_sources(&article);
+        assert!(sources.iter().any(|source| {
+            source.key == "indexing"
+                && source.label == "Article Indexing"
+                && source.sources == vec!["PubMed".to_string()]
         }));
     }
 
@@ -1901,6 +1922,7 @@ mod tests {
             europepmc_license: None,
             europepmc_retracted: None,
             annotations: None,
+            indexing: None,
             semantic_scholar: None,
             pubtator_fallback: false,
         };

@@ -51,6 +51,55 @@ pub struct PubMedESummaryRequestPlan {
     pub auth_mode: &'static str,
 }
 
+#[allow(dead_code)]
+pub struct PubMedCitationRequestPlan {
+    pub method: &'static str,
+    pub path: &'static str,
+    pub query_params: Vec<(&'static str, String)>,
+    pub cache_mode: &'static str,
+    pub status_expectation: &'static str,
+    pub content_type_expectation: &'static str,
+    pub auth_mode: &'static str,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PubMedCitation {
+    pub authors: Vec<PubMedCitationAuthor>,
+    pub mesh_headings: Vec<PubMedMeshHeading>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PubMedCitationAuthor {
+    pub name: String,
+    pub orcid: Option<String>,
+    pub affiliations: Vec<PubMedAffiliation>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PubMedAffiliation {
+    pub text: String,
+    pub identifiers: Vec<PubMedAffiliationIdentifier>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PubMedAffiliationIdentifier {
+    pub source: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PubMedMeshHeading {
+    pub descriptor: PubMedMeshTerm,
+    pub qualifiers: Vec<PubMedMeshTerm>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PubMedMeshTerm {
+    pub text: String,
+    pub ui: Option<String>,
+    pub major_topic: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct PubMedESearchResponse {
     pub count: u64,
@@ -136,6 +185,95 @@ impl PubMedClient {
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
         let bytes = crate::sources::read_limited_body(resp, PUBMED_EUTILS_API).await?;
         Ok((status, content_type, bytes.to_vec()))
+    }
+
+    pub(crate) fn citation_plan(
+        pmid: &str,
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        let pmid = pmid.trim();
+        if pmid.is_empty() || !pmid.chars().all(|character| character.is_ascii_digit()) {
+            return Err(BioMcpError::InvalidArgument(
+                "PubMed citation PMID must be numeric".into(),
+            ));
+        }
+
+        let mut plan = RequestPlan::get("efetch.fcgi")
+            .query("db", "pubmed")
+            .query("retmode", "xml")
+            .query("id", pmid);
+        if let Some(key) = clean_api_key(api_key) {
+            plan = plan.query("api_key", key);
+        }
+        Ok(plan)
+    }
+
+    #[allow(dead_code)]
+    pub fn citation_request_plan(
+        &self,
+        pmid: &str,
+    ) -> Result<PubMedCitationRequestPlan, BioMcpError> {
+        let plan = Self::citation_plan(pmid, self.api_key.as_deref())?;
+        Ok(PubMedCitationRequestPlan {
+            method: "GET",
+            path: "/efetch.fcgi",
+            query_params: plan
+                .query
+                .into_iter()
+                .filter(|(key, _)| key != "api_key")
+                .map(|(key, value)| (pubmed_query_key(&key), value))
+                .collect(),
+            cache_mode: if self.api_key.is_some() {
+                "auth"
+            } else {
+                "default"
+            },
+            status_expectation: "non-2xx => Api",
+            content_type_expectation: "xml",
+            auth_mode: if self.api_key.is_some() {
+                "authenticated"
+            } else {
+                "keyless"
+            },
+        })
+    }
+
+    pub(crate) async fn citation(&self, pmid: &str) -> Result<PubMedCitation, BioMcpError> {
+        let authenticated = self.api_key.is_some();
+        let plan = Self::citation_plan(pmid, self.api_key.as_deref())?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let (status, content_type, bytes) = self.send(req, authenticated).await?;
+        let xml = Self::decode_citation_response(status, content_type.as_ref(), bytes)?;
+        let pmid = pmid.trim().to_string();
+        tokio::task::spawn_blocking(move || parse_citation_xml(&pmid, &xml))
+            .await
+            .map_err(|error| {
+                pubmed_api_error(format!("PubMed citation parser task failed: {error}"))
+            })?
+    }
+
+    fn decode_citation_response(
+        status: reqwest::StatusCode,
+        content_type: Option<&reqwest::header::HeaderValue>,
+        bytes: Vec<u8>,
+    ) -> Result<String, BioMcpError> {
+        if !status.is_success() {
+            return Err(pubmed_api_error(format!(
+                "PubMed citation request returned HTTP {status}"
+            )));
+        }
+        let media_type = content_type
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.split(';').next())
+            .map(str::trim)
+            .map(str::to_ascii_lowercase);
+        if !matches!(media_type.as_deref(), Some("application/xml" | "text/xml")) {
+            return Err(pubmed_api_error(
+                "PubMed citation response had an unexpected content type",
+            ));
+        }
+        String::from_utf8(bytes)
+            .map_err(|_| pubmed_api_error("PubMed citation response was not valid UTF-8"))
     }
 
     pub(crate) fn esearch_plan(
@@ -451,6 +589,195 @@ impl PubMedClient {
 
         Ok(entries)
     }
+}
+
+fn pubmed_api_error(message: impl Into<String>) -> BioMcpError {
+    BioMcpError::Api {
+        api: PUBMED_EUTILS_API.to_string(),
+        message: message.into(),
+    }
+}
+
+fn element_children<'a, 'input>(
+    node: roxmltree::Node<'a, 'input>,
+    name: &str,
+) -> impl Iterator<Item = roxmltree::Node<'a, 'input>> {
+    node.children()
+        .filter(move |child| child.is_element() && child.tag_name().name() == name)
+}
+
+fn child_text<'a, 'input>(node: roxmltree::Node<'a, 'input>, name: &str) -> Option<&'a str> {
+    element_children(node, name)
+        .next()
+        .and_then(|child| child.text())
+        .map(str::trim)
+        .filter(|text| !text.is_empty())
+}
+
+fn required_text<'a, 'input>(
+    node: roxmltree::Node<'a, 'input>,
+    field: &str,
+) -> Result<&'a str, BioMcpError> {
+    node.text()
+        .map(str::trim)
+        .filter(|text| !text.is_empty())
+        .ok_or_else(|| pubmed_api_error(format!("PubMed citation has blank {field}")))
+}
+
+fn parse_major_topic(node: roxmltree::Node<'_, '_>) -> Result<bool, BioMcpError> {
+    match node.attribute("MajorTopicYN") {
+        Some("Y") => Ok(true),
+        Some("N") => Ok(false),
+        _ => Err(pubmed_api_error(
+            "PubMed citation has invalid or missing MajorTopicYN",
+        )),
+    }
+}
+
+fn parse_mesh_term(node: roxmltree::Node<'_, '_>) -> Result<PubMedMeshTerm, BioMcpError> {
+    Ok(PubMedMeshTerm {
+        text: required_text(node, node.tag_name().name())?.to_string(),
+        ui: node
+            .attribute("UI")
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string),
+        major_topic: parse_major_topic(node)?,
+    })
+}
+
+fn parse_affiliation(node: roxmltree::Node<'_, '_>) -> Result<PubMedAffiliation, BioMcpError> {
+    let text = child_text(node, "Affiliation")
+        .ok_or_else(|| pubmed_api_error("PubMed citation has blank affiliation"))?;
+    let identifiers = element_children(node, "Identifier")
+        .map(|identifier| {
+            let source = identifier
+                .attribute("Source")
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| {
+                    pubmed_api_error("PubMed affiliation identifier has blank source")
+                })?;
+            let value = required_text(identifier, "affiliation identifier")?;
+            Ok(PubMedAffiliationIdentifier {
+                source: source.to_string(),
+                value: value.to_string(),
+            })
+        })
+        .collect::<Result<Vec<_>, BioMcpError>>()?;
+    Ok(PubMedAffiliation {
+        text: text.to_string(),
+        identifiers,
+    })
+}
+
+fn author_name(node: roxmltree::Node<'_, '_>) -> Option<String> {
+    if let Some(collective) = child_text(node, "CollectiveName") {
+        return Some(collective.to_string());
+    }
+    let last = child_text(node, "LastName")?;
+    if let Some(fore) = child_text(node, "ForeName") {
+        return Some(format!("{fore} {last}"));
+    }
+    if let Some(initials) = child_text(node, "Initials") {
+        return Some(format!("{initials} {last}"));
+    }
+    Some(last.to_string())
+}
+
+fn normalize_orcid(value: &str) -> String {
+    let value = value.trim();
+    for prefix in ["https://orcid.org/", "http://orcid.org/"] {
+        if value.len() >= prefix.len()
+            && value
+                .get(..prefix.len())
+                .is_some_and(|candidate| candidate.eq_ignore_ascii_case(prefix))
+        {
+            return value[prefix.len()..].to_string();
+        }
+    }
+    value.to_string()
+}
+
+fn parse_author(node: roxmltree::Node<'_, '_>) -> Result<PubMedCitationAuthor, BioMcpError> {
+    let name = author_name(node)
+        .ok_or_else(|| pubmed_api_error("PubMed citation author is missing a usable name"))?;
+    let orcid = element_children(node, "Identifier")
+        .find(|identifier| {
+            identifier
+                .attribute("Source")
+                .is_some_and(|source| source.trim().eq_ignore_ascii_case("ORCID"))
+                && identifier
+                    .text()
+                    .is_some_and(|value| !value.trim().is_empty())
+        })
+        .and_then(|identifier| identifier.text())
+        .map(normalize_orcid);
+    let affiliations = element_children(node, "AffiliationInfo")
+        .map(parse_affiliation)
+        .collect::<Result<Vec<_>, BioMcpError>>()?;
+    Ok(PubMedCitationAuthor {
+        name,
+        orcid,
+        affiliations,
+    })
+}
+
+fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, BioMcpError> {
+    let document = roxmltree::Document::parse(xml)
+        .map_err(|_| pubmed_api_error("PubMed citation XML failed to parse"))?;
+    let citation = document
+        .descendants()
+        .filter(|node| node.is_element() && node.tag_name().name() == "PubmedArticle")
+        .filter_map(|article| element_children(article, "MedlineCitation").next())
+        .find(|citation| child_text(*citation, "PMID") == Some(pmid))
+        .ok_or_else(|| BioMcpError::NotFound {
+            entity: "PubMed citation".into(),
+            id: pmid.to_string(),
+            suggestion: "The record may be missing or deleted in PubMed.".into(),
+        })?;
+
+    let authors = element_children(citation, "Article")
+        .next()
+        .and_then(|article| element_children(article, "AuthorList").next())
+        .map(|list| {
+            element_children(list, "Author")
+                .map(parse_author)
+                .collect::<Result<Vec<_>, BioMcpError>>()
+        })
+        .transpose()?
+        .unwrap_or_default();
+
+    let mesh_headings = element_children(citation, "MeshHeadingList")
+        .next()
+        .map(|list| {
+            element_children(list, "MeshHeading")
+                .map(|heading| {
+                    let mut descriptors = element_children(heading, "DescriptorName");
+                    let descriptor = descriptors.next().ok_or_else(|| {
+                        pubmed_api_error("PubMed MeSH heading is missing a descriptor")
+                    })?;
+                    if descriptors.next().is_some() {
+                        return Err(pubmed_api_error(
+                            "PubMed MeSH heading has multiple descriptors",
+                        ));
+                    }
+                    Ok(PubMedMeshHeading {
+                        descriptor: parse_mesh_term(descriptor)?,
+                        qualifiers: element_children(heading, "QualifierName")
+                            .map(parse_mesh_term)
+                            .collect::<Result<Vec<_>, BioMcpError>>()?,
+                    })
+                })
+                .collect::<Result<Vec<_>, BioMcpError>>()
+        })
+        .transpose()?
+        .unwrap_or_default();
+
+    Ok(PubMedCitation {
+        authors,
+        mesh_headings,
+    })
 }
 
 fn clean_api_key(api_key: Option<&str>) -> Option<&str> {

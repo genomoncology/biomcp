@@ -38,6 +38,13 @@ biomcp get article 22663011
 Request a specific section only when needed.
 
 ```bash
+biomcp get article 22663011 indexing
+```
+
+Article indexing is opt-in because it adds a PubMed citation XML request. Use it
+for associated author affiliations, ORCID, and MeSH headings; `all` includes it.
+
+```bash
 biomcp get article 22663011 fulltext
 ```
 

@@ -34,6 +34,7 @@ fn article_with_signal() -> crate::entities::article::Article {
             chemicals: Vec::new(),
             mutations: Vec::new(),
         }),
+        indexing: None,
         semantic_scholar: None,
         pubtator_fallback: false,
     }

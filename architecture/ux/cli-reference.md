@@ -63,6 +63,7 @@ biomcp get variant "BRAF V600E" civic        # live CIViC evidence + currency ca
 biomcp get variant "BRAF V600E" clinvar population conservation
 biomcp get variant 'NM_004333.6:c.1799T>A'
 biomcp get article 22663011 tldr
+biomcp get article 22663011 indexing
 biomcp --json get article <id> assets
 biomcp get article <id> asset <name>
 biomcp get diagnostic GTR000006692.3 genes conditions
@@ -89,7 +90,10 @@ unavailable for NCI.
 
 The pattern is consistent across the entity command surface: no-section gives
 a summary, named sections are additive, and `all` gives the standard default
-surface rather than every opt-in section. Article `assets` is JSON-only and provider-labelled (PMC OA first, Figshare
+surface rather than every opt-in section. Article `indexing` is opt-in on an
+ordinary detail request because it adds PubMed citation XML retrieval, but it is
+included by article `all`; its availability status distinguishes an empty
+PubMed record from unavailable metadata. Article `assets` is JSON-only and provider-labelled (PMC OA first, Figshare
 fallback when Semantic Scholar points at supported Figshare metadata, including
 same-paper Figshare siblings discovered by DOI/title), while `asset <name>`
 streams raw bytes with no conversion for downstream parsers. Asset handles remain

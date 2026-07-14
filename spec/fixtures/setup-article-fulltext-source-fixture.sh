@@ -226,6 +226,47 @@ ARTICLES = {
 }
 
 
+PUBMED_INDEXING_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<PubmedArticleSet>
+  <PubmedArticle>
+    <MedlineCitation Status="MEDLINE">
+      <PMID Version="1">22663011</PMID>
+      <Article>
+        <AuthorList CompleteYN="Y">
+          <Author ValidYN="Y">
+            <LastName>First</LastName><ForeName>Ada</ForeName><Initials>AF</Initials>
+            <Identifier Source="ORCID">https://orcid.org/0000-0002-1825-0097</Identifier>
+            <AffiliationInfo>
+              <Affiliation>Precision Oncology Unit, Fixture University</Affiliation>
+              <Identifier Source="ROR">https://ror.org/03yrm5c26</Identifier>
+            </AffiliationInfo>
+            <AffiliationInfo>
+              <Affiliation>Translational Genomics Center, Fixture Hospital</Affiliation>
+              <Identifier Source="GRID">grid.fixture.200</Identifier>
+            </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Second</LastName><ForeName>Ben</ForeName><Initials>BS</Initials>
+            <AffiliationInfo>
+              <Affiliation>Precision Oncology Unit, Fixture University</Affiliation>
+              <Identifier Source="ROR">https://ror.org/03yrm5c26</Identifier>
+            </AffiliationInfo>
+          </Author>
+        </AuthorList>
+      </Article>
+      <MeshHeadingList>
+        <MeshHeading>
+          <DescriptorName UI="D008545" MajorTopicYN="Y">Melanoma</DescriptorName>
+          <QualifierName UI="Q000235" MajorTopicYN="N">genetics</QualifierName>
+          <QualifierName UI="Q000401" MajorTopicYN="Y">metabolism</QualifierName>
+        </MeshHeading>
+      </MeshHeadingList>
+    </MedlineCitation>
+  </PubmedArticle>
+</PubmedArticleSet>
+"""
+
+
 def append_request_log(line):
     with REQUEST_LOG_LOCK:
         with REQUEST_LOG.open("a", encoding="utf-8") as handle:
@@ -727,6 +768,14 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if decoded_path == "/efetch.fcgi":
+            if (
+                query.get("db") == ["pubmed"]
+                and query.get("retmode") == ["xml"]
+                and query.get("id") == ["22663011"]
+            ):
+                append_request_log("indexing:xml:pubmed-efetch")
+                send_text(self, 200, PUBMED_INDEXING_XML, "application/xml")
+                return
             if query.get("id") == ["123459"]:
                 append_request_log("fulltext:xml:ncbi-efetch-pmc")
             send_text(self, 404, "not found", "text/plain")
