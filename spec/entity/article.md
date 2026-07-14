@@ -241,6 +241,8 @@ PubMed
 Ada First
 0000-0002-1825-0097
 Precision Oncology Unit, Fixture University
+Jürgen Becker
+Fixture Study Group
 Melanoma
 D008545
 genetics
@@ -263,7 +265,7 @@ The descriptor identifier is a stable marker that the PubMed citation payload,
 not just the ordinary article card, was retrieved.
 
 ```bash
-../../tools/biomcp-ci --json get article 22663011 all | mustmatch like '{"indexing":{"status":"available","mesh_headings":[{"descriptor":{"ui":"D008545"}}]}}'
+../../tools/biomcp-ci --json get article 22663011 all | mustmatch like '{"indexing":{"status":"available","authors":[{"name":"Jürgen Becker"}],"mesh_headings":[{"descriptor":{"ui":"D008545"}}]}}'
 ```
 
 ## Article Batch Keeps Its Array and Carries Authorship

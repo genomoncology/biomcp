@@ -232,7 +232,7 @@ ARTICLES = {
 
 
 PUBMED_INDEXING_XML = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
+<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN" "https://example.invalid/pubmed_250101.dtd">
 <PubmedArticleSet>
   <PubmedArticle>
     <MedlineCitation Status="MEDLINE">
