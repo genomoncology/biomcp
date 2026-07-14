@@ -22,6 +22,16 @@ const SEARCH_PAPER_FIELDS: &str =
 const CITATION_EDGE_FIELDS: &str = "contexts,intents,isInfluential,citingPaper.paperId,citingPaper.externalIds,citingPaper.title,citingPaper.venue,citingPaper.year";
 const REFERENCE_EDGE_FIELDS: &str = "contexts,intents,isInfluential,citedPaper.paperId,citedPaper.externalIds,citedPaper.title,citedPaper.venue,citedPaper.year";
 const RECOMMENDATION_FIELDS: &str = "paperId,externalIds,title,venue,year";
+#[allow(dead_code)]
+const AUTHOR_FIELDS: &str =
+    "authorId,name,affiliations,externalIds,paperCount,citationCount,hIndex";
+#[allow(dead_code)]
+const AUTHOR_PAPER_FIELDS: &str =
+    "paperId,corpusId,externalIds,title,year,authors.authorId,authors.name";
+#[allow(dead_code)]
+const SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX: usize = 100;
+#[allow(dead_code)]
+const SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX: usize = 1_000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -108,7 +118,128 @@ impl SemanticScholarClient {
         }
         crate::sources::decode_json(SEMANTIC_SCHOLAR_API, status, None, bytes, false)
     }
+}
 
+#[allow(dead_code)]
+impl SemanticScholarClient {
+    pub(crate) fn author_search_plan(
+        query: &str,
+        offset: usize,
+        limit: usize,
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        let query = query.trim();
+        if query.is_empty() {
+            return Err(BioMcpError::InvalidArgument(
+                "Semantic Scholar author search query is required".into(),
+            ));
+        }
+        let limit = validate_author_page_limit(limit)?;
+        Ok(with_s2_api_key(
+            RequestPlan::get("graph/v1/author/search")
+                .query("query", query)
+                .query("fields", AUTHOR_FIELDS)
+                .query("offset", offset.to_string())
+                .query("limit", limit.to_string()),
+            api_key,
+        ))
+    }
+
+    pub async fn author_search(
+        &self,
+        query: &str,
+        offset: usize,
+        limit: usize,
+    ) -> Result<SemanticScholarAuthorSearchResponse, BioMcpError> {
+        let plan = Self::author_search_plan(query, offset, limit, self.api_key.as_deref())?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        self.send_json(req).await
+    }
+
+    pub(crate) fn author_detail_plan(
+        author_id: &str,
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        let author_id = validate_author_id(author_id)?;
+        Ok(with_s2_api_key(
+            RequestPlan::get(format!(
+                "graph/v1/author/{}",
+                encode_path_segment(author_id)
+            ))
+            .query("fields", AUTHOR_FIELDS),
+            api_key,
+        ))
+    }
+
+    pub async fn author_detail(
+        &self,
+        author_id: &str,
+    ) -> Result<SemanticScholarAuthor, BioMcpError> {
+        let plan = Self::author_detail_plan(author_id, self.api_key.as_deref())?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        self.send_json(req).await
+    }
+
+    pub(crate) fn author_batch_plan(
+        author_ids: &[String],
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        if author_ids.is_empty() || author_ids.len() > SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX {
+            return Err(BioMcpError::InvalidArgument(format!(
+                "Semantic Scholar author batch lookup requires 1-{SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX} author IDs"
+            )));
+        }
+        let author_ids = author_ids
+            .iter()
+            .map(|author_id| validate_author_id(author_id))
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut plan = RequestPlan::post("graph/v1/author/batch").query("fields", AUTHOR_FIELDS);
+        plan.body = RequestBody::Json(json!({ "ids": author_ids }));
+        Ok(with_s2_api_key(plan, api_key))
+    }
+
+    pub async fn author_batch(
+        &self,
+        author_ids: &[String],
+    ) -> Result<Vec<Option<SemanticScholarAuthor>>, BioMcpError> {
+        let plan = Self::author_batch_plan(author_ids, self.api_key.as_deref())?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        self.send_json(req).await
+    }
+
+    pub(crate) fn author_papers_plan(
+        author_id: &str,
+        offset: usize,
+        limit: usize,
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        let author_id = validate_author_id(author_id)?;
+        let limit = validate_author_page_limit(limit)?;
+        Ok(with_s2_api_key(
+            RequestPlan::get(format!(
+                "graph/v1/author/{}/papers",
+                encode_path_segment(author_id)
+            ))
+            .query("fields", AUTHOR_PAPER_FIELDS)
+            .query("offset", offset.to_string())
+            .query("limit", limit.to_string()),
+            api_key,
+        ))
+    }
+
+    pub async fn author_papers(
+        &self,
+        author_id: &str,
+        offset: usize,
+        limit: usize,
+    ) -> Result<SemanticScholarAuthorPapersResponse, BioMcpError> {
+        let plan = Self::author_papers_plan(author_id, offset, limit, self.api_key.as_deref())?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        self.send_json(req).await
+    }
+}
+
+impl SemanticScholarClient {
     pub(crate) fn paper_detail_plan(
         id: &str,
         api_key: Option<&str>,
@@ -404,6 +535,37 @@ where
     Ok(Option::<Vec<T>>::deserialize(deserializer)?.unwrap_or_default())
 }
 
+#[allow(dead_code)]
+fn validate_author_id(author_id: &str) -> Result<&str, BioMcpError> {
+    let author_id = author_id.trim();
+    if author_id.is_empty() {
+        return Err(BioMcpError::InvalidArgument(
+            "Semantic Scholar author ID is required".into(),
+        ));
+    }
+    if matches!(author_id, "." | "..") {
+        return Err(BioMcpError::InvalidArgument(
+            "Semantic Scholar author ID cannot be a path dot segment".into(),
+        ));
+    }
+    if author_id.len() > 512 {
+        return Err(BioMcpError::InvalidArgument(
+            "Semantic Scholar author ID is too long".into(),
+        ));
+    }
+    Ok(author_id)
+}
+
+#[allow(dead_code)]
+fn validate_author_page_limit(limit: usize) -> Result<usize, BioMcpError> {
+    if limit == 0 || limit > SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "Semantic Scholar author page limit must be between 1 and {SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX}"
+        )));
+    }
+    Ok(limit)
+}
+
 fn validate_paper_id(id: &str) -> Result<&str, BioMcpError> {
     let id = id.trim();
     if id.is_empty() {
@@ -426,6 +588,64 @@ fn validate_limit(limit: usize) -> Result<usize, BioMcpError> {
         ));
     }
     Ok(limit)
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct SemanticScholarAuthor {
+    #[serde(rename = "authorId")]
+    pub author_id: Option<String>,
+    pub name: Option<String>,
+    pub affiliations: Option<Vec<String>>,
+    #[serde(rename = "externalIds")]
+    pub external_ids: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(rename = "paperCount")]
+    pub paper_count: Option<u64>,
+    #[serde(rename = "citationCount")]
+    pub citation_count: Option<u64>,
+    #[serde(rename = "hIndex")]
+    pub h_index: Option<u64>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct SemanticScholarAuthorPaper {
+    #[serde(rename = "paperId")]
+    pub paper_id: Option<String>,
+    #[serde(rename = "corpusId")]
+    pub corpus_id: Option<u64>,
+    #[serde(rename = "externalIds")]
+    pub external_ids: Option<serde_json::Map<String, serde_json::Value>>,
+    pub title: Option<String>,
+    pub year: Option<u32>,
+    pub authors: Option<Vec<SemanticScholarAuthorPaperAuthor>>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct SemanticScholarAuthorPaperAuthor {
+    #[serde(rename = "authorId")]
+    pub author_id: Option<String>,
+    pub name: Option<String>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SemanticScholarAuthorSearchResponse {
+    pub total: Option<u64>,
+    pub offset: Option<u64>,
+    pub next: Option<u64>,
+    #[serde(default, deserialize_with = "deserialize_vec_or_default")]
+    pub data: Vec<SemanticScholarAuthor>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SemanticScholarAuthorPapersResponse {
+    pub offset: Option<u64>,
+    pub next: Option<u64>,
+    #[serde(default, deserialize_with = "deserialize_vec_or_default")]
+    pub data: Vec<SemanticScholarAuthorPaper>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]

@@ -1,0 +1,25 @@
+{
+  "total": 2,
+  "offset": 20,
+  "next": 22,
+  "data": [
+    {
+      "authorId": "1716151",
+      "name": "A. Butte",
+      "affiliations": [],
+      "externalIds": {"DBLP": ["Atul J. Butte"]},
+      "paperCount": 548,
+      "citationCount": 50686,
+      "hIndex": 99
+    },
+    {
+      "authorId": "2269573451",
+      "name": "Louis S. Williams",
+      "affiliations": null,
+      "externalIds": null,
+      "paperCount": 39,
+      "citationCount": 112,
+      "hIndex": 7
+    }
+  ]
+}
