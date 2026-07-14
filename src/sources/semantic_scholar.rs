@@ -543,6 +543,11 @@ fn validate_author_id(author_id: &str) -> Result<&str, BioMcpError> {
             "Semantic Scholar author ID is required".into(),
         ));
     }
+    if matches!(author_id, "." | "..") {
+        return Err(BioMcpError::InvalidArgument(
+            "Semantic Scholar author ID cannot be a path dot segment".into(),
+        ));
+    }
     if author_id.len() > 512 {
         return Err(BioMcpError::InvalidArgument(
             "Semantic Scholar author ID is too long".into(),

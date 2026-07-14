@@ -194,6 +194,24 @@ fn author_detail_and_papers_plans_encode_ids_and_preserve_continuation() {
 }
 
 #[test]
+fn author_id_dot_segments_are_rejected_before_request_construction() {
+    for author_id in [".", ".."] {
+        assert!(matches!(
+            SemanticScholarClient::author_detail_plan(author_id, None),
+            Err(BioMcpError::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            SemanticScholarClient::author_papers_plan(author_id, 0, 1, None),
+            Err(BioMcpError::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            SemanticScholarClient::author_batch_plan(&[author_id.into()], None),
+            Err(BioMcpError::InvalidArgument(_))
+        ));
+    }
+}
+
+#[test]
 fn author_batch_plan_posts_ordered_ids_at_provider_ceiling() {
     let ids = (0..SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX)
         .map(|idx| format!("author-{idx}"))
