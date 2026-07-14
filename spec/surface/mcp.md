@@ -117,6 +117,7 @@ all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
 search schema includes entity enum and bounded limit
 get schema includes entity and sections enum
+search and get schemas include author entity
 indexing'
 ```
 
