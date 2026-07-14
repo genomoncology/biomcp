@@ -26,6 +26,38 @@ request shape, status mapping, and redacted auth behavior locally.
 Europe PMC, PubMed, and compatible Semantic Scholar. LitSense2 remains
 individually selectable for callers who explicitly ask for it.
 
+## Author Filtering Uses Author-Capable Sources
+
+An author filter is an authorship constraint, not a free-text relevance hint. On
+the default route, BioMCP searches the Europe PMC and PubMed author fields and
+does not admit lexical matches from backends without an author-field contract.
+The fixture gives each capable source one byline match and gives the other
+sources tempting Williams syndrome false positives.
+
+```bash
+../../tools/biomcp-ci --json search article --author "Williams LS" --debug-plan --limit 10 \
+  | uv run --no-sync python3 -c '
+import json, sys
+doc = json.load(sys.stdin)
+rows = {row["title"] for row in doc["results"]}
+sources = doc["debug_plan"]["legs"][0]["sources"]
+assert sources == ["Europe PMC", "PubMed"], sources
+assert rows == {"Williams LS Europe PMC byline match", "Williams LS PubMed byline match"}, rows
+print("Author-filter sources: Europe PMC, PubMed")
+print("Byline matches exclude lexical Williams syndrome results")
+' | mustmatch like "Author-filter sources: Europe PMC, PubMed
+Byline matches exclude lexical Williams syndrome results"
+```
+
+The built-in article reference exposes the same filter and capable-source
+behavior, so an agent can discover the exact search form before issuing it.
+
+```bash
+biomcp list article | mustmatch like "search article -a <author>
+--author
+Europe PMC + PubMed"
+```
+
 ## Semantic Scholar Is Individually Selectable
 
 `--source semanticscholar` should use the same Semantic Scholar search client as
