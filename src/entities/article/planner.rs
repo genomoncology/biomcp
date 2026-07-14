@@ -2,7 +2,7 @@
 
 use crate::error::BioMcpError;
 
-use super::filters::{has_article_type_filter, has_keyword_query};
+use super::filters::{has_article_type_filter, has_author_filter, has_keyword_query};
 use super::{ArticleSearchFilters, ArticleSearchResult, ArticleSource, ArticleSourceFilter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,6 +69,12 @@ fn semantic_scholar_source_filter_error(filters: &ArticleSearchFilters) -> BioMc
     unreachable!("semantic_scholar_source_filter_error called with compatible filters");
 }
 
+fn author_source_filter_error(source: &str) -> BioMcpError {
+    BioMcpError::InvalidArgument(format!(
+        "--source {source} does not support --author. Use --source europepmc, --source pubmed, or --source all."
+    ))
+}
+
 fn litsense2_source_filter_error(filters: &ArticleSearchFilters) -> BioMcpError {
     if !has_keyword_query(filters) {
         return BioMcpError::InvalidArgument(
@@ -95,6 +101,9 @@ pub(crate) fn plan_backends(
     match source {
         ArticleSourceFilter::EuropePmc => Ok(BackendPlan::EuropeOnly),
         ArticleSourceFilter::PubTator => {
+            if has_author_filter(filters) {
+                return Err(author_source_filter_error("pubtator"));
+            }
             if has_strict_europepmc_filters(filters) {
                 return Err(pubtator_strict_filter_error(filters));
             }
@@ -107,12 +116,18 @@ pub(crate) fn plan_backends(
             Ok(BackendPlan::PubMedOnly)
         }
         ArticleSourceFilter::SemanticScholar => {
+            if has_author_filter(filters) {
+                return Err(author_source_filter_error("semanticscholar"));
+            }
             if has_strict_europepmc_filters(filters) {
                 return Err(semantic_scholar_source_filter_error(filters));
             }
             Ok(BackendPlan::SemanticScholarOnly)
         }
         ArticleSourceFilter::LitSense2 => {
+            if has_author_filter(filters) {
+                return Err(author_source_filter_error("litsense2"));
+            }
             if !has_keyword_query(filters)
                 || has_article_type_filter(filters)
                 || filters.open_access
@@ -124,7 +139,7 @@ pub(crate) fn plan_backends(
         ArticleSourceFilter::All => {
             if filters.open_access {
                 Ok(BackendPlan::EuropeOnly)
-            } else if has_article_type_filter(filters) {
+            } else if has_author_filter(filters) || has_article_type_filter(filters) {
                 if pubmed_filter_compatible(filters) {
                     Ok(BackendPlan::TypeCapable)
                 } else {
@@ -145,6 +160,7 @@ pub(crate) fn semantic_scholar_search_enabled(
         source,
         ArticleSourceFilter::All | ArticleSourceFilter::SemanticScholar
     ) && !has_strict_europepmc_filters(filters)
+        && !has_author_filter(filters)
 }
 
 pub(crate) fn litsense2_search_enabled(

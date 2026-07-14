@@ -23,6 +23,18 @@ By keyword:
 biomcp search article -k "immunotherapy resistance" --limit 5
 ```
 
+By author:
+
+```bash
+biomcp search article -a "Williams LS" --limit 5
+```
+
+Author filtering is an authorship constraint. The default `--source all` route
+narrows to Europe PMC and PubMed because those backends provide native author
+fields. You can select `--source europepmc` or `--source pubmed` directly;
+PubTator3, Semantic Scholar, and LitSense2 reject `--author` instead of treating
+the name as free text.
+
 Tune keyword-bearing relevance:
 
 ```bash
@@ -52,7 +64,8 @@ biomcp search article -g BRAF --since 2024-01-01 --no-preprints --limit 5
 Turn a natural-language literature question into two parts:
 
 - Put a known gene, disease, or drug in `-g/--gene`, `-d/--disease`, or `--drug`.
-- Put mechanisms, phenotypes, outcomes, datasets, and other free-text concepts in `-k/--keyword`.
+- Put mechanisms, phenotypes, outcomes, datasets, and other provider-neutral free-text concepts in `-k/--keyword`.
+- Put a known author in `-a/--author` and a known journal in `--journal`; do not put PubMed or Europe PMC field grammar in `-k/--keyword`.
 - If the question is asking which gene, disease, or drug fits the evidence and you do not know the entity yet, do not guess a typed flag. Start with keyword-only article search or run `biomcp discover "<question>"` first.
 - Question-format article terms are acceptable: PubMed ESearch cleans bounded filler words from unfielded gene, disease, drug, and keyword terms provider-locally, while query echoes and non-PubMed sources keep the original wording.
 - Use `--type review` for synthesis questions, list-style questions, and dataset surveys.
@@ -110,8 +123,11 @@ biomcp search article -k "TCGA mutation analysis dataset" --type review --limit 
 Article search fans out to PubTator3, Europe PMC, and PubMed by default when
 the filter set is compatible. Known gene, disease, drug, and keyword queries
 participate in that route. Semantic Scholar can still join the same query when
-the filter set is compatible. Semantic Scholar and LitSense2 are also available
-as explicit single-source routes with `--source semanticscholar` and
+the filter set is compatible. An author filter is intentionally narrower: the
+default route executes only Europe PMC and PubMed, whose native author fields
+make every returned candidate an authorship match rather than a lexical match.
+Semantic Scholar and LitSense2 are also available as explicit single-source
+routes with `--source semanticscholar` and
 `--source litsense2`. BioMCP merges duplicates across PMID,
 PMCID, and DOI where possible. `S2_API_KEY` upgrades the Semantic
 Scholar leg to authenticated requests at 1 req/sec; without it, BioMCP uses

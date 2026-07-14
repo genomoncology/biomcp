@@ -223,9 +223,20 @@ biomcp search gwas --trait "type 2 diabetes" --limit 10
 
 ```bash
 biomcp search article -g BRAF -d melanoma --since 2024-01-01 --limit 5 --offset 0
+biomcp search article -a "Williams LS" --limit 5
 biomcp --json search article -g BRAF --debug-plan --limit 5
 biomcp --json search article -k "Oncotype DX review" --session lit-review-1 --limit 5
 ```
+
+`-a/--author` is an authorship filter. On the default `--source all` route it
+narrows execution to author-capable Europe PMC and PubMed. Select either source
+directly when needed; PubTator3, Semantic Scholar, and LitSense2 reject author
+filters rather than interpreting the name as free text.
+
+`-k/--keyword` is provider-neutral text, not raw PubMed or Europe PMC grammar.
+Use `--author` or `--journal` for those fields. Recognized provider field
+expressions are rejected, while ordinary biomedical bracket and colon notation
+remains literal keyword text.
 
 `--session <token>` is article-local and optional. Use it as a short
 non-secret local label when a caller may repeat keyword searches for one task;

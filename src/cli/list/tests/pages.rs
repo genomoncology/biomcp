@@ -464,6 +464,15 @@ fn list_trial_and_article_include_missing_flags() {
 }
 
 #[test]
+fn list_article_page_documents_exact_author_filtering() {
+    let article = render(Some("article")).expect("list article should render");
+
+    assert!(article.contains("search article -a <author>"));
+    assert!(article.contains("author-capable Europe PMC + PubMed"));
+    assert!(article.contains("`-k/--keyword` is provider-neutral"));
+}
+
+#[test]
 fn list_article_page_mentions_entity_aware_followups() {
     let article = render(Some("article")).expect("list article should render");
     assert!(article.contains(

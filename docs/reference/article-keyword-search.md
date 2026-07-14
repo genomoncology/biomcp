@@ -117,8 +117,14 @@ before you search, use `biomcp discover "<question>"`.
 
 ## Keyword behavior
 
-`--keyword` (`-k`) is treated as escaped free text and no longer auto-quotes
-whitespace-containing values.
+`--keyword` (`-k`) is provider-neutral free text and no longer auto-quotes
+whitespace-containing values. It is not a raw PubMed or Europe PMC query field.
+Recognized author fields (`[author]`, `[au]`, `AUTH:`), affiliation fields
+(`[ad]`, `AFFILIATION:`), and journal fields (`[journal]`, `[jour]`, `JOURNAL:`)
+are rejected with guidance to use `--author`, `--journal`, or ordinary unfielded
+keyword text. Matching is case-insensitive. Other bracket and colon forms remain
+literal, so biomedical text such as `NM_004333.6:c.1799T>A`, `BRAF[variant]`,
+and `protein:protein interaction` remains searchable.
 
 PubMed-specific behavior: direct `--source pubmed` searches and the compatible
 federated PubMed leg clean bounded question-format filler words from
@@ -142,7 +148,8 @@ Entity-oriented filters retain phrase quoting behavior:
 - `--gene`
 - `--disease`
 - `--drug`
-- `--author`
+- `--author` (the default route narrows to author-capable Europe PMC and PubMed;
+  explicit PubTator3, Semantic Scholar, and LitSense2 author searches are rejected)
 
 Example:
 

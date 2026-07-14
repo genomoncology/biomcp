@@ -2,6 +2,55 @@
 use super::super::test_support::*;
 use super::*;
 
+fn keyword_filters(keyword: &str) -> ArticleSearchFilters {
+    ArticleSearchFilters {
+        keyword: Some(keyword.into()),
+        ..empty_filters()
+    }
+}
+
+#[test]
+fn native_keyword_fields_are_rejected_with_typed_guidance() {
+    for (keyword, guidance) in [
+        ("Williams LS[Author]", "--author"),
+        ("Williams LS[au] AND melanoma", "--author"),
+        ("Smith[Ad]", "ordinary unfielded -k/--keyword text"),
+        ("Nature[journal]", "--journal"),
+        ("Nature[jour])", "--journal"),
+        ("AUTH:Williams LS", "--author"),
+        ("melanoma (aUtH:Williams LS)", "--author"),
+        (
+            "AFFILIATION:Harvard",
+            "ordinary unfielded -k/--keyword text",
+        ),
+        ("melanoma JOURNAL:Nature", "--journal"),
+    ] {
+        let err = validate_search_filter_values(&keyword_filters(keyword))
+            .expect_err("native field syntax should be rejected");
+        let message = err.to_string();
+        assert!(message.contains("provider-neutral"), "{keyword}: {message}");
+        assert!(message.contains(guidance), "{keyword}: {message}");
+    }
+}
+
+#[test]
+fn ordinary_bracket_and_colon_keywords_remain_valid() {
+    for keyword in [
+        "BRAF p.V600E",
+        "NM_004333.6:c.1799T>A",
+        "BRAF[variant] melanoma",
+        "MYAUTH:Williams",
+        "AUTH receptor signaling",
+        "[author] Williams",
+        "Williams[author]ized",
+        "protein:protein interaction",
+        "TP53 (p.Arg175His)",
+    ] {
+        validate_search_filter_values(&keyword_filters(keyword))
+            .unwrap_or_else(|err| panic!("literal keyword {keyword:?} should remain valid: {err}"));
+    }
+}
+
 #[test]
 fn normalized_date_bounds_normalizes_partial_dates() {
     let mut filters = empty_filters();

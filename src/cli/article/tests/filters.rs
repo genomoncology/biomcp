@@ -72,6 +72,30 @@ fn article_search_request_records_normalized_cli_intent_and_backend_plan() {
 }
 
 #[test]
+fn article_search_request_records_author_capable_plan() {
+    let mut args = default_article_search_args();
+    args.author = vec!["Williams".into(), "LS".into()];
+
+    let request = article_search_request(args).expect("request");
+
+    assert_eq!(request.filters.author.as_deref(), Some("Williams LS"));
+    assert_eq!(
+        request.backend_plan,
+        crate::entities::article::BackendPlan::TypeCapable
+    );
+}
+
+#[test]
+fn article_search_request_rejects_native_keyword_field_syntax() {
+    let mut args = default_article_search_args();
+    args.keyword = vec!["Williams LS[Author]".into()];
+
+    let err = article_search_request(args).expect_err("provider syntax should be rejected");
+
+    assert!(err.to_string().contains("Use --author"));
+}
+
+#[test]
 fn article_search_request_records_exact_keyword_lookup_intent() {
     let mut args = default_article_search_args();
     args.keyword = vec!["Gleevec".into()];

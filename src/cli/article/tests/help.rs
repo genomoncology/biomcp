@@ -52,7 +52,15 @@ fn search_article_help_includes_query_formulation_guidance() {
         "Known gene/disease/drug anchors belong in `-g/--gene`, `-d/--disease`, or `--drug`."
     ));
     assert!(help.contains(
-        "Use `-k/--keyword` for mechanisms, phenotypes, datasets, outcomes, and other free-text concepts."
+        "Use provider-neutral `-k/--keyword` for mechanisms, phenotypes, datasets, outcomes, and other free-text concepts"
+    ));
+    assert!(
+        help.contains(
+            "`-a/--author` narrows the default route to author-capable Europe PMC + PubMed"
+        )
+    );
+    assert!(help.contains(
+        "Filter by author name (default search uses author-capable Europe PMC and PubMed)"
     ));
     assert!(help.contains(
         "PubMed ESearch cleans question-format gene/disease/drug/keyword terms provider-locally; query echoes and non-PubMed sources keep the original wording."
