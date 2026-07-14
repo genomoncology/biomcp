@@ -418,7 +418,16 @@ with no conversion.
 biomcp get trial NCT02576665
 biomcp get trial NCT02576665 contacts eligibility locations
 biomcp get trial NCT02576665 all
+biomcp --json get trial NCT03361748 documents
+biomcp get trial NCT03361748 document Prot_SAP_000.pdf
 ```
+
+`eligibility` is registry-supplied text and reports CTGov posted-document
+availability. The CTGov-only `documents` form is a standalone JSON manifest;
+`document <filename>` accepts an exact advertised name and returns raw,
+unconverted bytes up to 32 MiB. Documents may contain additional eligibility
+detail but do not guarantee that a criterion is resolved, and they remain
+outside ordinary `all`.
 
 ### Variant
 

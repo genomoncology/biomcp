@@ -402,6 +402,7 @@ fn format_sections_block_describes_guardrailed_drug_and_trial_sections() {
         completion_date: None,
         eligibility_text: None,
         eligibility: None,
+        eligibility_provenance: None,
         contacts: None,
         locations: None,
         outcomes: None,

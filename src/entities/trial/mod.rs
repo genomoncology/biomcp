@@ -4,11 +4,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
 
+mod documents;
 mod get;
 mod search;
 #[cfg(test)]
 mod test_support;
 
+pub use self::documents::{
+    TrialDocumentsManifest, TrialEligibilityProvenance, trial_document_bytes,
+    trial_documents_manifest,
+};
 pub use self::get::get;
 pub use self::search::{count_all, search, search_page};
 
@@ -45,6 +50,8 @@ pub struct Trial {
     pub eligibility_text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub eligibility: Option<TrialEligibility>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub eligibility_provenance: Option<TrialEligibilityProvenance>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub contacts: Option<Vec<TrialContact>>,
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -120,6 +120,7 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
         completion_date: None,
         eligibility_text: None,
         eligibility: None,
+        eligibility_provenance: None,
         contacts: None,
         locations: Some(vec![crate::entities::trial::TrialLocation {
             facility: "Example Hospital".to_string(),
@@ -190,6 +191,7 @@ fn paginate_trial_locations_handles_missing_locations() {
         completion_date: None,
         eligibility_text: None,
         eligibility: None,
+        eligibility_provenance: None,
         contacts: None,
         locations: None,
         outcomes: None,

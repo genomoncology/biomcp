@@ -20,6 +20,25 @@ fn get_fields_contacts_preserve_site_context_and_eligibility_sex() {
 
     let eligibility_fields = build_get_fields(&["eligibility".to_string()]);
     assert!(eligibility_fields.split(',').any(|field| field == "Sex"));
+    assert!(
+        eligibility_fields
+            .split(',')
+            .any(|field| field == "LargeDocumentModule")
+    );
+
+    let all_fields = build_get_fields(&["all".to_string()]);
+    assert!(
+        !all_fields
+            .split(',')
+            .any(|field| field == "LargeDocumentModule")
+    );
+
+    let document_fields = build_get_fields(&["documents".to_string()]);
+    assert!(
+        document_fields
+            .split(',')
+            .any(|field| field == "LargeDocumentModule")
+    );
 }
 
 #[test]

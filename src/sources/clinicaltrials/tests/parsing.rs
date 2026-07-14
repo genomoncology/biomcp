@@ -66,6 +66,26 @@ fn parses_contacts_and_eligibility_fixture() {
 }
 
 #[test]
+fn parses_large_document_module() {
+    let study = ClinicalTrialsClient::decode_get_response(
+        "NCT03361748",
+        StatusCode::OK,
+        br#"{"documentSection":{"largeDocumentModule":{"largeDocs":[{"typeAbbrev":"Prot_SAP","filename":"Prot_SAP_000.pdf","size":50,"hasProtocol":true,"hasSap":true,"hasIcf":false}]}}}"#,
+    )
+    .unwrap();
+
+    let document = &study
+        .document_section
+        .expect("document section")
+        .large_document_module
+        .expect("large document module")
+        .large_docs[0];
+    assert_eq!(document.type_abbrev.as_deref(), Some("Prot_SAP"));
+    assert_eq!(document.filename.as_deref(), Some("Prot_SAP_000.pdf"));
+    assert_eq!(document.size, Some(50));
+}
+
+#[test]
 fn get_response_maps_not_found_to_trial_not_found() {
     let err =
         ClinicalTrialsClient::decode_get_response("NCT404", StatusCode::NOT_FOUND, b"not found")

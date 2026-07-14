@@ -35,6 +35,7 @@ const CTGOV_GET_FIELDS_BASE: &[&str] = &[
 
 const CTGOV_GET_FIELDS_ELIGIBILITY: &[&str] =
     &["EligibilityCriteria", "MinimumAge", "MaximumAge", "Sex"];
+const CTGOV_GET_FIELDS_DOCUMENTS: &[&str] = &["LargeDocumentModule"];
 
 const CTGOV_GET_FIELDS_CONTACTS: &[&str] = &[
     "CentralContactName",
@@ -123,7 +124,11 @@ fn build_get_fields(sections: &[String]) -> String {
 
     for section in sections {
         match section.trim().to_ascii_lowercase().as_str() {
-            "eligibility" => fields.extend_from_slice(CTGOV_GET_FIELDS_ELIGIBILITY),
+            "eligibility" => {
+                fields.extend_from_slice(CTGOV_GET_FIELDS_ELIGIBILITY);
+                fields.extend_from_slice(CTGOV_GET_FIELDS_DOCUMENTS);
+            }
+            "documents" => fields.extend_from_slice(CTGOV_GET_FIELDS_DOCUMENTS),
             "contacts" => fields.extend_from_slice(CTGOV_GET_FIELDS_CONTACTS),
             "locations" => fields.extend_from_slice(CTGOV_GET_FIELDS_LOCATIONS),
             "outcomes" => fields.extend_from_slice(CTGOV_GET_FIELDS_OUTCOMES),
@@ -314,6 +319,7 @@ pub struct CtGovSearchResponse {
 #[serde(rename_all = "camelCase")]
 pub struct CtGovStudy {
     pub protocol_section: Option<CtGovProtocolSection>,
+    pub document_section: Option<CtGovDocumentSection>,
     pub has_results: Option<bool>,
     pub results_section: Option<CtGovResultsSection>,
 }
@@ -461,6 +467,33 @@ pub struct CtGovEligibilityModule {
     pub sex: Option<String>,
     pub minimum_age: Option<String>,
     pub maximum_age: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CtGovDocumentSection {
+    pub large_document_module: Option<CtGovLargeDocumentModule>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CtGovLargeDocumentModule {
+    #[serde(default)]
+    pub large_docs: Vec<CtGovLargeDocument>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CtGovLargeDocument {
+    pub type_abbrev: Option<String>,
+    pub label: Option<String>,
+    pub date: Option<String>,
+    pub upload_date: Option<String>,
+    pub filename: Option<String>,
+    pub size: Option<u64>,
+    pub has_protocol: Option<bool>,
+    pub has_sap: Option<bool>,
+    pub has_icf: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

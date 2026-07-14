@@ -18,6 +18,7 @@ fn parse_sections_accepts_contacts_and_all_includes_contacts() {
     let all = parse_sections(&["all".to_string()]).unwrap();
     assert!(all.include_contacts);
     assert!(all.include_eligibility);
+    assert!(!all.include_eligibility_provenance);
     assert!(all.include_locations);
 }
 

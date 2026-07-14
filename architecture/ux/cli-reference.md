@@ -73,11 +73,19 @@ biomcp get disease "Lynch syndrome" genes phenotypes variants
 biomcp get disease --name "chronic myeloid leukemia" survival
 biomcp get disease melanoma clinical_features
 biomcp get trial NCT02576665 eligibility locations outcomes
+biomcp --json get trial NCT03361748 documents
+biomcp get trial NCT03361748 document Prot_SAP_000.pdf
 ```
 
 The trial detail surface includes a `contacts` section for ClinicalTrials.gov
 central contacts and email-bearing site contacts. `locations` and `eligibility`
-remain opt-in sections for site detail and criteria text.
+remain opt-in sections for site detail and registry-supplied criteria text.
+Eligibility reports posted-document availability without attributing registry
+text to a PDF. CTGov `documents` is a standalone JSON manifest, while `document
+<filename>` accepts an exact advertised name and streams raw bytes without
+conversion, capped at 32 MiB. Posted documents may contain additional detail but
+do not guarantee criterion resolution; they stay outside ordinary `all` and are
+unavailable for NCI.
 
 The pattern is consistent across the entity command surface: no-section gives
 a summary, named sections are additive, and `all` gives the standard default

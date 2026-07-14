@@ -128,6 +128,24 @@ Eligibility:
 biomcp get trial NCT02576665 eligibility
 ```
 
+CTGov eligibility is registry-supplied text. JSON eligibility output identifies
+that provenance and reports whether posted trial documents are available. When
+documents exist, Markdown offers a cautious follow-up because they may contain
+additional eligibility detail; BioMCP does not claim that a protocol resolves
+any criterion.
+
+Posted CTGov documents use standalone manifest and retrieval forms:
+
+```bash
+biomcp --json get trial NCT03361748 documents
+biomcp get trial NCT03361748 document Prot_SAP_000.pdf > protocol.pdf
+```
+
+Use only an exact filename advertised by the current manifest. Retrieval returns
+raw bytes without PDF parsing or conversion and rejects bodies larger than 32
+MiB. Document forms are unavailable with `--source nci` and are not included in
+ordinary `all`.
+
 Contacts:
 
 ```bash
@@ -187,7 +205,7 @@ biomcp --json search trial -i daraxonrasib --limit 20
 
 - Start broad on condition, then add intervention and biomarker filters.
 - Keep limits low while tuning search criteria.
-- Use `eligibility` for full criteria text and structured sex/age facts.
+- Use `eligibility` for registry-supplied criteria text, provenance, and structured sex/age facts.
 - Use `contacts` when you need CTGov central or site contact details.
 
 ## Related guides
