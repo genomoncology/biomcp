@@ -258,11 +258,21 @@ impl PubMedClient {
         let plan = Self::citation_plan(pmid, self.api_key.as_deref())
             .map_err(|_| PubMedCitationErrorKind::InvalidResponse)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let (status, content_type, bytes) = self
-            .send(req, authenticated)
+        let response = crate::sources::apply_cache_mode_with_auth(req, authenticated)
+            .send()
+            .await
+            .map_err(BioMcpError::from)
+            .map_err(Self::citation_request_error)?;
+        let status = response.status();
+        Self::validate_citation_status(status)?;
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .cloned();
+        let bytes = crate::sources::read_limited_body(response, PUBMED_EUTILS_API)
             .await
             .map_err(Self::citation_request_error)?;
-        let xml = Self::decode_citation_response(status, content_type.as_ref(), bytes)?;
+        let xml = Self::decode_citation_response(status, content_type.as_ref(), bytes.to_vec())?;
         let pmid = pmid.trim().to_string();
         tokio::task::spawn_blocking(move || parse_citation_xml(&pmid, &xml))
             .await
@@ -279,21 +289,25 @@ impl PubMedClient {
         }
     }
 
+    fn validate_citation_status(
+        status: reqwest::StatusCode,
+    ) -> Result<(), PubMedCitationErrorKind> {
+        match status {
+            reqwest::StatusCode::TOO_MANY_REQUESTS => Err(PubMedCitationErrorKind::RateLimited),
+            reqwest::StatusCode::NOT_FOUND | reqwest::StatusCode::GONE => {
+                Err(PubMedCitationErrorKind::NotFound)
+            }
+            status if !status.is_success() => Err(PubMedCitationErrorKind::Http),
+            _ => Ok(()),
+        }
+    }
+
     fn decode_citation_response(
         status: reqwest::StatusCode,
         content_type: Option<&reqwest::header::HeaderValue>,
         bytes: Vec<u8>,
     ) -> Result<String, PubMedCitationErrorKind> {
-        match status {
-            reqwest::StatusCode::TOO_MANY_REQUESTS => {
-                return Err(PubMedCitationErrorKind::RateLimited);
-            }
-            reqwest::StatusCode::NOT_FOUND | reqwest::StatusCode::GONE => {
-                return Err(PubMedCitationErrorKind::NotFound);
-            }
-            status if !status.is_success() => return Err(PubMedCitationErrorKind::Http),
-            _ => {}
-        }
+        Self::validate_citation_status(status)?;
         let media_type = content_type
             .and_then(|value| value.to_str().ok())
             .and_then(|value| value.split(';').next())
@@ -753,6 +767,11 @@ fn parse_author(node: roxmltree::Node<'_, '_>) -> Result<PubMedCitationAuthor, B
 }
 
 fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, PubMedCitationErrorKind> {
+    // PubMed uses an external DTD declaration but does not require internal entities.
+    // Reject declarations that could expand text without increasing roxmltree's node count.
+    if xml.contains("<!ENTITY") {
+        return Err(PubMedCitationErrorKind::Parse);
+    }
     let document = roxmltree::Document::parse_with_options(
         xml,
         roxmltree::ParsingOptions {

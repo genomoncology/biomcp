@@ -274,6 +274,19 @@ fn citation_parser_enforces_node_and_entity_limits() {
             Err(PubMedCitationErrorKind::Parse)
         );
     }
+
+    let entity_value = "x".repeat(1_024);
+    let entity_references = "&flat;".repeat(1_000);
+    let flat_entity_expansion = format!(
+        "<!DOCTYPE PubmedArticleSet [<!ENTITY flat \"{entity_value}\">]>\
+         <PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>1</PMID>\
+         <Article><AuthorList><Author><LastName>{entity_references}</LastName></Author>\
+         </AuthorList></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"
+    );
+    assert_eq!(
+        parse_citation_xml("1", &flat_entity_expansion),
+        Err(PubMedCitationErrorKind::Parse)
+    );
 }
 
 #[test]
