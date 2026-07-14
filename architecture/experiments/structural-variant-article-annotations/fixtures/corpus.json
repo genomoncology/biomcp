@@ -1,0 +1,1120 @@
+{
+  "schema_version": 1,
+  "offset_unit": "unicode_codepoints",
+  "documents": [
+    {
+      "pmid": "30709865",
+      "label": "positive",
+      "title": "Invariant phenotype and molecular association of biallelic TET2 mutant myeloid neoplasia.",
+      "text": "Invariant phenotype and molecular association of biallelic TET2 mutant myeloid neoplasia.\nSomatic TET2 mutations (TET2 MT) are frequent in myeloid neoplasia (MN), particularly chronic myelomonocytic leukemia (CMML). TET2 MT includes mostly loss-of-function/hypomorphic hits. Impaired TET2 activity skews differentiation of hematopoietic stem cells toward proliferating myeloid precursors. This study was prompted by the observation of frequent biallelic TET2 gene inactivations (biTET2 i ) in CMML. We speculated that biTET2 i might be associated with distinct clinicohematological features. We analyzed TET2 MT in 1045 patients with MN. Of 82 biTET2 i cases, 66 were biTET2 MT, 13 were hemizygous TET2 MT, and 3 were homozygous TET2 MT (uniparental disomy); the remaining patients (denoted biTET2 - hereafter) were either monoallelic TET2 MT (n = 96) or wild-type TET2 (n = 823). Truncation mutations were found in 83% of biTET2 i vs 65% of biTET2 - cases (P = .02). TET2 hits were founder lesions in 72% of biTET2 i vs 38% of biTET2 - cases (P < .0001). In biTET2 i , significantly concurrent hits included SRSF2 MT (33%; P < .0001) and KRAS/NRAS MT (16%; P = .03) as compared with biTET2 - When the first TET2 hit was ancestral in biTET2 i , the most common subsequent hits affected a second TET2 MT, followed by SRSF2 MT, ASXL1 MT, RAS MT, and DNMT3A MT BiTET2 i patients without any monocytosis showed an absence of SRSF2 MT BiTET2 i patients were older and had monocytosis, CMML, normal karyotypes, and lower-risk disease compared with biTET2 - patients. Hence, while a second TET2 hit occurred frequently, biTET2 i did not portend faster progression but rather determined monocytic differentiation, consistent with its prevalence in CMML. Additionally, biTET2 i showed lower odds of cytopenias and marrow blasts (≥5%) and higher odds of myeloid dysplasia and marrow hypercellularity. Thus, biTET2 i might represent an auxiliary assessment tool in MN.",
+      "gold_events": [
+        {
+          "id": "30709865-e1",
+          "start": 738,
+          "end": 756,
+          "text": "uniparental disomy",
+          "normalized": "uniparental disomy",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "35637217",
+      "label": "positive",
+      "title": "Structural variants shape the genomic landscape and clinical outcome of multiple myeloma.",
+      "text": "Structural variants shape the genomic landscape and clinical outcome of multiple myeloma.\nDeciphering genomic architecture is key to identifying novel disease drivers and understanding the mechanisms underlying myeloma initiation and progression. In this work, using the CoMMpass dataset, we show that structural variants (SV) occur in a nonrandom fashion throughout the genome with an increased frequency in the t(4;14), RB1, or TP53 mutated cases and reduced frequency in t(11;14) cases. By mapping sites of chromosomal rearrangements to topologically associated domains and identifying significantly upregulated genes by RNAseq we identify both predicted and novel putative driver genes. These data highlight the heterogeneity of transcriptional dysregulation occurring as a consequence of both the canonical and novel structural variants. Further, it shows that the complex rearrangements chromoplexy, chromothripsis and templated insertions are common in MM with each variant having its own distinct frequency and impact on clinical outcome. Chromothripsis is associated with a significant independent negative impact on clinical outcome in newly diagnosed cases consistent with its use alongside other clinical and genetic risk factors to identify prognosis.",
+      "gold_events": [
+        {
+          "id": "35637217-e1",
+          "start": 0,
+          "end": 19,
+          "text": "Structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e2",
+          "start": 302,
+          "end": 321,
+          "text": "structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e4",
+          "start": 323,
+          "end": 325,
+          "text": "SV",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e5",
+          "start": 413,
+          "end": 420,
+          "text": "t(4;14)",
+          "normalized": "t(4;14)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "4",
+            "14"
+          ]
+        },
+        {
+          "id": "35637217-e6",
+          "start": 474,
+          "end": 482,
+          "text": "t(11;14)",
+          "normalized": "t(11;14)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "11",
+            "14"
+          ]
+        },
+        {
+          "id": "35637217-e7",
+          "start": 510,
+          "end": 536,
+          "text": "chromosomal rearrangements",
+          "normalized": "chromosomal rearrangement",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e3",
+          "start": 822,
+          "end": 841,
+          "text": "structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e8",
+          "start": 870,
+          "end": 892,
+          "text": "complex rearrangements",
+          "normalized": "complex rearrangement",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e9",
+          "start": 893,
+          "end": 904,
+          "text": "chromoplexy",
+          "normalized": "chromoplexy",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e11",
+          "start": 906,
+          "end": 920,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e12",
+          "start": 925,
+          "end": 945,
+          "text": "templated insertions",
+          "normalized": "templated insertion",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e10",
+          "start": 1047,
+          "end": 1061,
+          "text": "Chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "37449980",
+      "label": "positive",
+      "title": "Multiomic Mapping of Acquired Chromosome 1 Copy-Number and Structural Variants to Identify Therapeutic Vulnerabilities in Multiple Myeloma.",
+      "text": "Multiomic Mapping of Acquired Chromosome 1 Copy-Number and Structural Variants to Identify Therapeutic Vulnerabilities in Multiple Myeloma.\nChromosome 1 (chr1) copy-number abnormalities (CNA) and structural variants (SV) are frequent in newly diagnosed multiple myeloma (NDMM) and are associated with a heterogeneous impact on outcomes, the drivers of which are largely unknown. A multiomic approach comprising CRISPR, gene mapping of CNAs and SVs, methylation, expression, and mutational analysis was used to document the extent of chr1 molecular variants and their impact on pathway utilization. We identified two distinct groups of gain(1q): focal gains associated with limited gene-expression changes and a neutral prognosis, and whole-arm gains, which are associated with substantial gene-expression changes, complex genetics, and an adverse prognosis. CRISPR identified a number of dependencies on chr1 but only limited variants associated with acquired CNAs. We identified seven regions of deletion, nine of gain, three of chromothripsis (CT), and two of templated insertion (TI), which contain a number of potential drivers. An additional mechanism involving hypomethylation of genes at 1q may contribute to the aberrant gene expression of a number of genes. Expression changes associated with whole-arm gains were substantial and gene set enrichment analysis identified metabolic processes, apoptotic resistance, signaling via the MAPK pathway, and upregulation of transcription factors as being key drivers of the adverse prognosis associated with these variants. Multiple layers of genetic complexity impact the phenotype associated with CNAs on chr1 to generate its associated clinical phenotype. Whole-arm gains of 1q are the critically important prognostic group that deregulate multiple pathways, which may offer therapeutic vulnerabilities.",
+      "gold_events": [
+        {
+          "id": "37449980-e1",
+          "start": 43,
+          "end": 54,
+          "text": "Copy-Number",
+          "normalized": "copy-number abnormality",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        },
+        {
+          "id": "37449980-e2",
+          "start": 59,
+          "end": 78,
+          "text": "Structural Variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        },
+        {
+          "id": "37449980-e3",
+          "start": 160,
+          "end": 185,
+          "text": "copy-number abnormalities",
+          "normalized": "copy-number abnormality",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        },
+        {
+          "id": "37449980-e5",
+          "start": 187,
+          "end": 190,
+          "text": "CNA",
+          "normalized": "copy-number abnormality",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        },
+        {
+          "id": "37449980-e4",
+          "start": 196,
+          "end": 215,
+          "text": "structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        },
+        {
+          "id": "37449980-e9",
+          "start": 217,
+          "end": 219,
+          "text": "SV",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        },
+        {
+          "id": "37449980-e6",
+          "start": 435,
+          "end": 439,
+          "text": "CNAs",
+          "normalized": "copy-number abnormality",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        },
+        {
+          "id": "37449980-e10",
+          "start": 444,
+          "end": 447,
+          "text": "SVs",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        },
+        {
+          "id": "37449980-e16",
+          "start": 632,
+          "end": 639,
+          "text": "of gain",
+          "normalized": "gain",
+          "event_type": "gain",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "37449980-e11",
+          "start": 635,
+          "end": 643,
+          "text": "gain(1q)",
+          "normalized": "gain(1q)",
+          "event_type": "gain",
+          "chromosome_or_locus": [
+            "1q"
+          ]
+        },
+        {
+          "id": "37449980-e12",
+          "start": 645,
+          "end": 656,
+          "text": "focal gains",
+          "normalized": "gain",
+          "event_type": "gain",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "37449980-e13",
+          "start": 734,
+          "end": 749,
+          "text": "whole-arm gains",
+          "normalized": "gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [
+            "1q"
+          ]
+        },
+        {
+          "id": "37449980-e7",
+          "start": 960,
+          "end": 964,
+          "text": "CNAs",
+          "normalized": "copy-number abnormality",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        },
+        {
+          "id": "37449980-e15",
+          "start": 986,
+          "end": 1005,
+          "text": "regions of deletion",
+          "normalized": "deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "37449980-e17",
+          "start": 1012,
+          "end": 1019,
+          "text": "of gain",
+          "normalized": "gain",
+          "event_type": "gain",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "37449980-e18",
+          "start": 1030,
+          "end": 1044,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "37449980-e19",
+          "start": 1062,
+          "end": 1081,
+          "text": "templated insertion",
+          "normalized": "templated insertion",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "37449980-e14",
+          "start": 1302,
+          "end": 1317,
+          "text": "whole-arm gains",
+          "normalized": "gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [
+            "1q"
+          ]
+        },
+        {
+          "id": "37449980-e8",
+          "start": 1649,
+          "end": 1653,
+          "text": "CNAs",
+          "normalized": "copy-number abnormality",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "1"
+          ]
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "39796213",
+      "label": "positive",
+      "title": "Atypical B-Cell Acute Lymphoblastic Leukemia with iAMP21 in the Context of Constitutional Ring Chromosome 21: A Case Report and Review of the Genetic Insights.",
+      "text": "Atypical B-Cell Acute Lymphoblastic Leukemia with iAMP21 in the Context of Constitutional Ring Chromosome 21: A Case Report and Review of the Genetic Insights.\nRecent studies have demonstrated the association between constitutional ring chromosome 21 (r(21)c) and the development of B-cell acute lymphoblastic leukemia (B-ALL) with intrachromosomal amplification of chromosome 21 (iAMP21). iAMP21 acts as a driver which is often accompanied by secondary alterations that influence disease progression. Here, we report an atypical case of iAMP21 B-ALL with a unique molecular profile in the context of r(21)c. The onset of B-ALL occurred significantly earlier than previously reported in iAMP21-ALL, likely due to the presence of r(21)c. Only scarce cases of iAMP21 with concomitant PAX5 fusions have been reported. Through an extensive genomic characterization, the novel WWOX::PAX5 as well as 13q12.2 deletion involving FLT3 overexpression was found. These findings suggest that r(21)c may induce chromosomal instability on chromosome 21, triggering chromothripsis and leading to iAMP21-ALL. This case provides valuable insights to unravel the complex interplay between germline and somatic genetic alterations in leukemia. Moreover, it underscores the need for thorough genetic evaluation and multidisciplinary management in patients with syndromic presentation, particularly when rare genetic events may contribute to hematologic malignancies.",
+      "gold_events": [
+        {
+          "id": "39796213-e7",
+          "start": 50,
+          "end": 56,
+          "text": "iAMP21",
+          "normalized": "amp(21)",
+          "event_type": "amplification",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e1",
+          "start": 232,
+          "end": 250,
+          "text": "ring chromosome 21",
+          "normalized": "ring chromosome 21",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e2",
+          "start": 252,
+          "end": 258,
+          "text": "r(21)c",
+          "normalized": "r(21)c",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e6",
+          "start": 332,
+          "end": 379,
+          "text": "intrachromosomal amplification of chromosome 21",
+          "normalized": "amp(21)",
+          "event_type": "amplification",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e8",
+          "start": 381,
+          "end": 387,
+          "text": "iAMP21",
+          "normalized": "amp(21)",
+          "event_type": "amplification",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e9",
+          "start": 390,
+          "end": 396,
+          "text": "iAMP21",
+          "normalized": "amp(21)",
+          "event_type": "amplification",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e10",
+          "start": 538,
+          "end": 544,
+          "text": "iAMP21",
+          "normalized": "amp(21)",
+          "event_type": "amplification",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e3",
+          "start": 601,
+          "end": 607,
+          "text": "r(21)c",
+          "normalized": "r(21)c",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e11",
+          "start": 687,
+          "end": 693,
+          "text": "iAMP21",
+          "normalized": "amp(21)",
+          "event_type": "amplification",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e4",
+          "start": 729,
+          "end": 735,
+          "text": "r(21)c",
+          "normalized": "r(21)c",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e12",
+          "start": 758,
+          "end": 764,
+          "text": "iAMP21",
+          "normalized": "amp(21)",
+          "event_type": "amplification",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e14",
+          "start": 872,
+          "end": 882,
+          "text": "WWOX::PAX5",
+          "normalized": "WWOX::PAX5 fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "39796213-e15",
+          "start": 894,
+          "end": 910,
+          "text": "13q12.2 deletion",
+          "normalized": "del(13q12.2)",
+          "event_type": "deletion",
+          "chromosome_or_locus": [
+            "13q12.2"
+          ]
+        },
+        {
+          "id": "39796213-e5",
+          "start": 980,
+          "end": 986,
+          "text": "r(21)c",
+          "normalized": "r(21)c",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e16",
+          "start": 1051,
+          "end": 1065,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        },
+        {
+          "id": "39796213-e13",
+          "start": 1081,
+          "end": 1087,
+          "text": "iAMP21",
+          "normalized": "amp(21)",
+          "event_type": "amplification",
+          "chromosome_or_locus": [
+            "21"
+          ]
+        }
+      ],
+      "gold_gene_relationships": [
+        {
+          "event_id": "39796213-e14",
+          "relation": "fusion_partners",
+          "genes": [
+            "WWOX",
+            "PAX5"
+          ],
+          "evidence_start": 862,
+          "evidence_end": 882,
+          "evidence_text": "the novel WWOX::PAX5",
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "39796213"
+          }
+        }
+      ]
+    },
+    {
+      "pmid": "34885058",
+      "label": "positive",
+      "title": "Genome Instability in Multiple Myeloma: Facts and Factors.",
+      "text": "Genome Instability in Multiple Myeloma: Facts and Factors.\nMultiple myeloma (MM) is a malignant neoplasm of terminally differentiated immunoglobulin-producing B lymphocytes called plasma cells. MM is the second most common hematologic malignancy, and it poses a heavy economic and social burden because it remains incurable and confers a profound disability to patients. Despite current progress in MM treatment, the disease invariably recurs, even after the transplantation of autologous hematopoietic stem cells (ASCT). Biological processes leading to a pathological myeloma clone and the mechanisms of further evolution of the disease are far from complete understanding. Genetically, MM is a complex disease that demonstrates a high level of heterogeneity. Myeloma genomes carry numerous genetic changes, including structural genome variations and chromosomal gains and losses, and these changes occur in combinations with point mutations affecting various cellular pathways, including genome maintenance. MM genome instability in its extreme is manifested in mutation kataegis and complex genomic rearrangements: chromothripsis, templated insertions, and chromoplexy. Chemotherapeutic agents used to treat MM add another level of complexity because many of them exacerbate genome instability. Genome abnormalities are driver events and deciphering their mechanisms will help understand the causes of MM and play a pivotal role in developing new therapies.",
+      "gold_events": [
+        {
+          "id": "34885058-e1",
+          "start": 819,
+          "end": 847,
+          "text": "structural genome variations",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "34885058-e2",
+          "start": 852,
+          "end": 869,
+          "text": "chromosomal gains",
+          "normalized": "gain",
+          "event_type": "gain",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "34885058-e3",
+          "start": 874,
+          "end": 880,
+          "text": "losses",
+          "normalized": "copy-number loss",
+          "event_type": "deletion",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "34885058-e4",
+          "start": 1086,
+          "end": 1116,
+          "text": "complex genomic rearrangements",
+          "normalized": "complex genomic rearrangement",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "34885058-e5",
+          "start": 1118,
+          "end": 1132,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "34885058-e6",
+          "start": 1134,
+          "end": 1154,
+          "text": "templated insertions",
+          "normalized": "templated insertion",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "34885058-e7",
+          "start": 1160,
+          "end": 1171,
+          "text": "chromoplexy",
+          "normalized": "chromoplexy",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42426366",
+      "label": "positive",
+      "title": "Favorable outcome in TCF3::HLF-positive pediatric B-cell acute lymphoblastic leukemia without classic metabolic complications: A case report.",
+      "text": "Favorable outcome in TCF3::HLF-positive pediatric B-cell acute lymphoblastic leukemia without classic metabolic complications: A case report.\nThe t(17;19)(q22;p13) translocation, generating the TCF3::HLF fusion oncogene, occurs in < 1% of pediatric B-cell precursor acute lymphoblastic leukemia (BCP-ALL) and is associated with extreme chemotherapy resistance, frequent metabolic complications including hypercalcemia and disseminated intravascular coagulation (DIC), both of which have been reported with variable frequencies across published cohorts depending on the underlying TCF3::HLF fusion subtype, together with an extremely poor long-term prognosis. A 3-year-old girl with TCF3::HLF-positive BCP-ALL presented with fever, lethargy, and pancytopenia, but notably lacked hypercalcemia and overt disseminated intravascular coagulation (DIC). Cytogenetic analysis additionally revealed a high hyperdiploid karyotype (52-58 chromosomes) and duplication of 1q. She was treated with a high-risk Children's Oncology Group (COG) protocol (prednisone, vincristine, daunorubicin, PEG-asparaginase), achieving a day-8 blast count < 1000/µL and complete remission with an exceptionally low flow-cytometric MRD of less than 0.01%. She underwent myeloablative allogeneic hematopoietic stem cell transplantation (HSCT) from a matched related donor and remains in complete remission(CR) more than 2 years post-transplantation. This case suggests that TCF3::HLF-positive ALL encompasses a clinical spectrum rather than a uniformly fatal disease. The absence of classic metabolic complications and the co-occurrence of high hyperdiploidy might delineate a subgroup with a better response to intensive chemotherapy and early HSCT. Larger studies integrating detailed molecular characterization are required to substantiate this hypothesis and guide risk-adapted therapy.",
+      "gold_events": [
+        {
+          "id": "42426366-e1",
+          "start": 21,
+          "end": 30,
+          "text": "TCF3::HLF",
+          "normalized": "TCF3::HLF fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42426366-e6",
+          "start": 146,
+          "end": 163,
+          "text": "t(17;19)(q22;p13)",
+          "normalized": "t(17;19)(q22;p13)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "17q22",
+            "19p13"
+          ]
+        },
+        {
+          "id": "42426366-e2",
+          "start": 194,
+          "end": 203,
+          "text": "TCF3::HLF",
+          "normalized": "TCF3::HLF fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42426366-e3",
+          "start": 580,
+          "end": 589,
+          "text": "TCF3::HLF",
+          "normalized": "TCF3::HLF fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42426366-e4",
+          "start": 682,
+          "end": 691,
+          "text": "TCF3::HLF",
+          "normalized": "TCF3::HLF fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42426366-e7",
+          "start": 893,
+          "end": 920,
+          "text": "high hyperdiploid karyotype",
+          "normalized": "high hyperdiploidy",
+          "event_type": "ploidy_state",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42426366-e8",
+          "start": 945,
+          "end": 962,
+          "text": "duplication of 1q",
+          "normalized": "gain(1q)",
+          "event_type": "gain",
+          "chromosome_or_locus": [
+            "1q"
+          ]
+        },
+        {
+          "id": "42426366-e5",
+          "start": 1443,
+          "end": 1452,
+          "text": "TCF3::HLF",
+          "normalized": "TCF3::HLF fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42426366-e9",
+          "start": 1609,
+          "end": 1627,
+          "text": "high hyperdiploidy",
+          "normalized": "high hyperdiploidy",
+          "event_type": "ploidy_state",
+          "chromosome_or_locus": []
+        }
+      ],
+      "gold_gene_relationships": [
+        {
+          "event_id": "42426366-e6",
+          "relation": "produces_fusion",
+          "genes": [
+            "TCF3",
+            "HLF"
+          ],
+          "evidence_start": 142,
+          "evidence_end": 219,
+          "evidence_text": "The t(17;19)(q22;p13) translocation, generating the TCF3::HLF fusion oncogene",
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42426366"
+          }
+        }
+      ]
+    },
+    {
+      "pmid": "41935330",
+      "label": "positive",
+      "title": "Acquired pericentric inversion of der(9) with BCR and ABL1 codeletion in chronic myeloid leukemia: a rare cytogenetic finding from Mali.",
+      "text": "Acquired pericentric inversion of der(9) with BCR and ABL1 codeletion in chronic myeloid leukemia: a rare cytogenetic finding from Mali.\nChronic myeloid leukemia (CML) is defined by the presence of the BCR::ABL1 fusion gene resulting from the t(9;22)(q34;q11.2) translocation. In addition to this primary rearrangement, secondary chromosomal abnormalities involving chromosomes 9 and 22 may arise during clonal evolution and influence disease progression and response to therapy. Pericentric inversion of chromosome 9 is usually regarded as a constitutional variant. However, when acquired in CML, particularly involving the derivative chromosome 9, it represents a rare secondary abnormality whose biological and clinical significance remains poorly defined. We report the case of a 37 year old woman diagnosed with chronic phase CML following investigation of marked hyperleukocytosis. Fluorescence in situ hybridization (FISH) confirmed the presence of the BCR::ABL1 fusion in more than 90% of analyzed cells. Metaphase FISH showed the BCR::ABL1 fusion signal on the Philadelphia chromosome and revealed absence of BCR and ABL1 signals on the derivative chromosome 9. Multicolor FISH identified an acquired pericentric inversion involving the derivative chromosome 9, associated with codeletion of BCR and ABL1 sequences. The patient was initially treated with imatinib at a dose of 400 mg per day but failed to achieve complete cytogenetic remission after 24 months, prompting a switch to the second-generation tyrosine kinase inhibitor dasatinib, with a favorable clinical and cytogenetic response. This case highlights a rare cytogenetic abnormality in CML characterized by acquired pericentric inversion of the derivative chromosome 9 associated with BCR and ABL1 codeletion. Such complex rearrangements likely reflect clonal evolution and may be associated with suboptimal response to first line imatinib therapy. Accurate discrimination between constitutional and acquired inv(9), together with detailed assessment of derivative chromosome 9 integrity, is essential for prognostic stratification. Comprehensive cytogenetic and molecular analyses remain critical for identifying uncommon secondary abnormalities that may influence therapeutic response and clinical outcome in CML.",
+      "gold_events": [
+        {
+          "id": "41935330-e4",
+          "start": 9,
+          "end": 40,
+          "text": "pericentric inversion of der(9)",
+          "normalized": "inv(der(9))",
+          "event_type": "inversion",
+          "chromosome_or_locus": [
+            "9"
+          ]
+        },
+        {
+          "id": "41935330-e5",
+          "start": 59,
+          "end": 69,
+          "text": "codeletion",
+          "normalized": "codeletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "41935330-e1",
+          "start": 202,
+          "end": 211,
+          "text": "BCR::ABL1",
+          "normalized": "BCR::ABL1 fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "41935330-e8",
+          "start": 243,
+          "end": 261,
+          "text": "t(9;22)(q34;q11.2)",
+          "normalized": "t(9;22)(q34;q11.2)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "9q34",
+            "22q11.2"
+          ]
+        },
+        {
+          "id": "41935330-e9",
+          "start": 297,
+          "end": 318,
+          "text": "primary rearrangement",
+          "normalized": "chromosomal rearrangement",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [
+            "9",
+            "22"
+          ]
+        },
+        {
+          "id": "41935330-e10",
+          "start": 480,
+          "end": 517,
+          "text": "Pericentric inversion of chromosome 9",
+          "normalized": "inv(9)",
+          "event_type": "inversion",
+          "chromosome_or_locus": [
+            "9"
+          ]
+        },
+        {
+          "id": "41935330-e2",
+          "start": 960,
+          "end": 969,
+          "text": "BCR::ABL1",
+          "normalized": "BCR::ABL1 fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "41935330-e3",
+          "start": 1039,
+          "end": 1048,
+          "text": "BCR::ABL1",
+          "normalized": "BCR::ABL1 fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "41935330-e11",
+          "start": 1210,
+          "end": 1269,
+          "text": "pericentric inversion involving the derivative chromosome 9",
+          "normalized": "inv(der(9))",
+          "event_type": "inversion",
+          "chromosome_or_locus": [
+            "9"
+          ]
+        },
+        {
+          "id": "41935330-e6",
+          "start": 1287,
+          "end": 1297,
+          "text": "codeletion",
+          "normalized": "codeletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "41935330-e12",
+          "start": 1689,
+          "end": 1741,
+          "text": "pericentric inversion of the derivative chromosome 9",
+          "normalized": "inv(der(9))",
+          "event_type": "inversion",
+          "chromosome_or_locus": [
+            "9"
+          ]
+        },
+        {
+          "id": "41935330-e7",
+          "start": 1771,
+          "end": 1781,
+          "text": "codeletion",
+          "normalized": "codeletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "41935330-e13",
+          "start": 1788,
+          "end": 1810,
+          "text": "complex rearrangements",
+          "normalized": "complex rearrangement",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "41935330-e14",
+          "start": 1982,
+          "end": 1988,
+          "text": "inv(9)",
+          "normalized": "inv(9)",
+          "event_type": "inversion",
+          "chromosome_or_locus": [
+            "9"
+          ]
+        }
+      ],
+      "gold_gene_relationships": [
+        {
+          "event_id": "41935330-e8",
+          "relation": "produces_fusion",
+          "genes": [
+            "BCR",
+            "ABL1"
+          ],
+          "evidence_start": 198,
+          "evidence_end": 275,
+          "evidence_text": "the BCR::ABL1 fusion gene resulting from the t(9;22)(q34;q11.2) translocation",
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41935330"
+          }
+        },
+        {
+          "event_id": "41935330-e11",
+          "relation": "co_deletes",
+          "genes": [
+            "BCR",
+            "ABL1"
+          ],
+          "evidence_start": 1198,
+          "evidence_end": 1323,
+          "evidence_text": "an acquired pericentric inversion involving the derivative chromosome 9, associated with codeletion of BCR and ABL1 sequences",
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41935330"
+          }
+        }
+      ]
+    },
+    {
+      "pmid": "42379467",
+      "label": "positive",
+      "title": "Kidney Transplantation Post-Chimeric Antigen Receptor T-Cell (CAR-T) Therapy in Multiple Myeloma.",
+      "text": "Kidney Transplantation Post-Chimeric Antigen Receptor T-Cell (CAR-T) Therapy in Multiple Myeloma.\nKidney disease affects approximately half of patients with multiple myeloma (MM), and kidney failure is associated with poor prognosis. Kidney transplantation is rarely pursued in MM due to concerns of relapse, infection, and allograft rejection. However, advances in therapy, including B-cell maturation antigen (BCMA)-directed chimeric antigen receptor (CAR) T-cell therapy, have led to deep and durable hematologic responses, creating new opportunities for transplantation in select patients. We report a 71-year-old man with stage III MM and high-risk cytogenetics [del(17p)] who developed end-stage kidney disease requiring hemodialysis during his treatment course. Despite multiple lines of therapy, he had never achieved a deep remission until he received ciltacabtagene autoleucel (cilta-cel) CAR T-cell therapy, which led to minimal residual disease (MRD)-negative disease status. One year following CAR T-cell therapy, he underwent living donor kidney transplantation with basiliximab induction, and tacrolimus/mycophenolate maintenance immunosuppression. His course was complicated by hypogammaglobulinemia, cytopenia, BK viremia, and acute rejection, all managed with immunosuppression adjustment and supportive therapies. At 17 months post-transplant, allograft function remains stable (creatinine 1.8 mg/dL), and he has achieved an MRD-negative, complete hematologic remission. This case highlights both the feasibility and the challenges of kidney transplantation after CAR T-cell therapy in MM.",
+      "gold_events": [
+        {
+          "id": "42379467-e1",
+          "start": 668,
+          "end": 676,
+          "text": "del(17p)",
+          "normalized": "del(17p)",
+          "event_type": "deletion",
+          "chromosome_or_locus": [
+            "17p"
+          ]
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42366058",
+      "label": "positive",
+      "title": "Independent PML::RARA-positive acute promyelocytic leukemia arising during BCR::ABL1-positive chronic myeloid leukemia.",
+      "text": "Independent PML::RARA-positive acute promyelocytic leukemia arising during BCR::ABL1-positive chronic myeloid leukemia.\nAcute promyelocytic leukemia (APL) arising during the clinical course of BCR::ABL1-positive chronic myeloid leukemia (CML) is rare and may represent either promyelocytic blast phase or the emergence of an independent Philadelphia chromosome-negative clone. We report an octogenarian man with chronic-phase CML who was intolerant to multiple tyrosine kinase inhibitors and underwent temporary discontinuation of asciminib. During molecular relapse, bone marrow examination revealed 88% abnormal promyelocytes with Auer rods and markedly elevated PML::RARA transcripts, whereas BCR::ABL1 transcript levels were more than 3 logs lower than at CML diagnosis. Conventional cytogenetics demonstrated t(15;17) without t(9;22) as the dominant clone, supporting de novo APL arising independently of the residual CML clone. All-trans retinoic acid plus arsenic trioxide achieved molecular remission of PML::RARA and was followed by an initial marked reduction in BCR::ABL1 transcript levels, which subsequently remained detectable at low levels during continued follow-up. This case highlights the importance of integrated cytogenetic and molecular evaluation to distinguish blast phase from independent leukemogenesis in patients with CML who develop cytopenias.",
+      "gold_events": [
+        {
+          "id": "42366058-e1",
+          "start": 12,
+          "end": 21,
+          "text": "PML::RARA",
+          "normalized": "PML::RARA fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42366058-e4",
+          "start": 75,
+          "end": 84,
+          "text": "BCR::ABL1",
+          "normalized": "BCR::ABL1 fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42366058-e5",
+          "start": 193,
+          "end": 202,
+          "text": "BCR::ABL1",
+          "normalized": "BCR::ABL1 fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42366058-e2",
+          "start": 665,
+          "end": 674,
+          "text": "PML::RARA",
+          "normalized": "PML::RARA fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42366058-e6",
+          "start": 696,
+          "end": 705,
+          "text": "BCR::ABL1",
+          "normalized": "BCR::ABL1 fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42366058-e8",
+          "start": 814,
+          "end": 822,
+          "text": "t(15;17)",
+          "normalized": "t(15;17)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "15",
+            "17"
+          ]
+        },
+        {
+          "id": "42366058-e9",
+          "start": 831,
+          "end": 838,
+          "text": "t(9;22)",
+          "normalized": "t(9;22)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "9",
+            "22"
+          ]
+        },
+        {
+          "id": "42366058-e3",
+          "start": 1012,
+          "end": 1021,
+          "text": "PML::RARA",
+          "normalized": "PML::RARA fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "42366058-e7",
+          "start": 1073,
+          "end": 1082,
+          "text": "BCR::ABL1",
+          "normalized": "BCR::ABL1 fusion",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": []
+        }
+      ],
+      "gold_gene_relationships": [
+        {
+          "event_id": "42366058-e1",
+          "relation": "fusion_partners",
+          "genes": [
+            "PML",
+            "RARA"
+          ],
+          "evidence_start": 0,
+          "evidence_end": 59,
+          "evidence_text": "Independent PML::RARA-positive acute promyelocytic leukemia",
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42366058"
+          }
+        },
+        {
+          "event_id": "42366058-e4",
+          "relation": "fusion_partners",
+          "genes": [
+            "BCR",
+            "ABL1"
+          ],
+          "evidence_start": 68,
+          "evidence_end": 118,
+          "evidence_text": "during BCR::ABL1-positive chronic myeloid leukemia",
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42366058"
+          }
+        }
+      ]
+    },
+    {
+      "pmid": "42206448",
+      "label": "control",
+      "title": "Next generation sequencing-based measurable residual disease detection predicts outcomes in patients with acute myeloid leukemia undergoing allogeneic stem cell transplantation.",
+      "text": "Next generation sequencing-based measurable residual disease detection predicts outcomes in patients with acute myeloid leukemia undergoing allogeneic stem cell transplantation.\nSensitive, scalable and affordable measurable residual disease (MRD) assays are needed to guide treatment decisions in acute myeloid leukemia (AML), particularly around allogeneic hematopoietic stem cell transplantation (allo-SCT). Next-generation sequencing (NGS)-based MRD assays offer broad applicability and high sensitivity, but remain too costly for routine use in resource-limited environments. We developed a cost-efficient, sensitive NGS MRD assay utilizing single-molecule molecular inversion probes (smMIPs) targeting 92 genomic loci in 33 AML driver genes and applied it to 93 AML patients in remission prior to allo-SCT. MRD positivity, defined as the presence of ≥ 1 non-DTA (DNMT3A, TET2, ASXL1) gene variant with ≥ 0.5% variant allele frequency (VAF), was associated with significantly shorter post-transplantation overall survival (OS; p < 0.001). In multivariable analysis, NGS-based MRD detection remained an independent predictor of inferior OS (hazard ratio 4.58; p = 0.002). Conditioning intensity did not associate with outcome of MRD-positive patients in this retrospective cohort. Mutations at diagnosis and pretransplantation showed variable concordance across genes, and consistently lower VAFs at the later timepoint. In three patients, multiple low-VAF clustered variants in RUNX1 and TET2 were detected pre-transplantation, potentially indicating treatment-induced mutagenesis. These findings demonstrate that a broadly applicable, smMIP-based NGS MRD assay can provide clinically relevant risk stratification before allo-SCT in AML, while its low library preparation costs of approximately 8€ per sample may facilitate wide implementation in routine practice and allow more patients to receive MRD-directed therapeutic interventions.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42404792",
+      "label": "control",
+      "title": "HHV-8 genotypes and clinical features in Kaposi sarcoma and primary effusion lymphoma in people living with HIV in Salvador, Brazil.",
+      "text": "HHV-8 genotypes and clinical features in Kaposi sarcoma and primary effusion lymphoma in people living with HIV in Salvador, Brazil.\nHuman herpesvirus 8 (HHV-8) is the etiologic agent of Kaposi sarcoma (KS) and primary effusion lymphoma (PEL), important causes of morbidity and mortality among people living with HIV (PLWH). The highly polymorphic ORF-K1 region is commonly used for HHV-8 genotyping and phylogenetic analysis. We investigated the distribution of HHV-8 genotypes and their clinical correlates among PLWH diagnosed with KS or PEL in Salvador, Brazil. Between 2022 and 2025, biological specimens from PLWH with KS or PEL were prospectively collected, including skin biopsies, blood, pleural effusions, and serum samples. HHV-8 DNA was detected by real-time PCR, and positive samples underwent semi-nested PCR amplification and sequencing of the ORF-K1 region. Phylogenetic analyses were performed using Maximum Likelihood reconstruction with 602 reference HHV-8 K1 sequences obtained from GenBank. Clinical, virological, and immunological data were analyzed according to HHV-8 genotype. HHV-8 DNA was successfully sequenced in 14 of 19 samples. Phylogenetic analysis identified subtype C in 7/14 (50.0%) cases, subtype B in 4/14 (28.6%), and subtype A in 3/14 (21.4%). Most participants were men who have sex with men (86.6%), with a median age of 34 years. Among 13 patients with available clinical data, eight (61.5%) presented with high-risk KS or PEL. Genotype A was detected in patients with aggressive disease manifestations, including visceral KS and PEL, whereas subtype C was predominantly associated with mucocutaneous disease. However, no statistically significant association was observed between genotype and disease severity (Fisher-Freeman-Halton exact test, p = 0.4639). Phylogenetic reconstruction also identified a distinct cluster containing two previously reported A5 isolates that segregated from recognized HHV-8 subtypes. HHV-8 subtype C was the predominant genotype among PLWH with KS or PEL in Salvador, followed by subtypes B and A. Although limited by sample size, subtype A was observed only in patients with severe diseases, consistent with previous reports suggesting an association between subtype A and severe clinical presentations. The identification of a distinct phylogenetic branch expands current knowledge of HHV-8 genetic diversity and warrants further investigation. These findings improve understanding of HHV-8 molecular epidemiology and provide insights for future studies evaluating genotype-phenotype associations.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42440233",
+      "label": "control",
+      "title": "RPS5 modulates inflammatory response and angiogenesis in coronary heart disease through NF-κB signaling activation.",
+      "text": "RPS5 modulates inflammatory response and angiogenesis in coronary heart disease through NF-κB signaling activation.\nOxidized low-density lipoprotein (ox-LDL) and inflammation cause endothelial dysfunction in coronary heart disease (CHD). Although ribosomal protein S5 (RPS5) has been linked to cardiovascular disease, the mechanism by which it functions in the endothelium and its relationship to NF-κB signaling remain unknown. RPS5 was chosen as the hub gene for CHD after differential expression analysis was done on the GSE68506 dataset. The human coronary artery endothelial cells (HCAECs) injury model was established by ox-LDL. In vitro experiments were performed to evaluate the changes in RPS5 expression, apoptosis, inflammatory markers, vascular protective factors, cell proliferation, and Endothelial-to-Mesenchymal Transition (EndMT). Combining the dual luciferase reporter gene assay and the NF-κB nuclear translocation immunofluorescence assay, the effect of RPS5 on the NF-κB pathway was evaluated. Seven ribosomal genes (RPL11, RPL8, RPS13, RPS20, RPS3, RPS5, RPS8) were downregulated in coronary artery disease (CAD) samples in the GSE68506 dataset. In vitro, ox-LDL injury similarly reduced RPS5 expression in HCAECs. Functionally, RPS5 knockdown inhibits cell proliferation and enhances apoptosis and EndMT, while RPS5 overexpression has the opposite effect. Mechanistically, RPS5 overexpression diminished NF-κB nuclear accumulation, lowered κB-WT reporter activity, and reduced the phosphorylation levels of IKKα/β, IκBα, and p65. It also reduced pro-inflammatory mediators and decreased VEGF and HSP70. The pathway dependency was confirmed when LPS-induced NF-κB activation reversed these effects. Through the NF-κB signaling pathway, RPS5 plays a crucial role in controlling inflammation, apoptosis, EndMT, and vascular protection factors in injured HCAECs. Endothelial damage in CHD may be treatable by focusing on the RPS5-NF-κB axis.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42420503",
+      "label": "control",
+      "title": "Genetically targeted photocatalytic organic dyes for spatiotemporally controlled organic synthesis in specific living cells.",
+      "text": "Genetically targeted photocatalytic organic dyes for spatiotemporally controlled organic synthesis in specific living cells.\nThe catalytic synthesis of many abiotic organic compounds is beyond the native capabilities of mammalian cells. Broadening the range of physiologically compatible, bond-forming catalytic reactions could enable the in situ synthesis of diverse molecules within living systems. By controlling these reactions in both specific cells and in physical space, this approach could offer transformative ways to modulate cellular behaviour and treat cells as distinct reaction vessels within organisms. Here we use genetic targeting to incorporate organic photocatalytic dyes onto and within cells to enable cell-type-specific and spatially defined catalysis. Photocatalysis can be restricted to individual cells using mild, green-to-red visible stimulation. The dyes catalyse cross-dehydrogenative C-H functionalization for the light- and cell-specific construction of C-C bonds in situ. Nuclear-localized assembly directs protein translocation with reversed transport directionality, illustrating the utility of this approach to both generate and enhance the function of chemical biology tools. We anticipate that the integration of synthetic catalysts with cell-specific targeting may lay an important foundation for future precision-directed abiotic chemical synthesis in living organisms.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42436300",
+      "label": "control",
+      "title": "Geographical distribution and genotypic diversity of Theileria orientalis with emphasis on Indian isolates.",
+      "text": "Geographical distribution and genotypic diversity of Theileria orientalis with emphasis on Indian isolates.\nGlobally, Theileria orientalis leads to considerable economic losses in cattle. This study carried out an in-depth analysis of T. orientalis MPSP sequences to explore their phylogeny, genetic diversity, and population structure. We analyzed 800 blood samples from northern India between 2023 and 2025 using microscopy. The results showed a higher prevalence of Theileria in cattle at 29.25%, compared to 2.75% in buffaloes. PCR amplification targeting the 18 S rRNA gene confirmed the presence of the genus in 39.5% of cattle and 6.0% of buffaloes. Additionally, T. orientalis-specific PCR detected a prevalence of 4.5% in cattle and 3.0% in buffaloes. The phylogenetic analysis included 981 MPSP sequences from diverse geographical regions with 15 new isolates from India. This revealed 12 genotypes, classified as Types 1-5, 7, 8, and N1-N5. This study also supports recent updates in the taxonomic interpretation of these genotypes, suggesting that type 6 aligns closely with T. sinensis, while type 9 appears to group within the type 4 lineage. Furthermore, we found inaccuracies in GenBank typing, like the clustering of type 8 isolates with type 4 and vice versa. In India, we identified eight genotypes, with types 2, N1, and N5 being reported for the first time. Geographic analyses indicated that genotypes 1 and 3 have a cosmopolitan distribution. The population showed high diversity with 552 haplotypes, a nucleotide diversity (π) of 0.14, and haplotype diversity (Hd) of 0.988. The consistently high haplotype diversities across all 12 genotypes, along with significant negative values for Tajima's D and Fu's Fs statistics, suggest that the parasite population is expanding. Different T. orientalis genotypes showed higher Fst and lower Nm values between them, which indicates significant genetic differentiation and limited gene flow.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42440172",
+      "label": "control",
+      "title": "Anaplastic thyroid carcinoma in Argentina: real-world diagnostic lags and treatment barriers.",
+      "text": "Anaplastic thyroid carcinoma in Argentina: real-world diagnostic lags and treatment barriers.\nAnaplastic thyroid carcinoma (ATC) is an aggressive malignancy with high mortality. Approximately 50% harbor the BRAF V600E mutation, for which dabrafenib-trametinib (DT) has been associated with improved survival (OS). Prompt diagnosis and access to molecular testing and targeted therapy are critical for outcomes. We evaluated diagnostic and therapeutic barriers in ATC patients treated in Buenos Aires, Argentina. This retrospective multicenter cohort study included 48 ATC patients from 11 centers in Buenos Aires (2019-2025). Initial diagnostic methods (IDMs) included fine-needle aspiration cytology (FNAC), core needle biopsy (CNB), surgical biopsy, or unsuspected diagnosis after thyroidectomy. We assessed diagnostic delay, BRAF testing, DT access, and OS. Median time from symptom onset to diagnosis was 3.16 months (IQR: 2-5.5). FNAC was the most frequent IDM (62%), but confirmed ATC in only 30%. Unsuspected ATC diagnosed in surgical specimens accounted for 29% of cases. BRAF testing was performed in 70% of patients, with 59% positivity, and a median turnaround of 7.5 days (IQR 4-29) from collection to result. Median time from diagnosis to DT initiation was 39 days (IQR 22-70). Only 40% of eligible BRAF-positive patients received DT. Median OS was 3.23 months (IQR 1.4-11.5). In an exploratory unadjusted analysis, DT-treated patients had longer OS (8.6 vs. 3.61 months; p = 0.037). Unsuspected ATC diagnosed after thyroidectomy and surgery were associated with longer OS. Diagnostic delays and barriers to molecular testing and targeted therapy remain substantial. Optimizing diagnostic pathways, prioritizing representative tissue sampling, and improving timely access to molecular testing and DT may enable earlier treatment and better outcomes.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42435518",
+      "label": "control",
+      "title": "Gene cloning and functional characterization of a yellow-green leaf and reduced tillering mutant in rice.",
+      "text": "Gene cloning and functional characterization of a yellow-green leaf and reduced tillering mutant in rice.\nLeaf color mutants are valuable genetic resources for elucidating chloroplast development and photosynthetic regulation in rice. In this study, a stably inherited yellow-green leaf and reduced tillering mutant (ygrt) was isolated from tissue-cultured seedlings of the rice cultivar Zhonghua 11 (ZH11). ygrt plants exhibited a persistent yellow-green phenotype, reduced tiller number, and lower seed setting rate. I2-KI staining revealed that ygrt pollen grains were more lightly stained than ZH11 and showed oval or irregular shapes. Semi-thin anther sections indicated delayed tapetum degradation and abnormal microspore development in ygrt. Moreover, chlorophyll contents and net photosynthetic rate were significantly decreased, accompanied by an increased intercellular CO2 concentration in ygrt. Transmission electron microscopy showed defective chloroplast ultrastructure, including loosely distributed grana lamellae and numerous small vesicles. Through map-based cloning, the target gene was localized to the region between 42,443-42,635 kb region on chromosome 1, and LOC_Os01g73450 was identified as the candidate gene. CRISPR/Cas9 knockout of this gene reproduced the yellow-green leaf phenotype of the mutant, whereas reintroduction of the wild-type coding sequence restored normal leaf coloration. YGRT is predominantly expressed in leaves, with maximal expression observed at the booting stage. The ygrt plants displayed growth defects under both normal and low-light conditions, which were particularly pronounced under normal light, suggesting that YGRT is involved in the response to light intensity. Cloning and characterization of YGRT provide important genetic resources, insights into chloroplast development and photosynthetic regulation, and potential targets for rice yield improvement.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    }
+  ]
+}

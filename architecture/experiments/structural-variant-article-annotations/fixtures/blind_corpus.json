@@ -1,0 +1,1900 @@
+{
+  "schema_version": 1,
+  "split": "blind_full_scale",
+  "offset_unit": "unicode_codepoints",
+  "selection": "fixed disjoint PubMed query sample; 5 papers/event family and 5 papers/control trap",
+  "documents": [
+    {
+      "pmid": "42401675",
+      "selection_category": "translocation",
+      "label": "positive",
+      "title": "Evolutionary dynamics of enlarged neo-sex chromosomes and novel pseudoautosomal regions in Sylvioidea songbirds.",
+      "text": "Evolutionary dynamics of enlarged neo-sex chromosomes and novel pseudoautosomal regions in Sylvioidea songbirds.\nRecombining regions of sex chromosomes, pseudoautosomal regions (PARs), are essential for proper segregation of the sex chromosome pair during meiosis. Yet, the evolutionary dynamics of PARs remain poorly understood, particularly in relation to chromosomal translocation and fusion events. Using comparative analyses of enlarged neo-sex chromosomes across Sylvioidea songbirds, we show that the ancestrally conserved songbird PAR has independently ceased recombining multiple times, each coinciding with the emergence of novel PAR in newly sex-linked regions. These PAR transitions were associated with lineage-specific fusions, but were driven by subsequent recombination suppression events rather than the fusions themselves. Our data further support hypotheses predicting that recombination suppression expansions are preceded by sex-associated sequence divergence near the PAR boundary. Together, our results reveal remarkable PAR diversity among birds and demonstrate how chromosome fusions relax constraints on existing PARs, facilitating recombination suppression and enabling PAR transitions along evolving sex chromosomes.",
+      "gold_events": [
+        {
+          "id": "42401675-e1",
+          "start": 358,
+          "end": 383,
+          "text": "chromosomal translocation",
+          "normalized": "chromosomal translocation",
+          "event_type": "translocation",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42401675",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42205458",
+      "selection_category": "translocation",
+      "label": "positive",
+      "title": "Genetic etiology and phenotypic characteristics of fetuses with 11q deletion syndrome (11q23.3-q25).",
+      "text": "Genetic etiology and phenotypic characteristics of fetuses with 11q deletion syndrome (11q23.3-q25).\nThe 11q deletion (11q-) syndrome is a rare consecutive polygenic deletion disorder. Characterization of the clinical features, genetic etiology and diagnostic strategies associated with 11q deletion syndrome in the prenatal setting is important to understand this syndrome in its entirety. A retrospective review at Longgang District Maternity & Child Healthcare Hospital of Shenzhen City (Shenzhen, China) involving four fetuses diagnosed with 11q- syndrome was conducted to examine the clinical features of this syndrome. The cases were identified through prenatal screening, including maternal serum biochemistry, non-invasive prenatal screening (NIPS), chromosomal microarray analysis (CMA) and karyotyping. Pregnant women with high-risk results from NIPS or prenatal serological screening received early interventional prenatal diagnosis and genetic counseling. Of the two cases that showed a high-risk of 11q- by NIPS, invasive diagnostic procedures confirmed the presence of large terminal deletions on chromosome 11q, encompassing telomeric regions. CMA identified the deletions while karyotyping revealed underlying structural rearrangements, including balanced translocations in both cases. Prenatal ultrasound identified cardiac anomalies, such as ventricular septal defects and truncus arteriosus. The variability and incomplete penetrance of these malformations suggest the influence of polygenic (e.g., modifier genes, genetic background, copy number variations), epigenetic (e.g., DNA methylation, histone modification) and environmental factors (e.g., diet, lifestyle, exposure to toxins). The results demonstrated that the phenotypic expression of 11q- syndrome varies according to the size and gene content of the deleted region. The integration of CMA and karyotyping improves diagnostic accuracy and elucidates the origin of chromosomal alterations. In the single case present in the current study that involved a parental chromosomal translocation, karyotyping was essential for determining the risk of recurrence. These findings contribute to a more precise understanding of genotype-phenotype associations and support the provision of informed prenatal counseling and the clinical management of 11q- syndrome.",
+      "gold_events": [
+        {
+          "id": "42205458-e1",
+          "start": 64,
+          "end": 76,
+          "text": "11q deletion",
+          "normalized": "11q deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42205458",
+            "passage": "title"
+          }
+        },
+        {
+          "id": "42205458-e2",
+          "start": 105,
+          "end": 117,
+          "text": "11q deletion",
+          "normalized": "11q deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42205458",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42205458-e3",
+          "start": 287,
+          "end": 299,
+          "text": "11q deletion",
+          "normalized": "11q deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42205458",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42205458-e4",
+          "start": 2044,
+          "end": 2069,
+          "text": "chromosomal translocation",
+          "normalized": "chromosomal translocation",
+          "event_type": "translocation",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42205458",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42026179",
+      "selection_category": "translocation",
+      "label": "positive",
+      "title": "The spectrum of immunoglobulin heavy chain enhancer hijacking in chronic lymphocytic leukemia.",
+      "text": "The spectrum of immunoglobulin heavy chain enhancer hijacking in chronic lymphocytic leukemia.\nActivation of oncogenes by hijacking immunoglobulin gene loci (IG) enhancers via chromosomal translocation is a common pathogenetic mechanism in B-cell malignancies, affecting 5-10% of chronic lymphocytic leukemia (CLL). The oncogenic partners in many of these cases remain unidentified. Therefore, we conducted a comprehensive analysis of 144 CLL samples with IGH-translocation excluding IGH::BCL2, IGH::CCND1, IGH::BCL3 and IGH::MYC. By combining fluorescence in situ hybridization (FISH) with whole-genome, targeted sequencing, and RNA expression profiling, we identified 25 IG-translocation partners; 12 were previously unreported. Of 142 cases, 107 (75%) displayed an unmutated IGHV. Genetic profiling showed a heterogenous distribution of chromosomal aberrations and recurrently mutated genes across the groups. Of 41 informative cases, 32 (78%) exhibited breakpoints driven by aberrant class-switch recombination (CSR), with prominent involvement of IGHM (9/41) and IGHG3 (9/41). Three cases with unmutated IGHV carried a juxtaposition of the IGH locus 5' to the intact NKX2.6 gene in chromosome 8p21.2 due to illegitimate VDJ recombination, associated with significant ectopic upregulation of NKX2.6 transcriptional expression (FDR < 0.001, logFC: 15). Similarly, METRNL, located at the telomere of chromosome 17q25, was identified as a translocation partner gene in four cases. Our findings expand the spectrum of the oncogenic translocation partners targeting IGH in CLL.",
+      "gold_events": [
+        {
+          "id": "42026179-e1",
+          "start": 176,
+          "end": 201,
+          "text": "chromosomal translocation",
+          "normalized": "chromosomal translocation",
+          "event_type": "translocation",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42026179",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42026179-e2",
+          "start": 484,
+          "end": 493,
+          "text": "IGH::BCL2",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42026179",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42026179-e3",
+          "start": 495,
+          "end": 505,
+          "text": "IGH::CCND1",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42026179",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42026179-e4",
+          "start": 507,
+          "end": 516,
+          "text": "IGH::BCL3",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42026179",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42026179-e5",
+          "start": 521,
+          "end": 529,
+          "text": "IGH::MYC",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42026179",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42371798",
+      "selection_category": "translocation",
+      "label": "positive",
+      "title": "NSD2 Degradation Remediates the Oncogenic Cistrome in t(4;14) Multiple Myeloma.",
+      "text": "NSD2 Degradation Remediates the Oncogenic Cistrome in t(4;14) Multiple Myeloma.\nThe t(4;14) chromosomal translocation drives overexpression of the histone methyltransferase NSD2 and defines a high-risk segment of multiple myeloma (MM) patients. Herein, we report the discovery of NSD2-LDD, a cereblon-recruiting and PWWP1-mediated ligand directed degrader (LDD) that selectively and potently eliminates full length and PWWP1 domain containing NSD2 protein isoforms. NSD2-LDD treatment induces global loss of H3K36me2 leading to promoter-proximal spreading of H3K27me3 and re-wiring of cis-regulatory interactions that reverse t(4;14) transcriptional programs. These effects suppress MM disease-associated phenotypes including stromal adhesion, three-dimensional colony growth and paracrine signaling. By integrating patient single cell profiles with model 3D epigenomic and spatial transcriptomics, we delineate t(4;14) disease state together with the tumor-intrinsic reprogramming and resultant remodeling of the bone marrow microenvironment upon NSD2 degradation. In cell line derived xenografts and genetically engineered mouse models of t(4;14), NSD2-LDD extends median survival accompanied by tumoral H3K36me2 loss and niche re-modelling. Although the NSD2-LDD response is restricted to PWWP1-containining models, collectively this work validates NSD2 as a tractable dependency and supports clinical development of NSD2 degradation as a novel, targeted therapeutic strategy in high-risk MM.",
+      "gold_events": [
+        {
+          "id": "42371798-e1",
+          "start": 54,
+          "end": 61,
+          "text": "t(4;14)",
+          "normalized": "t(4;14)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "4",
+            "14"
+          ],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42371798",
+            "passage": "title"
+          }
+        },
+        {
+          "id": "42371798-e2",
+          "start": 84,
+          "end": 91,
+          "text": "t(4;14)",
+          "normalized": "t(4;14)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "4",
+            "14"
+          ],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42371798",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42371798-e3",
+          "start": 92,
+          "end": 117,
+          "text": "chromosomal translocation",
+          "normalized": "chromosomal translocation",
+          "event_type": "translocation",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42371798",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42371798-e4",
+          "start": 626,
+          "end": 633,
+          "text": "t(4;14)",
+          "normalized": "t(4;14)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "4",
+            "14"
+          ],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42371798",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42371798-e5",
+          "start": 912,
+          "end": 919,
+          "text": "t(4;14)",
+          "normalized": "t(4;14)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "4",
+            "14"
+          ],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42371798",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42371798-e6",
+          "start": 1141,
+          "end": 1148,
+          "text": "t(4;14)",
+          "normalized": "t(4;14)",
+          "event_type": "translocation",
+          "chromosome_or_locus": [
+            "4",
+            "14"
+          ],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42371798",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": [
+        {
+          "event_id": "42371798-e2",
+          "relation": "drives_overexpression",
+          "genes": [
+            "NSD2"
+          ],
+          "evidence_start": 80,
+          "evidence_end": 177,
+          "evidence_text": "The t(4;14) chromosomal translocation drives overexpression of the histone methyltransferase NSD2",
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42371798"
+          }
+        }
+      ]
+    },
+    {
+      "pmid": "42303812",
+      "selection_category": "translocation",
+      "label": "positive",
+      "title": "Rapid evolution driven by translocation-associated selection during meiosis.",
+      "text": "Rapid evolution driven by translocation-associated selection during meiosis.\nThe evolution of allele frequencies in a population is often ascribed to differential fitness among organisms carrying different alleles. However, selection during meiosis can substantially influence this process. Here, we studied the evolution of a hybrid yeast population over six meiotic generations and observed rapid allele frequency dynamics at many genomic loci. By tracking the whole population and analyzing single gametes we discovered that biased segregation pattern during meiosis can drive rapid evolutionary changes at translocation-linked loci. The inter-chromosomal translocation present in one parental strain creates quadrivalent structures that promote adjacent-1 segregation coupled with crossover formation over alternate segregation during meiosis. This ultimately increases the proportion of unbalanced gametes, and consequently alters allele frequencies in the population. These findings demonstrate that meiotic selection operates more broadly than previously recognized and constitutes a significant evolutionary force affecting population allele frequencies. Given the prevalence of inter-chromosomal translocations, biased segregation pattern may complement the established role of translocations in shaping evolutionary outcomes.",
+      "gold_events": [
+        {
+          "id": "42303812-e1",
+          "start": 641,
+          "end": 672,
+          "text": "inter-chromosomal translocation",
+          "normalized": "inter-chromosomal translocation",
+          "event_type": "translocation",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42303812",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42303812-e2",
+          "start": 1187,
+          "end": 1219,
+          "text": "inter-chromosomal translocations",
+          "normalized": "inter-chromosomal translocation",
+          "event_type": "translocation",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42303812",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41921592",
+      "selection_category": "deletion",
+      "label": "positive",
+      "title": "Metabolic engineering of Pseudomonas putida KT2440 for valorization of terephthalic acid to produce catechol and muconic acid.",
+      "text": "Metabolic engineering of Pseudomonas putida KT2440 for valorization of terephthalic acid to produce catechol and muconic acid.\nPolyethylene terephthalate (PET) is one of the most widely used synthetic plastics, yet its environmental persistence necessitates sustainable end-of-life management strategies. Microbial upcycling of PET-derived monomers, particularly terephthalic acid (TPA), into high-value chemicals represents a promising alternative to conventional recycling. In this study, Pseudomonas putida KT2440 was engineered as a modular bioconversion platform for efficient TPA valorization into aromatic products, including catechol and muconic acid (MA). Introduction of the Comamonas sp. E6 tphBAabc operon combined with deletion of pcaHG in the chromosome of P. putida enabled conversion of TPA into protocatechuate (PCA). However, limited native TPA uptake was found. To overcome this bottleneck, nine TPA transporters were screened, identifying Acinetobacter baylyi ADP1 MucKmut and Rhodococcus opacus TpaK as superior transporters that enhanced TPA assimilation. Using these transporters, catechol biosynthesis was enabled by plasmid-based expression of Enterobacter cloacae aroY and chromosomal deletion of catA1 and catA2. Notably, the tpaK-expressing strain achieved catechol production of 8.51 mM with an 86.0% molar yield. Extension of the pathway toward MA through plasmid-based expression of aroY, catA1 and catA2, and chromosomal deletion of catB and catC enabled efficient MA production, reaching 8.45 mM MA with a 93.1% molar yield. In addition, TPA derived from chemically depolymerized post-consumer PET was effectively utilized for catechol production. Furthermore, fed-batch fermentation validated process scalability, achieving 15.04 mM catechol from 16.76 mM TPA. Collectively, this work demonstrates that recombinant P. putida KT2440 can be constructed as a robust chassis for sustainable PET upcycling through implementation of an efficient TPA transporter.",
+      "gold_events": [
+        {
+          "id": "41921592-e1",
+          "start": 1199,
+          "end": 1219,
+          "text": "chromosomal deletion",
+          "normalized": "chromosomal deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41921592",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "41921592-e2",
+          "start": 1441,
+          "end": 1461,
+          "text": "chromosomal deletion",
+          "normalized": "chromosomal deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41921592",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42311136",
+      "selection_category": "deletion",
+      "label": "positive",
+      "title": "Resolving a Complex Neonatal Phenotype by Rapid Trio Whole-Genome Sequencing: A De Novo 11q14.3-q22.3 Deletion and a Splicing-Altering Synonymous ANK1 Variant.",
+      "text": "Resolving a Complex Neonatal Phenotype by Rapid Trio Whole-Genome Sequencing: A De Novo 11q14.3-q22.3 Deletion and a Splicing-Altering Synonymous ANK1 Variant.\nNeonates with complex and evolving phenotypes often lack sufficiently specific clinical features to guide targeted genetic testing. Rapid trio whole-genome sequencing (WGS) may provide comprehensive etiologic clarification by simultaneously detecting sequence and structural variants. Rapid trio WGS was performed in a preterm infant with dysmorphic features, cardiac anomalies, hemolytic anemia, and persistent intrahepatic cholestasis, together with her parents. A copy number variant was confirmed by chromosomal microarray analysis. The functional effect of a candidate single nucleotide variant was investigated using SpliceAI, reverse transcription PCR, agarose gel electrophoresis, and Sanger sequencing. The genetic diagnosis was achieved within 10 days. WGS identified a de novo heterozygous 15.6 Mb deletion at chromosome 11q14.3-q22.3, which was classified as pathogenic and accounted for the infant's congenital anomalies. A novel paternally inherited ANK1 synonymous variant, NM_000037.4:c.4104G>A was also identified, and its RNA analysis demonstrated exon 33 skipping, resulting in an in-frame deletion. Although the variant was classified as a variant of uncertain significance, its demonstrated splicing effect and the concordant spherocytosis phenotype in the infant and her father supported its clinical relevance. This integrated diagnosis informed surveillance, genetic counseling, and evaluation of the persistent cholestasis while avoiding further invasive investigation. Rapid trio WGS, complemented by functional RNA analysis, resolved distinct components of a complex neonatal phenotype by identifying both a pathogenic chromosomal deletion and a splicing-altering synonymous ANK1 variant. This case demonstrates the value of comprehensive genomic testing for precision diagnosis and individualized management in neonatal medicine.",
+      "gold_events": [
+        {
+          "id": "42311136-e1",
+          "start": 424,
+          "end": 443,
+          "text": "structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42311136",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42311136-e2",
+          "start": 1806,
+          "end": 1826,
+          "text": "chromosomal deletion",
+          "normalized": "chromosomal deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42311136",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41773871",
+      "selection_category": "deletion",
+      "label": "positive",
+      "title": "Intra-strain and inter-strain heterogeneity shape phage-host interactions and phenotypic adaptation in Pseudomonas aeruginosa.",
+      "text": "Intra-strain and inter-strain heterogeneity shape phage-host interactions and phenotypic adaptation in Pseudomonas aeruginosa.\nThe efficacy of phage therapy relies on a precise understanding of phage-host interactions, particularly how phages recognize bacterial surface receptors and how these interactions shape host adaptation. In Pseudomonas aeruginosa, the O-antigen of lipopolysaccharide (LPS) is a common but incompletely characterized determinant of phage susceptibility. Here, we used an O-antigen-specific lytic podophage, phipa9, to prove receptor plasticity in P. aeruginosa strain ZS-PA-11. Phage-resistant mutants arose through either a point mutation in gtaB (phipa9-G), encoding UTP-glucose-1-phosphate uridylyltransferase, or a large chromosomal deletion (411 kb) (phipa9-B) encompassing gtaB. Functional analyses revealed that gtaB is essential for O-antigen synthesis, phage adsorption, and infection. Disruption of gtaB altered the LPS profile, reduced motility, and promoted biofilm formation. Both resistant mutants (phipa9-G and phipa9-B) exhibited attenuated virulence in Galleria mellonella, with the 411 kb deletion mutant showing a more pronounced reduction, underscoring the contribution of O-antigen and deleted loci to bacterial virulence. Comparative assays with another O-antigen-specific phage, phipa10, revealed distinct host ranges and inhibition profiles, highlighting receptor-dependent diversity and possible roles of intracellular defenses. Together, these findings demonstrate that natural variation in O-antigen biosynthetic pathways governs phage susceptibility and bacterial physiology. By uncovering gtaB-mediated intra-strain heterogeneity that restricts phage infection while reshaping host phenotypes, this work underscores the dual role of surface receptors in mediating phage-host dynamics and provides mechanistic insight for the rational design of therapeutic phages targeting P. aeruginosa.IMPORTANCEEffective phage therapy against multidrug-resistant Pseudomonas aeruginosa requires understanding how surface receptors govern susceptibility and resistance. We show that gtaB-mediated loss of the O-antigen blocks phage adsorption, alters bacterial physiology, and promotes population heterogeneity through pleiotropic phenotypic alterations. These multifaceted consequences reveal that phage resistance is not binary but instead reprograms bacterial adaptation and virulence. Comparison of two O-antigen-dependent phages with distinct host specificities further demonstrates that natural receptor variation critically shapes infection outcomes. Thus, receptor-based resistance represents both a barrier and an opportunity: while it limits phage efficacy, it can also attenuate virulence and expose new vulnerabilities. Recognizing these trade-offs is essential for designing phage therapies that both eradicate pathogens and harness the evolutionary costs of resistance.",
+      "gold_events": [
+        {
+          "id": "41773871-e1",
+          "start": 751,
+          "end": 771,
+          "text": "chromosomal deletion",
+          "normalized": "chromosomal deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41773871",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42079105",
+      "selection_category": "deletion",
+      "label": "positive",
+      "title": "Tissue-Specific Prevalence and Clonal Architecture of BRCA1/2 LOH-Inducing Chromosomal Aneuploidy.",
+      "text": "Tissue-Specific Prevalence and Clonal Architecture of BRCA1/2 LOH-Inducing Chromosomal Aneuploidy.\nGermline pathogenic variants in BRCA1 and BRCA2 confer disproportionately elevated cancer risks in breast and ovarian tissues, yet the basis for this tissue specificity remains incompletely understood. Here, we integrate bulk-tumor aneuploidy analysis across 340,824 cancer cases from three independent cohorts (TCGA, ICGC PCAWG, and FoundationCore) with single-cell whole-genome sequencing from two independent studies to investigate whether tissue-specific patterns of chromosomal deletion contribute to this phenomenon. We find that breast and ovarian cancers are consistently enriched for deletions of chromosome arms 17q and 13q-harboring the BRCA1 and BRCA2 genes, respectively-relative to other solid tumor types, and that mutational timing analysis independently places these deletions among the earliest somatic events in these cancers. Phylogenetic reconstruction of single-cell data reveals that in pre-malignant breast tissue from germline BRCA1/2 carriers, chr17q and chr13q deletions appear as localized subclonal events within small clades against a largely diploid background. In established malignancies, these same deletions are found within dominant clonal lineages accompanied by widespread genomic instability-consistent with clonal sweeps originating from early deletion events. These findings suggest that breast and ovarian cellular environments confer a selective advantage for chr17q and chr13q deletions, providing a mechanism that may contribute to the tissue-specific cancer risk observed in gBRCA1/2 carriers.",
+      "gold_events": [
+        {
+          "id": "42079105-e1",
+          "start": 570,
+          "end": 590,
+          "text": "chromosomal deletion",
+          "normalized": "chromosomal deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42079105",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42079105-e2",
+          "start": 1080,
+          "end": 1096,
+          "text": "chr13q deletions",
+          "normalized": "chr13q deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42079105",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42079105-e3",
+          "start": 1513,
+          "end": 1529,
+          "text": "chr13q deletions",
+          "normalized": "chr13q deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42079105",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42001523",
+      "selection_category": "deletion",
+      "label": "positive",
+      "title": "TNG961 is a selective oral HBS1L molecular glue degrader for the treatment of FOCAD-deleted cancers.",
+      "text": "TNG961 is a selective oral HBS1L molecular glue degrader for the treatment of FOCAD-deleted cancers.\nWhen tumor suppressor genes are lost through chromosomal deletion, deletion of adjacent genes can generate therapeutic vulnerabilities. MTAP is frequently co-deleted with the Chr9p21 tumor suppressor gene CDKN2A, creating synthetic lethal dependency on PRMT5. Telomeric to MTAP lies FOCAD, whose loss induces dependency on the HBS1L/PELO ribosome-rescue complex for translational maintenance. FOCAD is deleted in ~1/3 of MTAP-deleted cancers. We screened an IMiD-focused diversity library and identified a weak hit that bound cereblon, promoted HBS1L-CRBN-compound complex formation, and induced E3-ligase-dependent HBS1L ubiquitination and degradation. Guided by cryo-EM structures and proteome selectivity we developed TNG961, a potent, selective HBS1L degrader that disrupts the HBS1L/PELO complex, inducing translational arrest, unfolded protein response activation, and growth inhibition in FOCAD-negative models. Oral administration of TNG961 regresses FOCAD-negative xenografts, including PRMT5 inhibitor-refractory models, establishing HBS1L degradation as a strategy to exploit FOCAD loss and supporting clinical evaluation of TNG961 as a first-in-class precision oncology therapeutic.",
+      "gold_events": [
+        {
+          "id": "42001523-e1",
+          "start": 146,
+          "end": 166,
+          "text": "chromosomal deletion",
+          "normalized": "chromosomal deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42001523",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42216953",
+      "selection_category": "gain",
+      "label": "positive",
+      "title": "High incidence of Y-chromosome mosaicism in male and female individuals with mild malformation of cortical development with oligodendroglial hyperplasia in epilepsy.",
+      "text": "High incidence of Y-chromosome mosaicism in male and female individuals with mild malformation of cortical development with oligodendroglial hyperplasia in epilepsy.\nMild malformation of cortical development with oligodendroglial hyperplasia in epilepsy (MOGHE) is an underrecognized pediatric cortical lesion associated with somatic X-linked SLC35A2 variants in approximately 50% of individuals. The genetic etiology in individuals without detectable SLC35A2 mutations remains undefined, which limits our understanding of its pathomechanism and clinical characterization. The aim is to identify genetic correlates of MOGHE in individuals lacking pathogenic SLC35A2 variants and to investigate the clinicopathological and genomic correlations. We investigated archival brain tissue of 29 individuals (19 males, 10 females) with histopathologically confirmed MOGHE. Twenty individuals carried SLC35A2 variants, and nine individuals lacked detectable mutations in SLC35A2 or other epilepsy-related genes. Brain tissue samples were analyzed using DNA methylation-derived copy number variation (CNV) analysis, polymerase chain reaction (PCR), and chromogenic/fluorescent in situ hybridization (ISH). CNV analysis identified Y-chromosomal material in five of 10 females (50%) and mosaic Y-chromosome gains in 16 of 19 males (84%), confirmed by PCR and ISH, and associated with lesional tissue. Exploratory stratification of the cohort by SLC35A2 status and Y-chromosome gain revealed a tendency toward earlier seizure onset, multilobar involvement, and cognitive impairment in patients carrying both SLC35A2 mutations and Y-chromosome gain; however, these differences did not reach statistical significance in our small cohort. The combined presence of Y-chromosomal material in females, mosaic Y-chromosome gains in males, and SLC35A2 variants represents a recurrent genomic feature in patients with MOGHE. These findings suggest that sex-chromosome anomalies may contribute to the pathobiology of this epilepsy-associated cortical malformation, highlighting the need to clarify the underlying molecular mechanisms of this clinicohistopathologic entity. Although the root cause, biological consequence, and clinical significance of brain somatic Y-chromosomal gain remain to be further clarified, our findings identify a previously unrecognized genomic feature of MOGHE and provide a rationale for future research in MOGHE cohorts.",
+      "gold_events": [
+        {
+          "id": "42216953-e1",
+          "start": 1282,
+          "end": 1300,
+          "text": "Y-chromosome gains",
+          "normalized": "y-chromosome gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [
+            "Y"
+          ],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42216953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42216953-e2",
+          "start": 1452,
+          "end": 1469,
+          "text": "Y-chromosome gain",
+          "normalized": "y-chromosome gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [
+            "Y"
+          ],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42216953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42216953-e3",
+          "start": 1617,
+          "end": 1634,
+          "text": "Y-chromosome gain",
+          "normalized": "y-chromosome gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [
+            "Y"
+          ],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42216953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42216953-e4",
+          "start": 1790,
+          "end": 1808,
+          "text": "Y-chromosome gains",
+          "normalized": "y-chromosome gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [
+            "Y"
+          ],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42216953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42216953-e5",
+          "start": 2244,
+          "end": 2260,
+          "text": "chromosomal gain",
+          "normalized": "chromosomal gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42216953",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41863841",
+      "selection_category": "gain",
+      "label": "positive",
+      "title": "Genomic profiling of meiotic errors and early malignant transformation events in ovarian mature teratoma.",
+      "text": "Genomic profiling of meiotic errors and early malignant transformation events in ovarian mature teratoma.\nOvarian mature teratoma (OMT) exhibits copy-neutral loss of heterozygosity (CN-LOH) derived from meiotic errors. Studies have classified OMT into five types using these CN-LOH patterns. However, tumor purity issues have hindered accurate classification and molecular characterization. Moreover, the relationship between OMT genomic abnormalities and malignant transformation remains unclear. Here, we used laser microdissection to selectively collect 29 epithelial regions from 22 OMT cases and 1 carcinoma in situ (CIS) region from a squamous cell carcinoma case arising from OMT. We then conducted whole-exome sequencing. Copy number analysis enabled classification according to the established system. In cases with multi-regional sampling, the CN-LOH patterns were identical within the same tumor, while bilateral tumors showed distinct patterns, indicating that each tumor originated independently. Among the type II OMTs, which are believed to result from meiosis II error, 2 cases exhibited a chromosomal gain. Assessment of heterozygosity suggested that these cases had meiosis I error before meiosis II error. Somatic mutation analysis revealed an extremely low mutation burden, with 1 case harboring a PIK3CA mutation. In the CIS region, additional copy number alterations were present alongside the underlying CN-LOH pattern. TP53 mutations and loss of the wild-type allele were detected. The tumor mutation burden of CIS was 6.2 mutations per megabase. Mutational signature analysis showed enrichment of apolipoprotein B mRNA editing enzyme catalytic subunit-associated signatures. This study suggests novel perspectives on the mechanisms of OMT tumor development and malignant transformation.",
+      "gold_events": [
+        {
+          "id": "41863841-e1",
+          "start": 1106,
+          "end": 1122,
+          "text": "chromosomal gain",
+          "normalized": "chromosomal gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41863841",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41733011",
+      "selection_category": "gain",
+      "label": "positive",
+      "title": "Chromosomal and gene mapping of uterine fibroids: A systematic review.",
+      "text": "Chromosomal and gene mapping of uterine fibroids: A systematic review.\nGenetic mutations and their phenotypic manifestation have been recognized as critical factors in tumorigenesis. However, the relationship between these mutations and the pathogenesis of uterine leiomyomas (UL) remains inadequately characterized. There is compelling evidence to suggest a genetic underpinning in UL development, alongside influences from epigenetics, environmental stimuli, growth hormones, and growth factors. A plethora of studies have tried to elucidate the genetic and epigenetic etiologies associated with UL, but the definitive implications of these findings remain unclear. An extensive systematic review was conducted to investigate the genetic etiologies of UL. This systematic review aimed to consolidate current knowledge on genetic and epigenetic causes of UL, offering a comprehensive perspective on the evidence and its relevance in other solid tumors. A secondary focus was to identify the most significant genetic association with the genesis of UL. A total of 60 articles were identified, and 10 chromosomes and 51 genes were found to be implicated in the development of UL. The main trend in fibroid research focuses on genetic abnormalities and aberrations as the etiology of UL development. It has been estimated that 40% of UL can be associated with chromosome-specific aberrations. Chromosomal gain, loss, rearrangement, single nucleotide polymorphism (SNP), and translocation are the most common aberrations associated with UL development. The most recurrent ones include chromosome X and 7q deletions, and rearrangements of 12q15, 6p21 and 10q22. MED12 has been identified as a gene of particular importance in the development of UL.",
+      "gold_events": [
+        {
+          "id": "41733011-e1",
+          "start": 1391,
+          "end": 1407,
+          "text": "Chromosomal gain",
+          "normalized": "chromosomal gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41733011",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "41733011-e2",
+          "start": 1599,
+          "end": 1611,
+          "text": "7q deletions",
+          "normalized": "7q deletion",
+          "event_type": "deletion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41733011",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "40257113",
+      "selection_category": "gain",
+      "label": "positive",
+      "title": "PLK4: Master Regulator of Centriole Duplication and Its Therapeutic Potential.",
+      "text": "PLK4: Master Regulator of Centriole Duplication and Its Therapeutic Potential.\nCentrosomes catalyze the assembly of a microtubule-based bipolar spindle, essential for the precise chromosome segregation during cell division. At the center of this process lies Polo-Like Kinase 4 (PLK4), the master regulator that controls the duplication of the centriolar core to ensure the correct balance of two centrosomes per dividing cell. Disruptions in centrosome number or function can lead to genetic disorders such as primary microcephaly or drive tumorigenesis via centrosome amplification. In this context, several chemical inhibitors of PLK4 have emerged as promising therapeutic candidates. The inhibition of PLK4 results in the emergence of acentrosomal cells, which undergo prolonged and error-prone mitosis. This aberrant mitotic duration triggers a \"mitotic stopwatch\" mechanism that activates the tumor suppressor p53, halting cellular proliferation. However, in a multitude of cancers, the efficacy of this mitotic surveillance mechanism is compromised by mutations that incapacitate p53. Recent investigations have unveiled p53-independent vulnerabilities in cancers characterized by chromosomal gain or amplification of 17q23, which encodes for the ubiquitin ligase TRIM37, in response to PLK4 inhibition, particularly in neuroblastoma and breast cancer. This review encapsulates the latest advancements in our understanding of centriole duplication and acentrosomal cell division in the context of TRIM37 amplification, positioning PLK4 as a compelling target for innovative cancer therapeutics.",
+      "gold_events": [
+        {
+          "id": "40257113-e1",
+          "start": 1188,
+          "end": 1204,
+          "text": "chromosomal gain",
+          "normalized": "chromosomal gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "40257113",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "40496546",
+      "selection_category": "gain",
+      "label": "positive",
+      "title": "Chromophobe renal cell carcinoma with sarcomatoid change: A case report.",
+      "text": "Chromophobe renal cell carcinoma with sarcomatoid change: A case report.\nChromophobe renal cell carcinoma (ChRCC) is a rare type of kidney cancer that is generally associated with a favorable prognosis. By contrast, RCC with sarcomatoid transformation exhibits a more aggressive clinical course, with its pathogenesis remaining largely unclear. The present study reports a case of ChRCC with sarcomatoid changes. A 54-year-old woman presented to the Department of Urology for evaluation of an incidentally detected left renal mass. Histological examination of the resected tumor revealed two distinct components: One with conventional ChRCC morphology and the other comprising highly pleomorphic, poorly differentiated cells. Next-generation sequencing of the two components revealed chromosomal losses in multiple chromosomes and variations in the RNF46 gene. Based on these findings, a final diagnosis of ChRCC with sarcomatoid changes was made. Although the two components shared some genetic changes, differences were also noted. The sarcomatoid area change carried chromosomal gain, single nucleotide variants and MET fusion compared with the conventional ChRCC component. Furthermore, while programmed cell death ligand 1 expression was negative in the conventional ChRCC component, >10% of the tumor cells in the sarcomatoid component were positive. Overall, the present case reveals novel genetic and immunohistochemical features of ChRCC with sarcomatoid changes.",
+      "gold_events": [
+        {
+          "id": "40496546-e1",
+          "start": 1070,
+          "end": 1086,
+          "text": "chromosomal gain",
+          "normalized": "chromosomal gain",
+          "event_type": "gain",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "40496546",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42193341",
+      "selection_category": "amplification",
+      "label": "positive",
+      "title": "Identification of RPA3 as a Potential Functional Effector of Chromosome 7 Gain in Glioblastoma.",
+      "text": "Identification of RPA3 as a Potential Functional Effector of Chromosome 7 Gain in Glioblastoma.\nBackground: Chromosome 7 gain (chr7 gain) is a highly prevalent early event in glioblastoma (GBM). Because chr7 gain usually involves broad chromosomal amplification, its biological impact is unlikely to be fully explained by canonical loci such as EGFR and MET. The contribution of less-characterized, dosage-sensitive genes on chromosome 7 remains insufficiently defined. This study aimed to identify additional chr7 candidates associated with malignant phenotypes in GBM. Methods: Transcriptomic, copy-number, and clinical data from TCGA-GBM and TCGA-LGG were analyzed to characterize chr7-gain-associated alterations and prioritize candidate genes. Refined GBM and histologic GBM cohorts based on the WHO 2021 framework were used for candidate selection. RPA3-associated pathway features were examined using ssGSEA, PROGENy, WGCNA, and protein-protein interaction analysis, with external validation in the CGGA-693 cohort. Single-cell RNA-seq analysis compared chr7-gain and chr7-normal-copy tumor subclusters. Functional relevance was evaluated by siRNA-mediated knockdown in U87 and U118 cells. Results: Chr7 gain was enriched in high-grade IDH-wildtype gliomas and was associated with cell-cycle- and DNA repair-related programs. RPA3 was prioritized as a dosage-sensitive chromosome 7 candidate based on its upregulation in chr7-gain tumors, association with poor prognosis, and concordance with replication- and repair-related signatures. In vitro, RPA3 knockdown impaired cell growth, proliferation, colony formation, and migration. Single-cell analysis suggested greater transcriptomic and network-level relevance of RPA3 in chr7-gain tumor cells. Conclusions:RPA3 is a dosage-sensitive chromosome 7 candidate associated with aggressive and replication-/repair-related phenotypes in GBM. Increased RPA3 expression may contribute to the selective advantage associated with chr7 gain, which supports further investigation as potential therapeutic target.",
+      "gold_events": [
+        {
+          "id": "42193341-e1",
+          "start": 236,
+          "end": 261,
+          "text": "chromosomal amplification",
+          "normalized": "chromosomal amplification",
+          "event_type": "amplification",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42193341",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41926541",
+      "selection_category": "amplification",
+      "label": "positive",
+      "title": "Functional role of small extrachromosomal circular DNA in colorectal cancer.",
+      "text": "Functional role of small extrachromosomal circular DNA in colorectal cancer.\nExtrachromosomal circular DNA (eccDNA) are molecules that originate from chromosomal DNA but exist independently. While large eccDNA (ecDNA) contributes to tumorigenesis, the role of smaller eccDNA (<100,000 base pairs) in cancer remains unclear. Our analysis of 25 colorectal cancer (CRC) tumors and normal adjacent tissues revealed that eccDNA is significantly more abundant in tumor tissues, correlating strongly with chromosomal amplifications. The presence of whole intact genes on 1.29% of eccDNA was nonrandom. We identified 84 genes that recurred across tumors of multiple patients when present on eccDNA, with 19% of genes being cancer-associated. eccDNA-borne genes were often accompanied by increased expression, and their contribution to expression was much larger than that from linear amplifications and the larger ecDNA. The cytokine gene CXCL5 exemplified this phenomenon, showing substantial copy-number increase and upregulation when present on eccDNA. Functional validation in cell lines showed that CXCL5 eccDNA enhanced transcriptional output and immune cell recruitment function. The recurrence and overexpression of CRC-related genes on eccDNA indicate their selection in tumors, suggest that eccDNA can serve as an additional mechanism for dynamically influencing gene expression and is capable of conferring cancer phenotypes on cells. Analysis of chromatin landscapes revealed that eccDNA preferentially forms at sites of open chromatin and active transcription, with architectural boundaries marked by CTCF protein. Clinically, higher eccDNA levels correlated with poorer relapse-free survival in a small patient cohort. These findings suggest that circular DNA elements across the entire size spectrum participate in cancer evolution and warrant further investigation in larger cohorts.",
+      "gold_events": [
+        {
+          "id": "41926541-e1",
+          "start": 498,
+          "end": 524,
+          "text": "chromosomal amplifications",
+          "normalized": "chromosomal amplification",
+          "event_type": "amplification",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41926541",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41959452",
+      "selection_category": "amplification",
+      "label": "positive",
+      "title": "MRPL47 as a Novel Mitochondrial Biomarker for Early Detection and Therapeutic Response in Ovarian Cancer.",
+      "text": "MRPL47 as a Novel Mitochondrial Biomarker for Early Detection and Therapeutic Response in Ovarian Cancer.\nMRPL47 (Mitochondrial Ribosomal Protein Large Subunit 47) gene in chromosome 3q26 encodes a protein that is part of the large subunit of the mitochondrial ribosome. We observed that MRPL47 is frequently amplified and overexpressed in ovarian cancer samples. Importantly, increased expression of MRPL47 mRNA is associated with high levels of MRPL47 protein in ovarian cancer patients. High expression of MRPL47 is also associated with poor overall and recurrence free survival of ovarian cancer patients. Notably, MRPL47 improved metabolic fitness by enhancing cellular respiration, and glycolysis in cancer cells. Gene set enrichment analysis and target specific knockdown assays revealed that MYC transcription factor regulates MRPL47 expression. Furthermore, MRPL47 was identified very high in the plasma samples of ovarian cancer patients compared to those of healthy volunteers. MRPL47 was also associated with cisplatin resistance, whereas its expression predicted sensitivity to cisplatin therapy. Taken together, we demonstrated that MRPL47 can be used as a diagnostic biomarker for ovarian cancer and other cancers with 3q26 chromosomal amplification.",
+      "gold_events": [
+        {
+          "id": "41959452-e1",
+          "start": 1239,
+          "end": 1264,
+          "text": "chromosomal amplification",
+          "normalized": "chromosomal amplification",
+          "event_type": "amplification",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41959452",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "40864971",
+      "selection_category": "amplification",
+      "label": "positive",
+      "title": "Rewiring Aromatic Compound Consumption: Chromosomal Amplification and Evolution of a Foreign Pathway in Acinetobacter baylyi ADP1.",
+      "text": "Rewiring Aromatic Compound Consumption: Chromosomal Amplification and Evolution of a Foreign Pathway in Acinetobacter baylyi ADP1.\nRational engineering strategies that seek to harness the remarkable diversity of microbial metabolism can be limited by incomplete biological knowledge. As described here, a novel approach to address this challenge involved replacing a native pathway for degrading lignin-derived aromatic compounds via ortho cleavage of protocatechuate in Acinetobacter baylyi ADP1 with a foreign meta-cleavage pathway that uses different enzymes, metabolites, and redox carriers. This alteration may improve lignin valorization and coordinate catabolism with bioproduction strategies. When a 14-kbp region of foreign DNA was inserted in the chromosome, the heterologous genes failed to confer growth on target substrates. Regional gene dosage was increased using a synthetic DNA fragment to promote recombination, and higher copy number enabled growth. During adaptive laboratory evolution, compensatory mutations arose that permit growth with one copy of the foreign genes. This complex metabolic remodeling was accomplished without assumptions about the impediments that initially prevented growth. To understand the changes that emerged, a novel transformation assay identified a combination of mutations sufficient for the new phenotype. Three unexpected changes were revealed: loss of one foreign enzyme, loss of one native enzyme, and loss of a two-component transcriptional regulatory system. This study establishes that large multicopy tandem arrays of poorly adapted pathway genes can confer new functions and improve understanding of metabolism.",
+      "gold_events": [
+        {
+          "id": "40864971-e1",
+          "start": 40,
+          "end": 65,
+          "text": "Chromosomal Amplification",
+          "normalized": "chromosomal amplification",
+          "event_type": "amplification",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "40864971",
+            "passage": "title"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "40540066",
+      "selection_category": "amplification",
+      "label": "positive",
+      "title": "VPS45 promotes the progression of hepatocellular carcinoma by recycling β1 integrin to the cell membrane via the endocytic pathway.",
+      "text": "VPS45 promotes the progression of hepatocellular carcinoma by recycling β1 integrin to the cell membrane via the endocytic pathway.\nHepatocellular carcinoma (HCC) is a highly aggressive malignancy with poor prognosis, which is often driven by chromosomal amplifications at 1q. Vacuolar sorting protein 45 (VPS45), a gene located on chromosome 1q, is involved in the endocytic recycling pathway; however, its role in HCC remains unclear. In this study, we aimed to investigate the functional significance of VPS45 in the progression of HCC. VPS45 expression was analyzed using public databases, clinical HCC samples, and cell lines. Functional assays, including VPS45 knockout and rescue experiments, were conducted to assess the effect on tumor progression in vitro and in vivo. The molecular mechanisms underlying VPS45 function, particularly its role in β1 integrin recycling and FAK-AKT signaling activation, were also explored. VPS45 expression was significantly elevated in HCC owing to DNA copy number amplification and correlated with poor prognosis. Moreover, VPS45 knockout suppressed cell proliferation, migration, and invasion, while promoting apoptosis. VPS45 interacted with syntaxin16 and rabenosyn-5 to facilitate the recycling of β1 integrin to the cell membrane, thereby activating FAK-AKT signaling, which promotes oncogenic phenotypes. In xenograft models, VPS45 knockout significantly suppressed tumor growth, further supporting its role in HCC progression. VPS45 is a key oncogene in HCC that promotes tumor progression by enhancing β1 integrin recycling and activating FAK-AKT signaling. Given its strong association with poor prognosis and tumor malignancy, VPS45 may serve as a promising prognostic biomarker and a potential therapeutic target for HCC.",
+      "gold_events": [
+        {
+          "id": "40540066-e1",
+          "start": 243,
+          "end": 269,
+          "text": "chromosomal amplifications",
+          "normalized": "chromosomal amplification",
+          "event_type": "amplification",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "40540066",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42394944",
+      "selection_category": "inversion",
+      "label": "positive",
+      "title": "Stepwise genetic testing strategy identified pathogenic variants in 10 Chinese duchenne muscular dystrophy patients.",
+      "text": "Stepwise genetic testing strategy identified pathogenic variants in 10 Chinese duchenne muscular dystrophy patients.\nDuchenne muscular dystrophy (DMD) results from pathogenic variants in the DMD gene. Despite routine screening using Multiplex Ligation-dependent Probe Amplification (MLPA) and Whole-Exome Sequencing (WES), a subset of cases remains molecularly unexplained. This diagnostic gap is often attributed to the inherent limitations of these methods in detecting deep intronic variants or complex structural rearrangements. We implemented a tiered molecular diagnostic workflow for 10 male patients with suspected DMD. Primary screening for copy number variations (CNVs) was performed via MLPA. Negative cases were sequentially analyzed using WES and Whole-Genome Sequencing (WGS). Pathogenicity was validated through in silico splicing predictions, mRNA transcript analysis, and chromosomal breakpoint mapping. MLPA identified CNVs in six cases. WES resolved two additional patients, identifying a frameshift variant (c.7392delC) and a nonsense variant (c.4729C>T). In the remaining two cases, WGS identified a deep intronic variant (c.9225-287C>A) and a 9.4 Mb chromosomal inversion. Functional analysis of the c.9225-287C>A variant revealed the activation of a 58-nucleotide pseudoexon, resulting in a frameshift (p.H3076Vfs*15) and truncated dystrophin expression. For the 9.4 Mb inversion, WGS successfully mapped the breakpoints to DMD intron 7, enabling definitive carrier identification within the family. Our findings demonstrate that WGS is a robust tool for detecting pathogenic variations that evade standard MLPA and WES protocols, including deep intronic variants and large-scale inversions. This study emphasizes the clinical necessity of an integrated, tiered genomic approach to ensure accurate genetic counseling and facilitate access to precision therapies.",
+      "gold_events": [
+        {
+          "id": "42394944-e1",
+          "start": 1172,
+          "end": 1193,
+          "text": "chromosomal inversion",
+          "normalized": "chromosomal inversion",
+          "event_type": "inversion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42394944",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42354908",
+      "selection_category": "inversion",
+      "label": "positive",
+      "title": "Genomic Characterization of an O-Antigen-Deficient, Hydrogen Sulfide-Negative Salmonella enterica Serovar Senftenberg Isolated from Cooked Mussels.",
+      "text": "Genomic Characterization of an O-Antigen-Deficient, Hydrogen Sulfide-Negative Salmonella enterica Serovar Senftenberg Isolated from Cooked Mussels.\nAtypical Salmonella enterica strains that evade conventional detection pose significant challenges to food safety surveillance. A hydrogen sulfide (H2S)-negative and serologically untypable S. enterica strain (SF1060) was detected by qPCR from cooked farmed mussels in Galicia, Spain, and characterized using phenotypic and genomic approaches. Despite typical biochemical profiles, SF1060 failed to produce black colonies on Xylose Lysine Deoxycholate (XLD) agar and lacked detectable somatic antigens by conventional serotyping. Hybrid genome assembly using nanopore and illumina sequencing yielded a closed chromosome and five plasmids. In silico analyses identified the strain as S. Senftenberg ST14. Comparative genomics revealed a chromosomal inversion at the rfb operon (encoding enzymes needed to synthesize deoxysugars and O antigens) mediated by IS5-family transposase ISEc68, which truncated the rfbD gene and separated the remaining rfb genes at rfbD, disrupting O-antigen biosynthesis, explaining the inconclusive phenotypic serotyping results. The phs operon responsible for H2S production lacked premature stop codons, suggesting the H2S-negative phenotype may result from an alternative mechanism. This study demonstrates how whole-genome sequencing resolves identification of atypical strains that fail culture-based detection and emphasizes the critical need for molecular surveillance methods in seafood safety programs, particularly in regions where atypical S. enterica variants may be endemic.",
+      "gold_events": [
+        {
+          "id": "42354908-e1",
+          "start": 884,
+          "end": 905,
+          "text": "chromosomal inversion",
+          "normalized": "chromosomal inversion",
+          "event_type": "inversion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42354908",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41547329",
+      "selection_category": "inversion",
+      "label": "positive",
+      "title": "Optimal path reconstruction of plant chromosome evolution.",
+      "text": "Optimal path reconstruction of plant chromosome evolution.\nDNA rearrangements contribute to the formation of new chromosomes, which are often the foundation of speciation. Deciphering the order of DNA rearrangements facilitates the reconstruction of evolutionary trajectories from extant to ancestral chromosomes, a task that is computationally NP-hard. Here, a mathematically rigorous chromosome-rearrangement model is integrated with the \"Chromosomal Inversion Path Exploration via Monte-Carlo Tree Search (CIPE-MCTS)\" framework in a deeply coupled manner. This integration yields a robust analytical framework that ensures both global optimality and computational efficiency, thereby enabling the precise reconstruction of complex chromosomal evolutionary trajectories. The framework rigorously characterizes elementary rearrangement operations-inversion, translocation, fusion, and fission-within a strict graph-theoretic and group-theoretic formalism. On this basis, MCTS is introduced, guided by a domain-specific heuristic evaluation function that integrates a decay function and a dynamic hash table. The Upper Confidence Bound for Trees (UCT) serves as the node-selection criterion, while an extensible sampling strategy enables rapid convergence toward near-optimal solutions within the vast state space. Comprehensive benchmark tests demonstrate that, under identical hardware constraints, this method achieves significantly higher reconstruction accuracy than exhaustive global search, while its overall running time is markedly shorter than that of a single heuristic algorithm, thereby achieving simultaneous improvements in both accuracy and efficiency. This study introduces, for the first time, a scalable, reproducible, and mathematically guaranteed tool for accurate analysis of complex plant genomes, offering a novel quantitative perspective for elucidating the chromosomal basis of plant diversification and adaptive evolution.",
+      "gold_events": [
+        {
+          "id": "41547329-e1",
+          "start": 441,
+          "end": 462,
+          "text": "Chromosomal Inversion",
+          "normalized": "chromosomal inversion",
+          "event_type": "inversion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41547329",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42095083",
+      "selection_category": "inversion",
+      "label": "positive",
+      "title": "Genomic and phenotypic comparisons reveal lineage-specific traits of the probiotic Saccharomyces boulardii.",
+      "text": "Genomic and phenotypic comparisons reveal lineage-specific traits of the probiotic Saccharomyces boulardii.\nSaccharomyces boulardii is a widely used probiotic yeast, yet its functional distinction from closely related Saccharomyces cerevisiae strains and the consistency of traits across commercial isolates remain unclear. Here, we performed integrated genomic, physiological, metabolic, and host-cell analyses of five S. boulardii isolates and three distinct S. cerevisiae strains. Despite high genomic similarity, S. boulardii exhibited conserved lineage-specific features, including a chromosomal inversion, reduced CAZyme copy numbers, and consistent sequence variation in metabolic pathways. Functionally, S. boulardii isolates showed enhanced acid tolerance, elevated acetate and succinate production, and reproducible immunomodulatory activity, including NF-κB suppression and reduced IL-8 and TNF-α secretion. All isolates consistently activated the aryl hydrocarbon receptor (AhR), unlike other S. cerevisiae strains, which instead displayed faster growth and greater bile tolerance. Overall, probiotic-relevant phenotypes were conserved across S. boulardii, defining it as a functionally coherent probiotic lineage.",
+      "gold_events": [
+        {
+          "id": "42095083-e1",
+          "start": 589,
+          "end": 610,
+          "text": "chromosomal inversion",
+          "normalized": "chromosomal inversion",
+          "event_type": "inversion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42095083",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41992736",
+      "selection_category": "inversion",
+      "label": "positive",
+      "title": "Examining the Role of a Chromosomal Inversion in Accumulating Adaptive and Barrier Loci in a Cold-adapted Insect Species.",
+      "text": "Examining the Role of a Chromosomal Inversion in Accumulating Adaptive and Barrier Loci in a Cold-adapted Insect Species.\nChromosomal inversions can play a crucial role in population adaptation and divergence by reducing gene flow and preserving adaptive allelic combinations between populations with different arrangements. However, demonstrating this empirically is challenging due to numerous interacting processes with similar genomic signatures affecting inversion evolution. In this study, we characterized a large (9.5Mb) polymorphic inversion in the cold-adapted and widely distributed species, Drosophila montana, using long- and short-read sequencing across several populations. The origin of this inversion predates the divergence of North American (NA) and Fennoscandian (North European) populations, suggesting it emerged in the ancestral D. montana population in the Rocky Mountains of NA. Despite the species' expansion across the northern hemisphere, this inversion has remained exclusive to the Rocky Mountains populations, where it is fixed in the southernmost high-elevation population and appears at lower frequencies in the more northern and lower-elevation populations. By independently mapping single nucleotide polymorphisms (SNPs) linked to climate adaptation and barriers to gene flow (barrier loci; identified through reduced migration rates), we found enrichment of both within the inversion, with barrier and adaptive regions partially overlapping. However, the inversion was not enriched for SNPs related to cold tolerance. These findings suggest that inversions may maintain associations between multiple adaptive and barrier loci, effectively coupling them, and that locally adaptive regions may act as barriers to gene flow. Our study provides empirical evidence that inversions can contribute to population adaptation and divergence by reducing gene flow, maintaining adaptive allelic combinations, and facilitating the coupling of different barriers to gene flow.",
+      "gold_events": [
+        {
+          "id": "41992736-e1",
+          "start": 24,
+          "end": 45,
+          "text": "Chromosomal Inversion",
+          "normalized": "chromosomal inversion",
+          "event_type": "inversion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41992736",
+            "passage": "title"
+          }
+        },
+        {
+          "id": "41992736-e2",
+          "start": 122,
+          "end": 144,
+          "text": "Chromosomal inversions",
+          "normalized": "chromosomal inversion",
+          "event_type": "inversion",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41992736",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42326738",
+      "selection_category": "complex_event",
+      "label": "positive",
+      "title": "Genomic landscape and tumor immune microenvironment of osteosarcoma: Bridging mechanistic insights to precision therapeutics.",
+      "text": "Genomic landscape and tumor immune microenvironment of osteosarcoma: Bridging mechanistic insights to precision therapeutics.\nOsteosarcoma (OTS) is a highly aggressive primary bone malignancy characterized by profound genomic instability and a complex, immunosuppressive tumor immune microenvironment (TIME). Despite the established standard of neoadjuvant chemotherapy and surgical resection, the 5-year overall survival rates for metastatic or relapsed disease have remained stagnant at approximately 40% for decades. The high degree of heterogeneity and the \"immune cold\" nature of OTS pose significant challenges to the efficacy of conventional and emerging therapies. This review aims to summarize recent advances in the genomic and immunological landscape of OTS to inform personalized precision medicine. Genomic profiling reveals that OTS is driven by large-scale structural variations rather than single oncogenic drivers, with chromothripsis occurring in over 70% of cases. Frequent alterations in tumor suppressor genes, such as TP53 (80%) and RB1 (40%), fuel clonal evolution and therapeutic resistance. Furthermore, epigenetic dysregulation, including aberrant DNA methylation and alternative mRNA splicing, further complicates the molecular landscape. The OTS TIME is predominantly \"cold,\" characterized by low T-cell infiltration and an abundance of M2-polarized tumor-associated macrophages (TAMs), regulatory T cells (Tregs), and myeloid-derived suppressor cells (MDSCs). While immune checkpoint inhibitors (ICIs) targeting PD-1/PD-L1 have shown limited clinical success, emerging precision strategies, such as antibody-drug conjugates (ADCs) targeting B7-H3 or LRRC15, CAR-T cell therapies, and targeting of the CD47-SIRPα axis, demonstrate promising potential in preclinical and early-phase clinical trials. The transition from universal treatment to precision therapy in OTS requires a multi-omics approach for patient stratification. Future strategies must focus on overcoming the physical and immunological barriers of the TIME, reprogramming immunosuppressive cells, and exploiting novel targets like B7-H3 and MTAP deletion to improve outcomes for patients with advanced disease.",
+      "gold_events": [
+        {
+          "id": "42326738-e1",
+          "start": 937,
+          "end": 951,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42326738",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42442953",
+      "selection_category": "complex_event",
+      "label": "positive",
+      "title": "Utility of Optical Genome Mapping in the Characterisation of the Global Genomic Architecture of Paediatric Central Nervous System Tumours: A Pilot Study.",
+      "text": "Utility of Optical Genome Mapping in the Characterisation of the Global Genomic Architecture of Paediatric Central Nervous System Tumours: A Pilot Study.\nGenomic instability is common in cancer, driven by different mechanisms and often linked to disease stage and progression. Optical genome mapping (OGM) enables the detection of genome-wide balanced and unbalanced structural rearrangements (SRs), providing an overview of genomic complexity. To explore the utility of OGM in brain tumour characterisation, we conducted a pilot study on a well-characterised series of 43, mostly paediatric, cases encompassing different histotypes and enriched for gene fusion-positive neoplasms (30 cases). SRs were observed in 37/43 samples and defined three genomic patterns based on their number and distribution across the chromosomes: SR-chromothripsis (11 cases), high SR-complexity (11 cases) and low SR-complexity (21 cases). Genomic complexity was also assessed according to the number of copy number alterations (CNA) and, to this end, in SR-chromothripsis samples, only CNAs affecting chromosomes not involved in chromothripsis were considered: absence of CNAs was found in 15 cases, 1-9 CNAs in 19 cases, 10-49 CNAs in three cases and ≥ 50 CNAs in six cases. When examining the relationship between SR and CNA, a positive correlation emerged between CNA burden and the number of chromosomes harbouring SR (Spearman's r = 0.588, p = 0.0001), while breakpoint number was weakly associated; chromothripsis occurred exclusively within low CNA-complexity groups (p = 0.0836). Genome complexity patterns correlated with tumour types, with diffuse high-grade gliomas exhibiting high complexity, whereas infant-type hemispheric gliomas, most low-grade gliomas and embryonal tumours showed low complexity profiles. Importantly, SR-chromothripsis cases corresponded to low/intermediate-grade fusion-driven tumours, with balanced/nearly balanced CNA profiles. OGM allowed the detection of gene fusions in 24/30 cases, failing in six. When integrated with RNA sequencing, OGM unveiled the mechanisms underlying gene fusion formation in all cases: chromothripsis (11 cases), isolated chromosomal abnormalities (12 cases) and genome-wide alterations (seven cases). OGM reveals distinct genomic complexity patterns and refines the definition of chromothripsis, improving insights into tumourigenic mechanisms.",
+      "gold_events": [
+        {
+          "id": "42442953-e1",
+          "start": 829,
+          "end": 843,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e2",
+          "start": 1009,
+          "end": 1012,
+          "text": "CNA",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e3",
+          "start": 1038,
+          "end": 1052,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e4",
+          "start": 1067,
+          "end": 1071,
+          "text": "CNAs",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e5",
+          "start": 1110,
+          "end": 1124,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e6",
+          "start": 1153,
+          "end": 1157,
+          "text": "CNAs",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e7",
+          "start": 1185,
+          "end": 1189,
+          "text": "CNAs",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e8",
+          "start": 1209,
+          "end": 1213,
+          "text": "CNAs",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e9",
+          "start": 1238,
+          "end": 1242,
+          "text": "CNAs",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e10",
+          "start": 1304,
+          "end": 1307,
+          "text": "CNA",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e11",
+          "start": 1348,
+          "end": 1351,
+          "text": "CNA",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e12",
+          "start": 1486,
+          "end": 1500,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e13",
+          "start": 1533,
+          "end": 1536,
+          "text": "CNA",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e14",
+          "start": 1820,
+          "end": 1834,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e15",
+          "start": 1933,
+          "end": 1936,
+          "text": "CNA",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e16",
+          "start": 2133,
+          "end": 2147,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42442953-e17",
+          "start": 2328,
+          "end": 2342,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42442953",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41943674",
+      "selection_category": "complex_event",
+      "label": "positive",
+      "title": "De Novo Complex Genomic Rearrangement Spanning 2q31.1 in a Proband With Congenital Malformations: Genotype-Phenotype Correlation and Development of a CGR Detection Pipeline.",
+      "text": "De Novo Complex Genomic Rearrangement Spanning 2q31.1 in a Proband With Congenital Malformations: Genotype-Phenotype Correlation and Development of a CGR Detection Pipeline.\nThe 2q31 region is commonly associated with pathogenic alleles of the HOXD cluster leading to various clinical phenotypes related to skeletal development. We present a proband with tetralogy of Fallot and multiple congenital anomalies. Genomic variant screening including an in-house CGR detection pipeline pairing genome sequencing (GS) structural variant calls with read-depth data revealed a de novo complex genomic rearrangement (CGR) spanning 2.7 Mb across 2q31 characterized by a series of duplications and triplications including the HOXD gene cluster. The genomic structure was assembled by applying combined methodologies including short-read and long-read GS, and optical genome mapping (OGM). This in-house CGR pipeline detected five additional rearrangements throughout the genome confirmed by orthogonal methodologies as inherited and unlikely to impact this individual's phenotype. Importantly, these catastrophic genomic events, chromoanasynthesis-like, are surprisingly commonly observed in the genome, inherited and involve large regions of the genome. Moreover, such inherited CGRs often include copy-number gains that partially affect disease-causing genes which complicate clinical interpretation. Overall, we show the utility of short-read sequencing to uncover de novo and inherited chromoanasynthesis events and established genotype-phenotype correlation in a proband with multiple congenital malformations.",
+      "gold_events": [
+        {
+          "id": "41943674-e1",
+          "start": 8,
+          "end": 37,
+          "text": "Complex Genomic Rearrangement",
+          "normalized": "complex genomic rearrangement",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41943674",
+            "passage": "title"
+          }
+        },
+        {
+          "id": "41943674-e2",
+          "start": 512,
+          "end": 530,
+          "text": "structural variant",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41943674",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "41943674-e3",
+          "start": 577,
+          "end": 606,
+          "text": "complex genomic rearrangement",
+          "normalized": "complex genomic rearrangement",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41943674",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41954631",
+      "selection_category": "complex_event",
+      "label": "positive",
+      "title": "An Analytic Framework Characterizes the Biological Processes That Shape Copy Number-Based Genome Instability Patterns in Breast Cancer.",
+      "text": "An Analytic Framework Characterizes the Biological Processes That Shape Copy Number-Based Genome Instability Patterns in Breast Cancer.\nCopy number (CN) alterations (CNA) accumulate nonrandomly within cancer genomes reflecting specific DNA damage and repair events. Higher-order patterning of CNAs can illuminate the types and determinants of genome instability (GI), as well as their clinical relevance, highlighting the need to develop analytic frameworks to capture such patterns. To address this issue, we collated a literature-curated compendium of predefined CN-based GI scores and extracted de novo CN signatures. Application to 2,763 breast cancer genomes from The Cancer Genome Atlas and METABRIC revealed the complementarity of various GI scores and their differences across immunohistochemical subtypes. Of the eight CN signatures identified, three were associated with distinct characteristics of homologous recombination deficiency and showed differential activity between cases with BRCA1 versus BRCA2 loss. Segments assigned to an HER2+ enriched signature strongly overlapped regions of chromothripsis and circular extrachromosomal DNA, suggesting that a common mutational process contributes to these phenotypes. CN \"quiet\" diploid and tetraploid genomes were apparent, with the latter group capturing a unique subset of whole-genome doubled tumors enriched for PIK3CA, MAP3K1, and CDH1 mutations. Finally, combining CN signatures with tumor microenvironment analyses, patients with quiet genomes and low macrophage infiltration showed remarkably better survival outcomes. Collectively, these findings demonstrate the value of deep interrogation of scores and signatures in characterizing the biological processes and clinical implications underlying CN-based GI. The publicly available web portal will facilitate similar analyses across pan-cancer genomes. Development of an extensive framework and a web portal for quantifying copy number patterns provides biological insights into breast cancer and genomic instability and supplies tools for future studies across cancer types.",
+      "gold_events": [
+        {
+          "id": "41954631-e1",
+          "start": 166,
+          "end": 169,
+          "text": "CNA",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41954631",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "41954631-e2",
+          "start": 293,
+          "end": 297,
+          "text": "CNAs",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41954631",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "41954631-e3",
+          "start": 1102,
+          "end": 1116,
+          "text": "chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41954631",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42302064",
+      "selection_category": "complex_event",
+      "label": "positive",
+      "title": "Chromosomal Instability Drives Glioblastoma Heterogeneity and Therapeutic Opportunities.",
+      "text": "Chromosomal Instability Drives Glioblastoma Heterogeneity and Therapeutic Opportunities.\nGlioblastoma, the most aggressive and lethal form of brain cancer, is defined by profound genomic instability, with Chromosomal Instability (CIN) playing a central role in driving tumor progression, therapy resistance, and poor prognosis. CIN is characterized by numerical and structural alterations, is driven by mechanisms such as mitotic errors, centrosome amplification, spindle assembly checkpoint dysfunction, and defective DNA repair pathways. These aberrations contribute to tumor heterogeneity, leading to the emergence of Glioblastoma Stem Cells (GSCs) with enhanced plasticity, therapy resistance, and metastatic capacity. Chromothripsis, frequently involves specific chromosomes and stems from micronuclei rapture, resulting in chromosomal rearrangement. The immune implications of CIN are also critical, with the Cyclic GMP-AMP Synthase-Stimulator of Interferon Genes (cGAS-STING) pathway toggling between anti-tumor immunity and immune evasion. Therapeutic strategies targeting CIN are explored, including inhibitors of centrosomal clustering, DNA damage response pathways, and spindle assembly components, as well as innovative approaches like Chimeric Antigen Receptor T (CAR-T) cell therapies and nanoparticle-based drug delivery systems. Advances in single-cell sequencing provide transformative insights into CIN-driven glioblastoma heterogeneity and therapeutic vulnerabilities. By integrating mechanistic understanding with translational strategies, this review underscores CIN as both a therapeutic challenge and an opportunity, charting a path toward improving glioblastoma treatment outcomes and patient survival.",
+      "gold_events": [
+        {
+          "id": "42302064-e1",
+          "start": 723,
+          "end": 737,
+          "text": "Chromothripsis",
+          "normalized": "chromothripsis",
+          "event_type": "complex_event",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42302064",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42302064-e2",
+          "start": 829,
+          "end": 854,
+          "text": "chromosomal rearrangement",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42302064",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42068673",
+      "selection_category": "ploidy_state",
+      "label": "positive",
+      "title": "Genetic architecture of multiple myeloma: From somatic alterations to germline susceptibility and clinical implications.",
+      "text": "Genetic architecture of multiple myeloma: From somatic alterations to germline susceptibility and clinical implications.\nMultiple myeloma (MM) is best understood as a dynamically evolving genomic ecosystem shaped by inherited susceptibility, early oncogenic events, and continuous selective pressures. We propose an evolutionary genomics framework integrating germline risk, disease initiation, clonal diversification, and therapeutic adaptation into a unified model of MM biology. Polygenic risk burden, rare predisposing variants, and alterations in DNA repair and telomere pathways create a permissive background that influences precursor states and immune interactions. Primary cytogenetic events, particularly immunoglobulin heavy chain (IgH) translocations and hyperdiploidy, establish biologically distinct founding clones and constrain subsequent evolutionary trajectories. Disease progression is driven by secondary chromosomal alterations, copy number changes, MYC activation, TP53 loss, and structural rearrangements, promoting genomic instability and transcriptional plasticity. Longitudinal studies reveal branching clonal architectures shaped by treatment-driven selection. Integrating germline and somatic landscapes within an evolution-aware precision framework may improve risk stratification, anticipate high-risk trajectories, and support adaptive strategies to achieve more durable disease control. While polygenic risk scores (PRS) provide insight into inherited susceptibility, they are not yet clinically actionable for risk stratification or screening in MM and currently remain research tools. This framework provides a clinically oriented basis for applying genomic biomarkers to risk stratification, treatment selection, and longitudinal monitoring.",
+      "gold_events": [
+        {
+          "id": "42068673-e1",
+          "start": 767,
+          "end": 780,
+          "text": "hyperdiploidy",
+          "normalized": "hyperdiploidy",
+          "event_type": "ploidy_state",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42068673",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42342436",
+      "selection_category": "ploidy_state",
+      "label": "positive",
+      "title": "Paediatric B-lymphoblastic leukaemia with low peripheral blasts: a potential diagnostic pitfall.",
+      "text": "Paediatric B-lymphoblastic leukaemia with low peripheral blasts: a potential diagnostic pitfall.\nB cell acute lymphoblastic leukaemia (B-ALL) infrequently presents with undetectable or very low peripheral blood (PB) lymphoblasts, which may cause diagnostic difficulties. We report the clinicopathological features of paediatric patients with B-ALL who presented with low (<5%; n=31) PB lymphoblasts by flow cytometry. 15 patients presented with <1% PB lymphoblasts (range: 0.0%-0.9%), a level potentially undetectable by manual smear review and standard 100-cell count. Compared with patients presenting with ≥5% PB lymphoblasts (n=45), those with <5% had more frequent musculoskeletal symptoms, less frequent lymphadenopathy and hepatosplenomegaly, higher platelet counts, lower white blood cell counts and lower lactate dehydrogenase. The presence of low PB lymphoblasts was associated with favourable cytogenetics (ETV6::RUNX1 or high hyperdiploidy without IKZF1 deletion) and less frequent central nervous system involvement. Aleukemic/low PB lymphoblast presentation of B-ALL is associated with unique clinicopathological features that overlap with non-malignant disorders. A high degree of clinical suspicion and careful review of PB flow cytometry data are required for timely diagnosis.",
+      "gold_events": [
+        {
+          "id": "42342436-e1",
+          "start": 918,
+          "end": 929,
+          "text": "ETV6::RUNX1",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42342436",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42342436-e2",
+          "start": 933,
+          "end": 951,
+          "text": "high hyperdiploidy",
+          "normalized": "high hyperdiploidy",
+          "event_type": "ploidy_state",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42342436",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42382092",
+      "selection_category": "ploidy_state",
+      "label": "positive",
+      "title": "CD19-negative relapse with an apparent cytogenetic shift after blinatumomab-induced measurable residual disease clearance in Philadelphia chromosome-negative B-cell acute lymphoblastic leukemia.",
+      "text": "CD19-negative relapse with an apparent cytogenetic shift after blinatumomab-induced measurable residual disease clearance in Philadelphia chromosome-negative B-cell acute lymphoblastic leukemia.\nBlinatumomab, a CD3/CD19 bispecific T-cell engager, improves outcomes in adult B-cell acute lymphoblastic leukemia (B-ALL), but CD19-negative relapse is an important mode of treatment failure. We report a 69-year-old woman with Philadelphia chromosome-negative B-ALL who achieved hematological complete remission after hyper-CVAD induction therapy but remained measurable residual disease (MRD)-positive. Blinatumomab was administered after one cycle of high-dose methotrexate/cytarabine, resulting in MRD negativity after one cycle. However, blinatumomab was discontinued after one cycle at the patient's request, and hematological relapse occurred three months after MRD conversion. Relapsed blasts showed selective loss of CD19 expression, whereas cytoplasmic CD22 expression was retained. G-banding showed an apparent cytogenetic shift from a diagnostic hyperdiploid abnormal karyotype to a normal karyotype at first relapse. Inotuzumab ozogamicin induced a second hematological remission with MRD negativity, although disease control was not durable. This case highlights the importance of repeat immunophenotypic and cytogenetic assessment at relapse after blinatumomab treatment.",
+      "gold_events": [
+        {
+          "id": "42382092-e1",
+          "start": 1053,
+          "end": 1065,
+          "text": "hyperdiploid",
+          "normalized": "hyperdiploidy",
+          "event_type": "ploidy_state",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42382092",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42346857",
+      "selection_category": "ploidy_state",
+      "label": "positive",
+      "title": "Epidemiological Profile of Pediatric Patients with Acute Lymphoblastic Leukemia Admitted to Four Hospitals in Curitiba, Southern Brazil.",
+      "text": "Epidemiological Profile of Pediatric Patients with Acute Lymphoblastic Leukemia Admitted to Four Hospitals in Curitiba, Southern Brazil.\nAcute lymphoblastic leukemia (ALL) is the most common childhood malignancy. Understanding its epidemiological characteristics is essential for guiding public health strategies. In this study, we characterized the epidemiological profiles that may contribute to the risk of ALL in children in southern Brazil. Clinical and epidemiological data from 71 children (1-15 years old) admitted and newly diagnosed with ALL at four hospitals in Curitiba, Paraná, Brazil, were retrieved and analyzed. Among the 71 children with ALL, the majority were male (n = 43, 60.6%), with an age range of 1-3 years (n = 26, 36.6%), self-identified as White (n = 47, 66.2%), and were born in Paraná state (n = 61, 85.9%). Nearly half had a family history of cancer (n = 33, 46.5%), primarily among grandparents (n = 36, 61%). Parental environmental exposures included smoking (n = 30, 42.3%) and occupational exposure to chemicals or radiation (n = 17, 23.9%). At diagnosis, most patients (n = 43, 60.5%) had a bone marrow blast count > 70%, and 27 patients (38%) had a peripheral blood blast count > 70%. B-cell ALL was the predominant subtype (n = 61, 85.9%). In B-cell ALL cases, the most frequent molecular subtype was high hyperdiploidy (n = 17, 23.9%). White blood cell counts differed significantly between the B-cell ALL and T-cell ALL groups (p = 0.029). Our findings provide insights into ALL epidemiology in southern Brazil and highlight regional differences across the country.",
+      "gold_events": [
+        {
+          "id": "42346857-e1",
+          "start": 1338,
+          "end": 1356,
+          "text": "high hyperdiploidy",
+          "normalized": "high hyperdiploidy",
+          "event_type": "ploidy_state",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42346857",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41996759",
+      "selection_category": "ploidy_state",
+      "label": "positive",
+      "title": "Seasonal variation in childhood acute lymphoblastic leukemia, but not in acute myeloid leukemia, or brain tumors - A Swedish population-based study.",
+      "text": "Seasonal variation in childhood acute lymphoblastic leukemia, but not in acute myeloid leukemia, or brain tumors - A Swedish population-based study.\nAcute lymphoblastic leukemia (ALL), the most common malignancy in children and adolescents, arises from a heterogeneous and multifactorial etiology involving genetic and environmental factors. Studies of seasonal variation in ALL diagnosis have yielded inconsistent results, likely reflecting differences in study design and population characteristics. Here, we evaluated seasonal variation across ALL immunophenotypes, including two common genetic subtypes. We analyzed seasonal variation by ALL subtype in 1504 ALL patients diagnosed before the age of 18 between 1995 and 2017 using data from the National Cancer Register and the Swedish Childhood Cancer Registry. Subgroup analysis included 1305 B-cell precursor ALL (BCP-ALL) cases, including 422 high hyperdiploid (HeH) and 259 ETV6::RUNX1 fusion-positive cases, and 175 T-cell ALL (T-ALL) cases. For comparison, 214 acute myeloid leukemia (AML) cases and 1367 brain tumor cases, including 224 medulloblastomas, were analyzed. Cases were grouped into overlapping 3-month diagnostic periods and analyzed using a Bayesian GARIMAX model, an extension of the autoregressive integrated moving average (ARIMA) framework. A sensitivity analysis was performed restricted to children aged 1-17 years. Seasonal variation was observed in the overall ALL cohort, with peaks between June and October. BCP-ALL and T-ALL also showed informative seasonality, with August consistently included among the peak months. Similar results were obtained in the sensitivity analysis. No seasonal variation was observed in AML, medulloblastoma, or other brain tumors. Informative seasonal variation was not detected in the HeH or ETV6::RUNX1-positive subgroups, although HeH showed peak quarters consistent with the overall ALL pattern. These findings support a role for seasonal triggers in ALL and warrant further investigation in larger, genetically stratified cohorts.",
+      "gold_events": [
+        {
+          "id": "41996759-e1",
+          "start": 900,
+          "end": 917,
+          "text": "high hyperdiploid",
+          "normalized": "high hyperdiploidy",
+          "event_type": "ploidy_state",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41996759",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "41996759-e2",
+          "start": 932,
+          "end": 943,
+          "text": "ETV6::RUNX1",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41996759",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "41996759-e3",
+          "start": 1808,
+          "end": 1819,
+          "text": "ETV6::RUNX1",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41996759",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42203030",
+      "selection_category": "free_text_structural_variant",
+      "label": "positive",
+      "title": "Crystal Structure of PLD From Arcanobacterium haemolyticum Identifies a Novel Class IIa-α Variant With Unusual Thermostability.",
+      "text": "Crystal Structure of PLD From Arcanobacterium haemolyticum Identifies a Novel Class IIa-α Variant With Unusual Thermostability.\nArcanobacterium haemolyticum, an emerging human pathogen, expresses phospholipase D (PLDAH), a multifunctional virulence factor capable of cleaving sphingomyelin and lysophospholipids from plasma membranes, in addition to promoting host cell adhesion and necrosis. Here, we report the first crystal structure of PLDAH, determined at 2.45 Å resolution, which reveals a canonical (α/β)8 TIM-barrel fold typical of glycerophosphodiester phosphodiesterase (GDPD)-like PLD enzymes, but with distinct structural features. PLDAH contains two disulfide bonds arranged in a unique pattern not observed in homologous brown spider PLDs, defining a new structural variant within the GDPD-like PLD family, designated class IIa-α. Comparative structural analysis with PLD from Loxosceles intermedia (PLDLI) revealed differences in loop architecture and local amino acid composition in the vicinity of the active site, including point substitutions that modulate cavity volume and flexibility. Despite exhibiting a melting temperature (Tm) between 45 and 51 °C, PLDAH retained residual enzymatic activity up to 95 °C, indicating exceptional thermostability among GDPD-like PLDs. Molecular dynamics simulations showed that increasing temperature selectively enhanced the flexibility of specific loops (C and G) without perturbing the catalytic core, suggesting that localized structural adaptability contributes to thermal resilience. These findings establish PLDAH as a structurally distinct GDPD-like sphingomyelinase D enzyme and provide insights into the molecular features underlying its multifunctional activity and thermostability.",
+      "gold_events": [
+        {
+          "id": "42203030-e1",
+          "start": 769,
+          "end": 787,
+          "text": "structural variant",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42203030",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41869909",
+      "selection_category": "free_text_structural_variant",
+      "label": "positive",
+      "title": "Optical Genome Mapping and Long-Read Sequencing Identifies a Novel Dystrophin Gene Inversion in a Patient With Duchenne Muscular Dystrophy.",
+      "text": "Optical Genome Mapping and Long-Read Sequencing Identifies a Novel Dystrophin Gene Inversion in a Patient With Duchenne Muscular Dystrophy.\nGenetic testing using targeted panels or comprehensive genome sequencing is the current standard for diagnosing Duchenne muscular dystrophy (DMD), identifying pathogenic variants in up to 98% of cases. We report a 5-year-old male presenting with delayed motor milestones, frequent falls, and difficulty climbing stairs due to generalized muscle weakness. Laboratory studies revealed markedly elevated CK (13,041 U/L) and chronic transaminase elevation. Clinical examination demonstrated Gower's sign, calf pseudohypertrophy, neuromuscular scoliosis, and cognitive impairment. Initial neuromuscular gene panel testing identified several variants of uncertain significance, and muscle biopsy showed markedly reduced dystrophin labeling. Follow-up short-read DMD sequencing with deletion/duplication analysis at Age 11 remained negative. Given persistently negative findings, we utilized optical genome mapping (Bionano Genomics) and long-read sequencing (Oxford Nanopore Technologies) to identify potential structural variants. Both methods independently detected a novel inversion identified to span 31 kb and encompassing exons 68-73 of the DMD gene (ChrX: 31,171,362-31,202,982), classified as pathogenic. This case highlights a clinically definitive diagnosis of DMD missed by standard genetic testing. Our findings demonstrate that Optical Genome Mapping and Long-Read Sequencing provide complementary, high-resolution tools for identifying previously unidentified structural variants and should be considered in unresolved cases prior to invasive procedures such as muscle biopsy.",
+      "gold_events": [
+        {
+          "id": "41869909-e1",
+          "start": 1145,
+          "end": 1164,
+          "text": "structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41869909",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "41869909-e2",
+          "start": 1608,
+          "end": 1627,
+          "text": "structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "41869909",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42436115",
+      "selection_category": "free_text_structural_variant",
+      "label": "positive",
+      "title": "Invas: an inversion-aware method for transcriptome assembly.",
+      "text": "Invas: an inversion-aware method for transcriptome assembly.\nIntragenic inversions reverse sequence orientation within genes and create non-collinear splice junctions that standard transcript assemblers miss, resulting in incomplete reconstruction and biased quantification. Here we show Invas, an inversion-aware framework operating with bulk short-read sequencing data. Invas integrates whole-genome sequencing breakpoints with transcriptomic sequencing evidence, rescues unmapped reads, and assembles isoforms using conjugate flow optimization. In silico across 42,000 events, Invas demonstrates high precision and recall and improves quantification of unaffected transcripts compared with conventional tools. We apply Invas to seven disease cohorts, identifying recurrent germline susceptibility variants and somatic drivers. Furthermore, Invas facilitates the discovery of somatic inversion-derived tumor-specific antigens with strong predicted immunogenicity. We release Invas and InvasDB as community resources to enable accurate characterization of inversion-affected genes, filling a critical gap in structural variant-aware transcriptomics.",
+      "gold_events": [
+        {
+          "id": "42436115-e1",
+          "start": 1109,
+          "end": 1127,
+          "text": "structural variant",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42436115",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42423801",
+      "selection_category": "free_text_structural_variant",
+      "label": "positive",
+      "title": "Lynch syndrome caused by a pathogenic SINE-VNTR-Alu (SVA) insertion in MSH2 gene identified by long-read DNA sequencing.",
+      "text": "Lynch syndrome caused by a pathogenic SINE-VNTR-Alu (SVA) insertion in MSH2 gene identified by long-read DNA sequencing.\nLynch syndrome, the most common hereditary cancer syndrome, is caused by germline pathogenic variants in DNA mismatch repair (MMR) genes. Identifying complex or structural MMR gene pathogenic variants can be challenging with short-read sequencing resulting in patients with unexplained MMR-deficient tumours. In this study, we report multiple members of a family who developed MSH2-deficient tumours where clinical multi-gene panel testing of the DNA MMR genes using short-read sequencing did not find a germline pathogenic variant. Oxford Nanopore Technologies adaptive sampling (ONT-AS) long-read sequencing, targeting 104 hereditary cancer genes, identified a shared ~ 3.2 kb SINE-VNTR-Alu (SVA) family F retrotransposon insertion within exon 12 of MSH2 in both the proband and her father. Segregation of this MSH2 SVA insertion by targeted PCR confirmed three additional family members as carriers, including a paternal uncle with three colorectal cancers and an MSH2-deficient sebaceous adenoma. Three of the five heterozygous carriers were cancer affected with at least one MSH2-deficient tumour each. This study demonstrates that long-read sequencing can identify structural variants that are missed by current short-read sequencing multi-gene panel testing, improving the diagnosis of Lynch syndrome. These findings support incorporating long-read sequencing into routine diagnostic workflows for patients with suspected Lynch syndrome following a negative germline test.",
+      "gold_events": [
+        {
+          "id": "42423801-e1",
+          "start": 1292,
+          "end": 1311,
+          "text": "structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42423801",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42421598",
+      "selection_category": "free_text_structural_variant",
+      "label": "positive",
+      "title": "Resolving Complex Structural Variants in Undiagnosed Rare Movement Disorders via Multimodal Genomics and Multi-omics.",
+      "text": "Resolving Complex Structural Variants in Undiagnosed Rare Movement Disorders via Multimodal Genomics and Multi-omics.\nLong-read sequencing and multi-omic analytical frameworks are increasingly being adopted in rare disease diagnostics. However, clinical workflows comprehensively integrating these methodologies remain uncommon. This study aimed to assess the potential and limitations of integrating long-read genomic, transcriptomic, and proteomic analyses to characterize complex structural variants. Two unrelated patients presenting with dystonia and comorbid neurological features underwent nanopore-based long-read DNA sequencing. In patient 1, complementary transcriptomic and proteomic analyses were performed. The workflow enabled the identification and characterization of two pathogenic complex structural variants: a homozygous AluY-mediated inversion disrupting PANK2, underlying neurodegeneration with brain iron accumulation (patient 1), and a heterozygous de novo 16p13.3 duplication-triplication event associated with an atypical dystonia-parkinsonism phenotype (patient 2). Our findings underscore the diagnostic potential of integrated long-read and multi-omic approaches for complex structural variant characterization, while illustrating persistent limitations of automated pipelines and highlighting unpredictable relationships between genomic, transcriptomic, and proteomic findings. © 2026 The Author(s). Movement Disorders published by Wiley Periodicals LLC on behalf of International Parkinson and Movement Disorder Society.",
+      "gold_events": [
+        {
+          "id": "42421598-e1",
+          "start": 18,
+          "end": 37,
+          "text": "Structural Variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42421598",
+            "passage": "title"
+          }
+        },
+        {
+          "id": "42421598-e2",
+          "start": 483,
+          "end": 502,
+          "text": "structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42421598",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42421598-e3",
+          "start": 807,
+          "end": 826,
+          "text": "structural variants",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42421598",
+            "passage": "abstract"
+          }
+        },
+        {
+          "id": "42421598-e4",
+          "start": 1204,
+          "end": 1222,
+          "text": "structural variant",
+          "normalized": "structural variant",
+          "event_type": "free_text_structural_variant",
+          "chromosome_or_locus": [],
+          "provenance": {
+            "source": "PubMed title/abstract",
+            "pmid": "42421598",
+            "passage": "abstract"
+          }
+        }
+      ],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42155174",
+      "selection_category": "control_pcr_amplification",
+      "label": "control",
+      "title": "Peptide display on small extracellular vesicles directs tissue-specific tropism and delivery of gene editing machinery.",
+      "text": "Peptide display on small extracellular vesicles directs tissue-specific tropism and delivery of gene editing machinery.\nSmall extracellular vesicles (EVs) deliver nucleic acid and protein therapeutics that promote tissue repair, however, there are few approaches to direct the tropism of EVs to specific tissues. Here, we address this challenge by engineering EVs to display a peptide library on the surface of EVs that is linked to barcoded guide RNA payloads (gRNAs). We show how these EVs can be administered systemically into mouse models and the cellular uptake of these gRNA-bearing EVs assessed by recovery of the small RNAs followed by PCR amplification and barcode sequencing. Since the design of the peptide library was linked to specific barcodes encoded on the same plasmid, subsequent sequencing of barcode sequences recovered from tissues revealed profiles of EV uptake associated with the display of specific peptide sequences on the surface of EVs. Therefore, candidate peptide motifs were cloned for validation using in vivo and in vitro readouts. In addition to the barcode-based tissue profiling, gRNA-laded EVs mediated functional gene editing in the Cre-loxP R26 LSL-tdTomato reporter mouse model in vivo. These studies demonstrated how EV display linked with barcoded gRNA payloads can address barriers to EV-based delivery of gene editing therapies.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42434337",
+      "selection_category": "control_pcr_amplification",
+      "label": "control",
+      "title": "Investigation of Epstein-Barr virus or human cytomegalovirus in pediatric gliomas: A retrospective single-center study from Tunisia.",
+      "text": "Investigation of Epstein-Barr virus or human cytomegalovirus in pediatric gliomas: A retrospective single-center study from Tunisia.\nThe involvement of infectious agents in glioma pathogenesis remains controversial. While adult gliomas have been extensively studied, the potential contribution of viral infections to pediatric gliomagenesis is poorly understood. This study aimed to assess the presence of two herpesviruses, Epstein-Barr virus (EBV) and human cytomegalovirus (HCMV), in pediatric gliomas from Tunisian patients. A retrospective investigation of 30 archived pediatric glioma samples was conducted. EBV detection involves PCR targeting the BamM region, in situ hybridization (ISH) for EBER1/2 transcripts, and immunohistochemistry (IHC) for the LMP1 oncoprotein. HCMV was evaluated via PCR amplification of the IE2 gene, ISH of early (E) transcripts, and IHC of IE, E, and late (L) antigens. Clinicopathological features and patient outcomes were also reviewed. The cohort included pilocytic astrocytomas (n = 24), desmoplastic infantile astrocytomas (n = 2), and diffuse pediatric-type high-grade glioma, H3-wild type/IDH-wild type (n = 4). No EBV DNA was detected in any of the tumors. ISH confirmed the absence of EBER expression, and the tumor cells were negative for LMP1. Similarly, no HCMV DNA, RNA transcripts, or IE/E/L antigen expression was identified. This first investigation of EBV and HCMV in pediatric gliomas from Africa and the Arab world provides compelling evidence for these viruses, suggesting that herpesviruses are unlikely to contribute to pediatric gliomagenesis. Larger multicenter studies employing high-sensitivity detection platforms are warranted to definitively rule out viral involvement and explore potential implications for tumor biology and therapy.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42119654",
+      "selection_category": "control_pcr_amplification",
+      "label": "control",
+      "title": "The first complete multichromosomal mitogenome of Cunninghamia lanceolata (Chinese fir): assembly, characterization and comparative analysis.",
+      "text": "The first complete multichromosomal mitogenome of Cunninghamia lanceolata (Chinese fir): assembly, characterization and comparative analysis.\nCunninghamia lanceolata is a key native timber species in southern China, yet the absence of mitochondrial genomic data has limited molecular breeding and phylogenetic studies in this species. Here, the complete mitochondrial genome of C. lanceolata was assembled via a hybrid Illumina/Nanopore approach. The genome adopts a complex architecture comprising one linear contig and a multi-branched structure formed by six additional linear contigs, as verified by targeted PCR across junctions and Sanger sequencing of the products. Genome annotation identified 31 protein-coding genes (PCGs), 3 rRNA genes, and 11 tRNA genes. We further detected 613 predicted C‑to‑U RNA editing sites across all PCGs. To validate our findings, we performed PCR amplification, Sanger sequencing, and alignment of PCR products with genomic DNA sequences, which confirmed RNA editing at atp6 (ACG → AUG/Thr → Met), ccmFN (CGU → UGU/Arg → Cys), nad6 (CGA → UGA/Arg → End), and another atp6 site (CAA → UAA/Gln → End). Comparative analysis with the chloroplast genome revealed six mitochondrial plastid DNA sequences, including fragments of two rRNA genes and one tRNA gene. Phylogenetic analysis using maximum likelihood and Bayesian methods based on PCGs strongly supported (bootstrap = 100, posterior probability = 1.0) a monophyletic clade comprising two traditional Taxodiaceae species (C. lanceolata and Metasequoia glyptostroboides) and four Cupressaceae s.s. species (Cupressus sempervirens, Hesperocyparis glabra, Platycladus orientalis, and Thuja sutchuenensis). Cupressaceae s.l. was resolved as sister to Taxaceae, while Podocarpaceae and Araucariaceae together formed a distinct sister group. Selection pressure analysis (Ka/Ks) indicated that nad3 and rps4 exhibited Ka/Ks ratios > 1, suggesting positive selection. Notably, pairwise comparisons between Th. sutchuenensis and other Cupressaceae species consistently yielded Ka/Ks > 1, indicating accelerated adaptive evolution in this lineage. This study provides the first mitochondrial genome resource for C. lanceolata, offering a foundation for molecular breeding and investigations into conifer mitochondrial evolution.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42434792",
+      "selection_category": "control_pcr_amplification",
+      "label": "control",
+      "title": "Synergetic role of As-Ag-TiO2 nanoparticles on organogenesis dependent Agrobacterium mediated pea (Pisum sativum L.) genetic transformation.",
+      "text": "Synergetic role of As-Ag-TiO2 nanoparticles on organogenesis dependent Agrobacterium mediated pea (Pisum sativum L.) genetic transformation.\nA direct organogenesis-mediated Agrobacterium tumefaciens-based transformation system was developed in pea (Pisum sativum L. cv. Ageta 6) using green-synthesized bioengineered nanoparticles (BENPs) to improve transformation efficiency. Titanium dioxide (TiO₂), silver (Ag), and acetosyringone (AS)-doped AS-Ag-TiO₂ BENPs were synthesized through a green hydrothermal approach and evaluated under optimized co-cultivation, sonication, and vacuum infiltration conditions. The synthesized BENPs were previously characterized through XRD, SEM, EDAX, HR-TEM, SAED, XPS, and cyclic voltammetry analyses, confirming ultrafine crystalline nanostructures and stable nanocomposite formation. Regenerated putative transformants were assessed through RAPD-based genetic fidelity analysis and further validated by histochemical GUS assays, bar gene-specific PCR amplification, and RT-PCR expression analysis. Among all treatments evaluated, AS-Ag-TiO₂ BENPs at 4 ppm produced the highest transformation efficiency (30.66%), followed by AS-TiO₂ (23.33%), Ag-TiO₂ (18.33%), and TiO₂ (13.33%), whereas the conventional AS-mediated transformation system produced only 8.66% transformation efficiency under identical optimized conditions and BASTA® selection pressure. RT-PCR analysis further demonstrated relatively enhanced bar transcript accumulation in AS-Ag-TiO₂-treated transformants compared with other BENPs-assisted treatments. The enhanced transformation response may be associated with improved Agrobacterium attachment, vir gene activation, intracellular T-DNA transfer, and enhanced explant survival during co-cultivation. In addition, the AS-Ag-TiO₂ nanocomposite may facilitate proton-coupled electron transfer (PCET)-associated alternative protonation mechanisms supporting enhanced VirA/VirG signalling and transformation competency. Collectively, the present study establishes an efficient and cost-effective BENPs-assisted transformation platform for recalcitrant legumes and highlights the potential application of multifunctional nanocomposites in plant genetic transformation and nano-enabled biomolecule delivery systems. The online version contains supplementary material available at 10.1007/s13205-026-04963-0.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42404976",
+      "selection_category": "control_pcr_amplification",
+      "label": "control",
+      "title": "Bioremediation of textile effluents by Serratia liquefaciens AM-2 for subsequent use in crop production.",
+      "text": "Bioremediation of textile effluents by Serratia liquefaciens AM-2 for subsequent use in crop production.\nThe increasing discharge of untreated textile effluents into freshwater resources has created a serious environmental challenge for sustainable agriculture and human health worldwide. This study evaluated a Gram-negative bacterial strain isolated from dye-contaminated sites for its potential in bioremediation of textile wastewater. Molecular identification based on 16 S rRNA sequence showed 100% similarity with Serratia liquefaciens AM-2. PCR amplification confirmed the presence of a NADPH-dependent FMN reductase gene associated with azo dye reduction. The strain showed maximal decolorization efficiencies of 92%, 80%, and 82% for Reactive Black 5, Reactive Red-120, and Congo Red after 72 h of incubation. Molecular docking analysis revealed strong predictive interaction of its azoreductase protein with azo dye degradation. Laboratory-scale treatment of textile wastewater with strain AM-2 significantly reduced EC, TDS, TSS, COD, and BOD by 45.2%, 39.5%, 56.6%, 54.8%, and 52.3%. Rice plants irrigated with treated wastewater showed higher chlorophyll a (49%), carotenoids (33.33%), and root dry weight (68.8%) compared with untreated wastewater. The treated wastewater also reduced H₂O₂ and MDA content by 26.15% and 78%. These results suggest the potential use of S. liquefaciens AM-2 as an environmentally friendly approach for textile wastewater treatment and agricultural reuse. The online version contains supplementary material available at 10.1007/s13205-026-04947-0.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41649879",
+      "selection_category": "control_protein_translocation",
+      "label": "control",
+      "title": "The TRAP complex (SSR1-SSR4): mechanistic roles and therapeutic opportunities.",
+      "text": "The TRAP complex (SSR1-SSR4): mechanistic roles and therapeutic opportunities.\nEsophageal squamous cell carcinoma (ESCC) is a highly aggressive cancer with a poor prognosis, and its molecular mechanisms remain unclear. Our previous research identified the signal sequence receptor subunit delta (SSR4) of the TRAP complex as a potential ESCC biomarker. The TRAP complex, composed of SSR1, SSR2, SSR3, and SSR4, is essential for protein translocation, folding, and quality control, crucial for cellular balance. While individual TRAP subunits have been studied, a comprehensive understanding of their roles in human diseases is lacking. This review synthesizes current evidence on the TRAP complex and its subunits (SSR1-SSR4) to clarify their roles in tumor progression and other diseases, identify knowledge gaps, and evaluate their potential as therapeutic targets. The study shows that TRAP subunit genes are significantly upregulated in various cancers, influencing tumor progression and immune infiltration, with some subunits showing different responses to chemotherapy. A pan-cancer analysis highlights their roles, while SSR3 and SSR4 mutations are linked to congenital glycosylation disorders. SSR1 and SSR3 are essential for glucose metabolism and are associated with diabetes risk. The interaction between TRAP and endoplasmic reticulum stress suggests potential therapeutic applications. This review emphasizes the crucial roles of the TRAP complex and its subunits (SSR1-SSR4) in various diseases, highlighting their potential as therapeutic targets and biomarkers. Future research should focus on understanding the mechanisms through integrated experimental and multi-omics approaches, defining subunit interactions, and exploring structure-based drug design for clinical applications.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42184477",
+      "selection_category": "control_protein_translocation",
+      "label": "control",
+      "title": "In situ spatiotemporal tracking of endogenous protein dynamics with allosteric genetically encoded biosensor in living cells.",
+      "text": "In situ spatiotemporal tracking of endogenous protein dynamics with allosteric genetically encoded biosensor in living cells.\nProteins' functions are dictated by their abundance and unique subcellular localization, necessitating analysis under native conditions. Current imaging approaches often rely on overexpression or genome editing, which work for exogenous or modified proteins, risk introducing artifacts, and fail to reveal the true roles of native proteins in situ. Imaging of endogenous, unmanipulated proteins in living cells remains extremely scarce. Herein, an allosteric biosensor comprising a protein of interest (POI) recognizing aptamer and a dual-locked fluorogenic aptamer module, termed the spatiotemporal tracking endogenous proteins (Step), is developed. The intracellular circular Step (circStep) system translates a single POI-aptamer binding event into an allosteric switch that simultaneously unlocks two caged fluorogenic aptamers (M18), which restore their active conformations and yield a robust fluorescent signal, enabling high-fidelity, real-time tracking of native POI localization and abundance fluctuations. By remodeling the aptamer into an allosteric switch, the design lowers background, curbs off-target binding and sharpens POI specificity. Importantly, it also enables spatiotemporal dynamic tracking of protein translocation by directly visualizing the process of the nucleocytoplasmic transport of POI, establishing a robust, imaging-based high-throughput platform that accurately screens drugs by artificially manipulating protein relocalization. Therefore, this plug-and-play circStep, which monitors the native protein dynamics without perturbing its expression or localization and leaves POI function intact, expands the current toolbox for investigating the authentic functions of proteins and accelerate drug discovery, especially for therapies that reprogram protein localization.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42307419",
+      "selection_category": "control_protein_translocation",
+      "label": "control",
+      "title": "Direct Observation of Electric Field-Driven Protein Translocation through the Single-Walled Carbon Nanotube Embedded in a Lipid Bilayer Membrane Revealed a High Dipole Moment of the Transition State.",
+      "text": "Direct Observation of Electric Field-Driven Protein Translocation through the Single-Walled Carbon Nanotube Embedded in a Lipid Bilayer Membrane Revealed a High Dipole Moment of the Transition State.\nThe translocation of molecules through nanoscale pores is ubiquitous in biology and widely used in biotechnology for nanopore sequencing and characterizing single biological molecules. Numerous artificial channels mimicking biological pores have been developed, and one of those is a single-walled carbon nanotube porin (CNTP) embedded in a lipid bilayer membrane. Although transport of ssDNA through CNTP has been demonstrated experimentally, protein translocation through CNTP has rarely been achieved. Here, we report the experimental observations of protein (cytochrome c) translocation through a single-walled carbon nanotube of an inner diameter of ∼1.3 nm embedded in a lipid bilayer membrane without using any chemical denaturant, enzyme motor, or tagging with an oligonucleotide. The electric field was found to sufficiently unfold the cytochrome c protein to facilitate the translocation, as confirmed by a decrease in the average residence time of the protein at the CNTP upon increasing the transmembrane potential. A simple free energy model suggests that the relatively fast (microseconds) dynamic interconversions of protein conformational states appear to dictate the slow (∼100 ms) translocation and account for the observed voltage-dependent rate constants from the exponential residence time distributions. Our report on the experimental evidence of protein translocation through CNTP may open the opportunity to explore the applications of CNTP in targeted protein delivery, in nanopore proteomics, and probing protein conformational transitions at the single-molecule level.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42212830",
+      "selection_category": "control_protein_translocation",
+      "label": "control",
+      "title": "A novel host-targeted inhibitor of clathrin-mediated endocytosis limits spring viremia of carp virus infection.",
+      "text": "A novel host-targeted inhibitor of clathrin-mediated endocytosis limits spring viremia of carp virus infection.\nSpring viremia of carp virus (SVCV), an aquatic rhabdovirus, causes lethal disease and major economic losses in carp aquaculture, yet no licensed antivirals are available. In this study, we identify the plant-derived diterpenoid quinone cryptotanshinone (CPT) as a potent inhibitor of SVCV that acts by inhibiting clathrin-mediated endocytosis (CME) and attenuating early mitochondrial apoptosis. CPT was well tolerated by epithelioma papulosum cyprinid cells (50% cytotoxic concentration [CC50] = 303.2 µM) and suppressed SVCV replication in a dose-dependent manner (50% inhibitory concentration [IC50] = 3.2 µM), reducing nucleoprotein (SVCV-N) gene expression and infectious virion production by >99% at 16 μM. Time-of-addition/removal and virion pre-incubation assays revealed that CPT acts predominantly at early entry or early post-entry steps: CPT did not impair viral attachment but selectively blocked internalization, causing DiO-labeled SVCV particles to remain trapped at the plasma membrane. Mechanistically, CPT inhibited CME, as evidenced by reduced transferrin uptake and redistribution of clathrin heavy chain from the cytosol to the cell surface. CPT also preserved mitochondrial integrity by limiting Bcl-2-associated X protein translocation, cytochrome c release, and caspase-9/3 activation. In vivo, therapeutic bath treatment with 4 μM CPT significantly lowered viral loads, decreased cumulative mortality, and reduced horizontal transmission in juvenile common carp, whereas prophylactic oral CPT primed type I interferon and interferon-stimulated gene expression, and markedly improved survival after SVCV challenge. Together, these findings define CME-dependent internalization as a druggable entry checkpoint for an aquatic rhabdovirus and highlight CPT as a promising antiviral lead for integrated control of SVCV.IMPORTANCEViral diseases are a major bottleneck to sustainable aquaculture, yet most control strategies still depend on husbandry and culling rather than on mechanism-based antiviral therapy. For spring viremia of carp virus (SVCV), a notifiable rhabdovirus of global concern, it remains unclear whether host entry pathways in fish are realistically \"druggable\" and how small molecules can be integrated into practical farm interventions. Here, we use cryptotanshinone (CPT) as a chemical probe to demonstrate that clathrin-mediated endocytosis in fish cells can be selectively perturbed to block SVCV internalization, and that this strategy is compatible with immersion and oral delivery in juvenile carp. At the same time, CPT reshapes host responses by stabilizing mitochondrial function and sustaining antiviral signaling, thereby linking a defined entry pathway to cell-death control and innate immunity in vivo. These findings open a conceptual route toward host-targeted, entry-focused antivirals for aquatic rhabdoviruses and provide a translational framework for developing environmentally compatible antivirals in aquaculture.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42177619",
+      "selection_category": "control_protein_translocation",
+      "label": "control",
+      "title": "Age-dependent nuclear accumulation of the membrane-associated NAC transcription factor GER1 activates SA biosynthesis to promote leaf senescence in Arabidopsis.",
+      "text": "Age-dependent nuclear accumulation of the membrane-associated NAC transcription factor GER1 activates SA biosynthesis to promote leaf senescence in Arabidopsis.\nLeaf senescence is a programmed physiological process that enhances nutrient use efficiency, thereby promoting plant adaptation and crop productivity. However, the molecular mechanisms that govern the initiation and precisely control the progression of senescence remain poorly understood. Here, we identify GERAS1 (GER1), a membrane-associated NAC transcription factor that acts as an age-dependent integrator of the leaf senescence program. As leaves age, GER1 expression is induced, and its protein undergoes age-dependent translocation from the plasma membrane to the nucleus. The activation tagging mutant ger1-D exhibits early leaf senescence, while the disruption of GER1 and its three homologs in a quadruple ger1 ger2 ger3 ger4 mutant causes significantly delayed leaf senescence. We further show that the nucleus-localized GER1 directly binds and activates the promoter of the central senescence regulator ORE1. Moreover, GER1 and ORE1 form a transcriptional activation complex that directly upregulates SID2, which encodes a key salicylic acid (SA) biosynthetic enzyme. The accumulation of SA in turn promotes the expression of GER1, establishing a positive feedforward loop that drives leaf senescence. Taken together, these findings not only unveil that GER1 acts as a central spatiotemporal regulator of leaf senescence, but also uncover a straightforward membrane-to-nucleus signaling pathway that finely regulates leaf aging.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42281240",
+      "selection_category": "control_nuclear_translocation",
+      "label": "control",
+      "title": "Intratumor Lactobacillus drives ferroptosis resistance via D-lactate-STAT3 K631 lactylation in esophageal squamous cell carcinoma.",
+      "text": "Intratumor Lactobacillus drives ferroptosis resistance via D-lactate-STAT3 K631 lactylation in esophageal squamous cell carcinoma.\nTumor-resident microbiota are increasingly recognized as active components of the gastrointestinal tumor ecosystem, yet how intratumor bacteria reshape cancer cell stress responses in esophageal squamous cell carcinoma (ESCC) remains unclear. Here, 16S rRNA gene sequencing of 102 multiregional tissue blocks from 27 patients with ESCC, integrated with untargeted metabolomics, RNA sequencing, and mass spectrometry, identified Lactobacillus, particularly Lactobacillus reuteri, as a tumor-enriched taxon associated with adverse survival. Mechanistic studies in ESCC cell lines and nude-mouse xenografts revealed a distinctive dynamic: in contrast to host-derived L-lactate, L. reuteri-derived D-lactate induced site-specific STAT3 lactylation at lysine 631, thereby promoting STAT3 dimerization and nuclear translocation. This host signaling rewiring upregulated the ferroptosis suppressors GPX4 and FTH1, reduced ferroptotic vulnerability, and enhanced ESCC growth. Disrupting bacterial D-lactate production using a ldhD-deficient L. reuteri mutant or blocking host STAT3 lactylation using STAT3-knockout cells reconstituted with wild-type STAT3 or lactylation-defective STAT3 K631R, abolished the pro-tumor and antiferroptotic effects in vitro and in vivo. Together, these findings define a tumor-resident microbe-metabolite-host signaling axis that links intratumor Lactobacillus to ferroptosis escape. By establishing bacteria-derived D-lactate as the functional driver, the study provides a novel mechanistic framework that extends beyond the classical Warburg effect for developing biomarkers and therapeutic strategies targeting STAT3 lactylation or ferroptosis sensitization. These translatable results emphasize the need for context-specific evaluation of Lactobacillus-containing probiotic supplementation in patients with ESCC.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42100892",
+      "selection_category": "control_nuclear_translocation",
+      "label": "control",
+      "title": "Inhibition of STAT3-mediated glycolysis by bruceine D suppresses non-small-cell lung cancer progression in vitro and in vivo.",
+      "text": "Inhibition of STAT3-mediated glycolysis by bruceine D suppresses non-small-cell lung cancer progression in vitro and in vivo.\nNon-small-cell lung cancer (NSCLC) is one of the deadliest malignancies in the world. Signal transducer and activator of transcription 3 (STAT3) plays an important role in the progression of NSCLC. Bruceine D is a bioactive quassinoid compound extracted from Brucea javanica, a plant widely used in traditional Chinese medicine. Tests of cell function were performed to observe the effects of bruceine D on human NSCLC cell lines (H460, PC-9, and SKMES-1). Levels of STAT3, phosphorylated STAT3, Survivin, and other apoptosis-related proteins were detected via Western blotting. The binding of bruceine D to STAT3 was examined using molecular dynamics simulations and surface plasmon resonance spectroscopy. The effect of bruceine D on STAT3 nuclear localization was examined by immunofluorescence. Furthermore, the glucose uptake, lactate production, and extracellular acidification rates of NSCLC cells were analyzed to confirm that bruceine D inhibited glycolysis in NSCLC. The efficacy of bruceine D in vivo was evaluated in a mouse xenotransplantation model. Bruceine D significantly reduced the viability of NSCLC cells, promoted apoptosis, and inhibited the growth of tumors in a mouse xenograft model. Bruceine D was found to bind directly to STAT3, inhibiting glycolysis in NSCLC cells. Western blotting results suggested that the antitumor effects of bruceine D might be mediated by the inhibition of the phosphorylation and nuclear translocation of STAT3. Bruceine D exerts a strong inhibitory effect on NSCLC in vitro and in vivo. Bruceine D has potential application prospects in the field of anti-NSCLC therapy.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42021123",
+      "selection_category": "control_nuclear_translocation",
+      "label": "control",
+      "title": "Helicobacter pylori activates histone lactylation to promote gastric cancer progression and immune evasion through the HAS2/c-MYC/PD-L1 axis.",
+      "text": "Helicobacter pylori activates histone lactylation to promote gastric cancer progression and immune evasion through the HAS2/c-MYC/PD-L1 axis.\nMetabolic reprogramming and epigenetic alterations play important roles in driving tumor microenvironment (TME) remodeling and immune evasion in gastric cancer (GC). Histone lactylation links glycolytic metabolism to transcriptional regulation, but its role in Helicobacter pylori (H. pylori)-associated GC progression remains largely elusive. Multiomics analysis (ChIP-seq and RNA-seq) with in vitro GC/CD8+ T-cell coculture systems and in vivo mouse xenograft models were employed in this study. Clinical GC tissue cohorts were analyzed to validate the clinical relevance of the identified signaling pathways. The epigenetic and immunological impacts of lactate metabolism were assessed using glycolysis inhibitors (2-DG and oxamate) and genetic silencing of LDHA and LDHB. Histone lactylation, specifically H3K18la, was significantly elevated in GC tissues and further elevated upon H. pylori infection. Pharmacological inhibition of glycolysis or LDHA/B double knockdown (DKD) markedly reduced H3K18la levels, suppressed GC cell proliferation, and restored CD8+ T cell-mediated cytotoxicity. Mechanistically, H3K18la directly bound to the HAS2 promoter, transcriptionally activating its expression. Upregulated HAS2 facilitated the nuclear translocation of c-MYC, which subsequently bound to the CD274 promoter to induce PD-L1 expression. Furthermore, c-MYC overexpression rescued PD-L1 levels and reversed the restored CD8+ T-cell cytotoxicity in LDHA/B-deficient GC cells. In vivo, the combination of oxamate and anti-PD-1 blockade synergistically enhanced CD8+ T-cell infiltration and exerted robust antitumor efficacy. H. pylori-associated lactate-driven H3K18la promotes GC progression and immune evasion through the HAS2/c-MYC/PD-L1 axis. These findings provide preclinical support for combining metabolic inhibition with PD-1 blockade in GC, particularly in H. pylori-associated disease.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42165632",
+      "selection_category": "control_nuclear_translocation",
+      "label": "control",
+      "title": "Sauchinone attenuates UVB-induced photoaging by suppressing oxidative stress and ferroptosis through activation of the Keap1-Nrf2 pathway in dermal fibroblasts.",
+      "text": "Sauchinone attenuates UVB-induced photoaging by suppressing oxidative stress and ferroptosis through activation of the Keap1-Nrf2 pathway in dermal fibroblasts.\nSkin photoaging induced by chronic ultraviolet B (UVB) exposure is primarily driven by oxidative stress. Emerging evidence suggests that ferroptosis contributes to UVB-induced skin damage. Sauchinone, a phenolic lignan derived from Saururus chinensis, possesses potent antioxidant and anti-inflammatory properties; however, its protective effects and underlying mechanisms against UVB-induced skin damage remain unclear. This study aimed to investigate the potential photoprotective effects and underlying mechanisms of sauchinone against UVB-induced skin damage in dermal fibroblasts. UVB-induced HFFs were used as an in vitro model of photoaging. Cellular senescence, extracellular matrix (ECM) degradation, oxidative stress, and ferroptosis were evaluated using fluorescence staining, flow cytometry, qPCR, ELISA, and western blot analysis. Sauchinone significantly attenuated cellular senescence and ECM degradation in UVB-induced HFFs, as evidenced by reduced SA-β-gal activity and decreased expression of p16 and p21, increased COL1A1 levels, and decreased MMP1 levels. Sauchinone also alleviated oxidative stress by reducing intracellular ROS and MDA levels while restoring GSH content and antioxidant enzyme activity. In addition, sauchinone attenuated ferroptosis-related features, including reduced lipid ROS and Fe2+ accumulation, and normalized ACSL4, GPX4, FTH1, and SLC7A11 expression. Mechanistically, sauchinone was associated with activation of the Keap1-Nrf2 pathway, as evidenced by decreased Keap1 levels, enhanced nuclear translocation of Nrf2, and upregulation of downstream antioxidant genes. Importantly, pharmacological inhibition of Nrf2 using ML385 partially reversed the protective effects of sauchinone on oxidative stress, ferroptosis, cellular senescence, and ECM degradation. Our findings revealed that sauchinone protected fibroblasts against UVB-induced photoaging by inhibiting oxidative stress and ferroptosis, potentially through activation of the Keap1-Nrf2 pathway.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42144020",
+      "selection_category": "control_nuclear_translocation",
+      "label": "control",
+      "title": "MEF2A nuclear translocation mediated by ROCK phosphorylation promotes EZH2 expression and peritoneal fibrosis.",
+      "text": "MEF2A nuclear translocation mediated by ROCK phosphorylation promotes EZH2 expression and peritoneal fibrosis.\nProlonged peritoneal dialysis (PD) frequently leads to peritoneal fibrosis (PF). This study aimed to define the role of the Rho-associated coiled-coil containing protein kinase (ROCK) signaling pathway and its downstream effectors, MEF2A and EZH2, in PF. In vivo, a rat PD model was treated with the ROCK inhibitor fasudil or adeno-associated virus-mediated MEF2A knockdown. In vitro, high glucose-stimulated human peritoneal mesothelial cells (HPMCs) were subjected to MEF2A knockdown, EZH2 overexpression, or fasudil treatment. Exposure of HPMCs to high glucose markedly upregulated total and phosphorylated MEF2A (p-MEF2A) and promoted its nuclear translocation. MEF2A knockdown suppressed high glucose-induced upregulation of EZH2 and epithelial-mesenchymal transition (EMT), whereas EZH2 overexpression reversed this protective effect. Dual-luciferase reporter and ChIP-qPCR assays confirmed that MEF2A binds to the EZH2 promoter and activates its transcription. Inhibition of the ROCK pathway with fasudil reversed the high glucose-induced upregulation of MEF2A and suppressed its phosphorylation and nuclear translocation. In vivo, MEF2A knockdown alleviated PF in rats undergoing to long-term PD. Consistently, oral fasudil treatment inhibited the dialysis-induced upregulation of MEF2A and EMT markers. These results reveal a novel ROCK/MEF2A/EZH2 axis in PF pathogenesis, highlighting MEF2A as a potential therapeutic target.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41947040",
+      "selection_category": "control_molecular_inversion_probe",
+      "label": "control",
+      "title": "Clinical and genetic heterogeneity of syndromic hearing loss and its non-syndromic hearing loss mimics.",
+      "text": "Clinical and genetic heterogeneity of syndromic hearing loss and its non-syndromic hearing loss mimics.\nBACKGROUND: Hearing loss (HL) is one of the most common congenital conditions and exhibits substantial clinical and genetic heterogeneity. More than 150 genes are associated with non-syndromic hearing loss (NSHL), while over 600 genes are linked to syndromic hearing loss (SHL). Importantly, the absence of additional clinical symptoms at the time of diagnosis does not necessarily exclude SHL. An increasing number of functionally disruptive variants in a growing number of genes have been shown to initially present as isolated HL, only later revealing syndromic features. METHODS: We analyzed clinical data from 111 patients across 102 unrelated families, selected from over 600 individuals negative for GJB2 and STRC variants. Molecular inversion probe panel, exome, or genome sequencing was performed, and patients were retrospectively divided into three subgroups following variant interpretation. Molecular docking was performed on select non-synonymous substitutions. RESULTS: Subgroup 1 included 30 patients with variants in neurodevelopmental disorder (NDD)-associated genes. HL was the first clinical manifestation in 80% of patients, with it being the sole first symptom in half. Subgroup 2 was comprised of 52 patients with variants in SHL-associated genes unrelated to NDD, while subgroup 3 included 29 patients with variants in genes associated with both NSHL and SHL, such as SLC26A4 and USH1C. In subgroups 2 and 3, HL was the sole initial symptom for nearly all patients (92% and 100%, respectively). Across the cohort, 99 variants in 44 genes were identified, including 36 novel variants. CONCLUSION: The frequent absence of syndromic features at presentation may lead to genetic testing or analysis restricted to NSHL-associated genes. Our findings highlight the critical role of comprehensive genomic testing in the diagnostic workup of HL, enabling earlier identification of syndromic forms and facilitating timely medical management, genetic counseling, and anticipatory care.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41483127",
+      "selection_category": "control_molecular_inversion_probe",
+      "label": "control",
+      "title": "Genetic diversity of infertile males in India.",
+      "text": "Genetic diversity of infertile males in India.\nTo systematically investigate the genetic architecture of severe male infertility in Indian men, with a specific focus on chromosomal abnormalities and the contribution of de novo variants. We recruited 247 infertile males between 2021 and 2024 presenting with severe quantitative and qualitative sperm defects. All patients underwent karyotyping and Y chromosome microdeletion STS-PCR. A single molecule molecular inversion probe-based targeted sequencing assay covering 39 male infertility genes was performed in 120 patients, while whole exome sequencing (WES) was conducted in 48 patients using a duo/trio-based approach to enable segregation and de novo variant detection. Gonosomal aneuploidies were observed in 3/247 patients (1.2%, 95% CI 0.3-3.5%) and causal AZF microdeletions in 8/247 (3.2%, 95% CI 1.4-6.3%). Targeted sequencing identified pathogenic/likely pathogenic (P/LP) variants in 4/120 patients (3.3%, 95% CI 0.9-8.3%), with additional CFTR variants in 3 patients where parental DNA was unavailable for phasing. WES yielded P/LP variants in 4/48 patients (8.3%, 95% CI 2.3-19.9%) affecting PMFBP1, DNAH1, and AR genes, confirmed via segregation analysis. No de novo or copy number variants were confirmed as causative, though several candidate genes were prioritised. Sequencing-based approaches provided an additional ~ 6-8% diagnostic yield, with the overall diagnostic rate reaching 7.7% (19/247; 95% CI 4.7-11.8%). Sequencing-based strategies, particularly family-based trio WES, significantly enhance diagnostic yield beyond current guideline-recommended tests, with data supporting their adoption as first-tier investigations for severe male infertility. This represents India's largest cohort-based genomic study on male infertility to date. Larger family-based cohorts will be essential to delineate the contribution of de novo variants to male infertility genetics.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "42124593",
+      "selection_category": "control_molecular_inversion_probe",
+      "label": "control",
+      "title": "Malaria control and the unexpected spread of diagnostic-resistant Plasmodium falciparum in Peru.",
+      "text": "Malaria control and the unexpected spread of diagnostic-resistant Plasmodium falciparum in Peru.\nPlasmodium falciparum parasites with deletions of the histidine-rich protein 2 and 3 (hrp2 and hrp3) genes evade detection by common rapid diagnostic tests (RDTs) and pose a growing threat to malaria control. While these deletions have emerged in multiple regions globally, the evolutionary forces driving their spread remain unclear. Here, we analyze 1,215 P. falciparum samples collected between 2003 and 2018 in Loreto, Peru. This region experienced a major decline in malaria transmission following the Project for Malaria Control in Andean Border Areas (PAMAFRO) and now harbors a high proportion of hrp2/3 deleted parasites despite limited RDT use. Using molecular inversion probe (MIP) sequencing across > 2,000 genome-wide loci, we observed a marked reduction in genetic diversity, increased clonality, and fixation of parasites with deletions of both hrp2 and hrp3 genes (hrp2-/3-) over time. Identity-by-descent (IBD) analysis revealed rapid expansion of a single hrp2-/3- dominant lineage in the post-PAMAFRO period, consistent with clonal replacement after intense malaria control. Targeted sequencing of the hrp2/3 regions showed conserved deletion breakpoints across three different lineages, indicative of recombination of a common haplotype into distinct genetic backgrounds. To investigate the evolutionary forces driving the fixation of hrp2-/3- in Loreto, we simulated allele frequency trajectories under different selection coefficients. We found that fixation of hrp2-/3- due solely to genetic drift (selection coefficient s = 0) is unlikely; a selection coefficient of s ≥ 0.03 was required for fixation to occur consistently. However, our simulations also indicate that a genetic bottleneck caused by PAMAFRO increased the likelihood of fixation through drift by 4.5- to 17-fold depending on the population. These findings suggest that hrp2-/3- fixation was likely driven by a combination of demographic changes resulting from PAMAFRO and selective advantage unrelated to RDT use. Our results demonstrate how intensive malaria control efforts can reshape parasite populations and underscore the value of expanded genomic surveillance as countries move toward malaria elimination.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41379859",
+      "selection_category": "control_molecular_inversion_probe",
+      "label": "control",
+      "title": "High prevalence and emerging positive association of kelch13 R622I and HRP2-based RDT negativity in Plasmodium falciparum in northern Ethiopia.",
+      "text": "High prevalence and emerging positive association of kelch13 R622I and HRP2-based RDT negativity in Plasmodium falciparum in northern Ethiopia.\nThe rise of antimalarial drug-resistant Plasmodium falciparum threatens malaria elimination efforts. Mutations in the gene kelch13 (k13) confer artemisinin partial resistance (ART-R), compromising the efficacy of frontline artemisinin-based combination therapies (ACTs). The validated mutation k13 R622I has emerged and expanded rapidly in the Horn of Africa. We conducted a year-long genomic surveillance study in Gondar Zuria and Tach Armachiho, two ecologically distinct districts in northwestern Ethiopia where R622I was first identified. A total of 903 P. falciparum infections were sequenced using molecular inversion probe (MIP) panels targeting major drug resistance mutations and genome-wide informative SNPs. The R622I mutation was found in 44.3% of samples, more frequent in Gondar Zuria than Tach Armachiho (52% vs. 35%; p < 0.001), and persisted year-round in nearly all sites, indicating stable transmission with minimal seasonal variation. Histidine-rich protein 2 (HRP2) based rapid diagnostic test (RDT) negativity was also prevalent (39.3%), with significant district-level variation (48.7% vs. 27.6%; p < 0.001). Concerningly, R622I and HRP2-RDT co-occured in 22% of samples, higher in Gondar Zuria than in Tach Armachiho (28.9% vs. 12.9%; p < 0.001). Overall, HRP2-RDT negativity was significantly more common among R622I mutant parasites than wild-type (48.3% vs. 30.7%; p < 0.05). The k13 C580Y mutation was also detected at very low frequency (0.4%) in Gondar Zuria, representing the first report of this mutation in the Horn of Africa. Long-read whole-genome sequencing showed k13 flanking haplotypes of C580Y isolates were distinct from Southeast Asian lineages, suggesting a local, de novo emergence of African origin. These findings highlight the increasing prevalence and types of ART-R mutations, persistence of k13 R622I and its increasing association with HRP2-RDT negativity, representing a double threat to malaria control and elimination efforts.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    },
+    {
+      "pmid": "41291966",
+      "selection_category": "control_molecular_inversion_probe",
+      "label": "control",
+      "title": "Recurrent genetic alterations in epigenetically defined pineoblastoma subtypes.",
+      "text": "Recurrent genetic alterations in epigenetically defined pineoblastoma subtypes.\nPrevious studies have revealed four distinct epigenetic consensus pineoblastoma (PB) subtypes. The aim of this study was to confirm and further extend their respective genetic underpinnings. Cytogenetics of 83 PB were analyzed by high-resolution genome-wide molecular inversion probe analysis and methylation profiling. Seventy-nine cases were screened for mutations by next-generation DNA panel sequencing and for 25 samples mRNA expression was analyzed using NanoString. Additionally, 24 further pineal parenchymal tumors were analyzed. Clinical data of 63 patients was available. Our cohort consisted of 48 PB-miRNA1, 19 PB-miRNA2, 8 PB-MYC/FOXR2, and 8 PB-RB1 cases. PB-miRNA subtype tumors had characteristic alterations in microRNA-processing genes; DICER1 mutations (n = 19/64) and homozygous deletions of the DROSHA locus (n = 18/67) were most abundant, followed by DROSHA mutations (n = 12/64). Most frequent cytogenetic aberrations in PB-miRNA cases were chromosome 7 gains (n = 31/67) and chromosome 14 losses (n = 26/67, including 5 cases with copy-neutral LOH). The latter were significantly associated with DICER1 mutations (p < 0.001). OTX2 gain represented the most frequent alteration that occurred in 37/83 PB of all subtypes. In the PB-miRNA subtypes we identified cases with polyploid cytogenetics (n = 16/67). In contrast to previous publications, we did not find a difference in survival for the PB-miRNA subtypes, whereas PB-MYC/FOXR2 and PB-RB1 in infants showed a worse outcome. Epigenetically defined PB subtypes are characterized by distinct genetic events. Frequent gains of the oncogene OTX2 indicate a role in the pathogenesis of PB independent of its subtype.",
+      "gold_events": [],
+      "gold_gene_relationships": []
+    }
+  ]
+}

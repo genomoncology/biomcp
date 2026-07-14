@@ -1,0 +1,580 @@
+{
+  "experiment": "structural-variant-article-annotations",
+  "historical_gold_correction": {
+    "status": "corrected_in_exploit",
+    "note": "These measurements retain the original 87-event explore result. The checked-in corpus now includes the omitted repeated capitalized Chromothripsis occurrence in PMID 35637217; exploit.md reports the corrected control."
+  },
+  "corpus": {
+    "documents": 16,
+    "positive_documents": 9,
+    "control_documents": 7,
+    "gold_events": 87,
+    "gold_gene_relationships": 6
+  },
+  "match_rule": "exact unicode-codepoint start, end, and event_type",
+  "source_snapshots": {
+    "measured_on": "2026-07-14",
+    "pubtator_documents_available": 10,
+    "pubtator_documents_unavailable": [
+      {
+        "pmid": "42426366",
+        "http_status": 400
+      },
+      {
+        "pmid": "42440233",
+        "http_status": 400
+      },
+      {
+        "pmid": "42420503",
+        "http_status": 400
+      },
+      {
+        "pmid": "42436300",
+        "http_status": 400
+      },
+      {
+        "pmid": "42440172",
+        "http_status": 400
+      },
+      {
+        "pmid": "42435518",
+        "http_status": 400
+      }
+    ],
+    "ontology": "EMBL-EBI OLS4 terms retrieved 2026-07-14"
+  },
+  "approaches": [
+    {
+      "approach": "pubtator_current",
+      "per_event_type": {
+        "amplification": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 8,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "complex_event": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 17,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "deletion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 7,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "free_text_structural_variant": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 34,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "gain": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 8,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "inversion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "ploidy_state": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "translocation": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 6,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        }
+      },
+      "micro": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 87,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "macro": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "document_coverage": {
+        "covered": 0,
+        "positive_documents": 9,
+        "rate": 0.0
+      },
+      "control_false_positives": 0,
+      "examples": {
+        "false_positives": [],
+        "false_negatives": [
+          {
+            "pmid": "30709865",
+            "text": "uniparental disomy",
+            "event_type": "free_text_structural_variant"
+          },
+          {
+            "pmid": "35637217",
+            "text": "Structural variants",
+            "event_type": "free_text_structural_variant"
+          },
+          {
+            "pmid": "35637217",
+            "text": "structural variants",
+            "event_type": "free_text_structural_variant"
+          },
+          {
+            "pmid": "35637217",
+            "text": "SV",
+            "event_type": "free_text_structural_variant"
+          },
+          {
+            "pmid": "35637217",
+            "text": "t(4;14)",
+            "event_type": "translocation"
+          },
+          {
+            "pmid": "35637217",
+            "text": "t(11;14)",
+            "event_type": "translocation"
+          },
+          {
+            "pmid": "35637217",
+            "text": "chromosomal rearrangements",
+            "event_type": "free_text_structural_variant"
+          },
+          {
+            "pmid": "35637217",
+            "text": "structural variants",
+            "event_type": "free_text_structural_variant"
+          }
+        ]
+      }
+    },
+    {
+      "approach": "deterministic_parser",
+      "per_event_type": {
+        "amplification": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "complex_event": {
+          "tp": 17,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "deletion": {
+          "tp": 7,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "free_text_structural_variant": {
+          "tp": 34,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "gain": {
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "inversion": {
+          "tp": 5,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "ploidy_state": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "translocation": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        }
+      },
+      "micro": {
+        "tp": 87,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "macro": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "document_coverage": {
+        "covered": 9,
+        "positive_documents": 9,
+        "rate": 1.0
+      },
+      "control_false_positives": 0,
+      "examples": {
+        "false_positives": [],
+        "false_negatives": []
+      }
+    },
+    {
+      "approach": "ontology_lexical",
+      "per_event_type": {
+        "amplification": {
+          "tp": 1,
+          "fp": 3,
+          "fn": 7,
+          "precision": 0.25,
+          "recall": 0.125,
+          "f1": 0.1667
+        },
+        "complex_event": {
+          "tp": 7,
+          "fp": 1,
+          "fn": 10,
+          "precision": 0.875,
+          "recall": 0.4118,
+          "f1": 0.56
+        },
+        "deletion": {
+          "tp": 4,
+          "fp": 3,
+          "fn": 3,
+          "precision": 0.5714,
+          "recall": 0.5714,
+          "f1": 0.5714
+        },
+        "free_text_structural_variant": {
+          "tp": 6,
+          "fp": 0,
+          "fn": 28,
+          "precision": 1.0,
+          "recall": 0.1765,
+          "f1": 0.3
+        },
+        "gain": {
+          "tp": 0,
+          "fp": 8,
+          "fn": 8,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "inversion": {
+          "tp": 0,
+          "fp": 5,
+          "fn": 5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "ploidy_state": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "translocation": {
+          "tp": 0,
+          "fp": 4,
+          "fn": 6,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        }
+      },
+      "micro": {
+        "tp": 18,
+        "fp": 26,
+        "fn": 69,
+        "precision": 0.4091,
+        "recall": 0.2069,
+        "f1": 0.2748
+      },
+      "macro": {
+        "precision": 0.3371,
+        "recall": 0.1606,
+        "f1": 0.1998
+      },
+      "document_coverage": {
+        "covered": 5,
+        "positive_documents": 9,
+        "rate": 0.5556
+      },
+      "control_false_positives": 6,
+      "examples": {
+        "false_positives": [
+          {
+            "pmid": "35637217",
+            "text": "Chromothripsis",
+            "event_type": "complex_event"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gain",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gains",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gains",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "deletion",
+            "event_type": "deletion"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gain",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gains",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gains",
+            "event_type": "gain"
+          }
+        ],
+        "false_negatives": [
+          {
+            "pmid": "30709865",
+            "text": "uniparental disomy",
+            "event_type": "free_text_structural_variant"
+          },
+          {
+            "pmid": "35637217",
+            "text": "SV",
+            "event_type": "free_text_structural_variant"
+          },
+          {
+            "pmid": "35637217",
+            "text": "t(4;14)",
+            "event_type": "translocation"
+          },
+          {
+            "pmid": "35637217",
+            "text": "t(11;14)",
+            "event_type": "translocation"
+          },
+          {
+            "pmid": "35637217",
+            "text": "chromosomal rearrangements",
+            "event_type": "free_text_structural_variant"
+          },
+          {
+            "pmid": "35637217",
+            "text": "chromoplexy",
+            "event_type": "complex_event"
+          },
+          {
+            "pmid": "35637217",
+            "text": "templated insertions",
+            "event_type": "complex_event"
+          },
+          {
+            "pmid": "37449980",
+            "text": "Copy-Number",
+            "event_type": "free_text_structural_variant"
+          }
+        ]
+      }
+    },
+    {
+      "approach": "hybrid_union",
+      "per_event_type": {
+        "amplification": {
+          "tp": 8,
+          "fp": 3,
+          "fn": 0,
+          "precision": 0.7273,
+          "recall": 1.0,
+          "f1": 0.8421
+        },
+        "complex_event": {
+          "tp": 17,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.9444,
+          "recall": 1.0,
+          "f1": 0.9714
+        },
+        "deletion": {
+          "tp": 7,
+          "fp": 3,
+          "fn": 0,
+          "precision": 0.7,
+          "recall": 1.0,
+          "f1": 0.8235
+        },
+        "free_text_structural_variant": {
+          "tp": 34,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "gain": {
+          "tp": 8,
+          "fp": 8,
+          "fn": 0,
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667
+        },
+        "inversion": {
+          "tp": 5,
+          "fp": 5,
+          "fn": 0,
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667
+        },
+        "ploidy_state": {
+          "tp": 2,
+          "fp": 2,
+          "fn": 0,
+          "precision": 0.5,
+          "recall": 1.0,
+          "f1": 0.6667
+        },
+        "translocation": {
+          "tp": 6,
+          "fp": 4,
+          "fn": 0,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75
+        }
+      },
+      "micro": {
+        "tp": 87,
+        "fp": 26,
+        "fn": 0,
+        "precision": 0.7699,
+        "recall": 1.0,
+        "f1": 0.87
+      },
+      "macro": {
+        "precision": 0.684,
+        "recall": 1.0,
+        "f1": 0.7984
+      },
+      "document_coverage": {
+        "covered": 9,
+        "positive_documents": 9,
+        "rate": 1.0
+      },
+      "control_false_positives": 6,
+      "examples": {
+        "false_positives": [
+          {
+            "pmid": "35637217",
+            "text": "Chromothripsis",
+            "event_type": "complex_event"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gain",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gains",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gains",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "deletion",
+            "event_type": "deletion"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gain",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gains",
+            "event_type": "gain"
+          },
+          {
+            "pmid": "37449980",
+            "text": "gains",
+            "event_type": "gain"
+          }
+        ],
+        "false_negatives": []
+      }
+    }
+  ]
+}

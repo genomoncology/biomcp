@@ -1,0 +1,15 @@
+{
+  "retrieved": "2026-07-14",
+  "source": "EMBL-EBI OLS4 search over Sequence Ontology and NCI Thesaurus",
+  "terms": [
+    {"id": "SO:0001537", "label": "structural_variant", "event_type": "free_text_structural_variant", "lexemes": ["structural variant", "structural variants", "structural genome variation", "structural genome variations"]},
+    {"id": "SO:1000044", "label": "chromosomal_translocation", "event_type": "translocation", "lexemes": ["translocation", "translocations"]},
+    {"id": "SO:1000029", "label": "chromosomal_deletion", "event_type": "deletion", "lexemes": ["deletion", "deletions", "codeletion", "losses"]},
+    {"id": "SO:1000030", "label": "chromosomal_inversion", "event_type": "inversion", "lexemes": ["inversion", "inversions"]},
+    {"id": "SO:0002062", "label": "complex_chromosomal_rearrangement", "event_type": "complex_event", "lexemes": ["complex rearrangement", "complex rearrangements", "complex genomic rearrangement", "complex genomic rearrangements", "chromothripsis"]},
+    {"id": "SO:0001742", "label": "copy_number_gain", "event_type": "gain", "lexemes": ["gain", "gains", "duplication"]},
+    {"id": "NCIT:C124874", "label": "Intrachromosomal Amplification of Chromosome 21", "event_type": "amplification", "lexemes": ["amplification", "intrachromosomal amplification of chromosome 21"]},
+    {"id": "NCIT:C80336", "label": "Hyperdiploidy", "event_type": "ploidy_state", "lexemes": ["hyperdiploidy", "hyperdiploid"]},
+    {"id": "NCIT:C129355", "label": "Chromothripsis", "event_type": "complex_event", "lexemes": ["chromothripsis"]}
+  ]
+}
