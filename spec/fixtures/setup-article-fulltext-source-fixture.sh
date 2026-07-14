@@ -396,16 +396,6 @@ class Handler(BaseHTTPRequestHandler):
         if length:
             self.rfile.read(length)
 
-        if decoded_path == "/graph/v1/paper/batch":
-            send_json(self, 200, [{
-                "paperId": "paper-1",
-                "externalIds": {"PubMed": "22663011"},
-                "title": "Europe full text winner",
-                "venue": "Fixture Journal",
-                "year": 2012,
-            }])
-            return
-
         if decoded_path == "/v2/articles/search":
             send_json(self, 200, [
                 {
@@ -670,10 +660,6 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/articles/PMC123460/":
             send_text(self, 404, "not found", "text/plain")
-            return
-
-        if decoded_path == "/recommendations/v1/papers/forpaper/paper-1":
-            send_json(self, 200, {"recommendedPapers": []})
             return
 
         if decoded_path.startswith("/graph/v1/paper/PMID:"):

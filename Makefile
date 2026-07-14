@@ -16,6 +16,7 @@ SPEC_ROUTINE_PATHS = \
 	spec/surface/trial-retirement.md \
 	spec/surface/ctgov-helper-pivots.md
 SPEC_LIVE_PATHS = \
+	spec/entity/article-graph-live.md \
 	spec/entity/article-indexing-live.md \
 	spec/entity/ddinter-live.md \
 	spec/entity/diagnostic.md \

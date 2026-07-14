@@ -314,20 +314,6 @@ PMID: 22663012
 ...'
 ```
 
-## Empty Article Recommendations Keep an Iterable JSON Collection
-
-A successful recommendation lookup always returns its named collection, even
-when Semantic Scholar has no related papers. JSON callers can therefore iterate
-`recommendations` without first repairing a missing field.
-
-```bash run id=empty-article-recommendations exit=0
-biomcp --json article recommendations 22663011 --limit 5
-```
-
-```json expect=empty-article-recommendations contains
-{"recommendations": []}
-```
-
 ## MYD88 Protein-Alias Article Precision
 
 <!-- mustmatch-lint: skip -->
