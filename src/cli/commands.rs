@@ -496,7 +496,7 @@ EXAMPLES:
   biomcp get article 22663011 tldr
 
 Full text defaults to the XML -> PMC HTML ladder.
-Use `assets` for the JSON-only article asset manifest (PMC OA first, Figshare fallback, including same-paper Figshare siblings discovered by DOI/title).
+Use `assets` for the JSON-only article asset manifest (PMC OA first, Europe PMC second, then Figshare, including same-paper Figshare siblings discovered by DOI/title).
 Use `asset <name>` to return one provider asset as raw bytes with no conversion; handles stay as BioMCP commands, not provider URLs.
 Asset keywords:
 assets

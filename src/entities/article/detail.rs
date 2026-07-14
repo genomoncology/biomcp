@@ -505,11 +505,8 @@ pub(super) async fn enrich_article_with_semantic_scholar(
         return Ok(());
     };
 
-    match client.paper_detail(&lookup_id).await {
-        Ok(paper) => article.semantic_scholar = semantic_scholar_enrichment_from_paper(&paper),
-        Err(err) => warn!(?err, lookup_id, "Semantic Scholar enrichment failed"),
-    }
-
+    let paper = client.paper_detail(&lookup_id).await?;
+    article.semantic_scholar = semantic_scholar_enrichment_from_paper(&paper);
     Ok(())
 }
 
@@ -533,7 +530,9 @@ pub async fn get(
         enrich_article_with_indexing(&mut article).await;
     }
 
-    enrich_article_with_semantic_scholar(&mut article).await?;
+    if let Err(err) = enrich_article_with_semantic_scholar(&mut article).await {
+        warn!(?err, "Semantic Scholar enrichment failed");
+    }
 
     if section_only && !section_flags.include_annotations {
         article.annotations = None;

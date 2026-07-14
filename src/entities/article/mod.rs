@@ -255,6 +255,8 @@ pub struct ArticleFulltextReuse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub license: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub license_source: Option<ArticleFulltextProvider>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reuse_warning: Option<String>,
 }
 

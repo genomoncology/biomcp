@@ -60,6 +60,12 @@ fn parses_manifest_returns_none_without_tgz_link() {
 }
 
 #[test]
+fn malformed_or_unexpected_manifest_is_failure_not_absence() {
+    assert!(parse_archive_manifest_xml("<records>").is_err());
+    assert!(parse_archive_manifest_xml("<html><body>error</body></html>").is_err());
+}
+
+#[test]
 fn extract_first_nxml_reads_xml_entry() {
     let tgz = tgz_with_entries(&[("sample.nxml", b"<article><body>ok</body></article>")]);
 

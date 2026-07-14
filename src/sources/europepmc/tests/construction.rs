@@ -79,6 +79,19 @@ fn full_text_xml_plan_builds_id_endpoint_and_normalizes_pmc() {
 }
 
 #[test]
+fn supplementary_files_plan_validates_and_normalizes_pmcid() {
+    let plan = EuropePmcClient::supplementary_files_plan(" pmc11143360 ").unwrap();
+    assert_eq!(plan.method, HttpMethod::Get);
+    assert_eq!(plan.path, "PMC11143360/supplementaryFiles");
+    assert!(plan.query.is_empty());
+
+    assert!(matches!(
+        EuropePmcClient::supplementary_files_plan("PMC../unsafe"),
+        Err(BioMcpError::InvalidArgument(_))
+    ));
+}
+
+#[test]
 fn full_text_xml_plan_empty_source_or_id_returns_none() {
     assert!(
         EuropePmcClient::full_text_xml_plan("", "22663011")

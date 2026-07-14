@@ -56,6 +56,14 @@ failures are reduced at the source boundary to payload-free kinds before article
 indexing logs or renders them; raw response bodies, request URLs/API keys, and
 parser diagnostics must not cross that boundary.
 
+Article asset resolution uses explicit success, healthy-absence, and failure
+outcomes across PMC OA, Europe PMC supplementary ZIP, and Figshare. Later
+success wins, but later healthy absence never erases an earlier failure; with no
+winner, only an all-healthy miss becomes `not_found`. Europe PMC owns its
+validated PMCID request and bounded in-memory ZIP parsing: 64 MiB compressed,
+8 MiB per member, 64 MiB expanded total, and 256 members, with unsafe or
+duplicate normalized paths rejected and no disk extraction.
+
 ## Configuration Classification
 
 `docs/reference/configuration.md` owns the source-controlled classification of

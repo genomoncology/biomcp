@@ -156,11 +156,12 @@ Article workflows compose multiple APIs for different tasks:
 5. Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, recommendations, `openAccessPdf` metadata for the explicit `--pdf` fallback, and supported Figshare article-asset discovery
 6. NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and PMC OA asset rungs when the base article lacks PMCID
 7. Europe PMC PMC XML, NCBI EFetch PMC XML, PMC OA Archive XML, Europe PMC MED XML, PMC HTML, and opt-in Semantic Scholar PDF form the full-text content ladder where available
-8. PMC OA Archive remains the preferred article-asset source; when unavailable, Figshare can provide raw article assets after Semantic Scholar points at a supported Figshare/AACR Figshare article URL
+8. Article assets resolve through PMC OA Archive, then Europe PMC `PMC<digits>/supplementaryFiles`, then Figshare after Semantic Scholar points at a supported Figshare/AACR Figshare article URL
 
 NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and asset rungs.
 Semantic Scholar supplies `openAccessPdf` metadata for the explicit `--pdf` fallback and for supported Figshare asset discovery;
 BioMCP fetches third-party PDF URLs only after the caller opts in, while Figshare asset retrieval re-resolves bytes through the Figshare API `download_url`.
+Europe PMC supplementary ZIP responses are capped at 64 MiB compressed, 8 MiB per member, 64 MiB total expanded bytes, and 256 members. BioMCP validates relative normalized member names and never extracts them to disk. Only healthy absence across the applicable asset ladder returns `not_found`; a transport, body-limit, or archive failure without a later winner returns `source_unavailable`.
 
 This means metadata, annotations, and full text may have different availability
 for the same PMID.

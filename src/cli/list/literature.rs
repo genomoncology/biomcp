@@ -18,7 +18,7 @@ pub(super) fn list_article() -> String {
 - `get article <id> indexing` - opt-in PubMed citation authors, affiliations, ORCID, and MeSH headings
 - `get article <id> fulltext` - download/cache full text via XML -> PMC HTML
 - `get article <id> fulltext --pdf` - allow Semantic Scholar PDF after XML and PMC HTML miss
-- `get article <id> assets` - JSON-only article asset manifest (PMC OA first, Figshare fallback with same-paper siblings discovered by DOI/title)
+- `get article <id> assets` - JSON-only article asset manifest (PMC OA, then Europe PMC, then Figshare with same-paper siblings discovered by DOI/title)
 - `get article <id> asset <name>` - return one provider asset as raw bytes with no conversion; handles stay as BioMCP commands
 - Asset quick reference:
 get article <id> assets
@@ -121,7 +121,7 @@ Worked examples:
 - `search article --json` and `--debug-plan` expose article source status,
   including federated degradation and redacted Semantic Scholar auth/availability.
 - `get article <id> fulltext` tries XML first, then PMC HTML, and never falls back to PDF.
-- `get article <id> assets` resolves the canonical PMC OA package first; when unavailable, supported Figshare/AACR Figshare metadata discovered through Semantic Scholar can provide a provider-labelled fallback manifest with same-paper sibling records discovered by DOI/title.
+- `get article <id> assets` resolves PMC OA first, Europe PMC supplementary files second, and supported Figshare/AACR Figshare metadata last; a failed source with no later winner is unavailable, not a confirmed miss.
 - `get article <id> asset <name>` streams provider bytes without conversion; handles stay as BioMCP commands and downstream tools parse CSV, XLSX, DOC, PDF, or images.
 - Add `--pdf` only with `fulltext` to extend that ladder with Semantic Scholar PDF as the last resort.
 - `--pdf` requires the `fulltext` section and is rejected for other article requests.

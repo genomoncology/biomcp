@@ -319,7 +319,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["search article", "get article <pmid>", "get article <id> fulltext"],
+    "bioMcp_surfaces": ["search article", "get article <pmid>", "get article <id> fulltext", "get article <id> assets", "get article <id> asset <name>"],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public API",
@@ -328,7 +328,7 @@
     "terms_url": "https://europepmc.org/RestfulWebService",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP uses Europe PMC for search, bibliographic metadata, and article full-text XML lookups. Open-access reuse depends on the publication license attached to each record."
+    "notes": "BioMCP uses Europe PMC for search, bibliographic metadata, article full-text XML, and the second article-asset rung after PMC OA. Supplementary ZIP bytes do not imply reusable status; a retained PMC OA license keeps PMC OA source attribution."
   },
   {
     "id": "figshare",
@@ -345,7 +345,7 @@
     "terms_url": "https://figshare.com/terms",
     "key_url": null,
     "reviewed_on": "2026-06-06",
-    "notes": "BioMCP uses Figshare only as an article-asset fallback after PMC OA assets are unavailable and Semantic Scholar discovery points at a supported Figshare/AACR Figshare article URL. BioMCP downloads bytes from the Figshare API download_url and does not parse supplement contents."
+    "notes": "BioMCP uses Figshare only as an article-asset fallback after PMC OA and Europe PMC assets are unavailable and Semantic Scholar discovery points at a supported Figshare/AACR Figshare article URL. BioMCP downloads bytes from the Figshare API download_url and does not parse supplement contents."
   },
   {
     "id": "gnomad",
@@ -855,7 +855,7 @@
     "terms_url": "https://pmc.ncbi.nlm.nih.gov/tools/openftlist/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP queries PMC OA on demand as one XML full-text rung and as the preferred article-asset provider; it does not ship the article corpus. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses."
+    "notes": "BioMCP queries PMC OA on demand as one XML full-text rung and as the preferred article-asset provider; it does not ship the article corpus. When Europe PMC recovers bytes after an advertised PMC archive fails, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses."
   },
   {
     "id": "pubtator3",

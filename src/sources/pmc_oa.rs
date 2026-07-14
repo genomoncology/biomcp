@@ -86,7 +86,7 @@ impl PmcOaClient {
         Ok(Some(plan))
     }
 
-    async fn oa_archive_manifest(
+    pub(crate) async fn oa_archive_manifest(
         &self,
         pmcid: &str,
     ) -> Result<Option<PmcOaArchiveManifest>, BioMcpError> {
@@ -117,6 +117,7 @@ impl PmcOaClient {
         Ok(xml.map(|xml| (xml, manifest)))
     }
 
+    #[allow(dead_code)]
     pub async fn get_archive_package(
         &self,
         pmcid: &str,
@@ -124,6 +125,13 @@ impl PmcOaClient {
         let Some(manifest) = self.oa_archive_manifest(pmcid).await? else {
             return Ok(None);
         };
+        self.archive_package(manifest).await.map(Some)
+    }
+
+    pub(crate) async fn archive_package(
+        &self,
+        manifest: PmcOaArchiveManifest,
+    ) -> Result<PmcOaArchivePackage, BioMcpError> {
         let bytes = self.archive_bytes(&manifest).await?;
         let entries = tokio::task::spawn_blocking(move || extract_archive_entries(&bytes))
             .await
@@ -131,7 +139,7 @@ impl PmcOaClient {
                 api: PMC_OA_API.to_string(),
                 message: format!("Task join error: {err}"),
             })??;
-        Ok(Some(PmcOaArchivePackage { manifest, entries }))
+        Ok(PmcOaArchivePackage { manifest, entries })
     }
 }
 
@@ -147,6 +155,20 @@ fn decode_text(status: reqwest::StatusCode, bytes: &[u8]) -> Result<String, BioM
 }
 
 fn parse_archive_manifest_xml(xml: &str) -> Result<Option<PmcOaArchiveManifest>, BioMcpError> {
+    let document = roxmltree::Document::parse(xml).map_err(|_| BioMcpError::Api {
+        api: PMC_OA_API.to_string(),
+        message: "Invalid PMC OA manifest XML".to_string(),
+    })?;
+    if !document
+        .descendants()
+        .any(|node| node.is_element() && node.tag_name().name() == "records")
+    {
+        return Err(BioMcpError::Api {
+            api: PMC_OA_API.to_string(),
+            message: "Unexpected PMC OA manifest XML".to_string(),
+        });
+    }
+
     let re = TGZ_HREF_RE.get_or_init(|| {
         Regex::new(r#"<link[^>]*format="tgz"[^>]*href="([^"]+)""#).expect("valid tgz href regex")
     });
