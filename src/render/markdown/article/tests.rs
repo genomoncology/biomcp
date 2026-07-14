@@ -79,6 +79,9 @@ fn article_markdown_renders_semantic_scholar_section() {
     assert!(markdown.contains("TLDR: A concise summary."));
     assert!(markdown.contains("Influential citations: 4"));
     assert!(markdown.contains("Open-access PDF: https://example.org/paper.pdf"));
+
+    let detail = article_markdown(&article, &[]).expect("detail markdown should render");
+    assert!(detail.contains("Authorship: unavailable (no author list supplied by PubTator3)"));
 }
 
 #[test]
@@ -88,9 +91,16 @@ fn article_markdown_renders_resolved_fulltext_source_label() {
         pmcid: Some("PMC123456".to_string()),
         doi: Some("10.1000/example".to_string()),
         title: "Example".to_string(),
-        authors: Vec::new(),
-        author_count: 0,
-        author_completeness: ArticleAuthorCompleteness::Unavailable,
+        authors: vec![
+            "First Author".to_string(),
+            "Second Author".to_string(),
+            "Middle Author".to_string(),
+            "Fourth Author".to_string(),
+            "Fifth Author".to_string(),
+            "Last Author".to_string(),
+        ],
+        author_count: 6,
+        author_completeness: ArticleAuthorCompleteness::SourceLimited,
         author_source: ArticleSource::EuropePmc,
         journal: Some("Example Journal".to_string()),
         date: Some("2024-01-01".to_string()),
@@ -118,6 +128,12 @@ fn article_markdown_renders_resolved_fulltext_source_label() {
         article_markdown(&article, &["fulltext".to_string()]).expect("markdown should render");
     assert!(markdown.contains("## Full Text (Europe PMC XML)"));
     assert!(markdown.contains("Saved to: /tmp/fulltext.md"));
+
+    let detail = article_markdown(&article, &[]).expect("detail markdown should render");
+    assert!(detail.contains(
+        "First Author, Second Author, Middle Author, Fourth Author, Fifth Author, Last Author"
+    ));
+    assert!(detail.contains("Authorship: source-limited (6 returned; Europe PMC)"));
 }
 
 #[test]
@@ -188,6 +204,27 @@ fn article_batch_markdown_renders_compact_rows() {
             influential_citation_count: Some(18),
         },
         crate::entities::article::ArticleBatchItem {
+            requested_id: "source-limited".to_string(),
+            pmid: Some("24000000".to_string()),
+            pmcid: None,
+            doi: None,
+            title: "Source-limited authors".to_string(),
+            authors: vec![
+                "First Author".into(),
+                "Middle Author".into(),
+                "Last Author".into(),
+            ],
+            author_count: 3,
+            author_completeness: ArticleAuthorCompleteness::SourceLimited,
+            author_source: ArticleSource::EuropePmc,
+            journal: None,
+            year: None,
+            entity_summary: None,
+            tldr: None,
+            citation_count: None,
+            influential_citation_count: None,
+        },
+        crate::entities::article::ArticleBatchItem {
             requested_id: "PMC9984800".to_string(),
             pmid: Some("24200969".to_string()),
             pmcid: Some("PMC9984800".to_string()),
@@ -207,7 +244,7 @@ fn article_batch_markdown_renders_compact_rows() {
     ];
 
     let markdown = article_batch_markdown(&rows).expect("batch markdown");
-    assert!(markdown.contains("# Article Batch (2)"));
+    assert!(markdown.contains("# Article Batch (3)"));
     assert!(markdown.contains("## 1. Improved survival with vemurafenib"));
     assert!(markdown.contains("PMID: 22663011"));
     assert!(markdown.contains("Authors: A. One, B. Two, C. Three"));
@@ -215,7 +252,10 @@ fn article_batch_markdown_renders_compact_rows() {
     assert!(markdown.contains("Entities: Genes: BRAF (4); Diseases: melanoma (2)"));
     assert!(markdown.contains("TLDR: BRAF inhibitor benefit in melanoma."));
     assert!(markdown.contains("Citations: 120 (influential: 18)"));
-    assert!(markdown.contains("## 2. Follow-up trial"));
+    assert!(markdown.contains("## 2. Source-limited authors"));
+    assert!(markdown.contains("Authors: First Author, Middle Author, Last Author"));
+    assert!(markdown.contains("Authorship: source-limited (3 returned; Europe PMC)"));
+    assert!(markdown.contains("## 3. Follow-up trial"));
     assert!(markdown.contains("PMID: 24200969"));
     assert!(markdown.contains("Authorship: unavailable (no author list supplied by Europe PMC)"));
     // Absent optional fields are omitted, not printed as placeholders

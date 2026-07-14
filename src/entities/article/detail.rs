@@ -282,11 +282,15 @@ pub(super) async fn resolve_article_from_pmid(
                         .ok_or_else(|| article_not_found(not_found_id, suggestion_id))?
                 }
             };
-            let mut article = transform::article::from_europepmc_result(&hit);
-            article.pubtator_fallback = true;
-            Ok(article)
+            Ok(article_from_europepmc_fallback(&hit))
         }
     }
+}
+
+fn article_from_europepmc_fallback(hit: &EuropePmcResult) -> Article {
+    let mut article = transform::article::from_europepmc_result(hit);
+    article.pubtator_fallback = true;
+    article
 }
 
 pub(super) async fn get_article_base_with_clients(
