@@ -90,17 +90,17 @@ a complete structured list from unavailable or source-limited authorship without
 mistaking a shortened list for the full collaboration.
 
 ```bash
-../../tools/biomcp-ci --json get article 22663011 | mustmatch like '"authors": [
+../../tools/biomcp-ci --json get article 22663011 | mustmatch like '"author_completeness": "complete",
+"author_count": 6,
+"author_source": "pubtator",
+"authors": [
   "Ada First",
   "Ben Second",
   "Cyra Middle",
   "Dev Fourth",
   "Eli Fifth",
   "Fay Last"
-],
-"author_count": 6,
-"author_completeness": "complete",
-"author_source": "pubtator"
+]
 ...'
 ```
 
