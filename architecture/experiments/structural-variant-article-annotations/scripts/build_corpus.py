@@ -24,6 +24,7 @@ GOLD: dict[str, list[tuple[str, str, str, list[str]]]] = {
         ("chromosomal rearrangements", "free_text_structural_variant", "chromosomal rearrangement", []),
         ("complex rearrangements", "complex_event", "complex rearrangement", []),
         ("chromoplexy", "complex_event", "chromoplexy", []),
+        ("Chromothripsis", "complex_event", "chromothripsis", []),
         ("chromothripsis", "complex_event", "chromothripsis", []),
         ("templated insertions", "complex_event", "templated insertion", []),
     ],

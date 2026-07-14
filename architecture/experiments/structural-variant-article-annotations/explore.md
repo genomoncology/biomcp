@@ -1,5 +1,10 @@
 # Structural-Variant Annotation Layer for Biomedical Articles
 
+> **Exploit correction:** This historical report and `measurements.json` describe the
+> original 87-event gold. Exploit found that PMID 35637217 omitted a repeated capitalized
+> `Chromothripsis` mention at offsets 1047:1061. The checked-in corpus now has 88 events;
+> see `exploit.md` for the corrected 88/0/0 control and correctness carveout.
+
 ## Spike Question
 
 Can BioMCP add a general structural-event annotation layer for biomedical articles that materially closes PubTator's cytogenetic-event gap without disease-specific answer tables or event-to-gene inference masquerading as extraction?

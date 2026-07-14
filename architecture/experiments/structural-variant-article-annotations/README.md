@@ -22,8 +22,30 @@ architecture/experiments/structural-variant-article-annotations/scripts/build_co
 ```
 
 Live and intermediate payloads stay in ignored `work/`. `measurements.json` is the
-small durable summary; the repository intentionally forbids tracked
-`architecture/experiments/**/results/` payloads.
+historical pre-correction explore summary and `exploit-measurements.json` is the full-scale summary; the
+repository intentionally forbids tracked `architecture/experiments/**/results/`
+payloads.
+
+## Full-scale exploit
+
+The exploit adds an isolated standard-library Python library/CLI and a 60-paper offline
+fixture (40 positives, 20 lexical-trap controls, 91 events):
+
+```bash
+architecture/experiments/structural-variant-article-annotations/scripts/structural_events.py \
+  --input architecture/experiments/structural-variant-article-annotations/fixtures/blind_corpus.json \
+  --output architecture/experiments/structural-variant-article-annotations/work/events.jsonl
+architecture/experiments/structural-variant-article-annotations/scripts/test_exploit.py
+architecture/experiments/structural-variant-article-annotations/scripts/evaluate_exploit.py
+```
+
+The CLI emits occurrence-level candidate-schema JSONL and never infers gene
+relationships. The evaluator scores the frozen explore parser's first pass separately
+from post-inspection generic family additions, runs the original 16-paper regression
+control, validates the corpus/schema, records complete errors, checks deterministic
+checksums, and measures end-to-end runtime/RSS. See `blind-corpus-protocol.md` for the
+sampling audit and the important limitation: the tuned score is development evidence,
+not independent blind acceptance.
 
 ## Corpus and annotation rule
 

@@ -1,5 +1,9 @@
 {
   "experiment": "structural-variant-article-annotations",
+  "historical_gold_correction": {
+    "status": "corrected_in_exploit",
+    "note": "These measurements retain the original 87-event explore result. The checked-in corpus now includes the omitted repeated capitalized Chromothripsis occurrence in PMID 35637217; exploit.md reports the corrected control."
+  },
   "corpus": {
     "documents": 16,
     "positive_documents": 9,

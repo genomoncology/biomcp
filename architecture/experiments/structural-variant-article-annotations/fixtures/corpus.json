@@ -114,7 +114,7 @@
           "chromosome_or_locus": []
         },
         {
-          "id": "35637217-e10",
+          "id": "35637217-e11",
           "start": 906,
           "end": 920,
           "text": "chromothripsis",
@@ -123,11 +123,20 @@
           "chromosome_or_locus": []
         },
         {
-          "id": "35637217-e11",
+          "id": "35637217-e12",
           "start": 925,
           "end": 945,
           "text": "templated insertions",
           "normalized": "templated insertion",
+          "event_type": "complex_event",
+          "chromosome_or_locus": []
+        },
+        {
+          "id": "35637217-e10",
+          "start": 1047,
+          "end": 1061,
+          "text": "Chromothripsis",
+          "normalized": "chromothripsis",
           "event_type": "complex_event",
           "chromosome_or_locus": []
         }
