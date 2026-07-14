@@ -52,6 +52,19 @@ fn parses_manifest_and_rewrites_ftp_to_https() {
 }
 
 #[test]
+fn parses_manifest_attributes_independent_of_order_and_quote_style() {
+    let manifest = parse_archive_manifest_xml(
+        "<records><record retracted='yes' license='CC0'><link href='https://example.test/archive.tgz' format='tgz'/></record></records>",
+    )
+    .unwrap()
+    .expect("manifest");
+
+    assert_eq!(manifest.tgz_url, "https://example.test/archive.tgz");
+    assert_eq!(manifest.license.as_deref(), Some("CC0"));
+    assert_eq!(manifest.retracted, Some(true));
+}
+
+#[test]
 fn parses_manifest_returns_none_without_tgz_link() {
     assert_eq!(
         parse_archive_manifest_xml("<records><record /></records>").unwrap(),

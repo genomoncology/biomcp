@@ -1,9 +1,7 @@
 use std::borrow::Cow;
 use std::path::{Component, Path, PathBuf};
-use std::sync::OnceLock;
 
 use http_cache_reqwest::CacheMode;
-use regex::Regex;
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
@@ -15,10 +13,6 @@ const PMC_OA_API: &str = "pmc-oa";
 const PMC_OA_BASE_ENV: &str = "BIOMCP_PMC_OA_BASE";
 const MAX_TGZ_BYTES: usize = 64 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRY_BYTES: u64 = 8 * 1024 * 1024;
-
-static TGZ_HREF_RE: OnceLock<Regex> = OnceLock::new();
-static LICENSE_ATTR_RE: OnceLock<Regex> = OnceLock::new();
-static RETRACTED_ATTR_RE: OnceLock<Regex> = OnceLock::new();
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PmcOaArchiveManifest {
@@ -168,20 +162,20 @@ fn parse_archive_manifest_xml(xml: &str) -> Result<Option<PmcOaArchiveManifest>,
         });
     }
 
-    let re = TGZ_HREF_RE.get_or_init(|| {
-        Regex::new(r#"<link[^>]*format="tgz"[^>]*href="([^"]+)""#).expect("valid tgz href regex")
-    });
-
-    let Some(caps) = re.captures(xml) else {
+    let Some(link) = document.descendants().find(|node| {
+        node.is_element()
+            && node.tag_name().name() == "link"
+            && node.attribute("format") == Some("tgz")
+            && node
+                .attribute("href")
+                .is_some_and(|href| !href.trim().is_empty())
+    }) else {
         return Ok(None);
     };
-    let Some(raw_href) = caps
-        .get(1)
-        .map(|m| m.as_str().trim())
-        .filter(|s| !s.is_empty())
-    else {
-        return Ok(None);
-    };
+    let raw_href = link
+        .attribute("href")
+        .expect("checked nonempty href")
+        .trim();
 
     let href = if raw_href.starts_with("ftp://ftp.ncbi.nlm.nih.gov/") {
         raw_href.replacen(
@@ -195,17 +189,17 @@ fn parse_archive_manifest_xml(xml: &str) -> Result<Option<PmcOaArchiveManifest>,
         raw_href.to_string()
     };
 
-    let license = LICENSE_ATTR_RE
-        .get_or_init(|| Regex::new(r#"\blicense="([^"]+)""#).expect("valid license regex"))
-        .captures(xml)
-        .and_then(|caps| caps.get(1))
-        .map(|m| m.as_str().trim().to_string())
-        .filter(|s| !s.is_empty());
-    let retracted = RETRACTED_ATTR_RE
-        .get_or_init(|| Regex::new(r#"\bretracted="([^"]+)""#).expect("valid retracted regex"))
-        .captures(xml)
-        .and_then(|caps| caps.get(1))
-        .and_then(|value| parse_boolish(value.as_str()));
+    let record = link
+        .ancestors()
+        .find(|node| node.is_element() && node.tag_name().name() == "record");
+    let license = record
+        .and_then(|node| node.attribute("license"))
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+    let retracted = record
+        .and_then(|node| node.attribute("retracted"))
+        .and_then(parse_boolish);
 
     Ok(Some(PmcOaArchiveManifest {
         tgz_url: href.clone(),

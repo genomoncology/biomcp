@@ -19,9 +19,9 @@ Figshare/AACR URL. Europe PMC ZIPs are validated under compressed, per-member,
 expanded-total, count, and normalized-name bounds entirely in memory. Figshare
 uses the same collection resolver as raw-byte retrieval: it starts from the
 linked record, adds same-paper sibling records found by DOI/title, filters out
-wrong-paper candidates, and keeps handles as BioMCP commands. `get article <id>
-asset <name>` re-resolves the same provider ladder and returns the selected asset
-bytes without conversion. A successful manifest makes an unknown filename a
+wrong-paper candidates, and keeps handles as BioMCP commands. The command
+`get article <id> asset <name>` re-resolves the same provider ladder and returns
+the selected asset bytes without conversion. A successful manifest makes an unknown filename a
 true asset miss; without a winner, any source failure produces
 `source_unavailable`, while all-healthy absence produces `not_found`.
 
