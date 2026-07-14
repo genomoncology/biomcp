@@ -315,6 +315,8 @@ def study_payload_for_request(parsed, study):
         interventions = payload["protocolSection"]["armsInterventionsModule"]["interventions"]
         for intervention in interventions:
             intervention.pop("otherNames", None)
+    if "LargeDocumentModule" not in requested_fields:
+        payload.pop("documentSection", None)
     return payload
 
 
