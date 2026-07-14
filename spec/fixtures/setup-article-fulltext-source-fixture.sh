@@ -471,8 +471,9 @@ class Handler(BaseHTTPRequestHandler):
             for value in query.get("term", [])
         ):
             row = AUTHOR_SEARCH["bounded_pubmed"]
+            ids = [] if query.get("retstart") != ["0"] else [row["pmid"]]
             send_json(self, 200, {
-                "esearchresult": {"count": "1", "idlist": [row["pmid"]]},
+                "esearchresult": {"count": "1", "idlist": ids},
             })
             return
 
