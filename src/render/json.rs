@@ -308,6 +308,7 @@ pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> 
         BioMcpError::HttpMiddleware(_) => "http_middleware",
         BioMcpError::Api { .. } => "api",
         BioMcpError::ApiJson { .. } => "api_json",
+        BioMcpError::BodyLimit { .. } => "body_limit",
         BioMcpError::CtGovInterventionQueryRejected { .. } => "api",
         BioMcpError::NotFound { .. } => "not_found",
         BioMcpError::InvalidArgument(_) => "invalid_argument",

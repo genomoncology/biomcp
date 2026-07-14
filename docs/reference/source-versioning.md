@@ -51,6 +51,7 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 | OpenFDA device 510(k) | `https://api.fda.gov/device/510k.json` | Unversioned | OpenFDA resource path is stable without URL versioning | 2026-06-11 |
 | OpenFDA device PMA | `https://api.fda.gov/device/pma.json` | Unversioned | OpenFDA resource path is stable without URL versioning | 2026-06-11 |
 | OpenTargets | `https://api.platform.opentargets.org/api/v4/graphql` | Versioned (`v4`) | Endpoint already pinned | 2026-02-15 |
+| ORCID Public API | `https://pub.orcid.org/v3.0` | Versioned (`v3.0`) | Internal anonymous record/works seam is pinned to v3.0; no public author route is registered | 2026-07-14 |
 | OLS4 | `https://www.ebi.ac.uk/ols4` | Versioned-by-product (`ols4`) | Version identity is in the product namespace | 2026-06-11 |
 | PharmGKB | `https://api.pharmgkb.org/v1` | Versioned (`v1`) | Endpoint already pinned | 2026-06-11 |
 | PMC HTML | `https://pmc.ncbi.nlm.nih.gov/articles` | Unversioned | NCBI article HTML route is stable and not API-versioned | 2026-06-11 |

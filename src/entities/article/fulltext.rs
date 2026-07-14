@@ -228,8 +228,10 @@ fn pdf_content_type_is_supported(content_type: Option<&reqwest::header::HeaderVa
 fn body_limit_error(err: &BioMcpError, max_bytes: usize) -> bool {
     matches!(
         err,
-        BioMcpError::Api { api, message }
-            if api == ARTICLE_FULLTEXT_API && message == &format!("Response body exceeded {max_bytes} bytes")
+        BioMcpError::BodyLimit {
+            source_name,
+            max_bytes: actual_max,
+        } if source_name == ARTICLE_FULLTEXT_API && *actual_max == max_bytes
     )
 }
 
@@ -829,6 +831,15 @@ mod tests {
             ),
             None
         );
+    }
+
+    #[test]
+    fn typed_body_limit_error_keeps_fulltext_overflow_as_a_source_miss() {
+        let error = BioMcpError::BodyLimit {
+            source_name: ARTICLE_FULLTEXT_API.into(),
+            max_bytes: PDF_MAX_BODY_BYTES,
+        };
+        assert!(body_limit_error(&error, PDF_MAX_BODY_BYTES));
     }
 
     #[test]

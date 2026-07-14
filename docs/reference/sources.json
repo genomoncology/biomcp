@@ -807,6 +807,23 @@
     "notes": "The licence page also lists the licensing status of major upstream datasets consumed by Open Targets. Drug target output keeps Open Targets in the generic target section while CIViC variant annotations, when present, are labeled separately."
   },
   {
+    "id": "orcid",
+    "name": "ORCID",
+    "tier": 3,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["internal record/works source seam (no public CLI/MCP route)"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "anonymous Public API reads of public record data; registered Public API and member/private access are not used",
+    "license_summary": "free Public API access is limited to non-commercial services under ORCID's Public APIs Terms of Service",
+    "redistribution_summary": "preserve assertion provenance and visibility; do not assume the anonymous Public API is available to revenue-generating deployments",
+    "terms_url": "https://info.orcid.org/public-client-terms-of-service/",
+    "key_url": null,
+    "reviewed_on": "2026-07-14",
+    "notes": "BioMCP has an internal-only anonymous v3.0 record/works seam with forced no-store, one-process 10 requests/second pacing, and no works continuation. There is no credential variable or public author route. Deployments outside the Public API terms retain citation-supplied ORCID evidence only."
+  },
+  {
     "id": "pharmgkb",
     "name": "PharmGKB",
     "tier": 3,
