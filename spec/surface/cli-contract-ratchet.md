@@ -152,18 +152,22 @@ provider terms and author identity domain are enabled together, normal discovery
 must not advertise an author command or entity.
 
 ```bash
+set -o pipefail
 biomcp --help | mustmatch not '/(?m)^\s*author\s/'
 ```
 
 ```bash
+set -o pipefail
 biomcp search --help | mustmatch not '/(?m)^\s*author\s/'
 ```
 
 ```bash
+set -o pipefail
 biomcp get --help | mustmatch not '/(?m)^\s*author\s/'
 ```
 
 ```bash
+set -o pipefail
 biomcp list | mustmatch not '/(?m)^- `?author`?(\s|$)/'
 ```
 
