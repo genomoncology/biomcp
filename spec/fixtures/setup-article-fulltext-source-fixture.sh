@@ -28,6 +28,7 @@ import json
 import sys
 import tarfile
 import threading
+import time
 
 
 FIXTURE_DIR = Path(sys.argv[2])
@@ -63,6 +64,10 @@ AUTHOR_SEARCH = {
     "semanticscholar": {
         "pmid": "51300004",
         "title": "Williams syndrome Semantic Scholar lexical false positive",
+    },
+    "bounded_pubmed": {
+        "pmid": "51700001",
+        "title": "Taylor EJ PubMed byline match",
     },
 }
 
@@ -432,6 +437,19 @@ class Handler(BaseHTTPRequestHandler):
             decoded_path == "/search"
             and search_query
             and query.get("format") == ["json"]
+            and any("AUTH:" in value and "Taylor EJ" in value for value in search_query)
+        ):
+            time.sleep(65)
+            send_json(self, 200, {
+                "hitCount": 0,
+                "resultList": {"result": []},
+            })
+            return
+
+        if (
+            decoded_path == "/search"
+            and search_query
+            and query.get("format") == ["json"]
             and any("AUTH:" in value and "Williams LS" in value for value in search_query)
         ):
             row = AUTHOR_SEARCH["europepmc"]
@@ -449,6 +467,16 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if decoded_path == "/esearch.fcgi" and any(
+            "Taylor EJ" in value and "[author]" in value.lower()
+            for value in query.get("term", [])
+        ):
+            row = AUTHOR_SEARCH["bounded_pubmed"]
+            send_json(self, 200, {
+                "esearchresult": {"count": "1", "idlist": [row["pmid"]]},
+            })
+            return
+
+        if decoded_path == "/esearch.fcgi" and any(
             "Williams LS" in value and "[author]" in value.lower()
             for value in query.get("term", [])
         ):
@@ -458,8 +486,13 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
-        if decoded_path == "/esummary.fcgi" and query.get("id") == [AUTHOR_SEARCH["pubmed"]["pmid"]]:
-            row = AUTHOR_SEARCH["pubmed"]
+        author_summary_rows = {
+            AUTHOR_SEARCH["pubmed"]["pmid"]: AUTHOR_SEARCH["pubmed"],
+            AUTHOR_SEARCH["bounded_pubmed"]["pmid"]: AUTHOR_SEARCH["bounded_pubmed"],
+        }
+        summary_ids = query.get("id")
+        if decoded_path == "/esummary.fcgi" and summary_ids and summary_ids[0] in author_summary_rows:
+            row = author_summary_rows[summary_ids[0]]
             send_json(self, 200, {
                 "result": {
                     "uids": [row["pmid"]],
