@@ -168,6 +168,12 @@ struct FederatedArticleRows {
     semantic_scholar_status: ArticleSourceStatus,
 }
 
+struct TypeCapableArticleRows {
+    rows: Vec<ArticleSearchResult>,
+    total: Option<usize>,
+    source_status: Vec<ArticleSourceStatus>,
+}
+
 enum FederatedSourceOutcome<T> {
     Available(T),
     Unavailable {
@@ -409,56 +415,80 @@ fn collect_federated_article_rows(
     }
 }
 
-async fn search_type_capable_page(
-    filters: &ArticleSearchFilters,
-    fetch_count: usize,
-    limit: usize,
-    offset: usize,
-) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    let (europe_leg, pubmed_leg) = tokio::join!(
-        search_europepmc_page(filters, fetch_count, 0),
-        search_pubmed_page(filters, fetch_count, 0),
-    );
-
+fn collect_type_capable_article_rows(
+    europe_leg: FederatedSourceOutcome<SearchPage<ArticleSearchResult>>,
+    pubmed_leg: FederatedSourceOutcome<SearchPage<ArticleSearchResult>>,
+) -> Result<TypeCapableArticleRows, BioMcpError> {
     match (europe_leg, pubmed_leg) {
-        (Ok(europe_page), Ok(pubmed_page)) => {
+        (
+            FederatedSourceOutcome::Available(europe_page),
+            FederatedSourceOutcome::Available(pubmed_page),
+        ) => {
             let mut rows = europe_page.results;
             rows.extend(pubmed_page.results);
-            Ok(enrich_and_finalize_article_candidates(rows, limit, offset, None, filters).await)
+            Ok(TypeCapableArticleRows {
+                rows,
+                total: None,
+                source_status: Vec::new(),
+            })
         }
-        (Ok(europe_page), Err(err)) => {
-            warn!(
-                ?err,
-                "PubMed type-capable leg failed; returning Europe PMC-only results"
-            );
-            Ok(enrich_and_finalize_article_candidates(
-                europe_page.results,
-                limit,
-                offset,
-                europe_page.total,
-                filters,
-            )
-            .await)
-        }
-        (Err(err), Ok(pubmed_page)) => {
-            warn!(
-                ?err,
-                "Europe PMC type-capable leg failed; returning PubMed-only results"
-            );
-            Ok(enrich_and_finalize_article_candidates(
-                pubmed_page.results,
-                limit,
-                offset,
-                pubmed_page.total,
-                filters,
-            )
-            .await)
-        }
-        (Err(europe_err), Err(pubmed_err)) => {
-            warn!(?pubmed_err, "PubMed type-capable leg also failed");
-            Err(europe_err)
-        }
+        (
+            FederatedSourceOutcome::Available(europe_page),
+            FederatedSourceOutcome::Unavailable { status, .. },
+        ) => Ok(TypeCapableArticleRows {
+            rows: europe_page.results,
+            total: europe_page.total,
+            source_status: vec![status],
+        }),
+        (
+            FederatedSourceOutcome::Unavailable { status, .. },
+            FederatedSourceOutcome::Available(pubmed_page),
+        ) => Ok(TypeCapableArticleRows {
+            rows: pubmed_page.results,
+            total: pubmed_page.total,
+            source_status: vec![status],
+        }),
+        (
+            FederatedSourceOutcome::Unavailable {
+                error: europe_error,
+                ..
+            },
+            FederatedSourceOutcome::Unavailable {
+                error: pubmed_error,
+                ..
+            },
+        ) => Err(europe_error
+            .or(pubmed_error)
+            .unwrap_or_else(|| unavailable_source_error(ArticleSource::EuropePmc))),
     }
+}
+
+async fn search_type_capable_page(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+) -> Result<ArticleSearchPage, BioMcpError> {
+    let fetch_count = limit.saturating_add(offset);
+    if fetch_count > MAX_FEDERATED_FETCH_RESULTS {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--offset + --limit must be <= {MAX_FEDERATED_FETCH_RESULTS} for federated article search"
+        )));
+    }
+    let (europe_leg, pubmed_leg) = tokio::join!(
+        with_federated_source_timeout(
+            ArticleSource::EuropePmc,
+            search_europepmc_page(filters, fetch_count, 0),
+        ),
+        with_federated_source_timeout(
+            ArticleSource::PubMed,
+            search_pubmed_page(filters, fetch_count, 0),
+        ),
+    );
+    let capable = collect_type_capable_article_rows(europe_leg, pubmed_leg)?;
+    let page =
+        enrich_and_finalize_article_candidates(capable.rows, limit, offset, capable.total, filters)
+            .await;
+    Ok(article_search_page(page, capable.source_status))
 }
 
 async fn search_relevance_page(
@@ -520,7 +550,7 @@ async fn search_relevance_page(
             Ok(enrich_and_finalize_article_candidates(rows, limit, offset, None, filters).await)
         }
         BackendPlan::TypeCapable => {
-            search_type_capable_page(filters, fetch_count, limit, offset).await
+            unreachable!("type-capable search is handled by search_page")
         }
         BackendPlan::Both => unreachable!("federated relevance is handled by search_page"),
     }
@@ -552,6 +582,9 @@ pub async fn search_page(
 ) -> Result<ArticleSearchPage, BioMcpError> {
     validate_search_page_request(filters, limit, source)?;
     let plan = plan_backends(filters, source)?;
+    if plan == BackendPlan::TypeCapable {
+        return search_type_capable_page(filters, limit, offset).await;
+    }
     if filters.sort == ArticleSort::Relevance {
         if plan == BackendPlan::Both {
             return search_federated_page(filters, limit, offset).await;
@@ -579,11 +612,12 @@ pub async fn search_page(
                 Vec::new(),
             ))
         }
-        BackendPlan::PubMedOnly | BackendPlan::LitSense2Only | BackendPlan::TypeCapable => {
-            Ok(article_search_page(
-                search_relevance_page(filters, limit, offset, plan).await?,
-                Vec::new(),
-            ))
+        BackendPlan::PubMedOnly | BackendPlan::LitSense2Only => Ok(article_search_page(
+            search_relevance_page(filters, limit, offset, plan).await?,
+            Vec::new(),
+        )),
+        BackendPlan::TypeCapable => {
+            unreachable!("type-capable search returned before sort dispatch")
         }
         BackendPlan::SemanticScholarOnly => {
             search_semantic_scholar_page(filters, limit, offset).await

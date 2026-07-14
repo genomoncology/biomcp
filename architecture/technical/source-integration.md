@@ -297,10 +297,11 @@ generic multi-source rule above:
 6. Preserve provenance on the result row and, when ranking metadata is
    serialized, expose the effective mode plus the normalized component scores
    needed to explain hybrid and semantic ordering in JSON output.
-7. For the default federated `--source all` article path, run source legs
-   concurrently and bound each source leg with the 12-second federated article timeout.
-   A timed-out or unreachable source is omitted from merged rows, but must be
-   recorded as degraded/unavailable in the article source-status surface.
+7. For every multi-source article fan-out, including `BackendPlan::TypeCapable`,
+   run source legs concurrently and bound each source leg with the 12-second
+   federated article timeout. A timed-out or unreachable source is omitted from
+   merged rows, but must be recorded as degraded/unavailable in the article
+   source-status surface.
 
 The article-specific invariants are:
 

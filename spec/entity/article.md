@@ -82,6 +82,37 @@ find the exact search form before issuing it.
 biomcp list article | mustmatch like "search article -a <author>"
 ```
 
+## Author-Capable Search Reports Partial Coverage
+<!-- mustmatch-lint: skip -->
+
+A slow author-capable source does not hide a match from the healthy source or
+make the result look complete. Both machine-readable status locations name the
+same degraded source while preserving the PubMed byline match.
+
+```bash run id=bounded-author-json timeout=25 exit=0
+../../tools/biomcp-ci --json search article --author "Taylor EJ" --debug-plan --limit 10
+```
+
+```json expect=bounded-author-json contains
+{
+  "results": [{"title": "Taylor EJ PubMed byline match", "source": "pubmed"}],
+  "debug_plan": {"legs": [{"source_status": [{"source": "europepmc", "status": "degraded"}]}]},
+  "_meta": {"source_status": [{"source": "europepmc", "status": "degraded"}]}
+}
+```
+
+The human-readable view keeps the same partial result and makes the missing
+coverage visible without requiring debug output.
+
+```bash run id=bounded-author-markdown timeout=25 exit=0
+../../tools/biomcp-ci search article --author "Taylor EJ" --limit 10
+```
+
+```text expect=bounded-author-markdown contains
+Taylor EJ PubMed byline match
+Europe PMC source status: degraded
+```
+
 ## Semantic Scholar Is Individually Selectable
 
 `--source semanticscholar` should use the same Semantic Scholar search client as

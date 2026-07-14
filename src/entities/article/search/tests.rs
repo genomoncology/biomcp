@@ -6,6 +6,7 @@ use super::*;
 mod finalizer;
 mod integration;
 mod merge;
+mod type_capable;
 
 fn semantic_scholar_unavailable_status(message: &str) -> ArticleSourceStatus {
     ArticleSourceStatus {
