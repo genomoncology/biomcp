@@ -47,6 +47,7 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
         completion_date => &trial.completion_date,
         eligibility_text => &trial.eligibility_text,
         eligibility => &trial.eligibility,
+        eligibility_provenance => &trial.eligibility_provenance,
         contacts => &trial.contacts,
         locations => &trial.locations,
         outcomes => &trial.outcomes,

@@ -5,7 +5,9 @@ pub(super) fn list_trial() -> String {
 ## Commands
 
 - `get trial <nct_id>` - protocol card by NCT ID
-- `get trial <nct_id> eligibility` - show eligibility criteria inline
+- `get trial <nct_id> eligibility` - show registry-supplied eligibility criteria and CTGov document availability
+- `--json get trial <nct_id> documents` - standalone CTGov posted-document manifest
+- `get trial <nct_id> document <filename>` - exact advertised raw bytes with no PDF conversion (32 MiB maximum)
 - `get trial <nct_id> locations` - site locations section
 - `get trial <nct_id> --offset <N> --limit <N> locations` - paged location slice
 - `get trial <nct_id> outcomes` - primary/secondary outcomes
@@ -48,6 +50,12 @@ pub(super) fn list_trial() -> String {
 - A rejected expanded alias does not discard successful requested-name results, but leaves the exact total unknown.
 - `--no-alias-expand` performs one literal request for the supplied name.
 - `--next-page` is not supported when intervention alias expansion fans out to multiple queries; use `--offset` or `--no-alias-expand`.
+
+## Posted CTGov documents
+
+- Use the BioMCP retrieval handle from `documents`; filenames must match the current manifest exactly.
+- Eligibility remains registry-supplied text. Posted documents may contain additional detail but do not guarantee that any criterion is resolved.
+- Document forms are CTGov-only, standalone, and excluded from ordinary `all`.
 
 ## NCI source notes
 

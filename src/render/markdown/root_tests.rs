@@ -283,6 +283,7 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         completion_date: None,
         eligibility_text: Some("Eligibility text.".to_string()),
         eligibility: None,
+        eligibility_provenance: None,
         contacts: None,
         locations: Some(vec![crate::entities::trial::TrialLocation {
             facility: "Example Hospital".to_string(),

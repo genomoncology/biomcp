@@ -18,6 +18,7 @@ const ELIGIBILITY_MAX_CHARS: usize = 12_000;
 #[derive(Debug, Clone, Copy, Default)]
 struct TrialSections {
     include_eligibility: bool,
+    include_eligibility_provenance: bool,
     include_contacts: bool,
     include_locations: bool,
     include_outcomes: bool,
@@ -38,7 +39,10 @@ fn parse_sections(sections: &[String]) -> Result<TrialSections, BioMcpError> {
             continue;
         }
         match section.as_str() {
-            TRIAL_SECTION_ELIGIBILITY => out.include_eligibility = true,
+            TRIAL_SECTION_ELIGIBILITY => {
+                out.include_eligibility = true;
+                out.include_eligibility_provenance = true;
+            }
             TRIAL_SECTION_CONTACTS => out.include_contacts = true,
             TRIAL_SECTION_LOCATIONS => out.include_locations = true,
             TRIAL_SECTION_OUTCOMES => out.include_outcomes = true,
@@ -96,12 +100,8 @@ fn normalize_nct_id(value: &str) -> String {
     trimmed.to_string()
 }
 
-pub async fn get(
-    nct_id: &str,
-    sections: &[String],
-    source: TrialSource,
-) -> Result<Trial, BioMcpError> {
-    let nct_id = normalize_nct_id(nct_id);
+pub(super) fn validated_nct_id(value: &str) -> Result<String, BioMcpError> {
+    let nct_id = normalize_nct_id(value);
     let nct_id = nct_id.trim();
     if nct_id.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -116,7 +116,16 @@ pub async fn get(
             "Expected an NCT ID like NCT02576665 (got '{nct_id}')"
         )));
     }
+    Ok(nct_id.to_string())
+}
 
+pub async fn get(
+    nct_id: &str,
+    sections: &[String],
+    source: TrialSource,
+) -> Result<Trial, BioMcpError> {
+    let nct_id = validated_nct_id(nct_id)?;
+    let nct_id = nct_id.as_str();
     let section_flags = parse_sections(sections)?;
 
     match source {
@@ -136,6 +145,10 @@ pub async fn get(
             }
 
             if section_flags.include_eligibility {
+                if section_flags.include_eligibility_provenance {
+                    trial.eligibility_provenance =
+                        Some(super::documents::eligibility_provenance(nct_id, &study));
+                }
                 let criteria = study
                     .protocol_section
                     .as_ref()

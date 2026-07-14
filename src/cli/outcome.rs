@@ -540,6 +540,14 @@ async fn run_outcome_inner(
             })
             .await
         }
+        Commands::Get {
+            entity: GetEntity::Trial(args),
+        } => {
+            crate::sources::with_no_cache(no_cache, async move {
+                super::trial::handle_get(args, json).await
+            })
+            .await
+        }
         Commands::Gene {
             cmd: super::GeneCommand::Definition { symbol },
         } => {

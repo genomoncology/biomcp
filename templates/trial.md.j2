@@ -67,6 +67,10 @@ _and {{ interventions | length - 5 }} more (see `arms` section)_
 {% endif -%}
 {% if eligibility_text %}{{ eligibility_text }}
 {% endif -%}
+{% if eligibility_provenance and eligibility_provenance.posted_documents_available -%}
+
+**Posted trial documents:** Posted trial documents are available and may contain additional eligibility detail: `{{ eligibility_provenance.documents_handle }}`
+{% endif -%}
 {% endif -%}
 {% if show_locations_section and locations -%}
 ## Locations ({{ trial_source_label }})

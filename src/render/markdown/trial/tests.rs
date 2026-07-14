@@ -114,6 +114,7 @@ fn trial_markdown_includes_source_labeled_sections() {
         completion_date: None,
         eligibility_text: Some("Eligibility text.".to_string()),
         eligibility: None,
+        eligibility_provenance: None,
         contacts: None,
         locations: Some(vec![crate::entities::trial::TrialLocation {
             facility: "Example Hospital".to_string(),
@@ -159,6 +160,7 @@ fn trial_markdown_includes_source_labeled_sections() {
     assert!(markdown.contains("## Outcomes (ClinicalTrials.gov)"));
     assert!(markdown.contains("## Arms (ClinicalTrials.gov)"));
     assert!(markdown.contains("## References (ClinicalTrials.gov)"));
+    assert!(!markdown.contains("Posted trial documents"));
 }
 
 #[test]
@@ -184,6 +186,12 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
             sex: Some("Female".to_string()),
             minimum_age: Some("2 Years".to_string()),
             maximum_age: Some("18 Years".to_string()),
+        }),
+        eligibility_provenance: Some(crate::entities::trial::TrialEligibilityProvenance {
+            source_kind: "registry".to_string(),
+            source: "ClinicalTrials.gov registry".to_string(),
+            posted_documents_available: true,
+            documents_handle: Some("biomcp --json get trial NCT41300001 documents".to_string()),
         }),
         contacts: Some(vec![crate::entities::trial::TrialContact {
             level: "central".to_string(),
@@ -229,6 +237,9 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
     assert!(markdown.contains("Sex: Female"));
     assert!(markdown.contains("Eligible Ages: 2 Years to 18 Years"));
     assert!(markdown.contains("site@example.test"));
+    assert!(markdown.contains("Posted trial documents"));
+    assert!(markdown.contains("may contain additional eligibility detail"));
+    assert!(markdown.contains("biomcp --json get trial NCT41300001 documents"));
 
     let json = serde_json::to_value(&trial).expect("trial json");
     assert_eq!(json["contacts"][0]["email"], "central@example.test");

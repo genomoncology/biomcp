@@ -127,7 +127,7 @@ pub struct TrialSearchArgs {
 pub struct TrialGetArgs {
     /// ClinicalTrials.gov identifier (e.g., NCT02693535)
     pub nct_id: String,
-    /// Sections to include (eligibility, contacts, locations, outcomes, arms, references, all)
+    /// Sections or document form (eligibility, contacts, locations, outcomes, arms, references, all, documents, document <filename>)
     #[arg(trailing_var_arg = true)]
     pub sections: Vec<String>,
     /// Trial data source (ctgov or nci)
@@ -142,6 +142,7 @@ pub struct TrialGetArgs {
 }
 
 mod dispatch;
+mod documents;
 mod zero_result;
 pub(super) use self::dispatch::{handle_get, handle_search};
 
