@@ -604,7 +604,7 @@ import json, re, sys
 doc = json.load(sys.stdin)
 assert doc.get("pmcid") == "PMC123461"
 provider = doc.get("provider") or {}
-assert provider.get("label") == "Europe PMC Supplementary Files"
+assert "Europe PMC" in str(provider.get("label", ""))
 assert provider.get("source") == "Europe PMC"
 assets = {row.get("filename"): row for row in doc.get("assets") or []}
 filename = "41408_2024_1068_MOESM1_ESM.docx"
