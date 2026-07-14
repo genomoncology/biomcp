@@ -137,6 +137,8 @@ fn supplementary_zip_rejects_unsafe_and_duplicate_names() {
         "folder/../asset.txt",
         "folder//asset.txt",
         "folder/./asset.txt",
+        " leading.txt",
+        "trailing.txt ",
         "control\nname.txt",
     ] {
         let bytes = zip_bytes(&[(name, b"x")], &[]);

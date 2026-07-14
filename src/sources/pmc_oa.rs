@@ -117,17 +117,6 @@ impl PmcOaClient {
         Ok(xml.map(|xml| (xml, manifest)))
     }
 
-    #[allow(dead_code)]
-    pub async fn get_archive_package(
-        &self,
-        pmcid: &str,
-    ) -> Result<Option<PmcOaArchivePackage>, BioMcpError> {
-        let Some(manifest) = self.oa_archive_manifest(pmcid).await? else {
-            return Ok(None);
-        };
-        self.archive_package(manifest).await.map(Some)
-    }
-
     pub(crate) async fn archive_package(
         &self,
         manifest: PmcOaArchiveManifest,
@@ -159,10 +148,20 @@ fn parse_archive_manifest_xml(xml: &str) -> Result<Option<PmcOaArchiveManifest>,
         api: PMC_OA_API.to_string(),
         message: "Invalid PMC OA manifest XML".to_string(),
     })?;
-    if !document
+    let records = document
         .descendants()
-        .any(|node| node.is_element() && node.tag_name().name() == "records")
-    {
+        .any(|node| node.is_element() && node.tag_name().name() == "records");
+    if !records {
+        let root = document.root_element();
+        let not_open_access = root.tag_name().name() == "OA"
+            && root.children().any(|node| {
+                node.is_element()
+                    && node.tag_name().name() == "error"
+                    && node.attribute("code") == Some("idIsNotOpenAccess")
+            });
+        if not_open_access {
+            return Ok(None);
+        }
         return Err(BioMcpError::Api {
             api: PMC_OA_API.to_string(),
             message: "Unexpected PMC OA manifest XML".to_string(),

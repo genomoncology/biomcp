@@ -343,6 +343,7 @@ fn normalize_supplementary_name(raw: &[u8]) -> Result<String, BioMcpError> {
     let raw = std::str::from_utf8(raw)
         .map_err(|_| supplementary_archive_error("member name is not UTF-8"))?;
     if raw.is_empty()
+        || raw.trim() != raw
         || raw.starts_with(['/', '\\'])
         || raw.as_bytes().get(1) == Some(&b':')
         || raw.chars().any(char::is_control)
