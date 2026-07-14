@@ -2,7 +2,7 @@
 
 use crate::error::BioMcpError;
 use crate::sources::europepmc::{EuropePmcClient, EuropePmcResult, EuropePmcSearchResponse};
-use crate::sources::pubmed::{PubMedCitation, PubMedClient};
+use crate::sources::pubmed::{PubMedCitation, PubMedCitationErrorKind, PubMedClient};
 use crate::sources::pubtator::PubTatorClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 use crate::transform;
@@ -13,8 +13,9 @@ use super::{
     ARTICLE_SECTION_ASSETS, ARTICLE_SECTION_FULLTEXT, ARTICLE_SECTION_INDEXING,
     ARTICLE_SECTION_NAMES, ARTICLE_SECTION_TLDR, Article, ArticleAffiliation,
     ArticleAffiliationIdentifier, ArticleGetOptions, ArticleIndexing, ArticleIndexingAuthor,
-    ArticleIndexingStatus, ArticleMeshHeading, ArticleMeshTerm, ArticleSemanticScholar,
-    ArticleSemanticScholarPdf, ArticleSource, INVALID_ARTICLE_ID_MSG, fulltext,
+    ArticleIndexingFailure, ArticleIndexingFailureCode, ArticleIndexingStatus, ArticleMeshHeading,
+    ArticleMeshTerm, ArticleSemanticScholar, ArticleSemanticScholarPdf, ArticleSource,
+    INVALID_ARTICLE_ID_MSG, fulltext,
 };
 
 const ARTICLE_INDEXING_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
@@ -356,12 +357,50 @@ pub(super) async fn get_article_base(id: &str) -> Result<Article, BioMcpError> {
     get_article_base_with_clients(id, &pubtator, &europe).await
 }
 
-fn unavailable_indexing() -> ArticleIndexing {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum IndexingUnavailableCause {
+    MissingPmid,
+    Client,
+    Timeout,
+    PubMed(PubMedCitationErrorKind),
+}
+
+impl IndexingUnavailableCause {
+    fn failure_code(self) -> ArticleIndexingFailureCode {
+        match self {
+            Self::MissingPmid => ArticleIndexingFailureCode::MissingPmid,
+            Self::Client => ArticleIndexingFailureCode::ClientError,
+            Self::Timeout => ArticleIndexingFailureCode::Timeout,
+            Self::PubMed(PubMedCitationErrorKind::Network) => {
+                ArticleIndexingFailureCode::NetworkError
+            }
+            Self::PubMed(PubMedCitationErrorKind::Http) => ArticleIndexingFailureCode::HttpError,
+            Self::PubMed(PubMedCitationErrorKind::RateLimited) => {
+                ArticleIndexingFailureCode::RateLimited
+            }
+            Self::PubMed(PubMedCitationErrorKind::InvalidResponse) => {
+                ArticleIndexingFailureCode::InvalidResponse
+            }
+            Self::PubMed(PubMedCitationErrorKind::ResponseTooLarge) => {
+                ArticleIndexingFailureCode::ResponseTooLarge
+            }
+            Self::PubMed(PubMedCitationErrorKind::Parse) => ArticleIndexingFailureCode::ParseError,
+            Self::PubMed(PubMedCitationErrorKind::NotFound) => ArticleIndexingFailureCode::NotFound,
+        }
+    }
+}
+
+fn warn_indexing_unavailable(cause: IndexingUnavailableCause, pmid: &str) {
+    warn!(error = ?cause, pmid, "PubMed article indexing unavailable");
+}
+
+fn unavailable_indexing(cause: IndexingUnavailableCause) -> ArticleIndexing {
     ArticleIndexing {
         status: ArticleIndexingStatus::Unavailable,
         source: ArticleSource::PubMed,
         authors: Vec::new(),
         mesh_headings: Vec::new(),
+        failure: Some(ArticleIndexingFailure::from_code(cause.failure_code())),
     }
 }
 
@@ -412,42 +451,42 @@ fn article_indexing_from_citation(citation: PubMedCitation) -> ArticleIndexing {
                     .collect(),
             })
             .collect(),
+        failure: None,
     }
 }
 
 async fn citation_with_timeout<F>(
     timeout: std::time::Duration,
     future: F,
-) -> Result<PubMedCitation, BioMcpError>
+) -> Result<PubMedCitation, IndexingUnavailableCause>
 where
-    F: std::future::Future<Output = Result<PubMedCitation, BioMcpError>>,
+    F: std::future::Future<Output = Result<PubMedCitation, PubMedCitationErrorKind>>,
 {
     tokio::time::timeout(timeout, future)
         .await
-        .map_err(|_| BioMcpError::Api {
-            api: "pubmed-eutils".into(),
-            message: "PubMed article indexing timed out".into(),
-        })?
+        .map_err(|_| IndexingUnavailableCause::Timeout)?
+        .map_err(IndexingUnavailableCause::PubMed)
 }
 
 async fn enrich_article_with_indexing(article: &mut Article) {
     let Some(pmid) = article.pmid.as_deref() else {
-        article.indexing = Some(unavailable_indexing());
+        article.indexing = Some(unavailable_indexing(IndexingUnavailableCause::MissingPmid));
         return;
     };
     let client = match PubMedClient::new() {
         Ok(client) => client,
-        Err(_error) => {
-            warn!(pmid, "PubMed article indexing client failed");
-            article.indexing = Some(unavailable_indexing());
+        Err(_) => {
+            let cause = IndexingUnavailableCause::Client;
+            warn_indexing_unavailable(cause, pmid);
+            article.indexing = Some(unavailable_indexing(cause));
             return;
         }
     };
     match citation_with_timeout(ARTICLE_INDEXING_TIMEOUT, client.citation(pmid)).await {
         Ok(citation) => article.indexing = Some(article_indexing_from_citation(citation)),
-        Err(_error) => {
-            warn!(pmid, "PubMed article indexing unavailable");
-            article.indexing = Some(unavailable_indexing());
+        Err(cause) => {
+            warn_indexing_unavailable(cause, pmid);
+            article.indexing = Some(unavailable_indexing(cause));
         }
     }
 }

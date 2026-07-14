@@ -1888,6 +1888,7 @@ mod tests {
             source: ArticleSource::PubMed,
             authors: Vec::new(),
             mesh_headings: Vec::new(),
+            failure: None,
         });
         let sources = article_section_sources(&article);
         assert!(sources.iter().any(|source| {

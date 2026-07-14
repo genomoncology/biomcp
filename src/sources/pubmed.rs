@@ -12,6 +12,7 @@ use crate::sources::{RequestPlan, request_from_plan};
 const PUBMED_EUTILS_BASE: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 const PUBMED_EUTILS_BASE_ENV: &str = "BIOMCP_PUBMED_BASE";
 const PUBMED_EUTILS_API: &str = "pubmed-eutils";
+pub(crate) const PUBMED_CITATION_NODE_LIMIT: u32 = 100_000;
 
 #[derive(Clone)]
 pub struct PubMedClient {
@@ -60,6 +61,17 @@ pub struct PubMedCitationRequestPlan {
     pub status_expectation: &'static str,
     pub content_type_expectation: &'static str,
     pub auth_mode: &'static str,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PubMedCitationErrorKind {
+    Network,
+    Http,
+    RateLimited,
+    InvalidResponse,
+    ResponseTooLarge,
+    Parse,
+    NotFound,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -238,29 +250,49 @@ impl PubMedClient {
         })
     }
 
-    pub(crate) async fn citation(&self, pmid: &str) -> Result<PubMedCitation, BioMcpError> {
+    pub(crate) async fn citation(
+        &self,
+        pmid: &str,
+    ) -> Result<PubMedCitation, PubMedCitationErrorKind> {
         let authenticated = self.api_key.is_some();
-        let plan = Self::citation_plan(pmid, self.api_key.as_deref())?;
+        let plan = Self::citation_plan(pmid, self.api_key.as_deref())
+            .map_err(|_| PubMedCitationErrorKind::InvalidResponse)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let (status, content_type, bytes) = self.send(req, authenticated).await?;
+        let (status, content_type, bytes) = self
+            .send(req, authenticated)
+            .await
+            .map_err(Self::citation_request_error)?;
         let xml = Self::decode_citation_response(status, content_type.as_ref(), bytes)?;
         let pmid = pmid.trim().to_string();
         tokio::task::spawn_blocking(move || parse_citation_xml(&pmid, &xml))
             .await
-            .map_err(|error| {
-                pubmed_api_error(format!("PubMed citation parser task failed: {error}"))
-            })?
+            .map_err(|_| PubMedCitationErrorKind::Parse)?
+    }
+
+    fn citation_request_error(error: BioMcpError) -> PubMedCitationErrorKind {
+        match error {
+            BioMcpError::Http(_) | BioMcpError::HttpMiddleware(_) => {
+                PubMedCitationErrorKind::Network
+            }
+            BioMcpError::BodyLimit { .. } => PubMedCitationErrorKind::ResponseTooLarge,
+            _ => PubMedCitationErrorKind::InvalidResponse,
+        }
     }
 
     fn decode_citation_response(
         status: reqwest::StatusCode,
         content_type: Option<&reqwest::header::HeaderValue>,
         bytes: Vec<u8>,
-    ) -> Result<String, BioMcpError> {
-        if !status.is_success() {
-            return Err(pubmed_api_error(format!(
-                "PubMed citation request returned HTTP {status}"
-            )));
+    ) -> Result<String, PubMedCitationErrorKind> {
+        match status {
+            reqwest::StatusCode::TOO_MANY_REQUESTS => {
+                return Err(PubMedCitationErrorKind::RateLimited);
+            }
+            reqwest::StatusCode::NOT_FOUND | reqwest::StatusCode::GONE => {
+                return Err(PubMedCitationErrorKind::NotFound);
+            }
+            status if !status.is_success() => return Err(PubMedCitationErrorKind::Http),
+            _ => {}
         }
         let media_type = content_type
             .and_then(|value| value.to_str().ok())
@@ -268,12 +300,9 @@ impl PubMedClient {
             .map(str::trim)
             .map(str::to_ascii_lowercase);
         if !matches!(media_type.as_deref(), Some("application/xml" | "text/xml")) {
-            return Err(pubmed_api_error(
-                "PubMed citation response had an unexpected content type",
-            ));
+            return Err(PubMedCitationErrorKind::InvalidResponse);
         }
-        String::from_utf8(bytes)
-            .map_err(|_| pubmed_api_error("PubMed citation response was not valid UTF-8"))
+        String::from_utf8(bytes).map_err(|_| PubMedCitationErrorKind::InvalidResponse)
     }
 
     pub(crate) fn esearch_plan(
@@ -723,19 +752,21 @@ fn parse_author(node: roxmltree::Node<'_, '_>) -> Result<PubMedCitationAuthor, B
     })
 }
 
-fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, BioMcpError> {
-    let document = roxmltree::Document::parse(xml)
-        .map_err(|_| pubmed_api_error("PubMed citation XML failed to parse"))?;
+fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, PubMedCitationErrorKind> {
+    let document = roxmltree::Document::parse_with_options(
+        xml,
+        roxmltree::ParsingOptions {
+            allow_dtd: true,
+            nodes_limit: PUBMED_CITATION_NODE_LIMIT,
+        },
+    )
+    .map_err(|_| PubMedCitationErrorKind::Parse)?;
     let citation = document
         .descendants()
         .filter(|node| node.is_element() && node.tag_name().name() == "PubmedArticle")
         .filter_map(|article| element_children(article, "MedlineCitation").next())
         .find(|citation| child_text(*citation, "PMID") == Some(pmid))
-        .ok_or_else(|| BioMcpError::NotFound {
-            entity: "PubMed citation".into(),
-            id: pmid.to_string(),
-            suggestion: "The record may be missing or deleted in PubMed.".into(),
-        })?;
+        .ok_or(PubMedCitationErrorKind::NotFound)?;
 
     let authors = element_children(citation, "Article")
         .next()
@@ -745,7 +776,8 @@ fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, BioMcpErr
                 .map(parse_author)
                 .collect::<Result<Vec<_>, BioMcpError>>()
         })
-        .transpose()?
+        .transpose()
+        .map_err(|_| PubMedCitationErrorKind::Parse)?
         .unwrap_or_default();
 
     let mesh_headings = element_children(citation, "MeshHeadingList")
@@ -771,7 +803,8 @@ fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, BioMcpErr
                 })
                 .collect::<Result<Vec<_>, BioMcpError>>()
         })
-        .transpose()?
+        .transpose()
+        .map_err(|_| PubMedCitationErrorKind::Parse)?
         .unwrap_or_default();
 
     Ok(PubMedCitation {

@@ -93,7 +93,9 @@ a summary, named sections are additive, and `all` gives the standard default
 surface rather than every opt-in section. Article `indexing` is opt-in on an
 ordinary detail request because it adds PubMed citation XML retrieval, but it is
 included by article `all`; its availability status distinguishes an empty
-PubMed record from unavailable metadata. Article `assets` is JSON-only and provider-labelled (PMC OA first, Figshare
+PubMed record from unavailable metadata. Unavailable indexing preserves the
+base article and exposes only a stable failure code and static message in JSON
+and Markdown, never raw provider or parser details. Article `assets` is JSON-only and provider-labelled (PMC OA first, Figshare
 fallback when Semantic Scholar points at supported Figshare metadata, including
 same-paper Figshare siblings discovered by DOI/title), while `asset <name>`
 streams raw bytes with no conversion for downstream parsers. Asset handles remain

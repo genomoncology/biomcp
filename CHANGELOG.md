@@ -22,6 +22,9 @@
 
 ### Fixes
 
+- Restored live PubMed article indexing for normal DTD-bearing citation XML with
+  finite body/node bounds, and added sanitized failure codes/messages while
+  preserving the base article when indexing degrades.
 - Emitted JSON usage errors for clap parse failures under `--json`, keeping CLI
   error output machine-readable on parse errors. (466)
 - Fixed `variant normalize` JSON output so failures no longer look like silent
