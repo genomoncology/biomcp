@@ -145,6 +145,28 @@ print("shipped docs omit retired suggest command")
 ' | mustmatch like "shipped docs omit retired suggest command"
 ```
 
+## ORCID Source Foundation Does Not Publish Author Grammar
+
+ORCID record and work retrieval is an internal source foundation. Until the
+provider terms and author identity domain are enabled together, normal discovery
+must not advertise an author command or entity.
+
+```bash
+biomcp --help | mustmatch not '/(?m)^\s*author\s/'
+```
+
+```bash
+biomcp search --help | mustmatch not '/(?m)^\s*author\s/'
+```
+
+```bash
+biomcp get --help | mustmatch not '/(?m)^\s*author\s/'
+```
+
+```bash
+biomcp list | mustmatch not '/(?m)^- `?author`?(\s|$)/'
+```
+
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
 
 The cache configuration reference promises an operator env override for the
