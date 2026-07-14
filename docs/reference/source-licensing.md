@@ -271,7 +271,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 
 ### Europe PMC
 
-- BioMCP surfaces: `search article; get article <pmid>; get article <id> fulltext`
+- BioMCP surfaces: `search article; get article <pmid>; get article <id> fulltext; get article <id> assets; get article <id> asset <name>`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
@@ -279,7 +279,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: metadata is broadly reusable, but full text and PDFs remain governed by article-level licenses
 - Official terms URL: <https://europepmc.org/RestfulWebService>
 - Reviewed on: `2026-03-20`
-- Notes: BioMCP uses Europe PMC for search, bibliographic metadata, and article full-text XML lookups. Open-access reuse depends on the publication license attached to each record.
+- Notes: BioMCP uses Europe PMC for search, bibliographic metadata, article full-text XML, and the second article-asset rung after PMC OA. Supplementary ZIP bytes do not imply reusable status: BioMCP reports unknown reuse unless article metadata or a retained PMC OA manifest supplies a license, and retained PMC licenses keep PMC OA source attribution.
 
 ### Figshare
 
@@ -291,7 +291,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: reuse downloaded article assets according to the Figshare item license and preserve Figshare/article provenance
 - Official terms URL: <https://figshare.com/terms>
 - Reviewed on: `2026-06-06`
-- Notes: BioMCP uses Figshare only as an article-asset fallback after PMC OA assets are unavailable and Semantic Scholar discovery points at a supported Figshare/AACR Figshare article URL. BioMCP downloads bytes from the Figshare API `download_url` and does not parse supplement contents.
+- Notes: BioMCP uses Figshare only as an article-asset fallback after PMC OA and Europe PMC assets are unavailable and Semantic Scholar discovery points at a supported Figshare/AACR Figshare article URL. BioMCP downloads bytes from the Figshare API `download_url` and does not parse supplement contents.
 
 ### g:Profiler
 
@@ -523,7 +523,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://pmc.ncbi.nlm.nih.gov/tools/openftlist/>
 - API key / account URL: <https://www.ncbi.nlm.nih.gov/account/settings/>
 - Reviewed on: `2026-03-20`
-- Notes: BioMCP queries PMC OA on demand as one XML full-text rung and as the preferred article-asset provider; it does not ship the article corpus. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses.
+- Notes: BioMCP queries PMC OA on demand as one XML full-text rung and as the preferred article-asset provider; it does not ship the article corpus. When an advertised archive fails but Europe PMC supplies the bytes, a parsed PMC OA license fact is retained with PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses.
 
 ### PubMed
 

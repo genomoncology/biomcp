@@ -246,15 +246,18 @@ biomcp get article <id> asset <filename>
 ```
 
 `get article <id> assets` returns a JSON-only provider-labelled manifest. BioMCP
-prefers the canonical PMC OA package; if none is available and Semantic Scholar
-enrichment points at supported Figshare/AACR Figshare metadata, it resolves the
-Figshare API and lists those public files instead. Figshare manifests can include
-same-paper sibling records discovered by DOI/title, while excluding records that
-do not match the paper. `get article <id> asset <name>` returns the selected
-member as raw bytes with no conversion; downstream tools parse CSV, XLSX, DOC,
-PDF, or images. Manifest handles remain BioMCP commands, not provider download
-URLs. Figshare supplement PDFs and tables remain assets, not full-text article
-substitutes.
+tries the canonical PMC OA package first, a validated Europe PMC supplementary
+ZIP second, and supported Figshare/AACR Figshare metadata last. Figshare
+manifests can include same-paper sibling records discovered by DOI/title, while
+excluding records that do not match the paper. `get article <id> asset <name>`
+returns the selected member as raw bytes with no conversion; downstream tools
+parse CSV, XLSX, DOC, PDF, or images. Manifest handles remain BioMCP commands,
+not provider download URLs. Europe PMC reuse remains unknown unless article
+metadata or a retained PMC OA manifest supplies a license; retained licenses
+name PMC OA as their source. A healthy provider ladder with no package returns
+`not_found`, while a failed source with no successful fallback returns
+`source_unavailable` rather than claiming that assets are absent. Figshare
+supplement PDFs and tables remain assets, not full-text article substitutes.
 
 Opt in to the final PDF rung only when you want the last-resort open-access PDF
 path after XML and PMC HTML both miss:

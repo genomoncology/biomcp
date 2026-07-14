@@ -22,6 +22,9 @@
 
 ### Fixes
 
+- Recovered article assets through bounded Europe PMC supplementary ZIPs when a
+  PMC OA archive fails, while distinguishing confirmed absence from source
+  unavailability and preserving retained PMC OA license provenance.
 - Restored live PubMed article indexing for normal DTD-bearing citation XML with
   finite body/node bounds, and added sanitized failure codes/messages while
   preserving the base article when indexing degrades.

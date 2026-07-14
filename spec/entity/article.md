@@ -590,6 +590,49 @@ belongs downstream.
 0,1"
 ```
 
+## Europe PMC Recovers Assets After a PMC Archive Failure
+
+An advertised PMC OA archive can disappear without proving that the article has
+no supplementary files. BioMCP keeps PMC OA first, then recovers through the
+validated Europe PMC supplementary package while retaining the PMC manifest's
+article-level license fact with its own source attribution.
+
+```bash
+../../tools/biomcp-ci --json get article 22663018 assets | uv run --no-sync python3 -c '
+import json, re, sys
+
+doc = json.load(sys.stdin)
+assert doc.get("pmcid") == "PMC123461"
+provider = doc.get("provider") or {}
+assert "Europe PMC" in str(provider.get("label", ""))
+assert provider.get("source") == "Europe PMC"
+assets = {row.get("filename"): row for row in doc.get("assets") or []}
+filename = "41408_2024_1068_MOESM1_ESM.docx"
+supp = assets.get(filename) or {}
+assert supp.get("kind") == "supplementary-file"
+assert isinstance(supp.get("size_bytes"), int) and supp["size_bytes"] > 0
+assert re.fullmatch(r"[0-9a-f]{64}", str(supp.get("sha256", "")))
+assert (supp.get("provider") or {}).get("source") == "Europe PMC"
+reuse = supp.get("reuse") or {}
+assert reuse.get("license_present") is True
+assert reuse.get("license") == "CC BY"
+assert (reuse.get("license_source") or {}).get("source") == "PMC OA"
+handle = "biomcp get article 22663018 asset 41408_2024_1068_MOESM1_ESM.docx"
+assert supp.get("handle") == handle
+assert handle in ((doc.get("_meta") or {}).get("next_commands") or [])
+print("europe pmc fallback manifest ok")
+' | mustmatch like "europe pmc fallback manifest ok"
+```
+
+## Europe PMC Asset Retrieval Returns Exact Bytes
+
+The stable handle resolves the same validated Europe PMC member and returns its
+bytes without conversion.
+
+```bash
+../../tools/biomcp-ci get article 22663018 asset 41408_2024_1068_MOESM1_ESM.docx | mustmatch like "scrubbed Europe PMC supplementary DOCX fixture bytes"
+```
+
 ## Non-PMC Figshare Assets Manifest
 
 When an article has no PMC OA package but Semantic Scholar points at a supported

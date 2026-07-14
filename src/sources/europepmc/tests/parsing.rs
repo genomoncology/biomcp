@@ -3,7 +3,10 @@
 
 use crate::error::BioMcpError;
 use crate::sources::decode_json;
-use crate::sources::europepmc::{EuropePmcClient, EuropePmcResult, EuropePmcSearchResponse};
+use crate::sources::europepmc::{
+    EuropePmcClient, EuropePmcResult, EuropePmcSearchResponse, parse_supplementary_zip,
+    parse_supplementary_zip_with_limits, supplementary_status_has_package,
+};
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 
@@ -21,6 +24,25 @@ macro_rules! fixture {
 
 fn json_ct() -> HeaderValue {
     HeaderValue::from_static("application/json")
+}
+
+fn zip_bytes(entries: &[(&str, &[u8])], directories: &[&str]) -> Vec<u8> {
+    use std::io::{Cursor, Write};
+
+    let mut out = Cursor::new(Vec::new());
+    {
+        let mut archive = zip::ZipWriter::new(&mut out);
+        let options = zip::write::FileOptions::default();
+        for directory in directories {
+            archive.add_directory(*directory, options).unwrap();
+        }
+        for (name, bytes) in entries {
+            archive.start_file(*name, options).unwrap();
+            archive.write_all(bytes).unwrap();
+        }
+        archive.finish().unwrap();
+    }
+    out.into_inner()
 }
 
 #[test]
@@ -83,6 +105,73 @@ fn decode_full_text_xml_maps_http_error_status_with_excerpt() {
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(msg.contains("europepmc"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
+}
+
+#[test]
+fn supplementary_status_distinguishes_absence_from_failure() {
+    assert!(!supplementary_status_has_package(StatusCode::NOT_FOUND).unwrap());
+    assert!(!supplementary_status_has_package(StatusCode::NO_CONTENT).unwrap());
+    assert!(supplementary_status_has_package(StatusCode::OK).unwrap());
+    assert!(matches!(
+        supplementary_status_has_package(StatusCode::BAD_GATEWAY),
+        Err(BioMcpError::Api { .. })
+    ));
+}
+
+#[test]
+fn supplementary_zip_preserves_normalized_names_and_exact_bytes() {
+    let bytes = zip_bytes(&[("folder\\asset.docx", b"exact bytes")], &["empty/"]);
+    let package = parse_supplementary_zip(&bytes).unwrap();
+    assert_eq!(package.entries.len(), 1);
+    assert_eq!(package.entries[0].filename, "folder/asset.docx");
+    assert_eq!(package.entries[0].bytes, b"exact bytes");
+}
+
+#[test]
+fn supplementary_zip_rejects_unsafe_and_duplicate_names() {
+    for name in [
+        "../asset.txt",
+        "/asset.txt",
+        "C:\\asset.txt",
+        "C:asset.txt",
+        "folder/../asset.txt",
+        "folder//asset.txt",
+        "folder/./asset.txt",
+        " leading.txt",
+        "trailing.txt ",
+        "control\nname.txt",
+    ] {
+        let bytes = zip_bytes(&[(name, b"x")], &[]);
+        assert!(
+            parse_supplementary_zip(&bytes).is_err(),
+            "accepted {name:?}"
+        );
+    }
+
+    let bytes = zip_bytes(&[("a\\b.txt", b"one"), ("a/b.txt", b"two")], &[]);
+    assert!(parse_supplementary_zip(&bytes).is_err());
+
+    let bytes = zip_bytes(&[("folder", b"file")], &["folder/"]);
+    assert!(parse_supplementary_zip(&bytes).is_err());
+}
+
+#[test]
+fn supplementary_zip_rejects_empty_directory_only_and_malformed_archives() {
+    assert!(parse_supplementary_zip(&zip_bytes(&[], &[])).is_err());
+    assert!(parse_supplementary_zip(&zip_bytes(&[], &["folder/"])).is_err());
+    assert!(parse_supplementary_zip(&zip_bytes(&[("file.txt", b"x")], &["../"])).is_err());
+    assert!(parse_supplementary_zip(b"not a zip").is_err());
+}
+
+#[test]
+fn supplementary_zip_enforces_all_size_and_count_limits() {
+    let one = zip_bytes(&[("one.txt", b"1234")], &[]);
+    assert!(parse_supplementary_zip_with_limits(&one, one.len() - 1, 10, 10, 1).is_err());
+    assert!(parse_supplementary_zip_with_limits(&one, one.len(), 3, 10, 1).is_err());
+
+    let two = zip_bytes(&[("one.txt", b"1234"), ("two.txt", b"5678")], &[]);
+    assert!(parse_supplementary_zip_with_limits(&two, two.len(), 4, 7, 2).is_err());
+    assert!(parse_supplementary_zip_with_limits(&two, two.len(), 4, 8, 1).is_err());
 }
 
 #[test]

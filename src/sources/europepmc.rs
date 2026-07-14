@@ -1,4 +1,6 @@
 use std::borrow::Cow;
+use std::collections::BTreeSet;
+use std::io::{Cursor, Read};
 
 use http_cache_reqwest::CacheMode;
 use serde::de::DeserializeOwned;
@@ -10,6 +12,21 @@ use crate::sources::{RequestPlan, request_from_plan};
 const EUROPE_PMC_BASE: &str = "https://www.ebi.ac.uk/europepmc/webservices/rest";
 const EUROPE_PMC_API: &str = "europepmc";
 const EUROPE_PMC_BASE_ENV: &str = "BIOMCP_EUROPEPMC_BASE";
+const MAX_SUPPLEMENTARY_ZIP_BYTES: usize = 64 * 1024 * 1024;
+const MAX_SUPPLEMENTARY_MEMBER_BYTES: u64 = 8 * 1024 * 1024;
+const MAX_SUPPLEMENTARY_TOTAL_BYTES: usize = 64 * 1024 * 1024;
+const MAX_SUPPLEMENTARY_MEMBERS: usize = 256;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EuropePmcSupplementaryEntry {
+    pub filename: String,
+    pub bytes: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EuropePmcSupplementaryPackage {
+    pub entries: Vec<EuropePmcSupplementaryEntry>,
+}
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum EuropePmcSort {
@@ -72,30 +89,40 @@ impl EuropePmcClient {
         &self,
         pmcid: &str,
     ) -> Result<EuropePmcSearchResponse, BioMcpError> {
-        let pmcid = pmcid.trim();
-        if pmcid.is_empty() {
-            return Err(BioMcpError::InvalidArgument(
-                "PMCID is required. Example: biomcp get article PMC9984800".into(),
-            ));
-        }
-        if pmcid.len() > 64 {
-            return Err(BioMcpError::InvalidArgument("PMCID is too long.".into()));
-        }
-
-        let (prefix, rest) = pmcid.split_at(3.min(pmcid.len()));
-        if !prefix.eq_ignore_ascii_case("PMC")
-            || rest.is_empty()
-            || !rest.chars().all(|c| c.is_ascii_digit())
-        {
-            return Err(BioMcpError::InvalidArgument(
-                "PMCID must start with PMC and contain only digits after. Example: biomcp get article PMC9984800"
-                    .into(),
-            ));
-        }
-
-        let normalized = format!("PMC{rest}");
+        let normalized = normalize_pmcid(pmcid)?;
         self.search_query(&format!("PMCID:{normalized}"), 1, 1)
             .await
+    }
+
+    pub(crate) fn supplementary_files_plan(pmcid: &str) -> Result<RequestPlan, BioMcpError> {
+        let normalized = normalize_pmcid(pmcid)?;
+        Ok(RequestPlan::get(format!("{normalized}/supplementaryFiles")))
+    }
+
+    pub async fn get_supplementary_package(
+        &self,
+        pmcid: &str,
+    ) -> Result<Option<EuropePmcSupplementaryPackage>, BioMcpError> {
+        let plan = Self::supplementary_files_plan(pmcid)?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let resp = req.with_extension(CacheMode::NoStore).send().await?;
+        let status = resp.status();
+        if !supplementary_status_has_package(status)? {
+            return Ok(None);
+        }
+        let bytes = crate::sources::read_limited_body_with_limit(
+            resp,
+            EUROPE_PMC_API,
+            MAX_SUPPLEMENTARY_ZIP_BYTES,
+        )
+        .await?;
+        let package = tokio::task::spawn_blocking(move || parse_supplementary_zip(&bytes))
+            .await
+            .map_err(|err| BioMcpError::Api {
+                api: EUROPE_PMC_API.to_string(),
+                message: format!("Task join error: {err}"),
+            })??;
+        Ok(Some(package))
     }
 
     pub async fn search_by_pmid(&self, pmid: &str) -> Result<EuropePmcSearchResponse, BioMcpError> {
@@ -267,6 +294,165 @@ impl EuropePmcClient {
         let bytes = crate::sources::read_limited_body(resp, EUROPE_PMC_API).await?;
         Self::decode_full_text_xml(status, &bytes)
     }
+}
+
+fn normalize_pmcid(pmcid: &str) -> Result<String, BioMcpError> {
+    let pmcid = pmcid.trim();
+    if pmcid.is_empty() {
+        return Err(BioMcpError::InvalidArgument(
+            "PMCID is required. Example: biomcp get article PMC9984800".into(),
+        ));
+    }
+    if pmcid.len() > 64 {
+        return Err(BioMcpError::InvalidArgument("PMCID is too long.".into()));
+    }
+    let (prefix, rest) = pmcid.split_at(3.min(pmcid.len()));
+    if !prefix.eq_ignore_ascii_case("PMC")
+        || rest.is_empty()
+        || !rest.chars().all(|c| c.is_ascii_digit())
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "PMCID must start with PMC and contain only digits after. Example: biomcp get article PMC9984800"
+                .into(),
+        ));
+    }
+    Ok(format!("PMC{rest}"))
+}
+
+fn supplementary_status_has_package(status: reqwest::StatusCode) -> Result<bool, BioMcpError> {
+    if status == reqwest::StatusCode::NOT_FOUND || status == reqwest::StatusCode::NO_CONTENT {
+        return Ok(false);
+    }
+    if !status.is_success() {
+        return Err(BioMcpError::Api {
+            api: EUROPE_PMC_API.to_string(),
+            message: format!("HTTP {status} retrieving supplementary files"),
+        });
+    }
+    Ok(true)
+}
+
+fn supplementary_archive_error(reason: &str) -> BioMcpError {
+    BioMcpError::Api {
+        api: EUROPE_PMC_API.to_string(),
+        message: format!("invalid supplementary ZIP: {reason}"),
+    }
+}
+
+fn normalize_supplementary_name(raw: &[u8]) -> Result<String, BioMcpError> {
+    let raw = std::str::from_utf8(raw)
+        .map_err(|_| supplementary_archive_error("member name is not UTF-8"))?;
+    if raw.is_empty()
+        || raw.trim() != raw
+        || raw.starts_with(['/', '\\'])
+        || raw.as_bytes().get(1) == Some(&b':')
+        || raw.chars().any(char::is_control)
+    {
+        return Err(supplementary_archive_error("unsafe member name"));
+    }
+    let normalized = raw.replace('\\', "/");
+    let mut parts = Vec::new();
+    for part in normalized.split('/') {
+        if part.is_empty() || part == "." || part == ".." || part.ends_with(':') {
+            return Err(supplementary_archive_error("unsafe member name"));
+        }
+        parts.push(part);
+    }
+    Ok(parts.join("/"))
+}
+
+fn parse_supplementary_zip(bytes: &[u8]) -> Result<EuropePmcSupplementaryPackage, BioMcpError> {
+    parse_supplementary_zip_with_limits(
+        bytes,
+        MAX_SUPPLEMENTARY_ZIP_BYTES,
+        MAX_SUPPLEMENTARY_MEMBER_BYTES,
+        MAX_SUPPLEMENTARY_TOTAL_BYTES,
+        MAX_SUPPLEMENTARY_MEMBERS,
+    )
+}
+
+fn parse_supplementary_zip_with_limits(
+    bytes: &[u8],
+    max_zip_bytes: usize,
+    max_member_bytes: u64,
+    max_total_bytes: usize,
+    max_members: usize,
+) -> Result<EuropePmcSupplementaryPackage, BioMcpError> {
+    if bytes.len() > max_zip_bytes {
+        return Err(supplementary_archive_error(
+            "compressed response is too large",
+        ));
+    }
+    let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
+        .map_err(|_| supplementary_archive_error("malformed archive"))?;
+    if archive.len() > max_members {
+        return Err(supplementary_archive_error("too many members"));
+    }
+
+    let mut entries = Vec::new();
+    let mut names = BTreeSet::new();
+    let mut total_bytes = 0usize;
+    for index in 0..archive.len() {
+        let mut member = archive
+            .by_index(index)
+            .map_err(|_| supplementary_archive_error("malformed member"))?;
+        let raw_name = if member.is_dir() {
+            member
+                .name_raw()
+                .strip_suffix(b"/")
+                .or_else(|| member.name_raw().strip_suffix(b"\\"))
+                .unwrap_or(member.name_raw())
+        } else {
+            member.name_raw()
+        };
+        let filename = normalize_supplementary_name(raw_name)?;
+        if !names.insert(filename.clone()) {
+            return Err(supplementary_archive_error("duplicate member name"));
+        }
+        if member.is_dir() {
+            continue;
+        }
+        if member.size() > max_member_bytes {
+            return Err(supplementary_archive_error("member is too large"));
+        }
+        let declared_size = usize::try_from(member.size())
+            .map_err(|_| supplementary_archive_error("member is too large"))?;
+        if total_bytes
+            .checked_add(declared_size)
+            .is_none_or(|size| size > max_total_bytes)
+        {
+            return Err(supplementary_archive_error("expanded archive is too large"));
+        }
+
+        let remaining_total = max_total_bytes - total_bytes;
+        let actual_limit = usize::try_from(max_member_bytes)
+            .unwrap_or(usize::MAX)
+            .min(remaining_total);
+        let mut member_bytes = Vec::new();
+        (&mut member)
+            .take(actual_limit as u64)
+            .read_to_end(&mut member_bytes)
+            .map_err(|_| supplementary_archive_error("could not read member"))?;
+        let mut extra = [0_u8; 1];
+        if member
+            .read(&mut extra)
+            .map_err(|_| supplementary_archive_error("could not read member"))?
+            != 0
+        {
+            return Err(supplementary_archive_error(
+                "member or expanded archive is too large",
+            ));
+        }
+        total_bytes += member_bytes.len();
+        entries.push(EuropePmcSupplementaryEntry {
+            filename,
+            bytes: member_bytes,
+        });
+    }
+    if entries.is_empty() {
+        return Err(supplementary_archive_error("archive has no file members"));
+    }
+    Ok(EuropePmcSupplementaryPackage { entries })
 }
 
 #[derive(Debug, Deserialize, Serialize)]

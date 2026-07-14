@@ -52,10 +52,40 @@ fn parses_manifest_and_rewrites_ftp_to_https() {
 }
 
 #[test]
+fn parses_manifest_attributes_independent_of_order_and_quote_style() {
+    let manifest = parse_archive_manifest_xml(
+        "<records><record retracted='yes' license='CC0'><link href='https://example.test/archive.tgz' format='tgz'/></record></records>",
+    )
+    .unwrap()
+    .expect("manifest");
+
+    assert_eq!(manifest.tgz_url, "https://example.test/archive.tgz");
+    assert_eq!(manifest.license.as_deref(), Some("CC0"));
+    assert_eq!(manifest.retracted, Some(true));
+}
+
+#[test]
 fn parses_manifest_returns_none_without_tgz_link() {
     assert_eq!(
         parse_archive_manifest_xml("<records><record /></records>").unwrap(),
         None
+    );
+}
+
+#[test]
+fn documented_not_open_access_response_is_healthy_absence() {
+    let xml = r#"<OA><responseDate>2026-07-14 16:01:49</responseDate><request>https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC145899</request><error code="idIsNotOpenAccess">identifier 'PMC145899' is not Open Access</error></OA>"#;
+    assert_eq!(parse_archive_manifest_xml(xml).unwrap(), None);
+}
+
+#[test]
+fn malformed_or_unexpected_manifest_is_failure_not_absence() {
+    assert!(parse_archive_manifest_xml("<records>").is_err());
+    assert!(parse_archive_manifest_xml("<html><body>error</body></html>").is_err());
+    assert!(parse_archive_manifest_xml("<OA><error code=\"unknown\">error</error></OA>").is_err());
+    assert!(
+        parse_archive_manifest_xml("<html><error code=\"idIsNotOpenAccess\">error</error></html>")
+            .is_err()
     );
 }
 

@@ -125,11 +125,13 @@ fn manifest_reuse(license: Option<String>) -> ArticleFulltextReuse {
         Some(license) => ArticleFulltextReuse {
             license_present: true,
             license: Some(license),
+            license_source: None,
             reuse_warning: None,
         },
         None => ArticleFulltextReuse {
             license_present: false,
             license: None,
+            license_source: None,
             reuse_warning: Some(
                 "License/reuse status is unknown; verify rights before reuse.".to_string(),
             ),

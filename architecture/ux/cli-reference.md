@@ -95,11 +95,12 @@ ordinary detail request because it adds PubMed citation XML retrieval, but it is
 included by article `all`; its availability status distinguishes an empty
 PubMed record from unavailable metadata. Unavailable indexing preserves the
 base article and exposes only a stable failure code and static message in JSON
-and Markdown, never raw provider or parser details. Article `assets` is JSON-only and provider-labelled (PMC OA first, Figshare
-fallback when Semantic Scholar points at supported Figshare metadata, including
-same-paper Figshare siblings discovered by DOI/title), while `asset <name>`
-streams raw bytes with no conversion for downstream parsers. Asset handles remain
-BioMCP commands rather than provider download URLs.
+and Markdown, never raw provider or parser details. Article `assets` is JSON-only
+and provider-labelled (PMC OA first, Europe PMC second, then Figshare when
+Semantic Scholar points at supported metadata), while `asset <name>` streams raw
+bytes with no conversion for downstream parsers. A failed source with no later
+winner is unavailable rather than a confirmed miss. Asset handles remain BioMCP
+commands rather than provider download URLs.
 Use `--name` when a multi-word drug or disease name would otherwise be confused with section tokens.
 Opt-in sections such as
 `clinical_features`, `diagnostics`, `disgenet`, and `funding` still require

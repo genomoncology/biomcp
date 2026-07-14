@@ -4,6 +4,9 @@ use roxmltree::Node;
 use sha2::{Digest, Sha256};
 
 use crate::error::BioMcpError;
+use crate::sources::europepmc::{
+    EuropePmcClient, EuropePmcSupplementaryEntry, EuropePmcSupplementaryPackage,
+};
 use crate::sources::figshare::{
     FigshareArticle, FigshareArticleRef, FigshareArticleSearchResult, FigshareClient, FigshareFile,
     parse_figshare_article_url,
@@ -21,9 +24,40 @@ use super::{
 
 const PMC_PROVIDER_LABEL: &str = "PMC OA Archive";
 const PMC_PROVIDER_SOURCE: &str = "PMC OA";
+const EUROPE_PMC_PROVIDER_LABEL: &str = "Europe PMC Supplementary Files";
+const EUROPE_PMC_PROVIDER_SOURCE: &str = "Europe PMC";
 const FIGSHARE_PROVIDER_LABEL: &str = "Figshare";
 const FIGSHARE_PROVIDER_SOURCE: &str = "Figshare";
 const FIGSHARE_COLLECTION_RECORD_LIMIT: usize = 25;
+
+enum SourceAttempt<T> {
+    Success(T),
+    Absent,
+    Failed,
+}
+
+enum ArchivePackage {
+    Pmc {
+        pmcid: String,
+        package: PmcOaArchivePackage,
+    },
+    EuropePmc {
+        pmcid: String,
+        package: EuropePmcSupplementaryPackage,
+        pmc_manifest: Option<PmcOaArchiveManifest>,
+    },
+}
+
+enum AssetBytesAttempt {
+    Found(Vec<u8>),
+    SourceAbsent,
+    AssetMissing,
+}
+
+struct FigshareCollection {
+    articles: Vec<FigshareArticle>,
+    failed: bool,
+}
 
 #[derive(Clone, Debug, Default)]
 struct JatsAssetFacts {
@@ -43,18 +77,40 @@ pub async fn article_assets_manifest(
     requested_id: &str,
 ) -> Result<ArticleAssetsManifest, BioMcpError> {
     let mut article = super::detail::get_article_base(requested_id).await?;
-    if let Some((pmcid, package)) = try_pmc_package(&article, requested_id).await {
-        return Ok(build_assets_manifest(
-            requested_id,
-            &article,
-            &pmcid,
+    let archive_attempt = resolve_archive_package(&article).await;
+    let archive_failed = matches!(&archive_attempt, SourceAttempt::Failed);
+    match archive_attempt {
+        SourceAttempt::Success(ArchivePackage::Pmc { pmcid, package }) => {
+            return Ok(build_assets_manifest(
+                requested_id,
+                &article,
+                &pmcid,
+                package,
+            ));
+        }
+        SourceAttempt::Success(ArchivePackage::EuropePmc {
+            pmcid,
             package,
-        ));
+            pmc_manifest,
+        }) => {
+            return Ok(build_europe_pmc_manifest(
+                requested_id,
+                &article,
+                &pmcid,
+                package,
+                pmc_manifest.as_ref(),
+            ));
+        }
+        SourceAttempt::Absent | SourceAttempt::Failed => {}
     }
-    if let Some(manifest) = figshare_assets_manifest(requested_id, &mut article).await? {
-        return Ok(manifest);
+    match figshare_assets_manifest(requested_id, &mut article).await {
+        Ok(Some(manifest)) => Ok(manifest),
+        Ok(None) => Err(final_asset_source_error(requested_id, archive_failed)),
+        Err(_) => {
+            tracing::warn!("Figshare request failed for article assets");
+            Err(asset_sources_unavailable())
+        }
     }
-    Err(no_supported_asset_source(requested_id))
 }
 
 pub async fn article_asset_bytes(
@@ -63,52 +119,117 @@ pub async fn article_asset_bytes(
 ) -> Result<Vec<u8>, BioMcpError> {
     let mut article = super::detail::get_article_base(requested_id).await?;
     let wanted = filename.trim();
-    if let Some((_, package)) = try_pmc_package(&article, requested_id).await {
-        return package
-            .entries
-            .into_iter()
-            .find(|entry| !entry.is_xml && entry.filename == wanted)
-            .map(|entry| entry.bytes)
-            .ok_or_else(|| article_asset_not_found(requested_id, wanted));
+    let archive_attempt = resolve_archive_package(&article).await;
+    let archive_failed = matches!(&archive_attempt, SourceAttempt::Failed);
+    match archive_attempt {
+        SourceAttempt::Success(ArchivePackage::Pmc { package, .. }) => {
+            return package
+                .entries
+                .into_iter()
+                .find(|entry| !entry.is_xml && entry.filename == wanted)
+                .map(|entry| entry.bytes)
+                .ok_or_else(|| article_asset_not_found(requested_id, wanted));
+        }
+        SourceAttempt::Success(ArchivePackage::EuropePmc { package, .. }) => {
+            return package
+                .entries
+                .into_iter()
+                .find(|entry| entry.filename == wanted)
+                .map(|entry| entry.bytes)
+                .ok_or_else(|| article_asset_not_found(requested_id, wanted));
+        }
+        SourceAttempt::Absent | SourceAttempt::Failed => {}
     }
-    if let Some(bytes) = figshare_asset_bytes(&mut article, wanted).await? {
-        return Ok(bytes);
+    match figshare_asset_bytes(&mut article, wanted).await {
+        Ok(AssetBytesAttempt::Found(bytes)) => Ok(bytes),
+        Ok(AssetBytesAttempt::AssetMissing) => Err(article_asset_not_found(requested_id, wanted)),
+        Ok(AssetBytesAttempt::SourceAbsent) if !archive_failed => {
+            Err(article_asset_not_found(requested_id, wanted))
+        }
+        Ok(AssetBytesAttempt::SourceAbsent) => Err(asset_sources_unavailable()),
+        Err(_) => {
+            tracing::warn!("Figshare request failed for article asset bytes");
+            Err(asset_sources_unavailable())
+        }
     }
-    Err(article_asset_not_found(requested_id, wanted))
 }
 
 pub(super) async fn attach_not_included(article: &mut Article, requested_id: &str) {
-    let Some((pmcid, package)) = try_pmc_package(article, requested_id).await else {
-        return;
+    let manifest = match resolve_archive_package(article).await {
+        SourceAttempt::Success(ArchivePackage::Pmc { pmcid, package }) => {
+            build_assets_manifest(requested_id, article, &pmcid, package)
+        }
+        SourceAttempt::Success(ArchivePackage::EuropePmc {
+            pmcid,
+            package,
+            pmc_manifest,
+        }) => build_europe_pmc_manifest(
+            requested_id,
+            article,
+            &pmcid,
+            package,
+            pmc_manifest.as_ref(),
+        ),
+        SourceAttempt::Absent | SourceAttempt::Failed => return,
     };
-    let manifest = build_assets_manifest(requested_id, article, &pmcid, package);
     article.not_included = manifest.not_included;
 }
 
-async fn try_pmc_package(
-    article: &Article,
-    requested_id: &str,
-) -> Option<(String, PmcOaArchivePackage)> {
-    let pmcid = match resolve_article_pmcid(article, requested_id).await {
-        Ok(pmcid) => pmcid,
-        Err(err) => {
-            tracing::warn!(
-                ?err,
-                requested_id,
-                "Article PMC OA asset coverage unavailable"
-            );
-            return None;
+async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePackage> {
+    let pmcid = match resolve_article_pmcid(article).await {
+        Ok(Some(pmcid)) => pmcid,
+        Ok(None) => return SourceAttempt::Absent,
+        Err(_) => {
+            tracing::warn!("Article asset identity resolution failed");
+            return SourceAttempt::Failed;
         }
     };
-    match fetch_package(&pmcid).await {
-        Ok(package) => Some((pmcid, package)),
-        Err(err) => {
-            tracing::warn!(
-                ?err,
-                requested_id,
-                "PMC OA package unavailable for asset coverage"
-            );
+    let pmc = match PmcOaClient::new() {
+        Ok(client) => client,
+        Err(_) => {
+            tracing::warn!("PMC OA client unavailable for article assets");
+            return SourceAttempt::Failed;
+        }
+    };
+    let mut failed = false;
+    let mut pmc_manifest = match pmc.oa_archive_manifest(&pmcid).await {
+        Ok(manifest) => manifest,
+        Err(_) => {
+            tracing::warn!("PMC OA manifest request failed for article assets");
+            failed = true;
             None
+        }
+    };
+    if let Some(manifest) = pmc_manifest.clone() {
+        match pmc.archive_package(manifest).await {
+            Ok(package) => {
+                return SourceAttempt::Success(ArchivePackage::Pmc { pmcid, package });
+            }
+            Err(_) => {
+                tracing::warn!("PMC OA archive request failed for article assets");
+                failed = true;
+            }
+        }
+    }
+
+    let europe_pmc = match EuropePmcClient::new() {
+        Ok(client) => client,
+        Err(_) => {
+            tracing::warn!("Europe PMC client unavailable for article assets");
+            return SourceAttempt::Failed;
+        }
+    };
+    match europe_pmc.get_supplementary_package(&pmcid).await {
+        Ok(Some(package)) => SourceAttempt::Success(ArchivePackage::EuropePmc {
+            pmcid,
+            package,
+            pmc_manifest: pmc_manifest.take(),
+        }),
+        Ok(None) if !failed => SourceAttempt::Absent,
+        Ok(None) => SourceAttempt::Failed,
+        Err(_) => {
+            tracing::warn!("Europe PMC supplementary request failed for article assets");
+            SourceAttempt::Failed
         }
     }
 }
@@ -125,59 +246,56 @@ fn no_supported_asset_source(requested_id: &str) -> BioMcpError {
     BioMcpError::NotFound {
         entity: "article asset source".to_string(),
         id: requested_id.to_string(),
-        suggestion:
-            "No supported article asset source found: no PMC OA package or supported Figshare asset URL."
-                .to_string(),
+        suggestion: "No supported article asset source found: no PMC OA, Europe PMC, or supported Figshare package."
+            .to_string(),
     }
 }
 
-async fn fetch_package(pmcid: &str) -> Result<PmcOaArchivePackage, BioMcpError> {
-    PmcOaClient::new()?
-        .get_archive_package(pmcid)
-        .await?
-        .ok_or_else(|| BioMcpError::NotFound {
-            entity: "PMC OA package".to_string(),
-            id: pmcid.to_string(),
-            suggestion: "Try fulltext or verify the article has a PMC Open Access package."
-                .to_string(),
-        })
+fn final_asset_source_error(requested_id: &str, failed: bool) -> BioMcpError {
+    if failed {
+        asset_sources_unavailable()
+    } else {
+        no_supported_asset_source(requested_id)
+    }
 }
 
-async fn resolve_article_pmcid(
-    article: &Article,
-    requested_id: &str,
-) -> Result<String, BioMcpError> {
+fn asset_sources_unavailable() -> BioMcpError {
+    BioMcpError::SourceUnavailable {
+        source_name: "article asset providers".to_string(),
+        reason: "Asset availability could not be confirmed because a consulted source failed."
+            .to_string(),
+        suggestion: "Retry later or inspect the article at its source.".to_string(),
+    }
+}
+
+async fn resolve_article_pmcid(article: &Article) -> Result<Option<String>, BioMcpError> {
     if let Some(pmcid) = article
         .pmcid
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty())
     {
-        return Ok(pmcid.to_string());
+        return Ok(Some(pmcid.to_string()));
     }
 
     let ncbi = NcbiIdConverterClient::new()?;
     if let Some(pmid) = article.pmid.as_deref()
         && let Some(pmcid) = ncbi.pmid_to_pmcid(pmid).await?
     {
-        return Ok(pmcid);
+        return Ok(Some(pmcid));
     }
     if let Some(doi) = article.doi.as_deref()
         && let Some(pmcid) = ncbi.doi_to_pmcid(doi).await?
     {
-        return Ok(pmcid);
+        return Ok(Some(pmcid));
     }
 
-    Err(BioMcpError::NotFound {
-        entity: "PMC OA package".to_string(),
-        id: requested_id.to_string(),
-        suggestion: "Article has no resolved PMCID for OA asset retrieval.".to_string(),
-    })
+    Ok(None)
 }
 
 async fn figshare_collection(
     article: &mut Article,
-) -> Result<Option<Vec<FigshareArticle>>, BioMcpError> {
+) -> Result<Option<FigshareCollection>, BioMcpError> {
     super::detail::enrich_article_with_semantic_scholar(article).await?;
     let Some(url) = article
         .semantic_scholar
@@ -203,7 +321,7 @@ async fn figshare_collection(
         .or_else(|| linked.title.as_deref().and_then(normalize_title));
     let mut ids = vec![linked.article_id];
     let mut seen = BTreeSet::from([linked.article_id]);
-    let doi_additions = match target_doi.as_deref() {
+    let (doi_additions, mut failed) = match target_doi.as_deref() {
         Some(doi) => {
             append_figshare_search_ids(
                 &client,
@@ -213,14 +331,14 @@ async fn figshare_collection(
                 &mut seen,
                 &mut ids,
             )
-            .await?
+            .await
         }
-        None => 0,
+        None => (0, false),
     };
     if doi_additions == 0
         && let Some(title) = target_title.as_deref()
     {
-        append_figshare_search_ids(
+        failed |= append_figshare_search_ids(
             &client,
             title,
             target_doi.as_deref(),
@@ -228,7 +346,8 @@ async fn figshare_collection(
             &mut seen,
             &mut ids,
         )
-        .await?;
+        .await
+        .1;
     }
 
     let mut articles = vec![linked];
@@ -239,10 +358,13 @@ async fn figshare_collection(
         };
         match client.article(&reference).await {
             Ok(article) => articles.push(article),
-            Err(err) => tracing::warn!(?err, article_id, "Figshare sibling article unavailable"),
+            Err(_) => {
+                failed = true;
+                tracing::warn!("Figshare sibling article request failed");
+            }
         }
     }
-    Ok(Some(articles))
+    Ok(Some(FigshareCollection { articles, failed }))
 }
 
 async fn append_figshare_search_ids(
@@ -252,21 +374,18 @@ async fn append_figshare_search_ids(
     target_title: Option<&str>,
     seen: &mut BTreeSet<u64>,
     ids: &mut Vec<u64>,
-) -> Result<usize, BioMcpError> {
+) -> (usize, bool) {
     let rows = match client.search_articles(query).await {
         Ok(rows) => rows,
-        Err(err) => {
-            tracing::warn!(?err, query, "Figshare sibling search unavailable");
-            return Ok(0);
+        Err(_) => {
+            tracing::warn!("Figshare sibling search request failed");
+            return (0, true);
         }
     };
-    Ok(append_matching_figshare_ids(
-        rows,
-        target_doi,
-        target_title,
-        seen,
-        ids,
-    ))
+    (
+        append_matching_figshare_ids(rows, target_doi, target_title, seen, ids),
+        false,
+    )
 }
 
 fn append_matching_figshare_ids(
@@ -352,10 +471,10 @@ async fn figshare_assets_manifest(
     requested_id: &str,
     article: &mut Article,
 ) -> Result<Option<ArticleAssetsManifest>, BioMcpError> {
-    let Some(figshare_articles) = figshare_collection(article).await? else {
+    let Some(collection) = figshare_collection(article).await? else {
         return Ok(None);
     };
-    let Some(first_article) = figshare_articles.first() else {
+    let Some(first_article) = collection.articles.first() else {
         return Ok(None);
     };
     let provider = figshare_provider();
@@ -363,7 +482,8 @@ async fn figshare_assets_manifest(
     let client = FigshareClient::new()?;
     let mut seen_files = BTreeSet::new();
     let mut assets = Vec::new();
-    for figshare in &figshare_articles {
+    let mut download_failed = false;
+    for figshare in &collection.articles {
         let reuse = figshare_reuse(figshare);
         let asset_provenance = figshare_provenance(figshare, article);
         for file in &figshare.files {
@@ -379,14 +499,19 @@ async fn figshare_assets_manifest(
                     &reuse,
                     &asset_provenance,
                 )),
-                Err(err) => {
-                    tracing::warn!(?err, filename = %file.filename, "Figshare asset unavailable")
+                Err(_) => {
+                    download_failed = true;
+                    tracing::warn!("Figshare asset download failed");
                 }
             }
         }
     }
     if assets.is_empty() {
-        return Ok(None);
+        return if download_failed || collection.failed {
+            Err(asset_sources_unavailable())
+        } else {
+            Ok(None)
+        };
     }
     assets.sort_by(|left, right| left.filename.cmp(&right.filename));
     let mut manifest = ArticleAssetsManifest {
@@ -405,23 +530,30 @@ async fn figshare_assets_manifest(
 async fn figshare_asset_bytes(
     article: &mut Article,
     wanted: &str,
-) -> Result<Option<Vec<u8>>, BioMcpError> {
-    let Some(figshare_articles) = figshare_collection(article).await? else {
-        return Ok(None);
+) -> Result<AssetBytesAttempt, BioMcpError> {
+    let Some(collection) = figshare_collection(article).await? else {
+        return Ok(AssetBytesAttempt::SourceAbsent);
     };
     let client = FigshareClient::new()?;
     let mut seen_files = BTreeSet::new();
-    for figshare in &figshare_articles {
+    for figshare in &collection.articles {
         for file in &figshare.files {
             if !seen_files.insert(file.filename.clone()) {
                 continue;
             }
             if file.filename == wanted {
-                return client.download_file(file).await.map(Some);
+                return client
+                    .download_file(file)
+                    .await
+                    .map(AssetBytesAttempt::Found);
             }
         }
     }
-    Ok(None)
+    if collection.failed {
+        Err(asset_sources_unavailable())
+    } else {
+        Ok(AssetBytesAttempt::AssetMissing)
+    }
 }
 
 fn figshare_provider() -> ArticleFulltextProvider {
@@ -440,11 +572,13 @@ fn figshare_reuse(article: &FigshareArticle) -> ArticleFulltextReuse {
         Some(license) => ArticleFulltextReuse {
             license_present: true,
             license: Some(license),
+            license_source: None,
             reuse_warning: None,
         },
         None => ArticleFulltextReuse {
             license_present: false,
             license: None,
+            license_source: None,
             reuse_warning: Some(
                 "License/reuse status is unknown; verify rights before reuse.".to_string(),
             ),
@@ -505,6 +639,95 @@ fn figshare_kind(file: &FigshareFile) -> &'static str {
     filename_kind(&file.filename)
 }
 
+fn build_europe_pmc_manifest(
+    requested_id: &str,
+    article: &Article,
+    pmcid: &str,
+    package: EuropePmcSupplementaryPackage,
+    pmc_manifest: Option<&PmcOaArchiveManifest>,
+) -> ArticleAssetsManifest {
+    let provider = ArticleFulltextProvider {
+        label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
+        source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
+    };
+    let reuse = europe_pmc_reuse(pmc_manifest, article);
+    let provenance = ArticleFulltextProvenance {
+        open_access: article.open_access,
+        retracted: pmc_manifest
+            .and_then(|manifest| manifest.retracted)
+            .or(article.europepmc_retracted),
+        package_url: None,
+        pdf_fallback_used: false,
+    };
+    let mut assets = package
+        .entries
+        .iter()
+        .map(|entry| europe_pmc_asset_entry(requested_id, entry, &provider, &reuse, &provenance))
+        .collect::<Vec<_>>();
+    assets.sort_by(|left, right| left.filename.cmp(&right.filename));
+    let mut manifest = ArticleAssetsManifest {
+        article_id: requested_id.trim().to_string(),
+        pmid: article.pmid.clone(),
+        pmcid: Some(pmcid.to_string()),
+        provider,
+        provenance,
+        assets,
+        not_included: None,
+    };
+    manifest.not_included = Some(not_included_from_manifest(&manifest));
+    manifest
+}
+
+fn europe_pmc_reuse(
+    pmc_manifest: Option<&PmcOaArchiveManifest>,
+    article: &Article,
+) -> ArticleFulltextReuse {
+    if let Some(license) = pmc_manifest.and_then(|manifest| manifest.license.clone()) {
+        return ArticleFulltextReuse {
+            license_present: true,
+            license: Some(license),
+            license_source: Some(provider()),
+            reuse_warning: None,
+        };
+    }
+    match article.europepmc_license.clone() {
+        Some(license) => ArticleFulltextReuse {
+            license_present: true,
+            license: Some(license),
+            license_source: None,
+            reuse_warning: None,
+        },
+        None => ArticleFulltextReuse {
+            license_present: false,
+            license: None,
+            license_source: None,
+            reuse_warning: Some(
+                "License/reuse status is unknown; verify rights before reuse.".to_string(),
+            ),
+        },
+    }
+}
+
+fn europe_pmc_asset_entry(
+    requested_id: &str,
+    entry: &EuropePmcSupplementaryEntry,
+    provider: &ArticleFulltextProvider,
+    reuse: &ArticleFulltextReuse,
+    provenance: &ArticleFulltextProvenance,
+) -> ArticleAssetEntry {
+    ArticleAssetEntry {
+        filename: entry.filename.clone(),
+        kind: filename_kind(&entry.filename).to_string(),
+        size_bytes: entry.bytes.len(),
+        sha256: sha256_hex(&entry.bytes),
+        provider: provider.clone(),
+        reuse: reuse.clone(),
+        provenance: provenance.clone(),
+        jats: None,
+        handle: article_asset_command(requested_id, &entry.filename),
+    }
+}
+
 fn build_assets_manifest(
     requested_id: &str,
     article: &Article,
@@ -552,11 +775,13 @@ fn reuse(manifest: &PmcOaArchiveManifest, article: &Article) -> ArticleFulltextR
         Some(license) => ArticleFulltextReuse {
             license_present: true,
             license: Some(license),
+            license_source: None,
             reuse_warning: None,
         },
         None => ArticleFulltextReuse {
             license_present: false,
             license: None,
+            license_source: None,
             reuse_warning: Some(
                 "License/reuse status is unknown; verify rights before reuse.".to_string(),
             ),
@@ -871,6 +1096,56 @@ mod tests {
         assert_eq!(
             not_included.figure_images.retrieve_with,
             "biomcp --json get article \"10.1000/foo bar\" assets"
+        );
+    }
+
+    #[test]
+    fn final_source_classification_distinguishes_absence_from_failure() {
+        assert!(matches!(
+            final_asset_source_error("22663011", false),
+            BioMcpError::NotFound { .. }
+        ));
+        assert!(matches!(
+            final_asset_source_error("22663011", true),
+            BioMcpError::SourceUnavailable { .. }
+        ));
+    }
+
+    #[test]
+    fn europe_pmc_manifest_retains_pmc_license_source_and_exact_member_facts() {
+        let bytes = b"exact supplementary bytes".to_vec();
+        let package = EuropePmcSupplementaryPackage {
+            entries: vec![EuropePmcSupplementaryEntry {
+                filename: "supplement.docx".to_string(),
+                bytes: bytes.clone(),
+            }],
+        };
+        let pmc_manifest = PmcOaArchiveManifest {
+            package_url: "https://example.test/stale.tgz".to_string(),
+            tgz_url: "https://example.test/stale.tgz".to_string(),
+            license: Some("CC BY".to_string()),
+            retracted: Some(false),
+        };
+
+        let manifest = build_europe_pmc_manifest(
+            "22663011",
+            &sample_article(),
+            "PMC123456",
+            package,
+            Some(&pmc_manifest),
+        );
+        assert_eq!(manifest.provider.source, EUROPE_PMC_PROVIDER_SOURCE);
+        let asset = manifest.assets.first().unwrap();
+        assert_eq!(asset.size_bytes, bytes.len());
+        assert_eq!(asset.sha256, sha256_hex(&bytes));
+        assert_eq!(asset.reuse.license.as_deref(), Some("CC BY"));
+        assert_eq!(
+            asset
+                .reuse
+                .license_source
+                .as_ref()
+                .map(|source| source.source.as_str()),
+            Some(PMC_PROVIDER_SOURCE)
         );
     }
 
