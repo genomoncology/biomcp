@@ -372,6 +372,12 @@ def test_live_docs_do_not_reference_deleted_numbered_specs() -> None:
     assert not stale_refs, "\n".join(stale_refs)
 
 
+def test_article_indexing_command_is_aligned_across_user_and_ux_references() -> None:
+    command = "biomcp get article 22663011 indexing"
+    assert command in _read_repo("docs/user-guide/cli-reference.md")
+    assert command in _read_repo("architecture/ux/cli-reference.md")
+
+
 def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> None:
     technical = _read_repo("architecture/technical/overview.md")
     ux = _read_repo("architecture/ux/cli-reference.md")
