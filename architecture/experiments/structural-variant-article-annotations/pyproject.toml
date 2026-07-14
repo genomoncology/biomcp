@@ -1,0 +1,13 @@
+[project]
+name = "biomcp-structural-variant-annotations"
+version = "0.1.0"
+description = "Experimental in-process structural-event annotations for article text"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["scripts/structural_variant_annotations"]
