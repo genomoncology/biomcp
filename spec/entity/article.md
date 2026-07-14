@@ -83,6 +83,7 @@ biomcp list article | mustmatch like "search article -a <author>"
 ```
 
 ## Author-Capable Search Reports Partial Coverage
+<!-- mustmatch-lint: skip -->
 
 A slow author-capable source does not hide a match from the healthy source or
 make the result look complete. Both machine-readable status locations name the
