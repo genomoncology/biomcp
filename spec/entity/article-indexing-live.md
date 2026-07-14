@@ -13,3 +13,25 @@ response rather than a previously cached citation.
 ```bash
 ../../tools/biomcp-ci --no-cache --json get article 22663011 indexing | mustmatch like '{"indexing":{"status":"available","authors":[{}],"mesh_headings":[{}]}}'
 ```
+
+## Live Europe PMC supplementary asset canary
+
+The reviewed open-access article should expose at least one supplementary asset
+through Europe PMC. The follow-up uses the returned filename rather than pinning
+a mutable live filename, count, size, timestamp, or hash.
+
+```bash run id=live-europepmc-assets exit=0
+../../tools/biomcp-ci --no-cache --json get article 38821914 assets
+```
+
+```json expect=live-europepmc-assets contains
+{"provider":{"source":"Europe PMC"},"assets":[{}]}
+```
+
+```bash run id=live-europepmc-first-asset uses=live-europepmc-assets exit=0
+../../tools/biomcp-ci --no-cache get article 38821914 asset "{{live-europepmc-assets.assets.0.filename}}" | wc -c
+```
+
+```text expect=live-europepmc-first-asset
+/^[1-9][0-9]*$/
+```

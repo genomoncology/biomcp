@@ -29,6 +29,7 @@ import sys
 import tarfile
 import threading
 import time
+import zipfile
 
 
 FIXTURE_DIR = Path(sys.argv[2])
@@ -173,8 +174,21 @@ def make_pmc_oa_only_tgz():
     return out.getvalue()
 
 
+def make_europe_pmc_supplementary_zip():
+    # Scrubbed from the observed PMC11143360 supplementaryFiles archive shape.
+    # Preserve a real member name, but replace the copyrighted document contents.
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "41408_2024_1068_MOESM1_ESM.docx",
+            b"scrubbed Europe PMC supplementary DOCX fixture bytes\n",
+        )
+    return out.getvalue()
+
+
 OA_ASSETS_TGZ = make_oa_assets_tgz()
 PMC_OA_ONLY_TGZ = make_pmc_oa_only_tgz()
+EUROPE_PMC_SUPPLEMENTARY_ZIP = make_europe_pmc_supplementary_zip()
 
 
 ARTICLES = {
@@ -227,6 +241,12 @@ ARTICLES = {
         "title": "Figshare cold storage asset winner",
         "abstract": "Abstract text.",
         "paper_id": "paper-7",
+    },
+    "22663018": {
+        "pmcid": "PMC123461",
+        "title": "Europe PMC supplementary asset fallback winner",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-8",
     },
 }
 
@@ -574,6 +594,10 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 200, ARTICLE_XML, "application/xml")
             return
 
+        if decoded_path == "/PMC123461/supplementaryFiles":
+            send_bytes(self, 200, EUROPE_PMC_SUPPLEMENTARY_ZIP, "application/zip")
+            return
+
         if decoded_path == "/PMC123459/fullTextXML":
             append_request_log("fulltext:xml:europepmc-pmc")
             send_text(self, 404, "not found", "text/plain")
@@ -602,6 +626,14 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/oa-assets-22663016.tgz":
             send_bytes(self, 200, PMC_OA_ONLY_TGZ, "application/gzip")
+            return
+
+        if decoded_path == "/" and query.get("id") == ["PMC123461"]:
+            send_text(self, 200, f"""<records><record license=\"CC BY\" retracted=\"no\"><link format=\"tgz\" href=\"http://127.0.0.1:{self.server.server_port}/stale-oa-assets-22663018.tgz\" /></record></records>""", "application/xml")
+            return
+
+        if decoded_path == "/stale-oa-assets-22663018.tgz":
+            send_text(self, 404, "not found", "text/plain")
             return
 
         if decoded_path == "/" and query.get("id") == ["PMC123459"]:
