@@ -4,6 +4,7 @@
 use super::super::*;
 use crate::error::BioMcpError;
 use crate::sources::{HttpMethod, RequestBody};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 fn client_with_api_key(api_key: Option<&str>) -> SemanticScholarClient {
     SemanticScholarClient {
@@ -11,6 +12,65 @@ fn client_with_api_key(api_key: Option<&str>) -> SemanticScholarClient {
         base: std::borrow::Cow::Borrowed("http://127.0.0.1"),
         api_key: api_key.map(str::to_string),
     }
+}
+
+async fn author_fixture_client(
+    responses: Vec<&'static str>,
+) -> (SemanticScholarClient, tokio::task::JoinHandle<Vec<String>>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind author fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let server = tokio::spawn(async move {
+        let mut requests = Vec::with_capacity(responses.len());
+        for body in responses {
+            let (mut stream, _) = listener.accept().await.expect("accept author request");
+            let mut request = Vec::new();
+            loop {
+                let mut chunk = [0_u8; 4096];
+                let read = stream.read(&mut chunk).await.expect("read author request");
+                if read == 0 {
+                    break;
+                }
+                request.extend_from_slice(&chunk[..read]);
+                let Some(header_end) = request.windows(4).position(|bytes| bytes == b"\r\n\r\n")
+                else {
+                    continue;
+                };
+                let headers = String::from_utf8_lossy(&request[..header_end]);
+                let content_length = headers
+                    .lines()
+                    .find_map(|line| {
+                        line.to_ascii_lowercase()
+                            .strip_prefix("content-length: ")
+                            .and_then(|value| value.parse::<usize>().ok())
+                    })
+                    .unwrap_or(0);
+                if request.len() >= header_end + 4 + content_length {
+                    break;
+                }
+            }
+            requests.push(String::from_utf8_lossy(&request).into_owned());
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body,
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await
+                .expect("write author response");
+        }
+        requests
+    });
+    (
+        SemanticScholarClient {
+            client: crate::sources::shared_client().expect("shared client"),
+            base: std::borrow::Cow::Owned(base),
+            api_key: Some("fixture-key".into()),
+        },
+        server,
+    )
 }
 
 #[test]
@@ -190,6 +250,14 @@ fn author_plans_validate_required_input_and_endpoint_boundaries() {
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(matches!(
+        SemanticScholarClient::author_papers_plan(" ", 0, 1, None),
+        Err(BioMcpError::InvalidArgument(_))
+    ));
+    assert!(matches!(
+        SemanticScholarClient::author_papers_plan(&too_long_id, 0, 1, None),
+        Err(BioMcpError::InvalidArgument(_))
+    ));
+    assert!(matches!(
         SemanticScholarClient::author_papers_plan("author-1", 0, 0, None),
         Err(BioMcpError::InvalidArgument(_))
     ));
@@ -228,17 +296,45 @@ fn author_plans_validate_required_input_and_endpoint_boundaries() {
         SemanticScholarClient::author_batch_plan(&[" ".into()], None),
         Err(BioMcpError::InvalidArgument(_))
     ));
+    assert!(matches!(
+        SemanticScholarClient::author_batch_plan(&[too_long_id], None),
+        Err(BioMcpError::InvalidArgument(_))
+    ));
 }
 
-#[allow(dead_code)]
-async fn author_execution_methods_keep_typed_source_contracts(client: &SemanticScholarClient) {
-    let _: Result<SemanticScholarAuthorSearchResponse, BioMcpError> =
-        client.author_search("Atul Butte", 0, 1).await;
-    let _: Result<SemanticScholarAuthor, BioMcpError> = client.author_detail("1716151").await;
-    let _: Result<Vec<Option<SemanticScholarAuthor>>, BioMcpError> =
-        client.author_batch(&["1716151".into()]).await;
-    let _: Result<SemanticScholarAuthorPapersResponse, BioMcpError> =
-        client.author_papers("1716151", 0, 1).await;
+#[tokio::test]
+async fn author_execution_methods_send_plans_and_decode_typed_responses() {
+    let (client, server) = author_fixture_client(vec![
+        r#"{"total":1,"offset":0,"next":null,"data":[{"authorId":"search-id"}]}"#,
+        r#"{"authorId":"detail-id"}"#,
+        r#"[{"authorId":"batch-id"}]"#,
+        r#"{"offset":0,"next":null,"data":[{"paperId":"paper-id"}]}"#,
+    ])
+    .await;
+
+    let search = client.author_search("Atul Butte", 0, 1).await.unwrap();
+    assert_eq!(search.data[0].author_id.as_deref(), Some("search-id"));
+    let detail = client.author_detail("detail-id").await.unwrap();
+    assert_eq!(detail.author_id.as_deref(), Some("detail-id"));
+    let batch = client.author_batch(&["batch-id".into()]).await.unwrap();
+    assert_eq!(
+        batch[0]
+            .as_ref()
+            .and_then(|author| author.author_id.as_deref()),
+        Some("batch-id")
+    );
+    let papers = client.author_papers("detail-id", 0, 1).await.unwrap();
+    assert_eq!(papers.data[0].paper_id.as_deref(), Some("paper-id"));
+
+    let requests = tokio::time::timeout(std::time::Duration::from_secs(5), server)
+        .await
+        .expect("author methods reached fixture server")
+        .expect("author fixture server");
+    assert!(requests[0].starts_with("GET /graph/v1/author/search?"));
+    assert!(requests[1].starts_with("GET /graph/v1/author/detail-id?"));
+    assert!(requests[2].starts_with("POST /graph/v1/author/batch?"));
+    assert!(requests[2].contains(r#"{"ids":["batch-id"]}"#));
+    assert!(requests[3].starts_with("GET /graph/v1/author/detail-id/papers?"));
 }
 
 #[test]

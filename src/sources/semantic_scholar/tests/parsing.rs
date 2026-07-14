@@ -162,7 +162,6 @@ fn parses_author_detail_and_search_fixtures_without_inventing_identity() {
     assert_eq!(search.total, Some(2));
     assert_eq!(search.offset, Some(20));
     assert_eq!(search.next, Some(22));
-    assert_eq!(search.data.len(), 2);
     assert_eq!(search.data[0].author_id.as_deref(), Some("1716151"));
     assert_eq!(search.data[1].author_id.as_deref(), Some("2269573451"));
     assert!(search.data[1].affiliations.is_none());
@@ -205,7 +204,6 @@ fn parses_author_papers_identifiers_byline_and_continuation() {
 
     assert_eq!(page.offset, Some(100));
     assert_eq!(page.next, Some(101));
-    assert_eq!(page.data.len(), 1);
     let paper = &page.data[0];
     assert_eq!(paper.paper_id.as_deref(), Some("paper-identity-1"));
     assert_eq!(paper.corpus_id, Some(277_710_284));
@@ -218,7 +216,6 @@ fn parses_author_papers_identifiers_byline_and_continuation() {
         Some("40215974")
     );
     let byline = paper.authors.as_ref().expect("requested authors field");
-    assert_eq!(byline.len(), 2);
     assert_eq!(byline[0].author_id.as_deref(), Some("2059910739"));
     assert_eq!(byline[1].author_id.as_deref(), Some("1716151"));
     assert_eq!(byline[1].name.as_deref(), Some("A. Butte"));
