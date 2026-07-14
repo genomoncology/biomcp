@@ -1,0 +1,45 @@
+{
+  "path": "/0000-0002-7433-2740/works",
+  "last-modified-date": {"value": 1720915200000},
+  "group": [{
+    "external-ids": {"external-id": [{
+      "external-id-type": "doi",
+      "external-id-value": "10.1000/example",
+      "external-id-url": {"value": "https://doi.org/10.1000/example"},
+      "external-id-relationship": "SELF",
+      "external-id-normalized": {"value": "10.1000/example", "transient": true}
+    }]},
+    "work-summary": [
+      {
+        "title": {"title": {"value": "Public assertion one"}, "subtitle": {"value": "A subtitle"}, "translated-title": {"value": "Translated one", "language-code": "en"}},
+        "type": "JOURNAL_ARTICLE",
+        "external-ids": {"external-id": [{"external-id-type": "pmid", "external-id-value": "12345", "external-id-relationship": "SELF"}]},
+        "put-code": 11,
+        "visibility": "public",
+        "created-date": {"value": 1600000000000},
+        "last-modified-date": {"value": 1700000000000},
+        "source": {"source-orcid": {"path": "0000-0002-7433-2740"}, "source-name": {"value": "Researcher"}, "assertion-origin-orcid": {"path": "0000-0001-5109-3700"}, "assertion-origin-name": {"value": "Crossref"}}
+      },
+      {
+        "title": {"title": {"value": "Public assertion two"}},
+        "type": "JOURNAL_ARTICLE",
+        "external-ids": {"external-id": [{"external-id-type": "doi", "external-id-value": "10.1000/example", "external-id-relationship": "SELF"}]},
+        "put-code": 12,
+        "visibility": "public",
+        "source": {"source-name": {"value": "DataCite"}}
+      },
+      {
+        "title": {"title": {"value": "Private assertion"}},
+        "put-code": 13,
+        "visibility": "private"
+      }
+    ]
+  }, {
+    "external-ids": {"external-id": [{"external-id-type": "doi", "external-id-value": "private-group-id"}]},
+    "work-summary": [{
+      "title": {"title": {"value": "Private-only assertion"}},
+      "put-code": 14,
+      "visibility": "private"
+    }]
+  }]
+}

@@ -1,0 +1,57 @@
+{
+  "orcid-identifier": {"path": "0000-0002-7433-2740"},
+  "history": {"last-modified-date": {"value": 1720915200000}},
+  "person": {
+    "name": {
+      "given-names": {"value": "Atul Janardhan"},
+      "family-name": {"value": "Butte"},
+      "credit-name": {"value": "Atul J. Butte"},
+      "visibility": "public",
+      "source": {
+        "source-orcid": {"path": "0000-0002-7433-2740"},
+        "source-name": {"value": "Atul J. Butte"},
+        "assertion-origin-orcid": {"path": "0000-0001-5109-3700"},
+        "assertion-origin-name": {"value": "UCSF"}
+      },
+      "created-date": {"value": 1500000000000},
+      "last-modified-date": {"value": 1720000000000}
+    },
+    "emails": {"email": [{"email": "excluded@example.org", "visibility": "public"}]},
+    "researcher-urls": {"researcher-url": [{"url": {"value": "https://excluded.example"}}]},
+    "biography": {"content": "excluded biography"},
+    "keywords": {"keyword": [{"content": "excluded keyword"}]},
+    "addresses": {"address": [{"country": {"value": "US"}}]}
+  },
+  "activities-summary": {
+    "employments": {
+      "affiliation-group": [
+        {"summaries": [{"employment-summary": {
+          "department-name": "Institute for Computational Health Sciences",
+          "role-title": "Professor",
+          "start-date": {"year": {"value": "2015"}, "month": {"value": "01"}, "day": null},
+          "end-date": null,
+          "organization": {
+            "name": "University of California San Francisco",
+            "address": {"city": "San Francisco", "region": "California", "country": "US"},
+            "disambiguated-organization": {"disambiguated-organization-identifier": "https://ror.org/043mz5j54", "disambiguation-source": "ROR"}
+          },
+          "source": {
+            "source-orcid": {"path": "0000-0002-7433-2740"},
+            "source-name": {"value": "Atul J. Butte"},
+            "assertion-origin-orcid": {"path": "0000-0001-5109-3700"},
+            "assertion-origin-name": {"value": "UCSF"}
+          },
+          "put-code": 1576165,
+          "visibility": "public",
+          "created-date": {"value": 1501000000000},
+          "last-modified-date": {"value": 1721000000000}
+        }}]},
+        {"summaries": [{"employment-summary": {
+          "organization": {"name": "Private Employer"},
+          "put-code": 999,
+          "visibility": "private"
+        }}]}
+      ]
+    }
+  }
+}

@@ -14,6 +14,7 @@ EXEMPT_MODULES = {
     "ema",
     "gtr",
     "mutalyzer",
+    "orcid",
     "variantvalidator",
     "who_ivd",
     "who_pq",

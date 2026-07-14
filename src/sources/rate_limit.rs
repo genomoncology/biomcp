@@ -165,6 +165,12 @@ impl RateLimiter {
                 s2_min_interval(has_s2_api_key),
             ),
             policy(
+                "orcid",
+                "BIOMCP_ORCID_BASE",
+                "https://pub.orcid.org/v3.0",
+                Duration::from_millis(100),
+            ),
+            policy(
                 "kegg",
                 "BIOMCP_KEGG_BASE",
                 "https://rest.kegg.jp",
@@ -289,6 +295,11 @@ pub(crate) fn redirect_policy() -> reqwest::redirect::Policy {
     redirect_policy_for(global_limiter().unpaced_origin.clone())
 }
 
+pub(crate) fn orcid_redirect_policy() -> reqwest::redirect::Policy {
+    // OrcidClient follows redirects itself so every hop re-enters middleware.
+    reqwest::redirect::Policy::none()
+}
+
 fn redirect_policy_for(unpaced_origin: Option<UnpacedOrigin>) -> reqwest::redirect::Policy {
     let default_policy = reqwest::redirect::Policy::default();
     reqwest::redirect::Policy::custom(move |attempt| {
@@ -320,6 +331,21 @@ impl RateLimitMiddleware {
     pub(crate) fn new() -> Self {
         Self {
             limiter: global_limiter(),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_test(prefix: String, min_interval: Duration) -> Self {
+        Self {
+            limiter: Arc::new(RateLimiter::new(
+                vec![RateLimitPolicy {
+                    key: "test",
+                    prefix: Cow::Owned(prefix),
+                    min_interval,
+                }],
+                min_interval,
+                None,
+            )),
         }
     }
 }
@@ -681,6 +707,25 @@ mod tests {
             assert_eq!(key, expected_key);
             assert_eq!(interval, expected_interval);
         }
+    }
+
+    #[test]
+    fn orcid_urls_resolve_to_named_hundred_millisecond_policy() {
+        let limiter = RateLimiter::from_env();
+        let url = Url::parse("https://pub.orcid.org/v3.0/0000-0002-7433-2740/record").unwrap();
+        let (key, interval) = limiter.resolve_key_and_interval(&url);
+        assert_eq!(key, "policy:orcid");
+        assert_eq!(interval, Duration::from_millis(100));
+
+        let fixture = RateLimiter::new(
+            vec![test_policy("orcid", "http://127.0.0.1:8123", 100)],
+            Duration::from_millis(100),
+            None,
+        );
+        let fixture_url = Url::parse("http://127.0.0.1:8123/0000-0002-7433-2740/works").unwrap();
+        let (key, interval) = fixture.resolve_key_and_interval(&fixture_url);
+        assert_eq!(key, "policy:orcid");
+        assert_eq!(interval, Duration::from_millis(100));
     }
 
     #[test]

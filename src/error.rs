@@ -20,6 +20,12 @@ pub enum BioMcpError {
         source: serde_json::Error,
     },
 
+    #[error("API error from {source_name}: Response body exceeded {max_bytes} bytes")]
+    BodyLimit {
+        source_name: String,
+        max_bytes: usize,
+    },
+
     #[error("ClinicalTrials.gov intervention query rejected: {reason}")]
     CtGovInterventionQueryRejected { reason: String },
 
