@@ -113,7 +113,7 @@ fn map_document(nct_id: &str, document: &CtGovLargeDocument) -> TrialDocument {
     let filename = document.filename.clone();
     let handle = filename
         .as_deref()
-        .filter(|value| !value.trim().is_empty())
+        .filter(|value| validate_filename(value).is_ok())
         .map(|value| document_command(nct_id, value));
     TrialDocument {
         document_type: document.type_abbrev.clone(),
@@ -142,7 +142,7 @@ fn document_command(nct_id: &str, filename: &str) -> String {
 }
 
 fn validate_filename(filename: &str) -> Result<(), BioMcpError> {
-    let invalid = filename.is_empty()
+    let invalid = filename.trim().is_empty()
         || filename == "."
         || filename == ".."
         || filename.contains(['/', '\\', '?', '#', '\0'])
@@ -238,14 +238,16 @@ async fn download_document_from_base(
 async fn read_document_body(mut response: reqwest::Response) -> Result<Vec<u8>, BioMcpError> {
     let mut body = Vec::new();
     while let Some(chunk) = response.chunk().await? {
-        let remaining = DOCUMENT_MAX_BYTES.saturating_sub(body.len());
-        if chunk.len() > remaining {
+        let remaining_with_overflow = DOCUMENT_MAX_BYTES
+            .saturating_sub(body.len())
+            .saturating_add(1);
+        body.extend_from_slice(&chunk[..chunk.len().min(remaining_with_overflow)]);
+        if body.len() > DOCUMENT_MAX_BYTES {
             return Err(BioMcpError::Api {
                 api: CTGOV_CDN_API.into(),
                 message: format!("Response body exceeded {DOCUMENT_MAX_BYTES} bytes"),
             });
         }
-        body.extend_from_slice(&chunk);
     }
     Ok(body)
 }
@@ -353,7 +355,21 @@ mod tests {
                 "accepted {filename:?}"
             );
         }
+        assert!(validate_filename("   ").is_err());
         assert!(validate_filename("Protocol 1%.pdf").is_ok());
+    }
+
+    #[test]
+    fn omits_handles_for_unsafe_advertised_filenames() {
+        let manifest = manifest_from_study(
+            "NCT03361748",
+            &study_with_documents(serde_json::json!([{"filename": "../Protocol.pdf"}])),
+        );
+        assert_eq!(
+            manifest.documents[0].filename.as_deref(),
+            Some("../Protocol.pdf")
+        );
+        assert!(manifest.documents[0].handle.is_none());
     }
 
     #[test]

@@ -7,9 +7,16 @@ pub(super) async fn handle_document_get(
     sections: &[String],
     source: TrialSource,
     json_output: bool,
+    location_options_present: bool,
 ) -> anyhow::Result<Option<CommandOutcome>> {
     if !document_route(sections) {
         return Ok(None);
+    }
+    if location_options_present {
+        return Err(BioMcpError::InvalidArgument(
+            "--offset and --limit are only valid with the 'locations' section".into(),
+        )
+        .into());
     }
     if matches!(source, TrialSource::NciCts) {
         return Err(BioMcpError::InvalidArgument(
@@ -48,7 +55,7 @@ pub(super) async fn handle_document_get(
 }
 
 fn document_route(sections: &[String]) -> bool {
-    sections.iter().any(|section| {
+    sections.first().is_some_and(|section| {
         matches!(
             section.trim().to_ascii_lowercase().as_str(),
             "document" | "documents"
@@ -67,26 +74,16 @@ fn documents_request(sections: &[String]) -> Result<(), BioMcpError> {
 }
 
 fn document_request(sections: &[String]) -> Result<Option<String>, BioMcpError> {
-    let Some((index, _)) = sections
-        .iter()
-        .enumerate()
-        .find(|(_, section)| section.trim().eq_ignore_ascii_case("document"))
-    else {
+    let Some(first) = sections.first() else {
         return Ok(None);
     };
-    if sections
-        .iter()
-        .any(|section| section.trim().eq_ignore_ascii_case("documents"))
-        || index != 0
-        || sections.len() != 2
-    {
+    if !first.trim().eq_ignore_ascii_case("document") {
+        return Ok(None);
+    }
+    if sections.len() != 2 || sections[1].trim().is_empty() {
         return Err(document_arity_error());
     }
-    let filename = sections[1].trim();
-    if filename.is_empty() {
-        return Err(document_arity_error());
-    }
-    Ok(Some(filename.to_string()))
+    Ok(Some(sections[1].clone()))
 }
 
 fn document_arity_error() -> BioMcpError {
@@ -128,6 +125,17 @@ mod tests {
                 .as_deref(),
             Some("Protocol.pdf")
         );
+        assert_eq!(
+            document_request(&sections(&["document", " documents "]))
+                .unwrap()
+                .as_deref(),
+            Some(" documents ")
+        );
+        assert!(!document_route(&sections(&[
+            "eligibility",
+            "document",
+            "Protocol.pdf"
+        ])));
         for invalid in [
             sections(&["documents", "eligibility"]),
             sections(&["document"]),
@@ -145,6 +153,7 @@ mod tests {
             &sections(&["documents"]),
             TrialSource::ClinicalTrialsGov,
             false,
+            false,
         )
         .await
         .unwrap_err();
@@ -155,9 +164,25 @@ mod tests {
             &sections(&["documents"]),
             TrialSource::NciCts,
             true,
+            false,
         )
         .await
         .unwrap_err();
         assert!(error.to_string().contains("only from ClinicalTrials.gov"));
+
+        let error = handle_document_get(
+            "NCT03361748",
+            &sections(&["documents"]),
+            TrialSource::ClinicalTrialsGov,
+            true,
+            true,
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("only valid with the 'locations' section")
+        );
     }
 }

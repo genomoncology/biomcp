@@ -13,7 +13,7 @@ pub(super) fn list_trial() -> String {
 - `get trial <nct_id> outcomes` - primary/secondary outcomes
 - `get trial <nct_id> arms` - arm/intervention details
 - `get trial <nct_id> references` - trial publication references
-- `get trial <nct_id> all` - include every section
+- `get trial <nct_id> all` - include every ordinary section
 - `search trial [filters]` - search ClinicalTrials.gov (default) or NCI CTS (`--source nci`)
 
 ## Useful filters (ctgov)

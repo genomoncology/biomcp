@@ -11,9 +11,14 @@ pub(in crate::cli) async fn handle_get(
     let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
     let json_output = json || json_override;
     let trial_source = crate::entities::trial::TrialSource::from_flag(&args.source)?;
-    if let Some(outcome) =
-        super::documents::handle_document_get(&args.nct_id, &sections, trial_source, json_output)
-            .await?
+    if let Some(outcome) = super::documents::handle_document_get(
+        &args.nct_id,
+        &sections,
+        trial_source,
+        json_output,
+        args.offset.is_some() || args.limit.is_some(),
+    )
+    .await?
     {
         return Ok(outcome);
     }
