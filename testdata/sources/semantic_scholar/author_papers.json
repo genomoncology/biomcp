@@ -1,0 +1,20 @@
+{
+  "offset": 100,
+  "next": 101,
+  "data": [
+    {
+      "paperId": "paper-identity-1",
+      "corpusId": 277710284,
+      "externalIds": {
+        "PubMed": "40215974",
+        "DOI": "10.1016/j.xgen.2025.100845"
+      },
+      "title": "Perceptual and technical barriers",
+      "year": 2025,
+      "authors": [
+        {"authorId": "2059910739", "name": "Viorel Munteanu"},
+        {"authorId": "1716151", "name": "A. Butte"}
+      ]
+    }
+  ]
+}
