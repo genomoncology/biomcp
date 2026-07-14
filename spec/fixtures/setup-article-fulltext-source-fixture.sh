@@ -232,6 +232,7 @@ ARTICLES = {
 
 
 PUBMED_INDEXING_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
 <PubmedArticleSet>
   <PubmedArticle>
     <MedlineCitation Status="MEDLINE">
@@ -256,6 +257,12 @@ PUBMED_INDEXING_XML = """<?xml version="1.0" encoding="UTF-8"?>
               <Affiliation>Precision Oncology Unit, Fixture University</Affiliation>
               <Identifier Source="ROR">https://ror.org/03yrm5c26</Identifier>
             </AffiliationInfo>
+          </Author>
+          <Author ValidYN="Y">
+            <LastName>Becker</LastName><ForeName>J&#xfc;rgen</ForeName><Initials>JB</Initials>
+          </Author>
+          <Author ValidYN="Y">
+            <CollectiveName>Fixture Study Group</CollectiveName>
           </Author>
         </AuthorList>
       </Article>

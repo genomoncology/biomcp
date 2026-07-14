@@ -219,7 +219,9 @@ was available and identifies its source in the standard provenance envelope.
         {"text": "Precision Oncology Unit, Fixture University", "identifiers": [{"source": "ROR", "value": "https://ror.org/03yrm5c26"}]},
         {"text": "Translational Genomics Center, Fixture Hospital", "identifiers": [{"source": "GRID", "value": "grid.fixture.200"}]}
       ]},
-      {"name": "Ben Second", "affiliations": [{"text": "Precision Oncology Unit, Fixture University", "identifiers": [{"source": "ROR", "value": "https://ror.org/03yrm5c26"}]}]}
+      {"name": "Ben Second", "affiliations": [{"text": "Precision Oncology Unit, Fixture University", "identifiers": [{"source": "ROR", "value": "https://ror.org/03yrm5c26"}]}]},
+      {"name": "Jürgen Becker", "affiliations": []},
+      {"name": "Fixture Study Group", "affiliations": []}
     ],
     "mesh_headings": [{"descriptor": {"text": "Melanoma", "ui": "D008545", "major_topic": true}, "qualifiers": [{"text": "genetics", "ui": "Q000235", "major_topic": false}, {"text": "metabolism", "ui": "Q000401", "major_topic": true}]}]
   },
