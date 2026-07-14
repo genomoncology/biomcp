@@ -34,28 +34,52 @@ does not admit lexical matches from backends without an author-field contract.
 The fixture gives each capable source one byline match and gives the other
 sources tempting Williams syndrome false positives.
 
-```bash
-../../tools/biomcp-ci --json search article --author "Williams LS" --debug-plan --limit 10 \
-  | uv run --no-sync python3 -c '
-import json, sys
-doc = json.load(sys.stdin)
-rows = {row["title"] for row in doc["results"]}
-sources = doc["debug_plan"]["legs"][0]["sources"]
-assert sources == ["Europe PMC", "PubMed"], sources
-assert rows == {"Williams LS Europe PMC byline match", "Williams LS PubMed byline match"}, rows
-print("Author-filter sources: Europe PMC, PubMed")
-print("Byline matches exclude lexical Williams syndrome results")
-' | mustmatch like "Author-filter sources: Europe PMC, PubMed
-Byline matches exclude lexical Williams syndrome results"
+```bash run id=author-capable-sources
+../../tools/biomcp-ci --json search article --author "Williams LS" --debug-plan --limit 10
 ```
 
-The built-in article reference exposes the same filter and capable-source
-behavior, so an agent can discover the exact search form before issuing it.
+```json expect=author-capable-sources contains
+{
+  "debug_plan": {
+    "legs": [{
+      "sources": ["Europe PMC", "PubMed"]
+    }]
+  }
+}
+```
+
+```text expect=author-capable-sources contains
+Williams LS Europe PMC byline match
+Williams LS PubMed byline match
+```
+
+```text expect=author-capable-sources not-contains
+Williams syndrome PubTator lexical false positive
+Williams syndrome Semantic Scholar lexical false positive
+```
+
+Direct capable-source selection keeps the same authorship contract. Each
+fixture row is returned only when BioMCP sends that provider's native author
+query to the selected source.
+
+| backend | expected_title |
+|---|---|
+| europepmc | Williams LS Europe PMC byline match |
+| pubmed | Williams LS PubMed byline match |
+
+```bash run id=direct-author-source each_row="Author Filtering Uses Author-Capable Sources"
+biomcp --json search article --source {{backend}} --author "Williams LS" --limit 10
+```
+
+```json expect=direct-author-source contains each_row="Author Filtering Uses Author-Capable Sources"
+{"results":[{"title":"{{expected_title}}","source":"{{backend}}"}]}
+```
+
+The built-in article reference exposes the author filter, so an agent can
+find the exact search form before issuing it.
 
 ```bash
-biomcp list article | mustmatch like "search article -a <author>
---author
-Europe PMC + PubMed"
+biomcp list article | mustmatch like "search article -a <author>"
 ```
 
 ## Semantic Scholar Is Individually Selectable
