@@ -180,6 +180,14 @@ indexed by PubMed or Europe PMC and cannot be resolved.
 biomcp get article 22663011
 ```
 
+Detail returns every author name supplied by the selected metadata source in
+source order. JSON includes `authors`, `author_count` (the number returned),
+`author_completeness` (`complete`, `source_limited`, or `unavailable`), and
+`author_source` (`pubtator` or `europepmc`). PubTator's structured author list is
+`complete`; Europe PMC's display string is `source_limited`, so BioMCP does not
+claim it reconstructs a ground-truth author list. Markdown prints the same names
+and status without inserting an ellipsis or a synthetic author.
+
 Default article output can include an optional Semantic Scholar section with
 TLDR text, influence counts, and open-access PDF metadata when that paper
 resolves in Semantic Scholar. `S2_API_KEY` makes those requests authenticated;
@@ -263,10 +271,14 @@ biomcp article references 22663011 --limit 3        # Semantic Scholar reference
 biomcp article recommendations 22663011 --limit 3   # Semantic Scholar related papers
 ```
 
-`article batch` works without `S2_API_KEY` and echoes the original
-`requested_id` together with resolved PMID/PMCID/DOI fields. When Semantic
-Scholar data is available, the batch helper can add optional TLDR and citation
-metadata. `S2_API_KEY` makes that enrichment authenticated and more reliable.
+`article batch` works without `S2_API_KEY` and returns a bare JSON array in
+request order. Each compact card echoes the original `requested_id`, keeps its
+resolved PMID/PMCID/DOI fields, and carries the same full `authors`, returned
+`author_count`, `author_completeness`, and `author_source` contract as detail.
+Markdown cards show the source-ordered names and an explicit status, including
+when no author list was supplied. When Semantic Scholar data is available, the
+batch helper can add optional TLDR and citation metadata without changing
+authorship. `S2_API_KEY` makes that enrichment authenticated and more reliable.
 Use `article batch` as the default follow-up after `search article` when you
 already have several shortlisted PMIDs or DOIs.
 

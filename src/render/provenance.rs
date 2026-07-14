@@ -806,7 +806,7 @@ pub(crate) fn article_section_sources(article: &Article) -> Vec<SectionSource> {
         !article.authors.is_empty(),
         "authors",
         "Authors",
-        ["PubMed", "Europe PMC"],
+        [article.author_source.display_name()],
     );
     push_section(
         &mut out,
@@ -1129,6 +1129,7 @@ pub(crate) fn adverse_event_report_section_sources(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::entities::article::{ArticleAuthorCompleteness, ArticleSource};
     use crate::entities::pathway::Pathway;
     use crate::entities::variant::Variant;
 
@@ -1838,7 +1839,10 @@ mod tests {
             pmcid: Some("PMC123456".to_string()),
             doi: Some("10.1000/example".to_string()),
             title: "Example article".to_string(),
-            authors: Vec::new(),
+            authors: vec!["Example Author".to_string()],
+            author_count: 1,
+            author_completeness: ArticleAuthorCompleteness::SourceLimited,
+            author_source: ArticleSource::EuropePmc,
             journal: Some("Example Journal".to_string()),
             date: Some("2024-01-01".to_string()),
             citation_count: Some(12),
@@ -1867,6 +1871,9 @@ mod tests {
                 && source.label == "Full Text"
                 && source.sources == vec!["Europe PMC".to_string()]
         }));
+        assert!(sources.iter().any(|source| {
+            source.key == "authors" && source.sources == vec!["Europe PMC".to_string()]
+        }));
     }
 
     #[test]
@@ -1877,6 +1884,9 @@ mod tests {
             doi: Some("10.1000/example".to_string()),
             title: "Example article".to_string(),
             authors: Vec::new(),
+            author_count: 0,
+            author_completeness: ArticleAuthorCompleteness::Unavailable,
+            author_source: ArticleSource::PubTator,
             journal: Some("Example Journal".to_string()),
             date: Some("2024-01-01".to_string()),
             citation_count: Some(12),

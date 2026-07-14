@@ -55,6 +55,9 @@ pub struct Article {
     pub title: String,
     #[serde(default)]
     pub authors: Vec<String>,
+    pub author_count: usize,
+    pub author_completeness: ArticleAuthorCompleteness,
+    pub author_source: ArticleSource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub journal: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -298,6 +301,14 @@ pub struct AnnotationCount {
     pub count: u32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleAuthorCompleteness {
+    Complete,
+    SourceLimited,
+    Unavailable,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArticleBatchItem {
     pub requested_id: String,
@@ -308,6 +319,11 @@ pub struct ArticleBatchItem {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub doi: Option<String>,
     pub title: String,
+    #[serde(default)]
+    pub authors: Vec<String>,
+    pub author_count: usize,
+    pub author_completeness: ArticleAuthorCompleteness,
+    pub author_source: ArticleSource,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub journal: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

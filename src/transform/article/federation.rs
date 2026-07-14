@@ -2,14 +2,16 @@
 
 use chrono::NaiveDate;
 
-use crate::entities::article::{Article, ArticleSearchResult, ArticleSource};
+use crate::entities::article::{
+    Article, ArticleAuthorCompleteness, ArticleSearchResult, ArticleSource,
+};
 use crate::sources::europepmc::EuropePmcResult;
 use crate::sources::pubmed::ESummaryEntry;
 use crate::sources::pubtator::{PubTatorDocument, PubTatorSearchResult};
 
 use super::anchors::{
     article_search_abstract_snippet, clean_abstract, clean_title, normalize_article_search_text,
-    truncate_abstract, truncate_authors,
+    truncate_abstract,
 };
 
 pub fn from_pubtator_document(doc: &PubTatorDocument) -> Article {
@@ -37,7 +39,14 @@ pub fn from_pubtator_document(doc: &PubTatorDocument) -> Article {
         pmcid: doc.pmcid.clone(),
         doi: None,
         title: title.unwrap_or_default().trim().to_string(),
-        authors: truncate_authors(&doc.authors),
+        authors: doc.authors.clone(),
+        author_count: doc.authors.len(),
+        author_completeness: if doc.authors.is_empty() {
+            ArticleAuthorCompleteness::Unavailable
+        } else {
+            ArticleAuthorCompleteness::Complete
+        },
+        author_source: ArticleSource::PubTator,
         journal: doc
             .journal
             .as_ref()
@@ -200,21 +209,29 @@ fn split_author_string(value: &str) -> Vec<String> {
     v.split(',')
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
-        .take(10)
         .collect()
 }
 
 pub fn from_europepmc_result(hit: &EuropePmcResult) -> Article {
+    let authors = hit
+        .author_string
+        .as_deref()
+        .map(split_author_string)
+        .unwrap_or_default();
+    let author_completeness = if authors.is_empty() {
+        ArticleAuthorCompleteness::Unavailable
+    } else {
+        ArticleAuthorCompleteness::SourceLimited
+    };
     Article {
         pmid: hit.pmid.clone(),
         pmcid: hit.pmcid.clone(),
         doi: hit.doi.clone(),
         title: clean_title(hit.title.as_deref().unwrap_or_default()),
-        authors: hit
-            .author_string
-            .as_deref()
-            .map(split_author_string)
-            .unwrap_or_default(),
+        author_count: authors.len(),
+        authors,
+        author_completeness,
+        author_source: ArticleSource::EuropePmc,
         journal: hit
             .journal_title
             .as_ref()

@@ -102,15 +102,5 @@ pub fn article_search_abstract_snippet(text: &str) -> Option<String> {
     Some(snippet)
 }
 
-pub fn truncate_authors(authors: &[String]) -> Vec<String> {
-    if authors.len() <= 4 {
-        return authors.to_vec();
-    }
-    match (authors.first(), authors.last()) {
-        (Some(first), Some(last)) if first != last => vec![first.clone(), last.clone()],
-        _ => authors.iter().take(2).cloned().collect(),
-    }
-}
-
 #[cfg(test)]
 mod tests;

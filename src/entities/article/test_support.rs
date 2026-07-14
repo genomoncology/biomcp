@@ -2,10 +2,10 @@
 
 #[allow(unused_imports)]
 pub(super) use super::{
-    ARTICLE_BATCH_MAX_IDS, AnnotationCount, Article, ArticleAnnotations, ArticleBatchEntitySummary,
-    ArticleBatchItem, ArticlePubMedRescueKind, ArticleRankingMode, ArticleRankingOptions,
-    ArticleSearchFilters, ArticleSearchResult, ArticleSemanticScholar, ArticleSemanticScholarPdf,
-    ArticleSort, ArticleSource, ArticleSourceFilter,
+    ARTICLE_BATCH_MAX_IDS, AnnotationCount, Article, ArticleAnnotations, ArticleAuthorCompleteness,
+    ArticleBatchEntitySummary, ArticleBatchItem, ArticlePubMedRescueKind, ArticleRankingMode,
+    ArticleRankingOptions, ArticleSearchFilters, ArticleSearchResult, ArticleSemanticScholar,
+    ArticleSemanticScholarPdf, ArticleSort, ArticleSource, ArticleSourceFilter,
 };
 #[allow(unused_imports)]
 pub(super) use crate::entities::SearchPage;

@@ -142,6 +142,12 @@ New to BioMCP? Try:
 - `disease articles <name>`
 - `disease drugs <name>`
 - `article entities <pmid> --limit <N>`
+- `article batch <id> [<id>...]` - up to 20 compact cards in request order
+  - bare-array JSON includes all source-supplied authors plus returned count
+  - completeness is `complete`, `source_limited`, or `unavailable`
+  - source is `pubtator` or `europepmc`
+- Article detail carries the same authorship contract.
+- Europe PMC display-string authorship is source-limited.
 - `article citations <id> --limit <N>` (optional auth; shared pool without `S2_API_KEY`)
 - `article references <id> --limit <N>` (optional auth; shared pool without `S2_API_KEY`)
 - `article recommendations <id> [<id>...] [--negative <id>...] --limit <N>` (optional auth; shared pool without `S2_API_KEY`)

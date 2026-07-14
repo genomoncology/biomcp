@@ -101,9 +101,10 @@ use crate::entities::adverse_event::{
     DeviceEvent, DeviceEventSearchResult, RecallSearchResult,
 };
 use crate::entities::article::{
-    AnnotationCount, Article, ArticleAnnotations, ArticleBatchEntitySummary, ArticleBatchItem,
-    ArticleGraphResult, ArticleRankingMetadata, ArticleRankingMode, ArticleRecommendationsResult,
-    ArticleRelatedPaper, ArticleSearchFilters, ArticleSearchResult, ArticleSort, ArticleSource,
+    AnnotationCount, Article, ArticleAnnotations, ArticleAuthorCompleteness,
+    ArticleBatchEntitySummary, ArticleBatchItem, ArticleGraphResult, ArticleRankingMetadata,
+    ArticleRankingMode, ArticleRecommendationsResult, ArticleRelatedPaper, ArticleSearchFilters,
+    ArticleSearchResult, ArticleSort, ArticleSource,
 };
 use crate::entities::diagnostic::{Diagnostic, DiagnosticRegulatoryRecord, DiagnosticSearchResult};
 use crate::entities::discover::{DiscoverResult, DiscoverType};

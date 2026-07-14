@@ -40,6 +40,9 @@ fn article_markdown_renders_semantic_scholar_section() {
         doi: Some("10.1000/example".to_string()),
         title: "Example".to_string(),
         authors: Vec::new(),
+        author_count: 0,
+        author_completeness: ArticleAuthorCompleteness::Unavailable,
+        author_source: ArticleSource::PubTator,
         journal: Some("Example Journal".to_string()),
         date: Some("2024-01-01".to_string()),
         citation_count: Some(12),
@@ -86,6 +89,9 @@ fn article_markdown_renders_resolved_fulltext_source_label() {
         doi: Some("10.1000/example".to_string()),
         title: "Example".to_string(),
         authors: Vec::new(),
+        author_count: 0,
+        author_completeness: ArticleAuthorCompleteness::Unavailable,
+        author_source: ArticleSource::EuropePmc,
         journal: Some("Example Journal".to_string()),
         date: Some("2024-01-01".to_string()),
         citation_count: Some(12),
@@ -159,6 +165,10 @@ fn article_batch_markdown_renders_compact_rows() {
             pmcid: None,
             doi: Some("10.1056/NEJMoa1203421".to_string()),
             title: "Improved survival with vemurafenib".to_string(),
+            authors: vec!["A. One".into(), "B. Two".into(), "C. Three".into()],
+            author_count: 3,
+            author_completeness: ArticleAuthorCompleteness::Complete,
+            author_source: ArticleSource::PubTator,
             journal: Some("NEJM".to_string()),
             year: Some(2012),
             entity_summary: Some(crate::entities::article::ArticleBatchEntitySummary {
@@ -183,6 +193,10 @@ fn article_batch_markdown_renders_compact_rows() {
             pmcid: Some("PMC9984800".to_string()),
             doi: None,
             title: "Follow-up trial".to_string(),
+            authors: Vec::new(),
+            author_count: 0,
+            author_completeness: ArticleAuthorCompleteness::Unavailable,
+            author_source: ArticleSource::EuropePmc,
             journal: Some("Nature".to_string()),
             year: Some(2014),
             entity_summary: None,
@@ -196,11 +210,14 @@ fn article_batch_markdown_renders_compact_rows() {
     assert!(markdown.contains("# Article Batch (2)"));
     assert!(markdown.contains("## 1. Improved survival with vemurafenib"));
     assert!(markdown.contains("PMID: 22663011"));
+    assert!(markdown.contains("Authors: A. One, B. Two, C. Three"));
+    assert!(markdown.contains("Authorship: complete (3 returned; PubTator3)"));
     assert!(markdown.contains("Entities: Genes: BRAF (4); Diseases: melanoma (2)"));
     assert!(markdown.contains("TLDR: BRAF inhibitor benefit in melanoma."));
     assert!(markdown.contains("Citations: 120 (influential: 18)"));
     assert!(markdown.contains("## 2. Follow-up trial"));
     assert!(markdown.contains("PMID: 24200969"));
+    assert!(markdown.contains("Authorship: unavailable (no author list supplied by Europe PMC)"));
     // Absent optional fields are omitted, not printed as placeholders
     assert!(!markdown.contains("TLDR: -"));
     assert!(!markdown.contains("Entities: -"));

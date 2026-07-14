@@ -7,12 +7,12 @@ mod html;
 mod jats;
 mod pdf;
 
+#[allow(unused_imports)]
+pub use self::anchors::truncate_abstract;
 pub use self::anchors::{
     article_search_abstract_snippet, article_search_fallback_title, clean_abstract, clean_title,
     normalize_article_search_text,
 };
-#[allow(unused_imports)]
-pub use self::anchors::{truncate_abstract, truncate_authors};
 pub use self::annotations::extract_annotations;
 pub use self::federation::{
     from_europepmc_result, from_europepmc_search_result, from_pubmed_esummary_entry,
@@ -58,7 +58,6 @@ mod tests {
         let _ = crate::transform::article::truncate_abstract as fn(&str) -> String;
         let _ = crate::transform::article::article_search_abstract_snippet
             as fn(&str) -> Option<String>;
-        let _ = crate::transform::article::truncate_authors as fn(&[String]) -> Vec<String>;
         let _ =
             crate::transform::article::from_pubtator_document as fn(&PubTatorDocument) -> Article;
         let _ = crate::transform::article::from_europepmc_result as fn(&EuropePmcResult) -> Article;

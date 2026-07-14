@@ -223,6 +223,9 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         doi: Some("10.1000/example".to_string()),
         title: "Example article".to_string(),
         authors: vec!["A. Author".to_string()],
+        author_count: 1,
+        author_completeness: ArticleAuthorCompleteness::Complete,
+        author_source: ArticleSource::PubTator,
         journal: Some("Example Journal".to_string()),
         date: Some("2012-05-31".to_string()),
         citation_count: Some(12),
@@ -258,7 +261,7 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
     };
     let article_markdown = article_markdown(&article, &["all".to_string()]).expect("article");
     assert!(article_markdown.contains("Source: PubMed / Europe PMC"));
-    assert!(article_markdown.contains("## Authors (PubMed / Europe PMC)"));
+    assert!(article_markdown.contains("## Authors (PubTator3)"));
     assert!(article_markdown.contains("## Abstract (PubMed / Europe PMC)"));
     assert!(article_markdown.contains("## PubTator Annotations"));
     assert!(article_markdown.contains("## Full Text"));

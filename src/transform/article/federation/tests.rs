@@ -28,6 +28,13 @@ fn article_sections_maps_egfr_review() {
     assert!(article.title.contains("EGFR targeted therapy"));
     assert_eq!(article.publication_type.as_deref(), Some("Review"));
     assert_eq!(article.open_access, Some(true));
+    assert_eq!(article.authors, vec!["A. One", "B. Two", "C. Three"]);
+    assert_eq!(article.author_count, article.authors.len());
+    assert_eq!(
+        article.author_completeness,
+        ArticleAuthorCompleteness::SourceLimited
+    );
+    assert_eq!(article.author_source, ArticleSource::EuropePmc);
     assert!(
         article
             .abstract_text
@@ -56,8 +63,98 @@ fn article_sections_maps_brca1_study() {
     assert_eq!(article.pmid.as_deref(), Some("22663011"));
     assert_eq!(article.pmcid.as_deref(), Some("PMC1234567"));
     assert!(article.title.contains("BRCA1"));
-    assert_eq!(article.authors, vec!["Author A", "Author E"]);
+    assert_eq!(
+        article.authors,
+        vec!["Author A", "Author B", "Author C", "Author D", "Author E"]
+    );
+    assert_eq!(article.author_count, article.authors.len());
+    assert_eq!(
+        article.author_completeness,
+        ArticleAuthorCompleteness::Complete
+    );
+    assert_eq!(article.author_source, ArticleSource::PubTator);
     assert!(!article.pubtator_fallback);
+}
+
+#[test]
+fn article_authorship_preserves_large_source_lists_and_empty_state() {
+    let authors = (1..=28)
+        .map(|idx| format!("Author {idx}"))
+        .collect::<Vec<_>>();
+    let populated_doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
+        "authors": authors.clone()
+    }))
+    .expect("valid PubTator document");
+    let populated = from_pubtator_document(&populated_doc);
+    assert_eq!(populated.authors, authors);
+    assert_eq!(populated.author_count, populated.authors.len());
+    assert_eq!(
+        populated.author_completeness,
+        ArticleAuthorCompleteness::Complete
+    );
+
+    let empty_doc: PubTatorDocument =
+        serde_json::from_value(serde_json::json!({})).expect("valid PubTator document");
+    let empty = from_pubtator_document(&empty_doc);
+    assert!(empty.authors.is_empty());
+    assert_eq!(empty.author_count, 0);
+    assert_eq!(
+        empty.author_completeness,
+        ArticleAuthorCompleteness::Unavailable
+    );
+}
+
+#[test]
+fn europepmc_authorship_has_no_ten_name_cap_and_reports_empty_state() {
+    let names = (1..=18)
+        .map(|idx| format!("Author {idx}"))
+        .collect::<Vec<_>>();
+    let populated_hit: EuropePmcResult = serde_json::from_value(serde_json::json!({
+        "id": "1",
+        "authorString": names.join(", ")
+    }))
+    .expect("valid Europe PMC hit");
+    let populated = from_europepmc_result(&populated_hit);
+    assert_eq!(populated.authors, names);
+    assert_eq!(populated.author_count, populated.authors.len());
+    assert_eq!(
+        populated.author_completeness,
+        ArticleAuthorCompleteness::SourceLimited
+    );
+
+    let empty_hit: EuropePmcResult =
+        serde_json::from_value(serde_json::json!({"id": "2"})).expect("valid Europe PMC hit");
+    let empty = from_europepmc_result(&empty_hit);
+    assert!(empty.authors.is_empty());
+    assert_eq!(empty.author_count, 0);
+    assert_eq!(
+        empty.author_completeness,
+        ArticleAuthorCompleteness::Unavailable
+    );
+}
+
+#[test]
+fn europepmc_metadata_merge_preserves_pubtator_authorship() {
+    let doc: PubTatorDocument = serde_json::from_value(serde_json::json!({
+        "authors": ["Structured One", "Structured Two"]
+    }))
+    .expect("valid PubTator document");
+    let mut article = from_pubtator_document(&doc);
+    let hit: EuropePmcResult = serde_json::from_value(serde_json::json!({
+        "id": "1",
+        "authorString": "Display One, Display Two"
+    }))
+    .expect("valid Europe PMC hit");
+
+    merge_europepmc_metadata(&mut article, &hit);
+
+    assert_eq!(article.authors, doc.authors);
+    assert_eq!(article.author_count, article.authors.len());
+    assert_eq!(
+        article.author_completeness,
+        ArticleAuthorCompleteness::Complete
+    );
+    assert_eq!(article.author_source, ArticleSource::PubTator);
 }
 
 #[test]
