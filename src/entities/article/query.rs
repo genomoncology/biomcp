@@ -75,6 +75,7 @@ pub(super) fn europepmc_keyword(value: &str) -> String {
 
 pub(super) fn build_search_query(filters: &ArticleSearchFilters) -> Result<String, BioMcpError> {
     validate_required_search_filters(filters)?;
+    validate_search_filter_values(filters)?;
     validate_article_ranking_options(filters)?;
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
     let mut terms: Vec<String> = Vec::new();
@@ -233,6 +234,7 @@ pub(super) fn build_pubmed_search_term(
         .map(str::trim)
         .filter(|value| !value.is_empty())
     {
+        let author = author.replace('"', " ");
         clauses.push(format!("\"{author}\"[author]"));
     }
 
