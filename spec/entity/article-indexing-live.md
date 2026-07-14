@@ -15,6 +15,7 @@ response rather than a previously cached citation.
 ```
 
 ## Live Europe PMC supplementary asset canary
+<!-- mustmatch-lint: skip -->
 
 The reviewed open-access article should expose at least one supplementary asset
 through Europe PMC. The follow-up uses the returned filename rather than pinning
