@@ -130,7 +130,9 @@ rules, source degradation, privacy boundaries, and the incremental build order.
 
 `biomcp search article` defaults to `--source all` for recall. The compatible
 federated article path fans out across PubTator3, Europe PMC, PubMed, and
-Semantic Scholar with a 12-second per-source latency bound. `-a/--author` is a
+Semantic Scholar with a 12-second per-source latency bound. The capable Europe
+PMC + PubMed fan-out used by default author and publication-type filtering
+shares that bound and the visible partial-coverage contract. `-a/--author` is a
 capability constraint: it limits default candidate search to Europe PMC and,
 when the other selected filters are compatible, PubMed. `--open-access` or
 `--no-preprints` can narrow further to Europe PMC. Explicit PubTator3, Semantic
