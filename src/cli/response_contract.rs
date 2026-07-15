@@ -13,6 +13,7 @@ const STRUCTURES_PATH: JsonPath = &["structures"];
 const PATHWAYS_PATH: JsonPath = &["pathways"];
 const ASSETS_PATH: JsonPath = &["assets"];
 const DOCUMENTS_PATH: JsonPath = &["documents"];
+const CONCEPTS_PATH: JsonPath = &["concepts"];
 const DRUG_US_RESULTS_PATH: JsonPath = &["regions", "us", "results"];
 const DRUG_EU_RESULTS_PATH: JsonPath = &["regions", "eu", "results"];
 const DRUG_WHO_RESULTS_PATH: JsonPath = &["regions", "who", "results"];
@@ -146,8 +147,10 @@ impl JsonResponseContract {
             | Commands::Uninstall
             | Commands::List(_)
             | Commands::Batch(_)
-            | Commands::Discover(_)
             | Commands::Version(_) => Self::NONE,
+            Commands::Discover(_) => Self {
+                collection_paths: &[CONCEPTS_PATH],
+            },
         }
     }
 
@@ -345,6 +348,7 @@ mod tests {
                 &["structures"],
             ),
             (&["biomcp", "enrich", "BRAF,TP53"], &["results"]),
+            (&["biomcp", "discover", "melanoma"], &["concepts"]),
             (
                 &["biomcp", "get", "article", "1", "assets", "--json"],
                 &["assets"],

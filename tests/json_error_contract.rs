@@ -295,6 +295,18 @@ fn parsed_json_errors_keep_command_collection_paths_iterable() {
 }
 
 #[test]
+fn runtime_json_errors_keep_discover_concepts_iterable() {
+    let result = run_biomcp_with_env(
+        &["--no-cache", "--json", "discover", "melanoma"],
+        &[("BIOMCP_OLS4_BASE", "http://127.0.0.1:9")],
+    );
+
+    assert_json_error(&result, 1, "http_middleware");
+    let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
+    assert_eq!(value["concepts"], serde_json::json!([]), "json={value}");
+}
+
+#[test]
 fn vaers_aggregate_and_pre_dispatch_errors_remain_keyless() {
     let vaers = run_biomcp(&[
         "--json",

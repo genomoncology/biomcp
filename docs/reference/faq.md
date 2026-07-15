@@ -77,7 +77,8 @@ When you need more detail:
 
 For object-shaped query commands, BioMCP keeps the command's primary collection
 iterable even when a parsed call fails. For example, an article-search error can
-contain `results: []` alongside `error` and `_meta`. This does not mean the
+contain `results: []` alongside `error` and `_meta`, while `discover` retains
+`concepts: []`. This does not mean the
 biomedical search succeeded with no matches: inspect the process exit status or
 the `error` object. Errors that occur before BioMCP can identify the command stay
 keyless. Section-shaped `search all`, scalar trial `--count-only`, and VAERS-only

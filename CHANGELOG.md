@@ -26,7 +26,7 @@
   success and parsed structured errors, while preserving error objects, nonzero
   exits, nested drug-region shapes, and legacy bare-array batch successes.
 - Sanitized standard structured JSON errors so provider bodies, request URLs,
-  credentials, parser details, and local paths are not exposed.
+  credentials, parser details, and internal local paths are not exposed.
 - Recovered article assets through bounded Europe PMC supplementary ZIPs when a
   PMC OA archive fails, while distinguishing confirmed absence from source
   unavailability and preserving retained PMC OA license provenance.
