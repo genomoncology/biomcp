@@ -105,7 +105,8 @@ impl BioMcpServer {
     }
 
     fn tool_error(message: impl Into<String>) -> CallToolResult {
-        CallToolResult::error(vec![Content::text(message.into())])
+        let message = crate::render::human::sanitize_inline(&message.into());
+        CallToolResult::error(vec![Content::text(message)])
     }
 
     async fn execute_args(args: Vec<String>, json: bool) -> Result<CallToolResult, McpError> {
@@ -143,6 +144,11 @@ impl BioMcpServer {
                         }
                         Err(_) => output.text,
                     }
+                };
+                let text = if json || args_include_json(&args) {
+                    text
+                } else {
+                    crate::render::human::sanitize_document(&text)
                 };
                 let mut content = vec![Content::text(text)];
                 if let Some(svg) = output.svg {
@@ -490,10 +496,10 @@ fn redact_mcp_json_value(value: &mut Value) {
     }
 }
 
-fn redact_mcp_json_text(text: &str) -> Result<String, serde_json::Error> {
+fn redact_mcp_json_text(text: &str) -> Result<String, crate::error::BioMcpError> {
     let mut value: Value = serde_json::from_str(text)?;
     redact_mcp_json_value(&mut value);
-    serde_json::to_string_pretty(&value)
+    crate::render::json::to_pretty(&value)
 }
 
 fn append_default_mcp_footer(text: String, json_text: &str) -> String {
@@ -652,6 +658,7 @@ fn build_resource_list() -> Vec<RawResource> {
 }
 
 fn to_resource_result(uri: &str, content: String) -> ReadResourceResult {
+    let content = crate::render::human::sanitize_document(&content);
     ReadResourceResult::new(vec![
         ResourceContents::text(content, uri).with_mime_type("text/markdown"),
     ])

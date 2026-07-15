@@ -30,6 +30,10 @@ pub(crate) const IMAGE_DIMENSION_FLAGS_ERROR: &str =
     "--width/--height require SVG, PNG, or MCP inline SVG chart output";
 pub(crate) const PNG_SCALE_FLAGS_ERROR: &str = "--scale requires PNG chart output";
 
+fn chart_text(value: &str) -> String {
+    crate::render::human::sanitize_inline(value)
+}
+
 fn display_mutation_class(label: &str) -> Cow<'_, str> {
     match label.trim() {
         "Missense_Mutation" => Cow::Borrowed("Missense"),
@@ -190,7 +194,7 @@ pub(crate) fn render_mutation_frequency_chart(
                     .top_variant_classes
                     .iter()
                     .map(|(label, count)| {
-                        (display_mutation_class(label).into_owned(), *count as f64)
+                        (chart_text(&display_mutation_class(label)), *count as f64)
                     })
                     .collect()
             };
@@ -219,7 +223,7 @@ pub(crate) fn render_mutation_frequency_chart(
                     .top_variant_classes
                     .iter()
                     .map(|(label, count)| {
-                        (display_mutation_class(label).into_owned(), *count as f64)
+                        (chart_text(&display_mutation_class(label)), *count as f64)
                     })
                     .collect()
             };
@@ -254,7 +258,7 @@ pub(crate) fn render_mutation_waterfall_chart(
         .with_bars(
             sample_counts
                 .iter()
-                .map(|(sample_id, count)| (sample_id.clone(), *count as f64))
+                .map(|(sample_id, count)| (chart_text(sample_id), *count as f64))
                 .collect::<Vec<_>>(),
         )
         .with_color(palette[0].clone());
@@ -376,7 +380,7 @@ pub(crate) fn render_expression_compare_chart(
         ChartType::Box => {
             let mut plot = BoxPlot::new();
             for (label, values) in groups {
-                plot = plot.with_group(label.clone(), values.iter().copied());
+                plot = plot.with_group(chart_text(label), values.iter().copied());
             }
             plot = plot.with_group_colors(
                 palette
@@ -396,7 +400,7 @@ pub(crate) fn render_expression_compare_chart(
         ChartType::Violin => {
             let mut plot = ViolinPlot::new();
             for (label, values) in groups {
-                plot = plot.with_group(label.clone(), values.iter().copied());
+                plot = plot.with_group(chart_text(label), values.iter().copied());
             }
             plot = plot.with_group_colors(
                 palette
@@ -417,7 +421,7 @@ pub(crate) fn render_expression_compare_chart(
             let mut plot = RidgelinePlot::new().with_legend(true);
             for (idx, (label, values)) in groups.iter().enumerate() {
                 plot = plot.with_group_color(
-                    label.clone(),
+                    chart_text(label),
                     values.iter().copied(),
                     palette[idx % palette.len()].clone(),
                 );
@@ -479,7 +483,7 @@ pub(crate) fn render_mutation_compare_chart(
                     result
                         .groups
                         .iter()
-                        .map(|group| (group.group_name.clone(), group.mutation_rate))
+                        .map(|group| (chart_text(&group.group_name), group.mutation_rate))
                         .collect::<Vec<_>>(),
                 )
                 .with_color(palette[0].clone());
@@ -499,7 +503,7 @@ pub(crate) fn render_mutation_compare_chart(
             for group in &result.groups {
                 let not_mutated = group.sample_count.saturating_sub(group.mutated_count);
                 plot = plot.with_group(
-                    group.group_name.clone(),
+                    chart_text(&group.group_name),
                     vec![
                         (group.mutated_count as f64, palette[0].as_str()),
                         (not_mutated as f64, palette[1].as_str()),
@@ -556,7 +560,7 @@ pub(crate) fn render_co_occurrence_chart(
                         .iter()
                         .map(|pair| {
                             (
-                                format!("{}/{}", pair.gene_a, pair.gene_b),
+                                chart_text(&format!("{}/{}", pair.gene_a, pair.gene_b)),
                                 pair.both_mutated as f64,
                             )
                         })
@@ -580,8 +584,14 @@ pub(crate) fn render_co_occurrence_chart(
                 .with_label_position(PieLabelPosition::Auto);
             for (idx, (label, value)) in [
                 ("Both mutated".to_string(), pair.both_mutated as f64),
-                (format!("{} only", pair.gene_a), pair.a_only as f64),
-                (format!("{} only", pair.gene_b), pair.b_only as f64),
+                (
+                    chart_text(&format!("{} only", pair.gene_a)),
+                    pair.a_only as f64,
+                ),
+                (
+                    chart_text(&format!("{} only", pair.gene_b)),
+                    pair.b_only as f64,
+                ),
                 ("Neither".to_string(), pair.neither as f64),
             ]
             .into_iter()
@@ -622,7 +632,7 @@ pub(crate) fn render_survival_chart(
                     result
                         .groups
                         .iter()
-                        .map(|group| (group.group_name.clone(), group.event_rate))
+                        .map(|group| (chart_text(&group.group_name), group.event_rate))
                         .collect::<Vec<_>>(),
                 )
                 .with_color(palette[0].clone());
@@ -646,7 +656,7 @@ pub(crate) fn render_survival_chart(
                             .with_data(group.km_curve_points.iter().copied())
                             .with_step()
                             .with_color(palette[idx % palette.len()].clone())
-                            .with_legend(group.group_name.clone()),
+                            .with_legend(chart_text(&group.group_name)),
                     )
                 })
                 .collect::<Vec<_>>();
@@ -702,9 +712,14 @@ fn render_co_occurrence_heatmap(
         matrix[j][i] = pair.both_mutated as f64;
     }
 
+    let genes = result
+        .genes
+        .iter()
+        .map(|gene| chart_text(gene))
+        .collect::<Vec<_>>();
     let plot = Heatmap::new()
         .with_data(matrix)
-        .with_labels(result.genes.clone(), result.genes.clone())
+        .with_labels(genes.clone(), genes.clone())
         .with_color_map(ColorMap::Viridis)
         .with_legend("Both-mutated sample count");
     let plots = vec![Plot::Heatmap(plot)];
@@ -713,13 +728,13 @@ fn render_co_occurrence_heatmap(
     let theme = theme_from_name(options.theme.as_deref(), terminal_default)?;
 
     let mut layout = Layout::auto_from_plots(&plots)
-        .with_x_categories(result.genes.clone())
-        .with_y_categories(result.genes.clone())
+        .with_x_categories(genes.clone())
+        .with_y_categories(genes)
         .with_x_label("Gene")
         .with_y_label("Gene")
         .with_theme(theme);
     let default_title = format!("Co-mutation heatmap ({})", result.study_id);
-    let title = options.title.as_deref().unwrap_or(default_title.as_str());
+    let title = chart_text(options.title.as_deref().unwrap_or(default_title.as_str()));
     if !title.trim().is_empty() {
         layout = layout.with_title(title);
     }
@@ -762,11 +777,11 @@ where
     let theme = theme_from_name(options.theme.as_deref(), terminal_default)?;
 
     let mut layout = Layout::auto_from_plots(&plots)
-        .with_x_label(x_label)
-        .with_y_label(y_label)
+        .with_x_label(chart_text(x_label))
+        .with_y_label(chart_text(y_label))
         .with_theme(theme)
         .with_palette(palette);
-    let title = options.title.as_deref().unwrap_or(default_title);
+    let title = chart_text(options.title.as_deref().unwrap_or(default_title));
     if !title.trim().is_empty() {
         layout = layout.with_title(title);
     }
@@ -988,12 +1003,12 @@ mod tests {
     use crate::test_support::TempDirGuard;
 
     use super::{
-        ChartRenderOptions, display_mutation_class, render_cna_chart, render_co_occurrence_chart,
-        render_expression_compare_chart, render_expression_density_chart,
-        render_expression_histogram_chart, render_expression_scatter_chart,
-        render_mutation_compare_chart, render_mutation_frequency_chart,
-        render_mutation_waterfall_chart, render_survival_chart, validate_compare_chart_type,
-        validate_query_chart_type, validate_standalone_chart_type,
+        ChartRenderOptions, chart_text, display_mutation_class, render_cna_chart,
+        render_co_occurrence_chart, render_expression_compare_chart,
+        render_expression_density_chart, render_expression_histogram_chart,
+        render_expression_scatter_chart, render_mutation_compare_chart,
+        render_mutation_frequency_chart, render_mutation_waterfall_chart, render_survival_chart,
+        validate_compare_chart_type, validate_query_chart_type, validate_standalone_chart_type,
     };
     use crate::cli::ChartType;
 
@@ -1147,6 +1162,14 @@ mod tests {
             output.push(ch);
         }
         output
+    }
+
+    #[test]
+    fn chart_text_removes_untrusted_controls_without_touching_unicode() {
+        assert_eq!(
+            chart_text("Control\u{7}Title\u{1b}[31m α"),
+            "Control Title α"
+        );
     }
 
     #[test]

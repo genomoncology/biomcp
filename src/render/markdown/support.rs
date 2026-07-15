@@ -108,7 +108,8 @@ pub(super) fn discover_try_line(query: &str, description: &str) -> String {
 }
 
 pub(super) fn markdown_cell(value: &str) -> String {
-    let value = value.replace(['\n', '\r'], " ").replace('|', "\\|");
+    let value = crate::render::human::sanitize_inline(value);
+    let value = value.replace('|', "\\|");
     let value = value.split_whitespace().collect::<Vec<_>>().join(" ");
     if value.is_empty() {
         "-".to_string()
@@ -136,7 +137,7 @@ pub(super) fn dedupe_markdown_commands(values: Vec<String>) -> Vec<String> {
 pub(super) fn render_debug_plan_block(debug_plan: &DebugPlan) -> Result<String, BioMcpError> {
     Ok(format!(
         "## Debug plan\n\n```json\n{}\n```\n\n",
-        serde_json::to_string_pretty(debug_plan)?
+        crate::render::json::to_pretty(debug_plan)?
     ))
 }
 

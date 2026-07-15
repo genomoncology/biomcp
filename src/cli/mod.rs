@@ -56,6 +56,11 @@ pub use self::types::{
 };
 pub use self::variant::VariantCommand;
 
+/// Removes terminal-active controls from a one-line human diagnostic.
+pub fn sanitize_human_diagnostic(message: &str) -> String {
+    crate::render::human::sanitize_inline(message)
+}
+
 #[cfg(test)]
 use self::shared::RUNTIME_HELP_SUBCOMMANDS;
 #[cfg(test)]

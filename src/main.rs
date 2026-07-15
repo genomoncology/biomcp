@@ -2,6 +2,10 @@ use std::io::{IsTerminal, Write};
 
 use tracing_subscriber::EnvFilter;
 
+fn human_error(error: &dyn std::fmt::Display) -> String {
+    biomcp_cli::cli::sanitize_human_diagnostic(&error.to_string())
+}
+
 fn init_tracing() {
     let _ = tracing_subscriber::fmt()
         .with_env_filter(
@@ -22,7 +26,7 @@ async fn main() -> std::process::ExitCode {
             match biomcp_cli::mcp::run_stdio().await {
                 Ok(()) => std::process::ExitCode::SUCCESS,
                 Err(err) => {
-                    eprintln!("Error: {err}");
+                    eprintln!("Error: {}", human_error(&err));
                     std::process::ExitCode::from(1)
                 }
             }
@@ -34,7 +38,7 @@ async fn main() -> std::process::ExitCode {
             match biomcp_cli::mcp::run_http(&host, port, allowed_hosts).await {
                 Ok(()) => std::process::ExitCode::SUCCESS,
                 Err(err) => {
-                    eprintln!("Error: {err}");
+                    eprintln!("Error: {}", human_error(&err));
                     std::process::ExitCode::from(1)
                 }
             }
@@ -42,7 +46,7 @@ async fn main() -> std::process::ExitCode {
         biomcp_cli::cli::Commands::ServeSse => match biomcp_cli::mcp::run_sse().await {
             Ok(()) => std::process::ExitCode::SUCCESS,
             Err(err) => {
-                eprintln!("Error: {err}");
+                eprintln!("Error: {}", human_error(&err));
                 std::process::ExitCode::from(1)
             }
         },
@@ -66,7 +70,7 @@ async fn main() -> std::process::ExitCode {
             }
             Err(err) => {
                 if let Some(bio_err) = err.downcast_ref::<biomcp_cli::error::BioMcpError>() {
-                    eprintln!("Error: {bio_err}");
+                    eprintln!("Error: {}", human_error(bio_err));
                     let _ = std::io::stderr().flush();
                     match bio_err {
                         biomcp_cli::error::BioMcpError::InvalidArgument(_) => {
@@ -77,7 +81,7 @@ async fn main() -> std::process::ExitCode {
                         }
                     }
                 } else {
-                    eprintln!("Error: {err}");
+                    eprintln!("Error: {}", human_error(&err));
                     let _ = std::io::stderr().flush();
                     std::process::exit(1);
                 }

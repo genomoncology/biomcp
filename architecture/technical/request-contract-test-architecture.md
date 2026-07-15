@@ -75,6 +75,7 @@ Target ownership:
 
 - Entities own semantic results, source status, fallback/degradation decisions, pagination, provenance, and typed next-command data: command name plus ordered, unquoted argument values.
 - Render/output modules own markdown/JSON serialization and shell-safe presentation of next commands. They turn typed command data into the public `_meta.next_commands` and Suggested Commands strings by quoting each argument independently at the boundary.
+- The renderer also owns terminal-control sanitization at human-output seams. Domain values remain verbatim; CLI/MCP text and diagnostics are sanitized at emission, chart scalars before the trusted ANSI backend, and pretty JSON only by lexical escaping that preserves round-trip values.
 - CLI dispatchers own argument parsing, request construction, execution call, and selecting markdown versus JSON output; they should not repair shell quoting after entity code has already flattened a command string.
 
 First cleanup should not move all next-command construction at once. Instead, tests should pin the desired boundary by adding fixture result builders for disease/discover/article/variant and asserting `_meta.next_commands`, `_meta.source_status`, provenance, and markdown table/card anchors without live calls.

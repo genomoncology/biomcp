@@ -447,6 +447,7 @@ def test_wrapper_writes_summary_artifacts_for_pass_fixture(tmp_path: Path) -> No
         "quality-ratchet-mcp-allowlist.json",
         "quality-ratchet-source-registry.json",
         "quality-ratchet-cli-line-cap.json",
+        "quality-ratchet-terminal-output-boundaries.json",
         "quality-ratchet-summary.json",
     ):
         assert (output_dir / name).exists(), name
@@ -457,7 +458,97 @@ def test_wrapper_writes_summary_artifacts_for_pass_fixture(tmp_path: Path) -> No
     assert summary["lint"]["files_checked"] == 1
     assert summary["lint"]["finding_count"] == 0
     assert summary["cli_line_cap"]["status"] == "pass"
+    assert summary["terminal_output_boundaries"]["status"] == "pass"
     assert "smoke_lane" not in summary
+
+
+def test_terminal_output_boundary_ratchet_detects_removed_seams_and_pretty_bypass(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    source_files = [
+        "src/render/human.rs",
+        "src/cli/outcome.rs",
+        "src/main.rs",
+        "src/mcp/shell.rs",
+        "src/render/chart.rs",
+        "src/render/json.rs",
+    ]
+    mutations = [
+        (
+            "src/render/human.rs",
+            "fn sanitize_document(value: &str)",
+            "fn removed_document(value: &str)",
+        ),
+        (
+            "src/cli/outcome.rs",
+            "outcome.text = crate::render::human::sanitize_document(&outcome.text)",
+            "outcome.text = String::from(&outcome.text)",
+        ),
+        (
+            "src/main.rs",
+            "sanitize_human_diagnostic(&error.to_string())",
+            "error.to_string()",
+        ),
+        ("src/mcp/shell.rs", "sanitize_document(&text)", "text.to_string()"),
+        (
+            "src/mcp/shell.rs",
+            "sanitize_document(&content)",
+            "content.to_string()",
+        ),
+        (
+            "src/mcp/shell.rs",
+            "sanitize_inline(&message.into())",
+            "message.into()",
+        ),
+        (
+            "src/render/chart.rs",
+            "fn chart_text(value: &str)",
+            "fn removed_chart_text(value: &str)",
+        ),
+    ]
+
+    for index, (relative_path, marker, replacement) in enumerate(mutations):
+        fixture = tmp_path / f"seam-{index}"
+        for source_file in source_files:
+            target = fixture / source_file
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(REPO_ROOT / source_file, target)
+        path = fixture / relative_path
+        text = path.read_text(encoding="utf-8")
+        assert marker in text
+        path.write_text(text.replace(marker, replacement, 1), encoding="utf-8")
+
+        payload = ratchet.check_terminal_output_boundaries(fixture)
+        assert payload["status"] == "fail"
+        assert any(finding["path"] == relative_path for finding in payload["findings"])
+
+    bypass_fixture = tmp_path / "pretty-bypass"
+    bypass = bypass_fixture / "src/cli/bypass.rs"
+    bypass.parent.mkdir(parents=True)
+    bypass.write_text(
+        "fn render(value: &serde_json::Value) { let _ = serde_json::to_string_pretty(value); }\n",
+        encoding="utf-8",
+    )
+    for source_file in source_files:
+        target = bypass_fixture / source_file
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPO_ROOT / source_file, target)
+
+    payload = ratchet.check_terminal_output_boundaries(bypass_fixture)
+    assert payload["status"] == "fail"
+    assert any(
+        finding["path"] == "src/cli/bypass.rs"
+        and "pretty JSON" in finding["message"]
+        for finding in payload["findings"]
+    )
+
+    bypass.write_text(
+        "#[cfg(test)]\nmod tests { fn render(value: &serde_json::Value) { let _ = serde_json::to_string_pretty(value); } }\n",
+        encoding="utf-8",
+    )
+    payload = ratchet.check_terminal_output_boundaries(bypass_fixture)
+    assert payload["status"] == "pass"
 
 
 def test_cli_line_cap_audit_reports_unallowlisted_tracked_overcap_file(

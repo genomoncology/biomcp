@@ -46,6 +46,26 @@ CLI_SURFACE_STATIC_TEXT_GLOBS = [
     "docs/**/*.md",
     "spec/**/*.md",
 ]
+TERMINAL_OUTPUT_BOUNDARY_SEAMS = {
+    "src/render/human.rs": [
+        "fn sanitize_document(value: &str)",
+        "fn sanitize_inline(value: &str)",
+    ],
+    "src/cli/outcome.rs": [
+        "outcome.text = crate::render::human::sanitize_document(&outcome.text)",
+        "trusted_terminal_chart = is_charted_mcp_study_command",
+    ],
+    "src/main.rs": ["sanitize_human_diagnostic(&error.to_string())"],
+    "src/mcp/shell.rs": [
+        "sanitize_document(&text)",
+        "sanitize_document(&content)",
+        "sanitize_inline(&message.into())",
+    ],
+    "src/render/chart.rs": [
+        "fn chart_text(value: &str)",
+        "sanitize_inline(value)",
+    ],
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -164,6 +184,55 @@ def check_architecture_experiment_results(root_dir: Path) -> dict[str, object]:
         "status": "fail" if findings else "pass",
         "glob": EXPERIMENT_RESULTS_GLOB,
         "files_checked": len(tracked_files),
+        "finding_count": len(findings),
+        "findings": findings,
+        "errors": [],
+    }
+
+
+def check_terminal_output_boundaries(root_dir: Path) -> dict[str, object]:
+    findings: list[dict[str, object]] = []
+    checked_surfaces: list[str] = []
+
+    for relative_path, markers in TERMINAL_OUTPUT_BOUNDARY_SEAMS.items():
+        path = root_dir / relative_path
+        checked_surfaces.append(relative_path)
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            findings.append({"path": relative_path, "message": f"required output boundary is unreadable: {exc}"})
+            continue
+        for marker in markers:
+            if marker not in text:
+                findings.append({
+                    "path": relative_path,
+                    "marker": marker,
+                    "message": "required terminal-output sanitization seam is missing",
+                })
+
+    src_dir = root_dir / "src"
+    for path in sorted(src_dir.rglob("*.rs")):
+        relative_path = path.relative_to(root_dir).as_posix()
+        checked_surfaces.append(relative_path)
+        if relative_path == "src/render/json.rs" or "tests" in path.parts:
+            continue
+        text = path.read_text(encoding="utf-8")
+        production_text = re.split(
+            r"#\[cfg\(test\)\]\s*mod\s+[A-Za-z0-9_]*tests\b",
+            text,
+            maxsplit=1,
+        )[0]
+        for match in re.finditer(r"serde_json::to_string_pretty", production_text):
+            findings.append({
+                "path": relative_path,
+                "line": production_text.count("\n", 0, match.start()) + 1,
+                "message": "production pretty JSON must route through src/render/json.rs",
+            })
+
+    return {
+        "name": "terminal_output_boundaries",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": sorted(set(checked_surfaces)),
         "finding_count": len(findings),
         "findings": findings,
         "errors": [],
@@ -1001,6 +1070,12 @@ def main() -> int:
         experiment_results_payload,
     )
 
+    terminal_output_payload = check_terminal_output_boundaries(args.root_dir)
+    write_json(
+        args.output_dir / "quality-ratchet-terminal-output-boundaries.json",
+        terminal_output_payload,
+    )
+
     cli_surface_payload = check_cli_surface_contract(args.root_dir)
     write_json(
         args.output_dir / "quality-ratchet-cli-surface-contract.json",
@@ -1013,6 +1088,7 @@ def main() -> int:
         source_payload.get("status"),
         cli_line_cap_payload.get("status"),
         experiment_results_payload.get("status"),
+        terminal_output_payload.get("status"),
         cli_surface_payload.get("status"),
     ]
     if "error" in statuses:
@@ -1029,6 +1105,7 @@ def main() -> int:
         "source_registry": {"status": source_payload.get("status")},
         "cli_line_cap": {"status": cli_line_cap_payload.get("status")},
         "experiment_results": {"status": experiment_results_payload.get("status")},
+        "terminal_output_boundaries": {"status": terminal_output_payload.get("status")},
         "cli_surface_contract": {"status": cli_surface_payload.get("status")},
     }
     write_json(args.output_dir / "quality-ratchet-summary.json", summary_payload)
