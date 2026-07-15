@@ -25,7 +25,8 @@ pub async fn detail(raw_id: &str) -> Result<AuthorDetail, crate::error::BioMcpEr
     let requested: ProviderAuthorId = raw_id.parse()?;
     let row = crate::sources::semantic_scholar::SemanticScholarClient::new()?
         .author_detail(&requested.value)
-        .await?;
+        .await
+        .map_err(sanitized_detail_error)?;
     map_detail(row, &requested, &chrono::Utc::now().to_rfc3339())
 }
 
@@ -91,6 +92,13 @@ fn contract_error() -> crate::error::BioMcpError {
     }
 }
 
+fn sanitized_detail_error(_: crate::error::BioMcpError) -> crate::error::BioMcpError {
+    crate::error::BioMcpError::Api {
+        api: "semantic_scholar".into(),
+        message: "author detail is unavailable; retry later".into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -121,6 +129,18 @@ mod tests {
         ] {
             assert!(map_detail(invalid, &requested, "now").is_err());
         }
+    }
+
+    #[test]
+    fn provider_failure_does_not_expose_response_body() {
+        let error = sanitized_detail_error(crate::error::BioMcpError::Api {
+            api: "semantic_scholar".into(),
+            message: "HTTP 500: private-author@example.invalid fixture-private-profile".into(),
+        });
+        let rendered = error.to_string();
+        assert!(rendered.contains("retry later"));
+        assert!(!rendered.contains("private-author@example.invalid"));
+        assert!(!rendered.contains("fixture-private-profile"));
     }
 
     #[test]

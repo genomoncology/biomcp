@@ -19,7 +19,7 @@ Search by a researcher's name when separate Semantic Scholar candidates are usef
     "source": "semantic_scholar",
     "results": [
       {"identity": {"kind": "exact_provider", "id": "semanticscholar:2269573451"}, "display_name": "Louis S. Williams", "warnings": [{"code": "orcid_link_not_established"}]},
-      {"identity": {"kind": "exact_provider", "id": "semanticscholar:1994488914"}, "display_name": "Louis S. Williams"}
+      {"identity": {"kind": "exact_provider", "id": "semanticscholar:1994488914"}, "display_name": "Louis S. Williams", "warnings": [{"code": "orcid_link_not_established"}]}
     ],
     "status": "available"
   }]
@@ -33,8 +33,14 @@ next step without inventing a BioMCP author identifier.
 {
   "_meta": {
     "source_status": [{"source": "semantic_scholar", "status": "available"}],
-    "evidence_urls": [{"url": "https://www.semanticscholar.org/author/2269573451"}],
-    "next_commands": ["biomcp get author semanticscholar:2269573451"]
+    "evidence_urls": [
+      {"url": "https://www.semanticscholar.org/author/2269573451"},
+      {"url": "https://www.semanticscholar.org/author/1994488914"}
+    ],
+    "next_commands": [
+      "biomcp get author semanticscholar:2269573451",
+      "biomcp get author semanticscholar:1994488914"
+    ]
   }
 }
 ```
@@ -48,10 +54,13 @@ Provider responses may grow fields, but public author results remain limited to 
 "gender":
 "race":
 "ethnicity":
+"externalIds":
+"external_ids":
 private-author@example.invalid
 https://private.example.invalid/author
 fixture-private-profile
 fixture-inferred-demographic
+0000-0002-7433-2740
 ```
 
 ## Exact provider detail preserves identity and uncertainty
@@ -88,10 +97,13 @@ The allowlisted detail projection applies the same privacy boundary as search.
 "gender":
 "race":
 "ethnicity":
+"externalIds":
+"external_ids":
 private-author@example.invalid
 https://private.example.invalid/author
 fixture-private-profile
 fixture-inferred-demographic
+0000-0002-7433-2740
 ```
 
 ## Markdown and discovery explain the S2-only boundary

@@ -38,6 +38,7 @@ BioMCP exposes a public entity surface. Most entities support both `search` and
 | gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen, gnomAD, CIViC, NIH Reporter, GTR-backed diagnostics pivot | `biomcp get gene ERBB2 funding` |
 | variant | MyVariant.info, ClinVar, gnomAD, CIViC, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome | `biomcp get variant "BRAF V600E" clinvar` |
 | article | PubMed, PubTator3, Europe PMC, explicit LitSense2, PMC OA, NCBI ID Converter, Semantic Scholar (optional auth; `S2_API_KEY` recommended) | `biomcp search article -g BRAF --limit 5` |
+| author | Semantic Scholar provider records | `biomcp search author -q "Louis Williams" --source semanticscholar` |
 | trial | ClinicalTrials.gov, NCI CTS API | `biomcp search trial -c melanoma -s recruiting` |
 | diagnostic | NCBI Genetic Testing Registry local bulk exports, WHO IVD local CSV, optional OpenFDA device 510(k)/PMA overlay | `biomcp search diagnostic --gene BRCA1 --limit 5` |
 | drug | MyChem.info, DDInter local bundle, EMA local batch, WHO Prequalification local CSV, ChEMBL, OpenTargets, Drugs@FDA, OpenFDA labels/shortages/approvals/FAERS/MAUDE/recalls, CIViC | `biomcp drug interactions warfarin` |
@@ -49,22 +50,18 @@ BioMCP exposes a public entity surface. Most entities support both `search` and
 | gwas | GWAS Catalog | `biomcp search gwas --trait "type 2 diabetes"` |
 | phenotype | Monarch Initiative (HPO) | `biomcp search phenotype "HP:0001250"` |
 
-This 13-row table is the high-level public entity surface. It intentionally
-does not fold the local `study` analytics family into the entity list.
+This table is the high-level public entity surface. It intentionally does not
+fold the local `study` analytics family into the entity list. Section-specific
+constraints and transport details live in the technical architecture docs.
 
-This table is a high-level shipped source map; section-specific constraints and
-transport details live in the technical architecture docs.
+### Author entity
 
-### Target author entity
-
-BioMCP does not yet ship an author entity. The additive target is an
-evidence-backed, provider-qualified author surface for identity candidates,
-publications, coauthors, and indexed topics. It explicitly preserves ambiguity
-instead of treating a normalized name as a person. See
+BioMCP ships Semantic Scholar-only provider-exact author search and detail.
+Each identity remains provider-qualified instead of treating a normalized name
+as a person or minting a global BioMCP author ID. Publications, coauthors,
+indexed topics, and cross-provider linking remain target work. See
 [Author Identity and Publication Surface](author-identity.md) for the current
-problem, exact target contracts, invariants, and migration boundaries. The
-shipped entity table above must not add `author` until the first public author
-build lands.
+contract, later target shapes, invariants, and migration boundaries.
 
 ## Study Command Family
 
