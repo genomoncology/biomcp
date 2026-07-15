@@ -1,4 +1,21 @@
 //! Literature and study command-reference pages for `biomcp list`.
+pub(super) fn list_author() -> String {
+    r#"# author
+
+Semantic Scholar author records remain provider-exact. BioMCP does not merge same-name people or establish ORCID links in this release.
+
+## Commands
+
+- `search author -q <name> --source semanticscholar [--limit N] [--offset N]`
+- `get author semanticscholar:<id>`
+
+## Notes
+
+- `--source semanticscholar` is the only source in this release.
+- IDs are case-sensitive and always provider-qualified.
+- Publication, coauthor, topic, affiliation-filter, PubMed, and ORCID operations are future work.
+"#.to_string()
+}
 pub(super) fn list_article() -> String {
     r#"# article
 

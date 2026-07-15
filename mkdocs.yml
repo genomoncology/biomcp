@@ -26,6 +26,7 @@ nav:
       - Gene: user-guide/gene.md
       - Variant: user-guide/variant.md
       - Article: user-guide/article.md
+      - Author: user-guide/author.md
       - Trial: user-guide/trial.md
       - Diagnostic: user-guide/diagnostic.md
       - Drug: user-guide/drug.md

@@ -196,6 +196,7 @@ case "$mode" in
     timeout_args=(--timeout 180)
     paths=(
       spec/entity/article.md
+      spec/entity/author.md
       spec/surface/mcp.md
       spec/surface/skills.md
       spec/surface/trial-retirement.md

@@ -173,6 +173,12 @@ async fn print_typed_tool_surface(
     if !json_property_contains(&search_schema, "entity", "pathway") {
         anyhow::bail!("search entity schema missing pathway enum");
     }
+    if !json_property_contains(&search_schema, "entity", "author") {
+        anyhow::bail!("search entity schema missing author enum");
+    }
+    if !json_property_contains(&get_schema, "entity", "author") {
+        anyhow::bail!("get entity schema missing author enum");
+    }
     if !json_property_contains(&search_schema, "limit", "25") {
         anyhow::bail!("search limit schema missing 25 bound");
     }
@@ -190,6 +196,7 @@ async fn print_typed_tool_surface(
     println!("all listed MCP tools are read-only annotated");
     println!("all listed MCP tools have titles and descriptions");
     println!("search schema includes entity enum and bounded limit");
+    println!("search and get schemas include author entity");
     println!("get schema includes entity and sections enum");
     println!("indexing");
     Ok(())

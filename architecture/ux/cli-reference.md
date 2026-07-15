@@ -442,3 +442,11 @@ Install output lands in `skills/biomcp/` and currently includes `SKILL.md`,
 directories (`.claude`, `.agents/skills/`, etc.) when no directory is passed.
 
 MCP resources include `biomcp://skill/<slug>` for each embedded worked example.
+
+
+## Author (current provider-exact slice)
+
+- `search author -q <name> [--source semanticscholar] [--limit N] [--offset N]`
+- `get author semanticscholar:<id>`
+- Output labels the identity as exact-provider and states that BioMCP has not established an ORCID link in this release.
+- Affiliation filtering, PubMed/ORCID identities, publications, coauthors, and topics remain future work.

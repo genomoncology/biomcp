@@ -1,13 +1,10 @@
 # Author Identity and Publication Surface
 
-Status: target architecture. BioMCP does not yet ship an author entity. The
-article fidelity prerequisites are shipped; the build sequence in ticket 516
-adds this surface incrementally.
+Status: partially current. BioMCP ships Semantic Scholar-only provider-exact author search and detail. The later federated identity, publication, coauthor, and topic stages remain target architecture.
 
 ## Problem and evidence
 
-BioMCP currently has publication-scoped names, affiliations, ORCIDs, and MeSH,
-but no researcher entity. `search article --author` performs provider author-
+BioMCP has publication-scoped names, affiliations, ORCIDs, and MeSH plus an exact Semantic Scholar provider-record author entity, but no globally resolved researcher identity. `search article --author` performs provider author-
 field searches and then drops which author matched. A normalized name is not a
 person identifier, PubMed has no author identifier, Semantic Scholar can split
 or merge people, and ORCID is strong but incomplete and assertion-level

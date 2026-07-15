@@ -26,6 +26,7 @@ variables, test-only override seams, cache settings, and release/install knobs.
 | Trial (optional) | NCI CTS API | `https://clinicaltrialsapi.cancer.gov/api/v2` | Yes (`NCI_API_KEY`) | Enabled via `--source nci` |
 | NCI CTS trial search | NCI CTS API | `https://clinicaltrialsapi.cancer.gov/api/v2` | Yes (`NCI_API_KEY`) | `search trial --source nci` |
 | Article search & metadata | PubTator3 + Europe PMC + PubMed + optional Semantic Scholar; Semantic Scholar and LitSense2 by explicit `--source semanticscholar` / `--source litsense2` | `https://www.ncbi.nlm.nih.gov/research/pubtator3-api`, `https://www.ebi.ac.uk/europepmc/webservices/rest`, `https://eutils.ncbi.nlm.nih.gov/entrez/eutils`, `https://www.ncbi.nlm.nih.gov/research/litsense2-api/api`, `https://api.semanticscholar.org` | Optional (`S2_API_KEY`) | Federated default search with identifier-aware merge, per-source capping after deduplication and before ranking, plus lexical, semantic, or weighted hybrid relevance ranking; Semantic Scholar and LitSense2 remain individually selectable |
+| Author search and detail | Semantic Scholar | `https://api.semanticscholar.org` | Optional (`S2_API_KEY`) | Provider-exact author records; no cross-provider resolution |
 | Article enrichment and graph helpers | Semantic Scholar | `https://api.semanticscholar.org` | Optional (`S2_API_KEY`) | Search-leg metadata, TLDR, influential citations, citation/reference graph, recommendations |
 | Article annotations | PubTator3 | `https://www.ncbi.nlm.nih.gov/research/pubtator3-api` | No | Entity annotations |
 | Article indexing | PubMed citation EFetch XML | `https://eutils.ncbi.nlm.nih.gov/entrez/eutils` | Optional (`NCBI_API_KEY`) | Opt-in associated author affiliations/ORCID and structured MeSH; explicit available/unavailable status; included by `all` |
@@ -99,7 +100,7 @@ BioMCP only requires API keys for a subset of sources.
 | Source | Environment variable | Required when |
 |--------|----------------------|---------------|
 | AlphaGenome | `ALPHAGENOME_API_KEY` | Running `get variant <id> predict` |
-| Semantic Scholar | `S2_API_KEY` | Optional authenticated requests for `search article`, `get article`, `article batch`, TLDR, citation/reference/recommendation helpers, and `get article <id> fulltext --pdf` metadata enrichment |
+| Semantic Scholar | `S2_API_KEY` | Optional authenticated requests for `search author`, `get author`, `search article`, `get article`, `article batch`, TLDR, citation/reference/recommendation helpers, and `get article <id> fulltext --pdf` metadata enrichment |
 | NCI CTS API | `NCI_API_KEY` | Trial operations with `--source nci` |
 | OncoKB | `ONCOKB_TOKEN` | Running `variant oncokb <id>` |
 | DisGeNET | `DISGENET_API_KEY` | Running `get gene <symbol> disgenet` or `get disease <name_or_id> disgenet` |
@@ -127,7 +128,7 @@ and practical ceilings observed in command behavior.
 | KEGG pathway search/detail | Rate-limited to 1 request / 334ms | Matches KEGG's published 3 requests / second guidance |
 | NIH Reporter funding sections | Rate-limited to 1 request / second | Use explicit gene symbols or disease phrases/identifiers; BioMCP queries the most recent 5 NIH fiscal years, keeps free-text disease lookups as-entered, falls back to the resolved canonical disease name for identifier lookups, and de-duplicates project-year rows before ranking grants |
 | Semantic Scholar article helpers | 1 request / second with `S2_API_KEY`; 1 request / 2 seconds on the shared pool without it | Explicit helper commands fail fast on shared-pool `429` responses; set `S2_API_KEY` for dedicated quota and retry behavior |
-| Semantic Scholar internal author source seam | Author search/papers pages: 1-100 rows; author batches: 1-1,000 IDs | Source foundation only; no public author command or cross-provider person identity is registered |
+| Semantic Scholar author search/detail | Author search pages: 1-100 rows | Public provider-exact search/detail; no global identity or ORCID link is established |
 | ORCID internal public-record source seam | Named process-local pacing at 1 request / 100 ms; one body-bounded `/works` read with no continuation | Anonymous guidance is 12/sec sustained, burst 40, and 25,000 reads/day/IP; daily quota is not coordinated across processes. Public API terms limit free use to non-commercial services, so unsupported deployments retain citation-supplied ORCID evidence only |
 | DisGeNET `disgenet` sections | Server-enforced; trial accounts may return first-page-only results and `429` with `X-Rate-Limit-Retry-After-Seconds` | Keep requests explicit, avoid fan-out loops, and retry after the server-provided cooldown |
 

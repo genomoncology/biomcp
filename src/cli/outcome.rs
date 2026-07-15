@@ -229,6 +229,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
     crate::sources::with_no_cache(no_cache, async move {
         match command {
             Commands::Get {
+                entity: GetEntity::Author(args),
+            } => outcome_to_string(super::author::handle_get(args, json).await?),
+            Commands::Get {
                 entity: GetEntity::Gene(args),
             } => outcome_to_string(super::gene::handle_get(args, json, false).await?),
             Commands::Get {
@@ -289,6 +292,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 outcome_to_string(super::system::handle_batch(args, json).await?)
             }
             Commands::Search { entity } => match entity {
+                SearchEntity::Author(args) => {
+                    outcome_to_string(super::author::handle_search(args, json).await?)
+                }
                 SearchEntity::All(args) => {
                     let keyword = super::resolve_query_input(
                         args.keyword,

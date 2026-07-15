@@ -2,6 +2,7 @@
 
 mod adverse_event;
 mod article;
+mod author;
 mod diagnostic;
 mod discovery;
 mod disease;
@@ -42,6 +43,8 @@ pub use self::article::{
     article_graph_markdown, article_markdown, article_recommendations_markdown,
     article_search_markdown_with_footer_and_context,
 };
+#[allow(unused_imports)]
+pub use self::author::{author_detail_markdown, author_search_markdown};
 #[allow(unused_imports)]
 pub use self::diagnostic::{
     diagnostic_markdown, diagnostic_search_markdown, diagnostic_search_markdown_with_footer,

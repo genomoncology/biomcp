@@ -49,6 +49,20 @@ FIGSHARE_COLD_STORAGE = b"%PDF-1.4\nFigshare cold-storage fixture bytes\n%%EOF\n
 COLD_STORAGE_LOCK = threading.Lock()
 COLD_STORAGE_HITS = {}
 
+AUTHOR_ENTITY_SEARCH = {
+    "total": 2,
+    "offset": 0,
+    "data": [
+        {"authorId": "2269573451", "name": "Louis S. Williams", "affiliations": ["Cleveland Clinic"], "paperCount": 42, "citationCount": 900, "hIndex": 15},
+        {"authorId": "1994488914", "name": "Louis S. Williams", "affiliations": ["Cleveland Clinic"], "paperCount": 18, "citationCount": 250, "hIndex": 8},
+    ],
+}
+AUTHOR_ENTITY_DETAIL = {"authorId": "1716151", "name": "A. Butte", "affiliations": ["University of California, San Francisco"], "paperCount": 548, "citationCount": 50000, "hIndex": 100}
+AUTHOR_FORBIDDEN = {"email": "private-author@example.invalid", "homepage": "https://private.example.invalid/author/1716151", "private_profile": "fixture-private-profile", "gender": "fixture-inferred-demographic", "race": "fixture-inferred-demographic", "ethnicity": "fixture-inferred-demographic", "externalIds": {"ORCID": "0000-0002-7433-2740"}}
+for row in AUTHOR_ENTITY_SEARCH["data"]:
+    row.update(AUTHOR_FORBIDDEN)
+AUTHOR_ENTITY_DETAIL.update(AUTHOR_FORBIDDEN)
+
 AUTHOR_SEARCH = {
     "europepmc": {
         "pmid": "51300001",
@@ -534,6 +548,14 @@ class Handler(BaseHTTPRequestHandler):
                     },
                 },
             })
+            return
+
+        if decoded_path == "/graph/v1/author/search":
+            send_json(self, 200, AUTHOR_ENTITY_SEARCH)
+            return
+
+        if decoded_path == "/graph/v1/author/1716151":
+            send_json(self, 200, AUTHOR_ENTITY_DETAIL)
             return
 
         if decoded_path == "/graph/v1/paper/search" and query.get("query") == ["Williams LS"]:

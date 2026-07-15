@@ -134,7 +134,9 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
     article_args, article_base, article_origin = invocations[0]
     rest_args, rest_base, rest_origin = invocations[1]
     assert "spec/entity/article.md" in article_args
+    assert "spec/entity/author.md" in article_args
     assert "spec/entity/article.md" not in rest_args
+    assert "spec/entity/author.md" not in rest_args
     assert article_base.startswith("http://127.0.0.1:")
     assert article_origin == article_base
     assert rest_base == "caller-pubtator"
@@ -385,11 +387,12 @@ def test_concurrent_workspaces_have_distinct_article_fixture_ownership(
     assert len(roots) == len(pids) == len(bases) == 2
     try:
         for item in exports:
-            host, port_text = (
-                item["BIOMCP_FIGSHARE_BASE"].removeprefix("http://").split(":")
-            )
+            base = item["BIOMCP_FIGSHARE_BASE"]
+            host, port_text = base.removeprefix("http://").split(":")
             with socket.create_connection((host, int(port_text)), timeout=1):
                 pass
+            assert _status(f"{base}/graph/v1/author/search?query=Name") == 200
+            assert _status(f"{base}/graph/v1/author/1716151") == 200
         subprocess.run(
             [
                 "bash",
@@ -403,6 +406,10 @@ def test_concurrent_workspaces_have_distinct_article_fixture_ownership(
         second_pid = exports[1]["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
         assert not Path(f"/proc/{first_pid}").exists()
         assert Path(f"/proc/{second_pid}").exists()
+        assert (
+            _status(f'{exports[1]["BIOMCP_FIGSHARE_BASE"]}/graph/v1/author/1716151')
+            == 200
+        )
     finally:
         for workspace in workspaces:
             subprocess.run(

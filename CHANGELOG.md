@@ -4,6 +4,9 @@
 
 ### New features
 
+- Added Semantic Scholar-only provider-exact `search author` and `get author`,
+  including JSON/Markdown provenance, honest unresolved-ORCID warnings,
+  list/help discovery, and typed MCP schema support.
 - Added opt-in PubMed article indexing with associated author affiliations,
   ORCID, structured MeSH descriptors/qualifiers, explicit availability, and
   inclusion under `get article <id> all`.
