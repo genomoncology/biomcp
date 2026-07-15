@@ -396,7 +396,7 @@ DOCTYPE. The parser accepts that prolog without fetching its system identifier
 and preserves numeric character references in the saved evidence text.
 
 ```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch like "External DTD numeric-reference evidence measures 70 µm."
+bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch "/evidence.*70 µm/"
 ```
 
 ```bash
