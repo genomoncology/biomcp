@@ -16,7 +16,17 @@ pub(crate) fn parse_external_xml(
 ) -> Result<Document<'_>, ExternalXmlError> {
     let bytes = xml.as_bytes();
     let mut index = 0;
+    let mut in_markup = false;
+    let mut quote = None;
     while index < bytes.len() {
+        if let Some(delimiter) = quote {
+            if bytes[index] == delimiter {
+                quote = None;
+            }
+            index += 1;
+            continue;
+        }
+
         let remainder = &bytes[index..];
         let skipped = if remainder.starts_with(b"<!--") {
             remainder
@@ -28,6 +38,11 @@ pub(crate) fn parse_external_xml(
                 .windows(3)
                 .position(|window| window == b"]]>")
                 .map(|end| end + 3)
+        } else if remainder.starts_with(b"<?") {
+            remainder
+                .windows(2)
+                .position(|window| window == b"?>")
+                .map(|end| end + 2)
         } else {
             None
         };
@@ -35,11 +50,26 @@ pub(crate) fn parse_external_xml(
             index += skipped;
             continue;
         }
-        if remainder.starts_with(b"<!--") || remainder.starts_with(b"<![CDATA[") {
+        if remainder.starts_with(b"<!--")
+            || remainder.starts_with(b"<![CDATA[")
+            || remainder.starts_with(b"<?")
+        {
             break;
         }
-        if remainder.starts_with(b"<!ENTITY") {
+
+        if !in_markup {
+            if bytes[index] != b'<' {
+                index += 1;
+                continue;
+            }
+            in_markup = true;
+        }
+        if matches!(bytes[index], b'\'' | b'"') {
+            quote = Some(bytes[index]);
+        } else if remainder.starts_with(b"<!ENTITY") {
             return Err(ExternalXmlError::EntityDeclaration);
+        } else if bytes[index] == b'>' {
+            in_markup = false;
         }
         index += 1;
     }
@@ -95,6 +125,8 @@ mod tests {
             r#"<!DOCTYPE article [<!ENTITY name "value">]><article />"#,
             r#"<!DOCTYPE article [<!ENTITY % local "value">]><article />"#,
             r#"<!DOCTYPE article [<!ENTITY external SYSTEM "https://example.invalid/entity">]><article />"#,
+            r#"<!DOCTYPE article SYSTEM "<!--" [<!ENTITY hidden "value"><!-- -->]><article>&hidden;</article>"#,
+            r#"<!DOCTYPE article [<?pi "?><!ENTITY hidden "value">]><article>&hidden;</article>"#,
         ] {
             assert!(matches!(
                 parse_external_xml(xml, 32),
