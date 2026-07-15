@@ -160,7 +160,7 @@ biomcp get variant "BRAF V600E" predictions
 ```
 
 MyVariant-backed prediction entries can include REVEL, AlphaMissense, ClinPred,
-SIFT, PolyPhen-2 HDIV, MetaRNN, `BayesDel add-AF`, and `BayesDel no-AF`.
+SIFT, MetaRNN, `BayesDel add-AF`, and `BayesDel no-AF`.
 The two BayesDel flavors remain separate source scores; BioMCP does not apply a
 clinical threshold or classify pathogenicity from either score.
 

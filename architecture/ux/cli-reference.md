@@ -79,8 +79,8 @@ biomcp get trial NCT03361748 document Prot_SAP_000.pdf
 ```
 
 Variant `predictions` can expose REVEL, AlphaMissense, ClinPred, SIFT,
-PolyPhen-2 HDIV, MetaRNN, `BayesDel add-AF`, and `BayesDel no-AF` from the
-MyVariant payload. The two BayesDel flavors remain separate source scores;
+MetaRNN, `BayesDel add-AF`, and `BayesDel no-AF` from the MyVariant payload.
+The two BayesDel flavors remain separate source scores;
 BioMCP does not apply clinical thresholds or classify pathogenicity from them.
 
 The trial detail surface includes a `contacts` section for ClinicalTrials.gov

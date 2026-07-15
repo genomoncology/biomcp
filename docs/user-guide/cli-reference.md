@@ -479,7 +479,7 @@ biomcp variant structure "BRAF V600E"
 ```
 
 The cached `predictions` section can include REVEL, AlphaMissense, ClinPred,
-SIFT, PolyPhen-2 HDIV, MetaRNN, `BayesDel add-AF`, and `BayesDel no-AF`.
+SIFT, MetaRNN, `BayesDel add-AF`, and `BayesDel no-AF`.
 The BayesDel entries are separate source scores; BioMCP does not assign a
 clinical threshold or pathogenicity classification to either flavor. The
 `predict` section is the separate, credentialed AlphaGenome integration.
