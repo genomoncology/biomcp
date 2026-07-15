@@ -140,7 +140,9 @@ By default, the `biomcp` tool keeps non-chart calls as readable text and appends
 - `## Sources` rolls up `_meta.section_sources` per section.
 - `## Next commands` rolls up `_meta.next_commands` as copyable follow-up commands.
 
-Agents that need the full structured contract can pass the tool input field `json: true`; BioMCP injects `--json` and returns CLI JSON text with metadata such as `_meta.section_sources`, `_meta.evidence_urls`, `_meta.next_commands`, and `_meta.ladder`.
+Agents that need the full structured contract can pass the tool input field `json: true`; BioMCP injects `--json` and returns JSON text with metadata such as `_meta.section_sources`, `_meta.evidence_urls`, `_meta.next_commands`, and `_meta.ladder`.
+
+MCP responses never disclose workstation-local article full-text paths. When full text is saved, readable MCP output reports that it is available while withholding the cache path; JSON replaces the CLI-only `full_text_path` field with `full_text_available: true`. Source, manifest, status, and provenance fields remain available. This transport boundary applies to both local stdio and remote Streamable HTTP MCP clients. Direct CLI calls intentionally continue to print `Saved to:` and serialize `full_text_path` because the CLI user is operating on the machine that owns the file.
 
 In MCP mode, charted `study` commands return two success content blocks in order:
 

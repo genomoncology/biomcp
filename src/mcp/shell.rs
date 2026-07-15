@@ -111,10 +111,38 @@ impl BioMcpServer {
     async fn execute_args(args: Vec<String>, json: bool) -> Result<CallToolResult, McpError> {
         match crate::cli::execute_mcp(args.clone()).await {
             Ok(output) => {
-                let text = if json {
-                    output.text
+                let text = if json || args_include_json(&args) {
+                    redact_mcp_json_text(&output.text).map_err(|err| {
+                        McpError::internal_error(
+                            format!("Failed to sanitize MCP JSON response: {err}"),
+                            None,
+                        )
+                    })?
                 } else {
-                    append_default_mcp_footer(output.text, &args).await
+                    match crate::cli::execute_mcp(args_with_json(&args)).await {
+                        Ok(json_output) => match serde_json::from_str::<Value>(&json_output.text) {
+                            Ok(value) => {
+                                let text = redact_mcp_text(output.text, &value);
+                                append_default_mcp_footer(text, &json_output.text)
+                            }
+                            Err(err) if args_may_return_article_fulltext(&args) => {
+                                return Err(McpError::internal_error(
+                                    format!(
+                                        "Failed to inspect MCP full-text response fields: {err}"
+                                    ),
+                                    None,
+                                ));
+                            }
+                            Err(_) => output.text,
+                        },
+                        Err(err) if args_may_return_article_fulltext(&args) => {
+                            return Err(McpError::internal_error(
+                                format!("Failed to prepare safe MCP full-text response: {err}"),
+                                None,
+                            ));
+                        }
+                        Err(_) => output.text,
+                    }
                 };
                 let mut content = vec![Content::text(text)];
                 if let Some(svg) = output.svg {
@@ -190,6 +218,10 @@ fn args_with_json(args: &[String]) -> Vec<String> {
         with_json.push("--json".to_string());
     }
     with_json
+}
+
+fn args_may_return_article_fulltext(args: &[String]) -> bool {
+    args.get(1).is_some_and(|arg| arg == "get") && args.get(2).is_some_and(|arg| arg == "article")
 }
 
 fn get_section_groups() -> &'static [&'static [&'static str]] {
@@ -404,17 +436,70 @@ fn mcp_meta_footer_from_json(json_text: &str) -> Option<String> {
     Some(lines.join("\n"))
 }
 
-async fn append_default_mcp_footer(text: String, args: &[String]) -> String {
-    if args_include_json(args) {
-        return text;
+fn collect_full_text_paths(value: &Value, paths: &mut Vec<String>) {
+    match value {
+        Value::Array(values) => {
+            for value in values {
+                collect_full_text_paths(value, paths);
+            }
+        }
+        Value::Object(map) => {
+            if let Some(path) = map.get("full_text_path").and_then(Value::as_str) {
+                push_unique(paths, path.to_string());
+            }
+            for value in map.values() {
+                collect_full_text_paths(value, paths);
+            }
+        }
+        _ => {}
     }
+}
 
-    match crate::cli::execute_mcp(args_with_json(args)).await {
-        Ok(output) => match mcp_meta_footer_from_json(&output.text) {
-            Some(footer) => format!("{text}\n\n{footer}"),
-            None => text,
-        },
-        Err(_) => text,
+fn redact_mcp_text(mut text: String, value: &Value) -> String {
+    let mut paths = Vec::new();
+    collect_full_text_paths(value, &mut paths);
+    for path in paths {
+        text = text.replace(
+            &format!("Saved to: {path}"),
+            "Full text: available (local cache path withheld over MCP)",
+        );
+        text = text.replace(&path, "[local path withheld over MCP]");
+    }
+    text
+}
+
+fn redact_mcp_json_value(value: &mut Value) {
+    match value {
+        Value::Array(values) => {
+            for value in values {
+                redact_mcp_json_value(value);
+            }
+        }
+        Value::Object(map) => {
+            let full_text_available = map
+                .remove("full_text_path")
+                .is_some_and(|path| !path.is_null());
+            if full_text_available {
+                map.insert("full_text_available".to_string(), Value::Bool(true));
+            }
+            for value in map.values_mut() {
+                redact_mcp_json_value(value);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn redact_mcp_json_text(text: &str) -> Result<String, serde_json::Error> {
+    let mut value: Value = serde_json::from_str(text)?;
+    redact_mcp_json_value(&mut value);
+    serde_json::to_string_pretty(&value)
+}
+
+fn append_default_mcp_footer(text: String, json_text: &str) -> String {
+    match mcp_meta_footer_from_json(json_text) {
+        Some(footer) => format!("{text}\n\n{footer}"),
+        None => text,
     }
 }
 
@@ -686,7 +771,8 @@ mod tests {
     use super::{
         CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet, TypedSearch,
         all_get_sections, get_args, get_section_groups, index_handler, is_allowed_mcp_command,
-        mcp_rejection_message, search_args, subcommand_names,
+        mcp_rejection_message, redact_mcp_json_text, redact_mcp_text, search_args,
+        subcommand_names,
     };
     use axum::Json;
 
@@ -695,6 +781,30 @@ mod tests {
             .iter()
             .flat_map(|group| group.iter().copied())
             .collect()
+    }
+
+    #[test]
+    fn mcp_full_text_path_redaction_is_field_driven_for_text_and_json() {
+        let path = "/tmp/BioMCP cache/naïve article.md";
+        let value = serde_json::json!({
+            "title": "Example",
+            "full_text_path": path,
+            "full_text_source": {"source": "Europe PMC"}
+        });
+        let text = redact_mcp_text(format!("## Full Text\nSaved to: {path}"), &value);
+        assert_eq!(
+            text,
+            "## Full Text\nFull text: available (local cache path withheld over MCP)"
+        );
+        assert!(!text.contains(path));
+        assert!(!text.contains("Saved to:"));
+
+        let json = redact_mcp_json_text(&value.to_string()).expect("valid JSON");
+        let redacted: serde_json::Value = serde_json::from_str(&json).expect("redacted JSON");
+        assert_eq!(redacted["full_text_available"], true);
+        assert_eq!(redacted["full_text_source"]["source"], "Europe PMC");
+        assert!(redacted.get("full_text_path").is_none());
+        assert!(!json.contains(path));
     }
 
     #[test]

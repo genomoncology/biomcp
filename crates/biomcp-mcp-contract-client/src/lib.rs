@@ -19,6 +19,25 @@ use tokio::process::{Child, Command};
 pub type EnvVar = (&'static str, String);
 pub type RunningClient<T> = rmcp::service::RunningService<rmcp::RoleClient, T>;
 
+pub struct ArticleFulltextFixture {
+    workspace: tempfile::TempDir,
+    repo_root: PathBuf,
+    pub base_url: String,
+    pub cache_dir: PathBuf,
+}
+
+impl Drop for ArticleFulltextFixture {
+    fn drop(&mut self) {
+        let _ = std::process::Command::new("bash")
+            .arg(
+                self.repo_root
+                    .join("spec/fixtures/cleanup-article-fulltext-source-fixture.sh"),
+            )
+            .arg(self.workspace.path())
+            .status();
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ContractHarness {
     pub biomcp_bin: PathBuf,
@@ -674,6 +693,53 @@ where
     Ok(())
 }
 
+pub async fn assert_mcp_fulltext_path_redaction<T>(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
+    fixture: &ArticleFulltextFixture,
+) -> anyhow::Result<()>
+where
+    T: rmcp::Service<rmcp::RoleClient>,
+{
+    let command = "biomcp get article 22663011 fulltext";
+    let text_call = call_biomcp(client, command).await?;
+    assert_eq!(text_call.is_error, Some(false));
+    let text = first_text(&text_call.content);
+    assert!(
+        text.contains("Full text: available (local cache path withheld over MCP)"),
+        "MCP text lacked transport-neutral availability: {text}"
+    );
+    assert!(
+        text.contains("Europe PMC XML"),
+        "MCP text lost provenance: {text}"
+    );
+    assert!(
+        !text.contains("Saved to:"),
+        "MCP text disclosed save path: {text}"
+    );
+    assert!(
+        !text.contains("file://"),
+        "MCP text exposed a file URI: {text}"
+    );
+    assert!(
+        !text.contains(fixture.cache_dir.to_string_lossy().as_ref()),
+        "MCP text exposed adversarial cache root: {text}"
+    );
+
+    let json_call = call_biomcp_json(client, command).await?;
+    assert_eq!(json_call.is_error, Some(false));
+    let json_text = first_text(&json_call.content);
+    let value: serde_json::Value = serde_json::from_str(json_text)?;
+    assert_eq!(value["full_text_available"], true, "json={value}");
+    assert!(value.get("full_text_path").is_none(), "json={value}");
+    assert!(value["full_text_source"].is_object(), "json={value}");
+    assert!(!json_text.contains("file://"), "json={json_text}");
+    assert!(
+        !json_text.contains(fixture.cache_dir.to_string_lossy().as_ref()),
+        "MCP JSON exposed adversarial cache root: {json_text}"
+    );
+    Ok(())
+}
+
 pub async fn assert_mcp_provenance_calls<T>(
     client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
 ) -> anyhow::Result<()>
@@ -780,6 +846,57 @@ where
     assert_eq!(rejected.is_error, Some(true));
     assert!(first_text(&rejected.content).contains("MCP chart responses do not support --output"));
     Ok(())
+}
+
+pub fn provision_article_fulltext_fixture(
+    repo_root: impl AsRef<Path>,
+) -> anyhow::Result<ArticleFulltextFixture> {
+    let repo_root = repo_root.as_ref().to_path_buf();
+    let workspace = tempfile::Builder::new()
+        .prefix("biomcp-rmcp-fulltext-")
+        .tempdir_in(&repo_root)?;
+    let output = std::process::Command::new("bash")
+        .arg(repo_root.join("spec/fixtures/setup-article-fulltext-source-fixture.sh"))
+        .arg(workspace.path())
+        .current_dir(&repo_root)
+        .output()?;
+    anyhow::ensure!(
+        output.status.success(),
+        "article full-text fixture setup failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let fixture_root = PathBuf::from(String::from_utf8(output.stdout)?.trim());
+    let base_url = std::fs::read_to_string(fixture_root.join("base-url"))?
+        .trim()
+        .to_string();
+    let cache_dir = workspace.path().join("cache path naïve 🧬");
+    Ok(ArticleFulltextFixture {
+        workspace,
+        repo_root,
+        base_url,
+        cache_dir,
+    })
+}
+
+pub fn article_fulltext_fixture_env(fixture: &ArticleFulltextFixture) -> Vec<EnvVar> {
+    let mut env = vec![(
+        "BIOMCP_CACHE_DIR",
+        fixture.cache_dir.to_string_lossy().into_owned(),
+    )];
+    for name in [
+        "BIOMCP_TEST_UNPACED_ORIGIN",
+        "BIOMCP_PUBTATOR_BASE",
+        "BIOMCP_EUROPEPMC_BASE",
+        "BIOMCP_PUBMED_BASE",
+        "BIOMCP_PMC_OA_BASE",
+        "BIOMCP_PMC_HTML_BASE",
+        "BIOMCP_NCBI_IDCONV_BASE",
+        "BIOMCP_S2_BASE",
+        "BIOMCP_FIGSHARE_BASE",
+    ] {
+        env.push((name, fixture.base_url.clone()));
+    }
+    env
 }
 
 pub fn provision_study_fixture(repo_root: impl AsRef<Path>) -> anyhow::Result<tempfile::TempDir> {
