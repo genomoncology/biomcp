@@ -25,6 +25,8 @@
 
 ### Fixes
 
+- Restored figure JATS context and complex-table omission metadata from normal
+  DTD-bearing PMC OA archives by sharing the bounded article XML parser policy.
 - Kept command-owned JSON collection paths present as empty arrays on empty
   success and parsed structured errors, while preserving error objects, nonzero
   exits, nested drug-region shapes, and legacy bare-array batch successes.

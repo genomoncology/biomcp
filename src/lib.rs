@@ -21,6 +21,7 @@ pub(crate) mod test_support;
 mod transform;
 mod utils;
 pub(crate) mod workflow_ladders;
+mod xml;
 
 #[cfg(test)]
 #[tokio::test]

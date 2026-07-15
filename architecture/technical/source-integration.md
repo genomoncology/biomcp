@@ -47,14 +47,14 @@ These are conventions, not a fake one-size-fits-all constructor contract. The
 current repo does not require every client to share one name, one constructor
 shape, or one exact error-variant mix.
 
-PubMed citation EFetch is a bounded XML exception to the usual JSON flow. It
-uses the shared 8 MiB response-body limit, parses off the async runtime, accepts
-PubMed's external `DOCTYPE` without resolving or fetching its system identifier,
-and caps the parsed document at 100,000 nodes. DTD entity loops and amplification
-remain parser errors. Citation transport, status, content, size, parse, and miss
-failures are reduced at the source boundary to payload-free kinds before article
-indexing logs or renders them; raw response bodies, request URLs/API keys, and
-parser diagnostics must not cross that boundary.
+Externally supplied PubMed, PMC, and JATS article XML uses one shared borrowed
+parser policy. It accepts external `DOCTYPE` syntax without a resolver or network
+access, rejects entity declarations before parsing, and requires every caller to
+provide a finite node limit. PubMed citation parsing keeps its 100,000-node cap;
+JATS and PMC article parsing use a 1,000,000-node cap. Existing 8 MiB
+transport/archive-member limits remain in force. Public failures stay
+payload-free: raw response bodies, request URLs/API keys, and parser diagnostics
+must not cross source or article boundaries.
 
 Article asset resolution uses explicit success, healthy-absence, and failure
 outcomes across PMC OA, Europe PMC supplementary ZIP, and Figshare. Later

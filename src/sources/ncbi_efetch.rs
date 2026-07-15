@@ -1,18 +1,14 @@
 use std::borrow::Cow;
-use std::sync::OnceLock;
 
 use http_cache_reqwest::CacheMode;
-use regex::Regex;
-use roxmltree::Document;
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
+use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
 const NCBI_EFETCH_BASE: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 const NCBI_EFETCH_API: &str = "pubmed-eutils";
 const NCBI_EFETCH_BASE_ENV: &str = "BIOMCP_PUBMED_BASE";
-
-static DOCTYPE_RE: OnceLock<Regex> = OnceLock::new();
 
 #[derive(Clone)]
 pub struct NcbiEfetchClient {
@@ -113,20 +109,13 @@ impl NcbiEfetchClient {
     }
 }
 
-fn strip_doctype_declaration(xml: &str) -> String {
-    let re = DOCTYPE_RE
-        .get_or_init(|| Regex::new(r#"(?is)<!DOCTYPE[^>]*>"#).expect("valid doctype regex"));
-    re.replace(xml, "").to_string()
-}
-
 pub(crate) fn normalize_article_xml(xml: &str) -> Result<Option<String>, BioMcpError> {
-    let sanitized = strip_doctype_declaration(xml);
-    let trimmed = sanitized.trim();
+    let trimmed = xml.trim();
     if trimmed.is_empty() {
         return Ok(None);
     }
 
-    let doc = match Document::parse(trimmed) {
+    let doc = match parse_external_xml(trimmed, ARTICLE_XML_NODE_LIMIT) {
         Ok(doc) => doc,
         Err(_) => return Ok(Some(trimmed.to_string())),
     };
