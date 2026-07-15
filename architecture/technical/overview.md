@@ -15,7 +15,12 @@ BioMCP is a single Rust binary (`biomcp`) with three operating modes:
   subcommands (`list`, `download --list`, `top-mutated`, `query`, `filter`,
   `cohort`, `survival`, `compare`, `co-occurrence`) are allowed.
   Operator-local or mutating commands such as `cache`, `update`, `serve`,
-  `serve-http`, and `skill install` stay blocked over MCP.
+  `serve-http`, and `skill install` stay blocked over MCP. The same transport
+  boundary removes the typed article `full_text_path` field before MCP JSON is
+  serialized and uses that field to replace `Saved to:` paths in readable MCP
+  text with an availability indicator. Source/status/provenance remain intact;
+  direct CLI rendering and saved-file behavior remain unchanged. This policy is
+  shared by stdio and Streamable HTTP rather than implemented as a path regex.
   See `src/mcp/shell.rs`, `tests/rmcp_client_contract.rs`, and
   `tests/test_skill_prompt_contract.py` for the canonical boundary.
 - **HTTP mode:** `biomcp serve-http --host 0.0.0.0 --port 8080` starts the
