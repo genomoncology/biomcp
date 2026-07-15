@@ -8,447 +8,2398 @@
   },
   "cgi": [
     {
-      "_license": "http://bit.ly/2FqS871",
       "association": "Responsive",
-      "cdna": "c.1799T>A",
       "drug": "PLX4720 (BRAF inhibitor)",
+      "evidence": null,
       "evidence_level": "Pre-clinical",
-      "gene": "BRAF",
       "primary_tumor_type": "Malignant astrocytoma",
-      "protein_change": "BRAF:V600E",
-      "region": "inside_[cds_in_exon_15]",
       "source": "PMC3638050",
-      "transcript": "ENST00000288602"
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "BRAF inhibitor + MEK inhibitors",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Thyroid",
+      "source": "ASCO 2013 (abstr 9029)",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Pan-RAF inhibitors",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "ESMO 2015 (abstract 300);AACR 2016 (abstr CT005);AACR 2017 (abstr  CT002)",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "BRAF inhibitors",
+      "evidence": null,
+      "evidence_level": "Case report",
+      "primary_tumor_type": "Ovary",
+      "source": "PMID:22608338",
+      "tumor_type": null
+    },
+    {
+      "association": "Resistant",
+      "drug": "EGFR TK inhibitors",
+      "evidence": null,
+      "evidence_level": "Case report",
+      "primary_tumor_type": "Lung adenocarcinoma",
+      "source": "PMID:22773810",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Trametinib (MEK inhibitor)",
+      "evidence": null,
+      "evidence_level": "FDA guidelines",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "FDA",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "BRAF inhibitors",
+      "evidence": null,
+      "evidence_level": "Pre-clinical",
+      "primary_tumor_type": "Glioma",
+      "source": "PMID:22038996;PMID:22586120",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Vemurafenib + Cobimetinib (BRAF inhibitor + MEK inhibitor)",
+      "evidence": null,
+      "evidence_level": "FDA guidelines",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "FDA",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "BRAF inhibitor + PI3K pathway inhibitors",
+      "evidence": null,
+      "evidence_level": "Pre-clinical",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "PMID:22389471;PMID:21156289",
+      "tumor_type": null
+    },
+    {
+      "association": "Resistant",
+      "drug": "Cetuximab (EGFR mAb inhibitor)",
+      "evidence": null,
+      "evidence_level": "Late trials",
+      "primary_tumor_type": "Colorectal adenocarcinoma",
+      "source": "PMID:20619739;PMID:21163703;PMID:23325582",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "ERK inhibitors",
+      "evidence": null,
+      "evidence_level": "Pre-clinical",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "PMID:23614898;PMID:22997239",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "MEK inhibitors",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Thyroid",
+      "source": "PMID:22241789",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Vemurafenib (BRAF inhibitor)",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Thyroid carcinoma",
+      "source": "PMID:22608338;PMID:20818844;PMID:23489023",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Vemurafenib (BRAF inhibitor)",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Malignant astrocytoma",
+      "source": "PMID:22586120",
+      "tumor_type": null
+    },
+    {
+      "association": "Resistant",
+      "drug": "Panitumumab (EGFR mAb inhibitor)",
+      "evidence": null,
+      "evidence_level": "Late trials",
+      "primary_tumor_type": "Colorectal adenocarcinoma",
+      "source": "PMID:20619739;PMID:21163703;PMID:23325582",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Dabrafenib (BRAF inhibitor)",
+      "evidence": null,
+      "evidence_level": "Case report",
+      "primary_tumor_type": "Gastrointestinal stromal",
+      "source": "PMID:23470635;PMID:22608338",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Vemurafenib (BRAF inhibitor)",
+      "evidence": null,
+      "evidence_level": "NCCN guidelines",
+      "primary_tumor_type": "Non-small cell lung;Lagerhans cell histiocytosis;Erdheim-Chester histiocytosis",
+      "source": "PMID:26287849",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Dabrafenib + Trametinib (BRAF inhibitor + MEK inhibitor)",
+      "evidence": null,
+      "evidence_level": "FDA guidelines",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "FDA",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "ERK inhibitors",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Lung adenocarcinoma",
+      "source": "ASCO 2017 (abstr 2508)",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Dabrafenib (BRAF inhibitor)",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Lung adenocarcinoma;Thyroid",
+      "source": "PMID:23524406;PMID:22608338;ASCO 2013 (abstr 8009);ESMO 2014 (abstr LBA38_PR);PMID:20818844;PMID:23489023;PMID:27080216",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "BRAF inhibitor + CDK2/4 inhibitors",
+      "evidence": null,
+      "evidence_level": "Pre-clinical",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "PMID:22997239",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Vemurafenib (BRAF inhibitor)",
+      "evidence": null,
+      "evidence_level": "FDA guidelines",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "FDA",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Dabrafenib (BRAF inhibitor)",
+      "evidence": null,
+      "evidence_level": "NCCN guidelines",
+      "primary_tumor_type": "Non-small cell lung",
+      "source": "NCCN",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Dabrafenib + Trametinib (BRAF inhibitor + MEK inhibitor)",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Colorectal adenocarcinoma",
+      "source": "PMID:26392102;ASCO 2015 (abstr 8006)",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Selumetinib (MEK inhibitor)",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Pediatric glioma",
+      "source": "NCT01089101",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Dabrafenib + Trametinib (BRAF inhibitor + MEK inhibitor)",
+      "evidence": null,
+      "evidence_level": "Case report",
+      "primary_tumor_type": "Neuroendocrine",
+      "source": "PMID:27048246",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Dabrafenib + Trametinib (BRAF inhibitor + MEK inhibitor)",
+      "evidence": null,
+      "evidence_level": "FDA guidelines",
+      "primary_tumor_type": "Lung adenocarcinoma",
+      "source": "PMID:27283860",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "MEK inhibitors",
+      "evidence": null,
+      "evidence_level": "Pre-clinical",
+      "primary_tumor_type": "Ovary",
+      "source": "PMID:19018267",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "BRAF inhibitor + HSP90 inhibitors",
+      "evidence": null,
+      "evidence_level": "Pre-clinical",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "PMID:22351686",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Dabrafenib (BRAF inhibitor)",
+      "evidence": null,
+      "evidence_level": "FDA guidelines",
+      "primary_tumor_type": "Cutaneous melanoma",
+      "source": "FDA",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Panitumumab + Dabrafenib + Trametinib (EGFR mAb inhibitor + BRAF inhibitor + MEK inhibitor)",
+      "evidence": null,
+      "evidence_level": "Early trials",
+      "primary_tumor_type": "Colorectal adenocarcinoma",
+      "source": "ASCO 2014 (abstr 3515);ASCO 2015 (abstr 103)",
+      "tumor_type": null
+    },
+    {
+      "association": "Responsive",
+      "drug": "Vemurafenib (BRAF inhibitor)",
+      "evidence": null,
+      "evidence_level": "Case report",
+      "primary_tumor_type": "Lung adenocarcinoma;Hairy-Cell leukemia;Myeloma",
+      "source": "PMID:22743296;PMID:22621641;PMID:23612012",
+      "tumor_type": null
     }
   ],
   "civic": {
-    "_license": "http://bit.ly/2FqS871",
-    "alleleRegistryId": "CA123643",
-    "clinvarIds": [
-      "13961",
-      "376069"
-    ],
-    "comments": {
-      "totalCount": 1
-    },
-    "contributors": {
-      "curators": [
-        {
-          "lastActionDate": "2015-09-08T19:54:43Z",
-          "totalActionCount": 1,
-          "uniqueActions": [
-            {
-              "action": "REVISION_SUGGESTED",
-              "count": 1
-            }
-          ],
-          "user": {
-            "id": 70,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhObWQ0TWpJeU5EUmpPR0ZrYVRnMGJETnJZVGRuTVdSa2FIQnFkZ1k2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTjJsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpjd0xtcHdaeUk3SUdacGJHVnVZVzFsS2oxVlZFWXRPQ2NuTnpBdWFuQm5CanNHVkRvUlkyOXVkR1Z1ZEY5MGVYQmxTU0lQYVcxaFoyVXZhbkJsWndZN0JsUTZFWE5sY25acFkyVmZibUZ0WlRvS2JHOWpZV3c9IiwiZXhwIjoiMjAyNS0wNS0yMlQxNzo0NjoxNS45NjdaIiwicHVyIjoiYmxvYl9rZXkifX0=--3939abf5347105cba0dcfce7157b4c64ea9b3169/70.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2016-02-18T22:19:46Z",
-          "totalActionCount": 3,
-          "uniqueActions": [
-            {
-              "action": "REVISION_SUGGESTED",
-              "count": 3
-            }
-          ],
-          "user": {
-            "id": 41,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhkREF4YXpKa1pXSTNaekpzZDJ0amN6Qm1OWGxtTkd3MmNuVjJlQVk2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTjJsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpReExtcHdaeUk3SUdacGJHVnVZVzFsS2oxVlZFWXRPQ2NuTkRFdWFuQm5CanNHVkRvUlkyOXVkR1Z1ZEY5MGVYQmxTU0lQYVcxaFoyVXZhbkJsWndZN0JsUTZFWE5sY25acFkyVmZibUZ0WlRvS2JHOWpZV3c9IiwiZXhwIjoiMjAyNS0wNS0yMlQxNzo0NjoxNS45NjRaIiwicHVyIjoiYmxvYl9rZXkifX0=--f7e93cd25997fffae679f143b95178197dc69f7e/41.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2016-03-24T02:17:27Z",
-          "totalActionCount": 2,
-          "uniqueActions": [
-            {
-              "action": "REVISION_SUGGESTED",
-              "count": 2
-            }
-          ],
-          "user": {
-            "id": 3,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhaM2cwTVdVM1pXdHllR1YyYUhKMGFXczFlbTV2YlhrMGEyb3lhUVk2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTldsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpNdWFuQm5JanNnWm1sc1pXNWhiV1VxUFZWVVJpMDRKeWN6TG1wd1p3WTdCbFE2RVdOdmJuUmxiblJmZEhsd1pVa2lEMmx0WVdkbEwycHdaV2NHT3daVU9oRnpaWEoyYVdObFgyNWhiV1U2Q214dlkyRnMiLCJleHAiOiIyMDI1LTA1LTIyVDE3OjQ2OjE1Ljk2MFoiLCJwdXIiOiJibG9iX2tleSJ9fQ==--7799b0bb9067720e24ad51178d4192f90ed89085/3.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2019-05-17T00:23:44Z",
-          "totalActionCount": 3,
-          "uniqueActions": [
-            {
-              "action": "REVISION_SUGGESTED",
-              "count": 2
-            },
-            {
-              "action": "VARIANT_CREATED",
-              "count": 1
-            }
-          ],
-          "user": {
-            "id": 6,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhhM0kxTW1FelptSm1aREZpTUc1eU9HOXdhVFkyTVhaNmQyUTRhQVk2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTldsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpZdWFuQm5JanNnWm1sc1pXNWhiV1VxUFZWVVJpMDRKeWMyTG1wd1p3WTdCbFE2RVdOdmJuUmxiblJmZEhsd1pVa2lEMmx0WVdkbEwycHdaV2NHT3daVU9oRnpaWEoyYVdObFgyNWhiV1U2Q214dlkyRnMiLCJleHAiOiIyMDI1LTA1LTIyVDE3OjQ2OjE1Ljk4M1oiLCJwdXIiOiJibG9iX2tleSJ9fQ==--96fc7c9a8fcc8a4bbd2320503d7b11a76728bf2f/6.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2017-04-29T15:22:52Z",
-          "totalActionCount": 4,
-          "uniqueActions": [
-            {
-              "action": "REVISION_SUGGESTED",
-              "count": 4
-            }
-          ],
-          "user": {
-            "id": 83,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhOVE5oTjNoMVpqWmtaVzkzZEhOcWMzb3lhelp4YVdRemFHUnNZZ1k2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTjJsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpnekxtcHdaeUk3SUdacGJHVnVZVzFsS2oxVlZFWXRPQ2NuT0RNdWFuQm5CanNHVkRvUlkyOXVkR1Z1ZEY5MGVYQmxTU0lQYVcxaFoyVXZhbkJsWndZN0JsUTZFWE5sY25acFkyVmZibUZ0WlRvS2JHOWpZV3c9IiwiZXhwIjoiMjAyNS0wNS0yMlQxNzo0NjoxNS45NzBaIiwicHVyIjoiYmxvYl9rZXkifX0=--087d4c6930d73f225bf651e4bb955e29f57bcc4f/83.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2022-01-13T05:40:29Z",
-          "totalActionCount": 1,
-          "uniqueActions": [
-            {
-              "action": "COMMENTED",
-              "count": 1
-            }
-          ],
-          "user": {
-            "id": 110,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhZalpwTVhFM05uSnNOV2R2ZEdWa1lXSTVibXhpZG1Oa1oyVjFhd1k2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpT1dsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpFeE1DNXFjR2NpT3lCbWFXeGxibUZ0WlNvOVZWUkdMVGduSnpFeE1DNXFjR2NHT3daVU9oRmpiMjUwWlc1MFgzUjVjR1ZKSWc5cGJXRm5aUzlxY0dWbkJqc0dWRG9SYzJWeWRtbGpaVjl1WVcxbE9ncHNiMk5oYkE9PSIsImV4cCI6IjIwMjUtMDUtMjJUMTc6NDY6MTUuOTczWiIsInB1ciI6ImJsb2Jfa2V5In19--863138045ed80ced798653d685837c34da7395ca/110.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2022-01-10T19:43:00Z",
-          "totalActionCount": 3,
-          "uniqueActions": [
-            {
-              "action": "REVISION_SUGGESTED",
-              "count": 3
-            }
-          ],
-          "user": {
-            "id": 15,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhNR1ZvTm5vNGIzQXdPV0YzYVRZNE5uVXpiR2RwZEdacGQyazJlUVk2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpVzJsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWsxaGJHRmphR2t0Vkdsa2VTMURjbTl3Y0dWa0xtcHdaeUk3SUdacGJHVnVZVzFsS2oxVlZFWXRPQ2NuVFdGc1lXTm9hUzFVYVdSNUxVTnliM0J3WldRdWFuQm5CanNHVkRvUlkyOXVkR1Z1ZEY5MGVYQmxTU0lQYVcxaFoyVXZhbkJsWndZN0JsUTZFWE5sY25acFkyVmZibUZ0WlRvS2JHOWpZV3c9IiwiZXhwIjoiMjAyNS0wNS0yMlQxNzo0NjoxNS45NzlaIiwicHVyIjoiYmxvYl9rZXkifX0=--43d432472724aaa4ce7bb461900aea32307938da/Malachi-Tidy-Cropped.jpg"
-          }
-        }
-      ],
-      "editors": [
-        {
-          "lastActionDate": "2017-04-02T01:41:36Z",
-          "totalActionCount": 5,
-          "uniqueActions": [
-            {
-              "action": "REVISION_ACCEPTED",
-              "count": 5
-            }
-          ],
-          "user": {
-            "id": 15,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhNR1ZvTm5vNGIzQXdPV0YzYVRZNE5uVXpiR2RwZEdacGQyazJlUVk2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpVzJsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWsxaGJHRmphR2t0Vkdsa2VTMURjbTl3Y0dWa0xtcHdaeUk3SUdacGJHVnVZVzFsS2oxVlZFWXRPQ2NuVFdGc1lXTm9hUzFVYVdSNUxVTnliM0J3WldRdWFuQm5CanNHVkRvUlkyOXVkR1Z1ZEY5MGVYQmxTU0lQYVcxaFoyVXZhbkJsWndZN0JsUTZFWE5sY25acFkyVmZibUZ0WlRvS2JHOWpZV3c9IiwiZXhwIjoiMjAyNS0wNS0yMlQxNzo0NjoxNS45NzhaIiwicHVyIjoiYmxvYl9rZXkifX0=--b85ccb412dfce4991505737580ccc90478483758/Malachi-Tidy-Cropped.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2016-02-18T22:20:12Z",
-          "totalActionCount": 3,
-          "uniqueActions": [
-            {
-              "action": "REVISION_ACCEPTED",
-              "count": 3
-            }
-          ],
-          "user": {
-            "id": 41,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhkREF4YXpKa1pXSTNaekpzZDJ0amN6Qm1OWGxtTkd3MmNuVjJlQVk2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTjJsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpReExtcHdaeUk3SUdacGJHVnVZVzFsS2oxVlZFWXRPQ2NuTkRFdWFuQm5CanNHVkRvUlkyOXVkR1Z1ZEY5MGVYQmxTU0lQYVcxaFoyVXZhbkJsWndZN0JsUTZFWE5sY25acFkyVmZibUZ0WlRvS2JHOWpZV3c9IiwiZXhwIjoiMjAyNS0wNS0yMlQxNzo0NjoxNS45NjNaIiwicHVyIjoiYmxvYl9rZXkifX0=--17f6836911cf50543bc397e16e8a479cfdf87115/41.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2017-05-12T03:16:45Z",
-          "totalActionCount": 4,
-          "uniqueActions": [
-            {
-              "action": "REVISION_ACCEPTED",
-              "count": 3
-            },
-            {
-              "action": "REVISION_REJECTED",
-              "count": 1
-            }
-          ],
-          "user": {
-            "id": 6,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhhM0kxTW1FelptSm1aREZpTUc1eU9HOXdhVFkyTVhaNmQyUTRhQVk2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTldsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpZdWFuQm5JanNnWm1sc1pXNWhiV1VxUFZWVVJpMDRKeWMyTG1wd1p3WTdCbFE2RVdOdmJuUmxiblJmZEhsd1pVa2lEMmx0WVdkbEwycHdaV2NHT3daVU9oRnpaWEoyYVdObFgyNWhiV1U2Q214dlkyRnMiLCJleHAiOiIyMDI1LTA1LTIyVDE3OjQ2OjE1Ljk4MloiLCJwdXIiOiJibG9iX2tleSJ9fQ==--d4ed2b2d28af0d59b8b9114bd8fac262b91c3f77/6.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2017-05-14T03:50:30Z",
-          "totalActionCount": 4,
-          "uniqueActions": [
-            {
-              "action": "REVISION_ACCEPTED",
-              "count": 4
-            }
-          ],
-          "user": {
-            "id": 3,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhaM2cwTVdVM1pXdHllR1YyYUhKMGFXczFlbTV2YlhrMGEyb3lhUVk2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTldsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpNdWFuQm5JanNnWm1sc1pXNWhiV1VxUFZWVVJpMDRKeWN6TG1wd1p3WTdCbFE2RVdOdmJuUmxiblJmZEhsd1pVa2lEMmx0WVdkbEwycHdaV2NHT3daVU9oRnpaWEoyYVdObFgyNWhiV1U2Q214dlkyRnMiLCJleHAiOiIyMDI1LTA1LTIyVDE3OjQ2OjE1Ljk1OVoiLCJwdXIiOiJibG9iX2tleSJ9fQ==--06dc513462af1f050d0b8001fedf057c4f960867/3.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2020-05-30T00:13:47Z",
-          "totalActionCount": 1,
-          "uniqueActions": [
-            {
-              "action": "REVISION_ACCEPTED",
-              "count": 1
-            }
-          ],
-          "user": {
-            "id": 968,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhNelExTTNsaGJqWnhOSEUwZUhGNmFHdHFlVEYxT0haamN6WmpjZ1k2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpT1dsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWprMk9DNXFjR2NpT3lCbWFXeGxibUZ0WlNvOVZWUkdMVGduSnprMk9DNXFjR2NHT3daVU9oRmpiMjUwWlc1MFgzUjVjR1ZKSWc5cGJXRm5aUzlxY0dWbkJqc0dWRG9SYzJWeWRtbGpaVjl1WVcxbE9ncHNiMk5oYkE9PSIsImV4cCI6IjIwMjUtMDUtMjJUMTc6NDY6MTUuOTc2WiIsInB1ciI6ImJsb2Jfa2V5In19--db778ad93e79c921ccb2b25e2563f56b0c083379/968.jpg"
-          }
-        },
-        {
-          "lastActionDate": "2022-01-13T05:39:29Z",
-          "totalActionCount": 1,
-          "uniqueActions": [
-            {
-              "action": "REVISION_ACCEPTED",
-              "count": 1
-            }
-          ],
-          "user": {
-            "id": 110,
-            "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhZalpwTVhFM05uSnNOV2R2ZEdWa1lXSTVibXhpZG1Oa1oyVjFhd1k2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpT1dsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpFeE1DNXFjR2NpT3lCbWFXeGxibUZ0WlNvOVZWUkdMVGduSnpFeE1DNXFjR2NHT3daVU9oRmpiMjUwWlc1MFgzUjVjR1ZKSWc5cGJXRm5aUzlxY0dWbkJqc0dWRG9SYzJWeWRtbGpaVjl1WVcxbE9ncHNiMk5oYkE9PSIsImV4cCI6IjIwMjUtMDUtMjJUMTc6NDY6MTUuOTczWiIsInB1ciI6ImJsb2Jfa2V5In19--863138045ed80ced798653d685837c34da7395ca/110.jpg"
-          }
-        }
-      ]
-    },
-    "coordinates": {
-      "chromosome": "7",
-      "coordinateType": "GENE_VARIANT_COORDINATE",
-      "ensemblVersion": 75,
-      "referenceBases": "A",
-      "referenceBuild": "GRCH37",
-      "representativeTranscript": "ENST00000288602.6",
-      "start": 140453136,
-      "stop": 140453136,
-      "variantBases": "T"
-    },
-    "creationActivity": {
-      "createdAt": "2015-06-21T16:49:42Z",
-      "user": {
-        "displayName": "kkrysiak",
-        "id": 6,
-        "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhaWEk1YVhGdk0yUjZOV2RqWVdFNVpYTnhNMmhxTUdOdk1YTXhZd1k2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTldsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpZdWFuQm5JanNnWm1sc1pXNWhiV1VxUFZWVVJpMDRKeWMyTG1wd1p3WTdCbFE2RVdOdmJuUmxiblJmZEhsd1pVa2lEMmx0WVdkbEwycHdaV2NHT3daVU9oRnpaWEoyYVdObFgyNWhiV1U2Q214dlkyRnMiLCJleHAiOiIyMDI1LTA1LTIyVDE3OjQ2OjE1LjcwNVoiLCJwdXIiOiJibG9iX2tleSJ9fQ==--b91cd8b04ab402e2c60521ae03ab20a6249e0605/6.jpg",
-        "role": "ADMIN"
-      }
-    },
-    "deprecated": false,
-    "feature": {
-      "deprecated": false,
-      "flagged": false,
-      "id": 5,
-      "link": "/features/5",
-      "name": "BRAF"
-    },
-    "flags": {
-      "totalCount": 0
-    },
-    "hgvsDescriptions": [
-      "NM_004333.4:c.1799T>A",
-      "NP_004324.2:p.Val600Glu",
-      "NC_000007.13:g.140453136A>T",
-      "ENST00000288602.6:c.1799T>A"
-    ],
-    "id": 12,
-    "lastAcceptedRevisionEvent": {
-      "originatingUser": {
-        "displayName": "CamGrisdale",
-        "id": 968,
-        "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhlR3huYkdWaWJIUnJZamgxT1hCME5IUnlkVGt3ZVhsbmFXTjBPUVk2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpT1dsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWprMk9DNXFjR2NpT3lCbWFXeGxibUZ0WlNvOVZWUkdMVGduSnprMk9DNXFjR2NHT3daVU9oRmpiMjUwWlc1MFgzUjVjR1ZKSWc5cGJXRm5aUzlxY0dWbkJqc0dWRG9SYzJWeWRtbGpaVjl1WVcxbE9ncHNiMk5oYkE9PSIsImV4cCI6IjIwMjUtMDUtMjJUMTc6NDY6MTUuNzA3WiIsInB1ciI6ImJsb2Jfa2V5In19--a46a02233e3aca0b145edb10638acb17e325048c/968.jpg",
-        "role": "EDITOR"
-      }
-    },
-    "lastSubmittedRevisionEvent": {
-      "originatingUser": {
-        "displayName": "LynzeyKujan",
-        "id": 83,
-        "profileImagePath": "https://civicdb.org/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSWhNM05yWkRjeE4zUTJjV1psTldSM05XaHROWFZoYkhocmJEWm5OZ1k2QmtWVU9oQmthWE53YjNOcGRHbHZia2tpTjJsdWJHbHVaVHNnWm1sc1pXNWhiV1U5SWpnekxtcHdaeUk3SUdacGJHVnVZVzFsS2oxVlZFWXRPQ2NuT0RNdWFuQm5CanNHVkRvUlkyOXVkR1Z1ZEY5MGVYQmxTU0lQYVcxaFoyVXZhbkJsWndZN0JsUTZFWE5sY25acFkyVmZibUZ0WlRvS2JHOWpZV3c9IiwiZXhwIjoiMjAyNS0wNS0yMlQxNzo0NjoxNS43MDZaIiwicHVyIjoiYmxvYl9rZXkifX0=--25dfe1f43acf2c76b82b8390ce7ecea7e69f6864/83.jpg",
-        "role": "CURATOR"
-      }
-    },
-    "maneSelectTranscript": "ENST00000646891.2:c.1799T>A",
     "molecularProfiles": [
       {
         "evidenceItems": [
           {
-            "description": "BRAF V600E is shown to be associated with the tall-cell variant of papillary thyroid cancer.",
             "disease": {
-              "diseaseAliases": [
-                "Malignant Neoplasm Of Thyroid Gland",
-                "Malignant Tumour Of Thyroid Gland",
-                "Neoplasm Of Thyroid Gland",
-                "Thyroid Gland Cancer",
-                "Thyroid Gland Neoplasm",
-                "Thyroid Neoplasm"
-              ],
-              "diseaseUrl": "https://www.disease-ontology.org/?id=DOID:1781",
               "displayName": "Thyroid Cancer",
-              "doid": "1781",
-              "id": 16,
-              "link": "/diseases/16",
-              "myDiseaseInfo": {
-                "doDef": "An endocrine gland cancer located in the thyroid gland located in the neck below the thyroid cartilage.",
-                "icd10": "C73",
-                "mesh": "D013964",
-                "mondoId": "MONDO:0002108",
-                "ncit": [
-                  "C3414",
-                  "C7510"
-                ]
-              },
               "name": "Thyroid Cancer"
             },
-            "evidenceDirection": "SUPPORTS",
             "evidenceLevel": "B",
-            "evidenceRating": 3,
             "evidenceType": "DIAGNOSTIC",
-            "flagged": false,
             "id": 79,
-            "molecularProfile": {
-              "id": 12
-            },
             "name": "EID79",
             "significance": "POSITIVE",
-            "source": {
-              "abstract": "This study was designed to examine the aggressive features of BRAF-positive papillary thyroid cancer (PTC) and association with age.We compared the clinicopathologic parameters and BRAF V600E mutation status of 121 elderly (age \u226565 years) PTC patients who underwent thyroidectomy from January 2007 to December 2009 to a consecutive cohort of 98 younger (age <65 years) PTC patients.Younger and elderly PTC patients had similar incidences of BRAF-positive tumors (41% vs. 38%; p = 0.67). The elderly cohort was more likely to have smaller tumors (mean 1.6 vs. 2.1 cm; p = 0.001), present with advanced TNM stage (36% vs. 19%; p = 0.008), and have persistent/recurrent disease (10% vs. 1%; p = 0.006). BRAF-positive status was associated with PTC that were tall cell variant (p < 0.001), had extrathyroidal extension (p < 0.001), lymph node involvement (p = 0.008), advanced (III/IV) TNM stage (p < 0.001), and disease recurrence (p < 0.001). Except for lymph node involvement, the association between aggressive histology characteristics at presentation and BRAF-positive PTC also was observed within the age-defined cohorts. In short-term follow-up (mean, 18 months), persistent/recurrent PTC was much more likely to occur in patients who were both BRAF-positive and elderly (22%).BRAF mutations are equally present in younger and older patients. Aggressive histology characteristics at presentation are associated with BRAF-positive PTC, irrespective of age. However, the well-established association of BRAF with recurrence is limited to older (age \u226565 years) patients.",
-              "authorString": "Gina M Howell, Sally E Carty, Michaele J Armstrong, Shane O Lebeau, Steven P Hodak, Christopher Coyne, Michael T Stang, Kelly L McCoy, Marina N Nikiforova, Yuri E Nikiforov, Linwah Yip",
-              "citation": "Howell et al., 2011",
-              "citationId": "21594703",
-              "id": 93,
-              "journal": "Ann Surg Oncol",
-              "link": "/sources/93",
-              "name": "PubMed: Howell et al., 2011",
-              "openAccess": false,
-              "publicationDate": "2011-12",
-              "retracted": false,
-              "sourceType": "PUBMED",
-              "sourceUrl": "http://www.ncbi.nlm.nih.gov/pubmed/21594703",
-              "title": "Both BRAF V600E mutation and older age (\u2265 65 years) are associated with recurrent papillary thyroid cancer."
-            },
-            "variantOrigin": "SOMATIC"
+            "status": null,
+            "therapies": []
           },
           {
-            "description": "Dabrafenib with trametinib provides higher response rate and lower toxicity (as compared to chemotherapy) in patients with melanoma.",
             "disease": {
-              "diseaseAliases": [
-                "Malignant Melanoma",
-                "Naevocarcinoma"
-              ],
-              "diseaseUrl": "https://www.disease-ontology.org/?id=DOID:1909",
               "displayName": "Melanoma",
-              "doid": "1909",
-              "id": 7,
-              "link": "/diseases/7",
-              "myDiseaseInfo": {
-                "doDef": "A cell type cancer that has_material_basis_in abnormally proliferating cells derives_from melanocytes which are found in skin, the bowel and the eye.",
-                "icdo": "8720/3",
-                "mesh": "D008545",
-                "mondoId": "MONDO:0005105",
-                "ncit": [
-                  "C3224"
-                ]
-              },
               "name": "Melanoma"
             },
-            "evidenceDirection": "SUPPORTS",
             "evidenceLevel": "B",
-            "evidenceRating": 5,
             "evidenceType": "PREDICTIVE",
-            "flagged": false,
             "id": 95,
-            "molecularProfile": {
-              "id": 12
-            },
             "name": "EID95",
             "significance": "SENSITIVITYRESPONSE",
-            "source": {
-              "abstract": "Dabrafenib and trametinib were approved for use as monotherapies in BRAF-mutant metastatic melanoma by the U.S. Food and Drug Administration (FDA) in 2013, and most recently, their use in combination has received accelerated FDA approval. Both drugs target the mitogen-activated protein kinase (MAPK) pathway: dabrafenib selectively inhibits mutant BRAF that constitutively activates the pathway, and trametinib selectively inhibits MEK1 and MEK2 proteins activated by RAF kinases. The phase III study of dabrafenib in BRAF(V600E) metastatic melanoma reported rapid tumor regression in most patients and a 59% objective RECIST response rate. The median progression-free survival (PFS) and overall survival (OS) were improved compared with dacarbazine. Toxicities were well tolerated and different from those reported for vemurafenib, the first FDA-approved BRAF inhibitor. Efficacy has been demonstrated in other BRAF-mutant genotypes. The phase III study of trametinib in BRAF inhibitor-na\u00efve patients with BRAF(V600E) or BRAF(V600K) also showed benefit with a prolonged median PFS and OS compared with chemotherapy. Trametinib is ineffective in patients who have progressed on BRAF inhibitors. A phase II trial of combined dabrafenib and trametinib demonstrated higher response rates and longer median PFS than dabrafenib monotherapy, with less cutaneous toxicity. Here, we review the clinical development of both drugs as monotherapies and in combination, and discuss their role in the management of BRAF-mutant melanoma.",
-              "authorString": "Alexander M Menzies, Georgina V Long",
-              "citation": "Menzies et al., 2014",
-              "citationId": "24583796",
-              "id": 105,
-              "journal": "Clin Cancer Res",
-              "link": "/sources/105",
-              "name": "PubMed: Menzies et al., 2014",
-              "openAccess": false,
-              "publicationDate": "2014-4-15",
-              "retracted": false,
-              "sourceType": "PUBMED",
-              "sourceUrl": "http://www.ncbi.nlm.nih.gov/pubmed/24583796",
-              "title": "Dabrafenib and trametinib, alone and in combination for BRAF-mutant metastatic melanoma."
-            },
+            "status": null,
             "therapies": [
               {
-                "deprecated": false,
-                "id": 22,
-                "link": "/therapies/22",
                 "name": "Dabrafenib"
               },
               {
-                "deprecated": false,
-                "id": 19,
-                "link": "/therapies/19",
                 "name": "Trametinib"
               }
-            ],
-            "variantOrigin": "SOMATIC"
-          }
-        ],
-        "id": 12,
-        "molecularProfileAliases": [
-          "RS113488022",
-          "VAL600GLU",
-          "V640E",
-          "VAL640GLU"
-        ],
-        "molecularProfileScore": 1433.5,
-        "name": "BRAF V600E",
-        "variants": [
+            ]
+          },
           {
-            "id": 12,
-            "link": "/variants/12",
-            "name": "V600E"
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 104,
+            "name": "EID104",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 106,
+            "name": "EID106",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 107,
+            "name": "EID107",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 105,
+            "name": "EID105",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Multiple Myeloma",
+              "name": "Multiple Myeloma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 463,
+            "name": "EID463",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2123,
+            "name": "EID2123",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Sorafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2128,
+            "name": "EID2128",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 86,
+            "name": "EID86",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Trametinib"
+              },
+              {
+                "name": "Mirdametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2124,
+            "name": "EID2124",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Mirdametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2125,
+            "name": "EID2125",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Mirdametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2127,
+            "name": "EID2127",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2133,
+            "name": "EID2133",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2129,
+            "name": "EID2129",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Selumetinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 1405,
+            "name": "EID1405",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2131,
+            "name": "EID2131",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2132,
+            "name": "EID2132",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 103,
+            "name": "EID103",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Gastrointestinal Neuroendocrine Tumor",
+              "name": "Gastrointestinal Neuroendocrine Tumor"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 1430,
+            "name": "EID1430",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              },
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 1398,
+            "name": "EID1398",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Skin Melanoma",
+              "name": "Skin Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 1410,
+            "name": "EID1410",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Thyroid Cancer",
+              "name": "Thyroid Cancer"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2139,
+            "name": "EID2139",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "RDEA 119"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Hairy Cell Leukemia",
+              "name": "Hairy Cell Leukemia"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 1579,
+            "name": "EID1579",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Multiple Myeloma",
+              "name": "Multiple Myeloma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 1698,
+            "name": "EID1698",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 1902,
+            "name": "EID1902",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              },
+              {
+                "name": "Cetuximab"
+              },
+              {
+                "name": "Irinotecan"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2894,
+            "name": "EID2894",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Sorafenib"
+              },
+              {
+                "name": "Cetuximab"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3742,
+            "name": "EID3742",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3740,
+            "name": "EID3740",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Cetuximab"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3745,
+            "name": "EID3745",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3747,
+            "name": "EID3747",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Ovarian Cancer",
+              "name": "Ovarian Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 7454,
+            "name": "EID7454",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3748,
+            "name": "EID3748",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3749,
+            "name": "EID3749",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3751,
+            "name": "EID3751",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3752,
+            "name": "EID3752",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 2503,
+            "name": "EID2503",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3753,
+            "name": "EID3753",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3756,
+            "name": "EID3756",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3759,
+            "name": "EID3759",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dasatinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Hairy Cell Leukemia",
+              "name": "Hairy Cell Leukemia"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3768,
+            "name": "EID3768",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Hairy Cell Leukemia",
+              "name": "Hairy Cell Leukemia"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3769,
+            "name": "EID3769",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Hairy Cell Leukemia",
+              "name": "Hairy Cell Leukemia"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3770,
+            "name": "EID3770",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3773,
+            "name": "EID3773",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3774,
+            "name": "EID3774",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3775,
+            "name": "EID3775",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dasatinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colon Cancer",
+              "name": "Colon Cancer"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3776,
+            "name": "EID3776",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Regorafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Lung Adenocarcinoma",
+              "name": "Lung Adenocarcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 3782,
+            "name": "EID3782",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 2116,
+            "name": "EID2116",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Lung Adenocarcinoma",
+              "name": "Lung Adenocarcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3780,
+            "name": "EID3780",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Thyroid Gland Carcinoma",
+              "name": "Thyroid Gland Carcinoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 3785,
+            "name": "EID3785",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Pleomorphic Xanthoastrocytoma",
+              "name": "Pleomorphic Xanthoastrocytoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3786,
+            "name": "EID3786",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Malignant Peripheral Nerve Sheath Tumor",
+              "name": "Malignant Peripheral Nerve Sheath Tumor"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3788,
+            "name": "EID3788",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Histiocytoma",
+              "name": "Histiocytoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3789,
+            "name": "EID3789",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 3750,
+            "name": "EID3750",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Cholangiocarcinoma",
+              "name": "Cholangiocarcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 5902,
+            "name": "EID5902",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Intrahepatic Cholangiocarcinoma",
+              "name": "Intrahepatic Cholangiocarcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 5903,
+            "name": "EID5903",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Intrahepatic Cholangiocarcinoma",
+              "name": "Intrahepatic Cholangiocarcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 5904,
+            "name": "EID5904",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 5960,
+            "name": "EID5960",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 6123,
+            "name": "EID6123",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Panitumumab"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 2120,
+            "name": "EID2120",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Bevacizumab"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 656,
+            "name": "EID656",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "DIAGNOSTIC",
+            "id": 80,
+            "name": "EID80",
+            "significance": "POSITIVE",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 6938,
+            "name": "EID6938",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Low Grade Glioma",
+              "name": "Low Grade Glioma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11770,
+            "name": "EID11770",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 7156,
+            "name": "EID7156",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Papillary Thyroid Carcinoma",
+              "name": "Papillary Thyroid Carcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 7762,
+            "name": "EID7762",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Cancer",
+              "name": "Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11672,
+            "name": "EID11672",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 99,
+            "name": "EID99",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 8507,
+            "name": "EID8507",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              },
+              {
+                "name": "Erlotinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PROGNOSTIC",
+            "id": 2362,
+            "name": "EID2362",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 8646,
+            "name": "EID8646",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Cetuximab"
+              },
+              {
+                "name": "Bevacizumab"
+              },
+              {
+                "name": "Capecitabine"
+              },
+              {
+                "name": "Oxaliplatin"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 1749,
+            "name": "EID1749",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 3757,
+            "name": "EID3757",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Ovarian Serous Carcinoma",
+              "name": "Ovarian Serous Carcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3787,
+            "name": "EID3787",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Anaplastic Thyroid Carcinoma",
+              "name": "Anaplastic Thyroid Carcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3743,
+            "name": "EID3743",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              },
+              {
+                "name": "Radiation Therapy"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Childhood Low-grade Glioma",
+              "name": "Childhood Low-grade Glioma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 7191,
+            "name": "EID7191",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          },
+          {
+            "disease": {
+              "displayName": "Anaplastic Thyroid Carcinoma",
+              "name": "Anaplastic Thyroid Carcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 6975,
+            "name": "EID6975",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11427,
+            "name": "EID11427",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              },
+              {
+                "name": "Erlotinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11436,
+            "name": "EID11436",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Cetuximab/Encorafenib Regimen"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "A",
+            "evidenceType": "PREDICTIVE",
+            "id": 11244,
+            "name": "EID11244",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 10328,
+            "name": "EID10328",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              },
+              {
+                "name": "Gefitinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 10329,
+            "name": "EID10329",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Langerhans-cell Histiocytosis",
+              "name": "Langerhans-cell Histiocytosis"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11303,
+            "name": "EID11303",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 11309,
+            "name": "EID11309",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Panitumumab"
+              },
+              {
+                "name": "Encorafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Ganglioglioma",
+              "name": "Ganglioglioma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 11310,
+            "name": "EID11310",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              },
+              {
+                "name": "Cobimetinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Pleomorphic Xanthoastrocytoma",
+              "name": "Pleomorphic Xanthoastrocytoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 11311,
+            "name": "EID11311",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Pleomorphic Xanthoastrocytoma",
+              "name": "Pleomorphic Xanthoastrocytoma"
+            },
+            "evidenceLevel": "A",
+            "evidenceType": "PREDICTIVE",
+            "id": 11312,
+            "name": "EID11312",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 126,
+            "name": "EID126",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Cetuximab"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 2135,
+            "name": "EID2135",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Anaplastic Thyroid Carcinoma",
+              "name": "Anaplastic Thyroid Carcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 5961,
+            "name": "EID5961",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              },
+              {
+                "name": "Pertuzumab"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Pilocytic Astrocytoma",
+              "name": "Pilocytic Astrocytoma"
+            },
+            "evidenceLevel": "A",
+            "evidenceType": "PREDICTIVE",
+            "id": 11313,
+            "name": "EID11313",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              },
+              {
+                "name": "Trametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Anaplastic Thyroid Carcinoma",
+              "name": "Anaplastic Thyroid Carcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3744,
+            "name": "EID3744",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Diffuse Large B-cell Lymphoma",
+              "name": "Diffuse Large B-cell Lymphoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 8952,
+            "name": "EID8952",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Venetoclax"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Lung Non-small Cell Carcinoma",
+              "name": "Lung Non-small Cell Carcinoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2143,
+            "name": "EID2143",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Mirdametinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Hairy Cell Leukemia",
+              "name": "Hairy Cell Leukemia"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11315,
+            "name": "EID11315",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "High Grade Glioma",
+              "name": "High Grade Glioma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2144,
+            "name": "EID2144",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Selumetinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Thyroid Cancer",
+              "name": "Thyroid Cancer"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 2142,
+            "name": "EID2142",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Sorafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Skin Melanoma",
+              "name": "Skin Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 2146,
+            "name": "EID2146",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Pilocytic Astrocytoma",
+              "name": "Pilocytic Astrocytoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 3772,
+            "name": "EID3772",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
           }
-        ]
+        ],
+        "name": "BRAF V600E"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 73,
+            "name": "EID73",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Dabrafenib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E AND BRAF V600M"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Epithelial Ovarian Cancer",
+              "name": "Epithelial Ovarian Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 9885,
+            "name": "EID9885",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Atezolizumab"
+              },
+              {
+                "name": "Bevacizumab"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "E",
+            "evidenceType": "PREDICTIVE",
+            "id": 92,
+            "name": "EID92",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Selumetinib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E AND BRAF Amplification"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 6262,
+            "name": "EID6262",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              },
+              {
+                "name": "Dabrafenib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF Amplification AND ( BRAF V600E OR BRAF V600K )"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Colorectal Adenocarcinoma",
+              "name": "Colorectal Adenocarcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11060,
+            "name": "EID11060",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Cetuximab"
+              },
+              {
+                "name": "Chemotherapy"
+              }
+            ]
+          }
+        ],
+        "name": "NOT KRAS Mutation AND ( BRAF V600E OR BRAF D594G )"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Skin Melanoma",
+              "name": "Skin Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 6952,
+            "name": "EID6952",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "JQEZ5"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E AND EZH2 Y646F"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Lung Adenocarcinoma",
+              "name": "Lung Adenocarcinoma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 11098,
+            "name": "EID11098",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Osimertinib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E AND EGFR L858R AND EGFR T790M"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Ganglioglioma",
+              "name": "Ganglioglioma"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 11314,
+            "name": "EID11314",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              },
+              {
+                "name": "Cobimetinib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E AND CDKN2A Deletion AND CDKN2B Deletion AND TET2 E796K AND BAX L76R AND AXIN2 P455K"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Pilocytic Astrocytoma",
+              "name": "Pilocytic Astrocytoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11316,
+            "name": "EID11316",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Selumetinib"
+              }
+            ]
+          },
+          {
+            "disease": {
+              "displayName": "Childhood Low-grade Glioma",
+              "name": "Childhood Low-grade Glioma"
+            },
+            "evidenceLevel": "A",
+            "evidenceType": "PREDICTIVE",
+            "id": 12016,
+            "name": "EID12016",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Tovorafenib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E OR KIAA1549::BRAF Fusion"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Colorectal Cancer",
+              "name": "Colorectal Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11670,
+            "name": "EID11670",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Cobimetinib"
+              },
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E OR BRAF K601E"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Cancer",
+              "name": "Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11681,
+            "name": "EID11681",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Selumetinib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E OR NRAS Mutation OR HRAS Mutation OR KRAS Mutation OR NF1 Mutation"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Cancer",
+              "name": "Cancer"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PREDICTIVE",
+            "id": 11696,
+            "name": "EID11696",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Selumetinib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E OR NRAS Mutation OR HRAS Mutation OR KRAS Mutation OR NF1 Inactivating Mutation"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Pancreatic Cancer",
+              "name": "Pancreatic Cancer"
+            },
+            "evidenceLevel": "C",
+            "evidenceType": "PREDICTIVE",
+            "id": 11712,
+            "name": "EID11712",
+            "significance": "SENSITIVITYRESPONSE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Trametinib"
+              },
+              {
+                "name": "Trastuzumab"
+              },
+              {
+                "name": "Lapatinib"
+              },
+              {
+                "name": "Bevacizumab"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E AND ERBB2 Amplification AND SMAD4 LOSS AND TP53 V218E"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Colon Carcinoma",
+              "name": "Colon Carcinoma"
+            },
+            "evidenceLevel": "B",
+            "evidenceType": "PROGNOSTIC",
+            "id": 12072,
+            "name": "EID12072",
+            "significance": "POOR_OUTCOME",
+            "status": null,
+            "therapies": []
+          }
+        ],
+        "name": "BRAF V600E AND MSI Low"
+      },
+      {
+        "evidenceItems": [
+          {
+            "disease": {
+              "displayName": "Melanoma",
+              "name": "Melanoma"
+            },
+            "evidenceLevel": "D",
+            "evidenceType": "PREDICTIVE",
+            "id": 90,
+            "name": "EID90",
+            "significance": "RESISTANCE",
+            "status": null,
+            "therapies": [
+              {
+                "name": "Vemurafenib"
+              }
+            ]
+          }
+        ],
+        "name": "BRAF V600E AND NF1 Loss"
       }
-    ],
-    "name": "V600E",
-    "openCravatUrl": "https://run.opencravat.org/webapps/variantreport/index.html?alt_base=T&chrom=chr7&pos=140753336&ref_base=A",
-    "openRevisionCount": 0,
-    "revisions": {
-      "totalCount": 0
-    },
-    "variantAliases": [
-      "RS113488022",
-      "VAL600GLU",
-      "V640E",
-      "VAL640GLU",
-      "RS113488022",
-      "VAL600GLU",
-      "V640E",
-      "VAL640GLU"
-    ],
-    "variantTypes": {
-      "id": 47,
-      "link": "/variant-types/47",
-      "name": "Missense Variant",
-      "soid": "SO:0001583"
-    }
+    ]
   },
   "clinvar": {
     "_license": "http://bit.ly/2SQdcI0",
@@ -710,6 +2661,7 @@
     "_license": "http://bit.ly/2VMkY7R",
     "cosmic_id": "COSM476",
     "mut_freq": 2.83,
+    "mut_nt": "T>A",
     "tumor_site": "biliary_tract"
   },
   "dbnsfp": {
@@ -721,12 +2673,27 @@
         "P",
         "P"
       ],
+      "rankscore": 0.97238,
       "score": [
         0.9853,
         0.9978,
         0.9927,
         0.9941
       ]
+    },
+    "bayesdel": {
+      "add_af": {
+        "pred": "D",
+        "score": 0.399079
+      },
+      "no_af": {
+        "pred": "D",
+        "score": 0.335473
+      }
+    },
+    "clinpred": {
+      "pred": "D",
+      "score": 0.993496775627136
     },
     "genename": [
       "BRAF",
@@ -759,6 +2726,22 @@
         0.88336486
       ]
     },
+    "phastcons": {
+      "100way_vertebrate": {
+        "rankscore": 0.71638
+      },
+      "470way_mammalian": {
+        "rankscore": 0.68203
+      }
+    },
+    "phylop": {
+      "100way_vertebrate": {
+        "rankscore": 0.94474
+      },
+      "470way_mammalian": {
+        "rankscore": 0.89583
+      }
+    },
     "polyphen2": {
       "hdiv": {
         "pred": "D"
@@ -775,12 +2758,36 @@
   },
   "exac": {
     "_license": "http://bit.ly/2H9c4hg",
-    "af": 1.647e-05
+    "af": 0.00001647
+  },
+  "exac_nontcga": {
+    "_license": "http://bit.ly/2H9c4hg",
+    "af": 0.00001883
   },
   "gnomad_exome": {
     "_license": "http://bit.ly/2I1cl1I",
     "af": {
-      "af": 3.97994e-06
+      "af": 0.00000397994,
+      "af_afr": 0.0,
+      "af_afr_female": 0.0,
+      "af_afr_male": 0.0,
+      "af_amr": 0.0,
+      "af_amr_female": 0.0,
+      "af_amr_male": 0.0,
+      "af_asj": 0.0,
+      "af_eas": 0.0,
+      "af_eas_jpn": 0.0,
+      "af_eas_kor": 0.0,
+      "af_fin": 0.0,
+      "af_nfe": 0.0,
+      "af_nfe_bgr": 0.0,
+      "af_nfe_est": 0.0,
+      "af_nfe_nwe": 0.0,
+      "af_nfe_onf": 0.0,
+      "af_nfe_seu": 0.0,
+      "af_nfe_swe": 0.0,
+      "af_oth": 0.0,
+      "af_sas": 0.0000326669
     }
   }
 }

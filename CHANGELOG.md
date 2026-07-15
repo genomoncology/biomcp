@@ -25,6 +25,9 @@
 
 ### Fixes
 
+- Restored MyVariant BayesDel predictions as separate `BayesDel add-AF` and
+  `BayesDel no-AF` source scores, and repaired `--gerp-min` filtering without
+  adding clinical thresholds or pathogenicity classification.
 - Restored figure JATS context and complex-table omission metadata from normal
   DTD-bearing PMC OA archives by sharing the bounded article XML parser policy.
 - Kept command-owned JSON collection paths present as empty arrays on empty

@@ -342,18 +342,38 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
     );
     push_prediction(
         &mut out,
-        "BayesDel addAF",
+        "BayesDel add-AF",
         dbnsfp
-            .bayesdel_addaf
+            .bayesdel
             .as_ref()
+            .and_then(|v| v.add_af.as_ref())
             .and_then(|v| first_score(v.score.as_ref())),
         normalize_prediction(
             dbnsfp
-                .bayesdel_addaf
+                .bayesdel
                 .as_ref()
+                .and_then(|v| v.add_af.as_ref())
                 .and_then(|v| v.pred.as_ref())
                 .and_then(first_nonempty),
-            "bayesdel_addaf",
+            "bayesdel_add_af",
+        ),
+    );
+    push_prediction(
+        &mut out,
+        "BayesDel no-AF",
+        dbnsfp
+            .bayesdel
+            .as_ref()
+            .and_then(|v| v.no_af.as_ref())
+            .and_then(|v| first_score(v.score.as_ref())),
+        normalize_prediction(
+            dbnsfp
+                .bayesdel
+                .as_ref()
+                .and_then(|v| v.no_af.as_ref())
+                .and_then(|v| v.pred.as_ref())
+                .and_then(first_nonempty),
+            "bayesdel_no_af",
         ),
     );
 
@@ -1236,6 +1256,30 @@ mod tests {
                 .unwrap_or_default(),
             1
         );
+    }
+
+    #[test]
+    fn extracts_bayesdel_flavors_from_recorded_myvariant_payload() {
+        let hit: MyVariantHit = serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/myvariant/get_braf_v600e.json"
+        )))
+        .expect("recorded MyVariant payload should parse");
+
+        let predictions = extract_expanded_predictions(&hit);
+        let add_af = predictions
+            .iter()
+            .find(|entry| entry.tool == "BayesDel add-AF")
+            .expect("add-AF prediction should be present");
+        assert_eq!(add_af.score, Some(0.399079));
+        assert_eq!(add_af.prediction.as_deref(), Some("D"));
+
+        let no_af = predictions
+            .iter()
+            .find(|entry| entry.tool == "BayesDel no-AF")
+            .expect("no-AF prediction should be present");
+        assert_eq!(no_af.score, Some(0.335473));
+        assert_eq!(no_af.prediction.as_deref(), Some("D"));
     }
 
     #[test]

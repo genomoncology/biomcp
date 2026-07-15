@@ -325,7 +325,7 @@ fn search_plan_gerp_min_clause() {
         ..params()
     })
     .unwrap();
-    assert_eq!(q(&plan), "dbnsfp.gerp++_rs:[4 TO *]");
+    assert_eq!(q(&plan), "dbnsfp.gerp++.rs:[4 TO *]");
 }
 
 #[test]
@@ -411,6 +411,12 @@ fn get_plan_builds_variant_path_with_get_fields() {
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "variant/rs113488022");
     assert_eq!(plan.query_value("fields"), Some(MYVARIANT_FIELDS_GET));
+    let fields = plan.query_value("fields").unwrap();
+    assert!(fields.contains("dbnsfp.bayesdel.add_af.score"));
+    assert!(fields.contains("dbnsfp.bayesdel.add_af.pred"));
+    assert!(fields.contains("dbnsfp.bayesdel.no_af.score"));
+    assert!(fields.contains("dbnsfp.bayesdel.no_af.pred"));
+    assert!(!fields.contains("bayesdel_addaf"));
 }
 
 #[test]

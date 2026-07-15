@@ -78,6 +78,21 @@ fn parses_get_hit_nested_fields_from_real_fixture() {
         hit.dbnsfp.as_ref().and_then(|d| d.genename.first()),
         Some("BRAF")
     );
+    let bayesdel = hit.dbnsfp.as_ref().and_then(|d| d.bayesdel.as_ref());
+    assert_eq!(
+        bayesdel
+            .and_then(|b| b.add_af.as_ref())
+            .and_then(|v| v.score.as_ref())
+            .and_then(FloatOrVec::first),
+        Some(0.399079)
+    );
+    assert_eq!(
+        bayesdel
+            .and_then(|b| b.no_af.as_ref())
+            .and_then(|v| v.score.as_ref())
+            .and_then(FloatOrVec::first),
+        Some(0.335473)
+    );
     assert_eq!(hit.cosmic.as_ref().and_then(|c| c.mut_freq), Some(2.83));
     assert!(hit.exac.as_ref().and_then(|e| e.af).is_some());
     assert_eq!(hit.clinvar.as_ref().and_then(|c| c.variant_id), Some(13961));

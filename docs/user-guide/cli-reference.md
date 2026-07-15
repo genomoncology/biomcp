@@ -472,10 +472,17 @@ outside ordinary `all`.
 ```bash
 biomcp get variant "BRAF V600E"
 biomcp get variant 'NM_004333.6:c.1799T>A'
+biomcp get variant "BRAF V600E" predictions
 biomcp get variant "BRAF V600E" predict
 biomcp get variant rs7903146 gwas
 biomcp variant structure "BRAF V600E"
 ```
+
+The cached `predictions` section can include REVEL, AlphaMissense, ClinPred,
+SIFT, PolyPhen-2 HDIV, MetaRNN, `BayesDel add-AF`, and `BayesDel no-AF`.
+The BayesDel entries are separate source scores; BioMCP does not assign a
+clinical threshold or pathogenicity classification to either flavor. The
+`predict` section is the separate, credentialed AlphaGenome integration.
 
 Default `get variant` output includes a one-line CIViC actionability pointer from
 cached MyVariant data when present, or a `get variant <id> civic` next-command
