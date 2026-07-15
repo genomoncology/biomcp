@@ -525,6 +525,7 @@ async fn variant_search_shorthand_json_returns_variant_guidance_metadata() {
         "protein_change_only"
     );
     assert_eq!(value["_meta"]["next_commands"][1], "biomcp discover R620W");
+    assert_eq!(value["results"], serde_json::json!([]));
 }
 
 #[test]

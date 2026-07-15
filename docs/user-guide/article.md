@@ -327,7 +327,11 @@ The Semantic Scholar graph helpers also work without `S2_API_KEY`, but they use
 the shared pool and can fail fast on HTTP 429 with guidance to set the key for
 a dedicated rate limit. Citations usually work broadly; references and
 recommendations can be sparse or empty for paywalled papers because of
-publisher elision in the Semantic Scholar graph.
+publisher elision in the Semantic Scholar graph. In JSON, citation/reference
+responses always carry `edges`, and recommendation responses always carry
+`recommendations`, including `[]` on successful emptiness and parsed structured
+errors. On errors, the accompanying `error` and nonzero exit status remain
+mandatory, so an empty array must not be interpreted as a biomedical negative.
 
 ## Caching behavior
 
@@ -361,7 +365,8 @@ label/alias match may include `_meta.suggestions[]` objects with `command`,
 `reason`, and `sections`; same-session keyword loop-breaker suggestions include
 `command` and `reason` and omit `sections`. `_meta.next_commands` remains the
 executable string command list. JSON `article batch` responses are a bare array of compact cards
-so callers can map results back to the original input order.
+so callers can map results back to the original input order; this compatibility
+shape is intentionally not wrapped in an object.
 
 ## Practical tips
 

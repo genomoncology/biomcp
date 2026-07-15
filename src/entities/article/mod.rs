@@ -569,7 +569,7 @@ pub struct ArticleGraphEdge {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArticleGraphResult {
     pub article: ArticleRelatedPaper,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub edges: Vec<ArticleGraphEdge>,
 }
 
@@ -579,7 +579,7 @@ pub struct ArticleRecommendationsResult {
     pub positive_seeds: Vec<ArticleRelatedPaper>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub negative_seeds: Vec<ArticleRelatedPaper>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub recommendations: Vec<ArticleRelatedPaper>,
 }
 
@@ -840,6 +840,71 @@ pub const ARTICLE_SEMANTIC_RANKING_POLICY: &str =
 mod tests {
     use super::test_support::{empty_filters, row_with};
     use super::*;
+
+    fn related_paper(title: &str) -> ArticleRelatedPaper {
+        ArticleRelatedPaper {
+            paper_id: Some("paper-1".to_string()),
+            pmid: Some("1".to_string()),
+            doi: None,
+            arxiv_id: None,
+            title: title.to_string(),
+            journal: None,
+            year: Some(2026),
+        }
+    }
+
+    #[test]
+    fn graph_and_recommendation_primary_collections_serialize_when_empty() {
+        let graph = ArticleGraphResult {
+            article: related_paper("Anchor"),
+            edges: Vec::new(),
+        };
+        let recommendations = ArticleRecommendationsResult {
+            positive_seeds: Vec::new(),
+            negative_seeds: Vec::new(),
+            recommendations: Vec::new(),
+        };
+
+        let graph_json = serde_json::to_value(graph).expect("graph JSON");
+        let recommendations_json =
+            serde_json::to_value(recommendations).expect("recommendations JSON");
+        assert_eq!(graph_json["edges"], serde_json::json!([]));
+        assert_eq!(
+            recommendations_json["recommendations"],
+            serde_json::json!([])
+        );
+        assert!(recommendations_json.get("positive_seeds").is_none());
+        assert!(recommendations_json.get("negative_seeds").is_none());
+    }
+
+    #[test]
+    fn graph_and_recommendation_nonempty_shapes_remain_compatible() {
+        let paper = related_paper("Related");
+        let graph = ArticleGraphResult {
+            article: related_paper("Anchor"),
+            edges: vec![ArticleGraphEdge {
+                paper: paper.clone(),
+                intents: vec!["background".to_string()],
+                contexts: Vec::new(),
+                is_influential: false,
+            }],
+        };
+        let recommendations = ArticleRecommendationsResult {
+            positive_seeds: vec![related_paper("Anchor")],
+            negative_seeds: Vec::new(),
+            recommendations: vec![paper],
+        };
+
+        let graph_json = serde_json::to_value(graph).expect("graph JSON");
+        let recommendations_json =
+            serde_json::to_value(recommendations).expect("recommendations JSON");
+        assert_eq!(graph_json["edges"][0]["paper"]["title"], "Related");
+        assert_eq!(
+            recommendations_json["recommendations"][0]["title"],
+            "Related"
+        );
+        assert_eq!(recommendations_json["positive_seeds"][0]["title"], "Anchor");
+    }
 
     #[test]
     fn article_sort_default_is_relevance() {

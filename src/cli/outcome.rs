@@ -2,6 +2,9 @@
 
 use std::io::IsTerminal;
 
+use super::response_contract::{
+    JsonResponseContract, command_requests_json, finalize_structured_error,
+};
 use super::{Cli, CliOutput, CommandOutcome, Commands, GetEntity, SearchEntity, StudyCommand};
 
 fn bio_mcp_error_exit_code(error: &crate::error::BioMcpError) -> u8 {
@@ -599,14 +602,22 @@ async fn run_outcome_inner(
 }
 
 pub async fn run_outcome(cli: Cli) -> anyhow::Result<CommandOutcome> {
-    let json = cli.json;
+    let json = cli.json || command_requests_json(&cli.command);
+    let contract = JsonResponseContract::for_command(&cli.command);
     match run_outcome_inner(cli, false).await {
-        Ok(outcome) => Ok(outcome),
+        Ok(outcome) => Ok(if json {
+            finalize_structured_error(outcome, contract)
+        } else {
+            outcome
+        }),
         Err(err) => {
             if json && let Some(bio_err) = err.downcast_ref::<crate::error::BioMcpError>() {
-                return Ok(CommandOutcome::stdout_with_exit(
-                    crate::render::json::to_error_json(bio_err)?,
-                    bio_mcp_error_exit_code(bio_err),
+                return Ok(finalize_structured_error(
+                    CommandOutcome::stdout_with_exit(
+                        crate::render::json::to_error_json(bio_err)?,
+                        bio_mcp_error_exit_code(bio_err),
+                    ),
+                    contract,
                 ));
             }
             Err(err)

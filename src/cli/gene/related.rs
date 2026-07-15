@@ -151,13 +151,16 @@ pub(super) async fn handle_related_command(
             let fetch_limit = super::super::paged_fetch_limit(limit, offset, 25)?;
             let sections = vec!["pathways".to_string()];
             let mut gene = crate::gene::get(&symbol, &sections).await?;
-            if let Some(pathways) = gene.pathways.take() {
-                let fetched = pathways.into_iter().take(fetch_limit).collect::<Vec<_>>();
-                let (results, observed_total) =
-                    super::super::paginate_results(fetched, offset, limit);
-                super::super::log_pagination_truncation(observed_total, offset, results.len());
-                gene.pathways = (!results.is_empty()).then_some(results);
-            }
+            let fetched = gene
+                .pathways
+                .take()
+                .unwrap_or_default()
+                .into_iter()
+                .take(fetch_limit)
+                .collect::<Vec<_>>();
+            let (results, observed_total) = super::super::paginate_results(fetched, offset, limit);
+            super::super::log_pagination_truncation(observed_total, offset, results.len());
+            gene.pathways = Some(results);
             if json {
                 crate::render::json::to_pretty(&gene)?
             } else {

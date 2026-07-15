@@ -240,12 +240,88 @@ fn json_mode_invalid_argument_error_writes_json_stdout_and_exit_2() {
 }
 
 #[test]
+fn parsed_json_errors_keep_command_collection_paths_iterable() {
+    let rows: &[(&[&str], &[&str])] = &[
+        (
+            &["--json", "search", "article", "test", "--limit", "999"],
+            &["results"],
+        ),
+        (
+            &["--json", "article", "recommendations", "1", "--limit", "0"],
+            &["recommendations"],
+        ),
+        (
+            &["--json", "article", "citations", "1", "--limit", "0"],
+            &["edges"],
+        ),
+        (
+            &[
+                "--json", "search", "drug", "aspirin", "--region", "eu", "--target", "EGFR",
+            ],
+            &["regions", "eu", "results"],
+        ),
+        (
+            &[
+                "--json",
+                "search",
+                "adverse-event",
+                "MMR",
+                "--source",
+                "vaers",
+                "--count",
+                "reaction",
+            ],
+            &["buckets"],
+        ),
+        (
+            &["get", "article", "1", "assets", "--pdf", "--json"],
+            &["assets"],
+        ),
+    ];
+
+    for (args, path) in rows {
+        let result = run_biomcp(args);
+        assert_json_error(&result, 2, "invalid_argument");
+        let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
+        let collection = path
+            .iter()
+            .fold(&value, |current, segment| &current[segment]);
+        assert_eq!(
+            collection,
+            &serde_json::json!([]),
+            "args={args:?}, json={value}"
+        );
+    }
+}
+
+#[test]
+fn vaers_aggregate_and_pre_dispatch_errors_remain_keyless() {
+    let vaers = run_biomcp(&[
+        "--json",
+        "search",
+        "adverse-event",
+        "MMR",
+        "--source",
+        "vaers",
+        "--type",
+        "recall",
+    ]);
+    assert_json_error(&vaers, 2, "invalid_argument");
+    let value: serde_json::Value = serde_json::from_str(&vaers.stdout).expect("valid JSON");
+    assert!(value.get("results").is_none(), "json={value}");
+}
+
+#[test]
 fn json_mode_missing_required_arg_parse_error_writes_json_stdout_and_exit_2() {
     let result = run_biomcp(&["--json", "get", "variant"]);
 
     assert_json_error(&result, 2, "invalid_argument");
     let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid json");
     assert_eq!(value["_meta"]["not_found"], false, "json={value}");
+    assert!(
+        value.get("results").is_none(),
+        "pre-dispatch errors stay keyless: {value}"
+    );
 }
 
 #[test]
