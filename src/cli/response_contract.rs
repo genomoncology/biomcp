@@ -41,6 +41,7 @@ fn sections_contain(sections: &[String], expected: &str) -> bool {
 pub(super) fn command_requests_json(command: &Commands) -> bool {
     match command {
         Commands::Get { entity } => match entity {
+            GetEntity::Author(_) => false,
             GetEntity::Gene(args) => sections_request_json(&args.sections),
             GetEntity::Article(args) => sections_request_json(&args.sections),
             GetEntity::Disease(args) => sections_request_json(&args.args),
@@ -156,7 +157,7 @@ impl JsonResponseContract {
 
     fn for_search(entity: &SearchEntity) -> Self {
         match entity {
-            SearchEntity::All(_) => Self::NONE,
+            SearchEntity::All(_) | SearchEntity::Author(_) => Self::NONE,
             SearchEntity::Trial(args) if args.count_only => Self::NONE,
             SearchEntity::Drug(args) => {
                 let structured = args.target.is_some()
@@ -268,6 +269,7 @@ mod tests {
     #[test]
     fn command_collection_contract_inventory() {
         let rows: &[(&[&str], &[&str])] = &[
+            (&["biomcp", "search", "author", "-q", "A. Butte"], &[]),
             (&["biomcp", "search", "gene", "BRAF"], &["results"]),
             (&["biomcp", "search", "disease", "melanoma"], &["results"]),
             (
@@ -432,6 +434,7 @@ mod tests {
             (&["biomcp", "article", "entities", "1"], &[]),
             (&["biomcp", "variant", "structure", "BRAF"], &[]),
             (&["biomcp", "gene", "definition", "BRAF"], &[]),
+            (&["biomcp", "get", "author", "semanticscholar:1"], &[]),
             (&["biomcp", "get", "gene", "BRAF"], &[]),
         ];
 
