@@ -469,46 +469,47 @@ def test_terminal_output_boundary_ratchet_detects_removed_seams_and_pretty_bypas
     source_files = [
         "src/render/human.rs",
         "src/cli/outcome.rs",
+        "src/cli/shared.rs",
         "src/main.rs",
         "src/mcp/shell.rs",
         "src/render/chart.rs",
         "src/render/json.rs",
     ]
-    mutations = [
-        (
-            "src/render/human.rs",
+    expected_markers = {
+        "src/render/human.rs": {
             "fn sanitize_document(value: &str)",
-            "fn removed_document(value: &str)",
-        ),
-        (
-            "src/cli/outcome.rs",
+            "fn sanitize_inline(value: &str)",
+        },
+        "src/cli/outcome.rs": {
             "outcome.text = crate::render::human::sanitize_document(&outcome.text)",
-            "outcome.text = String::from(&outcome.text)",
-        ),
-        (
-            "src/main.rs",
-            "sanitize_human_diagnostic(&error.to_string())",
-            "error.to_string()",
-        ),
-        ("src/mcp/shell.rs", "sanitize_document(&text)", "text.to_string()"),
-        (
-            "src/mcp/shell.rs",
+            "trusted_terminal_chart = is_charted_mcp_study_command",
+        },
+        "src/cli/shared.rs": {
+            "sanitize_document(&error.render().to_string())",
+            "Err(err) => exit_human_clap_error(err)",
+        },
+        "src/main.rs": {"sanitize_human_diagnostic(&error.to_string())"},
+        "src/mcp/shell.rs": {
+            "sanitize_document(&text)",
             "sanitize_document(&content)",
-            "content.to_string()",
-        ),
-        (
-            "src/mcp/shell.rs",
             "sanitize_inline(&message.into())",
-            "message.into()",
-        ),
-        (
-            "src/render/chart.rs",
+        },
+        "src/render/chart.rs": {
             "fn chart_text(value: &str)",
-            "fn removed_chart_text(value: &str)",
-        ),
+            "sanitize_inline(value)",
+        },
+    }
+    assert {
+        path: set(markers)
+        for path, markers in ratchet.TERMINAL_OUTPUT_BOUNDARY_SEAMS.items()
+    } == expected_markers
+    mutations = [
+        (relative_path, marker)
+        for relative_path, markers in expected_markers.items()
+        for marker in markers
     ]
 
-    for index, (relative_path, marker, replacement) in enumerate(mutations):
+    for index, (relative_path, marker) in enumerate(mutations):
         fixture = tmp_path / f"seam-{index}"
         for source_file in source_files:
             target = fixture / source_file
@@ -517,7 +518,9 @@ def test_terminal_output_boundary_ratchet_detects_removed_seams_and_pretty_bypas
         path = fixture / relative_path
         text = path.read_text(encoding="utf-8")
         assert marker in text
-        path.write_text(text.replace(marker, replacement, 1), encoding="utf-8")
+        path.write_text(
+            text.replace(marker, f"// removed seam: {marker}", 1), encoding="utf-8"
+        )
 
         payload = ratchet.check_terminal_output_boundaries(fixture)
         assert payload["status"] == "fail"
@@ -542,6 +545,15 @@ def test_terminal_output_boundary_ratchet_detects_removed_seams_and_pretty_bypas
         and "pretty JSON" in finding["message"]
         for finding in payload["findings"]
     )
+
+    for source in (
+        "fn render(value: &serde_json::Value) { let _ = serde_json :: to_string_pretty(value); }\n",
+        "use serde_json::to_string_pretty as pretty;\nfn render() {}\n",
+        "#[cfg(test)]\nmod tests {}\nfn render(value: &serde_json::Value) { let _ = serde_json::to_string_pretty(value); }\n",
+    ):
+        bypass.write_text(source, encoding="utf-8")
+        payload = ratchet.check_terminal_output_boundaries(bypass_fixture)
+        assert payload["status"] == "fail", source
 
     bypass.write_text(
         "#[cfg(test)]\nmod tests { fn render(value: &serde_json::Value) { let _ = serde_json::to_string_pretty(value); } }\n",

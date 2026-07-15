@@ -55,6 +55,10 @@ TERMINAL_OUTPUT_BOUNDARY_SEAMS = {
         "outcome.text = crate::render::human::sanitize_document(&outcome.text)",
         "trusted_terminal_chart = is_charted_mcp_study_command",
     ],
+    "src/cli/shared.rs": [
+        "sanitize_document(&error.render().to_string())",
+        "Err(err) => exit_human_clap_error(err)",
+    ],
     "src/main.rs": ["sanitize_human_diagnostic(&error.to_string())"],
     "src/mcp/shell.rs": [
         "sanitize_document(&text)",
@@ -190,6 +194,21 @@ def check_architecture_experiment_results(root_dir: Path) -> dict[str, object]:
     }
 
 
+def _rust_production_text(text: str) -> str:
+    """Remove test-only Rust modules and comments from static-check input."""
+    cfg_test = re.compile(r"#\[cfg\(test\)\]\s*mod\s+\w+\s*\{")
+    while match := cfg_test.search(text):
+        brace = match.end() - 1
+        depth = 1
+        cursor = brace + 1
+        while cursor < len(text) and depth:
+            depth += (text[cursor] == "{") - (text[cursor] == "}")
+            cursor += 1
+        text = text[: match.start()] + (" " * (cursor - match.start())) + text[cursor:]
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+    return re.sub(r"//[^\n]*", "", text)
+
+
 def check_terminal_output_boundaries(root_dir: Path) -> dict[str, object]:
     findings: list[dict[str, object]] = []
     checked_surfaces: list[str] = []
@@ -198,7 +217,7 @@ def check_terminal_output_boundaries(root_dir: Path) -> dict[str, object]:
         path = root_dir / relative_path
         checked_surfaces.append(relative_path)
         try:
-            text = path.read_text(encoding="utf-8")
+            text = _rust_production_text(path.read_text(encoding="utf-8"))
         except OSError as exc:
             findings.append({"path": relative_path, "message": f"required output boundary is unreadable: {exc}"})
             continue
@@ -216,13 +235,8 @@ def check_terminal_output_boundaries(root_dir: Path) -> dict[str, object]:
         checked_surfaces.append(relative_path)
         if relative_path == "src/render/json.rs" or "tests" in path.parts:
             continue
-        text = path.read_text(encoding="utf-8")
-        production_text = re.split(
-            r"#\[cfg\(test\)\]\s*mod\s+[A-Za-z0-9_]*tests\b",
-            text,
-            maxsplit=1,
-        )[0]
-        for match in re.finditer(r"serde_json::to_string_pretty", production_text):
+        production_text = _rust_production_text(path.read_text(encoding="utf-8"))
+        for match in re.finditer(r"\bto_string_pretty\b", production_text):
             findings.append({
                 "path": relative_path,
                 "line": production_text.count("\n", 0, match.start()) + 1,

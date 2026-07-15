@@ -1173,6 +1173,41 @@ mod tests {
     }
 
     #[test]
+    fn rendered_terminal_and_svg_charts_sanitize_dynamic_text_before_the_backend() {
+        let mutation = MutationFrequencyResult {
+            study_id: "demo".into(),
+            gene: "TP53".into(),
+            mutation_count: 7,
+            unique_samples: 5,
+            total_samples: 20,
+            frequency: 0.25,
+            top_variant_classes: vec![("Class \u{7}Label".into(), 7)],
+            top_protein_changes: Vec::new(),
+            mutation_only_caveat: None,
+        };
+        let mut terminal = custom_terminal_options(120, 30);
+        terminal.title = Some("Control \u{7}Title\u{202e}".into());
+        let terminal_output = render_mutation_frequency_chart(&mutation, ChartType::Bar, &terminal)
+            .expect("terminal chart");
+        let mut svg_options = inline_svg_options();
+        svg_options.title = terminal.title.clone();
+        let svg = render_mutation_frequency_chart(&mutation, ChartType::Bar, &svg_options)
+            .expect("inline SVG chart");
+
+        assert!(
+            terminal_output.contains('\u{1b}'),
+            "trusted backend ANSI should remain"
+        );
+        assert!(strip_ansi(&terminal_output).contains("Control Title"));
+        assert!(svg.contains("Control Title"));
+        assert!(svg.contains("Class Label"));
+        for untrusted in ['\u{7}', '\u{202e}'] {
+            assert!(!terminal_output.contains(untrusted));
+            assert!(!svg.contains(untrusted));
+        }
+    }
+
+    #[test]
     fn display_mutation_class_maps_known_and_passes_through_unknown() {
         assert_eq!(display_mutation_class("Missense_Mutation"), "Missense");
         assert_eq!(display_mutation_class("Frame_Shift_Del"), "Frameshift Del");

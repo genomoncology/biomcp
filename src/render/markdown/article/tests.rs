@@ -215,6 +215,29 @@ fn article_markdown_renders_resolved_fulltext_source_label() {
 }
 
 #[test]
+fn article_recommendations_markdown_sanitizes_provider_fields() {
+    let paper = crate::entities::article::ArticleRelatedPaper {
+        paper_id: Some("paper-1".into()),
+        pmid: None,
+        doi: None,
+        arxiv_id: None,
+        title: "Control\u{7} Title | α-synuclein\u{202e}".into(),
+        journal: Some("Journal\u{1b}[31m Name".into()),
+        year: Some(2025),
+    };
+    let result = crate::entities::article::ArticleRecommendationsResult {
+        positive_seeds: vec![paper.clone()],
+        negative_seeds: Vec::new(),
+        recommendations: vec![paper],
+    };
+
+    let markdown = article_recommendations_markdown(&result).expect("recommendations markdown");
+    assert!(markdown.contains("Control Title \\| α-synuclein"));
+    assert!(markdown.contains("Journal Name"));
+    assert!(!markdown.contains(['\u{7}', '\u{1b}', '\u{202e}']));
+}
+
+#[test]
 fn article_graph_markdown_renders_expected_table_headers() {
     let result = crate::entities::article::ArticleGraphResult {
         article: crate::entities::article::ArticleRelatedPaper {

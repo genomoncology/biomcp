@@ -4,10 +4,39 @@ use super::super::{
     search_json_with_meta_and_suggestions, search_meta, search_meta_with_suggestions,
     search_meta_with_workflow,
 };
+use crate::cli::shared::render_human_clap_error;
+use crate::cli::{execute, sanitize_human_diagnostic, try_parse_cli};
 use crate::entities::discover::{
     AliasAmbiguity, AliasCandidateSummary, AliasCanonicalMatch, AliasFallbackDecision,
     DiscoverConfidence, DiscoverType, MatchTier,
 };
+
+#[test]
+fn clap_diagnostics_remove_terminal_controls_from_rejected_arguments() {
+    let error = try_parse_cli(["biomcp", "--bad\u{9b}31m\u{202e}flag"])
+        .expect_err("unknown argument should fail");
+    let rendered = render_human_clap_error(&error);
+
+    assert_eq!(error.exit_code(), 2);
+    assert!(rendered.contains("--badflag"));
+    assert!(!rendered.contains(['\u{9b}', '\u{202e}']));
+}
+
+#[tokio::test]
+async fn reflected_study_identifier_is_sanitized_at_the_human_diagnostic_boundary() {
+    let error = execute(vec![
+        "biomcp".into(),
+        "study".into(),
+        "download".into(),
+        "bad\u{1b}[31m\u{202e}/id".into(),
+    ])
+    .await
+    .expect_err("path-like study ID should fail before network access");
+    let rendered = sanitize_human_diagnostic(&error.to_string());
+
+    assert!(rendered.contains("bad/id"));
+    assert!(!rendered.contains(['\u{1b}', '\u{202e}']));
+}
 
 #[test]
 fn extract_json_from_sections_detects_trailing_long_flag() {

@@ -776,10 +776,10 @@ mod tests {
     use std::collections::BTreeSet;
 
     use super::{
-        CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet, TypedSearch,
-        all_get_sections, get_args, get_section_groups, index_handler, is_allowed_mcp_command,
-        mcp_rejection_message, redact_mcp_json_text, redact_mcp_text, search_args,
-        subcommand_names,
+        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet,
+        TypedSearch, all_get_sections, get_args, get_section_groups, index_handler,
+        is_allowed_mcp_command, mcp_rejection_message, redact_mcp_json_text, redact_mcp_text,
+        search_args, subcommand_names, to_resource_result,
     };
     use axum::Json;
 
@@ -788,6 +788,22 @@ mod tests {
             .iter()
             .flat_map(|group| group.iter().copied())
             .collect()
+    }
+
+    #[test]
+    fn mcp_human_error_and_resource_boundaries_remove_terminal_controls() {
+        let error = serde_json::to_value(BioMcpServer::tool_error(
+            "Error: bad\u{9b}31m identifier\u{202e}",
+        ))
+        .expect("serialize MCP error");
+        let resource = serde_json::to_value(to_resource_result(
+            "biomcp://help",
+            "# Help\nBad\u{1b}]8;;https://example.test\u{7}label\u{1b}]8;;\u{7}".into(),
+        ))
+        .expect("serialize MCP resource");
+
+        assert_eq!(error["content"][0]["text"], "Error: bad identifier");
+        assert_eq!(resource["contents"][0]["text"], "# Help\nBadlabel");
     }
 
     #[test]
