@@ -704,6 +704,23 @@ where
     let text_call = call_biomcp(client, command).await?;
     assert_eq!(text_call.is_error, Some(false));
     let text = first_text(&text_call.content);
+
+    let json_call = call_biomcp_json(client, command).await?;
+    assert_eq!(json_call.is_error, Some(false));
+    let json_text = first_text(&json_call.content);
+    let value: serde_json::Value = serde_json::from_str(json_text)?;
+
+    let cache_root = fixture.cache_dir.to_string_lossy();
+    let text_leaked_cache_root = text.contains(cache_root.as_ref());
+    let json_leaked_cache_root = json_text.contains(cache_root.as_ref());
+    assert!(
+        !text_leaked_cache_root && !json_leaked_cache_root,
+        "MCP responses exposed adversarial cache root: text={text_leaked_cache_root}, json={json_leaked_cache_root}"
+    );
+    assert!(
+        !text.contains("file://") && !json_text.contains("file://"),
+        "MCP response exposed a file URI"
+    );
     assert!(
         text.contains("Full text: available (local cache path withheld over MCP)"),
         "MCP text lacked transport-neutral availability: {text}"
@@ -716,27 +733,9 @@ where
         !text.contains("Saved to:"),
         "MCP text disclosed save path: {text}"
     );
-    assert!(
-        !text.contains("file://"),
-        "MCP text exposed a file URI: {text}"
-    );
-    assert!(
-        !text.contains(fixture.cache_dir.to_string_lossy().as_ref()),
-        "MCP text exposed adversarial cache root: {text}"
-    );
-
-    let json_call = call_biomcp_json(client, command).await?;
-    assert_eq!(json_call.is_error, Some(false));
-    let json_text = first_text(&json_call.content);
-    let value: serde_json::Value = serde_json::from_str(json_text)?;
     assert_eq!(value["full_text_available"], true, "json={value}");
     assert!(value.get("full_text_path").is_none(), "json={value}");
     assert!(value["full_text_source"].is_object(), "json={value}");
-    assert!(!json_text.contains("file://"), "json={json_text}");
-    assert!(
-        !json_text.contains(fixture.cache_dir.to_string_lossy().as_ref()),
-        "MCP JSON exposed adversarial cache root: {json_text}"
-    );
     Ok(())
 }
 

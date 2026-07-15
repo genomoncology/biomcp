@@ -58,6 +58,25 @@ async fn rmcp_child_process_redacts_fulltext_paths_from_text_and_json() -> anyho
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn rmcp_streamable_http_client_redacts_fulltext_paths_from_text_and_json()
+-> anyhow::Result<()> {
+    let harness = harness();
+    let fixture = provision_article_fulltext_fixture(&harness.repo_root)?;
+    let env = article_fulltext_fixture_env(&fixture);
+    let (mut child, base_url) = harness.spawn_http_server(&env).await?;
+    let result = async {
+        let client = harness.http_client(format!("{base_url}/mcp")).await?;
+        assert_mcp_fulltext_path_redaction(&client, &fixture).await?;
+        client.cancel().await?;
+        Ok::<(), anyhow::Error>(())
+    }
+    .await;
+
+    child.kill().await.ok();
+    result
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn rmcp_child_process_client_verifies_stdio_chart_contract() -> anyhow::Result<()> {
     let harness = harness();
     let fixture_root = provision_study_fixture(&harness.repo_root)?;
