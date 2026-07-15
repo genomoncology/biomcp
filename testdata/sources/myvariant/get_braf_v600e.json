@@ -10,290 +10,226 @@
     {
       "association": "Responsive",
       "drug": "PLX4720 (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "Pre-clinical",
       "primary_tumor_type": "Malignant astrocytoma",
-      "source": "PMC3638050",
-      "tumor_type": null
+      "source": "PMC3638050"
     },
     {
       "association": "Responsive",
       "drug": "BRAF inhibitor + MEK inhibitors",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Thyroid",
-      "source": "ASCO 2013 (abstr 9029)",
-      "tumor_type": null
+      "source": "ASCO 2013 (abstr 9029)"
     },
     {
       "association": "Responsive",
       "drug": "Pan-RAF inhibitors",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "ESMO 2015 (abstract 300);AACR 2016 (abstr CT005);AACR 2017 (abstr  CT002)",
-      "tumor_type": null
+      "source": "ESMO 2015 (abstract 300);AACR 2016 (abstr CT005);AACR 2017 (abstr  CT002)"
     },
     {
       "association": "Responsive",
       "drug": "BRAF inhibitors",
-      "evidence": null,
       "evidence_level": "Case report",
       "primary_tumor_type": "Ovary",
-      "source": "PMID:22608338",
-      "tumor_type": null
+      "source": "PMID:22608338"
     },
     {
       "association": "Resistant",
       "drug": "EGFR TK inhibitors",
-      "evidence": null,
       "evidence_level": "Case report",
       "primary_tumor_type": "Lung adenocarcinoma",
-      "source": "PMID:22773810",
-      "tumor_type": null
+      "source": "PMID:22773810"
     },
     {
       "association": "Responsive",
       "drug": "Trametinib (MEK inhibitor)",
-      "evidence": null,
       "evidence_level": "FDA guidelines",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "FDA",
-      "tumor_type": null
+      "source": "FDA"
     },
     {
       "association": "Responsive",
       "drug": "BRAF inhibitors",
-      "evidence": null,
       "evidence_level": "Pre-clinical",
       "primary_tumor_type": "Glioma",
-      "source": "PMID:22038996;PMID:22586120",
-      "tumor_type": null
+      "source": "PMID:22038996;PMID:22586120"
     },
     {
       "association": "Responsive",
       "drug": "Vemurafenib + Cobimetinib (BRAF inhibitor + MEK inhibitor)",
-      "evidence": null,
       "evidence_level": "FDA guidelines",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "FDA",
-      "tumor_type": null
+      "source": "FDA"
     },
     {
       "association": "Responsive",
       "drug": "BRAF inhibitor + PI3K pathway inhibitors",
-      "evidence": null,
       "evidence_level": "Pre-clinical",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "PMID:22389471;PMID:21156289",
-      "tumor_type": null
+      "source": "PMID:22389471;PMID:21156289"
     },
     {
       "association": "Resistant",
       "drug": "Cetuximab (EGFR mAb inhibitor)",
-      "evidence": null,
       "evidence_level": "Late trials",
       "primary_tumor_type": "Colorectal adenocarcinoma",
-      "source": "PMID:20619739;PMID:21163703;PMID:23325582",
-      "tumor_type": null
+      "source": "PMID:20619739;PMID:21163703;PMID:23325582"
     },
     {
       "association": "Responsive",
       "drug": "ERK inhibitors",
-      "evidence": null,
       "evidence_level": "Pre-clinical",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "PMID:23614898;PMID:22997239",
-      "tumor_type": null
+      "source": "PMID:23614898;PMID:22997239"
     },
     {
       "association": "Responsive",
       "drug": "MEK inhibitors",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Thyroid",
-      "source": "PMID:22241789",
-      "tumor_type": null
+      "source": "PMID:22241789"
     },
     {
       "association": "Responsive",
       "drug": "Vemurafenib (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Thyroid carcinoma",
-      "source": "PMID:22608338;PMID:20818844;PMID:23489023",
-      "tumor_type": null
+      "source": "PMID:22608338;PMID:20818844;PMID:23489023"
     },
     {
       "association": "Responsive",
       "drug": "Vemurafenib (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Malignant astrocytoma",
-      "source": "PMID:22586120",
-      "tumor_type": null
+      "source": "PMID:22586120"
     },
     {
       "association": "Resistant",
       "drug": "Panitumumab (EGFR mAb inhibitor)",
-      "evidence": null,
       "evidence_level": "Late trials",
       "primary_tumor_type": "Colorectal adenocarcinoma",
-      "source": "PMID:20619739;PMID:21163703;PMID:23325582",
-      "tumor_type": null
+      "source": "PMID:20619739;PMID:21163703;PMID:23325582"
     },
     {
       "association": "Responsive",
       "drug": "Dabrafenib (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "Case report",
       "primary_tumor_type": "Gastrointestinal stromal",
-      "source": "PMID:23470635;PMID:22608338",
-      "tumor_type": null
+      "source": "PMID:23470635;PMID:22608338"
     },
     {
       "association": "Responsive",
       "drug": "Vemurafenib (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "NCCN guidelines",
       "primary_tumor_type": "Non-small cell lung;Lagerhans cell histiocytosis;Erdheim-Chester histiocytosis",
-      "source": "PMID:26287849",
-      "tumor_type": null
+      "source": "PMID:26287849"
     },
     {
       "association": "Responsive",
       "drug": "Dabrafenib + Trametinib (BRAF inhibitor + MEK inhibitor)",
-      "evidence": null,
       "evidence_level": "FDA guidelines",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "FDA",
-      "tumor_type": null
+      "source": "FDA"
     },
     {
       "association": "Responsive",
       "drug": "ERK inhibitors",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Lung adenocarcinoma",
-      "source": "ASCO 2017 (abstr 2508)",
-      "tumor_type": null
+      "source": "ASCO 2017 (abstr 2508)"
     },
     {
       "association": "Responsive",
       "drug": "Dabrafenib (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Lung adenocarcinoma;Thyroid",
-      "source": "PMID:23524406;PMID:22608338;ASCO 2013 (abstr 8009);ESMO 2014 (abstr LBA38_PR);PMID:20818844;PMID:23489023;PMID:27080216",
-      "tumor_type": null
+      "source": "PMID:23524406;PMID:22608338;ASCO 2013 (abstr 8009);ESMO 2014 (abstr LBA38_PR);PMID:20818844;PMID:23489023;PMID:27080216"
     },
     {
       "association": "Responsive",
       "drug": "BRAF inhibitor + CDK2/4 inhibitors",
-      "evidence": null,
       "evidence_level": "Pre-clinical",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "PMID:22997239",
-      "tumor_type": null
+      "source": "PMID:22997239"
     },
     {
       "association": "Responsive",
       "drug": "Vemurafenib (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "FDA guidelines",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "FDA",
-      "tumor_type": null
+      "source": "FDA"
     },
     {
       "association": "Responsive",
       "drug": "Dabrafenib (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "NCCN guidelines",
       "primary_tumor_type": "Non-small cell lung",
-      "source": "NCCN",
-      "tumor_type": null
+      "source": "NCCN"
     },
     {
       "association": "Responsive",
       "drug": "Dabrafenib + Trametinib (BRAF inhibitor + MEK inhibitor)",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Colorectal adenocarcinoma",
-      "source": "PMID:26392102;ASCO 2015 (abstr 8006)",
-      "tumor_type": null
+      "source": "PMID:26392102;ASCO 2015 (abstr 8006)"
     },
     {
       "association": "Responsive",
       "drug": "Selumetinib (MEK inhibitor)",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Pediatric glioma",
-      "source": "NCT01089101",
-      "tumor_type": null
+      "source": "NCT01089101"
     },
     {
       "association": "Responsive",
       "drug": "Dabrafenib + Trametinib (BRAF inhibitor + MEK inhibitor)",
-      "evidence": null,
       "evidence_level": "Case report",
       "primary_tumor_type": "Neuroendocrine",
-      "source": "PMID:27048246",
-      "tumor_type": null
+      "source": "PMID:27048246"
     },
     {
       "association": "Responsive",
       "drug": "Dabrafenib + Trametinib (BRAF inhibitor + MEK inhibitor)",
-      "evidence": null,
       "evidence_level": "FDA guidelines",
       "primary_tumor_type": "Lung adenocarcinoma",
-      "source": "PMID:27283860",
-      "tumor_type": null
+      "source": "PMID:27283860"
     },
     {
       "association": "Responsive",
       "drug": "MEK inhibitors",
-      "evidence": null,
       "evidence_level": "Pre-clinical",
       "primary_tumor_type": "Ovary",
-      "source": "PMID:19018267",
-      "tumor_type": null
+      "source": "PMID:19018267"
     },
     {
       "association": "Responsive",
       "drug": "BRAF inhibitor + HSP90 inhibitors",
-      "evidence": null,
       "evidence_level": "Pre-clinical",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "PMID:22351686",
-      "tumor_type": null
+      "source": "PMID:22351686"
     },
     {
       "association": "Responsive",
       "drug": "Dabrafenib (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "FDA guidelines",
       "primary_tumor_type": "Cutaneous melanoma",
-      "source": "FDA",
-      "tumor_type": null
+      "source": "FDA"
     },
     {
       "association": "Responsive",
       "drug": "Panitumumab + Dabrafenib + Trametinib (EGFR mAb inhibitor + BRAF inhibitor + MEK inhibitor)",
-      "evidence": null,
       "evidence_level": "Early trials",
       "primary_tumor_type": "Colorectal adenocarcinoma",
-      "source": "ASCO 2014 (abstr 3515);ASCO 2015 (abstr 103)",
-      "tumor_type": null
+      "source": "ASCO 2014 (abstr 3515);ASCO 2015 (abstr 103)"
     },
     {
       "association": "Responsive",
       "drug": "Vemurafenib (BRAF inhibitor)",
-      "evidence": null,
       "evidence_level": "Case report",
       "primary_tumor_type": "Lung adenocarcinoma;Hairy-Cell leukemia;Myeloma",
-      "source": "PMID:22743296;PMID:22621641;PMID:23612012",
-      "tumor_type": null
+      "source": "PMID:22743296;PMID:22621641;PMID:23612012"
     }
   ],
   "civic": {
@@ -310,7 +246,6 @@
             "id": 79,
             "name": "EID79",
             "significance": "POSITIVE",
-            "status": null,
             "therapies": []
           },
           {
@@ -323,7 +258,6 @@
             "id": 95,
             "name": "EID95",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -343,7 +277,6 @@
             "id": 104,
             "name": "EID104",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -356,7 +289,6 @@
             "id": 106,
             "name": "EID106",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -369,7 +301,6 @@
             "id": 107,
             "name": "EID107",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -382,7 +313,6 @@
             "id": 105,
             "name": "EID105",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -395,7 +325,6 @@
             "id": 463,
             "name": "EID463",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -408,7 +337,6 @@
             "id": 2123,
             "name": "EID2123",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Sorafenib"
@@ -425,7 +353,6 @@
             "id": 2128,
             "name": "EID2128",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -442,7 +369,6 @@
             "id": 86,
             "name": "EID86",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Trametinib"
@@ -462,7 +388,6 @@
             "id": 2124,
             "name": "EID2124",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Mirdametinib"
@@ -479,7 +404,6 @@
             "id": 2125,
             "name": "EID2125",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Mirdametinib"
@@ -496,7 +420,6 @@
             "id": 2127,
             "name": "EID2127",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -513,7 +436,6 @@
             "id": 2133,
             "name": "EID2133",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -530,7 +452,6 @@
             "id": 2129,
             "name": "EID2129",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Selumetinib"
@@ -547,7 +468,6 @@
             "id": 1405,
             "name": "EID1405",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -564,7 +484,6 @@
             "id": 2131,
             "name": "EID2131",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Trametinib"
@@ -581,7 +500,6 @@
             "id": 2132,
             "name": "EID2132",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -598,7 +516,6 @@
             "id": 103,
             "name": "EID103",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -611,7 +528,6 @@
             "id": 1430,
             "name": "EID1430",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -634,7 +550,6 @@
             "id": 1398,
             "name": "EID1398",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -651,7 +566,6 @@
             "id": 1410,
             "name": "EID1410",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -668,7 +582,6 @@
             "id": 2139,
             "name": "EID2139",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "RDEA 119"
@@ -685,7 +598,6 @@
             "id": 1579,
             "name": "EID1579",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -702,7 +614,6 @@
             "id": 1698,
             "name": "EID1698",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -719,7 +630,6 @@
             "id": 1902,
             "name": "EID1902",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -742,7 +652,6 @@
             "id": 2894,
             "name": "EID2894",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Sorafenib"
@@ -762,7 +671,6 @@
             "id": 3742,
             "name": "EID3742",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -779,7 +687,6 @@
             "id": 3740,
             "name": "EID3740",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Cetuximab"
@@ -796,7 +703,6 @@
             "id": 3745,
             "name": "EID3745",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -813,7 +719,6 @@
             "id": 3747,
             "name": "EID3747",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -830,7 +735,6 @@
             "id": 7454,
             "name": "EID7454",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -850,7 +754,6 @@
             "id": 3748,
             "name": "EID3748",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -867,7 +770,6 @@
             "id": 3749,
             "name": "EID3749",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -884,7 +786,6 @@
             "id": 3751,
             "name": "EID3751",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -901,7 +802,6 @@
             "id": 3752,
             "name": "EID3752",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -918,7 +818,6 @@
             "id": 2503,
             "name": "EID2503",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -931,7 +830,6 @@
             "id": 3753,
             "name": "EID3753",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -948,7 +846,6 @@
             "id": 3756,
             "name": "EID3756",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -965,7 +862,6 @@
             "id": 3759,
             "name": "EID3759",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dasatinib"
@@ -982,7 +878,6 @@
             "id": 3768,
             "name": "EID3768",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -999,7 +894,6 @@
             "id": 3769,
             "name": "EID3769",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1016,7 +910,6 @@
             "id": 3770,
             "name": "EID3770",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1033,7 +926,6 @@
             "id": 3773,
             "name": "EID3773",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1050,7 +942,6 @@
             "id": 3774,
             "name": "EID3774",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1067,7 +958,6 @@
             "id": 3775,
             "name": "EID3775",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dasatinib"
@@ -1084,7 +974,6 @@
             "id": 3776,
             "name": "EID3776",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Regorafenib"
@@ -1101,7 +990,6 @@
             "id": 3782,
             "name": "EID3782",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1118,7 +1006,6 @@
             "id": 2116,
             "name": "EID2116",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -1131,7 +1018,6 @@
             "id": 3780,
             "name": "EID3780",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1148,7 +1034,6 @@
             "id": 3785,
             "name": "EID3785",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1165,7 +1050,6 @@
             "id": 3786,
             "name": "EID3786",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1182,7 +1066,6 @@
             "id": 3788,
             "name": "EID3788",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1199,7 +1082,6 @@
             "id": 3789,
             "name": "EID3789",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1216,7 +1098,6 @@
             "id": 3750,
             "name": "EID3750",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1233,7 +1114,6 @@
             "id": 5902,
             "name": "EID5902",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1253,7 +1133,6 @@
             "id": 5903,
             "name": "EID5903",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1273,7 +1152,6 @@
             "id": 5904,
             "name": "EID5904",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1293,7 +1171,6 @@
             "id": 5960,
             "name": "EID5960",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1310,7 +1187,6 @@
             "id": 6123,
             "name": "EID6123",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1333,7 +1209,6 @@
             "id": 2120,
             "name": "EID2120",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Bevacizumab"
@@ -1350,7 +1225,6 @@
             "id": 656,
             "name": "EID656",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -1363,7 +1237,6 @@
             "id": 80,
             "name": "EID80",
             "significance": "POSITIVE",
-            "status": null,
             "therapies": []
           },
           {
@@ -1376,7 +1249,6 @@
             "id": 6938,
             "name": "EID6938",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1396,7 +1268,6 @@
             "id": 11770,
             "name": "EID11770",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1413,7 +1284,6 @@
             "id": 7156,
             "name": "EID7156",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -1426,7 +1296,6 @@
             "id": 7762,
             "name": "EID7762",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1446,7 +1315,6 @@
             "id": 11672,
             "name": "EID11672",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1466,7 +1334,6 @@
             "id": 99,
             "name": "EID99",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1483,7 +1350,6 @@
             "id": 8507,
             "name": "EID8507",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1503,7 +1369,6 @@
             "id": 2362,
             "name": "EID2362",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -1516,7 +1381,6 @@
             "id": 8646,
             "name": "EID8646",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Cetuximab"
@@ -1542,7 +1406,6 @@
             "id": 1749,
             "name": "EID1749",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1559,7 +1422,6 @@
             "id": 3757,
             "name": "EID3757",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1576,7 +1438,6 @@
             "id": 3787,
             "name": "EID3787",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1593,7 +1454,6 @@
             "id": 3743,
             "name": "EID3743",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1613,7 +1473,6 @@
             "id": 7191,
             "name": "EID7191",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           },
           {
@@ -1626,7 +1485,6 @@
             "id": 6975,
             "name": "EID6975",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1646,7 +1504,6 @@
             "id": 11427,
             "name": "EID11427",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1666,7 +1523,6 @@
             "id": 11436,
             "name": "EID11436",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Cetuximab/Encorafenib Regimen"
@@ -1683,7 +1539,6 @@
             "id": 11244,
             "name": "EID11244",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1700,7 +1555,6 @@
             "id": 10328,
             "name": "EID10328",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1720,7 +1574,6 @@
             "id": 10329,
             "name": "EID10329",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1737,7 +1590,6 @@
             "id": 11303,
             "name": "EID11303",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1754,7 +1606,6 @@
             "id": 11309,
             "name": "EID11309",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Panitumumab"
@@ -1774,7 +1625,6 @@
             "id": 11310,
             "name": "EID11310",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1794,7 +1644,6 @@
             "id": 11311,
             "name": "EID11311",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1814,7 +1663,6 @@
             "id": 11312,
             "name": "EID11312",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1834,7 +1682,6 @@
             "id": 126,
             "name": "EID126",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Cetuximab"
@@ -1851,7 +1698,6 @@
             "id": 2135,
             "name": "EID2135",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Trametinib"
@@ -1868,7 +1714,6 @@
             "id": 5961,
             "name": "EID5961",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1888,7 +1733,6 @@
             "id": 11313,
             "name": "EID11313",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -1908,7 +1752,6 @@
             "id": 3744,
             "name": "EID3744",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1925,7 +1768,6 @@
             "id": 8952,
             "name": "EID8952",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Venetoclax"
@@ -1942,7 +1784,6 @@
             "id": 2143,
             "name": "EID2143",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Mirdametinib"
@@ -1959,7 +1800,6 @@
             "id": 11315,
             "name": "EID11315",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -1976,7 +1816,6 @@
             "id": 2144,
             "name": "EID2144",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Selumetinib"
@@ -1993,7 +1832,6 @@
             "id": 2142,
             "name": "EID2142",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Sorafenib"
@@ -2010,7 +1848,6 @@
             "id": 2146,
             "name": "EID2146",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -2027,7 +1864,6 @@
             "id": 3772,
             "name": "EID3772",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -2049,7 +1885,6 @@
             "id": 73,
             "name": "EID73",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Dabrafenib"
@@ -2071,7 +1906,6 @@
             "id": 9885,
             "name": "EID9885",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Atezolizumab"
@@ -2091,7 +1925,6 @@
             "id": 92,
             "name": "EID92",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Selumetinib"
@@ -2113,7 +1946,6 @@
             "id": 6262,
             "name": "EID6262",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -2138,7 +1970,6 @@
             "id": 11060,
             "name": "EID11060",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Cetuximab"
@@ -2163,7 +1994,6 @@
             "id": 6952,
             "name": "EID6952",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "JQEZ5"
@@ -2185,7 +2015,6 @@
             "id": 11098,
             "name": "EID11098",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Osimertinib"
@@ -2207,7 +2036,6 @@
             "id": 11314,
             "name": "EID11314",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
@@ -2232,7 +2060,6 @@
             "id": 11316,
             "name": "EID11316",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Selumetinib"
@@ -2249,7 +2076,6 @@
             "id": 12016,
             "name": "EID12016",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Tovorafenib"
@@ -2271,7 +2097,6 @@
             "id": 11670,
             "name": "EID11670",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Cobimetinib"
@@ -2296,7 +2121,6 @@
             "id": 11681,
             "name": "EID11681",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Selumetinib"
@@ -2318,7 +2142,6 @@
             "id": 11696,
             "name": "EID11696",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Selumetinib"
@@ -2340,7 +2163,6 @@
             "id": 11712,
             "name": "EID11712",
             "significance": "SENSITIVITYRESPONSE",
-            "status": null,
             "therapies": [
               {
                 "name": "Trametinib"
@@ -2371,7 +2193,6 @@
             "id": 12072,
             "name": "EID12072",
             "significance": "POOR_OUTCOME",
-            "status": null,
             "therapies": []
           }
         ],
@@ -2389,7 +2210,6 @@
             "id": 90,
             "name": "EID90",
             "significance": "RESISTANCE",
-            "status": null,
             "therapies": [
               {
                 "name": "Vemurafenib"
