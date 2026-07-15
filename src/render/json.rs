@@ -320,11 +320,9 @@ fn safe_error_message(error: &BioMcpError) -> String {
         | BioMcpError::InvalidArgument(_)
         | BioMcpError::ApiKeyRequired { .. }
         | BioMcpError::ApiKeyRejected { .. } => error.to_string(),
-        BioMcpError::SourceUnavailable {
-            source_name,
-            suggestion,
-            ..
-        } => format!("Source unavailable: {source_name} is not available.\n\nTry: {suggestion}"),
+        BioMcpError::SourceUnavailable { source_name, .. } => format!(
+            "Source unavailable: {source_name} is not available.\n\nCheck source setup and retry."
+        ),
         BioMcpError::Template(_) => "Template rendering failed.".to_string(),
         BioMcpError::Json(_) => "JSON processing failed.".to_string(),
         BioMcpError::Io(_) => "I/O operation failed.".to_string(),
@@ -567,9 +565,9 @@ fn match_tier_name(match_tier: crate::entities::discover::MatchTier) -> &'static
 #[cfg(test)]
 mod tests {
     use super::{
-        safe_error_message, to_alias_suggestion_json, to_discover_json, to_entity_json,
-        to_entity_json_value, to_entity_json_value_with_suggestions_and_workflow,
-        to_entity_json_with_suggestions, to_error_json, to_pretty, to_variant_guidance_json,
+        to_alias_suggestion_json, to_discover_json, to_entity_json, to_entity_json_value,
+        to_entity_json_value_with_suggestions_and_workflow, to_entity_json_with_suggestions,
+        to_error_json, to_pretty, to_variant_guidance_json,
     };
     use crate::entities::discover::{
         AliasCanonicalMatch, AliasFallbackDecision, ConceptSource, ConceptXref, DiscoverConcept,
@@ -630,18 +628,18 @@ mod tests {
             BioMcpError::SourceUnavailable {
                 source_name: "example".to_string(),
                 reason: sentinels[2].to_string(),
-                suggestion: "Retry later".to_string(),
+                suggestion: format!("Retry with data from {} at {}", sentinels[0], sentinels[1]),
             },
             BioMcpError::Json(serde_json::Error::io(std::io::Error::other(sentinels[3]))),
         ];
 
         for error in &errors {
-            let message = safe_error_message(error);
+            let json = to_error_json(error).expect("structured error JSON");
+            let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
+            assert!(value["error"]["message"].is_string());
+            assert!(value["_meta"].is_object());
             for sentinel in sentinels {
-                assert!(
-                    !message.contains(sentinel),
-                    "message leaked {sentinel}: {message}"
-                );
+                assert!(!json.contains(sentinel), "JSON leaked {sentinel}: {json}");
             }
         }
     }
