@@ -73,6 +73,24 @@ When you need more detail:
 2. switch to JSON,
 3. verify source availability with `biomcp health --apis-only`.
 
+## Why is an empty JSON collection present beside an error?
+
+For object-shaped query commands, BioMCP keeps the command's primary collection
+iterable even when a parsed call fails. For example, an article-search error can
+contain `results: []` alongside `error` and `_meta`, while `discover` retains
+`concepts: []`. This does not mean the
+biomedical search succeeded with no matches: inspect the process exit status or
+the `error` object. Errors that occur before BioMCP can identify the command stay
+keyless. Section-shaped `search all`, scalar trial `--count-only`, and VAERS-only
+aggregate responses also retain their existing shapes without a false flat
+`results` key.
+
+BioMCP preserves existing response families rather than introducing a global
+`data` envelope in 0.8.x. Drug search therefore keeps nested
+`regions.<region>.results`, while article batch and the legacy generic batch keep
+their bare-array success shapes. A uniform versioned envelope remains a future
+breaking-change question rather than an additive 0.8.x change.
+
 ## How do I inspect available commands quickly?
 
 ```bash

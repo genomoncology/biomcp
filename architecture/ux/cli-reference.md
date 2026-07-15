@@ -349,7 +349,12 @@ These properties should be preserved across releases:
    `patterns`, while entity pages carry `entity` and `commands`. `biomcp cache
    path` is the documented operator-command exception: it stays plain text even
    under `--json`, while `biomcp cache stats` and `biomcp cache clean` keep their
-   normal JSON contracts
+   normal JSON contracts. After command identification, primary collection paths
+   remain iterable as `[]` on empty success and structured errors; `error` and a
+   nonzero exit still distinguish failure from a biomedical empty result. Early
+   clap failures remain command-agnostic and keyless. Section-shaped `search
+   all`, scalar trial `--count-only`, and VAERS-only aggregate responses retain
+   their existing non-collection shapes
 4. **`biomcp health`** reports per-source connectivity, cache writability, and
    excluded key-gated sources in one inspection view; partial upstream failures
    stay visible in output even though the command currently exits 0
@@ -372,11 +377,15 @@ search-wrapper family. Drug search has heterogeneous U.S./EU/WHO row schemas,
 so its stable contract uses top-level `region`, top-level `regions`, and
 per-region `pagination` / `count` / `results` buckets instead of one shared
 top-level `results` array. Drug `--region ema` is a public alias for the
-canonical `--region eu` value on search and get drug regional sections.
+canonical `--region eu` value on search and get drug regional sections. Parsed
+errors retain the applicable nested region result path or all three paths and do
+not gain a false flat `results` key.
 
 Legacy helper JSON shapes are documented, not silently normalized in this
 release. `article batch --json` remains a bare array of compact article cards in
-request order. Article detail and batch cards carry every author supplied by the
+request order; the generic legacy batch success shape also remains a bare array.
+Neither is migrated to an object envelope in this release. Article detail and
+batch cards carry every author supplied by the
 selected source plus returned count, completeness, and source; Europe PMC
 display-string authorship is explicitly source-limited. Helper-specific JSON
 such as `drug interactions --json` and `drug adverse-events --json` keeps

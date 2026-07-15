@@ -301,6 +301,34 @@ struct ErrorMeta {
     not_found: bool,
 }
 
+fn safe_error_message(error: &BioMcpError) -> String {
+    match error {
+        BioMcpError::HttpClientInit(_) => "HTTP client initialization failed.".to_string(),
+        BioMcpError::Http(_) | BioMcpError::HttpMiddleware(_) => "HTTP request failed.".to_string(),
+        BioMcpError::Api { api, .. } => format!("API request to {api} failed."),
+        BioMcpError::ApiJson { api, .. } => {
+            format!("API response from {api} could not be decoded.")
+        }
+        BioMcpError::BodyLimit {
+            source_name,
+            max_bytes,
+        } => format!("API error from {source_name}: Response body exceeded {max_bytes} bytes"),
+        BioMcpError::CtGovInterventionQueryRejected { .. } => {
+            "ClinicalTrials.gov rejected the intervention query.".to_string()
+        }
+        BioMcpError::NotFound { .. }
+        | BioMcpError::InvalidArgument(_)
+        | BioMcpError::ApiKeyRequired { .. }
+        | BioMcpError::ApiKeyRejected { .. } => error.to_string(),
+        BioMcpError::SourceUnavailable { source_name, .. } => format!(
+            "Source unavailable: {source_name} is not available.\n\nCheck source setup and retry."
+        ),
+        BioMcpError::Template(_) => "Template rendering failed.".to_string(),
+        BioMcpError::Json(_) => "JSON processing failed.".to_string(),
+        BioMcpError::Io(_) => "I/O operation failed.".to_string(),
+    }
+}
+
 pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> {
     let code = match error {
         BioMcpError::HttpClientInit(_) => "http_client_init",
@@ -323,7 +351,7 @@ pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> 
     to_pretty(&ErrorJsonResponse {
         error: AliasError {
             code,
-            message: error.to_string(),
+            message: safe_error_message(error),
         },
         _meta: ErrorMeta {
             not_found: matches!(error, BioMcpError::NotFound { .. }),
@@ -581,6 +609,39 @@ mod tests {
         assert!(json.contains("\"code\": \"api\""));
         assert!(json.contains("API error from example: Response body exceeded 42 bytes"));
         assert!(!json.contains("body_limit"));
+    }
+
+    #[test]
+    fn structured_error_messages_omit_external_and_local_details() {
+        let sentinels = [
+            "https://provider.example/private?token=fake-credential",
+            "/home/operator/fixture.json",
+            ".march/design-final.md",
+            "parser detail at byte 42",
+        ];
+        let errors = [
+            BioMcpError::Api {
+                api: "example".to_string(),
+                message: sentinels[0].to_string(),
+            },
+            BioMcpError::Io(std::io::Error::other(sentinels[1])),
+            BioMcpError::SourceUnavailable {
+                source_name: "example".to_string(),
+                reason: sentinels[2].to_string(),
+                suggestion: format!("Retry with data from {} at {}", sentinels[0], sentinels[1]),
+            },
+            BioMcpError::Json(serde_json::Error::io(std::io::Error::other(sentinels[3]))),
+        ];
+
+        for error in &errors {
+            let json = to_error_json(error).expect("structured error JSON");
+            let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
+            assert!(value["error"]["message"].is_string());
+            assert!(value["_meta"].is_object());
+            for sentinel in sentinels {
+                assert!(!json.contains(sentinel), "JSON leaked {sentinel}: {json}");
+            }
+        }
     }
 
     #[test]

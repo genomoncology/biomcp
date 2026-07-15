@@ -23,6 +23,7 @@ SPEC_ROUTINE_PATHS=(
 )
 
 SPEC_LIVE_PATHS=(
+  spec/entity/article-graph-live.md
   spec/entity/article-indexing-live.md
   spec/entity/diagnostic.md
   spec/entity/disease.md
@@ -206,6 +207,7 @@ case "$mode" in
   verify)
     timeout_args=(--timeout 180)
     paths=(
+      spec/entity/article-graph-live.md
       spec/entity/article-indexing-live.md
       spec/entity/diagnostic.md
       spec/entity/drug.md

@@ -25,6 +25,7 @@ mod pathway;
 mod pgx;
 mod phenotype;
 mod protein;
+mod response_contract;
 pub mod search_all;
 mod search_all_command;
 mod shared;

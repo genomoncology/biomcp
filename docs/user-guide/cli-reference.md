@@ -9,6 +9,8 @@ BioMCP provides one command family with entity-oriented subcommands.
 
 `--json` normally returns structured output, including JSON `error` objects on stdout for BioMCP command errors while preserving nonzero exit codes. Parse/usage errors under `--json` also exit 2 with a JSON `invalid_argument` error on stdout. `biomcp cache path` is a plain-text exception. `biomcp cache stats`, `biomcp cache clean`, and `biomcp cache clear` respect `--json` on success. `biomcp cache clear` still refuses non-TTY destructive runs with plain stderr unless you pass `--yes`.
 
+Once a command is identified, its primary collection path remains present as `[]` on empty success and structured errors (for example, `results`, `concepts`, `edges`, `recommendations`, or a drug region's nested `results`). An empty collection beside `error` means the call failed, not that the biomedical result was negative; scripts must inspect the exit status or `error`. Errors before a command is identified remain keyless. Provider bodies, request URLs, credentials, parser details, and internal local paths are omitted from standard structured errors. Section-shaped `search all`, scalar trial `--count-only`, and VAERS-only aggregate responses keep their existing shapes rather than gaining a false `results` key.
+
 ## Core command patterns
 
 ```text
@@ -291,7 +293,9 @@ Drug search JSON is region-aware: the top-level object exposes `region`,
 and `ladder`. Single-region searches use
 `regions.us.results`, `regions.eu.results`, or `regions.who.results`; omitted
 `--region` on a plain name lookup and explicit `--region all` expose all three
-region buckets, each with `pagination`, `count`, and `results`.
+region buckets, each with `pagination`, `count`, and `results`. Those nested
+`results` paths remain present as empty arrays on parsed structured errors; drug
+search never gains a false flat top-level `results` key.
 
 For vaccine brand lookups, omitted `--region` on a plain name search and
 explicit `--region eu|all` can auto-read the local CDC CVX/MVX bundle after
@@ -417,7 +421,8 @@ source order. JSON carries `authors`, returned `author_count`,
 `author_completeness` (`complete`, `source_limited`, or `unavailable`), and
 `author_source` (`pubtator` or `europepmc`). Europe PMC display-string lists are
 source-limited. Batch keeps its bare-array JSON envelope and request order, and
-Markdown cards show authorship plus its status.
+Markdown cards show authorship plus its status. This compatibility exception is
+not converted to an object collection envelope.
 
 `get article <id> indexing` adds PubMed citation authors with nested
 source-associated affiliations and optional ORCID plus structured MeSH
