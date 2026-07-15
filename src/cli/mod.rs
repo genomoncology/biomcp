@@ -2,6 +2,7 @@
 
 mod adverse_event;
 mod article;
+mod author;
 // Internal regression harness; not wired into production CLI.
 // See architecture/technical/benchmark-cli-ownership-decision.md.
 #[cfg(test)]

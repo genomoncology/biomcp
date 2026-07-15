@@ -51,6 +51,7 @@ New to BioMCP? Try:
 - gene
 - variant
 - article
+- author
 - trial
 - diagnostic
 - drug
@@ -104,6 +105,8 @@ New to BioMCP? Try:
   - Expansion uses plausible trade names and investigational codes while excluding systematic chemical synonyms.
   - A rejected expanded alias preserves successful requested-name results and makes the exact total unknown.
   - `--no-alias-expand` performs one literal request.
+- `search author -q <name> --source semanticscholar --limit <N> --offset <N>`
+- `get author semanticscholar:<id>`
 - `search article ... -a <author> --date-from --date-to --year-min --year-max --journal`
   - add `--source <all, pubtator, europepmc, pubmed, semanticscholar, litsense2>`
   - add `--max-per-source <N>` or `--session <token>` when needed

@@ -3,8 +3,8 @@
 use clap::Subcommand;
 
 use super::{
-    adverse_event, article, cache, chart, diagnostic, disease, drug, gene, gwas, pathway, pgx,
-    phenotype, protein, search_all_command, skill, study, system, trial, variant,
+    adverse_event, article, author, cache, chart, diagnostic, disease, drug, gene, gwas, pathway,
+    pgx, phenotype, protein, search_all_command, skill, study, system, trial, variant,
 };
 
 #[derive(Subcommand, Debug)]
@@ -245,6 +245,11 @@ EXAMPLES:
 
 See also: biomcp list search-all")]
     All(search_all_command::SearchAllArgs),
+    /// Search exact Semantic Scholar author records by name
+    #[command(
+        after_help = "EXAMPLES:\n  biomcp search author -q \"Louis Williams\" --source semanticscholar --limit 5\n\nSee also: biomcp list author"
+    )]
+    Author(author::AuthorSearchArgs),
     /// Search genes by symbol, name, type, or chromosome (MyGene.info)
     #[command(after_help = "\
 EXAMPLES:
@@ -470,6 +475,11 @@ See also: biomcp list adverse-event")]
 
 #[derive(Subcommand, Debug)]
 pub enum GetEntity {
+    /// Get one exact Semantic Scholar author record
+    #[command(
+        after_help = "EXAMPLES:\n  biomcp get author semanticscholar:1716151\n\nSee also: biomcp list author"
+    )]
+    Author(author::AuthorGetArgs),
     /// Get gene by symbol or known single-gene alias
     #[command(after_help = "\
 When to use: use this for the default card, then add protein, hpa, expression, diseases, diagnostics, or funding when you need deeper biology, localization, diagnostic-test, or NIH grant context. Known aliases that map to one canonical human gene also resolve here.

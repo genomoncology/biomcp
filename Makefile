@@ -2,6 +2,7 @@
 
 SPEC_ROUTINE_PATHS = \
 	spec/entity/article.md \
+	spec/entity/author.md \
 	spec/entity/disease-survival-fixture.md \
 	spec/entity/drug-interactions.md \
 	spec/entity/study.md \

@@ -703,3 +703,12 @@ biomcp study co-occurrence --study msk_impact_2017 --genes TP53,KRAS
 - `study cohort`, `study survival`, and `study compare` require `data_mutations.txt` and `data_clinical_sample.txt`.
 - `study survival` also requires `data_clinical_patient.txt` with canonical `{ENDPOINT}_STATUS` and `{ENDPOINT}_MONTHS` columns.
 - Expression workflows require a supported expression matrix file.
+
+## Author search and detail
+
+```bash
+biomcp search author -q "Louis Williams" --source semanticscholar --limit 5 --offset 0
+biomcp get author semanticscholar:1716151
+```
+
+Author identities are exact Semantic Scholar provider records, not BioMCP-global people. `--affiliation`, PubMed/ORCID author lookup, publications, coauthors, and topics are not available in this release.

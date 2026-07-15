@@ -7,12 +7,14 @@ description: "Use BioMCP to add Semantic Scholar TLDRs, citations, references, a
 
 Semantic Scholar matters when you already have the paper and need the graph around it: the TLDR, the follow-up literature, the references it builds on, and the related papers worth checking next. It turns a flat article lookup into a literature-review workflow that an agent can keep extending without losing the thread.
 
-In BioMCP, Semantic Scholar is an automatic optional `search article --source all` leg when the filter set is compatible, and it is also individually selectable with `--source semanticscholar`. Both routes use shared-pool mode at 1 req/2sec without `S2_API_KEY` and authenticated mode at 1 req/sec with the key. The dedicated helper commands on this page are the graph-oriented reason to come here: `get article <id> tldr`, `article citations`, `article references`, and `article recommendations`.
+In BioMCP, Semantic Scholar provides provider-exact author search/detail and an automatic optional `search article --source all` leg when the filter set is compatible; article search is also individually selectable with `--source semanticscholar`. These routes use shared-pool mode at 1 req/2sec without `S2_API_KEY` and authenticated mode at 1 req/sec with the key. The dedicated article helper commands on this page are `get article <id> tldr`, `article citations`, `article references`, and `article recommendations`.
 
 ## What BioMCP exposes
 
 | Command | What BioMCP gets from this source | Integration note |
 |---|---|---|
+| `search author -q <name> --source semanticscholar` | Exact Semantic Scholar provider-record candidates | Results remain separate and provider-qualified; BioMCP does not claim a globally resolved person |
+| `get author semanticscholar:<id>` | One exact Semantic Scholar provider record | Requires the qualified numeric ID and does not establish an ORCID link |
 | `search article` | Optional compatible search-leg enrichment plus source status | Semantic Scholar joins article search automatically when the filter set allows it and can be selected alone with `--source semanticscholar` |
 | `get article <id> tldr` | TLDR text, influence counts, and related article metadata | Dedicated Semantic Scholar helper |
 | `article citations <id>` | Citation graph rows | Dedicated Semantic Scholar helper |
@@ -22,10 +24,12 @@ In BioMCP, Semantic Scholar is an automatic optional `search article --source al
 ## Example commands
 
 ```bash
+biomcp search author -q "Louis Williams" --source semanticscholar --limit 5
+biomcp get author semanticscholar:1716151
 biomcp search article -k "BRAF melanoma" --source semanticscholar --limit 5
 ```
 
-Returns article rows whose source is Semantic Scholar.
+Returns provider-qualified author records or article rows from Semantic Scholar.
 
 ```bash
 biomcp get article 22663011 tldr

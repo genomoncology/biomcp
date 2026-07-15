@@ -265,6 +265,7 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
     {
         match entity.as_str() {
             "article" => args.extend(["--keyword".to_string(), query.to_string()]),
+            "author" => args.extend(["--query".to_string(), query.to_string()]),
             "diagnostic" | "gwas" | "pgx" => {
                 args.extend(["--gene".to_string(), query.to_string()]);
             }
@@ -699,6 +700,8 @@ mod tests {
     #[test]
     fn typed_schema_sources_match_cli_entities_and_sections() {
         assert!(subcommand_names("search").contains(&"pathway".to_string()));
+        assert!(subcommand_names("search").contains(&"author".to_string()));
+        assert!(subcommand_names("get").contains(&"author".to_string()));
         assert!(subcommand_names("get").contains(&"gene".to_string()));
         assert_eq!(
             all_get_sections().into_iter().collect::<BTreeSet<String>>(),
@@ -729,6 +732,27 @@ mod tests {
                 "--limit",
                 "5",
                 "--json"
+            ]
+        );
+
+        let author = search_args(TypedSearch {
+            entity: "author".to_string(),
+            query: Some("Louis Williams".to_string()),
+            limit: 5,
+            offset: 0,
+            json: false,
+        })
+        .expect("typed author search args");
+        assert_eq!(
+            author,
+            [
+                "biomcp",
+                "search",
+                "author",
+                "--query",
+                "Louis Williams",
+                "--limit",
+                "5"
             ]
         );
 

@@ -6,6 +6,7 @@ cd "$ROOT"
 
 SPEC_ROUTINE_PATHS=(
   spec/entity/article.md
+  spec/entity/author.md
   spec/entity/disease-survival-fixture.md
   spec/entity/drug-interactions.md
   spec/entity/study.md
@@ -66,7 +67,7 @@ partition_paths() {
   local path
   for path in "$@"; do
     case "$path" in
-      spec/entity/article.md) ARTICLE_MD_PATHS+=("$path") ;;
+      spec/entity/article.md|spec/entity/author.md) ARTICLE_MD_PATHS+=("$path") ;;
       *.md) MD_PATHS+=("$path") ;;
       *.py) PY_PATHS+=("$path") ;;
       *) echo "unsupported spec path extension: $path" >&2; return 1 ;;
@@ -195,6 +196,7 @@ case "$mode" in
     timeout_args=(--timeout 180)
     paths=(
       spec/entity/article.md
+      spec/entity/author.md
       spec/surface/mcp.md
       spec/surface/skills.md
       spec/surface/trial-retirement.md

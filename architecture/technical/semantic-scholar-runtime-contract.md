@@ -92,11 +92,12 @@ pub enum SemanticScholarAuthMode {
 - Authenticated requests continue to use `apply_cache_mode_with_auth(..., true)`
   so authenticated responses are not stored in the shared cache.
 
-The same client now has an internal author-source seam for author search, detail,
-batch, and papers. These requests use the existing key-aware request, rate-limit,
-cache, bounded-body, and error path; author pages are limited to 100 rows and
-batches to 1,000 provider IDs. The seam preserves Semantic Scholar identifiers
-and continuation without introducing a public author command or global person ID.
+The same client supplies the public provider-exact `search author` and `get
+author semanticscholar:<id>` commands, while author batch and papers remain
+internal source seams. These requests use the existing key-aware request,
+rate-limit, cache, bounded-body, and sanitized error path; author pages are
+limited to 100 rows and batches to 1,000 provider IDs. Public author responses
+preserve Semantic Scholar identifiers without introducing a global person ID.
 
 ### Article-search source status contract
 
