@@ -4,7 +4,10 @@ use super::*;
 
 #[test]
 fn extract_text_from_jats_preserves_structure_and_renders_references() {
-    let xml = r#"<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange DTD v1.4 20241031//EN" "JATS-archivearticle1.dtd">
+    let xml = r#"<?xml version="1.0"?>
+<!DOCTYPE article PUBLIC
+  "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange DTD v1.4 20241031//EN"
+  "https://example.invalid/JATS-archivearticle1-4.dtd">
 <article xmlns:xlink="http://www.w3.org/1999/xlink">
   <front>
     <journal-meta>
@@ -28,7 +31,7 @@ fn extract_text_from_jats_preserves_structure_and_renders_references() {
   <body>
     <sec>
       <title>Introduction</title>
-      <p>Body paragraph with <bold>important</bold> findings and <ext-link xlink:href="https://example.org/resource">external evidence</ext-link>.</p>
+      <p>Body paragraph with <bold>important</bold> findings at 70 &#181;m and <ext-link xlink:href="https://example.org/resource">external evidence</ext-link>.</p>
       <fig id="f1">
         <label>Figure 1</label>
         <caption>
@@ -73,8 +76,12 @@ fn extract_text_from_jats_preserves_structure_and_renders_references() {
     assert!(out.contains("## Introduction"));
     assert!(out.contains("### Methods"));
     assert!(out.contains("Abstract text with [1] and *signal*."));
-    assert!(out.contains("Body paragraph with **important** findings"));
+    assert!(out.contains("Body paragraph with **important** findings at 70 µm"));
     assert!(out.contains("[external evidence](https://example.org/resource)"));
+    let quality = jats_quality_flags(xml);
+    assert!(quality.has_sections);
+    assert!(quality.has_tables);
+    assert!(quality.has_references);
     assert!(out.contains("> **Figure 1.** Response overview Treatment response summary."));
     assert!(out.contains("| Gene | Count |"));
     assert!(out.contains("| BRAF | 12 |"));
@@ -336,4 +343,11 @@ fn extract_text_from_xml_falls_back_for_non_jats_and_malformed_xml() {
 
     assert_eq!(non_jats_out, "ignored?AlphaBeta");
     assert_eq!(malformed_out, "Broken");
+}
+
+#[test]
+fn entity_bearing_jats_is_not_rendered_through_fallback() {
+    let xml = r#"<!DOCTYPE article [<!ENTITY unsafe "expanded">]><article><body><p>&unsafe;</p></body></article>"#;
+    assert!(extract_text_from_xml(xml).is_empty());
+    assert_eq!(jats_quality_flags(xml), ArticleFulltextQuality::default());
 }

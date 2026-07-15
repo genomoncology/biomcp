@@ -3,9 +3,10 @@
 use std::{collections::HashSet, sync::OnceLock};
 
 use regex::Regex;
-use roxmltree::{Document, Node, NodeType};
+use roxmltree::{Node, NodeType};
 
 use crate::entities::article::ArticleFulltextQuality;
+use crate::xml::{ARTICLE_XML_NODE_LIMIT, ExternalXmlError, parse_external_xml};
 
 use super::collapse_whitespace;
 
@@ -14,22 +15,19 @@ mod refs;
 use self::refs::render_references;
 
 pub fn extract_text_from_xml(xml: &str) -> String {
-    try_extract_jats_markdown(xml).unwrap_or_else(|| strip_xml_tags_fallback(xml))
+    match try_extract_jats_markdown(xml) {
+        Ok(Some(rendered)) => rendered,
+        Err(ExternalXmlError::EntityDeclaration) => String::new(),
+        Ok(None) | Err(ExternalXmlError::Parse(_)) => strip_xml_tags_fallback(xml),
+    }
 }
 
 pub fn jats_quality_flags(xml: &str) -> ArticleFulltextQuality {
-    parse_jats_quality_flags(xml).unwrap_or_else(|| {
-        let sanitized = strip_doctype_declaration(xml);
-        if sanitized.as_str() == xml {
-            ArticleFulltextQuality::default()
-        } else {
-            parse_jats_quality_flags(&sanitized).unwrap_or_default()
-        }
-    })
+    parse_jats_quality_flags(xml).unwrap_or_default()
 }
 
 fn parse_jats_quality_flags(xml: &str) -> Option<ArticleFulltextQuality> {
-    let doc = Document::parse(xml).ok()?;
+    let doc = parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT).ok()?;
     let root = doc.root_element();
     if root.tag_name().name() != "article" || !has_jats_content_anchor(root) {
         return None;
@@ -50,24 +48,15 @@ fn parse_jats_quality_flags(xml: &str) -> Option<ArticleFulltextQuality> {
     })
 }
 
-fn try_extract_jats_markdown(xml: &str) -> Option<String> {
-    if let Some(rendered) = parse_and_render_jats(xml) {
-        return Some(rendered);
-    }
-
-    let sanitized = strip_doctype_declaration(xml);
-    if sanitized.as_str() == xml {
-        return None;
-    }
-
-    parse_and_render_jats(&sanitized)
+fn try_extract_jats_markdown(xml: &str) -> Result<Option<String>, ExternalXmlError> {
+    parse_and_render_jats(xml)
 }
 
-fn parse_and_render_jats(xml: &str) -> Option<String> {
-    let doc = Document::parse(xml).ok()?;
+fn parse_and_render_jats(xml: &str) -> Result<Option<String>, ExternalXmlError> {
+    let doc = parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT)?;
     let root = doc.root_element();
     if root.tag_name().name() != "article" || !has_jats_content_anchor(root) {
-        return None;
+        return Ok(None);
     }
 
     let mut blocks = Vec::new();
@@ -81,22 +70,15 @@ fn parse_and_render_jats(xml: &str) -> Option<String> {
 
     let rendered = join_blocks(blocks);
     if rendered.is_empty() {
-        None
+        Ok(None)
     } else {
-        Some(rendered)
+        Ok(Some(rendered))
     }
 }
 
 #[derive(Default)]
 struct RenderState {
     rendered_float_ids: HashSet<String>,
-}
-
-fn strip_doctype_declaration(xml: &str) -> String {
-    static DOCTYPE_RE: OnceLock<Regex> = OnceLock::new();
-    let re = DOCTYPE_RE
-        .get_or_init(|| Regex::new(r#"(?is)<!DOCTYPE[^>]*>"#).expect("valid doctype regex"));
-    re.replace(xml, "").to_string()
 }
 
 fn has_jats_content_anchor(root: Node<'_, '_>) -> bool {

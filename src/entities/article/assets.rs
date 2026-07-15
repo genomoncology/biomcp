@@ -15,6 +15,7 @@ use crate::sources::ncbi_idconv::NcbiIdConverterClient;
 use crate::sources::pmc_oa::{
     PmcOaArchiveEntry, PmcOaArchiveManifest, PmcOaArchivePackage, PmcOaClient,
 };
+use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
 use super::{
     Article, ArticleAssetCoverage, ArticleAssetEntry, ArticleAssetJats, ArticleAssetsManifest,
@@ -911,7 +912,7 @@ fn jats_facts(entries: &[PmcOaArchiveEntry]) -> JatsFacts {
 }
 
 fn parse_jats_facts(xml: &str) -> Option<JatsFacts> {
-    let doc = roxmltree::Document::parse(xml).ok()?;
+    let doc = parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT).ok()?;
     let mut out = JatsFacts {
         complex_tables: doc
             .descendants()
@@ -1028,7 +1029,10 @@ mod tests {
     fn build_manifest_hashes_binary_bytes_and_quotes_retrieval_commands() {
         let binary = vec![0, 0xff, b'P', b'N', b'G', b'\n'];
         let csv = b"time,value\n0,1\n".to_vec();
-        let jats_xml = br#"
+        let jats_xml = br#"<?xml version="1.0"?>
+<!DOCTYPE article PUBLIC
+  "-//NLM//DTD JATS Journal Archiving DTD v1.4 20241031//EN"
+  "https://example.invalid/JATS-archivearticle1-4.dtd">
 <article xmlns:xlink="http://www.w3.org/1999/xlink">
   <body>
     <fig id="f1">

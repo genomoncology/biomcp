@@ -8,6 +8,7 @@ use serde::Deserialize;
 
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
+use crate::xml::parse_external_xml;
 
 const PUBMED_EUTILS_BASE: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 const PUBMED_EUTILS_BASE_ENV: &str = "BIOMCP_PUBMED_BASE";
@@ -767,19 +768,8 @@ fn parse_author(node: roxmltree::Node<'_, '_>) -> Result<PubMedCitationAuthor, B
 }
 
 fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, PubMedCitationErrorKind> {
-    // PubMed uses an external DTD declaration but does not require internal entities.
-    // Reject declarations that could expand text without increasing roxmltree's node count.
-    if xml.contains("<!ENTITY") {
-        return Err(PubMedCitationErrorKind::Parse);
-    }
-    let document = roxmltree::Document::parse_with_options(
-        xml,
-        roxmltree::ParsingOptions {
-            allow_dtd: true,
-            nodes_limit: PUBMED_CITATION_NODE_LIMIT,
-        },
-    )
-    .map_err(|_| PubMedCitationErrorKind::Parse)?;
+    let document = parse_external_xml(xml, PUBMED_CITATION_NODE_LIMIT)
+        .map_err(|_| PubMedCitationErrorKind::Parse)?;
     let citation = document
         .descendants()
         .filter(|node| node.is_element() && node.tag_name().name() == "PubmedArticle")

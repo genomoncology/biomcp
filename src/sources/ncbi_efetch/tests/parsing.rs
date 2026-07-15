@@ -23,7 +23,9 @@ fn normalize_article_xml_extracts_article_from_wrapped_fixture() {
 
     assert!(xml.starts_with("<article"));
     assert!(xml.contains("<article-title>Wrapped</article-title>"));
+    assert!(xml.contains("Body text at 70 &#181;m."));
     assert!(!xml.contains("<pmc-articleset>"));
+    assert!(!xml.contains("<!DOCTYPE"));
 }
 
 #[test]
@@ -37,6 +39,19 @@ fn normalize_article_xml_keeps_unwrapped_xml() {
         .unwrap()
         .expect("xml");
     assert_eq!(xml, "<root><value>Body</value></root>");
+}
+
+#[test]
+fn normalize_article_xml_keeps_original_malformed_and_entity_bearing_xml() {
+    for input in [
+        "<article><body>",
+        r#"<!DOCTYPE article [<!ENTITY unsafe "value">]><article>&unsafe;</article>"#,
+    ] {
+        assert_eq!(
+            normalize_article_xml(input).unwrap().as_deref(),
+            Some(input)
+        );
+    }
 }
 
 #[test]

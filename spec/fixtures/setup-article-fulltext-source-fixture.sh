@@ -87,7 +87,11 @@ AUTHOR_SEARCH = {
 }
 
 
-ARTICLE_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
+ARTICLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE article PUBLIC
+  "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange DTD v1.4 20241031//EN"
+  "https://example.invalid/JATS-archivearticle1.dtd">
+<article xmlns:xlink="http://www.w3.org/1999/xlink">
   <front>
     <article-meta>
       <title-group><article-title>Europe full text winner</article-title></title-group>
@@ -98,6 +102,7 @@ ARTICLE_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
     <sec>
       <title>Fixture results</title>
       <p>Europe PMC body text with callout (<xref ref-type="fig" rid="fig2">Figure 2</xref>) and B-RAF<sup>V600E</sup>.PLX4032 boundary text.</p>
+      <p>External DTD numeric-reference evidence measures 70 &#181;m.</p>
       <fig id="fig1">
         <label>Figure 1</label>
         <caption><p>Inline figure caption preserves n=10 cell counts.</p></caption>
