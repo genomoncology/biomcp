@@ -22,7 +22,8 @@ pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "dbnsfp.alphamissense.score,dbnsfp.alphamissense.pred,dbnsfp.alphamissense.rankscore,",
     "dbnsfp.clinpred.score,dbnsfp.clinpred.pred,",
     "dbnsfp.metarnn.score,dbnsfp.metarnn.pred,",
-    "dbnsfp.bayesdel_addaf.score,dbnsfp.bayesdel_addaf.pred,",
+    "dbnsfp.bayesdel.add_af.score,dbnsfp.bayesdel.add_af.pred,",
+    "dbnsfp.bayesdel.no_af.score,dbnsfp.bayesdel.no_af.pred,",
     "dbnsfp.phylop.100way_vertebrate.rankscore,dbnsfp.phylop.470way_mammalian.rankscore,",
     "dbnsfp.phastcons.100way_vertebrate.rankscore,dbnsfp.phastcons.470way_mammalian.rankscore,",
     "dbnsfp.gerp++.rs,",
@@ -497,7 +498,7 @@ impl MyVariantClient {
         }
 
         if let Some(gerp_min) = params.gerp_min {
-            terms.push(format!("dbnsfp.gerp++_rs:[{gerp_min} TO *]"));
+            terms.push(format!("dbnsfp.gerp++.rs:[{gerp_min} TO *]"));
         }
 
         if let Some(tumor_site) = params
@@ -757,11 +758,17 @@ pub struct MyVariantDbnsfp {
     pub alphamissense: Option<MyVariantPredScore>,
     pub clinpred: Option<MyVariantPredScore>,
     pub metarnn: Option<MyVariantPredScore>,
-    pub bayesdel_addaf: Option<MyVariantPredScore>,
+    pub bayesdel: Option<MyVariantBayesDel>,
     pub phylop: Option<MyVariantConservationGroup>,
     pub phastcons: Option<MyVariantConservationGroup>,
     #[serde(rename = "gerp++")]
     pub gerp: Option<MyVariantGerp>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MyVariantBayesDel {
+    pub add_af: Option<MyVariantPredScore>,
+    pub no_af: Option<MyVariantPredScore>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -60,7 +60,7 @@ biomcp get gene BRAF all                  # everything
 
 biomcp get variant "BRAF V600E"              # summary card + cheap CIViC pointer
 biomcp get variant "BRAF V600E" civic        # live CIViC evidence + currency caveat
-biomcp get variant "BRAF V600E" clinvar population conservation
+biomcp get variant "BRAF V600E" clinvar population conservation predictions
 biomcp get variant 'NM_004333.6:c.1799T>A'
 biomcp get article 22663011 tldr
 biomcp get article 22663011 indexing
@@ -77,6 +77,11 @@ biomcp get trial NCT02576665 eligibility locations outcomes
 biomcp --json get trial NCT03361748 documents
 biomcp get trial NCT03361748 document Prot_SAP_000.pdf
 ```
+
+Variant `predictions` can expose REVEL, AlphaMissense, ClinPred, SIFT,
+MetaRNN, `BayesDel add-AF`, and `BayesDel no-AF` from the MyVariant payload.
+The two BayesDel flavors remain separate source scores;
+BioMCP does not apply clinical thresholds or classify pathogenicity from them.
 
 The trial detail surface includes a `contacts` section for ClinicalTrials.gov
 central contacts and email-bearing site contacts. `locations` and `eligibility`

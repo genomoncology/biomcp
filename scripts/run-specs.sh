@@ -37,6 +37,7 @@ SPEC_LIVE_PATHS=(
   spec/entity/trial.md
   spec/entity/vaers.md
   spec/entity/variant-hotspots.md
+  spec/entity/variant-myvariant-live.md
   spec/surface/cli.md
   spec/surface/discover.md
 )
@@ -220,6 +221,7 @@ case "$mode" in
       spec/entity/trial.md
       spec/entity/vaers.md
       spec/entity/variant-hotspots.md
+      spec/entity/variant-myvariant-live.md
       spec/surface/cli.md
       spec/surface/discover.md
     )
