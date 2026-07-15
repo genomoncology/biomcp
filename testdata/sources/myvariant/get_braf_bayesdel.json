@@ -1,0 +1,31 @@
+{
+  "_id": "chr7:g.140453136A>T",
+  "_version": 2,
+  "dbnsfp": {
+    "_license": "http://bit.ly/2VLnQBz",
+    "bayesdel": {
+      "add_af": {
+        "pred": "D",
+        "rankscore": 0.89859,
+        "score": 0.399079
+      },
+      "no_af": {
+        "pred": "D",
+        "rankscore": 0.89732,
+        "score": 0.335473
+      }
+    },
+    "genename": [
+      "BRAF",
+      "BRAF",
+      "BRAF",
+      "BRAF"
+    ],
+    "hgvsp": [
+      "p.Val640Glu",
+      "p.Val600Glu",
+      "p.Val207Glu",
+      "p.V600E"
+    ]
+  }
+}

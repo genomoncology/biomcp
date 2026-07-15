@@ -37,6 +37,31 @@ Therapeutic evidence: see `get variant \"chr1:g.101A>T\" civic`
 Caveat: CIViC evidence may lag current standard of care'
 ```
 
+## MyVariant Prediction Scores
+
+The expanded prediction section preserves each dbNSFP model as a separate
+labelled score. BayesDel's add-AF and no-AF flavors remain distinct because they
+have different meanings and clinical thresholds.
+
+```bash
+../../tools/biomcp-ci --json get variant 'chr7:g.140453136A>T' predictions \
+  | jq -r '.expanded_predictions[]? | select(.tool | startswith("BayesDel")) | "\(.tool): \(.score) (\(.prediction))"' \
+  | mustmatch like 'BayesDel add-AF: 0.399079 (D)
+BayesDel no-AF: 0.335473 (D)'
+```
+
+## GERP-Filtered Variant Search
+
+A minimum GERP score narrows variant discovery to records meeting the requested
+conservation threshold. A valid filter returns matching records rather than a
+successful but misleading empty result.
+
+```bash
+../../tools/biomcp-ci --json search variant --gerp-min 4 --limit 1 \
+  | jq -r '.results[]? | "\(.id) \(.gene)"' \
+  | mustmatch like 'chr5:g.82352958G>C TMEM167A'
+```
+
 ## Coordinate Genome-Build Context
 
 <!-- mustmatch-lint: skip -->

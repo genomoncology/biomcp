@@ -154,6 +154,16 @@ run_disease_survival_fixture() {
   register_cleanup cleanup_disease_survival_fixture
 }
 
+cleanup_myvariant_fixture() {
+  bash spec/fixtures/cleanup-myvariant-spec-fixture.sh "$ROOT"
+}
+
+run_myvariant_fixture() {
+  bash spec/fixtures/setup-myvariant-spec-fixture.sh "$ROOT"
+  source_if_present "$ROOT/.cache/spec-myvariant-env"
+  register_cleanup cleanup_myvariant_fixture
+}
+
 run_article_markdown_specs() {
   if ((${#ARTICLE_MD_PATHS[@]})); then
     (
@@ -191,6 +201,7 @@ case "$mode" in
     run_ddinter_fixture
     run_ctgov_fixture
     run_disease_survival_fixture
+    run_myvariant_fixture
     ;;
   spec-contracts)
     timeout_args=(--timeout 180)
