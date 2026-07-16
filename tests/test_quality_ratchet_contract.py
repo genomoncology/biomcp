@@ -958,6 +958,119 @@ def test_wrapper_accepts_section_when_one_of_multiple_bash_blocks_has_mustmatch(
     assert summary["lint"]["finding_count"] == 0
 
 
+def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    sources = tmp_path / "src/sources"
+    sources.mkdir(parents=True)
+    (sources / "mod.rs").write_text(
+        "ensure_body_limited_cache_epoch(cache_root)\n"
+        "ClientBuilder::new(base_client).with(Cache(())\n"
+        ".with(ResponseBodyLimitMiddleware {})\n",
+        encoding="utf-8",
+    )
+    (sources / "cbioportal_download.rs").write_text(
+        "max_archive_download_bytes: MAX_ARCHIVE_DOWNLOAD_BYTES\n"
+        "response.content_length().is_some_and(\n"
+        "    |length| length > self.max_archive_download_bytes as u64\n"
+        ")\n"
+        "File::create(dest);\n"
+        "account_download_bytes(\n"
+        "    downloaded, chunk.len(), self.max_archive_download_bytes\n"
+        ")?;\n"
+        "file.write_all(&chunk);\n"
+        "max_entries: MAX_ARCHIVE_ENTRIES,\n"
+        "max_member_bytes: MAX_ARCHIVE_MEMBER_BYTES,\n"
+        "max_total_bytes: MAX_ARCHIVE_EXPANDED_BYTES,\n"
+        "max_metadata_bytes: MAX_ARCHIVE_METADATA_BYTES\n"
+        "ArchiveBudget::new(limits); archive.entries()?.raw(true);",
+        encoding="utf-8",
+    )
+    (sources / "pmc_oa.rs").write_text(
+        "with_response_body_limit(request, MAX_TGZ_BYTES, PMC_OA_API);\n"
+        "max_entries: MAX_ARCHIVE_ENTRIES,\n"
+        "max_member_bytes: MAX_ARCHIVE_ENTRY_BYTES,\n"
+        "max_total_bytes: MAX_ARCHIVE_EXPANDED_BYTES,\n"
+        "max_metadata_bytes: MAX_ARCHIVE_METADATA_BYTES\n"
+        "ArchiveBudget::new(limits); archive.entries()?.raw(true);",
+        encoding="utf-8",
+    )
+    (sources / "clinicaltrials.rs").write_text("bounded bytes", encoding="utf-8")
+    (sources / "pubmed.rs").write_text("bounded bytes", encoding="utf-8")
+    custom_limit_calls = {
+        "ema.rs": "with_response_body_limit(request, EMA_MAX_BODY_BYTES, EMA_API)",
+        "europepmc.rs": (
+            "with_response_body_limit(req, MAX_SUPPLEMENTARY_ZIP_BYTES, EUROPE_PMC_API)"
+        ),
+        "gtr.rs": "with_response_body_limit(request, max_body_bytes, GTR_API)",
+        "wikipathways.rs": (
+            "with_response_body_limit(req, WIKIPATHWAYS_MAX_BODY_BYTES, WIKIPATHWAYS_API)"
+        ),
+        "who_ivd.rs": (
+            "with_response_body_limit(request, WHO_IVD_MAX_BODY_BYTES, WHO_IVD_API)"
+        ),
+        "who_pq.rs": "with_response_body_limit(request, max_body_bytes, WHO_PQ_API)",
+        "cvx.rs": "with_response_body_limit(request, max_body_bytes, CVX_API)",
+    }
+    for name, call in custom_limit_calls.items():
+        (sources / name).write_text(call, encoding="utf-8")
+    fulltext = tmp_path / "src/entities/article/fulltext.rs"
+    fulltext.parent.mkdir(parents=True)
+    fulltext.write_text(
+        "with_response_body_limit(request, PDF_MAX_BODY_BYTES, ARTICLE_FULLTEXT_API)",
+        encoding="utf-8",
+    )
+
+    assert ratchet.check_remote_resource_bounds(tmp_path)["status"] == "pass"
+
+    (sources / "mod.rs").write_text(
+        ".with(ResponseBodyLimitMiddleware {})\n"
+        "ClientBuilder::new(base_client).with(Cache(())\n",
+        encoding="utf-8",
+    )
+    (sources / "cbioportal_download.rs").write_text(
+        "MAX_ARCHIVE_DOWNLOAD_BYTES account_download_bytes(", encoding="utf-8"
+    )
+    (sources / "pmc_oa.rs").write_text("unbounded archive", encoding="utf-8")
+    (sources / "clinicaltrials.rs").write_text(
+        "read_limited_body(response, source).await?; bytes.to_vec()", encoding="utf-8"
+    )
+    (sources / "pubmed.rs").write_text(
+        "read_limited_body(response, source).await?; bytes.to_vec()", encoding="utf-8"
+    )
+    (sources / "gtr.rs").write_text(
+        "with_response_body_limit(request, DEFAULT_MAX_BODY_BYTES, GTR_API)\n"
+        "read_limited_body_with_limit(response, GTR_API, GTR_TEST_VERSION_MAX_BODY_BYTES)",
+        encoding="utf-8",
+    )
+    payload = ratchet.check_remote_resource_bounds(tmp_path)
+
+    assert payload["status"] == "fail"
+    assert any("inside the cache" in finding for finding in payload["findings"])
+    assert any("legacy HTTP cache" in finding for finding in payload["findings"])
+    assert any("declared archive length" in finding for finding in payload["findings"])
+    assert any(
+        "cBioPortal archive expansion" in finding for finding in payload["findings"]
+    )
+    assert any("PMC OA archive" in finding for finding in payload["findings"])
+    assert any("clinicaltrials.rs" in finding for finding in payload["findings"])
+    assert any("pubmed.rs" in finding for finding in payload["findings"])
+    assert any("custom response limit" in finding for finding in payload["findings"])
+
+    spec_path = _write_clean_spec(tmp_path / "spec")
+    output_dir = tmp_path / "out"
+    result = _run_wrapper(
+        {
+            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
+            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+        }
+    )
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    assert summary["remote_resource_bounds"]["status"] == "pass"
+
+
 def test_wrapper_allows_mustmatch_opt_out_later_in_section(tmp_path: Path) -> None:
     spec_path = _write_h2_bash_spec(
         tmp_path / "spec",

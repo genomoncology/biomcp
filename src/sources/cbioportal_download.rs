@@ -9,6 +9,7 @@ use reqwest::header::HeaderValue;
 use tokio::io::AsyncWriteExt;
 
 use crate::error::BioMcpError;
+use crate::sources::archive_budget::{ArchiveBudget, ArchiveEntry, ArchiveLimits};
 use crate::sources::{RequestPlan, request_from_plan};
 
 const DATAHUB_BASE: &str = "https://datahub.assets.cbioportal.org";
@@ -16,6 +17,11 @@ const DATAHUB_API: &str = "cbioportal-datahub";
 const DATAHUB_BASE_ENV: &str = "BIOMCP_CBIOPORTAL_DATAHUB_BASE";
 const DATAHUB_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const DATAHUB_ARCHIVE_IDLE_TIMEOUT: Duration = Duration::from_secs(120);
+const MAX_ARCHIVE_DOWNLOAD_BYTES: usize = 2 * 1024 * 1024 * 1024;
+const MAX_ARCHIVE_ENTRIES: u64 = 100_000;
+const MAX_ARCHIVE_MEMBER_BYTES: u64 = 1024 * 1024 * 1024;
+const MAX_ARCHIVE_EXPANDED_BYTES: u64 = 8 * 1024 * 1024 * 1024;
+const MAX_ARCHIVE_METADATA_BYTES: u64 = 1024 * 1024;
 
 #[derive(Debug, Clone)]
 pub struct StudyInstallResult {
@@ -28,6 +34,7 @@ pub struct CBioPortalDownloadClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
     download_idle_timeout: Duration,
+    max_archive_download_bytes: usize,
 }
 
 impl CBioPortalDownloadClient {
@@ -36,6 +43,7 @@ impl CBioPortalDownloadClient {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, None)?,
             base: crate::sources::env_base(DATAHUB_BASE, DATAHUB_BASE_ENV),
             download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT,
+            max_archive_download_bytes: MAX_ARCHIVE_DOWNLOAD_BYTES,
         })
     }
 
@@ -91,10 +99,28 @@ impl CBioPortalDownloadClient {
             let body = crate::sources::read_limited_body(resp, DATAHUB_API).await?;
             return Self::decode_archive_status(study_id, status, &body);
         }
+        if resp
+            .content_length()
+            .is_some_and(|length| length > self.max_archive_download_bytes as u64)
+        {
+            return Err(BioMcpError::SourceUnavailable {
+                source_name: "cBioPortal DataHub".to_string(),
+                reason: "Archive download exceeded its resource limit.".to_string(),
+                suggestion: "Retry the study download later.".to_string(),
+            });
+        }
         let mut file = tokio::fs::File::create(dest).await?;
+        let mut downloaded = 0;
         loop {
             match tokio::time::timeout(self.download_idle_timeout, resp.chunk()).await {
-                Ok(Ok(Some(chunk))) => file.write_all(&chunk).await?,
+                Ok(Ok(Some(chunk))) => {
+                    downloaded = account_download_bytes(
+                        downloaded,
+                        chunk.len(),
+                        self.max_archive_download_bytes,
+                    )?;
+                    file.write_all(&chunk).await?;
+                }
                 Ok(Ok(None)) => break,
                 Ok(Err(err)) => return Err(err.into()),
                 Err(_) => {
@@ -172,6 +198,29 @@ impl CBioPortalDownloadClient {
             message: format!("Study install worker failed: {err}"),
         })?
     }
+}
+
+fn account_download_bytes(
+    downloaded: usize,
+    chunk_bytes: usize,
+    max_archive_download_bytes: usize,
+) -> Result<usize, BioMcpError> {
+    let downloaded =
+        downloaded
+            .checked_add(chunk_bytes)
+            .ok_or_else(|| BioMcpError::SourceUnavailable {
+                source_name: "cBioPortal DataHub".to_string(),
+                reason: "Archive download exceeded its resource limit.".to_string(),
+                suggestion: "Retry the study download later.".to_string(),
+            })?;
+    if downloaded > max_archive_download_bytes {
+        return Err(BioMcpError::SourceUnavailable {
+            source_name: "cBioPortal DataHub".to_string(),
+            reason: "Archive download exceeded its resource limit.".to_string(),
+            suggestion: "Retry the study download later.".to_string(),
+        });
+    }
+    Ok(downloaded)
 }
 
 fn datahub_client(
@@ -285,9 +334,34 @@ fn extract_archive_into(
         let file = File::open(archive_path)?;
         let gz = GzDecoder::new(file);
         let mut archive = tar::Archive::new(gz);
-        for entry in archive.entries()? {
-            let mut entry = entry?;
-            let entry_path = entry.path()?.into_owned();
+        let limits = ArchiveLimits {
+            max_entries: MAX_ARCHIVE_ENTRIES,
+            max_member_bytes: MAX_ARCHIVE_MEMBER_BYTES,
+            max_total_bytes: MAX_ARCHIVE_EXPANDED_BYTES,
+            max_metadata_bytes: MAX_ARCHIVE_METADATA_BYTES,
+        };
+        let mut budget = ArchiveBudget::new(limits);
+        for entry in archive.entries()?.raw(true) {
+            let mut entry = entry.map_err(|_| BioMcpError::SourceUnavailable {
+                source_name: DATAHUB_API.to_string(),
+                reason: "Downloaded study archive failed its resource limit or metadata policy."
+                    .to_string(),
+                suggestion: "Retry the download or choose a different study.".to_string(),
+            })?;
+            let accounted =
+                budget
+                    .account(&mut entry)
+                    .map_err(|_| BioMcpError::SourceUnavailable {
+                        source_name: DATAHUB_API.to_string(),
+                        reason:
+                            "Downloaded study archive failed its resource limit or metadata policy."
+                                .to_string(),
+                        suggestion: "Retry the download or choose a different study.".to_string(),
+                    })?;
+            let entry_path = match accounted {
+                ArchiveEntry::Metadata => continue,
+                ArchiveEntry::Regular(path) | ArchiveEntry::Directory(path) => path,
+            };
             let Some(relative) = archive_relative_path(study_id, &entry_path)? else {
                 continue;
             };
@@ -324,6 +398,14 @@ fn extract_archive_into(
                 }
             }
         }
+        budget
+            .finish()
+            .map_err(|_| BioMcpError::SourceUnavailable {
+                source_name: DATAHUB_API.to_string(),
+                reason: "Downloaded study archive failed its resource limit or metadata policy."
+                    .to_string(),
+                suggestion: "Retry the download or choose a different study.".to_string(),
+            })?;
 
         if !staging_dir.join("meta_study.txt").is_file() {
             return Err(BioMcpError::SourceUnavailable {

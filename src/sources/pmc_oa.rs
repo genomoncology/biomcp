@@ -4,6 +4,7 @@ use std::path::{Component, Path, PathBuf};
 use http_cache_reqwest::CacheMode;
 
 use crate::error::BioMcpError;
+use crate::sources::archive_budget::{ArchiveBudget, ArchiveEntry, ArchiveLimits};
 use crate::sources::provider_url_policy::{ProviderUrlConsumer, ProviderUrlPolicy};
 use crate::sources::{RequestPlan, request_from_plan};
 
@@ -14,6 +15,9 @@ const PMC_OA_API: &str = "pmc-oa";
 const PMC_OA_BASE_ENV: &str = "BIOMCP_PMC_OA_BASE";
 const MAX_TGZ_BYTES: usize = 64 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRY_BYTES: u64 = 8 * 1024 * 1024;
+const MAX_ARCHIVE_ENTRIES: u64 = 256;
+const MAX_ARCHIVE_EXPANDED_BYTES: u64 = 64 * 1024 * 1024;
+const MAX_ARCHIVE_METADATA_BYTES: u64 = 1024 * 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PmcOaArchiveManifest {
@@ -228,10 +232,11 @@ impl PmcOaClient {
                     .into(),
             })?;
         self.provider_policy.validate_url(&archive_url)?;
-        let resp = self
+        let request = self
             .client
             .get(archive_url)
-            .with_extension(CacheMode::NoStore)
+            .with_extension(CacheMode::NoStore);
+        let resp = crate::sources::with_response_body_limit(request, MAX_TGZ_BYTES, PMC_OA_API)
             .send()
             .await?;
         let status = resp.status();
@@ -302,23 +307,39 @@ fn extract_archive_entries(tgz_bytes: &[u8]) -> Result<Vec<PmcOaArchiveEntry>, B
 
     let gz = flate2::read::GzDecoder::new(tgz_bytes);
     let mut archive = tar::Archive::new(gz);
-    let entries = archive.entries()?;
+    let entries = archive.entries()?.raw(true);
+    let limits = ArchiveLimits {
+        max_entries: MAX_ARCHIVE_ENTRIES,
+        max_member_bytes: MAX_ARCHIVE_ENTRY_BYTES,
+        max_total_bytes: MAX_ARCHIVE_EXPANDED_BYTES,
+        max_metadata_bytes: MAX_ARCHIVE_METADATA_BYTES,
+    };
+    let mut budget = ArchiveBudget::new(limits);
     let mut out = Vec::new();
 
     for entry in entries {
-        let entry = entry?;
-        if !entry.header().entry_type().is_file() || entry.size() > MAX_ARCHIVE_ENTRY_BYTES {
+        let mut entry = entry.map_err(|_| BioMcpError::SourceUnavailable {
+            source_name: PMC_OA_API.to_string(),
+            reason: "PMC OA archive failed its resource limit or metadata policy.".to_string(),
+            suggestion: "Try another full-text source or retry later.".to_string(),
+        })?;
+        let accounted = budget
+            .account(&mut entry)
+            .map_err(|_| BioMcpError::SourceUnavailable {
+                source_name: PMC_OA_API.to_string(),
+                reason: "PMC OA archive failed its resource limit or metadata policy.".to_string(),
+                suggestion: "Try another full-text source or retry later.".to_string(),
+            })?;
+        let ArchiveEntry::Regular(path) = accounted else {
             continue;
-        }
-        let path = entry.path()?;
+        };
         let Some(filename) = safe_archive_name(&path) else {
             continue;
         };
 
         let mut bytes = Vec::new();
-        let mut reader = entry.take(MAX_ARCHIVE_ENTRY_BYTES + 1);
-        reader.read_to_end(&mut bytes)?;
-        if bytes.len() as u64 > MAX_ARCHIVE_ENTRY_BYTES || bytes.is_empty() {
+        entry.read_to_end(&mut bytes)?;
+        if bytes.is_empty() {
             continue;
         }
         let is_xml = is_xml_name(&filename);
@@ -329,6 +350,13 @@ fn extract_archive_entries(tgz_bytes: &[u8]) -> Result<Vec<PmcOaArchiveEntry>, B
         });
     }
 
+    budget
+        .finish()
+        .map_err(|_| BioMcpError::SourceUnavailable {
+            source_name: PMC_OA_API.to_string(),
+            reason: "PMC OA archive failed its resource limit or metadata policy.".to_string(),
+            suggestion: "Try another full-text source or retry later.".to_string(),
+        })?;
     Ok(out)
 }
 

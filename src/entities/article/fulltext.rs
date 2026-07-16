@@ -362,9 +362,14 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
         Ok(client) => client,
         Err(err) => return FulltextStepOutcome::HardError(err),
     };
-    let response = match crate::sources::apply_no_store(client.get(url.clone()))
-        .send()
-        .await
+    let request = crate::sources::apply_no_store(client.get(url.clone()));
+    let response = match crate::sources::with_response_body_limit(
+        request,
+        PDF_MAX_BODY_BYTES,
+        ARTICLE_FULLTEXT_API,
+    )
+    .send()
+    .await
     {
         Ok(response) => response,
         Err(_) => {

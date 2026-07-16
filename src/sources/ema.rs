@@ -810,7 +810,9 @@ async fn sync_feed(root: &Path, plan: FeedSyncPlan) -> Result<(), BioMcpError> {
         // revalidation with the cached ETag/Last-Modified metadata.
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
     }
-    let response = request.send().await?;
+    let response = crate::sources::with_response_body_limit(request, EMA_MAX_BODY_BYTES, EMA_API)
+        .send()
+        .await?;
     let status = response.status();
     let content_type = response
         .headers()

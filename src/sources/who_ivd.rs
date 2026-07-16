@@ -305,7 +305,10 @@ async fn sync_export(root: &Path, mode: WhoIvdSyncMode) -> Result<(), BioMcpErro
     if matches!(mode, WhoIvdSyncMode::Force) {
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
     }
-    let response = request.send().await?;
+    let response =
+        crate::sources::with_response_body_limit(request, WHO_IVD_MAX_BODY_BYTES, WHO_IVD_API)
+            .send()
+            .await?;
     let status = response.status();
     let content_type = response
         .headers()

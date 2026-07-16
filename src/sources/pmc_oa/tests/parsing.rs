@@ -2,8 +2,9 @@
 //! parsers. No network, no server.
 
 use super::super::{
-    MAX_ARCHIVE_ENTRY_BYTES, PmcOaArchivePackage, decode_archive_bytes, decode_text,
-    extract_archive_entries, extract_first_nxml, parse_archive_manifest_xml, safe_archive_name,
+    MAX_ARCHIVE_ENTRIES, MAX_ARCHIVE_ENTRY_BYTES, PmcOaArchivePackage, decode_archive_bytes,
+    decode_text, extract_archive_entries, extract_first_nxml, parse_archive_manifest_xml,
+    safe_archive_name,
 };
 use crate::error::BioMcpError;
 use flate2::Compression;
@@ -24,6 +25,27 @@ fn tgz_with_entries(entries: &[(&str, &[u8])]) -> Vec<u8> {
             header.set_cksum();
             builder
                 .append_data(&mut header, *name, *body)
+                .expect("archive entry should append");
+        }
+        builder.finish().expect("tar should finish");
+    }
+
+    let mut gz = GzEncoder::new(Vec::new(), Compression::default());
+    gz.write_all(&tar_buf).expect("gzip should write tar");
+    gz.finish().expect("gzip should finish")
+}
+
+fn tgz_with_numbered_entries(count: usize) -> Vec<u8> {
+    let mut tar_buf = Vec::new();
+    {
+        let mut builder = Builder::new(&mut tar_buf);
+        for index in 0..count {
+            let mut header = Header::new_gnu();
+            header.set_size(1);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder
+                .append_data(&mut header, format!("entry-{index}.txt"), &b"x"[..])
                 .expect("archive entry should append");
         }
         builder.finish().expect("tar should finish");
@@ -133,7 +155,7 @@ fn archive_package_enumerates_non_xml_and_preserves_binary_bytes() {
 }
 
 #[test]
-fn extract_archive_entries_rejects_unsafe_empty_and_oversized_members() {
+fn extract_archive_entries_skips_unsafe_and_empty_members_but_rejects_oversized_members() {
     assert_eq!(
         safe_archive_name(Path::new("safe\\readme.txt")).as_deref(),
         Some("safe/readme.txt")
@@ -143,15 +165,13 @@ fn extract_archive_entries_rejects_unsafe_empty_and_oversized_members() {
     assert!(safe_archive_name(Path::new("/absolute.csv")).is_none());
     assert!(safe_archive_name(Path::new("C:\\absolute.csv")).is_none());
 
-    let oversized = vec![b'x'; MAX_ARCHIVE_ENTRY_BYTES as usize + 1];
     let tgz = tgz_with_entries(&[
         ("article.nxml", &b"<article/>"[..]),
         ("safe/readme.txt", b"ok"),
         ("empty.bin", b""),
-        ("huge.bin", oversized.as_slice()),
     ]);
 
-    let entries = extract_archive_entries(&tgz).expect("archive should parse");
+    let entries = extract_archive_entries(&tgz).expect("in-bound archive should parse");
     let names = entries
         .iter()
         .map(|entry| entry.filename.as_str())
@@ -159,7 +179,35 @@ fn extract_archive_entries_rejects_unsafe_empty_and_oversized_members() {
     assert!(names.contains(&"article.nxml"));
     assert!(names.contains(&"safe/readme.txt"));
     assert!(!names.contains(&"empty.bin"));
-    assert!(!names.contains(&"huge.bin"));
+
+    let oversized = vec![b'x'; MAX_ARCHIVE_ENTRY_BYTES as usize + 1];
+    let oversized_tgz = tgz_with_entries(&[("huge.bin", oversized.as_slice())]);
+    let err = extract_archive_entries(&oversized_tgz)
+        .expect_err("archive member resource cap should reject the package");
+    assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
+    assert!(err.to_string().contains("resource limit"));
+}
+
+#[test]
+fn extract_archive_entries_accepts_exact_member_count_limit() {
+    let tgz = tgz_with_numbered_entries(MAX_ARCHIVE_ENTRIES as usize);
+
+    let entries = extract_archive_entries(&tgz).expect("exact member count should pass");
+
+    assert_eq!(entries.len(), MAX_ARCHIVE_ENTRIES as usize);
+}
+
+#[test]
+fn extract_archive_entries_rejects_too_many_members() {
+    let tgz = tgz_with_numbered_entries(MAX_ARCHIVE_ENTRIES as usize + 1);
+
+    let err = extract_archive_entries(&tgz).expect_err("archive-wide member cap should reject");
+
+    assert!(
+        matches!(err, BioMcpError::SourceUnavailable { .. }),
+        "archive resource limits should be source-unavailable, got {err:?}"
+    );
+    assert!(err.to_string().contains("resource limit"));
 }
 
 #[test]

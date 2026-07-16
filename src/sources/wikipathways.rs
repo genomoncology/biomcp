@@ -32,7 +32,14 @@ impl WikiPathwaysClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let req = crate::sources::apply_cache_mode(req);
+        let resp = crate::sources::with_response_body_limit(
+            req,
+            WIKIPATHWAYS_MAX_BODY_BYTES,
+            WIKIPATHWAYS_API,
+        )
+        .send()
+        .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
         let bytes = crate::sources::read_limited_body_with_limit(

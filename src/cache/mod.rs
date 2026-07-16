@@ -21,7 +21,7 @@ pub(crate) use limits::{
     inspect_filesystem_space, summarize_cache_usage,
 };
 pub(crate) use manager::SizeAwareCacheManager;
-pub(crate) use migration::{MigrationOutcome, migrate_http_cache};
+pub(crate) use migration::{MigrationOutcome, ensure_body_limited_cache_epoch, migrate_http_cache};
 #[allow(unused_imports)]
 pub(crate) use planner::{
     CacheBlob, CacheCleanupPlan, CacheEntry, CachePlannerError, CacheSnapshot, plan_age_cleanup,

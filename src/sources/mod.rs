@@ -8,14 +8,16 @@ use std::time::Duration;
 
 use http::Extensions;
 use http_cache_reqwest::{Cache, CacheMode, CacheOptions, HttpCache, HttpCacheOptions};
-use reqwest::StatusCode;
-use reqwest::header::{CACHE_CONTROL, HeaderMap, HeaderValue, RETRY_AFTER};
+use reqwest::header::{CACHE_CONTROL, CONTENT_LENGTH, HeaderMap, HeaderValue, RETRY_AFTER};
+use reqwest::{ResponseBuilderExt, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Middleware, Next, RequestBuilder};
 use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
 use serde::de::DeserializeOwned;
 use tracing::warn;
 
 use crate::error::BioMcpError;
+
+mod archive_budget;
 
 pub(crate) mod alphagenome;
 pub(crate) mod cancerhotspots;
@@ -478,13 +480,115 @@ impl Middleware for SemanticScholarSharedPoolRateLimitMiddleware {
     }
 }
 
-fn apply_migration_non_fatal<M, W>(cache_root: &Path, migrate: M, warn_fn: W)
+#[derive(Clone, Copy, Debug)]
+struct ResponseBodyPolicy {
+    source_name: &'static str,
+    max_bytes: usize,
+}
+
+#[derive(Debug, thiserror::Error)]
+#[error("biomcp-response-body-limit|{source_name}|{max_bytes}")]
+pub(crate) struct ResponseBodyLimitError {
+    pub(crate) source_name: &'static str,
+    pub(crate) max_bytes: usize,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct ResponseBodyLimitMiddleware;
+
+#[async_trait::async_trait]
+impl Middleware for ResponseBodyLimitMiddleware {
+    async fn handle(
+        &self,
+        req: reqwest::Request,
+        extensions: &mut Extensions,
+        next: Next<'_>,
+    ) -> reqwest_middleware::Result<reqwest::Response> {
+        let policy =
+            extensions
+                .get::<ResponseBodyPolicy>()
+                .copied()
+                .unwrap_or(ResponseBodyPolicy {
+                    source_name: "remote source",
+                    max_bytes: DEFAULT_MAX_BODY_BYTES,
+                });
+        let mut response = next.run(req, extensions).await?;
+        if response
+            .headers()
+            .get(CONTENT_LENGTH)
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.parse::<u64>().ok())
+            .is_some_and(|length| length > policy.max_bytes as u64)
+        {
+            return Err(reqwest_middleware::Error::middleware(
+                ResponseBodyLimitError {
+                    source_name: policy.source_name,
+                    max_bytes: policy.max_bytes,
+                },
+            ));
+        }
+
+        let status = response.status();
+        let version = response.version();
+        let headers = response.headers().clone();
+        let url = response.url().clone();
+        let mut body = Vec::new();
+        while let Some(chunk) = response.chunk().await? {
+            let next_len = body.len().checked_add(chunk.len()).ok_or_else(|| {
+                reqwest_middleware::Error::middleware(ResponseBodyLimitError {
+                    source_name: policy.source_name,
+                    max_bytes: policy.max_bytes,
+                })
+            })?;
+            if next_len > policy.max_bytes {
+                return Err(reqwest_middleware::Error::middleware(
+                    ResponseBodyLimitError {
+                        source_name: policy.source_name,
+                        max_bytes: policy.max_bytes,
+                    },
+                ));
+            }
+            body.extend_from_slice(&chunk);
+        }
+
+        let mut rebuilt: reqwest::Response = http::Response::builder()
+            .status(status)
+            .version(version)
+            .url(url)
+            .body(reqwest::Body::from(body))
+            .expect("validated response metadata")
+            .into();
+        *rebuilt.headers_mut() = headers;
+        Ok(rebuilt)
+    }
+}
+
+pub(crate) fn with_response_body_limit(
+    request: RequestBuilder,
+    max_bytes: usize,
+    source_name: &'static str,
+) -> RequestBuilder {
+    request.with_extension(ResponseBodyPolicy {
+        source_name,
+        max_bytes,
+    })
+}
+
+fn apply_migration_non_fatal<M, W>(
+    cache_root: &Path,
+    migrate: M,
+    warn_fn: W,
+) -> Option<crate::cache::MigrationOutcome>
 where
     M: FnOnce(&Path) -> std::io::Result<crate::cache::MigrationOutcome>,
     W: FnOnce(&std::io::Error),
 {
-    if let Err(err) = migrate(cache_root) {
-        warn_fn(&err);
+    match migrate(cache_root) {
+        Ok(outcome) => Some(outcome),
+        Err(err) => {
+            warn_fn(&err);
+            None
+        }
     }
 }
 
@@ -499,12 +603,20 @@ fn build_http_client_with_config(
     provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     let cache_root = config.cache_root.clone();
-    apply_migration_non_fatal(&cache_root, crate::cache::migrate_http_cache, |err| {
-        warn!(
-            cache_root = %cache_root.display(),
-            "HTTP cache directory migration failed; continuing with normal cache initialization: {err}"
-        );
-    });
+    let migration = apply_migration_non_fatal(
+        &cache_root,
+        crate::cache::migrate_http_cache,
+        |err| {
+            warn!(
+                cache_root = %cache_root.display(),
+                "HTTP cache directory migration failed; continuing with normal cache initialization: {err}"
+            );
+        },
+    );
+    crate::cache::ensure_body_limited_cache_epoch(
+        &cache_root,
+        matches!(migration, Some(crate::cache::MigrationOutcome::Renamed)),
+    )?;
     let cache_path = cache_root.join("http");
     std::fs::create_dir_all(&cache_path)?;
 
@@ -557,7 +669,10 @@ fn build_http_client_with_config(
             builder.with(SemanticScholarSharedPoolRateLimitMiddleware)
         }
     };
-    Ok(builder.with(rate_limit::RateLimitMiddleware::new()).build())
+    Ok(builder
+        .with(rate_limit::RateLimitMiddleware::new())
+        .with(ResponseBodyLimitMiddleware)
+        .build())
 }
 
 #[cfg(test)]
@@ -900,7 +1015,13 @@ pub(crate) async fn read_limited_body_with_limit(
     let mut body: Vec<u8> = Vec::new();
 
     while let Some(chunk) = resp.chunk().await? {
-        let next_len = body.len().saturating_add(chunk.len());
+        let next_len =
+            body.len()
+                .checked_add(chunk.len())
+                .ok_or_else(|| BioMcpError::BodyLimit {
+                    source_name: api.to_string(),
+                    max_bytes,
+                })?;
         if next_len > max_bytes {
             return Err(BioMcpError::BodyLimit {
                 source_name: api.to_string(),
@@ -1114,6 +1235,143 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn shared_body_limit_rejects_before_cache_materialization() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let cache_root = TempDirGuard::new("body-limit-cache");
+        let client = build_http_client_with_config(
+            SharedHttpClientKind::Default,
+            test_cache_config(cache_root.path()),
+            None,
+        )
+        .expect("test client");
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind test listener");
+        let address = listener.local_addr().expect("test listener address");
+        let server = tokio::spawn(async move {
+            let mut handlers = Vec::new();
+            for request_number in 0..4 {
+                let (mut stream, _) = listener.accept().await.expect("accept request");
+                handlers.push(tokio::spawn(async move {
+                    let mut request = [0_u8; 1024];
+                    let _ = stream.read(&mut request).await.expect("read request");
+                    if request_number == 0 {
+                        stream
+                            .write_all(
+                                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nCache-Control: public, max-age=3600\r\nConnection: close\r\n\r\nok",
+                            )
+                            .await
+                            .expect("write in-bound response");
+                        return;
+                    }
+                    if request_number == 1 {
+                        let custom_size = DEFAULT_MAX_BODY_BYTES + 1;
+                        stream
+                            .write_all(
+                                format!(
+                                    "HTTP/1.1 200 OK\r\nContent-Length: {custom_size}\r\nConnection: close\r\n\r\n"
+                                )
+                                .as_bytes(),
+                            )
+                            .await
+                            .expect("write custom-limit headers");
+                        stream
+                            .write_all(&vec![b'c'; custom_size])
+                            .await
+                            .expect("write custom-limit body");
+                        return;
+                    }
+
+                    stream
+                        .write_all(b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nCache-Control: public, max-age=3600\r\n\r\n")
+                        .await
+                        .expect("write oversized headers without a declared length");
+                    stream
+                        .write_all(
+                            format!("{:x}\r\n", DEFAULT_MAX_BODY_BYTES + 1).as_bytes(),
+                        )
+                        .await
+                        .expect("write oversized chunk header");
+                    stream
+                        .write_all(&vec![b'x'; DEFAULT_MAX_BODY_BYTES + 1])
+                        .await
+                        .expect("write bytes through the rejection boundary");
+                    stream.write_all(b"\r\n").await.expect("finish chunk");
+                    std::future::pending::<()>().await;
+                }));
+            }
+            handlers
+        });
+
+        let in_bound_url = format!("http://{address}/in-bound");
+        let in_bound = client
+            .get(&in_bound_url)
+            .send()
+            .await
+            .expect("in-bound response should pass through middleware");
+        assert_eq!(in_bound.status(), StatusCode::OK);
+        assert_eq!(in_bound.version(), http::Version::HTTP_11);
+        assert_eq!(
+            in_bound
+                .headers()
+                .get(CACHE_CONTROL)
+                .and_then(|value| value.to_str().ok()),
+            Some("public, max-age=3600")
+        );
+        assert_eq!(in_bound.url().as_str(), in_bound_url);
+        assert_eq!(in_bound.bytes().await.expect("read in-bound body"), "ok");
+
+        let custom_request = client.get(format!("http://{address}/custom-limit"));
+        let custom_response = with_response_body_limit(
+            custom_request,
+            DEFAULT_MAX_BODY_BYTES + 1,
+            "custom-limit-test",
+        )
+        .send()
+        .await
+        .expect("custom limit above the default should remain effective");
+        assert_eq!(
+            custom_response
+                .bytes()
+                .await
+                .expect("read custom-limit body")
+                .len(),
+            DEFAULT_MAX_BODY_BYTES + 1
+        );
+
+        for _ in 0..2 {
+            let send_result = tokio::time::timeout(
+                Duration::from_secs(2),
+                client.get(format!("http://{address}/oversized")).send(),
+            )
+            .await
+            .expect("limiter should reject at max+1 without waiting for EOF");
+            let err = BioMcpError::from(
+                send_result.expect_err("oversized response should fail before caching"),
+            );
+            assert!(
+                matches!(
+                    err,
+                    BioMcpError::BodyLimit {
+                        max_bytes: DEFAULT_MAX_BODY_BYTES,
+                        ..
+                    }
+                ),
+                "expected typed body limit, got {err:?}"
+            );
+        }
+        let handlers = tokio::time::timeout(Duration::from_secs(2), server)
+            .await
+            .expect("all requests should reach transport")
+            .expect("test server should finish accepting requests");
+        for handler in handlers {
+            handler.abort();
+            let _ = handler.await;
+        }
+    }
+
+    #[tokio::test]
     async fn read_limited_body_with_limit_rejects_oversized_body() {
         let err = read_limited_body_with_limit(
             test_response(StatusCode::OK, &[], "abcdef"),
@@ -1270,7 +1528,7 @@ mod tests {
     fn apply_migration_non_fatal_warns_and_continues_on_error() {
         let mut warned: Vec<std::io::ErrorKind> = Vec::new();
 
-        apply_migration_non_fatal(
+        let outcome = apply_migration_non_fatal(
             Path::new("/unused"),
             |_| {
                 Err(std::io::Error::new(
@@ -1281,11 +1539,12 @@ mod tests {
             |err: &std::io::Error| warned.push(err.kind()),
         );
 
+        assert!(outcome.is_none());
         assert_eq!(warned, vec![std::io::ErrorKind::PermissionDenied]);
     }
 
     #[test]
-    fn build_http_client_renames_legacy_http_cache_before_client_init() {
+    fn build_http_client_migrates_then_clears_pre_limit_legacy_cache() {
         let root = TempDirGuard::new("http-cache-migration");
         let override_root = root.path().join("override-root");
         let legacy_dir = override_root.join("http-cacache");
@@ -1300,7 +1559,35 @@ mod tests {
             "client should initialize even with legacy cache migration"
         );
         assert!(override_root.join("http").is_dir());
-        assert!(override_root.join("http").join("sentinel.txt").is_file());
+        assert!(!override_root.join("http").join("sentinel.txt").exists());
         assert!(!override_root.join("http-cacache").exists());
+    }
+
+    #[test]
+    fn build_http_client_does_not_restore_legacy_cache_after_epoch_and_clear() {
+        let root = TempDirGuard::new("http-cache-epoch-clear");
+        let cache_root = root.path().join("cache-root");
+        std::fs::create_dir_all(cache_root.join("http-cacache")).expect("create legacy cache");
+        std::fs::write(
+            cache_root.join("http-cacache").join("legacy-sentinel"),
+            b"unbounded legacy response",
+        )
+        .expect("seed legacy entry");
+        std::fs::write(
+            cache_root.join(".body-limit-cache-v1"),
+            b"bounded-response-body-v1\n",
+        )
+        .expect("seed epoch marker from prior initialization");
+
+        build_http_client_with_config(
+            SharedHttpClientKind::Default,
+            test_cache_config(&cache_root),
+            None,
+        )
+        .expect("client should repair legacy cache state");
+
+        assert!(cache_root.join("http").is_dir());
+        assert!(!cache_root.join("http").join("legacy-sentinel").exists());
+        assert!(!cache_root.join("http-cacache").exists());
     }
 }

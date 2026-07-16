@@ -8,7 +8,7 @@ pub enum BioMcpError {
     Http(#[from] reqwest::Error),
 
     #[error("HTTP middleware error: {0}")]
-    HttpMiddleware(#[from] reqwest_middleware::Error),
+    HttpMiddleware(reqwest_middleware::Error),
 
     #[error("API error from {api}: {message}")]
     Api { api: String, message: String },
@@ -72,6 +72,48 @@ pub enum BioMcpError {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+}
+
+impl From<reqwest_middleware::Error> for BioMcpError {
+    fn from(err: reqwest_middleware::Error) -> Self {
+        if let reqwest_middleware::Error::Middleware(source) = &err {
+            if let Some(limit) = source
+                .downcast_ref::<crate::sources::ResponseBodyLimitError>()
+                .or_else(|| {
+                    source.chain().find_map(|cause| {
+                        cause.downcast_ref::<crate::sources::ResponseBodyLimitError>()
+                    })
+                })
+            {
+                return Self::BodyLimit {
+                    source_name: limit.source_name.to_string(),
+                    max_bytes: limit.max_bytes,
+                };
+            }
+
+            // http-cache wraps the inner BoxError in anyhow and does not retain the
+            // concrete type in its source chain. This private marker carries only the
+            // same payload-free fields as ResponseBodyLimitError.
+            if let Some(marker) = source
+                .chain()
+                .map(ToString::to_string)
+                .find(|message| message.starts_with("biomcp-response-body-limit|"))
+            {
+                let mut parts = marker.split('|');
+                if parts.next() == Some("biomcp-response-body-limit")
+                    && let (Some(source_name), Some(max_bytes), None) =
+                        (parts.next(), parts.next(), parts.next())
+                    && let Ok(max_bytes) = max_bytes.parse()
+                {
+                    return Self::BodyLimit {
+                        source_name: source_name.to_string(),
+                        max_bytes,
+                    };
+                }
+            }
+        }
+        Self::HttpMiddleware(err)
+    }
 }
 
 #[cfg(test)]

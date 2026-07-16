@@ -631,7 +631,9 @@ async fn sync_export(
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
     }
 
-    let response = request.send().await?;
+    let response = crate::sources::with_response_body_limit(request, max_body_bytes, CVX_API)
+        .send()
+        .await?;
     let status = response.status();
     let content_type = response
         .headers()
