@@ -574,13 +574,21 @@ pub(crate) fn with_response_body_limit(
     })
 }
 
-fn apply_migration_non_fatal<M, W>(cache_root: &Path, migrate: M, warn_fn: W)
+fn apply_migration_non_fatal<M, W>(
+    cache_root: &Path,
+    migrate: M,
+    warn_fn: W,
+) -> Option<crate::cache::MigrationOutcome>
 where
     M: FnOnce(&Path) -> std::io::Result<crate::cache::MigrationOutcome>,
     W: FnOnce(&std::io::Error),
 {
-    if let Err(err) = migrate(cache_root) {
-        warn_fn(&err);
+    match migrate(cache_root) {
+        Ok(outcome) => Some(outcome),
+        Err(err) => {
+            warn_fn(&err);
+            None
+        }
     }
 }
 
@@ -595,13 +603,20 @@ fn build_http_client_with_config(
     provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     let cache_root = config.cache_root.clone();
-    apply_migration_non_fatal(&cache_root, crate::cache::migrate_http_cache, |err| {
-        warn!(
-            cache_root = %cache_root.display(),
-            "HTTP cache directory migration failed; continuing with normal cache initialization: {err}"
-        );
-    });
-    crate::cache::ensure_body_limited_cache_epoch(&cache_root)?;
+    let migration = apply_migration_non_fatal(
+        &cache_root,
+        crate::cache::migrate_http_cache,
+        |err| {
+            warn!(
+                cache_root = %cache_root.display(),
+                "HTTP cache directory migration failed; continuing with normal cache initialization: {err}"
+            );
+        },
+    );
+    crate::cache::ensure_body_limited_cache_epoch(
+        &cache_root,
+        matches!(migration, Some(crate::cache::MigrationOutcome::Renamed)),
+    )?;
     let cache_path = cache_root.join("http");
     std::fs::create_dir_all(&cache_path)?;
 
@@ -1513,7 +1528,7 @@ mod tests {
     fn apply_migration_non_fatal_warns_and_continues_on_error() {
         let mut warned: Vec<std::io::ErrorKind> = Vec::new();
 
-        apply_migration_non_fatal(
+        let outcome = apply_migration_non_fatal(
             Path::new("/unused"),
             |_| {
                 Err(std::io::Error::new(
@@ -1524,6 +1539,7 @@ mod tests {
             |err: &std::io::Error| warned.push(err.kind()),
         );
 
+        assert!(outcome.is_none());
         assert_eq!(warned, vec![std::io::ErrorKind::PermissionDenied]);
     }
 
@@ -1545,5 +1561,33 @@ mod tests {
         assert!(override_root.join("http").is_dir());
         assert!(!override_root.join("http").join("sentinel.txt").exists());
         assert!(!override_root.join("http-cacache").exists());
+    }
+
+    #[test]
+    fn build_http_client_does_not_restore_legacy_cache_after_epoch_and_clear() {
+        let root = TempDirGuard::new("http-cache-epoch-clear");
+        let cache_root = root.path().join("cache-root");
+        std::fs::create_dir_all(cache_root.join("http-cacache")).expect("create legacy cache");
+        std::fs::write(
+            cache_root.join("http-cacache").join("legacy-sentinel"),
+            b"unbounded legacy response",
+        )
+        .expect("seed legacy entry");
+        std::fs::write(
+            cache_root.join(".body-limit-cache-v1"),
+            b"bounded-response-body-v1\n",
+        )
+        .expect("seed epoch marker from prior initialization");
+
+        build_http_client_with_config(
+            SharedHttpClientKind::Default,
+            test_cache_config(&cache_root),
+            None,
+        )
+        .expect("client should repair legacy cache state");
+
+        assert!(cache_root.join("http").is_dir());
+        assert!(!cache_root.join("http").join("legacy-sentinel").exists());
+        assert!(!cache_root.join("http-cacache").exists());
     }
 }

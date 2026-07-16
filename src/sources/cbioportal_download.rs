@@ -34,6 +34,7 @@ pub struct CBioPortalDownloadClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
     download_idle_timeout: Duration,
+    max_archive_download_bytes: usize,
 }
 
 impl CBioPortalDownloadClient {
@@ -42,6 +43,7 @@ impl CBioPortalDownloadClient {
             client: datahub_client(DATAHUB_CONNECT_TIMEOUT, None)?,
             base: crate::sources::env_base(DATAHUB_BASE, DATAHUB_BASE_ENV),
             download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT,
+            max_archive_download_bytes: MAX_ARCHIVE_DOWNLOAD_BYTES,
         })
     }
 
@@ -99,7 +101,7 @@ impl CBioPortalDownloadClient {
         }
         if resp
             .content_length()
-            .is_some_and(|length| length > MAX_ARCHIVE_DOWNLOAD_BYTES as u64)
+            .is_some_and(|length| length > self.max_archive_download_bytes as u64)
         {
             return Err(BioMcpError::SourceUnavailable {
                 source_name: "cBioPortal DataHub".to_string(),
@@ -112,7 +114,11 @@ impl CBioPortalDownloadClient {
         loop {
             match tokio::time::timeout(self.download_idle_timeout, resp.chunk()).await {
                 Ok(Ok(Some(chunk))) => {
-                    downloaded = account_download_bytes(downloaded, chunk.len())?;
+                    downloaded = account_download_bytes(
+                        downloaded,
+                        chunk.len(),
+                        self.max_archive_download_bytes,
+                    )?;
                     file.write_all(&chunk).await?;
                 }
                 Ok(Ok(None)) => break,
@@ -194,7 +200,11 @@ impl CBioPortalDownloadClient {
     }
 }
 
-fn account_download_bytes(downloaded: usize, chunk_bytes: usize) -> Result<usize, BioMcpError> {
+fn account_download_bytes(
+    downloaded: usize,
+    chunk_bytes: usize,
+    max_archive_download_bytes: usize,
+) -> Result<usize, BioMcpError> {
     let downloaded =
         downloaded
             .checked_add(chunk_bytes)
@@ -203,7 +213,7 @@ fn account_download_bytes(downloaded: usize, chunk_bytes: usize) -> Result<usize
                 reason: "Archive download exceeded its resource limit.".to_string(),
                 suggestion: "Retry the study download later.".to_string(),
             })?;
-    if downloaded > MAX_ARCHIVE_DOWNLOAD_BYTES {
+    if downloaded > max_archive_download_bytes {
         return Err(BioMcpError::SourceUnavailable {
             source_name: "cBioPortal DataHub".to_string(),
             reason: "Archive download exceeded its resource limit.".to_string(),

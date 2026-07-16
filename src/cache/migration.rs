@@ -57,10 +57,14 @@ pub(crate) fn migrate_http_cache(cache_root: &Path) -> Result<MigrationOutcome, 
     Ok(MigrationOutcome::Renamed)
 }
 
-pub(crate) fn ensure_body_limited_cache_epoch(cache_root: &Path) -> Result<(), io::Error> {
+pub(crate) fn ensure_body_limited_cache_epoch(
+    cache_root: &Path,
+    legacy_cache_was_renamed: bool,
+) -> Result<(), io::Error> {
     fs::create_dir_all(cache_root)?;
     let marker = cache_root.join(BODY_LIMIT_CACHE_EPOCH);
-    if marker.is_file() {
+    let legacy_cache = cache_root.join("http-cacache");
+    if marker.is_file() && !legacy_cache_was_renamed && !legacy_cache.exists() {
         return Ok(());
     }
 
@@ -74,16 +78,14 @@ pub(crate) fn ensure_body_limited_cache_epoch(cache_root: &Path) -> Result<(), i
     lock.lock_exclusive()?;
 
     let result = (|| {
-        if marker.is_file() {
+        if marker.is_file() && !legacy_cache_was_renamed {
+            remove_cache_directory(&legacy_cache)?;
             return Ok(());
         }
 
         let cache_path = cache_root.join("http");
-        match fs::remove_dir_all(&cache_path) {
-            Ok(()) => {}
-            Err(err) if err.kind() == io::ErrorKind::NotFound => {}
-            Err(err) => return Err(err),
-        }
+        remove_cache_directory(&cache_path)?;
+        remove_cache_directory(&legacy_cache)?;
         fs::create_dir_all(&cache_path)?;
 
         let temporary = cache_root.join(format!(
@@ -93,11 +95,22 @@ pub(crate) fn ensure_body_limited_cache_epoch(cache_root: &Path) -> Result<(), i
         let mut file = File::create(&temporary)?;
         file.write_all(b"bounded-response-body-v1\n")?;
         file.sync_all()?;
+        if marker.exists() {
+            fs::remove_file(&marker)?;
+        }
         fs::rename(&temporary, &marker)?;
         Ok(())
     })();
     let unlock_result = FileExt::unlock(&lock);
     result.and(unlock_result)
+}
+
+fn remove_cache_directory(path: &Path) -> Result<(), io::Error> {
+    match fs::remove_dir_all(path) {
+        Ok(()) => Ok(()),
+        Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(()),
+        Err(err) => Err(err),
+    }
 }
 
 #[cfg(test)]
@@ -225,11 +238,11 @@ mod tests {
         std::fs::create_dir_all(&cache).expect("create cache");
         std::fs::write(cache.join("legacy-entry"), b"legacy").expect("seed legacy entry");
 
-        ensure_body_limited_cache_epoch(root.path()).expect("migrate cache epoch");
+        ensure_body_limited_cache_epoch(root.path(), false).expect("migrate cache epoch");
         assert!(!cache.join("legacy-entry").exists());
 
         std::fs::write(cache.join("bounded-entry"), b"bounded").expect("seed bounded entry");
-        ensure_body_limited_cache_epoch(root.path()).expect("repeat cache epoch");
+        ensure_body_limited_cache_epoch(root.path(), false).expect("repeat cache epoch");
         assert!(cache.join("bounded-entry").is_file());
     }
 
@@ -240,7 +253,7 @@ mod tests {
         let workers = (0..8)
             .map(|_| {
                 let root_path = std::sync::Arc::clone(&root_path);
-                std::thread::spawn(move || ensure_body_limited_cache_epoch(&root_path))
+                std::thread::spawn(move || ensure_body_limited_cache_epoch(&root_path, false))
             })
             .collect::<Vec<_>>();
         for worker in workers {

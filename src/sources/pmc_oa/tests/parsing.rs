@@ -2,8 +2,9 @@
 //! parsers. No network, no server.
 
 use super::super::{
-    MAX_ARCHIVE_ENTRY_BYTES, PmcOaArchivePackage, decode_archive_bytes, decode_text,
-    extract_archive_entries, extract_first_nxml, parse_archive_manifest_xml, safe_archive_name,
+    MAX_ARCHIVE_ENTRIES, MAX_ARCHIVE_ENTRY_BYTES, PmcOaArchivePackage, decode_archive_bytes,
+    decode_text, extract_archive_entries, extract_first_nxml, parse_archive_manifest_xml,
+    safe_archive_name,
 };
 use crate::error::BioMcpError;
 use flate2::Compression;
@@ -188,8 +189,17 @@ fn extract_archive_entries_skips_unsafe_and_empty_members_but_rejects_oversized_
 }
 
 #[test]
+fn extract_archive_entries_accepts_exact_member_count_limit() {
+    let tgz = tgz_with_numbered_entries(MAX_ARCHIVE_ENTRIES as usize);
+
+    let entries = extract_archive_entries(&tgz).expect("exact member count should pass");
+
+    assert_eq!(entries.len(), MAX_ARCHIVE_ENTRIES as usize);
+}
+
+#[test]
 fn extract_archive_entries_rejects_too_many_members() {
-    let tgz = tgz_with_numbered_entries(257);
+    let tgz = tgz_with_numbered_entries(MAX_ARCHIVE_ENTRIES as usize + 1);
 
     let err = extract_archive_entries(&tgz).expect_err("archive-wide member cap should reject");
 

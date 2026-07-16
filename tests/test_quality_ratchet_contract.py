@@ -971,36 +971,54 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
         encoding="utf-8",
     )
     (sources / "cbioportal_download.rs").write_text(
-        "MAX_ARCHIVE_DOWNLOAD_BYTES\n"
-        "account_download_bytes(downloaded, chunk.len())?;\n"
+        "max_archive_download_bytes: MAX_ARCHIVE_DOWNLOAD_BYTES\n"
+        "response.content_length().is_some_and(\n"
+        "    |length| length > self.max_archive_download_bytes as u64\n"
+        ")\n"
+        "File::create(dest);\n"
+        "account_download_bytes(\n"
+        "    downloaded, chunk.len(), self.max_archive_download_bytes\n"
+        ")?;\n"
         "file.write_all(&chunk);\n"
+        "max_entries: MAX_ARCHIVE_ENTRIES,\n"
+        "max_member_bytes: MAX_ARCHIVE_MEMBER_BYTES,\n"
+        "max_total_bytes: MAX_ARCHIVE_EXPANDED_BYTES,\n"
+        "max_metadata_bytes: MAX_ARCHIVE_METADATA_BYTES\n"
         "ArchiveBudget::new(limits); archive.entries()?.raw(true);",
         encoding="utf-8",
     )
     (sources / "pmc_oa.rs").write_text(
-        "with_response_body_limit(req, MAX_TGZ_BYTES, api);\n"
+        "with_response_body_limit(request, MAX_TGZ_BYTES, PMC_OA_API);\n"
+        "max_entries: MAX_ARCHIVE_ENTRIES,\n"
+        "max_member_bytes: MAX_ARCHIVE_ENTRY_BYTES,\n"
+        "max_total_bytes: MAX_ARCHIVE_EXPANDED_BYTES,\n"
+        "max_metadata_bytes: MAX_ARCHIVE_METADATA_BYTES\n"
         "ArchiveBudget::new(limits); archive.entries()?.raw(true);",
         encoding="utf-8",
     )
     (sources / "clinicaltrials.rs").write_text("bounded bytes", encoding="utf-8")
     (sources / "pubmed.rs").write_text("bounded bytes", encoding="utf-8")
-    for name in (
-        "ema.rs",
-        "europepmc.rs",
-        "gtr.rs",
-        "wikipathways.rs",
-        "who_ivd.rs",
-        "who_pq.rs",
-        "cvx.rs",
-    ):
-        (sources / name).write_text(
-            "with_response_body_limit(req, source_limit, source_name)",
-            encoding="utf-8",
-        )
+    custom_limit_calls = {
+        "ema.rs": "with_response_body_limit(request, EMA_MAX_BODY_BYTES, EMA_API)",
+        "europepmc.rs": (
+            "with_response_body_limit(req, MAX_SUPPLEMENTARY_ZIP_BYTES, EUROPE_PMC_API)"
+        ),
+        "gtr.rs": "with_response_body_limit(request, max_body_bytes, GTR_API)",
+        "wikipathways.rs": (
+            "with_response_body_limit(req, WIKIPATHWAYS_MAX_BODY_BYTES, WIKIPATHWAYS_API)"
+        ),
+        "who_ivd.rs": (
+            "with_response_body_limit(request, WHO_IVD_MAX_BODY_BYTES, WHO_IVD_API)"
+        ),
+        "who_pq.rs": "with_response_body_limit(request, max_body_bytes, WHO_PQ_API)",
+        "cvx.rs": "with_response_body_limit(request, max_body_bytes, CVX_API)",
+    }
+    for name, call in custom_limit_calls.items():
+        (sources / name).write_text(call, encoding="utf-8")
     fulltext = tmp_path / "src/entities/article/fulltext.rs"
     fulltext.parent.mkdir(parents=True)
     fulltext.write_text(
-        "with_response_body_limit(req, PDF_MAX_BODY_BYTES, source_name)",
+        "with_response_body_limit(request, PDF_MAX_BODY_BYTES, ARTICLE_FULLTEXT_API)",
         encoding="utf-8",
     )
 
@@ -1022,6 +1040,7 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
         "read_limited_body(response, source).await?; bytes.to_vec()", encoding="utf-8"
     )
     (sources / "gtr.rs").write_text(
+        "with_response_body_limit(request, DEFAULT_MAX_BODY_BYTES, GTR_API)\n"
         "read_limited_body_with_limit(response, GTR_API, GTR_TEST_VERSION_MAX_BODY_BYTES)",
         encoding="utf-8",
     )
@@ -1030,7 +1049,10 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
     assert payload["status"] == "fail"
     assert any("inside the cache" in finding for finding in payload["findings"])
     assert any("legacy HTTP cache" in finding for finding in payload["findings"])
-    assert any("cBioPortal archive expansion" in finding for finding in payload["findings"])
+    assert any("declared archive length" in finding for finding in payload["findings"])
+    assert any(
+        "cBioPortal archive expansion" in finding for finding in payload["findings"]
+    )
     assert any("PMC OA archive" in finding for finding in payload["findings"])
     assert any("clinicaltrials.rs" in finding for finding in payload["findings"])
     assert any("pubmed.rs" in finding for finding in payload["findings"])
