@@ -51,8 +51,8 @@ without erasing the other source's result.
 
 ```bash
 ../../tools/biomcp-ci --json search adverse-event "MMR vaccine" --source all --limit 5 \
-  | jq -r '.vaers.status, .section_outcomes.faers.outcome, .section_outcomes.vaers.outcome' \
-  | mustmatch '/^(ok|empty|unavailable)\n(data|empty|degraded|unavailable)\n(data|empty|degraded|unavailable)/'
+  | jq '(.section_outcomes.faers.outcome as $faers | .section_outcomes.vaers.outcome as $vaers | (.vaers.status | IN("ok", "empty", "unavailable")) and ($faers | IN("data", "empty", "unavailable")) and (($vaers == "data" and .vaers.status == "ok") or ($vaers == "empty" and .vaers.status == "empty") or ($vaers == "unavailable" and .vaers.status == "unavailable")) and (._meta.section_sources | any(.key == "faers" and .outcome == $faers)) and (._meta.section_sources | any(.key == "vaers" and .outcome == $vaers)))' \
+  | mustmatch 'true'
 ```
 
 ## Source-Specific Limitations

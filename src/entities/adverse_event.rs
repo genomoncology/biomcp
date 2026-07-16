@@ -1028,8 +1028,8 @@ fn faers_section_outcome(status: &FaersSearchStatus) -> SectionOutcome {
 
 fn vaers_section_outcome(payload: &VaersSearchPayload) -> SectionOutcome {
     match payload.status {
-        VaersSearchStatus::Ok => SectionOutcome::data("CDC VAERS"),
-        VaersSearchStatus::Empty => SectionOutcome::empty("CDC VAERS"),
+        VaersSearchStatus::Ok => SectionOutcome::data_sources(["CDC CVX", "CDC VAERS"]),
+        VaersSearchStatus::Empty => SectionOutcome::empty_sources(["CDC CVX", "CDC VAERS"]),
         VaersSearchStatus::QueryNotVaccine | VaersSearchStatus::UnmappedVaccine => {
             SectionOutcome::empty("CDC CVX")
         }
@@ -1048,7 +1048,9 @@ fn source_search(
     if let Some(status) = &faers {
         section_outcomes.complete("faers", faers_section_outcome(status));
     }
-    if let Some(payload) = &vaers {
+    if let Some(payload) = &vaers
+        && payload.status != VaersSearchStatus::UnsupportedFilters
+    {
         section_outcomes.complete("vaers", vaers_section_outcome(payload));
     }
     AdverseEventSourceSearch {
@@ -2244,6 +2246,28 @@ mod tests {
     }
 
     #[test]
+    fn successful_vaers_outcomes_credit_identity_and_evidence_sources() {
+        for (status, expected) in [
+            (
+                VaersSearchStatus::Ok,
+                crate::entities::section_outcome::SectionOutcomeState::Data,
+            ),
+            (
+                VaersSearchStatus::Empty,
+                crate::entities::section_outcome::SectionOutcomeState::Empty,
+            ),
+        ] {
+            let outcome = vaers_section_outcome(&VaersSearchPayload::status_only(
+                status,
+                "fixture".to_string(),
+            ));
+            assert_eq!(outcome.outcome(), expected);
+            assert!(outcome.sources().iter().any(|source| source == "CDC CVX"));
+            assert!(outcome.sources().iter().any(|source| source == "CDC VAERS"));
+        }
+    }
+
+    #[test]
     fn search_with_source_all_skips_vaers_for_unsupported_filters() {
         let response = all_source_search_with_unsupported_vaers_filters(
             FaersSearchStatus::NotFound,
@@ -2255,6 +2279,14 @@ mod tests {
         assert!(matches!(response.faers, Some(FaersSearchStatus::NotFound)));
         assert_eq!(vaers.status, VaersSearchStatus::UnsupportedFilters);
         assert!(vaers.message.unwrap_or_default().contains("--reaction"));
+        assert_eq!(
+            response
+                .section_outcomes
+                .get("vaers")
+                .expect("vaers outcome")
+                .outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::NotRequested
+        );
     }
 
     #[tokio::test]

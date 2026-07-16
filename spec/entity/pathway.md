@@ -64,7 +64,7 @@ its provenance, instead of making empty vectors stand for every outcome.
 
 ```bash
 ../../tools/biomcp-ci --json get pathway R-HSA-5673001 genes events \
-  | jq '[{"entity": .section_outcomes.genes.outcome, "provenance": (._meta.section_sources | map(select(.key == "genes")) | if length == 1 then .[0].outcome else null end)}, {"entity": .section_outcomes.events.outcome, "provenance": (._meta.section_sources | map(select(.key == "events")) | if length == 1 then .[0].outcome else null end)}] | all(.[]; (.entity | IN("data", "empty", "degraded", "unavailable")) and .entity == .provenance)' \
+  | jq '[{"entity": .section_outcomes.genes.outcome, "provenance": (._meta.section_sources | map(select(.key == "genes")) | if length == 1 then .[0].outcome else null end)}, {"entity": .section_outcomes.events.outcome, "provenance": (._meta.section_sources | map(select(.key == "events")) | if length == 1 then .[0].outcome else null end)}] | all(.[]; (.entity | IN("data", "empty", "unavailable")) and .entity == .provenance)' \
   | mustmatch 'true'
 ```
 

@@ -1805,6 +1805,19 @@ fn gnomad_constraint_section(
     }
 }
 
+fn gnomad_constraint_outcome(constraint: &GeneConstraint) -> SectionOutcome {
+    if constraint.transcript.is_some()
+        || constraint.pli.is_some()
+        || constraint.loeuf.is_some()
+        || constraint.mis_z.is_some()
+        || constraint.syn_z.is_some()
+    {
+        SectionOutcome::data("gnomAD")
+    } else {
+        SectionOutcome::empty("gnomAD")
+    }
+}
+
 async fn fetch_constraint_section(
     symbol: &str,
     timeout: Duration,
@@ -1823,16 +1836,17 @@ async fn fetch_constraint_section(
     };
 
     match tokio::time::timeout(timeout, constraint_fut).await {
-        Ok(Ok(Some(constraint))) => (
-            gnomad_constraint_section(
+        Ok(Ok(Some(constraint))) => {
+            let section = gnomad_constraint_section(
                 constraint.transcript,
                 constraint.pli,
                 constraint.loeuf,
                 constraint.mis_z,
                 constraint.syn_z,
-            ),
-            SectionOutcome::data("gnomAD"),
-        ),
+            );
+            let outcome = gnomad_constraint_outcome(&section);
+            (section, outcome)
+        }
         Ok(Ok(None)) => (
             gnomad_constraint_section(None, None, None, None, None),
             SectionOutcome::empty("gnomAD"),
@@ -2394,27 +2408,23 @@ async fn populate_sections_parallel_top(
 
     if include.contains(&GeneIncludeType::Disgenet) {
         let started = Instant::now();
-        if let Err(err) = add_disgenet_section(gene).await {
-            timing.record("disgenet", started, "error");
+        let timing_outcome = if let Err(err) = add_disgenet_section(gene).await {
             warn!("DisGeNET unavailable for gene disease associations: {err}");
             gene.section_outcomes.complete(
                 GENE_SECTION_DISGENET,
                 SectionOutcome::unavailable("DisGeNET gene associations are unavailable."),
             );
-        }
-        timing.record(
-            "disgenet",
-            started,
-            if gene
-                .disgenet
-                .as_ref()
-                .is_some_and(|section| !section.associations.is_empty())
-            {
-                "data"
-            } else {
-                "empty"
-            },
-        );
+            "error"
+        } else if gene
+            .disgenet
+            .as_ref()
+            .is_some_and(|section| !section.associations.is_empty())
+        {
+            "data"
+        } else {
+            "empty"
+        };
+        timing.record("disgenet", started, timing_outcome);
     }
 
     if include.contains(&GeneIncludeType::Diagnostics) {
@@ -2833,27 +2843,23 @@ pub async fn get_with_report(
 
     if include.contains(&GeneIncludeType::Disgenet) {
         let started = Instant::now();
-        if let Err(err) = add_disgenet_section(&mut gene).await {
-            timing.record("disgenet", started, "error");
+        let timing_outcome = if let Err(err) = add_disgenet_section(&mut gene).await {
             warn!("DisGeNET unavailable for gene disease associations: {err}");
             gene.section_outcomes.complete(
                 GENE_SECTION_DISGENET,
                 SectionOutcome::unavailable("DisGeNET gene associations are unavailable."),
             );
-        }
-        timing.record(
-            "disgenet",
-            started,
-            if gene
-                .disgenet
-                .as_ref()
-                .is_some_and(|section| !section.associations.is_empty())
-            {
-                "data"
-            } else {
-                "empty"
-            },
-        );
+            "error"
+        } else if gene
+            .disgenet
+            .as_ref()
+            .is_some_and(|section| !section.associations.is_empty())
+        {
+            "data"
+        } else {
+            "empty"
+        };
+        timing.record("disgenet", started, timing_outcome);
     }
 
     if include.contains(&GeneIncludeType::Diagnostics) {
@@ -3187,6 +3193,21 @@ mod tests {
             diagnostics: None,
             diagnostics_note: None,
         }
+    }
+
+    #[test]
+    fn gnomad_constraint_without_metrics_is_healthy_empty() {
+        let empty = gnomad_constraint_section(None, None, None, None, None);
+        assert_eq!(
+            gnomad_constraint_outcome(&empty).outcome(),
+            SectionOutcomeState::Empty
+        );
+
+        let data = gnomad_constraint_section(Some("ENST0001".to_string()), None, None, None, None);
+        assert_eq!(
+            gnomad_constraint_outcome(&data).outcome(),
+            SectionOutcomeState::Data
+        );
     }
 
     #[test]

@@ -406,6 +406,21 @@ pub(super) fn search_meta(next_commands: Vec<String>) -> Option<SearchJsonMeta> 
     search_meta_with_suggestions(next_commands, None)
 }
 
+pub(super) fn search_meta_with_section_sources(
+    next_commands: Vec<String>,
+    section_sources: Vec<crate::render::provenance::SectionSource>,
+) -> Option<SearchJsonMeta> {
+    let meta = search_meta(next_commands).unwrap_or(SearchJsonMeta {
+        next_commands: Vec::new(),
+        suggestions: None,
+        workflow: None,
+        ladder: Vec::new(),
+        section_sources: Vec::new(),
+    });
+    (!meta.next_commands.is_empty() || !section_sources.is_empty())
+        .then(|| meta.with_section_sources(section_sources))
+}
+
 pub(super) fn search_meta_with_suggestions(
     next_commands: Vec<String>,
     suggestions: Option<Vec<String>>,
@@ -519,5 +534,29 @@ pub(super) fn log_pagination_truncation(observed_total: usize, offset: usize, re
             total = observed_total,
             offset, returned, "Results truncated by --limit"
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::entities::section_outcome::SectionOutcomeState;
+
+    #[test]
+    fn section_provenance_keeps_meta_when_search_has_no_next_commands() {
+        let meta = search_meta_with_section_sources(
+            Vec::new(),
+            vec![crate::render::provenance::SectionSource {
+                key: "faers".to_string(),
+                label: "Adverse events (OpenFDA FAERS)".to_string(),
+                outcome: SectionOutcomeState::Unavailable,
+                sources: Vec::new(),
+            }],
+        )
+        .expect("section provenance should create metadata");
+        let value = serde_json::to_value(meta).expect("metadata JSON");
+
+        assert_eq!(value["section_sources"][0]["key"], "faers");
+        assert_eq!(value["section_sources"][0]["outcome"], "unavailable");
     }
 }

@@ -307,7 +307,6 @@ pub(crate) async fn handle_search(
                         #[serde(skip_serializing_if = "Option::is_none")]
                         _meta: Option<crate::cli::SearchJsonMeta>,
                     }
-
                     #[derive(serde::Serialize)]
                     struct CombinedSearchResponse {
                         section_outcomes: crate::entities::section_outcome::SectionOutcomes,
@@ -360,8 +359,10 @@ pub(crate) async fn handle_search(
                                 count: results.len(),
                                 summary,
                                 results,
-                                _meta: crate::cli::search_meta(next_commands)
-                                    .map(|meta| meta.with_section_sources(section_sources)),
+                                _meta: crate::cli::search_meta_with_section_sources(
+                                    next_commands,
+                                    section_sources,
+                                ),
                             })?
                         }
                         crate::entities::adverse_event::AdverseEventSourceFilter::Vaers => {
@@ -372,8 +373,10 @@ pub(crate) async fn handle_search(
                                 source: "vaers",
                                 query: raw_query.clone(),
                                 vaers,
-                                _meta: crate::cli::search_meta(next_commands)
-                                    .map(|meta| meta.with_section_sources(section_sources)),
+                                _meta: crate::cli::search_meta_with_section_sources(
+                                    next_commands,
+                                    section_sources,
+                                ),
                             })?
                         }
                         crate::entities::adverse_event::AdverseEventSourceFilter::All => {
@@ -409,8 +412,10 @@ pub(crate) async fn handle_search(
                                 summary,
                                 results,
                                 vaers,
-                                _meta: crate::cli::search_meta(next_commands)
-                                    .map(|meta| meta.with_section_sources(section_sources)),
+                                _meta: crate::cli::search_meta_with_section_sources(
+                                    next_commands,
+                                    section_sources,
+                                ),
                             })?
                         }
                     }

@@ -12,8 +12,8 @@ that OpenFDA successfully established the empty result.
 
 ```bash
 ../../tools/biomcp-ci --json get drug fixture-drug approvals \
-  | jq '{approvals, section_outcome: .section_outcomes.approvals, section_source: (._meta.section_sources[] | select(.key == "approvals"))}' \
-  | mustmatch like '{"approvals":[],"section_outcome":{"outcome":"empty","sources":["OpenFDA Drugs@FDA"]},"section_source":{"key":"approvals","outcome":"empty","sources":["OpenFDA Drugs@FDA"]}}'
+  | jq '(.approvals == []) and (.section_outcomes.approvals == {"outcome":"empty","sources":["OpenFDA Drugs@FDA"]}) and ([._meta.section_sources[] | select(.key == "approvals") | {key,outcome,sources}] == [{"key":"approvals","outcome":"empty","sources":["OpenFDA Drugs@FDA"]}])' \
+  | mustmatch 'true'
 ```
 
 ## Healthy-empty Markdown remains a confirmed zero
@@ -26,6 +26,8 @@ unavailability.
 ../../tools/biomcp-ci get drug fixture-drug approvals \
   | mustmatch like '## Drugs@FDA Approvals
 No approvals found in Drugs@FDA'
+../../tools/biomcp-ci get drug fixture-drug approvals \
+  | mustmatch not '/(?i)unavailable/'
 ```
 
 ## Typed MCP get preserves the outcome
@@ -35,6 +37,17 @@ CLI JSON. Transport through MCP does not erase the healthy-empty distinction.
 
 ```bash
 bash ../fixtures/run-section-outcome-mcp.sh ../.. \
-  | jq '{approvals, section_outcome: .section_outcomes.approvals}' \
-  | mustmatch like '{"approvals":[],"section_outcome":{"outcome":"empty","sources":["OpenFDA Drugs@FDA"]}}'
+  | jq '(.approvals == []) and (.section_outcomes.approvals == {"outcome":"empty","sources":["OpenFDA Drugs@FDA"]})' \
+  | mustmatch 'true'
+```
+
+## Unrequested sections stay distinguishable
+
+A base drug card does not call Drugs@FDA. Its registry records that omission as
+`not_requested`, and provenance does not imply that approval evidence was queried.
+
+```bash
+../../tools/biomcp-ci --json get drug fixture-drug \
+  | jq '(.section_outcomes.approvals == {"outcome":"not_requested","sources":[]}) and (._meta.section_sources | any(.key == "approvals") | not)' \
+  | mustmatch 'true'
 ```
