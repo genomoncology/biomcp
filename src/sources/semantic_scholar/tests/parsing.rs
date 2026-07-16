@@ -245,8 +245,9 @@ fn author_response_types_keep_null_data_explicit_and_map_bad_responses() {
     let message = unavailable.to_string();
     assert!(matches!(unavailable, BioMcpError::Api { .. }));
     assert!(message.contains("503"), "got: {message}");
+    assert!(message.contains("source unavailable"), "got: {message}");
     assert!(
-        message.contains("temporarily unavailable"),
+        !message.contains("temporarily unavailable"),
         "got: {message}"
     );
 
@@ -280,7 +281,7 @@ fn shared_pool_429_returns_dedicated_guidance() {
 }
 
 #[test]
-fn authenticated_http_error_keeps_status_and_excerpt() {
+fn authenticated_http_error_keeps_status_and_sanitizes_payload() {
     let err = SemanticScholarClient::decode_json_response::<SemanticScholarPaper>(
         StatusCode::FORBIDDEN,
         b"forbidden",
@@ -291,5 +292,5 @@ fn authenticated_http_error_keeps_status_and_excerpt() {
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(msg.contains("semantic_scholar"), "got: {msg}");
     assert!(msg.contains("403"), "got: {msg}");
-    assert!(msg.contains("forbidden"), "got: {msg}");
+    assert!(!msg.contains("forbidden"), "got: {msg}");
 }

@@ -700,7 +700,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://www.semanticscholar.org/product/api/license>
 - API key / account URL: <https://www.semanticscholar.org/product/api>
 - Reviewed on: `2026-03-20`
-- Notes: BioMCP can call Semantic Scholar without `S2_API_KEY`, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability. Author search/detail expose exact provider records without cross-provider resolution. Article search can use Semantic Scholar through compatible default federation or `--source semanticscholar`. For `get article <id> fulltext --pdf`, BioMCP uses Semantic Scholar `openAccessPdf` metadata, then fetches the third-party PDF URL only after explicit PDF opt-in; the PDF's article-level reuse terms remain separate.
+- Notes: BioMCP can call Semantic Scholar without `S2_API_KEY`, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability. Author search/detail expose exact provider records without cross-provider resolution. Article search can use Semantic Scholar through compatible default federation or `--source semanticscholar`. For `get article <id> fulltext --pdf`, BioMCP uses Semantic Scholar `openAccessPdf` metadata, then fetches the PDF after explicit PDF opt-in only when its HTTPS origin is on BioMCP's Semantic Scholar/CDN allowlist; the PDF's article-level reuse terms remain separate.
 
 ### UMLS
 

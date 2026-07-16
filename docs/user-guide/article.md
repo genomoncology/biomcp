@@ -266,10 +266,12 @@ path after XML and PMC HTML both miss:
 biomcp get article 22663011 fulltext --pdf
 ```
 
-With `--pdf`, BioMCP can use the Semantic Scholar open-access PDF URL as the
-final fallback and labels the winner as `Semantic Scholar PDF`. `--pdf` is only
-valid with the `fulltext` section; `biomcp get article 22663011 --pdf` is
-rejected instead of silently doing nothing.
+With `--pdf`, BioMCP can use a Semantic Scholar open-access PDF URL from an
+explicitly allowed Semantic Scholar/CDN HTTPS origin as the final fallback and
+labels the winner as `Semantic Scholar PDF`. Other provider-returned origins are
+rejected before contact. `--pdf` is only valid with the `fulltext` section;
+`biomcp get article 22663011 --pdf` is rejected instead of silently doing
+nothing.
 
 Indexing section:
 

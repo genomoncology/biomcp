@@ -74,6 +74,27 @@ async fn author_fixture_client(
 }
 
 #[test]
+fn credential_attachment_requires_canonical_or_explicit_unsafe_fixture_origin() {
+    let canonical = reqwest::Url::parse(SEMANTIC_SCHOLAR_BASE).unwrap();
+    let canonical_policy = ProviderUrlPolicy::semantic_scholar_api(&canonical).unwrap();
+    assert_eq!(
+        effective_api_key(&canonical_policy, &canonical, Some("canonical-key".into())).as_deref(),
+        Some("canonical-key")
+    );
+
+    let override_url = reqwest::Url::parse("https://s2-fixture.example.test").unwrap();
+    let override_policy = ProviderUrlPolicy::semantic_scholar_api(&override_url).unwrap();
+    assert_eq!(
+        effective_api_key(
+            &override_policy,
+            &override_url,
+            Some("must-not-leak".into())
+        ),
+        None
+    );
+}
+
+#[test]
 fn auth_mode_reports_keyed_or_shared_pool_without_exposing_key() {
     let keyed = client_with_api_key(Some("spec-secret-key-365"));
     assert_eq!(keyed.auth_mode(), SemanticScholarAuthMode::Authenticated);
