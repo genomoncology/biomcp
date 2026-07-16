@@ -1129,27 +1129,55 @@ mod tests {
             .expect("bind test listener");
         let address = listener.local_addr().expect("test listener address");
         let server = tokio::spawn(async move {
-            let body = vec![b'x'; DEFAULT_MAX_BODY_BYTES + 1];
-            let headers = format!(
-                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nCache-Control: public, max-age=3600\r\nConnection: close\r\n\r\n",
-                body.len()
-            );
-            for _ in 0..2 {
+            for request_number in 0..3 {
                 let (mut stream, _) = listener.accept().await.expect("accept request");
-                let mut request = [0_u8; 1024];
-                let _ = stream.read(&mut request).await.expect("read request");
-                let _ = stream.write_all(headers.as_bytes()).await;
-                let _ = stream.write_all(&body).await;
+                tokio::spawn(async move {
+                    let mut request = [0_u8; 1024];
+                    let _ = stream.read(&mut request).await.expect("read request");
+                    if request_number == 0 {
+                        stream
+                            .write_all(
+                                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nCache-Control: public, max-age=3600\r\nConnection: close\r\n\r\nok",
+                            )
+                            .await
+                            .expect("write in-bound response");
+                        return;
+                    }
+
+                    let headers = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nCache-Control: public, max-age=3600\r\nConnection: close\r\n\r\n",
+                        DEFAULT_MAX_BODY_BYTES * 8
+                    );
+                    stream
+                        .write_all(headers.as_bytes())
+                        .await
+                        .expect("write oversized headers");
+                    stream
+                        .write_all(&vec![b'x'; DEFAULT_MAX_BODY_BYTES + 1])
+                        .await
+                        .expect("write bytes through the rejection boundary");
+                    std::future::pending::<()>().await;
+                });
             }
         });
 
+        let in_bound = client
+            .get(format!("http://{address}/in-bound"))
+            .send()
+            .await
+            .expect("in-bound response should pass through middleware");
+        assert_eq!(in_bound.bytes().await.expect("read in-bound body"), "ok");
+
         for _ in 0..2 {
-            let middleware_error = client
-                .get(format!("http://{address}/oversized"))
-                .send()
-                .await
-                .expect_err("oversized response should fail before caching");
-            let err = BioMcpError::from(middleware_error);
+            let send_result = tokio::time::timeout(
+                Duration::from_secs(2),
+                client.get(format!("http://{address}/oversized")).send(),
+            )
+            .await
+            .expect("limiter should reject at max+1 without waiting for EOF");
+            let err = BioMcpError::from(
+                send_result.expect_err("oversized response should fail before caching"),
+            );
             assert!(
                 matches!(
                     err,
@@ -1161,7 +1189,10 @@ mod tests {
                 "expected typed body limit, got {err:?}"
             );
         }
-        server.await.expect("both requests should reach the server");
+        tokio::time::timeout(Duration::from_secs(2), server)
+            .await
+            .expect("all requests should reach transport")
+            .expect("test server should finish");
     }
 
     #[tokio::test]

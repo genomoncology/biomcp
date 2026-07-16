@@ -34,6 +34,27 @@ fn tgz_with_entries(entries: &[(&str, &[u8])]) -> Vec<u8> {
     gz.finish().expect("gzip should finish")
 }
 
+fn tgz_with_numbered_entries(count: usize) -> Vec<u8> {
+    let mut tar_buf = Vec::new();
+    {
+        let mut builder = Builder::new(&mut tar_buf);
+        for index in 0..count {
+            let mut header = Header::new_gnu();
+            header.set_size(1);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder
+                .append_data(&mut header, format!("entry-{index}.txt"), &b"x"[..])
+                .expect("archive entry should append");
+        }
+        builder.finish().expect("tar should finish");
+    }
+
+    let mut gz = GzEncoder::new(Vec::new(), Compression::default());
+    gz.write_all(&tar_buf).expect("gzip should write tar");
+    gz.finish().expect("gzip should finish")
+}
+
 #[test]
 fn parses_manifest_and_rewrites_ftp_to_https() {
     let manifest = parse_archive_manifest_xml(
@@ -160,6 +181,19 @@ fn extract_archive_entries_rejects_unsafe_empty_and_oversized_members() {
     assert!(names.contains(&"safe/readme.txt"));
     assert!(!names.contains(&"empty.bin"));
     assert!(!names.contains(&"huge.bin"));
+}
+
+#[test]
+fn extract_archive_entries_rejects_too_many_members() {
+    let tgz = tgz_with_numbered_entries(257);
+
+    let err = extract_archive_entries(&tgz).expect_err("archive-wide member cap should reject");
+
+    assert!(
+        matches!(err, BioMcpError::SourceUnavailable { .. }),
+        "archive resource limits should be source-unavailable, got {err:?}"
+    );
+    assert!(err.to_string().contains("resource limit"));
 }
 
 #[test]

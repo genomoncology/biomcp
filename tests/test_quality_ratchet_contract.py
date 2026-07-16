@@ -965,6 +965,7 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
     sources = tmp_path / "src/sources"
     sources.mkdir(parents=True)
     (sources / "mod.rs").write_text(
+        "ensure_body_limited_cache_epoch(cache_root)\n"
         "ClientBuilder::new(base_client).with(Cache(())\n"
         ".with(ResponseBodyLimitMiddleware {})\n",
         encoding="utf-8",
@@ -976,6 +977,10 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
     (sources / "pmc_oa.rs").write_text("ArchiveBudget::new(limits)", encoding="utf-8")
     (sources / "clinicaltrials.rs").write_text("bounded bytes", encoding="utf-8")
     (sources / "pubmed.rs").write_text("bounded bytes", encoding="utf-8")
+    (sources / "gtr.rs").write_text(
+        'with_response_body_limit(req, GTR_TEST_VERSION_MAX_BODY_BYTES, "gtr")',
+        encoding="utf-8",
+    )
 
     assert ratchet.check_remote_resource_bounds(tmp_path)["status"] == "pass"
 
@@ -987,16 +992,39 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
     (sources / "cbioportal_download.rs").write_text(
         "MAX_ARCHIVE_DOWNLOAD_BYTES account_download_bytes(", encoding="utf-8"
     )
+    (sources / "pmc_oa.rs").write_text("unbounded archive", encoding="utf-8")
     (sources / "clinicaltrials.rs").write_text(
         "read_limited_body(response, source).await?; bytes.to_vec()", encoding="utf-8"
+    )
+    (sources / "pubmed.rs").write_text(
+        "read_limited_body(response, source).await?; bytes.to_vec()", encoding="utf-8"
+    )
+    (sources / "gtr.rs").write_text(
+        "read_limited_body_with_limit(response, GTR_API, GTR_TEST_VERSION_MAX_BODY_BYTES)",
+        encoding="utf-8",
     )
     payload = ratchet.check_remote_resource_bounds(tmp_path)
 
     assert payload["status"] == "fail"
-    assert payload["finding_count"] == 3
     assert any("inside the cache" in finding for finding in payload["findings"])
+    assert any("legacy HTTP cache" in finding for finding in payload["findings"])
     assert any("cBioPortal archive expansion" in finding for finding in payload["findings"])
+    assert any("PMC OA archive" in finding for finding in payload["findings"])
     assert any("clinicaltrials.rs" in finding for finding in payload["findings"])
+    assert any("pubmed.rs" in finding for finding in payload["findings"])
+    assert any("custom response limit" in finding for finding in payload["findings"])
+
+    spec_path = _write_clean_spec(tmp_path / "spec")
+    output_dir = tmp_path / "out"
+    result = _run_wrapper(
+        {
+            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
+            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+        }
+    )
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    assert summary["remote_resource_bounds"]["status"] == "pass"
 
 
 def test_wrapper_allows_mustmatch_opt_out_later_in_section(tmp_path: Path) -> None:
