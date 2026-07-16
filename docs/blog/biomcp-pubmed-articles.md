@@ -15,10 +15,10 @@ $ biomcp search article --gene BRAF -d melanoma --limit 5
 
 | Identifier | Title                                              | Source(s)         | Date | Cit. |
 |----------|----------------------------------------------------|-------------------|------|------|
-| 30544808 | Oleuropein, the Main Polyphenol of Olea europaea…  | Semantic Scholar  | 2018 | 100  |
-| 29295999 | ERK-mediated phosphorylation regulates SOX10…      | Semantic Scholar  | 2018 | 70   |
-| 26790143 | p53 Reactivation by PRIMA-1(Met) sensitises…       | Semantic Scholar  | 2016 | 52   |
-| 28455392 | Biomarker Accessible and Chemically Addressable…   | Semantic Scholar  | 2017 | 45   |
+| PMID 30544808 | Oleuropein, the Main Polyphenol of Olea europaea…  | Semantic Scholar  | 2018 | 100  |
+| PMID 29295999 | ERK-mediated phosphorylation regulates SOX10…      | Semantic Scholar  | 2018 | 70   |
+| PMID 26790143 | p53 Reactivation by PRIMA-1(Met) sensitises…       | Semantic Scholar  | 2016 | 52   |
+| PMID 28455392 | Biomarker Accessible and Chemically Addressable…   | Semantic Scholar  | 2017 | 45   |
 ```
 
 You can stack filters: `--gene BRAF --drug vemurafenib --since 2020 --type review --sort citations`. JSON search rows are compact by default; add `--full` for abstracts, complete provenance, and ranking diagnostics. Date sorting replaces relevance ranking and prints an in-band warning.
