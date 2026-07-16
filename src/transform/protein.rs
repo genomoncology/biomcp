@@ -41,6 +41,9 @@ pub fn from_uniprot_record_base(record: UniProtRecord) -> Protein {
     let function = record.function_summary();
 
     Protein {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::protein::PROTEIN_OUTCOME_KEYS,
+        ),
         accession,
         entry_id,
         name,

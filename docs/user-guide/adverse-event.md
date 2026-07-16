@@ -125,6 +125,17 @@ this safety surface.
 biomcp --json get adverse-event 10222779
 ```
 
+## Combined-source outcomes
+
+JSON from `search adverse-event <query> --source all` includes independent
+`section_outcomes.faers` and `.vaers` entries while preserving `vaers.status`.
+One branch can be `unavailable` without erasing a healthy result from the other;
+`empty` means that source completed successfully with no matching evidence. A
+successful VAERS branch credits both CDC CVX identity resolution and CDC VAERS
+evidence. When
+`--source all` includes filters unsupported by VAERS, `vaers.status` explains the
+skip and its section outcome remains `not_requested` because no VAERS fetch ran.
+
 ## Practical tips
 
 - Include drug generic names for better FAERS recall.

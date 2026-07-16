@@ -53,6 +53,7 @@ fn variant_json_next_commands_include_vus_literature_route() {
 #[test]
 fn drug_json_next_commands_parse() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "osimertinib".to_string(),
         drugbank_id: Some("DB09330".to_string()),
         chembl_id: Some("CHEMBL3353410".to_string()),

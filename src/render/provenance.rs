@@ -2,7 +2,9 @@ use std::collections::HashSet;
 
 use serde::Serialize;
 
-use crate::entities::adverse_event::{AdverseEvent, AdverseEventReport, DeviceEvent};
+use crate::entities::adverse_event::{
+    AdverseEvent, AdverseEventReport, AdverseEventSourceSearch, DeviceEvent,
+};
 use crate::entities::article::Article;
 use crate::entities::diagnostic::{Diagnostic, diagnostic_source_label};
 use crate::entities::discover::DiscoverResult;
@@ -12,6 +14,7 @@ use crate::entities::gene::Gene;
 use crate::entities::pathway::Pathway;
 use crate::entities::pgx::Pgx;
 use crate::entities::protein::Protein;
+use crate::entities::section_outcome::{SectionOutcomeState, SectionOutcomes};
 use crate::entities::trial::Trial;
 use crate::entities::variant::Variant;
 
@@ -19,6 +22,7 @@ use crate::entities::variant::Variant;
 pub struct SectionSource {
     pub key: String,
     pub label: String,
+    pub outcome: SectionOutcomeState,
     pub sources: Vec<String>,
 }
 
@@ -27,12 +31,21 @@ impl SectionSource {
         let key = self.key.trim();
         let label = self.label.trim();
         let sources = normalize_sources(self.sources);
-        if key.is_empty() || label.is_empty() || sources.is_empty() {
+        if key.is_empty()
+            || label.is_empty()
+            || self.outcome == SectionOutcomeState::NotRequested
+            || (sources.is_empty()
+                && !matches!(
+                    self.outcome,
+                    SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+                ))
+        {
             return None;
         }
         Some(Self {
             key: key.to_string(),
             label: label.to_string(),
+            outcome: self.outcome,
             sources,
         })
     }
@@ -81,6 +94,7 @@ fn push_section<I, S>(
     if let Some(section) = (SectionSource {
         key: key.to_string(),
         label: label.to_string(),
+        outcome: SectionOutcomeState::Data,
         sources: sources
             .into_iter()
             .map(|source| source.as_ref().to_string())
@@ -90,6 +104,25 @@ fn push_section<I, S>(
     {
         out.push(section);
     }
+}
+
+fn outcome_section_sources(
+    outcomes: &SectionOutcomes,
+    labels: &[(&str, &str)],
+) -> Vec<SectionSource> {
+    labels
+        .iter()
+        .filter_map(|(key, label)| {
+            let outcome = outcomes.get(key)?;
+            SectionSource {
+                key: (*key).to_string(),
+                label: (*label).to_string(),
+                outcome: outcome.outcome(),
+                sources: outcome.sources().to_vec(),
+            }
+            .normalized()
+        })
+        .collect()
 }
 
 pub(crate) fn discover_section_sources(result: &DiscoverResult) -> Vec<SectionSource> {
@@ -298,111 +331,26 @@ pub(crate) fn gene_section_sources(gene: &Gene) -> Vec<SectionSource> {
         "Aliases",
         ["NCBI Gene / MyGene.info"],
     );
-    if let Some(pathways) = &gene.pathways {
-        push_section(
-            &mut out,
-            true,
-            "pathways",
-            "Pathways",
-            pathways.iter().map(|row| row.source.as_str()),
-        );
-    }
-    push_section(
-        &mut out,
-        gene.ontology.is_some(),
-        "ontology",
-        "Ontology",
-        ["Enrichr"],
-    );
-    push_section(
-        &mut out,
-        gene.diseases.is_some(),
-        "diseases",
-        "Diseases",
-        ["Enrichr"],
-    );
-    if let Some(rows) = &gene.diagnostics {
-        push_section(
-            &mut out,
-            !rows.is_empty(),
-            "diagnostics",
-            "Diagnostics",
-            rows.iter().map(|row| diagnostic_source_label(&row.source)),
-        );
-    } else {
-        push_section(
-            &mut out,
-            has_opt_text(&gene.diagnostics_note),
-            "diagnostics",
-            "Diagnostics",
-            ["NCBI Genetic Testing Registry"],
-        );
-    }
-    push_section(
-        &mut out,
-        gene.protein.is_some(),
-        "protein",
-        "Protein",
-        ["UniProt"],
-    );
-    push_section(&mut out, gene.go.is_some(), "go", "GO Terms", ["QuickGO"]);
-    push_section(
-        &mut out,
-        gene.interactions.is_some(),
-        "interactions",
-        "Interactions",
-        ["STRING"],
-    );
-    push_section(&mut out, gene.civic.is_some(), "civic", "CIViC", ["CIViC"]);
-    push_section(
-        &mut out,
-        gene.expression.is_some(),
-        "expression",
-        "Expression",
-        ["GTEx"],
-    );
-    push_section(
-        &mut out,
-        gene.hpa.is_some(),
-        "hpa",
-        "Human Protein Atlas",
-        ["Human Protein Atlas"],
-    );
-    push_section(
-        &mut out,
-        gene.druggability.is_some(),
-        "druggability",
-        "Druggability",
-        ["DGIdb", "Open Targets"],
-    );
-    push_section(
-        &mut out,
-        gene.clingen.is_some(),
-        "clingen",
-        "ClinGen",
-        ["ClinGen"],
-    );
-    push_section(
-        &mut out,
-        gene.constraint.is_some(),
-        "constraint",
-        "Constraint",
-        ["gnomAD"],
-    );
-    push_section(
-        &mut out,
-        gene.disgenet.is_some(),
-        "disgenet",
-        "DisGeNET",
-        ["DisGeNET"],
-    );
-    push_section(
-        &mut out,
-        gene.funding.is_some() || has_opt_text(&gene.funding_note),
-        "funding",
-        "Funding",
-        ["NIH Reporter"],
-    );
+    out.extend(outcome_section_sources(
+        &gene.section_outcomes,
+        &[
+            ("pathways", "Pathways"),
+            ("ontology", "Ontology"),
+            ("diseases", "Diseases"),
+            ("diagnostics", "Diagnostics"),
+            ("protein", "Protein"),
+            ("go", "GO Terms"),
+            ("interactions", "Interactions"),
+            ("civic", "CIViC"),
+            ("expression", "Expression"),
+            ("hpa", "Human Protein Atlas"),
+            ("druggability", "Druggability"),
+            ("clingen", "ClinGen"),
+            ("constraint", "Constraint"),
+            ("disgenet", "DisGeNET"),
+            ("funding", "Funding"),
+        ],
+    ));
     out
 }
 
@@ -443,7 +391,11 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         ["OpenFDA FAERS"],
     );
     let mut regulatory_sources = Vec::new();
-    if drug.approvals.is_some() {
+    if drug
+        .section_outcomes
+        .get("approvals")
+        .is_some_and(|outcome| !outcome.sources().is_empty())
+    {
         regulatory_sources.push("OpenFDA Drugs@FDA".to_string());
     }
     if drug.ema_regulatory.is_some() {
@@ -533,13 +485,10 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         "EMA Shortage",
         ["EMA"],
     );
-    push_section(
-        &mut out,
-        drug.approvals.is_some(),
-        "approvals",
-        "Drugs@FDA Approvals",
-        ["OpenFDA Drugs@FDA"],
-    );
+    out.extend(outcome_section_sources(
+        &drug.section_outcomes,
+        &[("approvals", "Drugs@FDA Approvals")],
+    ));
     push_section(&mut out, drug.civic.is_some(), "civic", "CIViC", ["CIViC"]);
     out
 }
@@ -942,27 +891,14 @@ pub(crate) fn pathway_section_sources(pathway: &Pathway) -> Vec<SectionSource> {
         "Summary",
         source_ref,
     );
-    push_section(
-        &mut out,
-        !pathway.genes.is_empty(),
-        "genes",
-        "Genes",
-        source_ref,
-    );
-    push_section(
-        &mut out,
-        !pathway.events.is_empty(),
-        "events",
-        "Events",
-        source_ref,
-    );
-    push_section(
-        &mut out,
-        !pathway.enrichment.is_empty(),
-        "enrichment",
-        "Enrichment",
-        ["g:Profiler (Reactome enrichment)"],
-    );
+    out.extend(outcome_section_sources(
+        &pathway.section_outcomes,
+        &[
+            ("genes", "Genes"),
+            ("events", "Events"),
+            ("enrichment", "Enrichment"),
+        ],
+    ));
     out
 }
 
@@ -988,34 +924,15 @@ pub(crate) fn protein_section_sources(protein: &Protein) -> Vec<SectionSource> {
         "Function",
         ["UniProt"],
     );
-    push_section(
-        &mut out,
-        !protein.structures.is_empty() || protein.structure_count.is_some(),
-        "structures",
-        "Structures",
-        ["PDB", "AlphaFold via UniProt"],
-    );
-    push_section(
-        &mut out,
-        !protein.domains.is_empty(),
-        "domains",
-        "Domains",
-        ["InterPro"],
-    );
-    push_section(
-        &mut out,
-        !protein.interactions.is_empty(),
-        "interactions",
-        "Interactions",
-        ["STRING"],
-    );
-    push_section(
-        &mut out,
-        !protein.complexes.is_empty(),
-        "complexes",
-        "Complexes",
-        ["ComplexPortal"],
-    );
+    out.extend(outcome_section_sources(
+        &protein.section_outcomes,
+        &[
+            ("structures", "Structures"),
+            ("domains", "Domains"),
+            ("interactions", "Interactions"),
+            ("complexes", "Complexes"),
+        ],
+    ));
     out
 }
 
@@ -1057,6 +974,15 @@ pub(crate) fn pgx_section_sources(pgx: &Pgx) -> Vec<SectionSource> {
         ["PharmGKB"],
     );
     out
+}
+
+pub(crate) fn adverse_event_source_search_section_sources(
+    search: &AdverseEventSourceSearch,
+) -> Vec<SectionSource> {
+    outcome_section_sources(
+        &search.section_outcomes,
+        &[("faers", "OpenFDA FAERS"), ("vaers", "CDC CVX/VAERS")],
+    )
 }
 
 pub(crate) fn adverse_event_section_sources(event: &AdverseEvent) -> Vec<SectionSource> {
@@ -1164,6 +1090,15 @@ mod tests {
     #[test]
     fn pathway_section_sources_emits_wikipathways_not_reactome_for_wp_card() {
         let pathway = Pathway {
+            section_outcomes: {
+                let mut outcomes =
+                    SectionOutcomes::with_keys(crate::entities::pathway::PATHWAY_OUTCOME_KEYS);
+                outcomes.complete(
+                    "genes",
+                    crate::entities::section_outcome::SectionOutcome::data("WikiPathways"),
+                );
+                outcomes
+            },
             source: "WikiPathways".to_string(),
             id: "WP254".to_string(),
             name: "Apoptosis".to_string(),
@@ -1237,6 +1172,7 @@ mod tests {
     #[test]
     fn drug_provenance_emits_variant_targets_when_present() {
         let drug = Drug {
+            section_outcomes: Default::default(),
             name: "rindopepimut".to_string(),
             drugbank_id: None,
             chembl_id: None,
@@ -1285,6 +1221,7 @@ mod tests {
     #[test]
     fn drug_provenance_adds_who_to_regulatory_sources() {
         let drug = Drug {
+            section_outcomes: Default::default(),
             name: "trastuzumab".to_string(),
             drugbank_id: None,
             chembl_id: None,
@@ -1354,6 +1291,7 @@ mod tests {
     #[test]
     fn drug_section_sources_omit_interactions_when_no_interaction_data_is_present() {
         let drug = Drug {
+            section_outcomes: Default::default(),
             name: "pembrolizumab".to_string(),
             drugbank_id: Some("DB09037".to_string()),
             chembl_id: None,
@@ -1479,6 +1417,15 @@ mod tests {
     #[test]
     fn gene_section_sources_include_funding_when_present() {
         let gene = Gene {
+            section_outcomes: {
+                let mut outcomes =
+                    SectionOutcomes::with_keys(crate::entities::gene::GENE_OUTCOME_KEYS);
+                outcomes.complete(
+                    "funding",
+                    crate::entities::section_outcome::SectionOutcome::data("NIH Reporter"),
+                );
+                outcomes
+            },
             symbol: "ERBB2".to_string(),
             name: "erb-b2 receptor tyrosine kinase 2".to_string(),
             entrez_id: "2064".to_string(),
@@ -1536,6 +1483,17 @@ mod tests {
     #[test]
     fn gene_section_sources_include_diagnostics_from_rows() {
         let gene = Gene {
+            section_outcomes: {
+                let mut outcomes =
+                    SectionOutcomes::with_keys(crate::entities::gene::GENE_OUTCOME_KEYS);
+                outcomes.complete(
+                    "diagnostics",
+                    crate::entities::section_outcome::SectionOutcome::data(
+                        "NCBI Genetic Testing Registry",
+                    ),
+                );
+                outcomes
+            },
             symbol: "BRCA1".to_string(),
             name: "BRCA1 DNA repair associated".to_string(),
             entrez_id: "672".to_string(),
@@ -1585,8 +1543,20 @@ mod tests {
     }
 
     #[test]
-    fn gene_section_sources_include_diagnostics_note_source() {
+    fn gene_section_sources_marks_unavailable_diagnostics_without_source_credit() {
         let gene = Gene {
+            section_outcomes: {
+                let mut outcomes = SectionOutcomes::with_keys(
+                    crate::entities::gene::GENE_OUTCOME_KEYS,
+                );
+                outcomes.complete(
+                    "diagnostics",
+                    crate::entities::section_outcome::SectionOutcome::unavailable(
+                        "Gene diagnostics are unavailable.",
+                    ),
+                );
+                outcomes
+            },
             symbol: "BRCA1".to_string(),
             name: "BRCA1 DNA repair associated".to_string(),
             entrez_id: "672".to_string(),
@@ -1626,7 +1596,8 @@ mod tests {
         assert!(sources.iter().any(|source| {
             source.key == "diagnostics"
                 && source.label == "Diagnostics"
-                && source.sources == vec!["NCBI Genetic Testing Registry".to_string()]
+                && source.outcome == SectionOutcomeState::Unavailable
+                && source.sources.is_empty()
         }));
     }
 

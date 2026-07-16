@@ -43,6 +43,7 @@ fn proof_markdown_module_layout_uses_directory_module() {
 #[test]
 fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "CFTR".to_string(),
         name: "CF transmembrane conductance regulator".to_string(),
         entrez_id: "1080".to_string(),
@@ -116,6 +117,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
     assert!(gene_markdown.contains("biomcp search variant -g CFTR"));
 
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "ivacaftor".to_string(),
         drugbank_id: Some("DB08820".to_string()),
         chembl_id: Some("CHEMBL1200749".to_string()),
@@ -334,6 +336,7 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
     assert!(trial_markdown.contains("## References (ClinicalTrials.gov)"));
 
     let pathway = Pathway {
+        section_outcomes: Default::default(),
         source: "Reactome".to_string(),
         id: "R-HSA-5358351".to_string(),
         name: "Signal transduction".to_string(),
@@ -389,6 +392,7 @@ fn markdown_detail_outputs_label_variant_protein_pgx_and_openfda_sources() {
     assert!(variant_markdown.contains("## CGI Drug Associations (Cancer Genome Interpreter)"));
 
     let protein = crate::entities::protein::Protein {
+        section_outcomes: Default::default(),
         accession: "P15056".to_string(),
         entry_id: Some("BRAF_HUMAN".to_string()),
         name: "Serine/threonine-protein kinase B-raf".to_string(),

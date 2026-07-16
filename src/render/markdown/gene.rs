@@ -25,7 +25,7 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
     let funding_summary = funding_summary_line(gene.funding.as_ref());
     let diagnostic_rows =
         super::diagnostic::diagnostic_search_rows(gene.diagnostics.as_deref().unwrap_or(&[]));
-    let body = tmpl.render(context! {
+    let mut body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&gene.symbol, requested_sections),
         symbol => &gene.symbol,
@@ -72,6 +72,16 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
         sections_block => format_sections_block("gene", &gene.symbol, sections_gene(gene, requested_sections)),
         related_block => format_related_block(related_gene(gene)),
     })?;
+    for (key, outcome) in gene.section_outcomes.iter() {
+        if matches!(
+            outcome.outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::Degraded
+                | crate::entities::section_outcome::SectionOutcomeState::Unavailable
+        ) && let Some(message) = outcome.message()
+        {
+            body.push_str(&format!("\n\n**{key} status:** {message}"));
+        }
+    }
     Ok(append_evidence_urls(body, gene_evidence_urls(gene)))
 }
 

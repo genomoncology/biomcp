@@ -333,6 +333,7 @@ fn gene_alias_fallback_json_writes_stdout_and_exit_1() {
 
 fn gene_fixture(symbol: &str, name: &str, entrez_id: &str) -> crate::entities::gene::Gene {
     crate::entities::gene::Gene {
+        section_outcomes: Default::default(),
         symbol: symbol.to_string(),
         name: name.to_string(),
         entrez_id: entrez_id.to_string(),
@@ -381,6 +382,7 @@ fn batch_gene_json_includes_meta_per_item() {
             )],
             vec![format!("biomcp get gene {}", gene.symbol)],
             vec![crate::render::provenance::SectionSource {
+                outcome: crate::entities::section_outcome::SectionOutcomeState::Data,
                 key: "identity".to_string(),
                 label: "Identity".to_string(),
                 sources: vec!["NCBI Gene / MyGene.info".to_string()],

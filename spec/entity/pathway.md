@@ -57,6 +57,17 @@ biomcp get pathway hsa05200 genes
 biomcp get pathway hsa05200 all'
 ```
 
+## Typed optional-section outcomes
+
+Supported Reactome sections retain a bounded result state in both the entity and
+its provenance, instead of making empty vectors stand for every outcome.
+
+```bash
+../../tools/biomcp-ci --json get pathway R-HSA-5673001 genes events \
+  | jq '[{"entity": .section_outcomes.genes.outcome, "provenance": (._meta.section_sources | map(select(.key == "genes")) | if length == 1 then .[0].outcome else null end)}, {"entity": .section_outcomes.events.outcome, "provenance": (._meta.section_sources | map(select(.key == "events")) | if length == 1 then .[0].outcome else null end)}] | all(.[]; (.entity | IN("data", "empty", "unavailable")) and .entity == .provenance)' \
+  | mustmatch 'true'
+```
+
 ## Unsupported Section Rejection
 
 Source-aware sections should fail with specific guidance when the user asks for

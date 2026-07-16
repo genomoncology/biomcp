@@ -10,6 +10,7 @@ use tracing::warn;
 
 use crate::entities::SearchPage;
 use crate::entities::diagnostic::{DiagnosticSearchFilters, DiagnosticSearchResult};
+use crate::entities::section_outcome::{SectionOutcome, SectionOutcomeState, SectionOutcomes};
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::clingen::{ClinGenClient, GeneClinGen};
@@ -37,6 +38,8 @@ use crate::transform;
 /// Gene entity from MyGene.info plus optional enrichment sections.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Gene {
+    #[serde(default, deserialize_with = "deserialize_gene_section_outcomes")]
+    pub section_outcomes: SectionOutcomes,
     pub symbol: String,
     pub name: String,
     pub entrez_id: String,
@@ -231,6 +234,34 @@ const GENE_SECTION_CONSTRAINT: &str = "constraint";
 const GENE_SECTION_DISGENET: &str = "disgenet";
 const GENE_SECTION_FUNDING: &str = "funding";
 const GENE_SECTION_ALL: &str = "all";
+pub(crate) const GENE_OUTCOME_KEYS: &[&str] = &[
+    GENE_SECTION_PATHWAYS,
+    GENE_SECTION_ONTOLOGY,
+    GENE_SECTION_DISEASES,
+    GENE_SECTION_DIAGNOSTICS,
+    GENE_SECTION_PROTEIN,
+    GENE_SECTION_GO,
+    GENE_SECTION_INTERACTIONS,
+    GENE_SECTION_CIVIC,
+    GENE_SECTION_EXPRESSION,
+    GENE_SECTION_HPA,
+    GENE_SECTION_DRUGGABILITY,
+    GENE_SECTION_CLINGEN,
+    GENE_SECTION_CONSTRAINT,
+    GENE_SECTION_DISGENET,
+    GENE_SECTION_FUNDING,
+];
+
+fn deserialize_gene_section_outcomes<'de, D>(deserializer: D) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(GENE_OUTCOME_KEYS)
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
+}
 
 pub const GENE_SECTION_NAMES: &[&str] = &[
     GENE_SECTION_PATHWAYS,
@@ -348,7 +379,7 @@ const GENE_DIAGNOSTICS_UNAVAILABLE_NOTE: &str =
 pub struct GeneTimingEntry {
     pub section: String,
     pub elapsed_ms: u128,
-    pub outcome: String,
+    pub outcome: SectionOutcomeState,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -488,27 +519,15 @@ impl GeneTimingCollector {
         }
     }
 
-    fn enabled(&self) -> bool {
-        self.path.is_some()
-    }
-
-    fn record(&mut self, section: &str, started: Instant, outcome: impl Into<String>) {
-        if !self.enabled() {
-            return;
-        }
-
+    fn record(&mut self, section: &str, started: Instant, outcome: impl AsRef<str>) {
         self.sections.push(GeneTimingEntry {
             section: section.to_string(),
             elapsed_ms: started.elapsed().as_millis(),
-            outcome: outcome.into(),
+            outcome: timing_outcome_state(outcome.as_ref()),
         });
     }
 
     fn push(&mut self, entry: GeneTimingEntry) {
-        if !self.enabled() {
-            return;
-        }
-
         self.sections.push(entry);
     }
 
@@ -581,6 +600,15 @@ fn preferred_opentargets_id(gene: &Gene, strategy: GeneGetStrategy) -> Option<&s
         .filter(|value| !value.is_empty())
 }
 
+fn timing_outcome_state(outcome: &str) -> SectionOutcomeState {
+    match outcome {
+        "data" => SectionOutcomeState::Data,
+        "empty" => SectionOutcomeState::Empty,
+        "degraded" => SectionOutcomeState::Degraded,
+        _ => SectionOutcomeState::Unavailable,
+    }
+}
+
 async fn timed_section<T, F, C>(section: &str, fut: F, classify: C) -> (T, GeneTimingEntry)
 where
     F: Future<Output = T>,
@@ -594,20 +622,155 @@ where
         GeneTimingEntry {
             section: section.to_string(),
             elapsed_ms: started.elapsed().as_millis(),
-            outcome,
+            outcome: timing_outcome_state(&outcome),
         },
     )
 }
 
-fn classify_clingen_section(section: &GeneClinGen) -> String {
-    if !section.validity.is_empty()
-        || section.haploinsufficiency.is_some()
-        || section.triplosensitivity.is_some()
-    {
-        "data".to_string()
-    } else {
-        "empty".to_string()
+fn complete_gene_section_outcomes(gene: &mut Gene, include: &[GeneIncludeType]) {
+    for section in include {
+        let key = section.as_str();
+        if gene
+            .section_outcomes
+            .get(key)
+            .is_some_and(|outcome| outcome.outcome() != SectionOutcomeState::NotRequested)
+        {
+            continue;
+        }
+        let (has_data, unavailable, source) = match section {
+            GeneIncludeType::Pathways => (
+                gene.pathways.as_ref().is_some_and(|rows| !rows.is_empty()),
+                false,
+                "Reactome",
+            ),
+            GeneIncludeType::Ontology => (
+                gene.ontology
+                    .as_ref()
+                    .is_some_and(|rows| rows.iter().any(|row| !row.terms.is_empty())),
+                false,
+                "Enrichr",
+            ),
+            GeneIncludeType::Diseases => (
+                gene.diseases
+                    .as_ref()
+                    .is_some_and(|rows| rows.iter().any(|row| !row.terms.is_empty())),
+                false,
+                "Enrichr",
+            ),
+            GeneIncludeType::Diagnostics => (
+                gene.diagnostics
+                    .as_ref()
+                    .is_some_and(|rows| !rows.is_empty()),
+                gene.diagnostics_note.as_deref() == Some(GENE_DIAGNOSTICS_UNAVAILABLE_NOTE),
+                "NCBI Genetic Testing Registry",
+            ),
+            GeneIncludeType::Protein => (gene.protein.is_some(), false, "UniProt"),
+            GeneIncludeType::Go => (
+                gene.go.as_ref().is_some_and(|rows| !rows.is_empty()),
+                false,
+                "QuickGO",
+            ),
+            GeneIncludeType::Interactions => (
+                gene.interactions
+                    .as_ref()
+                    .is_some_and(|rows| !rows.is_empty()),
+                false,
+                "STRING",
+            ),
+            GeneIncludeType::Civic => (
+                gene.civic.as_ref().is_some_and(|value| {
+                    !value.evidence_items.is_empty() || !value.assertions.is_empty()
+                }),
+                false,
+                "CIViC",
+            ),
+            GeneIncludeType::Expression => (
+                gene.expression
+                    .as_ref()
+                    .is_some_and(|value| !value.tissues.is_empty()),
+                false,
+                "GTEx",
+            ),
+            GeneIncludeType::Hpa => (
+                gene.hpa.as_ref().is_some_and(|value| {
+                    !value.tissues.is_empty()
+                        || !value.subcellular_main_location.is_empty()
+                        || !value.subcellular_additional_location.is_empty()
+                        || value.reliability.is_some()
+                        || value.protein_summary.is_some()
+                        || value.rna_summary.is_some()
+                }),
+                false,
+                "Human Protein Atlas",
+            ),
+            GeneIncludeType::Druggability => (
+                gene.druggability.as_ref().is_some_and(|value| {
+                    !value.categories.is_empty()
+                        || !value.interactions.is_empty()
+                        || !value.tractability.is_empty()
+                        || !value.safety_liabilities.is_empty()
+                }),
+                false,
+                "DGIdb / Open Targets",
+            ),
+            GeneIncludeType::ClinGen => (
+                gene.clingen.as_ref().is_some_and(|value| {
+                    !value.validity.is_empty()
+                        || value.haploinsufficiency.is_some()
+                        || value.triplosensitivity.is_some()
+                }),
+                false,
+                "ClinGen",
+            ),
+            GeneIncludeType::Constraint => (
+                gene.constraint.as_ref().is_some_and(|value| {
+                    value.pli.is_some()
+                        || value.loeuf.is_some()
+                        || value.mis_z.is_some()
+                        || value.syn_z.is_some()
+                        || value.transcript.is_some()
+                }),
+                false,
+                "gnomAD",
+            ),
+            GeneIncludeType::Disgenet => (
+                gene.disgenet
+                    .as_ref()
+                    .is_some_and(|value| !value.associations.is_empty()),
+                false,
+                "DisGeNET",
+            ),
+            GeneIncludeType::Funding => (
+                gene.funding
+                    .as_ref()
+                    .is_some_and(|value| !value.grants.is_empty()),
+                gene.funding_note.as_deref() == Some(FUNDING_UNAVAILABLE_NOTE),
+                "NIH Reporter",
+            ),
+        };
+        let outcome = if unavailable {
+            SectionOutcome::unavailable("The requested gene section is unavailable.")
+        } else if has_data {
+            SectionOutcome::data(source)
+        } else {
+            SectionOutcome::empty(source)
+        };
+        gene.section_outcomes.complete(key, outcome);
     }
+}
+
+fn sync_timing_outcomes(timing: &mut GeneTimingCollector, gene: &Gene) {
+    for entry in &mut timing.sections {
+        if let Some(outcome) = gene.section_outcomes.get(&entry.section)
+            && outcome.outcome() != SectionOutcomeState::NotRequested
+        {
+            entry.outcome = outcome.outcome();
+        }
+    }
+}
+
+fn classify_clingen_section(section: &(GeneClinGen, SectionOutcome)) -> String {
+    section.1.outcome().as_str().to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1163,6 +1326,41 @@ pub async fn has_reactome_pathway_signal(symbol: &str) -> Result<bool, BioMcpErr
     Ok(!rows.is_empty())
 }
 
+fn pathway_outcome(pathways: Option<&[GenePathway]>, reactome_available: bool) -> SectionOutcome {
+    let mut sources = pathways
+        .unwrap_or_default()
+        .iter()
+        .map(|row| row.source.trim())
+        .filter(|source| !source.is_empty())
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    if reactome_available
+        && !sources
+            .iter()
+            .any(|source| source.eq_ignore_ascii_case("Reactome"))
+    {
+        sources.push("Reactome".to_string());
+    }
+    sources.sort_by_key(|source| source.to_ascii_lowercase());
+    sources.dedup_by(|left, right| left.eq_ignore_ascii_case(right));
+
+    if !reactome_available {
+        return if sources.is_empty() {
+            SectionOutcome::unavailable("Reactome gene pathways are unavailable.")
+        } else {
+            SectionOutcome::degraded(
+                sources,
+                "Reactome pathways are unavailable; retained pathway evidence may be incomplete.",
+            )
+        };
+    }
+    if pathways.is_some_and(|rows| !rows.is_empty()) {
+        SectionOutcome::data_sources(sources)
+    } else {
+        SectionOutcome::empty("Reactome")
+    }
+}
+
 fn merge_pathways(
     existing: Option<Vec<GenePathway>>,
     additional: Option<Vec<GenePathway>>,
@@ -1222,10 +1420,10 @@ async fn add_clinical_context(gene: &mut Gene, target_id: Option<&str>) -> Resul
     Ok(())
 }
 
-async fn fetch_civic_section(symbol: &str, timeout: Duration) -> CivicContext {
+async fn fetch_civic_section(symbol: &str, timeout: Duration) -> (CivicContext, SectionOutcome) {
     let symbol = symbol.trim();
     if symbol.is_empty() {
-        return CivicContext::default();
+        return (CivicContext::default(), SectionOutcome::empty("CIViC"));
     }
 
     let civic_fut = async {
@@ -1234,10 +1432,20 @@ async fn fetch_civic_section(symbol: &str, timeout: Duration) -> CivicContext {
     };
 
     match tokio::time::timeout(timeout, civic_fut).await {
-        Ok(Ok(context)) => context,
+        Ok(Ok(context)) => {
+            let outcome = if context.evidence_items.is_empty() && context.assertions.is_empty() {
+                SectionOutcome::empty("CIViC")
+            } else {
+                SectionOutcome::data("CIViC")
+            };
+            (context, outcome)
+        }
         Ok(Err(err)) => {
             warn!(symbol = %symbol, "CIViC unavailable for gene section: {err}");
-            CivicContext::default()
+            (
+                CivicContext::default(),
+                SectionOutcome::unavailable("CIViC gene evidence is unavailable."),
+            )
         }
         Err(_) => {
             warn!(
@@ -1245,26 +1453,27 @@ async fn fetch_civic_section(symbol: &str, timeout: Duration) -> CivicContext {
                 timeout_secs = timeout.as_secs(),
                 "CIViC gene section timed out"
             );
-            CivicContext::default()
+            (
+                CivicContext::default(),
+                SectionOutcome::unavailable("CIViC gene evidence is unavailable."),
+            )
         }
     }
 }
 
 async fn add_civic_section(gene: &mut Gene, timeout: Duration) {
-    let symbol = gene.symbol.trim();
-    if symbol.is_empty() {
-        return;
-    }
-    gene.civic = Some(fetch_civic_section(&gene.symbol, timeout).await);
+    let (context, outcome) = fetch_civic_section(&gene.symbol, timeout).await;
+    gene.civic = Some(context);
+    gene.section_outcomes.complete(GENE_SECTION_CIVIC, outcome);
 }
 
 async fn fetch_expression_section(
     ensembl_id: Option<&str>,
     symbol: &str,
     timeout: Duration,
-) -> GeneExpression {
+) -> (GeneExpression, SectionOutcome) {
     let Some(ensembl_id) = ensembl_id.map(str::trim).filter(|v| !v.is_empty()) else {
-        return GeneExpression::default();
+        return (GeneExpression::default(), SectionOutcome::empty("GTEx"));
     };
 
     let expression_fut = async {
@@ -1274,14 +1483,24 @@ async fn fetch_expression_section(
     };
 
     match tokio::time::timeout(timeout, expression_fut).await {
-        Ok(Ok(expression)) => expression,
+        Ok(Ok(expression)) => {
+            let outcome = if expression.tissues.is_empty() {
+                SectionOutcome::empty("GTEx")
+            } else {
+                SectionOutcome::data("GTEx")
+            };
+            (expression, outcome)
+        }
         Ok(Err(err)) => {
             warn!(
                 symbol = %symbol,
                 ensembl_id = %ensembl_id,
                 "GTEx unavailable for gene expression section: {err}"
             );
-            GeneExpression::default()
+            (
+                GeneExpression::default(),
+                SectionOutcome::unavailable("GTEx gene expression is unavailable."),
+            )
         }
         Err(_) => {
             warn!(
@@ -1290,19 +1509,32 @@ async fn fetch_expression_section(
                 timeout_secs = timeout.as_secs(),
                 "GTEx expression section timed out"
             );
-            GeneExpression::default()
+            (
+                GeneExpression::default(),
+                SectionOutcome::unavailable("GTEx gene expression is unavailable."),
+            )
         }
     }
 }
 
 async fn add_expression_section(gene: &mut Gene, timeout: Duration) {
-    gene.expression =
-        Some(fetch_expression_section(gene.ensembl_id.as_deref(), &gene.symbol, timeout).await);
+    let (expression, outcome) =
+        fetch_expression_section(gene.ensembl_id.as_deref(), &gene.symbol, timeout).await;
+    gene.expression = Some(expression);
+    gene.section_outcomes
+        .complete(GENE_SECTION_EXPRESSION, outcome);
 }
 
-async fn fetch_hpa_section(ensembl_id: Option<&str>, symbol: &str, timeout: Duration) -> GeneHpa {
+async fn fetch_hpa_section(
+    ensembl_id: Option<&str>,
+    symbol: &str,
+    timeout: Duration,
+) -> (GeneHpa, SectionOutcome) {
     let Some(ensembl_id) = ensembl_id.map(str::trim).filter(|v| !v.is_empty()) else {
-        return GeneHpa::default();
+        return (
+            GeneHpa::default(),
+            SectionOutcome::empty("Human Protein Atlas"),
+        );
     };
 
     let hpa_fut = async {
@@ -1311,14 +1543,30 @@ async fn fetch_hpa_section(ensembl_id: Option<&str>, symbol: &str, timeout: Dura
     };
 
     match tokio::time::timeout(timeout, hpa_fut).await {
-        Ok(Ok(hpa)) => hpa,
+        Ok(Ok(hpa)) => {
+            let has_data = !hpa.tissues.is_empty()
+                || !hpa.subcellular_main_location.is_empty()
+                || !hpa.subcellular_additional_location.is_empty()
+                || hpa.reliability.is_some()
+                || hpa.protein_summary.is_some()
+                || hpa.rna_summary.is_some();
+            let outcome = if has_data {
+                SectionOutcome::data("Human Protein Atlas")
+            } else {
+                SectionOutcome::empty("Human Protein Atlas")
+            };
+            (hpa, outcome)
+        }
         Ok(Err(err)) => {
             warn!(
                 symbol = %symbol,
                 ensembl_id = %ensembl_id,
                 "HPA unavailable for gene section: {err}"
             );
-            GeneHpa::default()
+            (
+                GeneHpa::default(),
+                SectionOutcome::unavailable("Human Protein Atlas data is unavailable."),
+            )
         }
         Err(_) => {
             warn!(
@@ -1327,23 +1575,31 @@ async fn fetch_hpa_section(ensembl_id: Option<&str>, symbol: &str, timeout: Dura
                 timeout_secs = timeout.as_secs(),
                 "HPA gene section timed out"
             );
-            GeneHpa::default()
+            (
+                GeneHpa::default(),
+                SectionOutcome::unavailable("Human Protein Atlas data is unavailable."),
+            )
         }
     }
 }
 
 async fn add_hpa_section(gene: &mut Gene, timeout: Duration) {
-    gene.hpa = Some(fetch_hpa_section(gene.ensembl_id.as_deref(), &gene.symbol, timeout).await);
+    let (hpa, outcome) = fetch_hpa_section(gene.ensembl_id.as_deref(), &gene.symbol, timeout).await;
+    gene.hpa = Some(hpa);
+    gene.section_outcomes.complete(GENE_SECTION_HPA, outcome);
 }
 
 async fn fetch_druggability_section(
     symbol: &str,
     target_id: Option<&str>,
     timeout: Duration,
-) -> GeneDruggability {
+) -> (GeneDruggability, SectionOutcome) {
     let symbol = symbol.trim();
     if symbol.is_empty() {
-        return GeneDruggability::default();
+        return (
+            GeneDruggability::default(),
+            SectionOutcome::empty_sources(["DGIdb", "Open Targets"]),
+        );
     }
     let target_id = target_id.map(str::to_string);
 
@@ -1408,11 +1664,36 @@ async fn fetch_druggability_section(
         }
     };
 
-    merge_druggability_results(dgidb_result, opentargets_result)
+    let successful_sources = [
+        dgidb_result.is_ok().then_some("DGIdb"),
+        opentargets_result.is_ok().then_some("Open Targets"),
+    ]
+    .into_iter()
+    .flatten()
+    .collect::<Vec<_>>();
+    let failed = 2 - successful_sources.len();
+    let merged = merge_druggability_results(dgidb_result, opentargets_result);
+    let has_data = !merged.categories.is_empty()
+        || !merged.interactions.is_empty()
+        || !merged.tractability.is_empty()
+        || !merged.safety_liabilities.is_empty();
+    let outcome = match (successful_sources.is_empty(), failed, has_data) {
+        (true, _, _) => SectionOutcome::unavailable("Gene druggability is unavailable."),
+        (false, 0, true) => SectionOutcome::data_sources(successful_sources),
+        (false, 0, false) => SectionOutcome::empty_sources(successful_sources),
+        (false, _, _) => SectionOutcome::degraded(
+            successful_sources,
+            "Gene druggability is incomplete because one provider is unavailable.",
+        ),
+    };
+    (merged, outcome)
 }
 
 async fn add_druggability_section(gene: &mut Gene, target_id: Option<&str>, timeout: Duration) {
-    gene.druggability = Some(fetch_druggability_section(&gene.symbol, target_id, timeout).await);
+    let (section, outcome) = fetch_druggability_section(&gene.symbol, target_id, timeout).await;
+    gene.druggability = Some(section);
+    gene.section_outcomes
+        .complete(GENE_SECTION_DRUGGABILITY, outcome);
 }
 
 fn merge_druggability_results(
@@ -1451,10 +1732,10 @@ fn merge_druggability_results(
     merged
 }
 
-async fn fetch_clingen_section(symbol: &str, timeout: Duration) -> GeneClinGen {
+async fn fetch_clingen_section(symbol: &str, timeout: Duration) -> (GeneClinGen, SectionOutcome) {
     let symbol = symbol.trim();
     if symbol.is_empty() {
-        return GeneClinGen::default();
+        return (GeneClinGen::default(), SectionOutcome::empty("ClinGen"));
     }
 
     let clingen_fut = async {
@@ -1463,13 +1744,26 @@ async fn fetch_clingen_section(symbol: &str, timeout: Duration) -> GeneClinGen {
     };
 
     match tokio::time::timeout(timeout, clingen_fut).await {
-        Ok(Ok(clingen)) => clingen,
+        Ok(Ok(clingen)) => {
+            let outcome = if clingen.validity.is_empty()
+                && clingen.haploinsufficiency.is_none()
+                && clingen.triplosensitivity.is_none()
+            {
+                SectionOutcome::empty("ClinGen")
+            } else {
+                SectionOutcome::data("ClinGen")
+            };
+            (clingen, outcome)
+        }
         Ok(Err(err)) => {
             warn!(
                 symbol = %symbol,
                 "ClinGen unavailable for gene clingen section: {err}"
             );
-            GeneClinGen::default()
+            (
+                GeneClinGen::default(),
+                SectionOutcome::unavailable("ClinGen gene evidence is unavailable."),
+            )
         }
         Err(_) => {
             warn!(
@@ -1477,13 +1771,19 @@ async fn fetch_clingen_section(symbol: &str, timeout: Duration) -> GeneClinGen {
                 timeout_secs = timeout.as_secs(),
                 "ClinGen gene section timed out"
             );
-            GeneClinGen::default()
+            (
+                GeneClinGen::default(),
+                SectionOutcome::unavailable("ClinGen gene evidence is unavailable."),
+            )
         }
     }
 }
 
 async fn add_clingen_section(gene: &mut Gene, timeout: Duration) {
-    gene.clingen = Some(fetch_clingen_section(&gene.symbol, timeout).await);
+    let (clingen, outcome) = fetch_clingen_section(&gene.symbol, timeout).await;
+    gene.clingen = Some(clingen);
+    gene.section_outcomes
+        .complete(GENE_SECTION_CLINGEN, outcome);
 }
 
 fn gnomad_constraint_section(
@@ -1505,10 +1805,29 @@ fn gnomad_constraint_section(
     }
 }
 
-async fn fetch_constraint_section(symbol: &str, timeout: Duration) -> GeneConstraint {
+fn gnomad_constraint_outcome(constraint: &GeneConstraint) -> SectionOutcome {
+    if constraint.transcript.is_some()
+        || constraint.pli.is_some()
+        || constraint.loeuf.is_some()
+        || constraint.mis_z.is_some()
+        || constraint.syn_z.is_some()
+    {
+        SectionOutcome::data("gnomAD")
+    } else {
+        SectionOutcome::empty("gnomAD")
+    }
+}
+
+async fn fetch_constraint_section(
+    symbol: &str,
+    timeout: Duration,
+) -> (GeneConstraint, SectionOutcome) {
     let symbol = symbol.trim();
     if symbol.is_empty() {
-        return gnomad_constraint_section(None, None, None, None, None);
+        return (
+            gnomad_constraint_section(None, None, None, None, None),
+            SectionOutcome::empty("gnomAD"),
+        );
     }
 
     let constraint_fut = async {
@@ -1517,20 +1836,30 @@ async fn fetch_constraint_section(symbol: &str, timeout: Duration) -> GeneConstr
     };
 
     match tokio::time::timeout(timeout, constraint_fut).await {
-        Ok(Ok(Some(constraint))) => gnomad_constraint_section(
-            constraint.transcript,
-            constraint.pli,
-            constraint.loeuf,
-            constraint.mis_z,
-            constraint.syn_z,
+        Ok(Ok(Some(constraint))) => {
+            let section = gnomad_constraint_section(
+                constraint.transcript,
+                constraint.pli,
+                constraint.loeuf,
+                constraint.mis_z,
+                constraint.syn_z,
+            );
+            let outcome = gnomad_constraint_outcome(&section);
+            (section, outcome)
+        }
+        Ok(Ok(None)) => (
+            gnomad_constraint_section(None, None, None, None, None),
+            SectionOutcome::empty("gnomAD"),
         ),
-        Ok(Ok(None)) => gnomad_constraint_section(None, None, None, None, None),
         Ok(Err(err)) => {
             warn!(
                 symbol = %symbol,
                 "gnomAD unavailable for gene constraint section: {err}"
             );
-            gnomad_constraint_section(None, None, None, None, None)
+            (
+                gnomad_constraint_section(None, None, None, None, None),
+                SectionOutcome::unavailable("gnomAD gene constraint is unavailable."),
+            )
         }
         Err(_) => {
             warn!(
@@ -1538,13 +1867,19 @@ async fn fetch_constraint_section(symbol: &str, timeout: Duration) -> GeneConstr
                 timeout_secs = timeout.as_secs(),
                 "gnomAD gene constraint section timed out"
             );
-            gnomad_constraint_section(None, None, None, None, None)
+            (
+                gnomad_constraint_section(None, None, None, None, None),
+                SectionOutcome::unavailable("gnomAD gene constraint is unavailable."),
+            )
         }
     }
 }
 
 async fn add_constraint_section(gene: &mut Gene, timeout: Duration) {
-    gene.constraint = Some(fetch_constraint_section(&gene.symbol, timeout).await);
+    let (constraint, outcome) = fetch_constraint_section(&gene.symbol, timeout).await;
+    gene.constraint = Some(constraint);
+    gene.section_outcomes
+        .complete(GENE_SECTION_CONSTRAINT, outcome);
 }
 
 fn map_disgenet_gene_association(row: DisgenetAssociationRecord) -> GeneDisgenetAssociation {
@@ -1663,7 +1998,9 @@ async fn populate_sections_parallel_top(
     timing: &mut GeneTimingCollector,
     opentargets_id: Option<&str>,
     optional_timeout: Duration,
-    prefetched_clingen: Option<tokio::task::JoinHandle<(GeneClinGen, GeneTimingEntry)>>,
+    prefetched_clingen: Option<
+        tokio::task::JoinHandle<((GeneClinGen, SectionOutcome), GeneTimingEntry)>,
+    >,
 ) -> Result<(), BioMcpError> {
     let symbol = gene.symbol.clone();
     let ensembl_id = gene.ensembl_id.clone();
@@ -1724,13 +2061,7 @@ async fn populate_sections_parallel_top(
                 timed_section(
                     "expression",
                     fetch_expression_section(ensembl_id.as_deref(), &symbol, optional_timeout),
-                    |expression| {
-                        if expression.tissues.is_empty() {
-                            "empty".to_string()
-                        } else {
-                            "data".to_string()
-                        }
-                    },
+                    |(_, outcome)| outcome.outcome().as_str().to_string(),
                 )
                 .await,
             )
@@ -1745,19 +2076,7 @@ async fn populate_sections_parallel_top(
                 timed_section(
                     "hpa",
                     fetch_hpa_section(ensembl_id.as_deref(), &symbol, optional_timeout),
-                    |hpa| {
-                        if !hpa.tissues.is_empty()
-                            || !hpa.subcellular_main_location.is_empty()
-                            || !hpa.subcellular_additional_location.is_empty()
-                            || hpa.reliability.is_some()
-                            || hpa.protein_summary.is_some()
-                            || hpa.rna_summary.is_some()
-                        {
-                            "data".to_string()
-                        } else {
-                            "empty".to_string()
-                        }
-                    },
+                    |(_, outcome)| outcome.outcome().as_str().to_string(),
                 )
                 .await,
             )
@@ -1776,17 +2095,7 @@ async fn populate_sections_parallel_top(
                         druggability_target_id.as_deref(),
                         optional_timeout,
                     ),
-                    |section| {
-                        if !section.categories.is_empty()
-                            || !section.interactions.is_empty()
-                            || !section.tractability.is_empty()
-                            || !section.safety_liabilities.is_empty()
-                        {
-                            "data".to_string()
-                        } else {
-                            "empty".to_string()
-                        }
-                    },
+                    |(_, outcome)| outcome.outcome().as_str().to_string(),
                 )
                 .await,
             )
@@ -1802,11 +2111,14 @@ async fn populate_sections_parallel_top(
                 Err(err) => {
                     warn!("ClinGen prefetch task failed: {err}");
                     Some((
-                        GeneClinGen::default(),
+                        (
+                            GeneClinGen::default(),
+                            SectionOutcome::unavailable("ClinGen gene evidence is unavailable."),
+                        ),
                         GeneTimingEntry {
                             section: "clingen".to_string(),
                             elapsed_ms: 0,
-                            outcome: "error".to_string(),
+                            outcome: SectionOutcomeState::Unavailable,
                         },
                     ))
                 }
@@ -1907,13 +2219,7 @@ async fn populate_sections_parallel_top(
                 timed_section(
                     "civic",
                     fetch_civic_section(&symbol, optional_timeout),
-                    |context| {
-                        if !context.evidence_items.is_empty() || !context.assertions.is_empty() {
-                            "data".to_string()
-                        } else {
-                            "empty".to_string()
-                        }
-                    },
+                    |(_, outcome)| outcome.outcome().as_str().to_string(),
                 )
                 .await,
             )
@@ -1928,18 +2234,7 @@ async fn populate_sections_parallel_top(
                 timed_section(
                     "constraint",
                     fetch_constraint_section(&symbol, optional_timeout),
-                    |section| {
-                        if section.pli.is_some()
-                            || section.loeuf.is_some()
-                            || section.mis_z.is_some()
-                            || section.syn_z.is_some()
-                            || section.transcript.is_some()
-                        {
-                            "data".to_string()
-                        } else {
-                            "empty".to_string()
-                        }
-                    },
+                    |(_, outcome)| outcome.outcome().as_str().to_string(),
                 )
                 .await,
             )
@@ -1987,38 +2282,65 @@ async fn populate_sections_parallel_top(
         timing.push(entry);
         let (ontology, diseases) = match result {
             Ok(value) => value,
-            Err(err) => return Err(err),
+            Err(err) => {
+                warn!("Enrichr unavailable for gene enrichment sections: {err}");
+                for section in &enrichr_sections {
+                    gene.section_outcomes.complete(
+                        section.as_str(),
+                        SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
+                    );
+                }
+                (None, None)
+            }
         };
         gene.ontology = ontology;
         gene.diseases = diseases;
     }
 
-    if let Some((expression, entry)) = expression_result {
+    if let Some(((expression, outcome), entry)) = expression_result {
         timing.push(entry);
         gene.expression = Some(expression);
+        gene.section_outcomes
+            .complete(GENE_SECTION_EXPRESSION, outcome);
     }
 
-    if let Some((hpa, entry)) = hpa_result {
+    if let Some(((hpa, outcome), entry)) = hpa_result {
         timing.push(entry);
         gene.hpa = Some(hpa);
+        gene.section_outcomes.complete(GENE_SECTION_HPA, outcome);
     }
 
-    if let Some((druggability, entry)) = druggability_result {
+    if let Some(((druggability, outcome), entry)) = druggability_result {
         timing.push(entry);
         gene.druggability = Some(druggability);
+        gene.section_outcomes
+            .complete(GENE_SECTION_DRUGGABILITY, outcome);
     }
 
-    if let Some((clingen, entry)) = clingen_result {
+    if let Some(((clingen, outcome), entry)) = clingen_result {
         timing.push(entry);
         gene.clingen = Some(clingen);
+        gene.section_outcomes
+            .complete(GENE_SECTION_CLINGEN, outcome);
     }
 
     if let Some((result, entry)) = pathways_result {
         timing.push(entry);
         gene.pathways = match result {
-            Ok(value) => merge_pathways(gene.pathways.take(), value),
+            Ok(value) => {
+                let pathways = merge_pathways(gene.pathways.take(), value);
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PATHWAYS,
+                    pathway_outcome(pathways.as_deref(), true),
+                );
+                pathways
+            }
             Err(err) => {
                 warn!("Reactome unavailable for gene pathways section: {err}");
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PATHWAYS,
+                    pathway_outcome(gene.pathways.as_deref(), false),
+                );
                 gene.pathways.clone()
             }
         };
@@ -2032,6 +2354,10 @@ async fn populate_sections_parallel_top(
             Ok(value) => value,
             Err(err) => {
                 warn!("UniProt unavailable for gene protein section: {err}");
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PROTEIN,
+                    SectionOutcome::unavailable("UniProt gene protein data is unavailable."),
+                );
                 None
             }
         };
@@ -2043,6 +2369,10 @@ async fn populate_sections_parallel_top(
             Ok(value) => Some(value),
             Err(err) => {
                 warn!("QuickGO unavailable for gene GO section: {err}");
+                gene.section_outcomes.complete(
+                    GENE_SECTION_GO,
+                    SectionOutcome::unavailable("QuickGO gene ontology is unavailable."),
+                );
                 Some(Vec::new())
             }
         };
@@ -2054,40 +2384,47 @@ async fn populate_sections_parallel_top(
             Ok(value) => Some(value),
             Err(err) => {
                 warn!("STRING unavailable for gene interactions section: {err}");
+                gene.section_outcomes.complete(
+                    GENE_SECTION_INTERACTIONS,
+                    SectionOutcome::unavailable("STRING gene interactions are unavailable."),
+                );
                 Some(Vec::new())
             }
         };
     }
 
-    if let Some((civic, entry)) = civic_result {
+    if let Some(((civic, outcome), entry)) = civic_result {
         timing.push(entry);
         gene.civic = Some(civic);
+        gene.section_outcomes.complete(GENE_SECTION_CIVIC, outcome);
     }
 
-    if let Some((constraint, entry)) = constraint_result {
+    if let Some(((constraint, outcome), entry)) = constraint_result {
         timing.push(entry);
         gene.constraint = Some(constraint);
+        gene.section_outcomes
+            .complete(GENE_SECTION_CONSTRAINT, outcome);
     }
 
     if include.contains(&GeneIncludeType::Disgenet) {
         let started = Instant::now();
-        if let Err(err) = add_disgenet_section(gene).await {
-            timing.record("disgenet", started, "error");
-            return Err(err);
-        }
-        timing.record(
-            "disgenet",
-            started,
-            if gene
-                .disgenet
-                .as_ref()
-                .is_some_and(|section| !section.associations.is_empty())
-            {
-                "data"
-            } else {
-                "empty"
-            },
-        );
+        let timing_outcome = if let Err(err) = add_disgenet_section(gene).await {
+            warn!("DisGeNET unavailable for gene disease associations: {err}");
+            gene.section_outcomes.complete(
+                GENE_SECTION_DISGENET,
+                SectionOutcome::unavailable("DisGeNET gene associations are unavailable."),
+            );
+            "error"
+        } else if gene
+            .disgenet
+            .as_ref()
+            .is_some_and(|section| !section.associations.is_empty())
+        {
+            "data"
+        } else {
+            "empty"
+        };
+        timing.record("disgenet", started, timing_outcome);
     }
 
     if include.contains(&GeneIncludeType::Diagnostics) {
@@ -2128,6 +2465,8 @@ async fn populate_sections_parallel_top(
         );
     }
 
+    complete_gene_section_outcomes(gene, include);
+    sync_timing_outcomes(timing, gene);
     Ok(())
 }
 
@@ -2238,9 +2577,20 @@ pub async fn get_with_report(
     if include.contains(&GeneIncludeType::Pathways) {
         let started = Instant::now();
         gene.pathways = match fetch_pathways_section(&gene.symbol).await {
-            Ok(v) => merge_pathways(gene.pathways.take(), v),
+            Ok(value) => {
+                let pathways = merge_pathways(gene.pathways.take(), value);
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PATHWAYS,
+                    pathway_outcome(pathways.as_deref(), true),
+                );
+                pathways
+            }
             Err(err) => {
                 warn!("Reactome unavailable for gene pathways section: {err}");
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PATHWAYS,
+                    pathway_outcome(gene.pathways.as_deref(), false),
+                );
                 gene.pathways
             }
         };
@@ -2270,8 +2620,14 @@ pub async fn get_with_report(
             Ok(value) => value,
             Err(err) => {
                 timing.record("enrichr", started, "error");
-                timing.finish();
-                return Err(err);
+                warn!("Enrichr unavailable for gene enrichment sections: {err}");
+                for section in &enrichr_sections {
+                    gene.section_outcomes.complete(
+                        section.as_str(),
+                        SectionOutcome::unavailable("Enrichr gene enrichment is unavailable."),
+                    );
+                }
+                (None, None)
             }
         };
         gene.ontology = ontology;
@@ -2301,6 +2657,10 @@ pub async fn get_with_report(
             Ok(v) => v,
             Err(err) => {
                 warn!("UniProt unavailable for gene protein section: {err}");
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PROTEIN,
+                    SectionOutcome::unavailable("UniProt gene protein data is unavailable."),
+                );
                 None
             }
         };
@@ -2321,6 +2681,10 @@ pub async fn get_with_report(
             Ok(v) => Some(v),
             Err(err) => {
                 warn!("QuickGO unavailable for gene GO section: {err}");
+                gene.section_outcomes.complete(
+                    GENE_SECTION_GO,
+                    SectionOutcome::unavailable("QuickGO gene ontology is unavailable."),
+                );
                 Some(Vec::new())
             }
         };
@@ -2341,6 +2705,10 @@ pub async fn get_with_report(
             Ok(v) => Some(v),
             Err(err) => {
                 warn!("STRING unavailable for gene interactions section: {err}");
+                gene.section_outcomes.complete(
+                    GENE_SECTION_INTERACTIONS,
+                    SectionOutcome::unavailable("STRING gene interactions are unavailable."),
+                );
                 Some(Vec::new())
             }
         };
@@ -2475,24 +2843,23 @@ pub async fn get_with_report(
 
     if include.contains(&GeneIncludeType::Disgenet) {
         let started = Instant::now();
-        if let Err(err) = add_disgenet_section(&mut gene).await {
-            timing.record("disgenet", started, "error");
-            timing.finish();
-            return Err(err);
-        }
-        timing.record(
-            "disgenet",
-            started,
-            if gene
-                .disgenet
-                .as_ref()
-                .is_some_and(|section| !section.associations.is_empty())
-            {
-                "data"
-            } else {
-                "empty"
-            },
-        );
+        let timing_outcome = if let Err(err) = add_disgenet_section(&mut gene).await {
+            warn!("DisGeNET unavailable for gene disease associations: {err}");
+            gene.section_outcomes.complete(
+                GENE_SECTION_DISGENET,
+                SectionOutcome::unavailable("DisGeNET gene associations are unavailable."),
+            );
+            "error"
+        } else if gene
+            .disgenet
+            .as_ref()
+            .is_some_and(|section| !section.associations.is_empty())
+        {
+            "data"
+        } else {
+            "empty"
+        };
+        timing.record("disgenet", started, timing_outcome);
     }
 
     if include.contains(&GeneIncludeType::Diagnostics) {
@@ -2533,6 +2900,8 @@ pub async fn get_with_report(
         );
     }
 
+    complete_gene_section_outcomes(&mut gene, &include);
+    sync_timing_outcomes(&mut timing, &gene);
     let timing = timing.finish();
     Ok(GeneGetResult { gene, timing })
 }
@@ -2792,6 +3161,7 @@ mod tests {
 
     fn test_gene(symbol: &str) -> Gene {
         Gene {
+            section_outcomes: SectionOutcomes::with_keys(GENE_OUTCOME_KEYS),
             symbol: symbol.to_string(),
             name: format!("{symbol} gene"),
             entrez_id: "0".to_string(),
@@ -2823,6 +3193,35 @@ mod tests {
             diagnostics: None,
             diagnostics_note: None,
         }
+    }
+
+    #[test]
+    fn gnomad_constraint_without_metrics_is_healthy_empty() {
+        let empty = gnomad_constraint_section(None, None, None, None, None);
+        assert_eq!(
+            gnomad_constraint_outcome(&empty).outcome(),
+            SectionOutcomeState::Empty
+        );
+
+        let data = gnomad_constraint_section(Some("ENST0001".to_string()), None, None, None, None);
+        assert_eq!(
+            gnomad_constraint_outcome(&data).outcome(),
+            SectionOutcomeState::Data
+        );
+    }
+
+    #[test]
+    fn outcome_inventory_matches_parser_visible_sections() {
+        let registry = SectionOutcomes::with_keys(GENE_OUTCOME_KEYS);
+        let keys = registry.iter().map(|(key, _)| key).collect::<Vec<_>>();
+        let mut visible = GENE_SECTION_NAMES[..GENE_SECTION_NAMES.len() - 1].to_vec();
+        visible.sort_unstable();
+        assert_eq!(keys, visible);
+        assert!(
+            registry
+                .iter()
+                .all(|(_, value)| value.outcome() == SectionOutcomeState::NotRequested)
+        );
     }
 
     #[test]
@@ -3112,6 +3511,34 @@ mod tests {
         assert_eq!(merged.len(), 2);
         assert_eq!(merged[0].source, "KEGG");
         assert_eq!(merged[1].source, "Reactome");
+    }
+
+    #[test]
+    fn pathway_outcome_credits_merged_sources_and_only_retained_sources_on_failure() {
+        let pathways = vec![
+            GenePathway {
+                source: "KEGG".to_string(),
+                id: "hsa04010".to_string(),
+                name: "MAPK signaling pathway".to_string(),
+            },
+            GenePathway {
+                source: "Reactome".to_string(),
+                id: "R-HSA-5673001".to_string(),
+                name: "RAF/MAP kinase cascade".to_string(),
+            },
+        ];
+
+        let healthy = pathway_outcome(Some(&pathways), true);
+        assert_eq!(healthy.outcome(), SectionOutcomeState::Data);
+        assert_eq!(healthy.sources(), &["KEGG", "Reactome"]);
+
+        let degraded = pathway_outcome(Some(&pathways[..1]), false);
+        assert_eq!(degraded.outcome(), SectionOutcomeState::Degraded);
+        assert_eq!(degraded.sources(), &["KEGG"]);
+
+        let unavailable = pathway_outcome(None, false);
+        assert_eq!(unavailable.outcome(), SectionOutcomeState::Unavailable);
+        assert!(unavailable.sources().is_empty());
     }
 
     #[tokio::test]

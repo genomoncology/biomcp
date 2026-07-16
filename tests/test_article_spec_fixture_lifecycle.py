@@ -65,6 +65,8 @@ def _runner_workspace(
         "setup-ctgov-intervention-alias-spec-fixture.sh",
         "setup-disease-survival-spec-fixture.sh",
         "cleanup-disease-survival-spec-fixture.sh",
+        "setup-section-outcomes-spec-fixture.sh",
+        "cleanup-section-outcomes-spec-fixture.sh",
     ):
         script = fixtures / name
         script.write_text("#!/usr/bin/env bash\nexit 0\n")
@@ -130,17 +132,17 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
     ]
-    assert len(invocations) == 2
+    assert len(invocations) == (2 if mode == "spec-contracts" else 3)
     article_args, article_base, article_origin = invocations[0]
-    rest_args, rest_base, rest_origin = invocations[1]
     assert "spec/entity/article.md" in article_args
     assert "spec/entity/author.md" in article_args
-    assert "spec/entity/article.md" not in rest_args
-    assert "spec/entity/author.md" not in rest_args
     assert article_base.startswith("http://127.0.0.1:")
     assert article_origin == article_base
-    assert rest_base == "caller-pubtator"
-    assert rest_origin == "http://127.0.0.1:9999"
+    for rest_args, rest_base, rest_origin in invocations[1:]:
+        assert "spec/entity/article.md" not in rest_args
+        assert "spec/entity/author.md" not in rest_args
+        assert rest_base == "caller-pubtator"
+        assert rest_origin == "http://127.0.0.1:9999"
     assert not (workspace / ".cache" / "spec-article-fulltext-source-env").exists()
 
 

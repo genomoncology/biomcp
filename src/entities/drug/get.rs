@@ -6,6 +6,7 @@ use std::sync::{Mutex, OnceLock};
 use regex::Regex;
 use tracing::warn;
 
+use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::ema::{EmaClient, EmaSyncMode};
@@ -195,6 +196,10 @@ async fn add_approvals_section(drug: &mut Drug) {
     let name = drug.name.trim();
     if name.is_empty() {
         drug.approvals = Some(Vec::new());
+        drug.section_outcomes.complete(
+            "approvals",
+            SectionOutcome::unavailable("Drugs@FDA approvals are unavailable."),
+        );
         return;
     }
 
@@ -217,11 +222,21 @@ async fn add_approvals_section(drug: &mut Drug) {
     match tokio::time::timeout(OPTIONAL_SAFETY_TIMEOUT, approvals_fut).await {
         Ok(Ok(resp)) => {
             let approvals = resp.map(map_drugsfda_approvals).unwrap_or_default();
+            let outcome = if approvals.is_empty() {
+                SectionOutcome::empty("OpenFDA Drugs@FDA")
+            } else {
+                SectionOutcome::data("OpenFDA Drugs@FDA")
+            };
             drug.approvals = Some(approvals);
+            drug.section_outcomes.complete("approvals", outcome);
         }
         Ok(Err(err)) => {
             warn!(drug = %drug.name, "OpenFDA Drugs@FDA unavailable: {err}");
             drug.approvals = Some(Vec::new());
+            drug.section_outcomes.complete(
+                "approvals",
+                SectionOutcome::unavailable("Drugs@FDA approvals are unavailable."),
+            );
         }
         Err(_) => {
             warn!(
@@ -230,6 +245,10 @@ async fn add_approvals_section(drug: &mut Drug) {
                 "OpenFDA Drugs@FDA section timed out"
             );
             drug.approvals = Some(Vec::new());
+            drug.section_outcomes.complete(
+                "approvals",
+                SectionOutcome::unavailable("Drugs@FDA approvals are unavailable."),
+            );
         }
     }
 }

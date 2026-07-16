@@ -395,6 +395,14 @@ The exact representation is not universal across the repo. Some sections label
 individual rows, some label source groups, and some preserve provenance through
 source-specific notes and identifiers.
 
+Gene, drug approvals, adverse-event source search, protein, and pathway use an
+entity-owned `section_outcomes` registry for optional sections. Its states are
+`not_requested`, `data`, `empty`, `degraded`, and `unavailable`. `empty` means a
+healthy source confirmed zero rows; `unavailable` means no usable result was
+obtained. `sources` credits only providers that returned usable evidence, so an
+unavailable section has no successful source credit. `_meta.section_sources`
+copies requested outcomes from this registry and omits `not_requested` entries.
+
 ## Auth, Cache, and Secrets
 
 Authenticated or key-gated integrations have extra requirements.

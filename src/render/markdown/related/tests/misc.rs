@@ -80,6 +80,7 @@ fn related_device_event_uses_supported_search_subcommands() {
 #[test]
 fn related_protein_includes_complexes_follow_up() {
     let protein = Protein {
+        section_outcomes: Default::default(),
         accession: "P15056".to_string(),
         entry_id: Some("BRAF_HUMAN".to_string()),
         name: "Serine/threonine-protein kinase B-raf".to_string(),
@@ -103,6 +104,7 @@ fn related_protein_includes_complexes_follow_up() {
 #[test]
 fn related_protein_excludes_requested_sections() {
     let protein = Protein {
+        section_outcomes: Default::default(),
         accession: "P15056".to_string(),
         entry_id: Some("BRAF_HUMAN".to_string()),
         name: "Serine/threonine-protein kinase B-raf".to_string(),

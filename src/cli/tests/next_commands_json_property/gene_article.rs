@@ -5,6 +5,7 @@ use crate::entities::gene::Gene;
 #[test]
 fn gene_json_next_commands_parse() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -69,6 +70,7 @@ fn gene_json_next_commands_parse() {
 #[test]
 fn gene_json_next_commands_omit_requested_section_follow_up() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -121,6 +123,7 @@ fn gene_json_next_commands_omit_requested_section_follow_up() {
 #[test]
 fn gene_json_suggestions_match_see_also_without_section_hints() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -170,6 +173,7 @@ fn gene_json_suggestions_match_see_also_without_section_hints() {
 #[test]
 fn gene_json_next_commands_include_clingen_trial_search() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "SCN1A".to_string(),
         name: "sodium voltage-gated channel alpha subunit 1".to_string(),
         entrez_id: "6323".to_string(),

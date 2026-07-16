@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn gene_evidence_urls_include_ensembl_and_omim() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -177,6 +178,7 @@ fn disease_evidence_urls_include_record_links() {
 #[test]
 fn drug_evidence_urls_include_chembl() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "osimertinib".to_string(),
         drugbank_id: Some("DB09330".to_string()),
         chembl_id: Some("CHEMBL3353410".to_string()),
@@ -224,6 +226,7 @@ fn drug_evidence_urls_include_chembl() {
 #[test]
 fn drug_evidence_urls_include_faers_and_dailymed_when_sections_exist() {
     let drug = Drug {
+            section_outcomes: Default::default(),
             name: "ivacaftor".to_string(),
             drugbank_id: None,
             chembl_id: None,

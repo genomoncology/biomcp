@@ -290,9 +290,15 @@ pub(crate) async fn handle_search(
                 )
                 .await?;
                 let raw_query = filters.drug.clone().unwrap_or_default();
+                let section_outcomes = source_response.section_outcomes.clone();
+                let section_sources =
+                    crate::render::provenance::adverse_event_source_search_section_sources(
+                        &source_response,
+                    );
                 if json {
                     #[derive(serde::Serialize)]
                     struct FaersSearchResponse {
+                        section_outcomes: crate::entities::section_outcome::SectionOutcomes,
                         source: &'static str,
                         pagination: super::super::PaginationMeta,
                         count: usize,
@@ -301,9 +307,9 @@ pub(crate) async fn handle_search(
                         #[serde(skip_serializing_if = "Option::is_none")]
                         _meta: Option<crate::cli::SearchJsonMeta>,
                     }
-
                     #[derive(serde::Serialize)]
                     struct CombinedSearchResponse {
+                        section_outcomes: crate::entities::section_outcome::SectionOutcomes,
                         source: &'static str,
                         pagination: super::super::PaginationMeta,
                         count: usize,
@@ -316,6 +322,7 @@ pub(crate) async fn handle_search(
 
                     #[derive(serde::Serialize)]
                     struct VaersOnlyResponse {
+                        section_outcomes: crate::entities::section_outcome::SectionOutcomes,
                         source: &'static str,
                         query: String,
                         vaers: crate::entities::adverse_event::VaersSearchPayload,
@@ -327,14 +334,12 @@ pub(crate) async fn handle_search(
                         crate::entities::adverse_event::AdverseEventSourceFilter::Faers => {
                             let status = source_response.faers.expect("faers status");
                             let (results, summary) = match status {
-                                crate::entities::adverse_event::FaersSearchStatus::NotFound => (
-                                    Vec::new(),
-                                    crate::entities::adverse_event::AdverseEventSearchSummary {
-                                        total_reports: 0,
-                                        returned_report_count: 0,
-                                        top_reactions: Vec::new(),
-                                    },
-                                ),
+                                crate::entities::adverse_event::FaersSearchStatus::NotFound
+                                | crate::entities::adverse_event::FaersSearchStatus::Unavailable => {
+                                    let response =
+                                        crate::entities::adverse_event::empty_search_response();
+                                    (response.results, response.summary)
+                                }
                                 crate::entities::adverse_event::FaersSearchStatus::Results(
                                     response,
                                 ) => (response.results, response.summary),
@@ -348,36 +353,42 @@ pub(crate) async fn handle_search(
                             let next_commands =
                                 crate::render::markdown::search_next_commands_faers(&results);
                             crate::render::json::to_pretty(&FaersSearchResponse {
+                                section_outcomes,
                                 source: "faers",
                                 pagination,
                                 count: results.len(),
                                 summary,
                                 results,
-                                _meta: crate::cli::search_meta(next_commands),
+                                _meta: crate::cli::search_meta_with_section_sources(
+                                    next_commands,
+                                    section_sources,
+                                ),
                             })?
                         }
                         crate::entities::adverse_event::AdverseEventSourceFilter::Vaers => {
                             let vaers = source_response.vaers.expect("vaers payload");
                             let next_commands = vaers_only_next_commands(&raw_query);
                             crate::render::json::to_pretty(&VaersOnlyResponse {
+                                section_outcomes,
                                 source: "vaers",
                                 query: raw_query.clone(),
                                 vaers,
-                                _meta: crate::cli::search_meta(next_commands),
+                                _meta: crate::cli::search_meta_with_section_sources(
+                                    next_commands,
+                                    section_sources,
+                                ),
                             })?
                         }
                         crate::entities::adverse_event::AdverseEventSourceFilter::All => {
                             let status = source_response.faers.expect("faers status");
                             let vaers = source_response.vaers.expect("vaers payload");
                             let (results, summary) = match status {
-                                crate::entities::adverse_event::FaersSearchStatus::NotFound => (
-                                    Vec::new(),
-                                    crate::entities::adverse_event::AdverseEventSearchSummary {
-                                        total_reports: 0,
-                                        returned_report_count: 0,
-                                        top_reactions: Vec::new(),
-                                    },
-                                ),
+                                crate::entities::adverse_event::FaersSearchStatus::NotFound
+                                | crate::entities::adverse_event::FaersSearchStatus::Unavailable => {
+                                    let response =
+                                        crate::entities::adverse_event::empty_search_response();
+                                    (response.results, response.summary)
+                                }
                                 crate::entities::adverse_event::FaersSearchStatus::Results(
                                     response,
                                 ) => (response.results, response.summary),
@@ -394,13 +405,17 @@ pub(crate) async fn handle_search(
                                 crate::render::markdown::search_next_commands_faers(&results)
                             };
                             crate::render::json::to_pretty(&CombinedSearchResponse {
+                                section_outcomes,
                                 source: "all",
                                 pagination,
                                 count: results.len(),
                                 summary,
                                 results,
                                 vaers,
-                                _meta: crate::cli::search_meta(next_commands),
+                                _meta: crate::cli::search_meta_with_section_sources(
+                                    next_commands,
+                                    section_sources,
+                                ),
                             })?
                         }
                     }
@@ -428,6 +443,15 @@ pub(crate) async fn handle_search(
                                     );
                                     (response.results, response.summary, message)
                                 }
+                                crate::entities::adverse_event::FaersSearchStatus::Unavailable => (
+                                    Vec::new(),
+                                    crate::entities::adverse_event::AdverseEventSearchSummary {
+                                        total_reports: 0,
+                                        returned_report_count: 0,
+                                        top_reactions: Vec::new(),
+                                    },
+                                    Some("OpenFDA FAERS adverse events are unavailable."),
+                                ),
                             };
                             let pagination = super::super::PaginationMeta::offset(
                                 args.offset,
@@ -474,6 +498,15 @@ pub(crate) async fn handle_search(
                                     );
                                     (response.results, response.summary, message)
                                 }
+                                crate::entities::adverse_event::FaersSearchStatus::Unavailable => (
+                                    Vec::new(),
+                                    crate::entities::adverse_event::AdverseEventSearchSummary {
+                                        total_reports: 0,
+                                        returned_report_count: 0,
+                                        top_reactions: Vec::new(),
+                                    },
+                                    Some("OpenFDA FAERS adverse events are unavailable."),
+                                ),
                             };
                             let pagination = super::super::PaginationMeta::offset(
                                 args.offset,

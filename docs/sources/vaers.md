@@ -15,7 +15,10 @@ vaccine.
 Vaccine identity can flow through the local CDC CVX/MVX bridge when the query
 needs help resolving to the CDC WONDER D8 code space, so brand-heavy inputs can
 still land on the right vaccine family without exposing the raw CDC codes to
-the operator.
+the operator. JSON from `--source all` keeps independent
+`section_outcomes.faers` and `.vaers` states. CVX or VAERS failure is
+`unavailable`; only a healthy CVX classification can produce
+`query_not_vaccine` or `unmapped_vaccine` in `vaers.status`.
 
 ## What BioMCP exposes
 

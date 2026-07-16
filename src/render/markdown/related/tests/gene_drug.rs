@@ -1,6 +1,7 @@
 #[test]
 fn related_gene_prioritizes_localization_deepening_when_supported() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "OPA1".to_string(),
         name: "OPA1 mitochondrial dynamin like GTPase".to_string(),
         entrez_id: "4976".to_string(),
@@ -64,6 +65,7 @@ fn related_gene_prioritizes_localization_deepening_when_supported() {
 #[test]
 fn related_gene_promotes_clingen_trial_search_before_generic_pivots() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "OPA1".to_string(),
         name: "OPA1 mitochondrial dynamin like GTPase".to_string(),
         entrez_id: "4976".to_string(),
@@ -143,6 +145,7 @@ fn related_gene_promotes_clingen_trial_search_before_generic_pivots() {
 #[test]
 fn related_drug_includes_pgx_search() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "warfarin".to_string(),
         drugbank_id: None,
         chembl_id: None,

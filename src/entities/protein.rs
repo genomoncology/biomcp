@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use tracing::warn;
 
 use crate::entities::SearchPage;
+use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::error::BioMcpError;
 use crate::sources::complexportal::{ComplexPortalClient, ComplexPortalComplex};
 use crate::sources::interpro::InterProClient;
@@ -15,6 +16,8 @@ use crate::transform;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Protein {
+    #[serde(default, deserialize_with = "deserialize_protein_section_outcomes")]
+    pub section_outcomes: SectionOutcomes,
     pub accession: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entry_id: Option<String>,
@@ -97,6 +100,25 @@ const PROTEIN_SECTION_INTERACTIONS: &str = "interactions";
 const PROTEIN_SECTION_COMPLEXES: &str = "complexes";
 const PROTEIN_SECTION_STRUCTURES: &str = "structures";
 const PROTEIN_SECTION_ALL: &str = "all";
+pub(crate) const PROTEIN_OUTCOME_KEYS: &[&str] = &[
+    PROTEIN_SECTION_DOMAINS,
+    PROTEIN_SECTION_INTERACTIONS,
+    PROTEIN_SECTION_COMPLEXES,
+    PROTEIN_SECTION_STRUCTURES,
+];
+fn deserialize_protein_section_outcomes<'de, D>(
+    deserializer: D,
+) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(PROTEIN_OUTCOME_KEYS)
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
+}
+
 const DEFAULT_COMPLEX_LIMIT: usize = 10;
 const DEFAULT_STRUCTURE_LIMIT: usize = 10;
 const MAX_STRUCTURE_LIMIT: usize = 100;
@@ -416,6 +438,14 @@ pub async fn get_with_structure_limit(
             structure_limit,
             structure_offset,
         );
+        protein.section_outcomes.complete(
+            PROTEIN_SECTION_STRUCTURES,
+            if protein.structures.is_empty() {
+                SectionOutcome::empty("UniProt")
+            } else {
+                SectionOutcome::data("UniProt")
+            },
+        );
     }
 
     let interaction_query = protein
@@ -505,19 +535,73 @@ pub async fn get_with_structure_limit(
     let (domains_res, interactions_res, complexes_res) =
         tokio::join!(domains_fut, interactions_fut, complexes_fut);
 
-    match domains_res {
-        Ok(domains) => protein.domains = domains,
-        Err(err) => warn!("InterPro unavailable for protein domains: {err}"),
+    if parsed_sections.include_domains {
+        match domains_res {
+            Ok(domains) => {
+                protein.section_outcomes.complete(
+                    PROTEIN_SECTION_DOMAINS,
+                    if domains.is_empty() {
+                        SectionOutcome::empty("InterPro")
+                    } else {
+                        SectionOutcome::data("InterPro")
+                    },
+                );
+                protein.domains = domains;
+            }
+            Err(err) => {
+                warn!("InterPro unavailable for protein domains: {err}");
+                protein.section_outcomes.complete(
+                    PROTEIN_SECTION_DOMAINS,
+                    SectionOutcome::unavailable("InterPro protein domains are unavailable."),
+                );
+            }
+        }
     }
 
-    match interactions_res {
-        Ok(rows) => protein.interactions = rows,
-        Err(err) => warn!("STRING unavailable for protein interactions: {err}"),
+    if parsed_sections.include_interactions {
+        match interactions_res {
+            Ok(rows) => {
+                protein.section_outcomes.complete(
+                    PROTEIN_SECTION_INTERACTIONS,
+                    if rows.is_empty() {
+                        SectionOutcome::empty("STRING")
+                    } else {
+                        SectionOutcome::data("STRING")
+                    },
+                );
+                protein.interactions = rows;
+            }
+            Err(err) => {
+                warn!("STRING unavailable for protein interactions: {err}");
+                protein.section_outcomes.complete(
+                    PROTEIN_SECTION_INTERACTIONS,
+                    SectionOutcome::unavailable("STRING protein interactions are unavailable."),
+                );
+            }
+        }
     }
 
-    match complexes_res {
-        Ok(rows) => protein.complexes = rows,
-        Err(err) => warn!("ComplexPortal unavailable for protein complexes: {err}"),
+    if parsed_sections.include_complexes {
+        match complexes_res {
+            Ok(rows) => {
+                protein.section_outcomes.complete(
+                    PROTEIN_SECTION_COMPLEXES,
+                    if rows.is_empty() {
+                        SectionOutcome::empty("ComplexPortal")
+                    } else {
+                        SectionOutcome::data("ComplexPortal")
+                    },
+                );
+                protein.complexes = rows;
+            }
+            Err(err) => {
+                warn!("ComplexPortal unavailable for protein complexes: {err}");
+                protein.section_outcomes.complete(
+                    PROTEIN_SECTION_COMPLEXES,
+                    SectionOutcome::unavailable("ComplexPortal protein complexes are unavailable."),
+                );
+            }
+        }
     }
 
     Ok(protein)

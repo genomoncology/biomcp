@@ -459,6 +459,11 @@ pub(crate) async fn handle_command(
                                 )?
                                 }
                             }
+                            crate::entities::adverse_event::FaersSearchStatus::Unavailable => {
+                                return Err(anyhow::anyhow!(
+                                    "OpenFDA FAERS adverse events are unavailable"
+                                ));
+                            }
                         }
                     }
                 }

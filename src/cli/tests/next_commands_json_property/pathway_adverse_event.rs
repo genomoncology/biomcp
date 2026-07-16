@@ -6,6 +6,7 @@ use crate::entities::protein::Protein;
 #[test]
 fn batch_protein_json_omits_requested_section_from_next_commands() {
     let protein = Protein {
+        section_outcomes: Default::default(),
         accession: "P00533".to_string(),
         entry_id: Some("EGFR_HUMAN".to_string()),
         name: "Epidermal growth factor receptor".to_string(),
@@ -55,6 +56,7 @@ fn batch_protein_json_omits_requested_section_from_next_commands() {
 #[test]
 fn pathway_json_next_commands_parse() {
     let pathway = Pathway {
+        section_outcomes: Default::default(),
         source: "KEGG".to_string(),
         id: "hsa05200".to_string(),
         name: "Pathways in cancer".to_string(),
@@ -95,6 +97,7 @@ fn pathway_json_next_commands_parse() {
 #[test]
 fn protein_json_next_commands_parse() {
     let protein = Protein {
+        section_outcomes: Default::default(),
         accession: "P00533".to_string(),
         entry_id: Some("EGFR_HUMAN".to_string()),
         name: "Epidermal growth factor receptor".to_string(),

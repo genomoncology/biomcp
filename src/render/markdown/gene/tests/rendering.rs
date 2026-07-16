@@ -1,6 +1,7 @@
 #[test]
 fn gene_markdown_includes_evidence_links() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -42,6 +43,7 @@ fn gene_markdown_includes_evidence_links() {
 #[test]
 fn ticket_406_coordinate_outputs_carry_genome_build_context() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -102,6 +104,7 @@ fn ticket_406_coordinate_outputs_carry_genome_build_context() {
 #[test]
 fn gene_markdown_section_only_shows_new_gene_enrichment_sections() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -159,6 +162,7 @@ fn gene_markdown_section_only_shows_new_gene_enrichment_sections() {
 #[test]
 fn gene_markdown_renders_combined_dgidb_and_opentargets_druggability() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "EGFR".to_string(),
         name: "epidermal growth factor receptor".to_string(),
         entrez_id: "1956".to_string(),
@@ -228,6 +232,7 @@ fn gene_markdown_renders_combined_dgidb_and_opentargets_druggability() {
 #[test]
 fn gene_markdown_renders_dgidb_interaction_table_alongside_opentargets_data() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -288,6 +293,7 @@ fn gene_markdown_renders_dgidb_interaction_table_alongside_opentargets_data() {
 #[test]
 fn gene_markdown_renders_hpa_section_details() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -366,6 +372,7 @@ fn gene_markdown_renders_hpa_section_details() {
 #[test]
 fn gene_markdown_renders_protein_isoforms_with_count_and_displayed_length() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "KRAS".to_string(),
         name: "KRAS proto-oncogene, GTPase".to_string(),
         entrez_id: "3845".to_string(),
@@ -424,6 +431,7 @@ fn gene_markdown_renders_protein_isoforms_with_count_and_displayed_length() {
 #[test]
 fn gene_markdown_without_isoforms_keeps_protein_lines_contiguous() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene, serine/threonine kinase".to_string(),
         entrez_id: "673".to_string(),
@@ -472,6 +480,7 @@ fn gene_markdown_without_isoforms_keeps_protein_lines_contiguous() {
 #[test]
 fn gene_markdown_renders_protein_alternative_names() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "PLIN2".to_string(),
         name: "perilipin 2".to_string(),
         entrez_id: "123".to_string(),
@@ -527,6 +536,7 @@ fn gene_markdown_renders_protein_alternative_names() {
 fn gene_markdown_preserves_full_protein_function_text() {
     let long_function = "Mitochondrial dynamin-like GTPase required for fusion. Localizes to the intermembrane space where it helps organize cristae architecture and mitochondrial DNA maintenance.".to_string();
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "OPA1".to_string(),
         name: "OPA1 mitochondrial dynamin like GTPase".to_string(),
         entrez_id: "4976".to_string(),
@@ -575,6 +585,7 @@ fn gene_markdown_preserves_full_protein_function_text() {
 #[test]
 fn gene_markdown_omits_protein_alternative_names_when_absent() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene, serine/threonine kinase".to_string(),
         entrez_id: "673".to_string(),

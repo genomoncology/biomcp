@@ -17,6 +17,8 @@ CAPTURED_PRINTF_MUSTMATCH_RE = re.compile(
 )
 MUSTMATCH_LINT_SKIP = "<!-- mustmatch-lint: skip -->"
 CLI_LINE_CAP = 700
+SECTION_OUTCOME_POLICY_LINE_CAP = 700
+SECTION_OUTCOME_POLICY_MODULES = ["src/entities/section_outcome.rs"]
 CLI_LINE_CAP_TICKET_RE = re.compile(r"^\d+(?:[-_][a-z0-9][a-z0-9-]*)?$")
 EXPERIMENT_RESULTS_GLOB = "architecture/experiments/**/results/**"
 CLI_SURFACE_CONTRACT_CHECKS = [
@@ -1078,6 +1080,26 @@ def main() -> int:
     cli_line_cap_payload = check_cli_line_cap(args.root_dir, cli_line_cap_allowlist)
     write_json(args.output_dir / "quality-ratchet-cli-line-cap.json", cli_line_cap_payload)
 
+    policy_module_lines = {
+        relative: len((args.root_dir / relative).read_text(encoding="utf-8").splitlines())
+        for relative in SECTION_OUTCOME_POLICY_MODULES
+    }
+    oversized_policy_modules = [
+        {"path": path, "lines": lines, "cap": SECTION_OUTCOME_POLICY_LINE_CAP}
+        for path, lines in policy_module_lines.items()
+        if lines > SECTION_OUTCOME_POLICY_LINE_CAP
+    ]
+    section_outcome_policy_payload = {
+        "status": "fail" if oversized_policy_modules else "pass",
+        "cap": SECTION_OUTCOME_POLICY_LINE_CAP,
+        "files": policy_module_lines,
+        "oversized_files": oversized_policy_modules,
+    }
+    write_json(
+        args.output_dir / "quality-ratchet-section-outcome-policy-line-cap.json",
+        section_outcome_policy_payload,
+    )
+
     experiment_results_payload = check_architecture_experiment_results(args.root_dir)
     write_json(
         args.output_dir / "quality-ratchet-experiment-results.json",
@@ -1101,6 +1123,7 @@ def main() -> int:
         mcp_payload.get("status"),
         source_payload.get("status"),
         cli_line_cap_payload.get("status"),
+        section_outcome_policy_payload.get("status"),
         experiment_results_payload.get("status"),
         terminal_output_payload.get("status"),
         cli_surface_payload.get("status"),
@@ -1118,6 +1141,9 @@ def main() -> int:
         "mcp_allowlist": {"status": mcp_payload.get("status")},
         "source_registry": {"status": source_payload.get("status")},
         "cli_line_cap": {"status": cli_line_cap_payload.get("status")},
+        "section_outcome_policy_line_cap": {
+            "status": section_outcome_policy_payload.get("status")
+        },
         "experiment_results": {"status": experiment_results_payload.get("status")},
         "terminal_output_boundaries": {"status": terminal_output_payload.get("status")},
         "cli_surface_contract": {"status": cli_surface_payload.get("status")},

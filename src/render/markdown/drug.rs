@@ -6,6 +6,7 @@ use super::drug_regulatory::{
     render_regulatory_block, render_safety_block, render_shortage_block, render_us_approvals_block,
 };
 use super::*;
+use crate::entities::section_outcome::SectionOutcomeState;
 
 #[cfg(test)]
 mod tests;
@@ -78,7 +79,19 @@ pub fn drug_markdown_with_region(
         safety_block => if show_safety_section { render_safety_block(drug, region) } else { String::new() },
         shortage_block => if show_shortage_section { render_shortage_block(drug, region) } else { String::new() },
         approvals_block => if show_approvals_section {
-            render_us_approvals_block("## Drugs@FDA Approvals", drug.approvals.as_deref())
+            match drug.section_outcomes.get("approvals").map(|value| value.outcome()) {
+                Some(SectionOutcomeState::Unavailable) => format!(
+                    "## Drugs@FDA Approvals\n\n{}\n",
+                    drug.section_outcomes
+                        .get("approvals")
+                        .and_then(|value| value.message())
+                        .unwrap_or("Drugs@FDA approvals are unavailable.")
+                ),
+                _ => render_us_approvals_block(
+                    "## Drugs@FDA Approvals",
+                    drug.approvals.as_deref(),
+                ),
+            }
         } else {
             String::new()
         },

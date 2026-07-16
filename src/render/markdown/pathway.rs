@@ -22,7 +22,7 @@ pub fn pathway_markdown(
     } else {
         pathway.name.as_str()
     };
-    let body = tmpl.render(context! {
+    let mut body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(pathway_label, requested_sections),
         pathway_source_label => crate::render::provenance::pathway_source_label(&pathway.source),
@@ -40,6 +40,18 @@ pub fn pathway_markdown(
         sections_block => format_sections_block("pathway", &pathway.id, sections_pathway(pathway, requested_sections)),
         related_block => format_related_block(related_pathway(pathway)),
     })?;
+    for key in ["genes", "events", "enrichment"] {
+        if let Some(outcome) = pathway.section_outcomes.get(key)
+            && matches!(
+                outcome.outcome(),
+                crate::entities::section_outcome::SectionOutcomeState::Degraded
+                    | crate::entities::section_outcome::SectionOutcomeState::Unavailable
+            )
+            && let Some(message) = outcome.message()
+        {
+            body.push_str(&format!("\n\n**{key} status:** {message}"));
+        }
+    }
     Ok(append_evidence_urls(body, pathway_evidence_urls(pathway)))
 }
 

@@ -13,6 +13,9 @@ pub fn from_reactome_hit(hit: ReactomePathwayHit) -> PathwaySearchResult {
 
 pub fn from_reactome_record(record: ReactomePathwayRecord) -> Pathway {
     Pathway {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::pathway::PATHWAY_OUTCOME_KEYS,
+        ),
         source: "Reactome".to_string(),
         id: record.id,
         name: record.name,
@@ -34,6 +37,9 @@ pub fn from_kegg_hit(hit: KeggPathwayHit) -> PathwaySearchResult {
 
 pub fn from_kegg_record(record: KeggPathwayRecord) -> Pathway {
     Pathway {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::pathway::PATHWAY_OUTCOME_KEYS,
+        ),
         source: "KEGG".to_string(),
         id: record.id,
         name: record.name,
@@ -55,6 +61,9 @@ pub fn from_wikipathways_hit(hit: WikiPathwaysHit) -> PathwaySearchResult {
 
 pub fn from_wikipathways_record(record: WikiPathwaysRecord) -> Pathway {
     Pathway {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::pathway::PATHWAY_OUTCOME_KEYS,
+        ),
         source: "WikiPathways".to_string(),
         id: record.id,
         name: record.name,
