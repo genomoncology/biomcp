@@ -327,6 +327,7 @@ pub(in crate::cli) async fn handle_command(
                                 &filters,
                                 crate::entities::article::ArticleSourceFilter::All,
                             ),
+                        warning: None,
                         note: None,
                         debug_plan: None,
                         exact_entity_commands: &[],

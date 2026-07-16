@@ -120,36 +120,45 @@ pub(super) fn trial_results_search_command(trial: &Trial) -> Option<String> {
     Some(format!("biomcp search article -q {seed_q} --limit 5"))
 }
 
+pub(in crate::render::markdown) fn typed_article_identifier(
+    pmid: Option<&str>,
+    pmcid: Option<&str>,
+    doi: Option<&str>,
+    arxiv_id: Option<&str>,
+    semantic_scholar_id: Option<&str>,
+) -> Option<String> {
+    fn available(value: Option<&str>) -> Option<&str> {
+        value.map(str::trim).filter(|value| !value.is_empty())
+    }
+    available(pmid)
+        .map(|value| format!("PMID {value}"))
+        .or_else(|| available(pmcid).map(|value| format!("PMCID {value}")))
+        .or_else(|| available(doi).map(|value| format!("DOI {value}")))
+        .or_else(|| available(arxiv_id).map(|value| format!("arXiv {value}")))
+        .or_else(|| available(semantic_scholar_id).map(|value| format!("Semantic Scholar {value}")))
+}
+
 pub(super) fn article_related_id(paper: &ArticleRelatedPaper) -> String {
-    paper
-        .pmid
-        .as_deref()
-        .or(paper.doi.as_deref())
-        .or(paper.arxiv_id.as_deref())
-        .or(paper.paper_id.as_deref())
-        .map(markdown_cell)
-        .unwrap_or_else(|| "-".to_string())
+    typed_article_identifier(
+        paper.pmid.as_deref(),
+        None,
+        paper.doi.as_deref(),
+        paper.arxiv_id.as_deref(),
+        paper.paper_id.as_deref(),
+    )
+    .map(|identifier| markdown_cell(&identifier))
+    .unwrap_or_else(|| "-".to_string())
 }
 
 pub(super) fn article_related_label(paper: &ArticleRelatedPaper) -> String {
-    paper
-        .pmid
-        .as_deref()
-        .map(|pmid| format!("PMID {pmid}"))
-        .or_else(|| paper.doi.as_deref().map(|doi| format!("DOI {doi}")))
-        .or_else(|| {
-            paper
-                .arxiv_id
-                .as_deref()
-                .map(|arxiv| format!("arXiv {arxiv}"))
-        })
-        .or_else(|| {
-            paper
-                .paper_id
-                .as_deref()
-                .map(|paper_id| format!("paper {paper_id}"))
-        })
-        .unwrap_or_else(|| markdown_cell(&paper.title))
+    typed_article_identifier(
+        paper.pmid.as_deref(),
+        None,
+        paper.doi.as_deref(),
+        paper.arxiv_id.as_deref(),
+        paper.paper_id.as_deref(),
+    )
+    .unwrap_or_else(|| paper.title.clone())
 }
 
 fn article_keyword_tokens(keyword: &str) -> Vec<&str> {

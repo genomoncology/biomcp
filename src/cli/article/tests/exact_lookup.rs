@@ -77,6 +77,8 @@ fn article_result() -> crate::entities::article::ArticleSearchResult {
         pmid: "22663011".into(),
         pmcid: None,
         doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "BRAF melanoma review".into(),
         journal: Some("Journal".into()),
         date: Some("2025-01-01".into()),

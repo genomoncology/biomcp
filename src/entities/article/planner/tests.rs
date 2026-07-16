@@ -295,6 +295,8 @@ fn summarize_debug_plan_reports_federated_sources_and_matches() {
         pmid: "22663011".into(),
         pmcid: None,
         doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "BRAF melanoma".into(),
         journal: None,
         date: None,

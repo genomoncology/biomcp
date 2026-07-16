@@ -1,58 +1,41 @@
 {
+  "query": "gene=BRAF, disease=melanoma, sort=relevance",
+  "sort": "relevance",
+  "semantic_scholar_enabled": true,
   "pagination": {
     "offset": 0,
-    "limit": 5,
-    "returned": 5,
+    "limit": 2,
+    "returned": 2,
     "total": null,
     "has_more": true,
     "next_page_token": null
   },
-  "count": 5,
+  "count": 2,
   "results": [
     {
       "pmid": "41630477",
-      "title": "A data-driven cartography of NSCLC vaccine research: Quantif…",
+      "title": "A data-driven cartography of NSCLC vaccine research",
       "journal": "Hum Vaccin Immunother",
       "date": "2026-12-01",
+      "citation_count": 12,
       "source": "pubtator",
-      "score": 203.22485,
       "is_retracted": false
     },
     {
-      "pmid": "41645735",
-      "title": "Origin dictates function: The dual roles of exosomes derived…",
+      "doi": "10.1000/example",
+      "semantic_scholar_id": "paper-example",
+      "title": "Origin dictates function",
       "journal": "Oncol Rep",
-      "date": "2026-04-01",
-      "source": "pubtator",
-      "score": 203.41167,
-      "is_retracted": false
-    },
-    {
-      "pmid": "41703996",
-      "title": "Melanoma in adolescents and young adults: special considerat…",
-      "journal": "Curr Opin Oncol",
-      "date": "2026-03-01",
-      "source": "pubtator",
-      "score": 60739.84,
-      "is_retracted": false
-    },
-    {
-      "pmid": "41728848",
-      "title": "Targeting Melanoma-Associated Fibroblasts to Overcome Cancer…",
-      "journal": "J Am Coll Surg",
-      "date": "2026-02-23",
-      "source": "pubtator",
-      "score": 70429.23,
-      "is_retracted": false
-    },
-    {
-      "pmid": "41734832",
-      "title": "Emerging biomarkers in melanoma: Bridging molecular discover…",
-      "journal": "Cancer Lett",
-      "date": "2026-02-22",
-      "source": "pubtator",
-      "score": 228.92467,
-      "is_retracted": false
+      "date": "2026",
+      "citation_count": 8,
+      "source": "semanticscholar",
+      "is_retracted": null
     }
-  ]
+  ],
+  "_meta": {
+    "next_commands": [
+      "biomcp get article 41630477",
+      "biomcp list article"
+    ]
+  }
 }

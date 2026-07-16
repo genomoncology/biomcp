@@ -323,6 +323,10 @@ EXAMPLES:
   biomcp search article -g BRAF --debug-plan --limit 5
   biomcp --json search article -k \"Oncotype DX review\" --session lit-review-1 --limit 5
 
+OUTPUT:
+  - JSON search rows are compact by default; use `--full` for abstracts, complete source provenance, and ranking diagnostics.
+  - `--sort date` replaces relevance ranking and emits an in-band warning in JSON and Markdown.
+
 RANKING:
   - `--sort relevance` accepts `--ranking-mode lexical|semantic|hybrid`.
   - Omit `--ranking-mode` to use `hybrid` when `--keyword` is present and `lexical` otherwise.

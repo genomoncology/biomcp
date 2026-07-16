@@ -47,6 +47,8 @@ pub(super) fn stable_article_identifier(row: &ArticleSearchResult) -> String {
     normalize_row_identifier(Some(&row.pmid))
         .or_else(|| normalize_row_identifier(row.pmcid.as_deref()))
         .or_else(|| normalize_row_identifier(row.doi.as_deref()))
+        .or_else(|| normalize_row_identifier(row.arxiv_id.as_deref()))
+        .or_else(|| normalize_row_identifier(row.semantic_scholar_id.as_deref()))
         .unwrap_or_else(|| row.title.to_ascii_lowercase())
 }
 
@@ -117,10 +119,16 @@ fn article_rows_overlap(left: &ArticleSearchResult, right: &ArticleSearchResult)
     let right_pmcid = normalize_row_identifier(right.pmcid.as_deref());
     let left_doi = normalize_row_identifier(left.doi.as_deref());
     let right_doi = normalize_row_identifier(right.doi.as_deref());
+    let left_arxiv = normalize_row_identifier(left.arxiv_id.as_deref());
+    let right_arxiv = normalize_row_identifier(right.arxiv_id.as_deref());
+    let left_semantic_scholar = normalize_row_identifier(left.semantic_scholar_id.as_deref());
+    let right_semantic_scholar = normalize_row_identifier(right.semantic_scholar_id.as_deref());
 
     left_pmid.is_some() && left_pmid == right_pmid
         || left_pmcid.is_some() && left_pmcid == right_pmcid
         || left_doi.is_some() && left_doi == right_doi
+        || left_arxiv.is_some() && left_arxiv == right_arxiv
+        || left_semantic_scholar.is_some() && left_semantic_scholar == right_semantic_scholar
 }
 
 fn merge_missing_string(target: &mut Option<String>, incoming: Option<String>) {
@@ -150,6 +158,11 @@ fn merge_article_candidate(target: &mut ArticleCandidate, incoming: ArticleCandi
     let target_row = &mut target.row;
     merge_missing_string(&mut target_row.pmcid, incoming_row.pmcid);
     merge_missing_string(&mut target_row.doi, incoming_row.doi);
+    merge_missing_string(&mut target_row.arxiv_id, incoming_row.arxiv_id);
+    merge_missing_string(
+        &mut target_row.semantic_scholar_id,
+        incoming_row.semantic_scholar_id,
+    );
     if target_row.pmid.trim().is_empty() && !incoming_row.pmid.trim().is_empty() {
         target_row.pmid = incoming_row.pmid;
     }
@@ -302,7 +315,18 @@ pub(super) fn finalize_article_candidates(
     }
 
     let mut rows = merge_article_candidates(rows);
-    rows.retain(|candidate| !candidate.row.pmid.trim().is_empty());
+    rows.retain(|candidate| {
+        [
+            Some(candidate.row.pmid.as_str()),
+            candidate.row.pmcid.as_deref(),
+            candidate.row.doi.as_deref(),
+            candidate.row.arxiv_id.as_deref(),
+            candidate.row.semantic_scholar_id.as_deref(),
+        ]
+        .into_iter()
+        .flatten()
+        .any(|value| !value.trim().is_empty())
+    });
     rows = cap_article_candidates_by_source(rows, resolve_article_source_cap(filters, limit));
     sort_article_rows(&mut rows, filters.sort, filters);
     let mut rows = rows

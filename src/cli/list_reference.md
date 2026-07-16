@@ -108,6 +108,8 @@ New to BioMCP? Try:
 - `search author -q <name> --source semanticscholar --limit <N> --offset <N>`
 - `get author semanticscholar:<id>`
 - `search article ... -a <author> --date-from --date-to --year-min --year-max --journal`
+  - JSON rows are compact by default; add `--full` for abstracts, full provenance, and ranking diagnostics
+  - `--sort date` replaces relevance ranking and emits an in-band warning
   - add `--source <all, pubtator, europepmc, pubmed, semanticscholar, litsense2>`
   - add `--max-per-source <N>` or `--session <token>` when needed
 - known gene/disease/drug anchors go in `-g/-d/--drug`; free-text concepts go in `-k`
@@ -188,8 +190,8 @@ Results depend on source document wording and may vary across sources.
   Output uses `biomcp serve` by default; add `--absolute-path` when the client cannot see your shell `PATH`.
 - Set `NCBI_API_KEY` to increase NCBI request throughput for article annotation, indexing, and full-text paths.
 - Set `S2_API_KEY` for authenticated Semantic Scholar requests at 1 req/sec; without it, BioMCP uses the shared pool at 1 req/2sec.
-- `search article --json` and `--debug-plan` expose article source status,
-  including federated degradation and redacted Semantic Scholar auth/availability.
+- `search article --json` preserves article source status, warnings, pagination, retraction state, and next commands in compact and `--full` output.
+- `--debug-plan` exposes executed routing plus redacted source auth/availability.
 - On default `search article --source all`, `-a/--author` limits candidate search
   to Europe PMC + compatible PubMed; stricter filters may narrow further. Explicit
   PubTator3, Semantic Scholar, or LitSense2 author searches are rejected instead

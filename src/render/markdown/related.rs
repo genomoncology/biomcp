@@ -1,6 +1,6 @@
 //! Cross-entity follow-up command generation and related-command descriptions.
 
-mod article_support;
+pub(super) mod article_support;
 
 use super::*;
 
@@ -321,12 +321,18 @@ pub(super) fn related_article_search_results(
     exact_entity_commands: &[String],
 ) -> Vec<String> {
     let mut out = Vec::new();
-    if let Some(pmid) = results
-        .first()
-        .map(|result| quote_arg(&result.pmid))
-        .filter(|pmid| !pmid.is_empty())
-    {
-        out.push(format!("biomcp get article {pmid}"));
+    if let Some(identifier) = results.first().and_then(|result| {
+        [
+            Some(result.pmid.as_str()),
+            result.pmcid.as_deref(),
+            result.doi.as_deref(),
+        ]
+        .into_iter()
+        .flatten()
+        .map(quote_arg)
+        .find(|value| !value.is_empty())
+    }) {
+        out.push(format!("biomcp get article {identifier}"));
     }
     out.extend(
         exact_entity_commands

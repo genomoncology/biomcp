@@ -1,9 +1,10 @@
 //! Article CLI JSON and session integration tests.
 use chrono::NaiveDate;
 
+use super::super::ArticleSearchDetail;
 use super::super::dispatch::{
     ArticleSearchJsonPage, ArticleSuggestion, article_query_summary, article_search_json,
-    article_session_suggestions,
+    article_search_json_with_detail, article_session_suggestions,
 };
 use crate::cli::PaginationMeta;
 use crate::test_support::TempDirGuard;
@@ -24,6 +25,8 @@ fn article_search_json_includes_query_and_ranking_context() {
         pmid: "22663011".into(),
         pmcid: Some("PMC9984800".into()),
         doi: Some("10.1056/NEJMoa1203421".into()),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "BRAF melanoma review".into(),
         journal: Some("Journal".into()),
         date: Some("2025-01-01".into()),
@@ -177,6 +180,8 @@ fn article_search_json_emits_structured_exact_entity_suggestions() {
         pmid: "22663011".into(),
         pmcid: Some("PMC9984800".into()),
         doi: Some("10.1056/NEJMoa1203421".into()),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "BRAF article".into(),
         journal: Some("Journal".into()),
         date: Some("2025-01-01".into()),
@@ -346,6 +351,8 @@ fn session_article_result(
         pmid: pmid.into(),
         pmcid: None,
         doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: title.into(),
         journal: Some("Journal".into()),
         date: Some("2025-01-01".into()),
@@ -473,6 +480,8 @@ fn article_search_json_next_commands_preserve_source_filter() {
         pmid: "22663011".into(),
         pmcid: None,
         doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "BRAF melanoma review".into(),
         journal: Some("Journal".into()),
         date: Some("2013-05-12".into()),
@@ -520,6 +529,108 @@ fn article_search_json_next_commands_preserve_source_filter() {
             .is_some_and(|commands| commands.contains(&serde_json::Value::String(
                 "biomcp search article -k \"BRAF melanoma\" --source pubmed --year-min 2013 --year-max 2013 --limit 5".into()
             )))
+    );
+}
+
+#[test]
+fn compact_article_search_rows_preserve_triage_fields_and_date_warnings() {
+    let mut filters = super::super::super::related_article_filters();
+    filters.sort = crate::entities::article::ArticleSort::Date;
+    let mut row = session_article_result("", "Provider-only article");
+    row.pmcid = Some("PMC123".into());
+    row.doi = Some("10.1000/example".into());
+    row.arxiv_id = Some("2401.12345".into());
+    row.semantic_scholar_id = Some("paper-1".into());
+    row.abstract_snippet = Some("A deliberately expensive abstract snippet".into());
+    row.matched_sources
+        .push(crate::entities::article::ArticleSource::SemanticScholar);
+    let page = || ArticleSearchJsonPage {
+        results: vec![row.clone()],
+        pagination: PaginationMeta::offset(0, 1, 1, Some(1)),
+        next_commands: vec!["biomcp get article PMC123".into()],
+        suggestions: Vec::new(),
+        source_status: Vec::new(),
+    };
+
+    let compact = article_search_json_with_detail(
+        "sort=date",
+        &filters,
+        ArticleSearchDetail::Compact,
+        true,
+        None,
+        None,
+        page(),
+    )
+    .expect("compact JSON");
+    let full = article_search_json_with_detail(
+        "sort=date",
+        &filters,
+        ArticleSearchDetail::Full,
+        true,
+        None,
+        None,
+        page(),
+    )
+    .expect("full JSON");
+    let value: serde_json::Value = serde_json::from_str(&compact).expect("compact value");
+    let result = &value["results"][0];
+
+    assert!(result.get("pmid").is_none());
+    assert_eq!(result["pmcid"], "PMC123");
+    assert_eq!(result["doi"], "10.1000/example");
+    assert_eq!(result["arxiv_id"], "2401.12345");
+    assert_eq!(result["semantic_scholar_id"], "paper-1");
+    assert!(result["is_retracted"].is_boolean());
+    for omitted in [
+        "first_index_date",
+        "influential_citation_count",
+        "matched_sources",
+        "score",
+        "abstract_snippet",
+        "ranking",
+    ] {
+        assert!(
+            result.get(omitted).is_none(),
+            "compact row retained {omitted}"
+        );
+    }
+    assert_eq!(
+        value["_meta"]["warnings"][0]["code"],
+        "date_sort_replaces_relevance"
+    );
+    assert!(
+        value["_meta"]["warnings"][0]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("replaces relevance ranking"))
+    );
+    assert!(full.contains("abstract_snippet"));
+    assert!(compact.len() < full.len());
+}
+
+#[test]
+fn date_warning_alone_retains_article_search_metadata() {
+    let mut filters = super::super::super::related_article_filters();
+    filters.sort = crate::entities::article::ArticleSort::Date;
+    let json = article_search_json_with_detail(
+        "sort=date",
+        &filters,
+        ArticleSearchDetail::Compact,
+        false,
+        None,
+        None,
+        ArticleSearchJsonPage {
+            results: Vec::new(),
+            pagination: PaginationMeta::offset(0, 1, 0, Some(0)),
+            next_commands: Vec::new(),
+            suggestions: Vec::new(),
+            source_status: Vec::new(),
+        },
+    )
+    .expect("date warning JSON");
+    let value: serde_json::Value = serde_json::from_str(&json).expect("date warning value");
+    assert_eq!(
+        value["_meta"]["warnings"][0]["code"],
+        "date_sort_replaces_relevance"
     );
 }
 

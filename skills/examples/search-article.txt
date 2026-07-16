@@ -1,24 +1,17 @@
-# Articles: gene=BRAF, disease=melanoma, exclude_retracted=true, sort=date
+# Articles: gene=BRAF, disease=melanoma, sort=date
 
-Found 5 articles
+Found 2 articles
 
-## PubTator3 (5)
+> Warning: Date sort replaces relevance ranking; results are ordered by publication date.
 
-| PMID | Title | Journal | Date | Score |
-|---|---|---|---|---|
-|41630477|A data-driven cartography of NSCLC vaccine research: Quantif…|Hum Vaccin Immunothe…|2026-12-01|203.22485|
-|41645735|Origin dictates function: The dual roles of exosomes derived…|Oncol Rep|2026-04-01|203.41167|
-|41703996|Melanoma in adolescents and young adults: special considerat…|Curr Opin Oncol|2026-03-01|60739.84|
-|41728848|Targeting Melanoma-Associated Fibroblasts to Overcome Cancer…|J Am Coll Surg|2026-02-23|70429.23|
-|41734832|Emerging biomarkers in melanoma: Bridging molecular discover…|Cancer Lett|2026-02-22|228.92467|
+Semantic Scholar: enabled
 
+| Identifier | Title | Source(s) | Date | Why | Cit. |
+|---|---|---|---|---|---|
+|PMID 41630477|A data-driven cartography of NSCLC vaccine research|PubTator3|2026-12-01|-|12|
+|DOI 10.1000/example|Origin dictates function|Semantic Scholar|2026|-|8|
 
+Use `get article <identifier>` for details when the row has a PMID, PMCID, or DOI.
+Filters: [query], -k/-q <keyword>, -g <gene>, -d <disease>, --drug <name>, -a <author>, --date-from/--date-to <YYYY|YYYY-MM|YYYY-MM-DD> (alias: --since/--until), --type <research-article|research|review|case-reports|meta-analysis>, --open-access, --exclude-retracted, --sort <date|citations|relevance>, --source <all|pubtator|europepmc|pubmed|semanticscholar|litsense2>
 
-
-
-Use `get article <pmid>` for details.
-Filters: [query], -k/-q <keyword>, -g <gene>, -d <disease>, --drug <name>, -a <author>, --date-from/--date-to <YYYY|YYYY-MM|YYYY-MM-DD> (alias: --since/--until), --type <research-article|research|review|case-reports|meta-analysis>, --open-access, --exclude-retracted, --sort <date|citations|relevance>, --source <all|pubtator|europepmc>
-
-
-Showing 5 results (total unknown). Use --offset 5 for more.
-
+Showing 2 results (total unknown). Use --offset 2 for more.

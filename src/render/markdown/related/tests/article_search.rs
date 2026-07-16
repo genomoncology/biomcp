@@ -3,6 +3,8 @@ fn article_search_result(pmid: &str) -> ArticleSearchResult {
         pmid: pmid.to_string(),
         pmcid: None,
         doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "Entity-aware article".to_string(),
         journal: Some("Journal".to_string()),
         date: Some("2025-01-01".to_string()),
@@ -60,6 +62,35 @@ fn article_search_related_results_include_primary_article_and_exact_commands() {
 
     assert_eq!(related[0], "biomcp get article 22663011");
     assert_eq!(related[1], "biomcp get gene BRAF");
+}
+
+#[test]
+fn article_search_related_results_use_supported_non_pmid_identifier() {
+    let mut row = article_search_result("");
+    row.doi = Some("10.1000/example".into());
+    row.arxiv_id = Some("2401.12345".into());
+    let related = related_article_search_results(
+        &[row],
+        &article_filters(Some("BRAF"), None, None),
+        crate::entities::article::ArticleSourceFilter::All,
+        &[],
+    );
+
+    assert_eq!(related[0], "biomcp get article 10.1000/example");
+}
+
+#[test]
+fn article_search_related_results_omit_unsupported_provider_identifier() {
+    let mut row = article_search_result("");
+    row.semantic_scholar_id = Some("paper-1".into());
+    let related = related_article_search_results(
+        &[row],
+        &article_filters(Some("BRAF"), None, None),
+        crate::entities::article::ArticleSourceFilter::All,
+        &[],
+    );
+
+    assert!(!related.iter().any(|command| command.starts_with("biomcp get article")));
 }
 
 #[test]

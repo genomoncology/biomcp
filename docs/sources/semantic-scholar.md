@@ -5,7 +5,7 @@ description: "Use BioMCP to add Semantic Scholar TLDRs, citations, references, a
 
 # Semantic Scholar
 
-Semantic Scholar matters when you already have the paper and need the graph around it: the TLDR, the follow-up literature, the references it builds on, and the related papers worth checking next. It turns a flat article lookup into a literature-review workflow that an agent can keep extending without losing the thread.
+Semantic Scholar supplies provider-defined TLDR, citation, reference, and recommendation records around a paper. BioMCP relays those records; recommendation quality and recall are provider-dependent and not validated by BioMCP.
 
 In BioMCP, Semantic Scholar provides provider-exact author search/detail and an automatic optional `search article --source all` leg when the filter set is compatible; article search is also individually selectable with `--source semanticscholar`. These routes use shared-pool mode at 1 req/2sec without `S2_API_KEY` and authenticated mode at 1 req/sec with the key. The dedicated article helper commands on this page are `get article <id> tldr`, `article citations`, `article references`, and `article recommendations`.
 
@@ -19,7 +19,7 @@ In BioMCP, Semantic Scholar provides provider-exact author search/detail and an 
 | `get article <id> tldr` | TLDR text, influence counts, and related article metadata | Dedicated Semantic Scholar helper |
 | `article citations <id>` | Citation graph rows | Dedicated Semantic Scholar helper |
 | `article references <id>` | Reference graph rows | Dedicated Semantic Scholar helper |
-| `article recommendations <id>` | Related-paper recommendations | Dedicated Semantic Scholar helper |
+| `article recommendations <id>` | Provider-defined paper recommendations | BioMCP relay; relatedness and recall are not validated by BioMCP |
 
 ## Example commands
 
@@ -53,7 +53,7 @@ Returns a reference graph table with the same citation-context fields.
 biomcp article recommendations 22663011 --limit 3
 ```
 
-Returns a recommendations table with PMID, title, journal, and year columns.
+Returns the provider-defined recommendations in a table with typed identifier, title, journal, and year columns.
 
 ## API access
 

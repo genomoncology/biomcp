@@ -75,6 +75,7 @@ raw bytes
 - `search article --max-per-source <N>`
 - `search article --session <token>` - local caller label for JSON loop-breaker suggestions across consecutive article keyword searches
 - `search article --debug-plan` - include executed planner/routing metadata in markdown or JSON
+- `search article --full` - restore detailed JSON rows with abstracts, provenance, and ranking diagnostics
 - `search article ... --limit <N> --offset <N>`
 
 ## Query formulation
@@ -121,15 +122,17 @@ Worked examples:
 
 ## JSON Output
 
+- `search article --json` returns compact rows by default with available identifiers, triage fields, source, and retraction state; add `--full` for detailed rows.
+- `--sort date` replaces relevance ranking and adds `_meta.warnings[]`; Markdown shows the same warning.
 - Non-empty `search article --json` responses include `_meta.next_commands`.
-- The first follow-up drills the top result with `biomcp get article <pmid>`.
+- The first follow-up drills the top result with the first supported PMID, PMCID, or DOI; arXiv and Semantic Scholar IDs are display-only for `get article`.
 - `biomcp list article` is always included so agents can inspect the full filter surface.
 - Keyword-only exact entity matches can also add `biomcp get gene <symbol>`, `biomcp get drug <name>`, or `biomcp get disease <name>` to `_meta.next_commands`.
 - Article search `_meta.suggestions` is an optional array of objects with `command` and `reason`. Exact entity suggestions include `sections`; loop-breaker suggestions from `--session` omit `sections`.
 - Multi-concept keyword phrases and typed-filter searches omit direct entity suggestion objects.
 - Loop-breaker suggestions, when emitted, are ordered as prior `biomcp article batch ...`, `biomcp discover <topic>`, then a date-narrowed `biomcp search article ... --year-min ... --year-max ...` retry when available.
 - When no explicit article date bounds are present, visible dated rows can also add a year-refinement next command that rebuilds the current search with `--year-min <YYYY> --year-max <YYYY> --limit 5`.
-- Each result may include `first_index_date` as `YYYY-MM-DD` when the upstream record exposes when it was first indexed. Europe PMC and PubMed provide it today; PubTator3, LitSense2, and Semantic Scholar do not.
+- Detailed `--full` results may include `first_index_date` as `YYYY-MM-DD` when the upstream record exposes when it was first indexed. Europe PMC and PubMed provide it today; PubTator3, LitSense2, and Semantic Scholar do not.
 
 ## Notes
 

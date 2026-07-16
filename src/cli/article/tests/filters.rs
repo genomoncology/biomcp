@@ -36,6 +36,7 @@ fn default_article_search_args() -> super::super::ArticleSearchArgs {
         limit: 10,
         offset: 0,
         debug_plan: false,
+        full: false,
     }
 }
 
