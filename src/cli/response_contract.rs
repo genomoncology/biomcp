@@ -247,7 +247,7 @@ pub(super) fn finalize_structured_error(
     for path in contract.collection_paths {
         insert_empty_collection(&mut value, path);
     }
-    if let Ok(text) = serde_json::to_string_pretty(&value) {
+    if let Ok(text) = crate::render::json::to_pretty(&value) {
         outcome.text = text;
     }
     outcome

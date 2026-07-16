@@ -140,3 +140,12 @@ stay tabular, and chart mode still exposes a visible title and axis label.
 ../../tools/biomcp-ci study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar | mustmatch like 'TP53 mutation classes
 Variant class'
 ```
+
+A title containing an accidental terminal control should remain readable without
+breaking the chart. The escaped input fixture invokes this same public command;
+it does not replace BioMCP output.
+
+```bash
+bash ../fixtures/run-study-control-title.sh ../.. | mustmatch like 'Control Title
+Variant class'
+```

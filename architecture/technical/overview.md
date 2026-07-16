@@ -41,6 +41,18 @@ exports are internal implementation details, unstable, have no semver guarantee,
 and are not for downstream import. Do not treat `biomcp_cli::...` modules as a
 supported library API.
 
+## Human Output Integrity
+
+Renderer-owned human text passes through the shared sequence-aware sanitizer in
+`src/render/human.rs` at CLI and MCP emission boundaries. It removes terminal
+control sequences and invisible bidi controls while preserving ordinary Unicode;
+inline chart labels and diagnostics additionally convert layout controls to safe
+separators. Typed entity values remain unchanged.
+
+Pretty JSON stays semantically faithful: `src/render/json.rs` is the sole
+production pretty writer and lexically escapes raw DEL/C1 and bidi controls after
+serde serialization. Parsing the output reproduces the original keys and values.
+
 ## Build and Packaging
 
 ```
@@ -192,7 +204,10 @@ data-shape matrix enforced in code:
 | `study survival` | `bar`, `survival` |
 
 The renderer targets terminal, SVG file, PNG file behind the `charts-png`
-feature, and MCP inline SVG output. `--cols` and `--rows` size terminal
+feature, and MCP inline SVG output. Every dynamic title, label, category, and
+legend is sanitized before it enters the chart backend. Completed terminal chart
+output is not scrubbed because the backend's own ANSI styling is trusted and
+intentional. `--cols` and `--rows` size terminal
 output. `--width` and `--height` size SVG, PNG, and MCP inline SVG output.
 `--scale` is PNG-only. `--title`, `--theme`, and `--palette` style rendered
 charts. Heatmaps reject `--palette` because `study co-occurrence --chart

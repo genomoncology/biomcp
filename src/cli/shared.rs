@@ -80,6 +80,31 @@ fn args_request_json(args: &[OsString]) -> bool {
         .any(|arg| arg == OsStr::new("--json") || arg == OsStr::new("-j"))
 }
 
+pub(crate) fn render_human_clap_error(error: &clap::Error, args: &[OsString]) -> String {
+    let mut message = error.render().to_string();
+    for arg in args {
+        let arg = arg.to_string_lossy();
+        let sanitized = crate::render::human::sanitize_inline(&arg);
+        if sanitized != arg {
+            message = message.replace(arg.as_ref(), &sanitized);
+        }
+    }
+    crate::render::human::sanitize_document(&message)
+}
+
+fn exit_human_clap_error(error: clap::Error, args: &[OsString]) -> ! {
+    let exit_code = error.exit_code();
+    let message = render_human_clap_error(&error, args);
+    let mut stream: Box<dyn Write> = if error.use_stderr() {
+        Box::new(std::io::stderr())
+    } else {
+        Box::new(std::io::stdout())
+    };
+    let _ = stream.write_all(message.as_bytes());
+    let _ = stream.flush();
+    std::process::exit(exit_code);
+}
+
 pub fn parse_cli_from_env() -> Cli {
     let args: Vec<OsString> = std::env::args_os().collect();
     match try_parse_cli(args.clone()) {
@@ -95,7 +120,7 @@ pub fn parse_cli_from_env() -> Cli {
             let _ = stdout.flush();
             std::process::exit(exit_code);
         }
-        Err(err) => err.exit(),
+        Err(err) => exit_human_clap_error(err, &args),
     }
 }
 

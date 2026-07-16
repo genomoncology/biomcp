@@ -1,3 +1,5 @@
+use std::fmt::Write as _;
+
 use serde::Serialize;
 
 use crate::entities::discover::{AliasFallbackDecision, DiscoverResult};
@@ -8,7 +10,24 @@ use crate::render::provenance::SectionSource;
 use crate::workflow_ladders::{WorkflowLadderStep, WorkflowMeta};
 
 pub fn to_pretty<T: Serialize>(value: &T) -> Result<String, BioMcpError> {
-    Ok(serde_json::to_string_pretty(value)?)
+    let serialized = serde_json::to_string_pretty(value)?;
+    let mut output = String::with_capacity(serialized.len());
+    for ch in serialized.chars() {
+        if matches!(
+            ch,
+            '\u{7f}'..='\u{9f}'
+                | '\u{061c}'
+                | '\u{200e}'..='\u{200f}'
+                | '\u{202a}'..='\u{202e}'
+                | '\u{2066}'..='\u{2069}'
+        ) {
+            write!(&mut output, "\\u{:04X}", ch as u32)
+                .expect("writing a JSON escape to String cannot fail");
+        } else {
+            output.push(ch);
+        }
+    }
+    Ok(output)
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -596,6 +615,28 @@ mod tests {
         assert!(json.contains('\n'));
         assert!(json.contains("\"symbol\": \"BRAF\""));
         assert!(json.contains("\"score\": 0.98"));
+    }
+
+    #[test]
+    fn to_pretty_lexically_escapes_terminal_controls_without_changing_values() {
+        let payload = std::collections::BTreeMap::from([(
+            "key\u{7f}\u{202e}".to_string(),
+            "value\0\u{85}\u{2067} α".to_string(),
+        )]);
+
+        let json = to_pretty(&payload).expect("json");
+        for forbidden in ['\u{7f}', '\u{85}', '\u{202e}', '\u{2067}'] {
+            assert!(!json.contains(forbidden));
+        }
+        assert!(json.contains("\\u007F"));
+        assert!(json.contains("\\u0085"));
+        assert!(json.contains("\\u202E"));
+        assert!(json.contains("\\u2067"));
+        assert_eq!(
+            serde_json::from_str::<std::collections::BTreeMap<String, String>>(&json)
+                .expect("valid JSON"),
+            payload
+        );
     }
 
     #[test]

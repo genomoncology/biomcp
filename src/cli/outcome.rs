@@ -609,11 +609,15 @@ async fn run_outcome_inner(
 
 pub async fn run_outcome(cli: Cli) -> anyhow::Result<CommandOutcome> {
     let json = cli.json || command_requests_json(&cli.command);
+    let trusted_terminal_chart = is_charted_mcp_study_command(&cli).unwrap_or(false);
     let contract = JsonResponseContract::for_command(&cli.command);
     match run_outcome_inner(cli, false).await {
-        Ok(outcome) => Ok(if json {
+        Ok(mut outcome) => Ok(if json {
             finalize_structured_error(outcome, contract)
         } else {
+            if outcome.bytes.is_none() && !trusted_terminal_chart {
+                outcome.text = crate::render::human::sanitize_document(&outcome.text);
+            }
             outcome
         }),
         Err(err) => {

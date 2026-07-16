@@ -105,7 +105,8 @@ impl BioMcpServer {
     }
 
     fn tool_error(message: impl Into<String>) -> CallToolResult {
-        CallToolResult::error(vec![Content::text(message.into())])
+        let message = crate::render::human::sanitize_inline(&message.into());
+        CallToolResult::error(vec![Content::text(message)])
     }
 
     async fn execute_args(args: Vec<String>, json: bool) -> Result<CallToolResult, McpError> {
@@ -143,6 +144,11 @@ impl BioMcpServer {
                         }
                         Err(_) => output.text,
                     }
+                };
+                let text = if json || args_include_json(&args) {
+                    text
+                } else {
+                    crate::render::human::sanitize_document(&text)
                 };
                 let mut content = vec![Content::text(text)];
                 if let Some(svg) = output.svg {
@@ -490,10 +496,10 @@ fn redact_mcp_json_value(value: &mut Value) {
     }
 }
 
-fn redact_mcp_json_text(text: &str) -> Result<String, serde_json::Error> {
+fn redact_mcp_json_text(text: &str) -> Result<String, crate::error::BioMcpError> {
     let mut value: Value = serde_json::from_str(text)?;
     redact_mcp_json_value(&mut value);
-    serde_json::to_string_pretty(&value)
+    crate::render::json::to_pretty(&value)
 }
 
 fn append_default_mcp_footer(text: String, json_text: &str) -> String {
@@ -652,6 +658,7 @@ fn build_resource_list() -> Vec<RawResource> {
 }
 
 fn to_resource_result(uri: &str, content: String) -> ReadResourceResult {
+    let content = crate::render::human::sanitize_document(&content);
     ReadResourceResult::new(vec![
         ResourceContents::text(content, uri).with_mime_type("text/markdown"),
     ])
@@ -769,10 +776,10 @@ mod tests {
     use std::collections::BTreeSet;
 
     use super::{
-        CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet, TypedSearch,
-        all_get_sections, get_args, get_section_groups, index_handler, is_allowed_mcp_command,
-        mcp_rejection_message, redact_mcp_json_text, redact_mcp_text, search_args,
-        subcommand_names,
+        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet,
+        TypedSearch, all_get_sections, get_args, get_section_groups, index_handler,
+        is_allowed_mcp_command, mcp_rejection_message, redact_mcp_json_text, redact_mcp_text,
+        search_args, subcommand_names, to_resource_result,
     };
     use axum::Json;
 
@@ -781,6 +788,22 @@ mod tests {
             .iter()
             .flat_map(|group| group.iter().copied())
             .collect()
+    }
+
+    #[test]
+    fn mcp_human_error_and_resource_boundaries_remove_terminal_controls() {
+        let error = serde_json::to_value(BioMcpServer::tool_error(
+            "Error: bad\u{9b}31m identifier\u{202e}",
+        ))
+        .expect("serialize MCP error");
+        let resource = serde_json::to_value(to_resource_result(
+            "biomcp://help",
+            "# Help\nBad\u{1b}]8;;https://example.test\u{7}label\u{1b}]8;;\u{7}".into(),
+        ))
+        .expect("serialize MCP resource");
+
+        assert_eq!(error["content"][0]["text"], "Error: bad identifier");
+        assert_eq!(resource["contents"][0]["text"], "# Help\nBadlabel");
     }
 
     #[test]

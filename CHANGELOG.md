@@ -25,6 +25,9 @@
 
 ### Fixes
 
+- Sanitized terminal-active controls and invisible bidi markers at human CLI,
+  MCP, Markdown, diagnostic, and chart-scalar boundaries while preserving typed
+  JSON values and trusted chart-backend ANSI styling.
 - Restored MyVariant BayesDel predictions as separate `BayesDel add-AF` and
   `BayesDel no-AF` source scores, and repaired `--gerp-min` filtering without
   adding clinical thresholds or pathogenicity classification.
