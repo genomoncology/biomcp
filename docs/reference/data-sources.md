@@ -161,7 +161,7 @@ Article workflows compose multiple APIs for different tasks:
 
 NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and asset rungs.
 Semantic Scholar supplies `openAccessPdf` metadata for the explicit `--pdf` fallback and for supported Figshare asset discovery;
-BioMCP fetches third-party PDF URLs only after the caller opts in, while Figshare asset retrieval re-resolves bytes through the Figshare API `download_url`.
+BioMCP fetches an opt-in PDF only when its HTTPS origin is on the explicit Semantic Scholar/CDN allowlist. Figshare asset retrieval is a separate path that re-resolves bytes through the Figshare API `download_url`.
 Europe PMC supplementary ZIP responses are capped at 64 MiB compressed, 8 MiB per member, 64 MiB total expanded bytes, and 256 members. BioMCP validates relative normalized member names and never extracts them to disk. Only healthy absence across the applicable asset ladder returns `not_found`; a transport, body-limit, or archive failure without a later winner returns `source_unavailable`.
 
 This means metadata, annotations, and full text may have different availability

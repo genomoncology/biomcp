@@ -209,7 +209,7 @@ def test_article_fulltext_source_inventory_matches_resolver_contract() -> None:
     assert "PMC article HTML is documented as a PMC web fallback" in pubmed["notes"]
     assert "openAccessPdf" in semantic_scholar["notes"]
     assert "explicit PDF opt-in" in semantic_scholar["notes"]
-    assert "third-party PDF URL" in semantic_scholar["notes"]
+    assert "Semantic Scholar/CDN allowlist" in semantic_scholar["notes"]
     assert "article-level reuse terms remain separate" in semantic_scholar["notes"]
 
     europe_pmc_section = _markdown_section_block(
@@ -225,7 +225,7 @@ def test_article_fulltext_source_inventory_matches_resolver_contract() -> None:
     assert "PMC web fallback" in source_notes
     assert "openAccessPdf" in semantic_scholar_section
     assert "explicit PDF opt-in" in semantic_scholar_section
-    assert "third-party PDF URL" in semantic_scholar_section
+    assert "Semantic Scholar/CDN allowlist" in semantic_scholar_section
     assert "article-level reuse terms remain separate" in semantic_scholar_section
 
 
