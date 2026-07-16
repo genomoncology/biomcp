@@ -21,6 +21,24 @@ async fn call_biomcp(
         .await?)
 }
 
+async fn call_typed_get(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, impl rmcp::Service<rmcp::RoleClient>>,
+    entity: &str,
+    id: &str,
+    sections: &[&str],
+) -> anyhow::Result<rmcp::model::CallToolResult> {
+    let arguments = serde_json::Map::from_iter([
+        ("entity".to_string(), json!(entity)),
+        ("id".to_string(), json!(id)),
+        ("sections".to_string(), json!(sections)),
+        ("json".to_string(), json!(true)),
+    ]);
+    Ok(client
+        .peer()
+        .call_tool(CallToolRequestParams::new("get").with_arguments(arguments))
+        .await?)
+}
+
 fn first_text(result: &rmcp::model::CallToolResult) -> anyhow::Result<&str> {
     result
         .content
@@ -207,17 +225,17 @@ async fn main() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     let mode = args.next().ok_or_else(|| {
         anyhow::anyhow!(
-            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools> <port>"
+            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome> <port>"
         )
     })?;
     let port = args.next().ok_or_else(|| {
         anyhow::anyhow!(
-            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools> <port>"
+            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome> <port>"
         )
     })?;
     if args.next().is_some() {
         anyhow::bail!(
-            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools> <port>"
+            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome> <port>"
         );
     }
 
@@ -246,6 +264,10 @@ async fn main() -> anyhow::Result<()> {
             println!("IMAGE: {}", first_image_mime(&chart)?);
         }
         "typed-tools" => print_typed_tool_surface(&client).await?,
+        "section-outcome" => {
+            let result = call_typed_get(&client, "drug", "fixture-drug", &["approvals"]).await?;
+            println!("{}", first_text(&result)?);
+        }
         _ => anyhow::bail!("unknown mode: {mode}"),
     }
 

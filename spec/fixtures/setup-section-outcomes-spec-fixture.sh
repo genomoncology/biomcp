@@ -81,9 +81,6 @@ class Handler(BaseHTTPRequestHandler):
                 },
             )
             return
-        if path == "/v1/pair_view":
-            send_json(self, 200, [])
-            return
         send_json(self, 404, {"error": "not found"})
 
     def log_message(self, format, *args):
@@ -114,8 +111,6 @@ curl -fsS "$base_url/v1/query?q=fixture-drug" >/dev/null
 
 printf 'export BIOMCP_MYCHEM_BASE=%q\n' "$base_url/v1" >"$env_file"
 printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url" >>"$env_file"
-printf 'export BIOMCP_CPIC_BASE=%q\n' "$base_url/v1" >>"$env_file"
-printf 'unset OPENFDA_API_KEY\n' >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_PID=%q\n' "$server_pid" >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"
