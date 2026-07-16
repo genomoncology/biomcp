@@ -444,27 +444,43 @@ PubTator heading and explain that the extracted entities are normalized.
 
 ## Full-Text Distinguishes Confirmed Absence from Source Unavailability
 
+A base article card does not consult the full-text ladder. Its entity-owned
+outcome records that the section was not requested, and provenance does not
+claim that a full-text source ran.
+
+```bash
+../../tools/biomcp-ci --json get article 22663011 \
+  | jq '(.section_outcomes.fulltext == {"outcome":"not_requested","sources":[]}) and (._meta.section_sources | any(.key == "fulltext") | not)' \
+  | mustmatch 'true'
+```
+
+When a provider returns usable full text, the outcome records data and JSON
+provenance mirrors the successful sources rather than deriving a second answer.
+
+```bash
+../../tools/biomcp-ci --json get article 22663011 fulltext \
+  | jq '(.section_outcomes.fulltext.outcome == "data") and ((.section_outcomes.fulltext.sources | length) > 0) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["data"]) and ([._meta.section_sources[] | select(.key == "fulltext") | .sources] == [.section_outcomes.fulltext.sources])' \
+  | mustmatch 'true'
+```
+
 A completed resolver ladder can confidently report that no supported full text
 was found. The entity-owned outcome and JSON provenance both record that
 healthy empty result, while the readable view stays free of degradation claims.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663014 fulltext \
-  | jq '(.section_outcomes.fulltext.outcome == "empty") and ((.section_outcomes.fulltext.sources | length) > 0) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["empty"])' \
+  | jq '(.section_outcomes.fulltext.outcome == "empty") and ((.section_outcomes.fulltext.sources | length) > 0) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["empty"]) and ([._meta.section_sources[] | select(.key == "fulltext") | .sources] == [.section_outcomes.fulltext.sources])' \
   | mustmatch 'true'
 ```
 
-```bash run id=healthy-empty-fulltext exit=0
-../../tools/biomcp-ci get article 22663014 fulltext
+```bash
+../../tools/biomcp-ci get article 22663014 fulltext \
+  | mustmatch '/(?is)## Full Text.*(no full text|full text.*not available)/'
 ```
 
-```text expect=healthy-empty-fulltext contains
-## Full Text
-Full text not available
-```
-
-```text expect=healthy-empty-fulltext not-contains
-unavailable
+```bash
+../../tools/biomcp-ci get article 22663014 fulltext \
+  | mustmatch not '/(?i)unavailable/'
 ```
 
 A provider failure means the ladder could not establish absence. Even when the
@@ -473,21 +489,18 @@ unavailable state instead of making the confident all-sources-empty claim.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663019 fulltext \
-  | jq '(.section_outcomes.fulltext.outcome == "unavailable") and (.section_outcomes.fulltext.sources == []) and ((.section_outcomes.fulltext.message // "") | test("unavailable"; "i")) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["unavailable"])' \
+  | jq '(.section_outcomes.fulltext.outcome == "unavailable") and (.section_outcomes.fulltext.sources == []) and ((.section_outcomes.fulltext.message // "") | test("unavailable"; "i")) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["unavailable"]) and ([._meta.section_sources[] | select(.key == "fulltext") | .sources] == [[]])' \
   | mustmatch 'true'
 ```
 
-```bash run id=unavailable-fulltext exit=0
-../../tools/biomcp-ci get article 22663019 fulltext
+```bash
+../../tools/biomcp-ci get article 22663019 fulltext \
+  | mustmatch '/(?is)## Full Text.*unavailable/'
 ```
 
-```text expect=unavailable-fulltext contains
-## Full Text
-unavailable
-```
-
-```text expect=unavailable-fulltext not-contains
-sources did not return full text
+```bash
+../../tools/biomcp-ci get article 22663019 fulltext \
+  | mustmatch not '/(?i)sources.*did not return full text/'
 ```
 
 ## Full-Text HTML Fallback
