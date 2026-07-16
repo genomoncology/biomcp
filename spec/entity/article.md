@@ -153,6 +153,82 @@ contracts. The deterministic tests should cover article JSON `_meta.next_command
 anchors without live PubMed, Europe PMC, PubTator, LitSense2, or Semantic Scholar
 calls.
 
+## Compact Article Search Keeps the Triage Contract
+
+Article search returns shortlist-sized JSON by default: stable identifiers and
+key triage fields remain alongside pagination, retraction state, and executable
+follow-ups. Use `--full` only when the abstract, complete source provenance, and
+ranking diagnostics are worth the larger response.
+
+```bash run id=compact-article-search exit=0
+../../tools/biomcp-ci --json search article --author "Williams LS" --limit 2
+```
+
+```json expect=compact-article-search contains
+{
+  "pagination": {"has_more": true},
+  "results": [{
+    "pmid": "51300001",
+    "title": "Williams LS Europe PMC byline match",
+    "journal": "Byline Fixture Journal",
+    "date": "2025-01-01",
+    "source": "europepmc",
+    "is_retracted": false
+  }],
+  "_meta": {"next_commands": ["biomcp get article 51300001"]}
+}
+```
+
+```text expect=compact-article-search not-contains
+"matched_sources":
+"ranking":
+```
+
+The explicit full view restores the detailed row contract without changing the
+search, ordering, or result collection.
+
+```bash run id=full-article-search exit=0
+../../tools/biomcp-ci --json search article --author "Williams LS" --limit 2 --full
+```
+
+```json expect=full-article-search contains
+{
+  "results": [{
+    "pmid": "51300001",
+    "matched_sources": ["europepmc"],
+    "ranking": {"mode": "lexical"}
+  }]
+}
+```
+
+## Date Sort Announces Relevance Replacement
+
+Date order is useful for recency scans, but it replaces relevance ranking rather
+than refining it. Both machine and human output say so in-band, including the
+compact default response.
+
+```bash run id=date-sort-json exit=0
+../../tools/biomcp-ci --json search article --author "Williams LS" --sort date --limit 2
+```
+
+```json expect=date-sort-json contains
+{
+  "sort": "date",
+  "_meta": {
+    "warnings": [{"code": "date_sort_replaces_relevance"}]
+  }
+}
+```
+
+```bash run id=date-sort-markdown exit=0
+../../tools/biomcp-ci search article --author "Williams LS" --sort date --limit 2
+```
+
+```text expect=date-sort-markdown contains
+Warning:
+replaces relevance ranking
+```
+
 ## Explicit Fixtures Do Not Inherit Live-Source Pacing
 <!-- mustmatch-lint: skip -->
 
