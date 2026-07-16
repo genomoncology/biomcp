@@ -442,6 +442,54 @@ source identity plus ranking metadata available to automation.
 Annotations remain a first-class deepen path. The section should keep the
 PubTator heading and explain that the extracted entities are normalized.
 
+## Full-Text Distinguishes Confirmed Absence from Source Unavailability
+
+A completed resolver ladder can confidently report that no supported full text
+was found. The entity-owned outcome and JSON provenance both record that
+healthy empty result, while the readable view stays free of degradation claims.
+
+```bash
+../../tools/biomcp-ci --json get article 22663014 fulltext \
+  | jq '(.section_outcomes.fulltext.outcome == "empty") and ((.section_outcomes.fulltext.sources | length) > 0) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["empty"])' \
+  | mustmatch 'true'
+```
+
+```bash run id=healthy-empty-fulltext exit=0
+../../tools/biomcp-ci get article 22663014 fulltext
+```
+
+```text expect=healthy-empty-fulltext contains
+## Full Text
+Full text not available
+```
+
+```text expect=healthy-empty-fulltext not-contains
+unavailable
+```
+
+A provider failure means the ladder could not establish absence. Even when the
+remaining sources return healthy misses, JSON and Markdown retain the
+unavailable state instead of making the confident all-sources-empty claim.
+
+```bash
+../../tools/biomcp-ci --json get article 22663019 fulltext \
+  | jq '(.section_outcomes.fulltext.outcome == "unavailable") and (.section_outcomes.fulltext.sources == []) and ((.section_outcomes.fulltext.message // "") | test("unavailable"; "i")) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["unavailable"])' \
+  | mustmatch 'true'
+```
+
+```bash run id=unavailable-fulltext exit=0
+../../tools/biomcp-ci get article 22663019 fulltext
+```
+
+```text expect=unavailable-fulltext contains
+## Full Text
+unavailable
+```
+
+```text expect=unavailable-fulltext not-contains
+sources did not return full text
+```
+
 ## Full-Text HTML Fallback
 
 When the XML ladder misses, BioMCP should fall back to the PMC HTML article page
