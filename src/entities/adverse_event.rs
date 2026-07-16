@@ -999,6 +999,19 @@ fn validate_explicit_vaers_source(
     Ok(())
 }
 
+fn optional_faers_status(
+    result: Result<FaersSearchStatus, BioMcpError>,
+) -> Result<FaersSearchStatus, BioMcpError> {
+    match result {
+        Ok(status) => Ok(status),
+        Err(err @ BioMcpError::InvalidArgument(_)) => Err(err),
+        Err(err) => {
+            tracing::warn!("OpenFDA FAERS adverse-event search unavailable: {err}");
+            Ok(FaersSearchStatus::Unavailable)
+        }
+    }
+}
+
 fn faers_section_outcome(status: &FaersSearchStatus) -> SectionOutcome {
     match status {
         FaersSearchStatus::Results(response) if !response.results.is_empty() => {
@@ -1092,11 +1105,9 @@ pub async fn search_with_source(
     match source {
         AdverseEventSourceFilter::Faers => Ok(source_search(
             source,
-            Some(
-                search_with_status(filters, limit, offset)
-                    .await
-                    .unwrap_or(FaersSearchStatus::Unavailable),
-            ),
+            Some(optional_faers_status(
+                search_with_status(filters, limit, offset).await,
+            )?),
             None,
         )),
         AdverseEventSourceFilter::Vaers => {
@@ -1126,14 +1137,12 @@ pub async fn search_with_source(
                     ),
                 };
                 Ok(all_source_search_with_vaers_payload(
-                    faers_result.unwrap_or(FaersSearchStatus::Unavailable),
+                    optional_faers_status(faers_result)?,
                     vaers,
                 ))
             } else {
                 Ok(all_source_search_with_unsupported_vaers_filters(
-                    search_with_status(filters, limit, offset)
-                        .await
-                        .unwrap_or(FaersSearchStatus::Unavailable),
+                    optional_faers_status(search_with_status(filters, limit, offset).await)?,
                     &unsupported,
                 ))
             }
@@ -2212,6 +2221,26 @@ mod tests {
             }
             _ => panic!("expected non-vaccine query"),
         }
+    }
+
+    #[test]
+    fn optional_faers_status_preserves_invalid_arguments() {
+        let result = optional_faers_status(Err(BioMcpError::InvalidArgument(
+            "--limit must be between 1 and 50".into(),
+        )));
+
+        assert!(matches!(result, Err(BioMcpError::InvalidArgument(_))));
+    }
+
+    #[test]
+    fn optional_faers_status_degrades_provider_failures() {
+        let result = optional_faers_status(Err(BioMcpError::Api {
+            api: "OpenFDA".into(),
+            message: "service unavailable".into(),
+        }))
+        .expect("provider failure should become an in-band outcome");
+
+        assert!(matches!(result, FaersSearchStatus::Unavailable));
     }
 
     #[test]

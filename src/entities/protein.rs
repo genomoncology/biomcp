@@ -16,7 +16,7 @@ use crate::transform;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Protein {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_protein_section_outcomes")]
     pub section_outcomes: SectionOutcomes,
     pub accession: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -106,6 +106,19 @@ pub(crate) const PROTEIN_OUTCOME_KEYS: &[&str] = &[
     PROTEIN_SECTION_COMPLEXES,
     PROTEIN_SECTION_STRUCTURES,
 ];
+fn deserialize_protein_section_outcomes<'de, D>(
+    deserializer: D,
+) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(PROTEIN_OUTCOME_KEYS)
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
+}
+
 const DEFAULT_COMPLEX_LIMIT: usize = 10;
 const DEFAULT_STRUCTURE_LIMIT: usize = 10;
 const MAX_STRUCTURE_LIMIT: usize = 100;

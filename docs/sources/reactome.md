@@ -7,7 +7,7 @@ description: "Use BioMCP to search Reactome pathways, inspect pathway genes and 
 
 Reactome is the best source page to reach for when a question has moved past single genes and into mechanism, signaling flow, or pathway membership. It matters because pathway context is where isolated biomarkers start to look like a biological story instead of a disconnected list of hits.
 
-BioMCP pathway search and detail are multi-source across Reactome, KEGG, and WikiPathways. This page covers the Reactome-backed part of that surface: Reactome IDs, Reactome detail cards, contained events, and Reactome-gated enrichment sections. Top-level `biomcp enrich` is a g:Profiler workflow and does not belong on this page.
+BioMCP pathway search and detail are multi-source across Reactome, KEGG, and WikiPathways. This page covers the Reactome-backed part of that surface: Reactome IDs, Reactome detail cards, contained events, and Reactome-gated enrichment sections. Top-level `biomcp enrich` is a g:Profiler workflow and does not belong on this page. JSON/MCP detail output records requested `genes`, `events`, and `enrichment` under `section_outcomes`; `empty` is a successful zero, while `unavailable` means the requested evidence could not be retrieved and is reported in Markdown too.
 
 ## What BioMCP exposes
 

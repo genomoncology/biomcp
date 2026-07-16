@@ -16,7 +16,7 @@ use crate::transform;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pathway {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_pathway_section_outcomes")]
     pub section_outcomes: SectionOutcomes,
     pub source: String,
     pub id: String,
@@ -65,6 +65,19 @@ pub(crate) const PATHWAY_OUTCOME_KEYS: &[&str] = &[
     PATHWAY_SECTION_EVENTS,
     PATHWAY_SECTION_ENRICHMENT,
 ];
+
+fn deserialize_pathway_section_outcomes<'de, D>(
+    deserializer: D,
+) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(PATHWAY_OUTCOME_KEYS)
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
+}
 
 pub const PATHWAY_SECTION_NAMES: &[&str] = &[
     PATHWAY_SECTION_GENES,
@@ -524,6 +537,14 @@ fn finalize_pathway_search_results(
     ))
 }
 
+fn wikipathways_gene_outcome(symbols: &[String]) -> SectionOutcome {
+    if symbols.is_empty() {
+        SectionOutcome::empty_sources(["WikiPathways", "MyGene.info"])
+    } else {
+        SectionOutcome::data_sources(["WikiPathways", "MyGene.info"])
+    }
+}
+
 async fn add_pathway_enrichment(
     pathway: &mut Pathway,
     fallback_genes: &[String],
@@ -763,11 +784,7 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
                             Ok(mygene) => match mygene.symbols_for_entrez_ids(&entrez_ids).await {
                                 Ok(symbols) => {
                                     pathway.genes = symbols.into_iter().take(50).collect();
-                                    if pathway.genes.is_empty() {
-                                        SectionOutcome::empty("WikiPathways")
-                                    } else {
-                                        SectionOutcome::data("WikiPathways")
-                                    }
+                                    wikipathways_gene_outcome(&pathway.genes)
                                 }
                                 Err(err) => {
                                     warn!(
@@ -1012,6 +1029,37 @@ mod tests {
         assert!(flags.include_genes);
         assert!(!flags.include_events);
         assert!(!flags.include_enrichment);
+    }
+
+    #[test]
+    fn pathway_json_compatibility_defaults_missing_outcomes_and_rejects_foreign_keys() {
+        let legacy = serde_json::from_str::<Pathway>(
+            r#"{"source":"Reactome","id":"R-HSA-1","name":"Example"}"#,
+        )
+        .expect("legacy pathway JSON should deserialize");
+        assert!(legacy.section_outcomes.iter().next().is_none());
+
+        let foreign = serde_json::from_str::<Pathway>(
+            r#"{"source":"Reactome","id":"R-HSA-1","name":"Example","section_outcomes":{"approvals":{"outcome":"empty","sources":["OpenFDA"]}}}"#,
+        );
+        assert!(foreign.is_err());
+    }
+
+    #[test]
+    fn wikipathways_gene_outcome_credits_symbol_resolution_provider() {
+        let data = wikipathways_gene_outcome(&["BRAF".to_string()]);
+        assert_eq!(
+            data.outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::Data
+        );
+        assert_eq!(data.sources(), &["WikiPathways", "MyGene.info"]);
+
+        let empty = wikipathways_gene_outcome(&[]);
+        assert_eq!(
+            empty.outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::Empty
+        );
+        assert_eq!(empty.sources(), &["WikiPathways", "MyGene.info"]);
     }
 
     #[tokio::test]

@@ -25,7 +25,7 @@ impl SectionOutcomeState {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SectionOutcome {
     outcome: SectionOutcomeState,
     sources: Vec<String>,
@@ -65,7 +65,7 @@ impl SectionOutcome {
     {
         Self {
             outcome: SectionOutcomeState::Degraded,
-            sources: sources.into_iter().map(Into::into).collect(),
+            sources: successful_sources(sources),
             message: Some(bounded_message(message)),
         }
     }
@@ -85,7 +85,7 @@ impl SectionOutcome {
     {
         Self {
             outcome,
-            sources: sources.into_iter().map(Into::into).collect(),
+            sources: successful_sources(sources),
             message: None,
         }
     }
@@ -103,12 +103,87 @@ impl SectionOutcome {
     }
 }
 
+fn successful_sources<I, S>(sources: I) -> Vec<String>
+where
+    I: IntoIterator<Item = S>,
+    S: Into<String>,
+{
+    let sources = sources.into_iter().map(Into::into).collect::<Vec<_>>();
+    assert!(
+        !sources.is_empty() && sources.iter().all(|source| !source.trim().is_empty()),
+        "successful section outcomes require non-blank sources"
+    );
+    sources
+}
+
+fn message_is_safe(message: &str) -> bool {
+    let lower = message.to_ascii_lowercase();
+    message.chars().count() <= 160
+        && !message.chars().any(char::is_control)
+        && !lower.contains("://")
+        && !lower.contains("credential")
+        && !lower.contains("password")
+        && !lower.contains("token=")
+        && !lower.contains("parser error")
+        && !lower.contains("transport error")
+        && !message
+            .split_whitespace()
+            .any(|word| word.starts_with('/') || word.contains(":\\"))
+}
+
 fn bounded_message(message: &'static str) -> String {
-    message
+    let message = message
         .chars()
         .filter(|ch| !ch.is_control())
         .take(160)
-        .collect()
+        .collect::<String>();
+    assert!(
+        message_is_safe(&message),
+        "unsafe public section outcome message"
+    );
+    message
+}
+
+#[derive(Deserialize)]
+struct SerializedSectionOutcome {
+    outcome: SectionOutcomeState,
+    #[serde(default)]
+    sources: Vec<String>,
+    #[serde(default)]
+    message: Option<String>,
+}
+
+impl<'de> Deserialize<'de> for SectionOutcome {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::Error as _;
+
+        let value = SerializedSectionOutcome::deserialize(deserializer)?;
+        let sources_are_valid = value.sources.iter().all(|source| !source.trim().is_empty());
+        let message_is_valid = value.message.as_deref().is_none_or(message_is_safe);
+        let shape_is_valid = match value.outcome {
+            SectionOutcomeState::NotRequested => {
+                value.sources.is_empty() && value.message.is_none()
+            }
+            SectionOutcomeState::Data | SectionOutcomeState::Empty => {
+                !value.sources.is_empty() && value.message.is_none()
+            }
+            SectionOutcomeState::Degraded => !value.sources.is_empty() && value.message.is_some(),
+            SectionOutcomeState::Unavailable => value.sources.is_empty() && value.message.is_some(),
+        };
+        if !sources_are_valid || !message_is_valid || !shape_is_valid {
+            return Err(D::Error::custom(
+                "invalid section outcome state/source/message combination",
+            ));
+        }
+        Ok(Self {
+            outcome: value.outcome,
+            sources: value.sources,
+            message: value.message,
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -138,12 +213,23 @@ impl SectionOutcomes {
             .0
             .get_mut(key)
             .unwrap_or_else(|| panic!("unknown section outcome key: {key}"));
-        debug_assert_eq!(current.outcome, SectionOutcomeState::NotRequested);
+        assert_eq!(
+            current.outcome,
+            SectionOutcomeState::NotRequested,
+            "section outcome completed more than once: {key}"
+        );
         *current = outcome;
     }
 
     pub fn get(&self, key: &str) -> Option<&SectionOutcome> {
         self.0.get(key)
+    }
+
+    pub fn validate_keys(&self, allowed: &[&str]) -> Result<(), String> {
+        if let Some(key) = self.0.keys().find(|key| !allowed.contains(&key.as_str())) {
+            return Err(format!("unknown section outcome key: {key}"));
+        }
+        Ok(())
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&str, &SectionOutcome)> {
@@ -180,10 +266,45 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn registry_rejects_second_completion_in_tests() {
+    #[should_panic(expected = "section outcome completed more than once")]
+    fn registry_rejects_second_completion() {
         let mut outcomes = SectionOutcomes::with_keys(&["section"]);
         outcomes.complete("section", SectionOutcome::empty("Source"));
         outcomes.complete("section", SectionOutcome::data("Source"));
+    }
+
+    #[test]
+    #[should_panic(expected = "non-blank sources")]
+    fn successful_outcomes_require_a_source() {
+        SectionOutcome::data_sources(Vec::<String>::new());
+    }
+
+    #[test]
+    fn deserialized_registry_rejects_entity_foreign_keys() {
+        let outcomes = serde_json::from_str::<SectionOutcomes>(
+            r#"{"foreign":{"outcome":"empty","sources":["Source"]}}"#,
+        )
+        .expect("outcome shape is valid");
+
+        assert_eq!(
+            outcomes.validate_keys(&["expected"]).unwrap_err(),
+            "unknown section outcome key: foreign"
+        );
+    }
+
+    #[test]
+    fn deserialization_rejects_illegal_shapes_and_unsafe_messages() {
+        for json in [
+            r#"{"outcome":"data","sources":[]}"#,
+            r#"{"outcome":"unavailable","sources":["Provider"],"message":"Unavailable."}"#,
+            r#"{"outcome":"degraded","sources":[],"message":"Incomplete."}"#,
+            r#"{"outcome":"unavailable","sources":[],"message":"See https://example.test/raw"}"#,
+            r#"{"outcome":"unavailable","sources":[],"message":"read /tmp/provider.json"}"#,
+        ] {
+            assert!(
+                serde_json::from_str::<SectionOutcome>(json).is_err(),
+                "{json}"
+            );
+        }
     }
 }

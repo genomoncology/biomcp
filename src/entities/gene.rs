@@ -38,7 +38,7 @@ use crate::transform;
 /// Gene entity from MyGene.info plus optional enrichment sections.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Gene {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_gene_section_outcomes")]
     pub section_outcomes: SectionOutcomes,
     pub symbol: String,
     pub name: String,
@@ -251,6 +251,17 @@ pub(crate) const GENE_OUTCOME_KEYS: &[&str] = &[
     GENE_SECTION_DISGENET,
     GENE_SECTION_FUNDING,
 ];
+
+fn deserialize_gene_section_outcomes<'de, D>(deserializer: D) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(GENE_OUTCOME_KEYS)
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
+}
 
 pub const GENE_SECTION_NAMES: &[&str] = &[
     GENE_SECTION_PATHWAYS,
@@ -1315,6 +1326,41 @@ pub async fn has_reactome_pathway_signal(symbol: &str) -> Result<bool, BioMcpErr
     Ok(!rows.is_empty())
 }
 
+fn pathway_outcome(pathways: Option<&[GenePathway]>, reactome_available: bool) -> SectionOutcome {
+    let mut sources = pathways
+        .unwrap_or_default()
+        .iter()
+        .map(|row| row.source.trim())
+        .filter(|source| !source.is_empty())
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    if reactome_available
+        && !sources
+            .iter()
+            .any(|source| source.eq_ignore_ascii_case("Reactome"))
+    {
+        sources.push("Reactome".to_string());
+    }
+    sources.sort_by_key(|source| source.to_ascii_lowercase());
+    sources.dedup_by(|left, right| left.eq_ignore_ascii_case(right));
+
+    if !reactome_available {
+        return if sources.is_empty() {
+            SectionOutcome::unavailable("Reactome gene pathways are unavailable.")
+        } else {
+            SectionOutcome::degraded(
+                sources,
+                "Reactome pathways are unavailable; retained pathway evidence may be incomplete.",
+            )
+        };
+    }
+    if pathways.is_some_and(|rows| !rows.is_empty()) {
+        SectionOutcome::data_sources(sources)
+    } else {
+        SectionOutcome::empty("Reactome")
+    }
+}
+
 fn merge_pathways(
     existing: Option<Vec<GenePathway>>,
     additional: Option<Vec<GenePathway>>,
@@ -2267,19 +2313,20 @@ async fn populate_sections_parallel_top(
     if let Some((result, entry)) = pathways_result {
         timing.push(entry);
         gene.pathways = match result {
-            Ok(value) => merge_pathways(gene.pathways.take(), value),
+            Ok(value) => {
+                let pathways = merge_pathways(gene.pathways.take(), value);
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PATHWAYS,
+                    pathway_outcome(pathways.as_deref(), true),
+                );
+                pathways
+            }
             Err(err) => {
                 warn!("Reactome unavailable for gene pathways section: {err}");
-                let outcome = if gene.pathways.as_ref().is_some_and(|rows| !rows.is_empty()) {
-                    SectionOutcome::degraded(
-                        ["MyGene"],
-                        "Reactome pathways are unavailable; retained pathway evidence may be incomplete.",
-                    )
-                } else {
-                    SectionOutcome::unavailable("Reactome gene pathways are unavailable.")
-                };
-                gene.section_outcomes
-                    .complete(GENE_SECTION_PATHWAYS, outcome);
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PATHWAYS,
+                    pathway_outcome(gene.pathways.as_deref(), false),
+                );
                 gene.pathways.clone()
             }
         };
@@ -2520,19 +2567,20 @@ pub async fn get_with_report(
     if include.contains(&GeneIncludeType::Pathways) {
         let started = Instant::now();
         gene.pathways = match fetch_pathways_section(&gene.symbol).await {
-            Ok(v) => merge_pathways(gene.pathways.take(), v),
+            Ok(value) => {
+                let pathways = merge_pathways(gene.pathways.take(), value);
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PATHWAYS,
+                    pathway_outcome(pathways.as_deref(), true),
+                );
+                pathways
+            }
             Err(err) => {
                 warn!("Reactome unavailable for gene pathways section: {err}");
-                let outcome = if gene.pathways.as_ref().is_some_and(|rows| !rows.is_empty()) {
-                    SectionOutcome::degraded(
-                        ["MyGene"],
-                        "Reactome pathways are unavailable; retained pathway evidence may be incomplete.",
-                    )
-                } else {
-                    SectionOutcome::unavailable("Reactome gene pathways are unavailable.")
-                };
-                gene.section_outcomes
-                    .complete(GENE_SECTION_PATHWAYS, outcome);
+                gene.section_outcomes.complete(
+                    GENE_SECTION_PATHWAYS,
+                    pathway_outcome(gene.pathways.as_deref(), false),
+                );
                 gene.pathways
             }
         };
@@ -3442,6 +3490,34 @@ mod tests {
         assert_eq!(merged.len(), 2);
         assert_eq!(merged[0].source, "KEGG");
         assert_eq!(merged[1].source, "Reactome");
+    }
+
+    #[test]
+    fn pathway_outcome_credits_merged_sources_and_only_retained_sources_on_failure() {
+        let pathways = vec![
+            GenePathway {
+                source: "KEGG".to_string(),
+                id: "hsa04010".to_string(),
+                name: "MAPK signaling pathway".to_string(),
+            },
+            GenePathway {
+                source: "Reactome".to_string(),
+                id: "R-HSA-5673001".to_string(),
+                name: "RAF/MAP kinase cascade".to_string(),
+            },
+        ];
+
+        let healthy = pathway_outcome(Some(&pathways), true);
+        assert_eq!(healthy.outcome(), SectionOutcomeState::Data);
+        assert_eq!(healthy.sources(), &["KEGG", "Reactome"]);
+
+        let degraded = pathway_outcome(Some(&pathways[..1]), false);
+        assert_eq!(degraded.outcome(), SectionOutcomeState::Degraded);
+        assert_eq!(degraded.sources(), &["KEGG"]);
+
+        let unavailable = pathway_outcome(None, false);
+        assert_eq!(unavailable.outcome(), SectionOutcomeState::Unavailable);
+        assert!(unavailable.sources().is_empty());
     }
 
     #[tokio::test]

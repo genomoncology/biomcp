@@ -17,6 +17,7 @@ In BioMCP, CDC CVX/MVX is a local-runtime vaccine identity source rather than a 
 | `search drug <vaccine_brand> --region all` | Combined U.S., EU, and WHO search with EMA vaccine bridge | Adds CDC-derived EMA alias expansion while keeping the split all-region output |
 | `search drug <vaccine_brand> --region who --product-type vaccine` | Explicit WHO vaccine search by vaccine name or brand | Uses the local CDC bundle to expand vaccine brand names into WHO-searchable aliases after MyChem identity misses |
 | `search drug <vaccine_brand>` | Default plain-name U.S.+EU+WHO search | The CDC bridge affects the EU bucket on this path; WHO aliases stay unchanged unless the user explicitly selects WHO vaccine search |
+| `search adverse-event <vaccine_query> --source vaers\|all` | Vaccine identity classification before VAERS aggregation | A healthy no-match may classify the query; missing, unreadable, or unsynchronized CVX data reports `vaers.status: unavailable` instead of `query_not_vaccine` |
 | `biomcp health` | Local readiness for the CDC CVX/MVX bundle | Reports `CDC CVX/MVX local data (<root>)` in the non-API health view |
 | `biomcp cvx sync` | Forced refresh of the local CDC vaccine identity bundle | Refreshes `cvx.txt`, `TRADENAME.txt`, and `mvx.txt` without waiting for automatic sync |
 

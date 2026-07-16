@@ -41,7 +41,7 @@ use crate::sources::who_pq::WhoPqIdentity;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Drug {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_drug_section_outcomes")]
     pub section_outcomes: SectionOutcomes,
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -116,6 +116,17 @@ pub struct Drug {
     pub who_prequalification: Option<Vec<WhoPrequalificationEntry>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub civic: Option<CivicContext>,
+}
+
+fn deserialize_drug_section_outcomes<'de, D>(deserializer: D) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(DRUG_SECTION_KEYS)
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
