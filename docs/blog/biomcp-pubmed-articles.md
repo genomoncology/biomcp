@@ -13,7 +13,7 @@ $ biomcp search article --gene BRAF -d melanoma --limit 5
 
 # Articles: gene=BRAF, disease=melanoma, sort=relevance
 
-| PMID     | Title                                              | Source(s)         | Date | Cit. |
+| Identifier | Title                                              | Source(s)         | Date | Cit. |
 |----------|----------------------------------------------------|-------------------|------|------|
 | 30544808 | Oleuropein, the Main Polyphenol of Olea europaea…  | Semantic Scholar  | 2018 | 100  |
 | 29295999 | ERK-mediated phosphorylation regulates SOX10…      | Semantic Scholar  | 2018 | 70   |
@@ -21,7 +21,7 @@ $ biomcp search article --gene BRAF -d melanoma --limit 5
 | 28455392 | Biomarker Accessible and Chemically Addressable…   | Semantic Scholar  | 2017 | 45   |
 ```
 
-You can stack filters: `--gene BRAF --drug vemurafenib --since 2020 --type review --sort citations`. Twelve filter options, all combinable.
+You can stack filters: `--gene BRAF --drug vemurafenib --since 2020 --type review --sort citations`. JSON search rows are compact by default; add `--full` for abstracts, complete provenance, and ranking diagnostics. Date sorting replaces relevance ranking and prints an in-band warning.
 
 ## 2. Article Detail
 
@@ -84,7 +84,7 @@ $ biomcp article citations 12068308 --limit 3
 
 # Citations for PMID 12068308
 
-| PMID | Title                                              | Intents | Influential |
+| Identifier | Title                                              | Intents | Influential |
 |------|----------------------------------------------------|---------|-------------|
 | …    | FDG PET/CT as the Decisive Modality in…            | -       | no          |
 | …    | Associations of Tumor Somatic Mutations and…       | -       | no          |
@@ -105,21 +105,21 @@ Same structure as citations but in the opposite direction. Follow the intellectu
 
 ## 6. Similar Papers
 
-Content-based recommendations from Semantic Scholar. Finds related work by meaning, not just shared keywords.
+BioMCP relays Semantic Scholar's provider-defined paper recommendations. BioMCP does not validate semantic similarity or systematic-review recall.
 
 ```
 $ biomcp article recommendations 12068308 --limit 3
 
 # Recommendations for PMID 12068308
 
-| PMID | Title                                              | Journal         | Year |
+| Identifier | Title                                              | Journal         | Year |
 |------|----------------------------------------------------|-----------------|------|
 | …    | Oncogenes and tumor suppressor genes enriched in…  | bioRxiv         | 2026 |
 | …    | Genome-wide CRISPR Screen Identifies Menin as…     | Cancer Research | 2026 |
 | …    | Pancreas cancer: Genomics, RAS therapeutics…        | Cancer Research | 2026 |
 ```
 
-Multi-seed with negative filtering: `biomcp article recommendations 12068308 21639808 --negative 39073865` finds papers similar to the first two but NOT similar to the third. Useful for narrowing a broad literature search.
+Multi-seed with negative filtering is available through `biomcp article recommendations 12068308 21639808 --negative 39073865`. BioMCP relays the provider-defined result and does not claim that it narrows a literature search reliably.
 
 ## 7. Entity Commands
 

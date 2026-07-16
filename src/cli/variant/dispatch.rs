@@ -161,6 +161,7 @@ pub(crate) async fn handle_command(
                                 &filters,
                                 crate::entities::article::ArticleSourceFilter::All,
                             ),
+                        warning: None,
                         note: Some(page.retrieval_path),
                         debug_plan: None,
                         exact_entity_commands: &[],

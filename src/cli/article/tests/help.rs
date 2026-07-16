@@ -99,6 +99,29 @@ fn search_article_help_includes_query_formulation_guidance() {
 }
 
 #[test]
+fn article_full_flag_parses_and_help_explains_compact_default() {
+    let cli = Cli::try_parse_from([
+        "biomcp", "--json", "search", "article", "-g", "BRAF", "--full",
+    ])
+    .expect("article full flag should parse");
+    let Cli {
+        command: Commands::Search {
+            entity: SearchEntity::Article(args),
+        },
+        ..
+    } = cli
+    else {
+        panic!("expected article search command");
+    };
+
+    assert!(args.full);
+    let help = render_article_search_long_help();
+    assert!(help.contains("--full"));
+    assert!(help.contains("JSON search rows are compact by default"));
+    assert!(help.contains("`--sort date` replaces relevance ranking"));
+}
+
+#[test]
 fn article_date_help_advertises_shared_accepted_formats() {
     let help = render_article_search_long_help();
 

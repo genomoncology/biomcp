@@ -21,6 +21,8 @@ fn to_json_array_preserves_article_source_and_ranking_metadata() {
         pmid: "22663011".into(),
         pmcid: Some("PMC9984800".into()),
         doi: Some("10.1056/NEJMoa1203421".into()),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "BRAF melanoma review".into(),
         journal: Some("Journal".into()),
         date: Some("2025-01-01".into()),

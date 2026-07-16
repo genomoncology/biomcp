@@ -9,7 +9,7 @@ mod tests;
 
 #[derive(serde::Serialize)]
 struct ArticleSearchRenderRow {
-    pmid: String,
+    identifier: String,
     title: String,
     sources: String,
     date: Option<String>,
@@ -21,6 +21,7 @@ struct ArticleSearchRenderRow {
 pub struct ArticleSearchRenderContext<'a> {
     pub source_filter: crate::entities::article::ArticleSourceFilter,
     pub semantic_scholar_enabled: bool,
+    pub warning: Option<&'a str>,
     pub note: Option<&'a str>,
     pub debug_plan: Option<&'a DebugPlan>,
     pub exact_entity_commands: &'a [String],
@@ -252,7 +253,7 @@ pub fn article_graph_markdown(
         markdown_cell(kind),
         markdown_cell(&article_related_label(&result.article))
     );
-    out.push_str("| PMID | Title | Intents | Influential | Context |\n");
+    out.push_str("| Identifier | Title | Intents | Influential | Context |\n");
     out.push_str("| --- | --- | --- | --- | --- |\n");
     if result.edges.is_empty() {
         out.push_str("| - | - | - | - | No related papers returned |\n");
@@ -307,7 +308,7 @@ pub fn article_recommendations_markdown(
             markdown_cell(&negatives)
         ));
     }
-    out.push_str("| PMID | Title | Journal | Year |\n");
+    out.push_str("| Identifier | Title | Journal | Year |\n");
     out.push_str("| --- | --- | --- | --- |\n");
     if result.recommendations.is_empty() {
         out.push_str("| - | No recommendations returned | - | - |\n");
@@ -491,7 +492,15 @@ pub fn article_search_markdown_with_footer_and_context(
     let rows = results
         .iter()
         .map(|row| ArticleSearchRenderRow {
-            pmid: row.pmid.clone(),
+            identifier: super::related::article_support::typed_article_identifier(
+                Some(&row.pmid),
+                row.pmcid.as_deref(),
+                row.doi.as_deref(),
+                row.arxiv_id.as_deref(),
+                row.semantic_scholar_id.as_deref(),
+            )
+            .map(|identifier| markdown_cell(&identifier))
+            .unwrap_or_else(|| "-".to_string()),
             title: row.title.clone(),
             sources: article_sources_label(row),
             date: row.date.clone(),
@@ -518,6 +527,7 @@ pub fn article_search_markdown_with_footer_and_context(
         rows => rows,
         semantic_scholar_enabled => context.semantic_scholar_enabled,
         semantic_scholar_source_status_note => semantic_scholar_source_status_note,
+        warning => context.warning,
         note => context.note,
         sort => filters.sort.as_str(),
         ranking_policy => crate::entities::article::article_relevance_ranking_policy(filters),

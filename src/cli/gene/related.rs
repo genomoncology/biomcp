@@ -135,6 +135,7 @@ pub(super) async fn handle_related_command(
                                 &filters,
                                 crate::entities::article::ArticleSourceFilter::All,
                             ),
+                        warning: None,
                         note: None,
                         debug_plan: None,
                         exact_entity_commands: &[],

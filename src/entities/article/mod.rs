@@ -468,6 +468,10 @@ pub struct ArticleSearchResult {
     pub pmcid: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub doi: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub arxiv_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub semantic_scholar_id: Option<String>,
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub journal: Option<String>,

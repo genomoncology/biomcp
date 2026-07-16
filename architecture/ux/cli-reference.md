@@ -164,6 +164,13 @@ healthy sources and reports the degraded source. Markdown includes source-status
 notes, JSON includes `_meta.source_status`, and `--debug-plan` includes the same
 per-source status in the article leg.
 
+Top-level article-search JSON uses compact rows by default while preserving
+identifiers, shortlist fields, retraction state, pagination, warnings, source
+status, and executable follow-ups. `--full` restores detailed rows without
+changing search or ordering. `--sort date` replaces relevance ranking and is
+announced in compact JSON, full JSON, and Markdown. Human-readable search and
+related-paper tables use an `Identifier` heading with typed values.
+
 ## Trial Search
 
 Trial condition filters are literal. Every CTGov intervention worker is sent as

@@ -275,6 +275,7 @@ fn semantic_scholar_candidates_keep_unknown_retraction_rows() {
                 external_ids: Some(SemanticScholarExternalIds {
                     pubmed: Some("22663011".into()),
                     doi: Some("10.1000/example".into()),
+                    arxiv: Some("2401.12345".into()),
                     ..Default::default()
                 }),
                 title: Some("Alternative microexon splicing in metastasis".into()),
@@ -292,6 +293,8 @@ fn semantic_scholar_candidates_keep_unknown_retraction_rows() {
 
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].source, ArticleSource::SemanticScholar);
+    assert_eq!(rows[0].arxiv_id.as_deref(), Some("2401.12345"));
+    assert_eq!(rows[0].semantic_scholar_id.as_deref(), Some("paper-1"));
     assert_eq!(rows[0].is_retracted, None);
 }
 

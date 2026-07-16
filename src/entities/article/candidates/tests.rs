@@ -17,6 +17,25 @@ fn article_source_litsense2_priority() {
 }
 
 #[test]
+fn merge_preserves_semantic_scholar_identifiers() {
+    let mut primary = row_with("1", ArticleSource::EuropePmc, None, None, None);
+    primary.doi = Some("10.1000/shared".into());
+    let mut semantic = row_with("", ArticleSource::SemanticScholar, None, None, None);
+    semantic.doi = Some("10.1000/shared".into());
+    semantic.arxiv_id = Some("2401.12345".into());
+    semantic.semantic_scholar_id = Some("paper-1".into());
+
+    let merged = merge_article_candidates(vec![primary, semantic]);
+
+    assert_eq!(merged.len(), 1);
+    assert_eq!(merged[0].row.arxiv_id.as_deref(), Some("2401.12345"));
+    assert_eq!(
+        merged[0].row.semantic_scholar_id.as_deref(),
+        Some("paper-1")
+    );
+}
+
+#[test]
 fn pubmed_unique_row_survives_first_page_in_mixed_federation() {
     // Design: "construct a mixed candidate set with one PubMed-only row that
     // has stronger title-anchor coverage than some competing rows, run it
@@ -30,6 +49,8 @@ fn pubmed_unique_row_survives_first_page_in_mixed_federation() {
         pmid: "99999".into(),
         pmcid: None,
         doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "BRAF V600E mutations in melanoma".into(),
         journal: Some("Nature".into()),
         date: Some("2025-01-01".into()),
@@ -54,6 +75,8 @@ fn pubmed_unique_row_survives_first_page_in_mixed_federation() {
             pmid: format!("{i}"),
             pmcid: None,
             doi: None,
+            arxiv_id: None,
+            semantic_scholar_id: None,
             title: format!("Unrelated oncology study {i}"),
             journal: Some("Journal".into()),
             date: Some("2025-01-01".into()),
@@ -418,6 +441,8 @@ fn merge_article_candidates_dedups_transitively_across_identifiers() {
             pmid: "100".into(),
             pmcid: Some("PMC100".into()),
             doi: None,
+            arxiv_id: None,
+            semantic_scholar_id: None,
             title: "Primary PMID row".into(),
             journal: Some("Journal".into()),
             date: Some("2025-01-01".into()),
@@ -439,6 +464,8 @@ fn merge_article_candidates_dedups_transitively_across_identifiers() {
             pmid: String::new(),
             pmcid: Some("PMC100".into()),
             doi: Some("10.1000/example".into()),
+            arxiv_id: None,
+            semantic_scholar_id: None,
             title: "Europe metadata".into(),
             journal: Some("Journal".into()),
             date: Some("2025-01-01".into()),
@@ -460,6 +487,8 @@ fn merge_article_candidates_dedups_transitively_across_identifiers() {
             pmid: String::new(),
             pmcid: None,
             doi: Some("10.1000/example".into()),
+            arxiv_id: None,
+            semantic_scholar_id: None,
             title: "Semantic Scholar metadata".into(),
             journal: Some("Journal".into()),
             date: Some("2025-01-01".into()),

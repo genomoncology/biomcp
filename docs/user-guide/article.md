@@ -151,9 +151,15 @@ Default `--sort relevance` is mode-aware:
 - `--weight-semantic`, `--weight-lexical`, `--weight-citations`, and
   `--weight-position` retune the hybrid formula.
 
-Markdown preserves the merged rank order, and JSON includes row-level
-`matched_sources`, `ranking`, `citation_count`, and
-`influential_citation_count`.
+Markdown preserves the merged rank order. JSON search rows are compact by
+default: available PMID/PMCID/DOI/arXiv/Semantic Scholar identifiers, title,
+journal, date, citation count, primary source, and tri-state retraction state.
+Use `biomcp --json search article -g BRAF --limit 5 --full` to restore detailed
+rows with `matched_sources`, `ranking`, `first_index_date`, influential counts,
+scores, and abstract snippets.
+
+`--sort date` replaces relevance ranking rather than refining it. Compact JSON,
+`--full` JSON, and Markdown all emit an in-band warning when date sort is used.
 
 Use `--source <all, pubtator, europepmc, pubmed, semanticscholar, litsense2>`
 to select one backend or keep the default federated search.
@@ -165,8 +171,8 @@ deduplication. Use `--max-per-source <N>` to override that cap, use
 `--limit` to disable capping.
 Default article search excludes confirmed retractions unless you pass
 `--include-retracted`. Sources that do not expose retraction metadata still
-participate in the search, and JSON search rows keep the tri-state contract:
-`"is_retracted": true`, `false`, or `null`.
+participate in the search, and compact and `--full` JSON search rows keep the
+tri-state contract: `"is_retracted": true`, `false`, or `null`.
 `--type`, `--open-access`, and `--no-preprints` are backend-compatibility
 constraints rather than universal filters across every article source.
 `--type` on `--source all` uses Europe PMC + PubMed when `--open-access` and

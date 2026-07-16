@@ -115,6 +115,130 @@ pub struct ArticleSearchArgs {
     /// Include the executed search planner output and redacted source status in markdown or JSON output
     #[arg(long = "debug-plan")]
     pub debug_plan: bool,
+    /// Return detailed JSON rows including abstracts, provenance, and ranking diagnostics
+    #[arg(long)]
+    pub full: bool,
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum ArticleSearchDetail {
+    Compact,
+    Full,
+}
+
+pub(super) const DATE_SORT_WARNING_MESSAGE: &str =
+    "Date sort replaces relevance ranking; results are ordered by publication date.";
+
+#[derive(Clone, Copy, serde::Serialize)]
+pub(super) struct ArticleSearchWarning {
+    pub(super) code: &'static str,
+    pub(super) message: &'static str,
+}
+
+pub(super) fn article_search_warning(
+    sort: crate::entities::article::ArticleSort,
+) -> Option<ArticleSearchWarning> {
+    (sort == crate::entities::article::ArticleSort::Date).then_some(ArticleSearchWarning {
+        code: "date_sort_replaces_relevance",
+        message: DATE_SORT_WARNING_MESSAGE,
+    })
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+pub(super) struct ArticleSuggestion {
+    pub command: String,
+    pub reason: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sections: Vec<String>,
+}
+
+#[derive(serde::Serialize)]
+pub(super) struct ArticleSearchJsonMeta {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    warnings: Vec<ArticleSearchWarning>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    next_commands: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    suggestions: Vec<ArticleSuggestion>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    source_status: Vec<crate::entities::article::ArticleSourceStatus>,
+}
+
+pub(super) fn article_search_json_meta(
+    warnings: Vec<ArticleSearchWarning>,
+    next_commands: Vec<String>,
+    suggestions: Vec<ArticleSuggestion>,
+    source_status: Vec<crate::entities::article::ArticleSourceStatus>,
+) -> Option<ArticleSearchJsonMeta> {
+    let next_commands = super::normalize_next_commands(next_commands);
+    let suggestions = suggestions
+        .into_iter()
+        .filter(|suggestion| {
+            !suggestion.command.trim().is_empty() && !suggestion.reason.trim().is_empty()
+        })
+        .collect::<Vec<_>>();
+
+    (!warnings.is_empty()
+        || !next_commands.is_empty()
+        || !suggestions.is_empty()
+        || !source_status.is_empty())
+    .then_some(ArticleSearchJsonMeta {
+        warnings,
+        next_commands,
+        suggestions,
+        source_status,
+    })
+}
+
+#[derive(serde::Serialize)]
+pub(super) struct ArticleSearchCompactResult<'a> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pmid: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pmcid: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    doi: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    arxiv_id: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    semantic_scholar_id: Option<&'a str>,
+    title: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    journal: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    date: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    citation_count: Option<u64>,
+    source: crate::entities::article::ArticleSource,
+    is_retracted: Option<bool>,
+}
+
+impl<'a> From<&'a crate::entities::article::ArticleSearchResult>
+    for ArticleSearchCompactResult<'a>
+{
+    fn from(row: &'a crate::entities::article::ArticleSearchResult) -> Self {
+        let nonempty = |value: &'a str| (!value.trim().is_empty()).then_some(value);
+        Self {
+            pmid: nonempty(&row.pmid),
+            pmcid: row.pmcid.as_deref().and_then(nonempty),
+            doi: row.doi.as_deref().and_then(nonempty),
+            arxiv_id: row.arxiv_id.as_deref().and_then(nonempty),
+            semantic_scholar_id: row.semantic_scholar_id.as_deref().and_then(nonempty),
+            title: &row.title,
+            journal: row.journal.as_deref(),
+            date: row.date.as_deref(),
+            citation_count: row.citation_count,
+            source: row.source,
+            is_retracted: row.is_retracted,
+        }
+    }
+}
+
+#[derive(serde::Serialize)]
+#[serde(untagged)]
+pub(super) enum ArticleSearchJsonRows<'a> {
+    Compact(Vec<ArticleSearchCompactResult<'a>>),
+    Full(&'a [crate::entities::article::ArticleSearchResult]),
 }
 
 #[derive(Args, Debug)]

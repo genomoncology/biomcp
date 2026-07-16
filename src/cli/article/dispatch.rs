@@ -1,6 +1,11 @@
+pub(super) use super::ArticleSuggestion;
 pub(super) use super::workflow::article_entity_suggestion;
 use super::workflow::article_follow_up_workflow;
-use super::{ArticleCommand, ArticleGetArgs, ArticleSearchArgs};
+use super::{
+    ArticleCommand, ArticleGetArgs, ArticleSearchArgs, ArticleSearchCompactResult,
+    ArticleSearchDetail, ArticleSearchJsonMeta, ArticleSearchJsonRows, article_search_json_meta,
+    article_search_warning,
+};
 use crate::cli::CommandOutcome;
 
 fn extract_pdf_from_sections(sections: &[String]) -> (Vec<String>, bool) {
@@ -210,6 +215,11 @@ pub(in crate::cli) async fn handle_search(
     args: ArticleSearchArgs,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
+    let detail = if args.full {
+        ArticleSearchDetail::Full
+    } else {
+        ArticleSearchDetail::Compact
+    };
     let session_token = args.session.clone();
     if let Some(token) = session_token.as_deref() {
         super::session::validate_token(token)?;
@@ -302,9 +312,10 @@ pub(in crate::cli) async fn handle_search(
     let article_type_note =
         crate::entities::article::article_type_limitation_note(filters, source_filter);
     let text = if json {
-        article_search_json(
+        article_search_json_with_detail(
             &query,
             filters,
+            detail,
             semantic_scholar_enabled,
             article_type_note,
             debug_plan,
@@ -326,6 +337,7 @@ pub(in crate::cli) async fn handle_search(
             crate::render::markdown::ArticleSearchRenderContext {
                 source_filter,
                 semantic_scholar_enabled,
+                warning: article_search_warning(filters.sort).map(|warning| warning.message),
                 note: article_type_note.as_deref(),
                 debug_plan: debug_plan.as_ref(),
                 exact_entity_commands: &exact_entity_commands,
@@ -574,46 +586,7 @@ pub(super) struct ArticleSearchJsonPage {
     pub source_status: Vec<crate::entities::article::ArticleSourceStatus>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
-pub(super) struct ArticleSuggestion {
-    pub command: String,
-    pub reason: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sections: Vec<String>,
-}
-
-#[derive(serde::Serialize)]
-struct ArticleSearchJsonMeta {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    next_commands: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    suggestions: Vec<ArticleSuggestion>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    source_status: Vec<crate::entities::article::ArticleSourceStatus>,
-}
-
-fn article_search_json_meta(
-    next_commands: Vec<String>,
-    suggestions: Vec<ArticleSuggestion>,
-    source_status: Vec<crate::entities::article::ArticleSourceStatus>,
-) -> Option<ArticleSearchJsonMeta> {
-    let next_commands = super::super::normalize_next_commands(next_commands);
-    let suggestions = suggestions
-        .into_iter()
-        .filter(|suggestion| {
-            !suggestion.command.trim().is_empty() && !suggestion.reason.trim().is_empty()
-        })
-        .collect::<Vec<_>>();
-
-    (!next_commands.is_empty() || !suggestions.is_empty() || !source_status.is_empty()).then_some(
-        ArticleSearchJsonMeta {
-            next_commands,
-            suggestions,
-            source_status,
-        },
-    )
-}
-
+#[cfg(test)]
 pub(super) fn article_search_json(
     query: &str,
     filters: &crate::entities::article::ArticleSearchFilters,
@@ -622,8 +595,28 @@ pub(super) fn article_search_json(
     debug_plan: Option<crate::cli::debug_plan::DebugPlan>,
     page: ArticleSearchJsonPage,
 ) -> anyhow::Result<String> {
+    article_search_json_with_detail(
+        query,
+        filters,
+        ArticleSearchDetail::Full,
+        semantic_scholar_enabled,
+        note,
+        debug_plan,
+        page,
+    )
+}
+
+pub(super) fn article_search_json_with_detail(
+    query: &str,
+    filters: &crate::entities::article::ArticleSearchFilters,
+    detail: ArticleSearchDetail,
+    semantic_scholar_enabled: bool,
+    note: Option<String>,
+    debug_plan: Option<crate::cli::debug_plan::DebugPlan>,
+    page: ArticleSearchJsonPage,
+) -> anyhow::Result<String> {
     #[derive(serde::Serialize)]
-    struct ArticleSearchResponse {
+    struct ArticleSearchResponse<'a> {
         query: String,
         sort: String,
         semantic_scholar_enabled: bool,
@@ -633,7 +626,7 @@ pub(super) fn article_search_json(
         note: Option<String>,
         pagination: crate::cli::PaginationMeta,
         count: usize,
-        results: Vec<crate::entities::article::ArticleSearchResult>,
+        results: ArticleSearchJsonRows<'a>,
         #[serde(skip_serializing_if = "Option::is_none")]
         debug_plan: Option<crate::cli::debug_plan::DebugPlan>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -641,6 +634,15 @@ pub(super) fn article_search_json(
     }
 
     let count = page.results.len();
+    let results = match detail {
+        ArticleSearchDetail::Compact => ArticleSearchJsonRows::Compact(
+            page.results
+                .iter()
+                .map(ArticleSearchCompactResult::from)
+                .collect(),
+        ),
+        ArticleSearchDetail::Full => ArticleSearchJsonRows::Full(&page.results),
+    };
     crate::render::json::to_pretty(&ArticleSearchResponse {
         query: query.to_string(),
         sort: filters.sort.as_str().to_string(),
@@ -649,9 +651,14 @@ pub(super) fn article_search_json(
         note,
         pagination: page.pagination,
         count,
-        results: page.results,
+        results,
         debug_plan,
-        _meta: article_search_json_meta(page.next_commands, page.suggestions, page.source_status),
+        _meta: article_search_json_meta(
+            article_search_warning(filters.sort).into_iter().collect(),
+            page.next_commands,
+            page.suggestions,
+            page.source_status,
+        ),
     })
     .map_err(Into::into)
 }

@@ -4,6 +4,10 @@
 
 ### New features
 
+- Made top-level article-search JSON compact by default, with `--full` restoring
+  detailed rows and in-band warnings when date sorting replaces relevance.
+- Added typed PMID/PMCID/DOI/arXiv/Semantic Scholar identifiers to article
+  search and related-paper tables.
 - Added Semantic Scholar-only provider-exact `search author` and `get author`,
   including JSON/Markdown provenance, honest unresolved-ORCID warnings,
   list/help discovery, and typed MCP schema support.

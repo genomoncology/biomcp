@@ -332,6 +332,8 @@ pub fn from_europepmc_search_result(hit: &EuropePmcResult) -> Option<ArticleSear
             .as_ref()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty()),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title,
         journal: hit
             .journal_title
@@ -378,6 +380,8 @@ pub fn from_pubtator_search_result(hit: &PubTatorSearchResult) -> Option<Article
         pmid,
         pmcid: None,
         doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: clean_title(hit.title.as_deref().unwrap_or_default()),
         journal: hit
             .journal
@@ -512,6 +516,8 @@ pub fn from_pubmed_esummary_entry(entry: &ESummaryEntry) -> Option<ArticleSearch
         pmid: entry.uid.clone(),
         pmcid: None,
         doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: title.clone(),
         journal,
         date,

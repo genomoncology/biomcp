@@ -454,6 +454,14 @@ fn semantic_scholar_rows_from_response(
                 .and_then(|ids| ids.doi.clone())
                 .map(|value| value.trim().to_string())
                 .filter(|value| !value.is_empty()),
+            arxiv_id: external_ids
+                .and_then(|ids| ids.arxiv.clone())
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty()),
+            semantic_scholar_id: paper
+                .paper_id
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty()),
             title,
             journal: paper
                 .venue
@@ -570,6 +578,8 @@ fn litsense2_rows_from_hits(
                 pmid: pmid.clone(),
                 pmcid: hit.pmcid.clone(),
                 doi: None,
+                arxiv_id: None,
+                semantic_scholar_id: None,
                 title: fallback_title.clone(),
                 journal: None,
                 date: None,

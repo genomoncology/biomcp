@@ -51,6 +51,8 @@ pub(super) fn row_with(
         pmid: pmid.to_string(),
         pmcid: None,
         doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: format!("title-{pmid}"),
         journal: Some("Journal".into()),
         date: date.map(str::to_string),

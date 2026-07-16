@@ -228,7 +228,15 @@ biomcp search article -g BRAF -d melanoma --since 2024-01-01 --limit 5 --offset 
 biomcp search article -a "Williams LS" --limit 5
 biomcp --json search article -g BRAF --debug-plan --limit 5
 biomcp --json search article -k "Oncotype DX review" --session lit-review-1 --limit 5
+biomcp --json search article -g BRAF --limit 5 --full
 ```
+
+JSON article search rows are compact by default and retain available identifiers,
+triage fields, source, and tri-state retraction status. `--full` restores
+abstracts, complete source provenance, and ranking diagnostics. `--sort date`
+replaces relevance ranking and emits an in-band warning in compact JSON, full
+JSON, and Markdown. Article tables label mixed PMID/PMCID/DOI/arXiv/Semantic
+Scholar values under `Identifier`.
 
 `-a/--author` is an authorship filter. On the default `--source all` route it
 limits candidate search to author-capable Europe PMC and, when the other filters

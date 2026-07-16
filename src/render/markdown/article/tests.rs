@@ -267,10 +267,50 @@ fn article_graph_markdown_renders_expected_table_headers() {
 
     let markdown = article_graph_markdown("Citations", &result).expect("graph markdown");
     assert!(markdown.contains("# Citations for PMID 22663011"));
-    assert!(markdown.contains("| PMID | Title | Intents | Influential | Context |"));
+    assert!(markdown.contains("| Identifier | Title | Intents | Influential | Context |"));
     assert!(markdown.contains(
-        "| 24200969 | Related paper | Background | yes | Important supporting context |"
+        "| PMID 24200969 | Related paper | Background | yes | Important supporting context |"
     ));
+}
+
+#[test]
+fn article_related_tables_render_typed_identifiers() {
+    let paper =
+        |paper_id: Option<&str>, pmid: Option<&str>, doi: Option<&str>, arxiv: Option<&str>| {
+            crate::entities::article::ArticleRelatedPaper {
+                paper_id: paper_id.map(str::to_string),
+                pmid: pmid.map(str::to_string),
+                doi: doi.map(str::to_string),
+                arxiv_id: arxiv.map(str::to_string),
+                title: "Related".into(),
+                journal: None,
+                year: None,
+            }
+        };
+    let result = crate::entities::article::ArticleRecommendationsResult {
+        positive_seeds: vec![paper(Some("seed"), Some("1"), None, None)],
+        negative_seeds: Vec::new(),
+        recommendations: vec![
+            paper(None, Some("2"), None, None),
+            paper(None, None, Some("10.1000/example"), None),
+            paper(None, None, None, Some("2401.12345")),
+            paper(Some("paper-4"), None, None, None),
+        ],
+    };
+
+    let markdown = article_recommendations_markdown(&result).expect("typed recommendations");
+    assert!(markdown.contains("| Identifier | Title | Journal | Year |"));
+    for identifier in [
+        "PMID 2",
+        "DOI 10.1000/example",
+        "arXiv 2401.12345",
+        "Semantic Scholar paper-4",
+    ] {
+        assert!(
+            markdown.contains(identifier),
+            "missing {identifier}: {markdown}"
+        );
+    }
 }
 
 #[test]
@@ -369,6 +409,8 @@ fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
     let rows = vec![
         ArticleSearchResult {
             pmid: "1".into(),
+            arxiv_id: None,
+            semantic_scholar_id: None,
             title: "Entity-ranked".into(),
             pmcid: Some("PMC1".into()),
             doi: Some("10.1000/one".into()),
@@ -409,6 +451,8 @@ fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
         },
         ArticleSearchResult {
             pmid: "2".into(),
+            arxiv_id: None,
+            semantic_scholar_id: None,
             title: "Field-ranked".into(),
             pmcid: None,
             doi: None,
@@ -457,6 +501,7 @@ fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
         ArticleSearchRenderContext {
             source_filter: crate::entities::article::ArticleSourceFilter::All,
             semantic_scholar_enabled: true,
+            warning: None,
             note: Some(
                 "Note: --type restricts article search to Europe PMC and PubMed. PubTator3, LitSense2, and Semantic Scholar do not support publication-type filtering.",
             ),
@@ -471,7 +516,7 @@ fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
         ));
     assert!(markdown.contains("Semantic Scholar: enabled"));
     assert!(markdown.contains("Ranking: calibrated PubMed rescue + lexical directness"));
-    assert!(markdown.contains("| PMID | Title | Source(s) | Date | Why | Cit. |"));
+    assert!(markdown.contains("| Identifier | Title | Source(s) | Date | Why | Cit. |"));
     assert!(markdown.contains("PubTator3, Semantic Scholar"));
     assert!(markdown.contains("title 2/2"));
     assert!(markdown.contains("title+abstract 2/2"));
@@ -481,13 +526,15 @@ fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
     );
     assert!(!markdown.contains("## PubTator3"));
     assert!(!markdown.contains("## Europe PMC"));
-    assert!(markdown.find("|1|").unwrap() < markdown.find("|2|").unwrap());
+    assert!(markdown.find("|PMID 1|").unwrap() < markdown.find("|PMID 2|").unwrap());
 }
 
 #[test]
 fn ticket_377_article_renderer_envelope_contracts_markdown_status() {
     let rows = vec![ArticleSearchResult {
         pmid: "22663011".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "BRAF melanoma fixture".into(),
         pmcid: None,
         doi: None,
@@ -522,6 +569,7 @@ fn ticket_377_article_renderer_envelope_contracts_markdown_status() {
         ArticleSearchRenderContext {
             source_filter: crate::entities::article::ArticleSourceFilter::All,
             semantic_scholar_enabled: true,
+            warning: None,
             note: None,
             debug_plan: None,
             exact_entity_commands: &[],
@@ -529,7 +577,7 @@ fn ticket_377_article_renderer_envelope_contracts_markdown_status() {
         },
     )
     .expect("article_search_markdown_with_footer_and_context");
-    assert!(markdown.contains("| PMID | Title | Source(s) | Date | Why | Cit. |"));
+    assert!(markdown.contains("| Identifier | Title | Source(s) | Date | Why | Cit. |"));
     assert!(markdown.lines().any(|line| {
         line.contains("Semantic Scholar")
             && line.contains("degraded")
@@ -541,6 +589,8 @@ fn ticket_377_article_renderer_envelope_contracts_markdown_status() {
 fn article_search_markdown_renders_non_semantic_source_status() {
     let rows = vec![ArticleSearchResult {
         pmid: "41800001".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "BRAF melanoma bounded federation fixture".into(),
         pmcid: None,
         doi: None,
@@ -576,6 +626,7 @@ fn article_search_markdown_renders_non_semantic_source_status() {
         ArticleSearchRenderContext {
             source_filter: crate::entities::article::ArticleSourceFilter::All,
             semantic_scholar_enabled: true,
+            warning: None,
             note: None,
             debug_plan: None,
             exact_entity_commands: &[],
@@ -593,6 +644,8 @@ fn article_search_markdown_renders_non_semantic_source_status() {
 fn article_ranking_why_tier1_mixed_shows_title_plus_abstract() {
     let row = ArticleSearchResult {
         pmid: "1".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "Partial coverage".into(),
         pmcid: None,
         doi: None,
@@ -639,6 +692,8 @@ fn article_ranking_why_tier1_mixed_shows_title_plus_abstract() {
 fn article_ranking_why_rescue_composes_with_lexical_reason() {
     let row = ArticleSearchResult {
         pmid: "1".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "Rescued partial coverage".into(),
         pmcid: None,
         doi: None,
@@ -686,6 +741,8 @@ fn article_ranking_why_rescue_composes_with_lexical_reason() {
 fn article_ranking_why_semantic_includes_score_and_lexical_context() {
     let row = ArticleSearchResult {
         pmid: "1".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "Semantic lead".into(),
         pmcid: None,
         doi: None,
@@ -733,6 +790,8 @@ fn article_ranking_why_semantic_includes_score_and_lexical_context() {
 fn article_ranking_why_hybrid_includes_score_and_lexical_context() {
     let row = ArticleSearchResult {
         pmid: "1".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "Hybrid lead".into(),
         pmcid: None,
         doi: None,
@@ -798,6 +857,8 @@ fn article_search_markdown_prepends_debug_plan_block() {
     };
     let rows = vec![ArticleSearchResult {
         pmid: "1".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "Entity-ranked".into(),
         pmcid: None,
         doi: None,
@@ -826,6 +887,7 @@ fn article_search_markdown_prepends_debug_plan_block() {
         ArticleSearchRenderContext {
             source_filter: crate::entities::article::ArticleSourceFilter::All,
             semantic_scholar_enabled: true,
+            warning: None,
             note: None,
             debug_plan: Some(&debug_plan),
             exact_entity_commands: &[],
@@ -843,6 +905,8 @@ fn article_search_markdown_prepends_debug_plan_block() {
 fn article_search_markdown_renders_related_block_before_pagination() {
     let rows = vec![ArticleSearchResult {
         pmid: "22663011".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "Entity-aware article".into(),
         pmcid: None,
         doi: None,
@@ -874,6 +938,7 @@ fn article_search_markdown_renders_related_block_before_pagination() {
         ArticleSearchRenderContext {
             source_filter: crate::entities::article::ArticleSourceFilter::All,
             semantic_scholar_enabled: true,
+            warning: None,
             note: None,
             debug_plan: None,
             exact_entity_commands: &exact_commands,
@@ -900,6 +965,8 @@ fn article_search_markdown_renders_related_block_before_pagination() {
 fn article_search_markdown_includes_cross_entity_discover_hint_for_short_keyword_phrase() {
     let rows = vec![ArticleSearchResult {
         pmid: "22663011".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "Entity-aware article".into(),
         pmcid: None,
         doi: None,
@@ -930,6 +997,7 @@ fn article_search_markdown_includes_cross_entity_discover_hint_for_short_keyword
         ArticleSearchRenderContext {
             source_filter: crate::entities::article::ArticleSourceFilter::All,
             semantic_scholar_enabled: true,
+            warning: None,
             note: None,
             debug_plan: None,
             exact_entity_commands: &[],
@@ -940,6 +1008,30 @@ fn article_search_markdown_includes_cross_entity_discover_hint_for_short_keyword
 
     assert!(markdown.contains("See also:"));
     assert!(markdown.contains("biomcp discover \"live attenuated vaccines\""));
+}
+
+#[test]
+fn article_search_markdown_renders_date_sort_warning() {
+    let markdown = article_search_markdown_with_footer_and_context(
+        "sort=date",
+        &[],
+        "",
+        &article_filters_for_test(ArticleSort::Date),
+        ArticleSearchRenderContext {
+            source_filter: crate::entities::article::ArticleSourceFilter::All,
+            semantic_scholar_enabled: false,
+            warning: Some(
+                "Date sort replaces relevance ranking; results are ordered by publication date.",
+            ),
+            note: None,
+            debug_plan: None,
+            exact_entity_commands: &[],
+            source_status: &[],
+        },
+    )
+    .expect("date warning markdown");
+
+    assert!(markdown.contains("> Warning: Date sort replaces relevance ranking"));
 }
 
 #[test]
@@ -968,6 +1060,8 @@ fn format_newest_indexed_footer_clamps_future_dates_to_zero_days() {
 fn article_search_markdown_omits_index_footer_when_no_rows_have_it() {
     let rows = vec![ArticleSearchResult {
         pmid: "22663011".into(),
+        arxiv_id: None,
+        semantic_scholar_id: None,
         title: "Entity-aware article".into(),
         pmcid: None,
         doi: None,
@@ -996,6 +1090,7 @@ fn article_search_markdown_omits_index_footer_when_no_rows_have_it() {
         ArticleSearchRenderContext {
             source_filter: crate::entities::article::ArticleSourceFilter::All,
             semantic_scholar_enabled: true,
+            warning: None,
             note: None,
             debug_plan: None,
             exact_entity_commands: &[],
