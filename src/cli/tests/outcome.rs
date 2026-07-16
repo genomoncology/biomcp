@@ -13,13 +13,29 @@ use crate::entities::discover::{
 
 #[test]
 fn clap_diagnostics_remove_terminal_controls_from_rejected_arguments() {
-    let error = try_parse_cli(["biomcp", "--bad\u{9b}31m\u{202e}flag"])
-        .expect_err("unknown argument should fail");
-    let rendered = render_human_clap_error(&error);
+    let args = ["biomcp", "--bad\u{9b}31m\u{202e}\nforged-line"];
+    let error = try_parse_cli(args).expect_err("unknown argument should fail");
+    let rendered = render_human_clap_error(&error, &args.map(std::ffi::OsString::from));
 
     assert_eq!(error.exit_code(), 2);
-    assert!(rendered.contains("--badflag"));
+    assert!(rendered.contains("--bad forged-line"));
     assert!(!rendered.contains(['\u{9b}', '\u{202e}']));
+    assert!(!rendered.contains("--bad\nforged-line"));
+}
+
+#[cfg(unix)]
+#[test]
+fn clap_diagnostics_sanitize_layout_controls_in_non_utf8_arguments() {
+    use std::os::unix::ffi::OsStringExt as _;
+
+    let args = vec![
+        std::ffi::OsString::from("biomcp"),
+        std::ffi::OsString::from_vec(b"--bad\xff\nforged-line".to_vec()),
+    ];
+    let error = try_parse_cli(args.clone()).expect_err("unknown argument should fail");
+    let rendered = render_human_clap_error(&error, &args);
+
+    assert!(!rendered.contains("\nforged-line'"));
 }
 
 #[tokio::test]

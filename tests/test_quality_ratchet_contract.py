@@ -485,8 +485,8 @@ def test_terminal_output_boundary_ratchet_detects_removed_seams_and_pretty_bypas
             "trusted_terminal_chart = is_charted_mcp_study_command",
         },
         "src/cli/shared.rs": {
-            "sanitize_document(&error.render().to_string())",
-            "Err(err) => exit_human_clap_error(err)",
+            "sanitize_document(&message)",
+            "Err(err) => exit_human_clap_error(err, &args)",
         },
         "src/main.rs": {"sanitize_human_diagnostic(&error.to_string())"},
         "src/mcp/shell.rs": {
