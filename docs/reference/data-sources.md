@@ -196,6 +196,12 @@ Users should always be able to trace:
 - Which identifier anchors the record (e.g., NCT, PMID, MONDO, rsID)
 - Which sections come from direct source fields vs normalized rendering
 
+Optional gene, drug approvals, combined adverse-event, protein, and pathway
+sections also expose `section_outcomes`. The five values are `not_requested`,
+`data`, `empty`, `degraded`, and `unavailable`. In `_meta.section_sources`, the
+`outcome` is copied from the entity registry and `sources` lists successful
+contributors only; a failed provider is not credited as evidence.
+
 ## Operations checklist
 
 When debugging source discrepancies:

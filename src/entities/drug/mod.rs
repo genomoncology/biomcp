@@ -30,6 +30,9 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::entities::SearchPage;
+use crate::entities::section_outcome::SectionOutcomes;
+
+pub(crate) const DRUG_SECTION_KEYS: &[&str] = &["approvals"];
 use crate::error::BioMcpError;
 use crate::sources::civic::CivicContext;
 use crate::sources::ema::EmaDrugIdentity;
@@ -38,6 +41,8 @@ use crate::sources::who_pq::WhoPqIdentity;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Drug {
+    #[serde(default)]
+    pub section_outcomes: SectionOutcomes,
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub drugbank_id: Option<String>,

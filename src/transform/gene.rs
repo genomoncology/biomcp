@@ -1,4 +1,5 @@
-use crate::entities::gene::{Gene, GenePathway, GeneSearchResult};
+use crate::entities::gene::{GENE_OUTCOME_KEYS, Gene, GenePathway, GeneSearchResult};
+use crate::entities::section_outcome::SectionOutcomes;
 use crate::sources::mygene::{MyGeneGetResponse, MyGeneHit};
 
 fn normalize_summary(summary: Option<String>) -> Option<String> {
@@ -151,6 +152,7 @@ pub fn from_mygene_get(resp: MyGeneGetResponse) -> Gene {
     let aliases = normalize_aliases(resp.alias.into_vec());
 
     Gene {
+        section_outcomes: SectionOutcomes::with_keys(GENE_OUTCOME_KEYS),
         symbol: resp.symbol.unwrap_or_default(),
         name: resp.name.unwrap_or_default(),
         entrez_id: resp

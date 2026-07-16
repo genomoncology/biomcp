@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "warfarin".to_string(),
         drugbank_id: Some("DB00682".to_string()),
         chembl_id: None,
@@ -49,6 +50,7 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
 #[test]
 fn drug_markdown_uses_truthful_public_unavailable_interactions_message() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "pembrolizumab".to_string(),
         drugbank_id: Some("DB09037".to_string()),
         chembl_id: None,
@@ -130,6 +132,7 @@ fn drug_interaction_report_markdown_renders_not_in_coverage_signal() {
 #[test]
 fn drug_markdown_shows_target_family_and_members_when_present() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "olaparib".to_string(),
         drugbank_id: Some("DB09074".to_string()),
         chembl_id: Some("CHEMBL1789941".to_string()),
@@ -179,6 +182,7 @@ fn drug_markdown_shows_target_family_and_members_when_present() {
 #[test]
 fn drug_markdown_renders_variant_targets_as_additive_line() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "rindopepimut".to_string(),
         drugbank_id: None,
         chembl_id: Some("CHEMBL2108508".to_string()),
@@ -225,6 +229,7 @@ fn drug_markdown_renders_variant_targets_as_additive_line() {
 #[test]
 fn drug_markdown_omits_target_family_for_mixed_targets() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "imatinib".to_string(),
         drugbank_id: Some("DB00619".to_string()),
         chembl_id: Some("CHEMBL941".to_string()),
@@ -271,6 +276,7 @@ fn drug_markdown_omits_target_family_for_mixed_targets() {
 #[test]
 fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "pembrolizumab".to_string(),
         drugbank_id: Some("DB09037".to_string()),
         chembl_id: None,
@@ -378,6 +384,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
 #[test]
 fn drug_markdown_with_region_who_renders_regulatory_block() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "trastuzumab".to_string(),
         drugbank_id: Some("DB00072".to_string()),
         chembl_id: None,
@@ -545,6 +552,7 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
     // Criterion 9: `get drug <name> all --region eu` must not show US-specific
     // header lines (FDA Approved, Safety FAERS) even though the full card is rendered.
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "pembrolizumab".to_string(),
         drugbank_id: Some("DB09037".to_string()),
         chembl_id: None,
@@ -616,6 +624,7 @@ fn drug_markdown_with_region_eu_all_suppresses_us_header_facts() {
 #[test]
 fn drug_markdown_with_region_eu_safety_shows_truthful_empty_subsections() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "semaglutide".to_string(),
         drugbank_id: Some("DB13928".to_string()),
         chembl_id: None,

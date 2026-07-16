@@ -688,6 +688,7 @@ mod tests {
     #[test]
     fn json_render_gene_entity() {
         let gene = Gene {
+            section_outcomes: Default::default(),
             symbol: "EGFR".to_string(),
             name: "epidermal growth factor receptor".to_string(),
             entrez_id: "1956".to_string(),
@@ -728,6 +729,7 @@ mod tests {
     #[test]
     fn json_render_gene_entity_with_sparse_disgenet_omits_optional_fields() {
         let gene = Gene {
+            section_outcomes: Default::default(),
             symbol: "KYNU".to_string(),
             name: "kynureninase".to_string(),
             entrez_id: "8942".to_string(),
@@ -786,6 +788,7 @@ mod tests {
     #[test]
     fn json_render_drug_entity() {
         let drug = Drug {
+            section_outcomes: Default::default(),
             name: "osimertinib".to_string(),
             drugbank_id: Some("DB09330".to_string()),
             chembl_id: Some("CHEMBL3353410".to_string()),
@@ -833,6 +836,7 @@ mod tests {
     #[test]
     fn json_render_drug_entity_omits_family_fields_when_absent() {
         let drug = Drug {
+            section_outcomes: Default::default(),
             name: "pembrolizumab".to_string(),
             drugbank_id: Some("DB09037".to_string()),
             chembl_id: Some("CHEMBL3137343".to_string()),
@@ -894,6 +898,7 @@ mod tests {
             ],
             vec!["biomcp get gene BRAF".to_string()],
             vec![SectionSource {
+                outcome: crate::entities::section_outcome::SectionOutcomeState::Data,
                 key: "summary".to_string(),
                 label: "Summary".to_string(),
                 sources: vec!["NCBI Gene".to_string()],
@@ -938,6 +943,7 @@ mod tests {
             ],
             vec!["biomcp get gene BRAF".to_string()],
             vec![SectionSource {
+                outcome: crate::entities::section_outcome::SectionOutcomeState::Data,
                 key: "summary".to_string(),
                 label: "Summary".to_string(),
                 sources: vec!["NCBI Gene".to_string()],
@@ -1030,6 +1036,7 @@ mod tests {
             vec!["biomcp list drug".to_string()],
             Some(vec!["biomcp get drug demo".to_string()]),
             vec![crate::render::provenance::SectionSource {
+                outcome: crate::entities::section_outcome::SectionOutcomeState::Data,
                 key: "demo".to_string(),
                 label: "Demo".to_string(),
                 sources: vec!["UnitTest".to_string()],
@@ -1087,21 +1094,25 @@ mod tests {
             Vec::new(),
             vec![
                 SectionSource {
+                    outcome: crate::entities::section_outcome::SectionOutcomeState::Data,
                     key: " ".to_string(),
                     label: "Summary".to_string(),
                     sources: vec!["NCBI Gene".to_string()],
                 },
                 SectionSource {
+                    outcome: crate::entities::section_outcome::SectionOutcomeState::Data,
                     key: "summary".to_string(),
                     label: " ".to_string(),
                     sources: vec!["NCBI Gene".to_string()],
                 },
                 SectionSource {
+                    outcome: crate::entities::section_outcome::SectionOutcomeState::Data,
                     key: "summary".to_string(),
                     label: "Summary".to_string(),
                     sources: vec![" ".to_string()],
                 },
                 SectionSource {
+                    outcome: crate::entities::section_outcome::SectionOutcomeState::Data,
                     key: "identity".to_string(),
                     label: "Identity".to_string(),
                     sources: vec![" NCBI Gene / MyGene.info ".to_string(), "".to_string()],

@@ -104,7 +104,7 @@ pub fn protein_markdown(
     };
     let complex_summaries = protein_complex_summary_rows(&protein.complexes);
     let complex_details = protein_complex_detail_rows(&protein.complexes);
-    let body = tmpl.render(context! {
+    let mut body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(protein_label, requested_sections),
         accession => &protein.accession,
@@ -127,6 +127,18 @@ pub fn protein_markdown(
         sections_block => format_sections_block("protein", &protein.accession, sections_protein(protein, requested_sections)),
         related_block => format_related_block(related_protein(protein, requested_sections)),
     })?;
+    for key in ["domains", "interactions", "complexes", "structures"] {
+        if let Some(outcome) = protein.section_outcomes.get(key)
+            && matches!(
+                outcome.outcome(),
+                crate::entities::section_outcome::SectionOutcomeState::Degraded
+                    | crate::entities::section_outcome::SectionOutcomeState::Unavailable
+            )
+            && let Some(message) = outcome.message()
+        {
+            body.push_str(&format!("\n\n**{key} status:** {message}"));
+        }
+    }
     Ok(append_evidence_urls(body, protein_evidence_urls(protein)))
 }
 

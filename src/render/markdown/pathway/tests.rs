@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn pathway_markdown_uses_source_and_source_specific_evidence_url() {
     let pathway = Pathway {
+        section_outcomes: Default::default(),
         source: "KEGG".to_string(),
         id: "hsa05200".to_string(),
         name: "Pathways in cancer".to_string(),
@@ -18,6 +19,7 @@ fn pathway_markdown_uses_source_and_source_specific_evidence_url() {
     assert!(markdown.contains("[KEGG](https://www.kegg.jp/entry/hsa05200)"));
 
     let wikipathways = Pathway {
+        section_outcomes: Default::default(),
         source: "WikiPathways".to_string(),
         id: "WP254".to_string(),
         name: "Apoptosis".to_string(),
@@ -36,6 +38,7 @@ fn pathway_markdown_uses_source_and_source_specific_evidence_url() {
 #[test]
 fn pathway_markdown_hides_genes_section_when_genes_are_empty() {
     let pathway = Pathway {
+        section_outcomes: Default::default(),
         source: "KEGG".to_string(),
         id: "hsa05200".to_string(),
         name: "Pathways in cancer".to_string(),

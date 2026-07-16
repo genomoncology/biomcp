@@ -5,6 +5,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
+use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::error::BioMcpError;
 use crate::sources::gprofiler::GProfilerClient;
 use crate::sources::kegg::{KeggClient, is_human_pathway_id};
@@ -15,6 +16,8 @@ use crate::transform;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pathway {
+    #[serde(default)]
+    pub section_outcomes: SectionOutcomes,
     pub source: String,
     pub id: String,
     pub name: String,
@@ -57,6 +60,11 @@ const PATHWAY_SECTION_GENES: &str = "genes";
 const PATHWAY_SECTION_EVENTS: &str = "events";
 const PATHWAY_SECTION_ENRICHMENT: &str = "enrichment";
 const PATHWAY_SECTION_ALL: &str = "all";
+pub(crate) const PATHWAY_OUTCOME_KEYS: &[&str] = &[
+    PATHWAY_SECTION_GENES,
+    PATHWAY_SECTION_EVENTS,
+    PATHWAY_SECTION_ENRICHMENT,
+];
 
 pub const PATHWAY_SECTION_NAMES: &[&str] = &[
     PATHWAY_SECTION_GENES,
@@ -516,21 +524,24 @@ fn finalize_pathway_search_results(
     ))
 }
 
-async fn add_pathway_enrichment(pathway: &mut Pathway, fallback_genes: &[String]) {
+async fn add_pathway_enrichment(
+    pathway: &mut Pathway,
+    fallback_genes: &[String],
+) -> SectionOutcome {
     let genes = if !pathway.genes.is_empty() {
         pathway.genes.clone()
     } else {
         fallback_genes.to_vec()
     };
     if genes.is_empty() {
-        return;
+        return SectionOutcome::empty("Reactome");
     }
 
     let client = match GProfilerClient::new() {
         Ok(client) => client,
         Err(err) => {
             warn!("g:Profiler enrichment unavailable: {err}");
-            return;
+            return SectionOutcome::unavailable("Pathway enrichment is unavailable.");
         }
     };
 
@@ -552,8 +563,16 @@ async fn add_pathway_enrichment(pathway: &mut Pathway, fallback_genes: &[String]
                         .eq_ignore_ascii_case(REACTOME_PATHWAY_ENRICHMENT_SOURCE)
                 })
                 .collect();
+            if pathway.enrichment.is_empty() {
+                SectionOutcome::empty("g:Profiler")
+            } else {
+                SectionOutcome::data("g:Profiler")
+            }
         }
-        Err(err) => warn!("g:Profiler enrichment unavailable: {err}"),
+        Err(err) => {
+            warn!("g:Profiler enrichment unavailable: {err}");
+            SectionOutcome::unavailable("Pathway enrichment is unavailable.")
+        }
     }
 }
 
@@ -711,7 +730,16 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
 
         let record = KeggClient::new()?.get_pathway(st_id).await?;
         let mut pathway = transform::pathway::from_kegg_record(record);
-        if !parsed_sections.include_genes {
+        if parsed_sections.include_genes {
+            pathway.section_outcomes.complete(
+                PATHWAY_SECTION_GENES,
+                if pathway.genes.is_empty() {
+                    SectionOutcome::empty("KEGG")
+                } else {
+                    SectionOutcome::data("KEGG")
+                },
+            );
+        } else {
             pathway.genes.clear();
         }
         return Ok(pathway);
@@ -725,27 +753,46 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
         let record = client.get_pathway(st_id).await?;
         let mut pathway = transform::pathway::from_wikipathways_record(record);
         if parsed_sections.include_genes {
-            match client.pathway_entrez_gene_ids(&pathway.id).await {
+            let outcome = match client.pathway_entrez_gene_ids(&pathway.id).await {
                 Ok(entrez_ids) => {
                     let entrez_ids = entrez_ids.into_iter().take(200).collect::<Vec<_>>();
-                    if !entrez_ids.is_empty() {
+                    if entrez_ids.is_empty() {
+                        SectionOutcome::empty("WikiPathways")
+                    } else {
                         match MyGeneClient::new() {
                             Ok(mygene) => match mygene.symbols_for_entrez_ids(&entrez_ids).await {
                                 Ok(symbols) => {
                                     pathway.genes = symbols.into_iter().take(50).collect();
+                                    if pathway.genes.is_empty() {
+                                        SectionOutcome::empty("WikiPathways")
+                                    } else {
+                                        SectionOutcome::data("WikiPathways")
+                                    }
                                 }
-                                Err(err) => warn!(
-                                    "WikiPathways gene symbol resolution unavailable via MyGene: {err}"
-                                ),
+                                Err(err) => {
+                                    warn!(
+                                        "WikiPathways gene symbol resolution unavailable via MyGene: {err}"
+                                    );
+                                    SectionOutcome::unavailable(
+                                        "WikiPathways genes are unavailable.",
+                                    )
+                                }
                             },
                             Err(err) => {
-                                warn!("WikiPathways gene symbol resolution unavailable: {err}")
+                                warn!("WikiPathways gene symbol resolution unavailable: {err}");
+                                SectionOutcome::unavailable("WikiPathways genes are unavailable.")
                             }
                         }
                     }
                 }
-                Err(err) => warn!("WikiPathways xref retrieval unavailable: {err}"),
-            }
+                Err(err) => {
+                    warn!("WikiPathways xref retrieval unavailable: {err}");
+                    SectionOutcome::unavailable("WikiPathways genes are unavailable.")
+                }
+            };
+            pathway
+                .section_outcomes
+                .complete(PATHWAY_SECTION_GENES, outcome);
         }
         return Ok(pathway);
     }
@@ -759,34 +806,67 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
     let mut pathway = transform::pathway::from_reactome_record(record);
 
     let mut participant_lines: Vec<String> = Vec::new();
+    let mut participants_available = true;
     if parsed_sections.include_genes || parsed_sections.include_enrichment {
-        participant_lines = match client.participants(&pathway.id, 200).await {
-            Ok(lines) => lines,
+        match client.participants(&pathway.id, 200).await {
+            Ok(lines) => participant_lines = lines,
             Err(err) => {
                 warn!("Reactome participants unavailable: {err}");
-                Vec::new()
+                participants_available = false;
             }
-        };
+        }
         pathway.genes = extract_gene_symbols(&participant_lines, 50);
+        if parsed_sections.include_genes || parsed_sections.include_enrichment {
+            pathway.section_outcomes.complete(
+                PATHWAY_SECTION_GENES,
+                if !participants_available {
+                    SectionOutcome::unavailable("Reactome pathway genes are unavailable.")
+                } else if pathway.genes.is_empty() {
+                    SectionOutcome::empty("Reactome")
+                } else {
+                    SectionOutcome::data("Reactome")
+                },
+            );
+        }
     }
 
     if parsed_sections.include_events {
-        pathway.events = match client.contained_events(&pathway.id, 50).await {
-            Ok(events) => events,
+        match client.contained_events(&pathway.id, 50).await {
+            Ok(events) => {
+                pathway.section_outcomes.complete(
+                    PATHWAY_SECTION_EVENTS,
+                    if events.is_empty() {
+                        SectionOutcome::empty("Reactome")
+                    } else {
+                        SectionOutcome::data("Reactome")
+                    },
+                );
+                pathway.events = events;
+            }
             Err(err) => {
                 warn!("Reactome contained events unavailable: {err}");
-                Vec::new()
+                pathway.section_outcomes.complete(
+                    PATHWAY_SECTION_EVENTS,
+                    SectionOutcome::unavailable("Reactome contained events are unavailable."),
+                );
             }
-        };
+        }
     }
 
     if parsed_sections.include_enrichment {
-        let fallback_genes = if pathway.genes.is_empty() {
-            extract_gene_symbols(&participant_lines, 30)
+        let outcome = if participants_available {
+            let fallback_genes = if pathway.genes.is_empty() {
+                extract_gene_symbols(&participant_lines, 30)
+            } else {
+                Vec::new()
+            };
+            add_pathway_enrichment(&mut pathway, &fallback_genes).await
         } else {
-            Vec::new()
+            SectionOutcome::unavailable("Pathway enrichment is unavailable.")
         };
-        add_pathway_enrichment(&mut pathway, &fallback_genes).await;
+        pathway
+            .section_outcomes
+            .complete(PATHWAY_SECTION_ENRICHMENT, outcome);
     }
 
     Ok(pathway)

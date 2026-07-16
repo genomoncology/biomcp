@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn sections_pathway_for_kegg_excludes_unsupported_sections() {
     let pathway = Pathway {
+        section_outcomes: Default::default(),
         source: "KEGG".to_string(),
         id: "hsa05200".to_string(),
         name: "Pathways in cancer".to_string(),
@@ -145,6 +146,7 @@ fn diagnostic_more_block_keeps_four_visible_section_commands() {
 #[test]
 fn sections_pathway_for_reactome_keeps_full_supported_set() {
     let pathway = Pathway {
+        section_outcomes: Default::default(),
         source: "Reactome".to_string(),
         id: "R-HSA-5673001".to_string(),
         name: "RAF/MAP kinase cascade".to_string(),
@@ -300,6 +302,7 @@ fn sections_disease_base_card_surfaces_diagnostics_before_optional_sections() {
 #[test]
 fn sections_gene_base_card_surfaces_diagnostics_as_fourth_command() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),

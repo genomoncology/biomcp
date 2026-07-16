@@ -125,6 +125,13 @@ this safety surface.
 biomcp --json get adverse-event 10222779
 ```
 
+## Combined-source outcomes
+
+JSON from `search adverse-event <query> --source all` includes independent
+`section_outcomes.faers` and `.vaers` entries while preserving `vaers.status`.
+One branch can be `unavailable` without erasing a healthy result from the other;
+`empty` means that source completed successfully with no matching evidence.
+
 ## Practical tips
 
 - Include drug generic names for better FAERS recall.

@@ -75,6 +75,14 @@ biomcp --json get pathway R-HSA-5673001 genes
 biomcp --json get pathway hsa05200 genes
 ```
 
+## Optional-section outcomes
+
+JSON and MCP pathway records include outcomes for source-supported requested
+`genes`, `events`, and `enrichment` sections. Unsupported sections remain an
+argument error; `not_requested`, `empty`, and `unavailable` are not substitutes
+for unsupported capability. Markdown reports requested unavailable sections
+in-band.
+
 ## Practical tips
 
 - Use `search pathway` when you know the label but not the stable ID.

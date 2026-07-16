@@ -357,6 +357,18 @@ pub(super) struct SearchJsonMeta {
     pub(super) workflow: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) ladder: Vec<crate::workflow_ladders::WorkflowLadderStep>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) section_sources: Vec<crate::render::provenance::SectionSource>,
+}
+
+impl SearchJsonMeta {
+    pub(super) fn with_section_sources(
+        mut self,
+        section_sources: Vec<crate::render::provenance::SectionSource>,
+    ) -> Self {
+        self.section_sources = section_sources;
+        self
+    }
 }
 
 #[derive(serde::Serialize)]
@@ -417,6 +429,7 @@ pub(super) fn search_meta_with_workflow(
             suggestions,
             workflow,
             ladder,
+            section_sources: Vec::new(),
         },
     )
 }

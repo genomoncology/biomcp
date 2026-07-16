@@ -1,6 +1,7 @@
 #[test]
 fn gene_markdown_section_only_shows_constraint_section() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "TP53".to_string(),
         name: "tumor protein p53".to_string(),
         entrez_id: "7157".to_string(),
@@ -56,6 +57,7 @@ fn gene_markdown_section_only_shows_constraint_section() {
 #[test]
 fn gene_markdown_section_only_shows_disgenet_section() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "TP53".to_string(),
         name: "tumor protein p53".to_string(),
         entrez_id: "7157".to_string(),
@@ -112,6 +114,7 @@ fn gene_markdown_section_only_shows_disgenet_section() {
 #[test]
 fn gene_markdown_disgenet_renders_sparse_optional_fields() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "KYNU".to_string(),
         name: "kynureninase".to_string(),
         entrez_id: "8942".to_string(),
@@ -163,6 +166,7 @@ fn gene_markdown_disgenet_renders_sparse_optional_fields() {
 #[test]
 fn gene_markdown_funding_renders_linked_rows_and_currency() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "ERBB2".to_string(),
         name: "erb-b2 receptor tyrosine kinase 2".to_string(),
         entrez_id: "2064".to_string(),
@@ -239,6 +243,7 @@ fn gene_markdown_funding_renders_linked_rows_and_currency() {
 #[test]
 fn gene_markdown_all_keeps_opt_in_sections_hidden() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "ERBB2".to_string(),
         name: "erb-b2 receptor tyrosine kinase 2".to_string(),
         entrez_id: "2064".to_string(),
@@ -281,6 +286,7 @@ fn gene_markdown_all_keeps_opt_in_sections_hidden() {
 #[test]
 fn gene_markdown_pathways_show_source_labels() {
     let gene = Gene {
+        section_outcomes: Default::default(),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),

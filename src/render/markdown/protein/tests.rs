@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn protein_markdown_renders_complexes_summary_and_detail_bullets() {
     let protein = Protein {
+            section_outcomes: Default::default(),
             accession: "P15056".to_string(),
             entry_id: Some("BRAF_HUMAN".to_string()),
             name: "Serine/threonine-protein kinase B-raf".to_string(),

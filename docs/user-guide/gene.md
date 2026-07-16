@@ -195,6 +195,15 @@ biomcp --json get gene BRAF
 `biomcp --json get gene BRAF druggability` includes DGIdb interaction fields plus
 OpenTargets `tractability[]` modality summaries and `safety_liabilities[]` event summaries.
 
+## Optional-section outcomes
+
+JSON and MCP gene records include all 15 optional keys under
+`section_outcomes`. Requested sections such as `go` and `interactions` report
+`data`, `empty`, `degraded`, or `unavailable`; unrequested keys remain
+`not_requested`. An empty payload is therefore a confirmed zero only when its
+outcome is `empty`. Markdown prints an in-band status note for unavailable or
+partial sections.
+
 ## Practical tips
 
 - Keep section requests narrow for better focus.

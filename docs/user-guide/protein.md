@@ -64,6 +64,13 @@ biomcp protein structures P15056
 biomcp --json get protein P15056 all
 ```
 
+## Optional-section outcomes
+
+JSON and MCP protein records include outcomes for `domains`, `interactions`,
+`complexes`, and `structures`. Unrequested keys are `not_requested`; a requested
+empty vector is a confirmed zero only when its outcome is `empty`. Provider
+failure is `unavailable` and is also reported in Markdown.
+
 ## Practical tips
 
 - Use a UniProt accession when you need the most stable exact lookup.

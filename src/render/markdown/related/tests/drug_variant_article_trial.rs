@@ -1,6 +1,7 @@
 #[test]
 fn related_drug_suggests_review_when_label_and_indications_are_sparse() {
     let drug = Drug {
+        section_outcomes: Default::default(),
         name: "orteronel".to_string(),
         drugbank_id: None,
         chembl_id: None,

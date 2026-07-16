@@ -7,6 +7,7 @@ mod parsing;
 
 fn test_gene(entrez_id: &str) -> Gene {
     Gene {
+        section_outcomes: Default::default(),
         symbol: "TP53".to_string(),
         name: "tumor protein p53".to_string(),
         entrez_id: entrez_id.to_string(),
