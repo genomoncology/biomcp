@@ -7,6 +7,16 @@ use std::borrow::Cow;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
+#[test]
+fn archive_download_accounting_accepts_exact_limit_and_rejects_overflow() {
+    assert_eq!(
+        account_download_bytes(MAX_ARCHIVE_DOWNLOAD_BYTES - 1, 1).expect("exact limit"),
+        MAX_ARCHIVE_DOWNLOAD_BYTES
+    );
+    assert!(account_download_bytes(MAX_ARCHIVE_DOWNLOAD_BYTES, 1).is_err());
+    assert!(account_download_bytes(usize::MAX, 1).is_err());
+}
+
 #[tokio::test]
 async fn archive_download_rejects_declared_oversize_before_creating_destination() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")

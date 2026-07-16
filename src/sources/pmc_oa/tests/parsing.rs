@@ -154,7 +154,7 @@ fn archive_package_enumerates_non_xml_and_preserves_binary_bytes() {
 }
 
 #[test]
-fn extract_archive_entries_rejects_unsafe_empty_and_oversized_members() {
+fn extract_archive_entries_skips_unsafe_and_empty_members_but_rejects_oversized_members() {
     assert_eq!(
         safe_archive_name(Path::new("safe\\readme.txt")).as_deref(),
         Some("safe/readme.txt")
@@ -164,15 +164,13 @@ fn extract_archive_entries_rejects_unsafe_empty_and_oversized_members() {
     assert!(safe_archive_name(Path::new("/absolute.csv")).is_none());
     assert!(safe_archive_name(Path::new("C:\\absolute.csv")).is_none());
 
-    let oversized = vec![b'x'; MAX_ARCHIVE_ENTRY_BYTES as usize + 1];
     let tgz = tgz_with_entries(&[
         ("article.nxml", &b"<article/>"[..]),
         ("safe/readme.txt", b"ok"),
         ("empty.bin", b""),
-        ("huge.bin", oversized.as_slice()),
     ]);
 
-    let entries = extract_archive_entries(&tgz).expect("archive should parse");
+    let entries = extract_archive_entries(&tgz).expect("in-bound archive should parse");
     let names = entries
         .iter()
         .map(|entry| entry.filename.as_str())
@@ -180,7 +178,13 @@ fn extract_archive_entries_rejects_unsafe_empty_and_oversized_members() {
     assert!(names.contains(&"article.nxml"));
     assert!(names.contains(&"safe/readme.txt"));
     assert!(!names.contains(&"empty.bin"));
-    assert!(!names.contains(&"huge.bin"));
+
+    let oversized = vec![b'x'; MAX_ARCHIVE_ENTRY_BYTES as usize + 1];
+    let oversized_tgz = tgz_with_entries(&[("huge.bin", oversized.as_slice())]);
+    let err = extract_archive_entries(&oversized_tgz)
+        .expect_err("archive member resource cap should reject the package");
+    assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
+    assert!(err.to_string().contains("resource limit"));
 }
 
 #[test]

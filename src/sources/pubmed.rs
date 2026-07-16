@@ -197,7 +197,7 @@ impl PubMedClient {
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
         let bytes = crate::sources::read_limited_body(resp, PUBMED_EUTILS_API).await?;
-        Ok((status, content_type, bytes.to_vec()))
+        Ok((status, content_type, bytes))
     }
 
     pub(crate) fn citation_plan(
@@ -273,7 +273,7 @@ impl PubMedClient {
         let bytes = crate::sources::read_limited_body(response, PUBMED_EUTILS_API)
             .await
             .map_err(Self::citation_request_error)?;
-        let xml = Self::decode_citation_response(status, content_type.as_ref(), bytes.to_vec())?;
+        let xml = Self::decode_citation_response(status, content_type.as_ref(), bytes)?;
         let pmid = pmid.trim().to_string();
         tokio::task::spawn_blocking(move || parse_citation_xml(&pmid, &xml))
             .await

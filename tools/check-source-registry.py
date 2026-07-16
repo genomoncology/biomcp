@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 HELPER_MODULES = {
+    "archive_budget",
     "cbioportal_download",
     "cbioportal_study",
     "provider_url_policy",

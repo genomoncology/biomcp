@@ -320,7 +320,9 @@ async fn download_payload(
     if matches!(normalize_sync_mode(mode), GtrSyncMode::Auto) && stale {
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
     }
-    let response = request.send().await?;
+    let response = crate::sources::with_response_body_limit(request, max_body_bytes, GTR_API)
+        .send()
+        .await?;
     let status = response.status();
     let body =
         crate::sources::read_limited_body_with_limit(response, GTR_API, max_body_bytes).await?;

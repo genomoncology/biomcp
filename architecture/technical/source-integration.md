@@ -47,6 +47,20 @@ These are conventions, not a fake one-size-fits-all constructor contract. The
 current repo does not require every client to share one name, one constructor
 shape, or one exact error-variant mix.
 
+Shared cached clients enforce response-body limits inside the cache middleware,
+so an oversized transport response cannot be materialized as a cache entry.
+The default is 8 MiB; sources with an existing larger or smaller contract attach
+that request-specific limit before sending. A one-time, filesystem-locked cache
+epoch clears legacy HTTP entries written before this guarantee. Limit failures
+retain the typed, payload-free body-limit classification without exposing URLs,
+credentials, or response bytes.
+
+Tar consumers that accept remote archives iterate physical headers in raw mode
+and share checked entry/member/aggregate/extension-metadata accounting. They
+bound GNU long-name and local PAX path metadata before buffering it and reject
+links, devices, sparse entries, size overrides, and ambiguous metadata with a
+sanitized source-unavailable failure.
+
 ### Provider-returned URL security
 
 `src/sources/provider_url_policy.rs` is the single owner for outbound URLs that

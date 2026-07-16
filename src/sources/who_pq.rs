@@ -962,7 +962,9 @@ async fn sync_export(
     if matches!(mode, WhoPqSyncMode::Force) {
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
     }
-    let response = request.send().await?;
+    let response = crate::sources::with_response_body_limit(request, max_body_bytes, WHO_PQ_API)
+        .send()
+        .await?;
     let status = response.status();
     let content_type = response
         .headers()

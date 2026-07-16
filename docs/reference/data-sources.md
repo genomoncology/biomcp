@@ -72,6 +72,11 @@ All HTTP-based sources share a common client with:
 - Retries: exponential backoff, up to 3 retries for transient failures
 - Retry-After: numeric 429 hints are honored only within a 5-second per-attempt cap and 15-second total retry-sleep budget
 - Disk cache: `<cache_root>/http` under the resolved cache root (`~/.cache/biomcp/http` on Linux)
+- Response bodies: bounded inside the cache before materialization (8 MiB by default, with source-specific request limits where documented)
+
+The first bounded-client initialization performs a filesystem-locked, one-time
+HTTP-cache epoch migration. It clears entries written before pre-cache body
+limits existed and fails closed if that migration cannot complete.
 
 ORCID is an explicit exception to ordinary anonymous shared caching: every ORCID
 request is forced `NoStore`, regardless of `BIOMCP_CACHE_MODE`.
@@ -89,8 +94,10 @@ API client:
 
 - cBioPortal DataHub study archive downloads do not use a total request timeout, so
   large files can keep downloading while bytes arrive. They use an idle/no-progress
-  timeout; if a stalled archive sends no bytes or progress within that window, the
-  download fails clearly.
+  timeout and a 2 GiB compressed cap; the download stalls if no bytes or progress
+  arrive within the idle window. Expansion is capped at 100,000 physical tar entries,
+  1 GiB per member, 8 GiB aggregate payload, and 1 MiB of path metadata; stalled,
+  oversized, or unsafe archives fail without publishing partial studies.
 - CTGov posted-document retrieval uses the standard 10-second connect and 30-second
   request timeouts, but does not retry or cache the raw bytes. Its dedicated client
   preserves provider bytes without transparent decompression and applies the shared
@@ -98,6 +105,11 @@ API client:
 
 Run `biomcp cache path` to print the managed HTTP cache directory on the current
 machine without creating or migrating cache directories.
+
+PMC OA packages retain their 64 MiB compressed and 8 MiB per-member limits and
+also cap expansion at 256 physical tar entries, 64 MiB aggregate payload, and
+1 MiB of path metadata. Archive resource failures are reported without provider
+payload or member-path leakage.
 
 For freshness-sensitive workflows, use `--no-cache`.
 

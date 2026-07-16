@@ -49,6 +49,13 @@ Returns a per-study mutation summary for TP53 from local study files. Mutation s
 
 No BioMCP API key required. Local study analytics use downloaded datasets in the default study root or `BIOMCP_STUDY_DIR`.
 
+Study archives are capped at 2 GiB compressed and 100,000 physical tar entries,
+with 1 GiB per regular member, 8 GiB aggregate payload, and 1 MiB of path
+extension metadata. BioMCP validates the complete archive in staging before the
+final install rename. A limit or unsafe archive-metadata failure is reported as
+source unavailable without exposing archive paths or payloads, and partial
+download/staging files are removed.
+
 ## Official source
 
 [cBioPortal](https://www.cbioportal.org/) is the official cancer-genomics portal behind BioMCP's cohort-frequency enrichment and study download workflows.

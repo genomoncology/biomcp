@@ -71,7 +71,10 @@ render references, figure captions, supplementary-material metadata, and complex
 omission markers. Semantic Scholar PDF is attempted only when the caller passes `--pdf`.
 Provider-returned PMC OA archive links are accepted only from reviewed NCBI HTTPS
 origins; scheme, origin, port, DNS answers, and every redirect are checked before
-contact without exposing a rejected URL in the public error.
+contact without exposing a rejected URL in the public error. PMC OA packages are
+capped at 64 MiB compressed, 256 physical tar entries, 8 MiB per regular member,
+64 MiB aggregate payload, and 1 MiB of path extension metadata. Archive resource
+or metadata-policy failures are sanitized as source unavailable.
 
 ## API access
 

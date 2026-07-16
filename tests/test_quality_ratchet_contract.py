@@ -971,14 +971,36 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
         encoding="utf-8",
     )
     (sources / "cbioportal_download.rs").write_text(
-        "MAX_ARCHIVE_DOWNLOAD_BYTES account_download_bytes( ArchiveBudget::new(limits)",
+        "MAX_ARCHIVE_DOWNLOAD_BYTES\n"
+        "account_download_bytes(downloaded, chunk.len())?;\n"
+        "file.write_all(&chunk);\n"
+        "ArchiveBudget::new(limits); archive.entries()?.raw(true);",
         encoding="utf-8",
     )
-    (sources / "pmc_oa.rs").write_text("ArchiveBudget::new(limits)", encoding="utf-8")
+    (sources / "pmc_oa.rs").write_text(
+        "with_response_body_limit(req, MAX_TGZ_BYTES, api);\n"
+        "ArchiveBudget::new(limits); archive.entries()?.raw(true);",
+        encoding="utf-8",
+    )
     (sources / "clinicaltrials.rs").write_text("bounded bytes", encoding="utf-8")
     (sources / "pubmed.rs").write_text("bounded bytes", encoding="utf-8")
-    (sources / "gtr.rs").write_text(
-        'with_response_body_limit(req, GTR_TEST_VERSION_MAX_BODY_BYTES, "gtr")',
+    for name in (
+        "ema.rs",
+        "europepmc.rs",
+        "gtr.rs",
+        "wikipathways.rs",
+        "who_ivd.rs",
+        "who_pq.rs",
+        "cvx.rs",
+    ):
+        (sources / name).write_text(
+            "with_response_body_limit(req, source_limit, source_name)",
+            encoding="utf-8",
+        )
+    fulltext = tmp_path / "src/entities/article/fulltext.rs"
+    fulltext.parent.mkdir(parents=True)
+    fulltext.write_text(
+        "with_response_body_limit(req, PDF_MAX_BODY_BYTES, source_name)",
         encoding="utf-8",
     )
 

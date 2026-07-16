@@ -1034,6 +1034,101 @@ def lint_specs(spec_paths: list[Path], spec_glob: str) -> dict[str, object]:
     }
 
 
+def check_remote_resource_bounds(root_dir: Path) -> dict[str, object]:
+    sources = root_dir / "src" / "sources"
+    findings: list[str] = []
+
+    def production_text(name: str) -> str:
+        path = sources / name
+        if not path.is_file():
+            return ""
+        return _rust_production_text(path.read_text(encoding="utf-8"))
+
+    shared = production_text("mod.rs")
+    migration = shared.find("ensure_body_limited_cache_epoch")
+    cache = shared.find("ClientBuilder::new(base_client).with(Cache(")
+    limiter = shared.find(".with(ResponseBodyLimitMiddleware", max(cache, 0))
+    if migration < 0 or cache < 0 or migration > cache:
+        findings.append(
+            "src/sources/mod.rs: legacy HTTP cache epoch must be enforced before shared cache construction"
+        )
+    if cache < 0 or limiter < 0 or limiter < cache:
+        findings.append(
+            "src/sources/mod.rs: response body limiter must remain inside the cache middleware"
+        )
+
+    cbioportal = production_text("cbioportal_download.rs")
+    download_accounting = cbioportal.find(
+        "account_download_bytes(downloaded, chunk.len())?"
+    )
+    download_write = cbioportal.find("file.write_all(&chunk)")
+    if (
+        "MAX_ARCHIVE_DOWNLOAD_BYTES" not in cbioportal
+        or download_accounting < 0
+        or download_write < 0
+        or download_accounting > download_write
+    ):
+        findings.append(
+            "src/sources/cbioportal_download.rs: cBioPortal compressed archive accounting is missing before write"
+        )
+    if (
+        "ArchiveBudget::new(limits)" not in cbioportal
+        or "entries()?.raw(true)" not in cbioportal
+    ):
+        findings.append(
+            "src/sources/cbioportal_download.rs: cBioPortal archive expansion must use the shared raw archive budget"
+        )
+
+    pmc = production_text("pmc_oa.rs")
+    if "ArchiveBudget::new(limits)" not in pmc or "entries()?.raw(true)" not in pmc:
+        findings.append(
+            "src/sources/pmc_oa.rs: PMC OA archive must use the shared raw archive budget"
+        )
+
+    for name in ("clinicaltrials.rs", "pubmed.rs"):
+        if "bytes.to_vec()" in production_text(name):
+            findings.append(
+                f"src/sources/{name}: bounded response buffer must be transferred without .to_vec()"
+            )
+
+    custom_limit_paths = (
+        "src/sources/ema.rs",
+        "src/sources/europepmc.rs",
+        "src/sources/gtr.rs",
+        "src/sources/pmc_oa.rs",
+        "src/sources/wikipathways.rs",
+        "src/sources/who_ivd.rs",
+        "src/sources/who_pq.rs",
+        "src/sources/cvx.rs",
+        "src/entities/article/fulltext.rs",
+    )
+    for relative in custom_limit_paths:
+        path = root_dir / relative
+        text = (
+            _rust_production_text(path.read_text(encoding="utf-8"))
+            if path.is_file()
+            else ""
+        )
+        if "with_response_body_limit(" not in text:
+            findings.append(
+                f"{relative}: custom response limit must be attached before send"
+            )
+
+    return {
+        "name": "remote_resource_bounds",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": [
+            "shared response/cache middleware",
+            "cBioPortal and PMC OA archives",
+            "custom response limits",
+            "bounded response ownership transfers",
+        ],
+        "finding_count": len(findings),
+        "findings": findings,
+        "errors": [],
+    }
+
+
 def main() -> int:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -1118,6 +1213,12 @@ def main() -> int:
         cli_surface_payload,
     )
 
+    remote_resource_payload = check_remote_resource_bounds(args.root_dir)
+    write_json(
+        args.output_dir / "quality-ratchet-remote-resource-bounds.json",
+        remote_resource_payload,
+    )
+
     statuses = [
         lint_payload["status"],
         mcp_payload.get("status"),
@@ -1127,6 +1228,7 @@ def main() -> int:
         experiment_results_payload.get("status"),
         terminal_output_payload.get("status"),
         cli_surface_payload.get("status"),
+        remote_resource_payload.get("status"),
     ]
     if "error" in statuses:
         summary_status = "error"
@@ -1147,6 +1249,7 @@ def main() -> int:
         "experiment_results": {"status": experiment_results_payload.get("status")},
         "terminal_output_boundaries": {"status": terminal_output_payload.get("status")},
         "cli_surface_contract": {"status": cli_surface_payload.get("status")},
+        "remote_resource_bounds": {"status": remote_resource_payload.get("status")},
     }
     write_json(args.output_dir / "quality-ratchet-summary.json", summary_payload)
     return 0 if summary_status == "pass" else 1

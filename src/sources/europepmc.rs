@@ -105,7 +105,14 @@ impl EuropePmcClient {
     ) -> Result<Option<EuropePmcSupplementaryPackage>, BioMcpError> {
         let plan = Self::supplementary_files_plan(pmcid)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let resp = req.with_extension(CacheMode::NoStore).send().await?;
+        let req = req.with_extension(CacheMode::NoStore);
+        let resp = crate::sources::with_response_body_limit(
+            req,
+            MAX_SUPPLEMENTARY_ZIP_BYTES,
+            EUROPE_PMC_API,
+        )
+        .send()
+        .await?;
         let status = resp.status();
         if !supplementary_status_has_package(status)? {
             return Ok(None);

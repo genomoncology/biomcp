@@ -168,7 +168,7 @@ impl ClinicalTrialsClient {
         let resp = crate::sources::apply_cache_mode(req).send().await?;
         let status = resp.status();
         let bytes = crate::sources::read_limited_body(resp, CTGOV_API).await?;
-        Ok((status, bytes.to_vec()))
+        Ok((status, bytes))
     }
 
     async fn get_json<T: DeserializeOwned>(
