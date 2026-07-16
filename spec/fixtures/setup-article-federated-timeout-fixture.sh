@@ -131,6 +131,7 @@ export BIOMCP_PUBTATOR_BASE="$base"
 export BIOMCP_EUROPEPMC_BASE="$base"
 export BIOMCP_PUBMED_BASE="$base/entrez/eutils"
 export BIOMCP_S2_BASE="$base"
+export BIOMCP_TEST_UNPACED_ORIGIN="$base"
 export BIOMCP_LITSENSE2_BASE="$base"
 export S2_API_KEY=""
 EOF

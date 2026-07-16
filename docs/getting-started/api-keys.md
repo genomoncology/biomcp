@@ -92,6 +92,12 @@ enrichment, `get article ... tldr`, `article citations`, `article references`,
 and `article recommendations`. Without the key, those paths still work through
 the shared unauthenticated pool at 1 req/2sec.
 
+BioMCP sends `x-api-key` only to the canonical Semantic Scholar HTTPS API
+origin. A noncanonical `BIOMCP_S2_BASE` override is unauthenticated, and the key
+cannot follow a redirect to another origin. The internal exact-origin fixture
+signal used by repository tests is the only unsafe local exception; it is not a
+CLI or model argument.
+
 Request a key at: <https://www.semanticscholar.org/product/api>
 
 ```bash
@@ -117,7 +123,7 @@ biomcp search adverse-event --drug pembrolizumab --limit 5
 - Do not commit secrets into source control.
 - Set keys in the same environment used by your MCP client.
 - Rotate keys when sharing machines or CI runners.
-- `S2_API_KEY` is optional. Without it, article search/get/helper paths still work through the shared Semantic Scholar pool at 1 req/2sec. With it, BioMCP sends `x-api-key` and uses the authenticated quota at 1 req/sec for the same article search/get/helper paths.
+- `S2_API_KEY` is optional. Without it, article search/get/helper paths still work through the shared Semantic Scholar pool at 1 req/2sec. With it, BioMCP sends `x-api-key` only to the approved canonical Semantic Scholar origin and uses the authenticated quota at 1 req/sec for those requests.
 - `UMLS_API_KEY` is optional; when absent, `discover` still works with OLS4-only results.
 
 See also: [Source Licensing and Terms](../reference/source-licensing.md)

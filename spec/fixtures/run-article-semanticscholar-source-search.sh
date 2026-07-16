@@ -83,5 +83,6 @@ fi
 base="http://127.0.0.1:$(cat "$PORT_FILE")"
 BIOMCP_CACHE_DIR="$ROOT/.cache/biomcp-article-semanticscholar-source" \
 BIOMCP_S2_BASE="$base" \
+BIOMCP_TEST_UNPACED_ORIGIN="$base" \
 S2_API_KEY="" \
   timeout 25s "$ROOT/tools/biomcp-ci" --json search article -k "BRAF melanoma" --source semanticscholar --debug-plan --limit 1

@@ -64,6 +64,7 @@ pub(crate) mod opentargets;
 pub(crate) mod orcid;
 pub(crate) mod pharmgkb;
 pub(crate) mod pmc_oa;
+pub(crate) mod provider_url_policy;
 pub(crate) mod pubmed;
 pub(crate) mod pubtator;
 pub(crate) mod quickgo;
@@ -88,7 +89,6 @@ pub(crate) const BIOTHINGS_MAX_RESULT_WINDOW: usize = 10_000;
 
 static HTTP_CLIENT: OnceLock<ClientWithMiddleware> = OnceLock::new();
 static ORCID_HTTP_CLIENT: OnceLock<ClientWithMiddleware> = OnceLock::new();
-static SEMANTIC_SCHOLAR_SHARED_POOL_HTTP_CLIENT: OnceLock<ClientWithMiddleware> = OnceLock::new();
 static STREAMING_HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 tokio::task_local! {
@@ -490,12 +490,13 @@ where
 
 fn build_http_client(kind: SharedHttpClientKind) -> Result<ClientWithMiddleware, BioMcpError> {
     let config = crate::cache::resolve_cache_config()?;
-    build_http_client_with_config(kind, config)
+    build_http_client_with_config(kind, config, None)
 }
 
 fn build_http_client_with_config(
     kind: SharedHttpClientKind,
     config: crate::cache::ResolvedCacheConfig,
+    provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     let cache_root = config.cache_root.clone();
     apply_migration_non_fatal(&cache_root, crate::cache::migrate_http_cache, |err| {
@@ -510,17 +511,23 @@ fn build_http_client_with_config(
     let mut default_headers = HeaderMap::new();
     default_headers.insert(CACHE_CONTROL, HeaderValue::from_static("max-stale=86400"));
 
-    let base_client = reqwest::Client::builder()
+    let mut base_client = reqwest::Client::builder()
         .timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(10))
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
-        .default_headers(default_headers)
-        .redirect(match kind {
+        .default_headers(default_headers);
+    if let Some(policy) = provider_policy {
+        base_client = base_client
+            .no_proxy()
+            .dns_resolver(policy.dns_resolver())
+            .redirect(policy.redirect_policy());
+    } else {
+        base_client = base_client.redirect(match kind {
             SharedHttpClientKind::Orcid => rate_limit::orcid_redirect_policy(),
             _ => rate_limit::redirect_policy(),
-        })
-        .build()
-        .map_err(BioMcpError::HttpClientInit)?;
+        });
+    }
+    let base_client = base_client.build().map_err(BioMcpError::HttpClientInit)?;
 
     let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
 
@@ -599,23 +606,24 @@ pub(crate) fn orcid_shared_client() -> Result<ClientWithMiddleware, BioMcpError>
     }
 }
 
-pub(crate) fn semantic_scholar_shared_pool_client() -> Result<ClientWithMiddleware, BioMcpError> {
-    if let Some(client) = SEMANTIC_SCHOLAR_SHARED_POOL_HTTP_CLIENT.get() {
-        return Ok(client.clone());
-    }
+pub(crate) fn semantic_scholar_provider_client(
+    policy: &provider_url_policy::ProviderUrlPolicy,
+    authenticated: bool,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    let kind = if authenticated {
+        SharedHttpClientKind::Default
+    } else {
+        SharedHttpClientKind::SemanticScholarSharedPool
+    };
+    let config = crate::cache::resolve_cache_config()?;
+    build_http_client_with_config(kind, config, Some(policy))
+}
 
-    let client = build_http_client(SharedHttpClientKind::SemanticScholarSharedPool)?;
-
-    match SEMANTIC_SCHOLAR_SHARED_POOL_HTTP_CLIENT.set(client.clone()) {
-        Ok(()) => Ok(client),
-        Err(_) => SEMANTIC_SCHOLAR_SHARED_POOL_HTTP_CLIENT
-            .get()
-            .cloned()
-            .ok_or_else(|| BioMcpError::Api {
-                api: "http-client".into(),
-                message: "Semantic Scholar shared-pool HTTP client initialization race".into(),
-            }),
-    }
+pub(crate) fn provider_url_client(
+    policy: &provider_url_policy::ProviderUrlPolicy,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    let config = crate::cache::resolve_cache_config()?;
+    build_http_client_with_config(SharedHttpClientKind::Default, config, Some(policy))
 }
 
 pub(crate) fn is_semantic_scholar_shared_pool_rate_limit_error(
@@ -1285,7 +1293,7 @@ mod tests {
         std::fs::write(legacy_dir.join("sentinel.txt"), b"cached payload").expect("write sentinel");
         let config = test_cache_config(&override_root);
 
-        let result = build_http_client_with_config(SharedHttpClientKind::Default, config);
+        let result = build_http_client_with_config(SharedHttpClientKind::Default, config, None);
 
         assert!(
             result.is_ok(),

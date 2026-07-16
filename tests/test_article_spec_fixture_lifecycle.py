@@ -354,7 +354,9 @@ def test_only_owned_article_fixtures_export_unpaced_origin() -> None:
         if "BIOMCP_TEST_UNPACED_ORIGIN" in path.read_text()
     }
     assert exporters == {
+        "run-article-semanticscholar-source-search.sh",
         "run-variant-article-entity-fixture.sh",
+        "setup-article-federated-timeout-fixture.sh",
         "setup-article-fulltext-source-fixture.sh",
     }
 

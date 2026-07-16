@@ -47,6 +47,29 @@ These are conventions, not a fake one-size-fits-all constructor contract. The
 current repo does not require every client to share one name, one constructor
 shape, or one exact error-variant mix.
 
+### Provider-returned URL security
+
+`src/sources/provider_url_policy.rs` is the single owner for outbound URLs that
+come from provider payloads. A source-specific policy supplies explicit allowed
+HTTPS origins and ports; the shared owner rejects URL credentials, forbidden IP
+classes (loopback, private, link-local, and cloud metadata), unsafe DNS answers,
+and invalid redirect targets. DNS validation runs in the connector resolver so
+the addresses checked are the addresses used for contact, and every redirect
+hop re-enters the scheme/origin/port policy before contact.
+
+Semantic Scholar is the first adopter: its API requests and provider-returned
+PDF fallback use policy-specific HTTP clients. `x-api-key` is retained only for
+the canonical Semantic Scholar API origin, authenticated responses remain
+no-store, and noncanonical base overrides are unauthenticated. Repository
+fixtures may use only the existing exact loopback
+`BIOMCP_TEST_UNPACED_ORIGIN` signal; this unsafe exception is internal and is
+not exposed through normal CLI/model inputs. PMC OA manifests, Figshare/trial
+consumers, and the enforcing consumer ratchet remain follow-up work.
+
+Policy failures must identify the source and outbound-policy class without
+including the rejected URL, response payload, credentials, or signed query
+values.
+
 Externally supplied PubMed, PMC, and JATS article XML uses one shared borrowed
 parser policy. It accepts external `DOCTYPE` syntax without a resolver or network
 access, rejects entity declarations before parsing, and requires every caller to

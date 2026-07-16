@@ -84,11 +84,17 @@ pub enum SemanticScholarAuthMode {
 }
 ```
 
-- `SemanticScholarClient::new()` still reads `s2_api_key()` once when the client
-  is constructed.
+- `SemanticScholarClient::new()` reads `s2_api_key()` once when the client is
+  constructed, but retains it only when the configured base is the canonical
+  Semantic Scholar HTTPS API origin (or the exact internal unsafe fixture
+  origin used by repository tests).
 - `SemanticScholarClient::auth_mode()` returns the enum above and never exposes
-  key material.
-- `maybe_with_auth()` remains the only place that attaches `x-api-key`.
+  key material. A normal noncanonical `BIOMCP_S2_BASE` override is therefore
+  reported and sent as shared-pool/unauthenticated even when `S2_API_KEY` exists.
+- `src/sources/provider_url_policy.rs` owns the destination and credential
+  boundary. It validates the initial origin, every redirect hop, and the DNS
+  answers used by the connector; redirects cannot carry the key outside an
+  approved credential origin.
 - Authenticated requests continue to use `apply_cache_mode_with_auth(..., true)`
   so authenticated responses are not stored in the shared cache.
 
@@ -178,8 +184,9 @@ BioMCP.
 
 ## Invariants
 
-- API-key values, partial values, hashes, and secret-derived strings never appear
-  in logs, health output, search output, run artifacts, tickets, or docs.
+- API-key values, partial values, hashes, credential-bearing URLs, and
+  secret-derived strings never appear in logs, health output, search output,
+  source errors, run artifacts, tickets, or docs.
 - BotAssembly forwards secrets only when a bot-folder policy explicitly names the
   variable; model tool input cannot smuggle arbitrary env values into spawn.
 - BioMCP's no-key Semantic Scholar path remains usable and degrades gracefully;

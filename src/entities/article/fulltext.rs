@@ -343,30 +343,41 @@ async fn try_resolve_html(pmcid: &str, requested_id: &str) -> FulltextStepOutcom
 
 async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepOutcome<String> {
     let Some(url) = parse_pdf_url(raw_pdf_url) else {
-        warn!(
-            requested_id,
-            pdf_url = raw_pdf_url,
-            "Skipping malformed PDF URL"
-        );
-        return FulltextStepOutcome::Miss;
+        return FulltextStepOutcome::HardError(BioMcpError::Api {
+            api: ARTICLE_FULLTEXT_API.to_string(),
+            message:
+                "Semantic Scholar PDF source unavailable: outbound policy rejected invalid URL"
+                    .to_string(),
+        });
     };
-    let client = match crate::sources::shared_client() {
+    let policy =
+        match crate::sources::provider_url_policy::ProviderUrlPolicy::semantic_scholar_pdf() {
+            Ok(policy) => policy,
+            Err(err) => return FulltextStepOutcome::HardError(err),
+        };
+    if let Err(err) = policy.validate_url(&url) {
+        return FulltextStepOutcome::HardError(err);
+    }
+    let client = match crate::sources::provider_url_client(&policy) {
         Ok(client) => client,
         Err(err) => return FulltextStepOutcome::HardError(err),
     };
-    let response = match crate::sources::apply_cache_mode(client.get(url.clone()))
+    let response = match crate::sources::apply_no_store(client.get(url.clone()))
         .send()
         .await
     {
         Ok(response) => response,
-        Err(err) => {
+        Err(_) => {
             warn!(
-                ?err,
                 requested_id,
-                pdf_url = url.as_str(),
-                "PDF fetch failed"
+                "Semantic Scholar PDF outbound request unavailable"
             );
-            return FulltextStepOutcome::Miss;
+            return FulltextStepOutcome::HardError(BioMcpError::Api {
+                api: ARTICLE_FULLTEXT_API.to_string(),
+                message:
+                    "Semantic Scholar PDF source unavailable: outbound request rejected or failed"
+                        .to_string(),
+            });
         }
     };
     if !response.status().is_success() {
@@ -383,21 +394,11 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
     {
         Ok(bytes) => bytes,
         Err(err) if body_limit_error(&err, PDF_MAX_BODY_BYTES) => {
-            warn!(
-                ?err,
-                requested_id,
-                pdf_url = url.as_str(),
-                "PDF body exceeded limit"
-            );
+            warn!(requested_id, "Semantic Scholar PDF body exceeded limit");
             return FulltextStepOutcome::Miss;
         }
-        Err(err) => {
-            warn!(
-                ?err,
-                requested_id,
-                pdf_url = url.as_str(),
-                "PDF body read failed"
-            );
+        Err(_) => {
+            warn!(requested_id, "Semantic Scholar PDF body read failed");
             return FulltextStepOutcome::Miss;
         }
     };
@@ -408,13 +409,8 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
 
     let markdown = match render_fulltext_pdf(bytes, PDF_PAGE_LIMIT).await {
         Ok(markdown) => markdown,
-        Err(err) => {
-            warn!(
-                ?err,
-                requested_id,
-                pdf_url = url.as_str(),
-                "PDF conversion failed"
-            );
+        Err(_) => {
+            warn!(requested_id, "Semantic Scholar PDF conversion failed");
             return FulltextStepOutcome::Miss;
         }
     };
@@ -842,6 +838,25 @@ mod tests {
             max_bytes: PDF_MAX_BODY_BYTES,
         };
         assert!(body_limit_error(&error, PDF_MAX_BODY_BYTES));
+    }
+
+    #[tokio::test]
+    async fn semantic_scholar_pdf_policy_rejects_unsafe_urls_without_echoing_them() {
+        for raw in [
+            "http://127.0.0.1:9/private-token.pdf",
+            "https://user:secret@pdfs.semanticscholar.org/paper.pdf",
+            "https://pdfs.semanticscholar.org:444/paper.pdf",
+            "https://example.test/private-token.pdf",
+        ] {
+            let FulltextStepOutcome::HardError(error) = try_resolve_pdf(raw, "PMID:1").await else {
+                panic!("unsafe PDF URL should fail before contact: {raw}");
+            };
+            let message = error.to_string();
+            assert!(message.contains("outbound policy"));
+            assert!(!message.contains(raw));
+            assert!(!message.contains("secret"));
+            assert!(!message.contains("private-token"));
+        }
     }
 
     #[test]

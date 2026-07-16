@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::error::BioMcpError;
+use crate::sources::provider_url_policy::ProviderUrlPolicy;
 use crate::sources::{RequestBody, RequestPlan, request_from_plan};
 
 const SEMANTIC_SCHOLAR_BASE: &str = "https://api.semanticscholar.org";
@@ -60,14 +61,19 @@ pub struct SemanticScholarClient {
 
 impl SemanticScholarClient {
     pub fn new() -> Result<Self, BioMcpError> {
-        let api_key = crate::sources::s2_api_key();
+        let base = crate::sources::env_base(SEMANTIC_SCHOLAR_BASE, SEMANTIC_SCHOLAR_BASE_ENV);
+        let base_url = reqwest::Url::parse(base.as_ref()).map_err(|_| BioMcpError::Api {
+            api: SEMANTIC_SCHOLAR_API.to_string(),
+            message:
+                "Semantic Scholar source unavailable: outbound policy rejected invalid base URL"
+                    .into(),
+        })?;
+        let policy = ProviderUrlPolicy::semantic_scholar_api(&base_url)?;
+        let api_key = effective_api_key(&policy, &base_url, crate::sources::s2_api_key());
+        let client = crate::sources::semantic_scholar_provider_client(&policy, api_key.is_some())?;
         Ok(Self {
-            client: if api_key.is_some() {
-                crate::sources::shared_client()?
-            } else {
-                crate::sources::semantic_scholar_shared_pool_client()?
-            },
-            base: crate::sources::env_base(SEMANTIC_SCHOLAR_BASE, SEMANTIC_SCHOLAR_BASE_ENV),
+            client,
+            base,
             api_key,
         })
     }
@@ -96,10 +102,23 @@ impl SemanticScholarClient {
                     ),
                 });
             }
-            Err(err) => return Err(err.into()),
+            Err(_) => {
+                return Err(BioMcpError::Api {
+                    api: SEMANTIC_SCHOLAR_API.to_string(),
+                    message:
+                        "Semantic Scholar source unavailable: outbound request rejected or failed"
+                            .to_string(),
+                });
+            }
         };
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, SEMANTIC_SCHOLAR_API).await?;
+        let bytes = crate::sources::read_limited_body(resp, SEMANTIC_SCHOLAR_API)
+            .await
+            .map_err(|_| BioMcpError::Api {
+                api: SEMANTIC_SCHOLAR_API.to_string(),
+                message: "Semantic Scholar source unavailable: response body could not be read"
+                    .to_string(),
+            })?;
         Self::decode_json_response(status, &bytes, self.api_key.is_none())
     }
 
@@ -114,6 +133,12 @@ impl SemanticScholarClient {
                 message: format!(
                     "Rate limited by Semantic Scholar. Set S2_API_KEY for a dedicated rate limit. See {SEMANTIC_SCHOLAR_DOCS_URL}"
                 ),
+            });
+        }
+        if !status.is_success() {
+            return Err(BioMcpError::Api {
+                api: SEMANTIC_SCHOLAR_API.to_string(),
+                message: format!("Semantic Scholar source unavailable: upstream HTTP {status}"),
             });
         }
         crate::sources::decode_json(SEMANTIC_SCHOLAR_API, status, None, bytes, false)
@@ -490,6 +515,17 @@ impl SemanticScholarClient {
         }));
         Ok(with_s2_api_key(plan, api_key))
     }
+}
+
+fn effective_api_key(
+    policy: &ProviderUrlPolicy,
+    base: &reqwest::Url,
+    candidate: Option<String>,
+) -> Option<String> {
+    policy
+        .is_credential_origin(base)
+        .then_some(candidate)
+        .flatten()
 }
 
 fn clean_api_key(api_key: Option<&str>) -> Option<&str> {

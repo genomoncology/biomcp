@@ -116,7 +116,13 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
     discovered_modules = [
         module
         for module in discovered_modules
-        if module not in {"rate_limit", "cbioportal_download", "cbioportal_study"}
+        if module
+        not in {
+            "rate_limit",
+            "cbioportal_download",
+            "cbioportal_study",
+            "provider_url_policy",
+        }
     ]
     assert sorted(discovered_modules) == sorted(DIRECT_SOURCE_MODULES)
 

@@ -158,6 +158,7 @@ def _run_article_citations(
         env.update(
             {
                 "BIOMCP_S2_BASE": server.base_url,
+                "BIOMCP_TEST_UNPACED_ORIGIN": server.base_url,
                 "BIOMCP_CACHE_MODE": "off",
                 "XDG_CACHE_HOME": cache_home,
                 "RUST_LOG": "error",
