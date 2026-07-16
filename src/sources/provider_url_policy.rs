@@ -18,6 +18,39 @@ const S2_PDF_ORIGINS: &[&str] = &[
     "https://pdfs.semanticscholar.org",
     "https://www.semanticscholar.org",
 ];
+const PMC_OA_ORIGINS: &[&str] = &[
+    "https://www.ncbi.nlm.nih.gov",
+    "https://ftp.ncbi.nlm.nih.gov",
+];
+const FIGSHARE_ORIGINS: &[&str] = &[
+    "https://api.figshare.com",
+    "https://figshare.com",
+    "https://ndownloader.figshare.com",
+    "https://s3-eu-west-1.amazonaws.com",
+];
+const CTGOV_DOCUMENT_ORIGINS: &[&str] = &["https://cdn.clinicaltrials.gov"];
+
+macro_rules! provider_url_consumers {
+    ($($consumer:ident),+ $(,)?) => {
+        /// Exhaustive inventory of provider-returned URL fetch consumers.
+        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+        pub(crate) enum ProviderUrlConsumer {
+            $($consumer),+
+        }
+
+        impl ProviderUrlConsumer {
+            #[cfg(test)]
+            const ALL: &'static [Self] = &[$(Self::$consumer),+];
+        }
+    };
+}
+
+provider_url_consumers!(
+    SemanticScholarPdf,
+    PmcOaArchive,
+    FigshareDownload,
+    ClinicalTrialsDocument,
+);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct AllowedOrigin {
@@ -78,15 +111,61 @@ impl ProviderUrlPolicy {
 
     /// Policy for PDF URLs returned in Semantic Scholar payloads.
     pub(crate) fn semantic_scholar_pdf() -> Result<Self, BioMcpError> {
-        Ok(Self {
-            source: "Semantic Scholar PDF",
-            allowed_origins: S2_PDF_ORIGINS
-                .iter()
-                .map(|origin| AllowedOrigin::parse(origin))
-                .collect::<Result<Vec<_>, _>>()?,
+        Self::for_consumer(ProviderUrlConsumer::SemanticScholarPdf, None)
+    }
+
+    /// Policy for one enumerated provider-returned URL consumer. API/CDN base overrides
+    /// are selected origins only for fixture-configurable clients. Their exact IP-loopback
+    /// origin may use HTTP; production origins remain HTTPS-only.
+    pub(crate) fn for_consumer(
+        consumer: ProviderUrlConsumer,
+        selected_origin: Option<&Url>,
+    ) -> Result<Self, BioMcpError> {
+        let (source, origins): (&'static str, &[&str]) = match consumer {
+            ProviderUrlConsumer::SemanticScholarPdf => ("Semantic Scholar PDF", S2_PDF_ORIGINS),
+            ProviderUrlConsumer::PmcOaArchive => ("PMC OA archive", PMC_OA_ORIGINS),
+            ProviderUrlConsumer::FigshareDownload => ("Figshare download", FIGSHARE_ORIGINS),
+            ProviderUrlConsumer::ClinicalTrialsDocument => {
+                ("ClinicalTrials.gov document", CTGOV_DOCUMENT_ORIGINS)
+            }
+        };
+        let mut allowed_origins = origins
+            .iter()
+            .map(|origin| AllowedOrigin::parse(origin))
+            .collect::<Result<Vec<_>, _>>()?;
+        if let Some(url) = selected_origin {
+            let selected = AllowedOrigin::from_url(url)
+                .ok_or_else(|| policy_error("selected URL has no valid origin"))?;
+            if !allowed_origins.contains(&selected) {
+                allowed_origins.push(selected);
+            }
+        }
+        let policy = Self {
+            source,
+            allowed_origins,
             credential_origins: Vec::new(),
-            unsafe_test_origin: unsafe_test_origin(),
-        })
+            unsafe_test_origin: unsafe_test_origin()
+                .or_else(|| selected_origin.and_then(selected_loopback_test_origin)),
+        };
+        if let Some(url) = selected_origin {
+            policy.validate_url(url)?;
+        }
+        Ok(policy)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_fixture(
+        consumer: ProviderUrlConsumer,
+        origin: &Url,
+    ) -> Result<Self, BioMcpError> {
+        let mut policy = Self::for_consumer(consumer, None)?;
+        let fixture = AllowedOrigin::from_url(origin)
+            .ok_or_else(|| policy_error("fixture URL has no valid origin"))?;
+        if !policy.allowed_origins.contains(&fixture) {
+            policy.allowed_origins.push(fixture.clone());
+        }
+        policy.unsafe_test_origin = Some(fixture);
+        Ok(policy)
     }
 
     pub(crate) fn validate_url(&self, url: &Url) -> Result<(), BioMcpError> {
@@ -220,6 +299,18 @@ fn unsafe_test_origin() -> Option<AllowedOrigin> {
     Some(origin)
 }
 
+fn selected_loopback_test_origin(url: &Url) -> Option<AllowedOrigin> {
+    let origin = AllowedOrigin::from_url(url)?;
+    (matches!(url.scheme(), "http" | "https")
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url
+            .host_str()
+            .and_then(parse_ip_literal)
+            .is_some_and(|address| address.is_loopback()))
+    .then_some(origin)
+}
+
 fn parse_ip_literal(host: &str) -> Option<IpAddr> {
     host.trim_matches(['[', ']']).parse().ok()
 }
@@ -310,6 +401,96 @@ mod tests {
     }
 
     #[test]
+    fn consumer_matrix_enumerates_valid_origins_and_shared_rejections() {
+        let valid = [
+            "https://pdfs.semanticscholar.org/paper.pdf",
+            "https://ftp.ncbi.nlm.nih.gov/pub/pmc/archive.tgz",
+            "https://ndownloader.figshare.com/files/1",
+            "https://cdn.clinicaltrials.gov/large-docs/48/NCT03361748/Protocol.pdf",
+        ];
+        assert_eq!(ProviderUrlConsumer::ALL.len(), valid.len());
+
+        for (consumer, valid_url) in ProviderUrlConsumer::ALL.iter().copied().zip(valid) {
+            let policy = ProviderUrlPolicy::for_consumer(consumer, None).unwrap();
+            assert!(policy.validate_url(&Url::parse(valid_url).unwrap()).is_ok());
+            for raw in [
+                "http://example.com/private",
+                "https://127.0.0.1/private",
+                "https://10.0.0.1/private",
+                "https://169.254.169.254/latest/meta-data",
+                "https://example.com:444/private",
+            ] {
+                let error = policy.validate_url(&Url::parse(raw).unwrap()).unwrap_err();
+                let message = error.to_string();
+                assert!(message.contains("outbound policy"));
+                assert!(!message.contains(raw));
+            }
+            assert!(
+                policy
+                    .validate_addresses([
+                        "93.184.216.34".parse().unwrap(),
+                        "127.0.0.1".parse().unwrap(),
+                    ])
+                    .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn selected_fixture_origin_allows_only_exact_ip_loopback() {
+        let fixture = Url::parse("http://127.0.0.1:43210/api").unwrap();
+        let policy = ProviderUrlPolicy::for_consumer(
+            ProviderUrlConsumer::ClinicalTrialsDocument,
+            Some(&fixture),
+        )
+        .unwrap();
+        assert!(
+            policy
+                .validate_url(&fixture.join("document.pdf").unwrap())
+                .is_ok()
+        );
+        assert!(
+            ProviderUrlPolicy::for_consumer(
+                ProviderUrlConsumer::ClinicalTrialsDocument,
+                Some(&Url::parse("http://localhost:43210/api").unwrap()),
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn provider_url_consumer_ownership_ratchet_names_every_fetch_site() {
+        let sites = [
+            (
+                ProviderUrlConsumer::SemanticScholarPdf,
+                include_str!("../entities/article/fulltext.rs"),
+                "ProviderUrlPolicy::semantic_scholar_pdf()",
+            ),
+            (
+                ProviderUrlConsumer::PmcOaArchive,
+                include_str!("pmc_oa.rs"),
+                "ProviderUrlConsumer::PmcOaArchive",
+            ),
+            (
+                ProviderUrlConsumer::FigshareDownload,
+                include_str!("figshare.rs"),
+                "ProviderUrlConsumer::FigshareDownload",
+            ),
+            (
+                ProviderUrlConsumer::ClinicalTrialsDocument,
+                include_str!("../entities/trial/documents.rs"),
+                "ProviderUrlConsumer::ClinicalTrialsDocument",
+            ),
+        ];
+        assert_eq!(sites.len(), ProviderUrlConsumer::ALL.len());
+        for (consumer, source, policy_marker) in sites {
+            assert!(ProviderUrlConsumer::ALL.contains(&consumer));
+            assert!(source.contains(policy_marker));
+            assert!(source.contains(".get("));
+        }
+    }
+
+    #[test]
     fn dns_answer_set_is_rejected_if_any_answer_is_forbidden() {
         let policy = pdf_policy();
         assert!(
@@ -336,36 +517,32 @@ mod tests {
         let redirect = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let redirect_url =
             Url::parse(&format!("http://{}/start", redirect.local_addr().unwrap())).unwrap();
-        let fixture_origin = AllowedOrigin::from_url(&redirect_url).unwrap();
-        let policy = ProviderUrlPolicy {
-            source: "test provider",
-            allowed_origins: vec![fixture_origin.clone()],
-            credential_origins: Vec::new(),
-            unsafe_test_origin: Some(fixture_origin),
-        };
-        policy.validate_url(&redirect_url).unwrap();
-
         let server = tokio::spawn(async move {
-            let (mut stream, _) = redirect.accept().await.unwrap();
-            let mut request = [0_u8; 1024];
-            let _ = stream.read(&mut request).await.unwrap();
-            let response = format!(
-                "HTTP/1.1 302 Found\r\nLocation: {target_url}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-            );
-            stream.write_all(response.as_bytes()).await.unwrap();
+            for _ in ProviderUrlConsumer::ALL {
+                let (mut stream, _) = redirect.accept().await.unwrap();
+                let mut request = [0_u8; 1024];
+                let _ = stream.read(&mut request).await.unwrap();
+                let response = format!(
+                    "HTTP/1.1 302 Found\r\nLocation: {target_url}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                );
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
         });
-        let client = reqwest::Client::builder()
-            .no_proxy()
-            .dns_resolver(policy.dns_resolver())
-            .redirect(policy.redirect_policy())
-            .build()
-            .unwrap();
-        let error = client
-            .get(redirect_url)
-            .send()
-            .await
-            .expect_err("off-origin redirect must fail");
-        assert!(error.is_redirect());
+        for consumer in ProviderUrlConsumer::ALL.iter().copied() {
+            let policy = ProviderUrlPolicy::test_fixture(consumer, &redirect_url).unwrap();
+            let client = reqwest::Client::builder()
+                .no_proxy()
+                .dns_resolver(policy.dns_resolver())
+                .redirect(policy.redirect_policy())
+                .build()
+                .unwrap();
+            let error = client
+                .get(redirect_url.clone())
+                .send()
+                .await
+                .expect_err("off-origin redirect must fail");
+            assert!(error.is_redirect());
+        }
         server.await.unwrap();
         assert!(
             tokio::time::timeout(std::time::Duration::from_millis(100), target.accept())

@@ -76,6 +76,14 @@ All HTTP-based sources share a common client with:
 ORCID is an explicit exception to ordinary anonymous shared caching: every ORCID
 request is forced `NoStore`, regardless of `BIOMCP_CACHE_MODE`.
 
+Provider-returned URL fetches share one outbound policy across Semantic Scholar
+PDFs, PMC OA archives, Figshare files, and ClinicalTrials.gov documents. Before
+contact, it requires an explicit HTTPS origin/port, rejects URL credentials and
+forbidden IP/DNS classes (including loopback, private, link-local, and metadata
+addresses), and revalidates every redirect target. Public failures identify the
+source and policy class without echoing the rejected URL or provider payload.
+Reviewed PMC, Figshare, and trial CDN transitions are explicit allowlist entries.
+
 Two raw-download paths use dedicated clients rather than the shared cached/retrying
 API client:
 
@@ -85,8 +93,8 @@ API client:
   download fails clearly.
 - CTGov posted-document retrieval uses the standard 10-second connect and 30-second
   request timeouts, but does not retry or cache the raw bytes. Its dedicated client
-  preserves provider bytes without transparent decompression and rejects redirects
-  that leave the approved CDN origin.
+  preserves provider bytes without transparent decompression and applies the shared
+  outbound policy to the approved CDN origin, DNS answers, and every redirect.
 
 Run `biomcp cache path` to print the managed HTTP cache directory on the current
 machine without creating or migrating cache directories.
@@ -161,7 +169,7 @@ Article workflows compose multiple APIs for different tasks:
 
 NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and asset rungs.
 Semantic Scholar supplies `openAccessPdf` metadata for the explicit `--pdf` fallback and for supported Figshare asset discovery;
-BioMCP fetches an opt-in PDF only when its HTTPS origin is on the explicit Semantic Scholar/CDN allowlist. Figshare asset retrieval is a separate path that re-resolves bytes through the Figshare API `download_url`.
+BioMCP fetches an opt-in PDF only when its HTTPS origin is on the explicit Semantic Scholar/CDN allowlist. Figshare asset retrieval is a separate path that re-resolves bytes through the Figshare API `download_url`; both that URL and PMC OA archive links use the same outbound policy with source-specific reviewed origins.
 Europe PMC supplementary ZIP responses are capped at 64 MiB compressed, 8 MiB per member, 64 MiB total expanded bytes, and 256 members. BioMCP validates relative normalized member names and never extracts them to disk. Only healthy absence across the applicable asset ladder returns `not_found`; a transport, body-limit, or archive failure without a later winner returns `source_unavailable`.
 
 This means metadata, annotations, and full text may have different availability

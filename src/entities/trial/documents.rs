@@ -1,5 +1,6 @@
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovLargeDocument, CtGovStudy};
+use crate::sources::provider_url_policy::{ProviderUrlConsumer, ProviderUrlPolicy};
 
 const CTGOV_CDN_BASE: &str = "https://cdn.clinicaltrials.gov";
 const CTGOV_CDN_BASE_ENV: &str = "BIOMCP_CTGOV_CDN_BASE";
@@ -196,12 +197,6 @@ fn approved_cdn_base() -> Result<reqwest::Url, BioMcpError> {
     Ok(url)
 }
 
-fn same_origin(left: &reqwest::Url, right: &reqwest::Url) -> bool {
-    left.scheme() == right.scheme()
-        && left.host_str() == right.host_str()
-        && left.port_or_known_default() == right.port_or_known_default()
-}
-
 fn download_url(base: &reqwest::Url, nct_id: &str, filename: &str) -> reqwest::Url {
     let mut url = base.clone();
     url.path_segments_mut()
@@ -215,25 +210,28 @@ async fn download_document_from_base(
     nct_id: &str,
     filename: &str,
 ) -> Result<Vec<u8>, BioMcpError> {
-    let approved_origin = base.clone();
+    let policy =
+        ProviderUrlPolicy::for_consumer(ProviderUrlConsumer::ClinicalTrialsDocument, Some(&base))?;
+    download_document_with_policy(base, nct_id, filename, policy).await
+}
+
+async fn download_document_with_policy(
+    base: reqwest::Url,
+    nct_id: &str,
+    filename: &str,
+    policy: ProviderUrlPolicy,
+) -> Result<Vec<u8>, BioMcpError> {
+    let url = download_url(&base, nct_id, filename);
+    policy.validate_url(&url)?;
     let client = reqwest::Client::builder()
         .connect_timeout(DOCUMENT_CONNECT_TIMEOUT)
         .timeout(DOCUMENT_REQUEST_TIMEOUT)
         .gzip(false)
-        .redirect(reqwest::redirect::Policy::custom(move |attempt| {
-            if !same_origin(&approved_origin, attempt.url()) {
-                attempt.error("trial document redirect left the approved origin")
-            } else if attempt.previous().len() >= 10 {
-                attempt.error("too many trial document redirects")
-            } else {
-                attempt.follow()
-            }
-        }))
+        .no_proxy()
+        .dns_resolver(policy.dns_resolver())
+        .redirect(policy.redirect_policy())
         .build()?;
-    let response = client
-        .get(download_url(&base, nct_id, filename))
-        .send()
-        .await?;
+    let response = client.get(url).send().await?;
     if !response.status().is_success() {
         return Err(BioMcpError::Api {
             api: CTGOV_CDN_API.into(),
@@ -286,6 +284,16 @@ mod tests {
             reqwest::Url::parse(&format!("http://{address}")).unwrap(),
             task,
         )
+    }
+
+    async fn download_fixture(
+        base: reqwest::Url,
+        nct_id: &str,
+        filename: &str,
+    ) -> Result<Vec<u8>, BioMcpError> {
+        let policy =
+            ProviderUrlPolicy::test_fixture(ProviderUrlConsumer::ClinicalTrialsDocument, &base)?;
+        download_document_with_policy(base, nct_id, filename, policy).await
     }
 
     fn study_with_documents(documents: serde_json::Value) -> CtGovStudy {
@@ -403,7 +411,8 @@ mod tests {
             get(|| async { b"small actual body".to_vec() }),
         );
         let (base, task) = serve(router).await;
-        let body = document_bytes_from_manifest(&manifest, "reported-oversize.pdf", base)
+        assert!(is_advertised(&manifest, "reported-oversize.pdf"));
+        let body = download_fixture(base, &manifest.nct_id, "reported-oversize.pdf")
             .await
             .unwrap();
         assert_eq!(body, b"small actual body");
@@ -423,11 +432,11 @@ mod tests {
             );
         let (base, task) = serve(router).await;
 
-        let exact = download_document_from_base(base.clone(), "NCT03361748", "exact.pdf")
+        let exact = download_fixture(base.clone(), "NCT03361748", "exact.pdf")
             .await
             .unwrap();
         assert_eq!(exact.len(), DOCUMENT_MAX_BYTES);
-        let error = download_document_from_base(base, "NCT03361748", "too-large.pdf")
+        let error = download_fixture(base, "NCT03361748", "too-large.pdf")
             .await
             .unwrap_err();
         assert!(error.to_string().contains("exceeded 33554432 bytes"));
@@ -459,7 +468,7 @@ mod tests {
         }));
         let (approved_base, redirect_task) = serve(redirect_router).await;
 
-        let error = download_document_from_base(approved_base, "NCT03361748", "Protocol.pdf")
+        let error = download_fixture(approved_base, "NCT03361748", "Protocol.pdf")
             .await
             .unwrap_err();
         assert!(error.to_string().contains("redirect"));
