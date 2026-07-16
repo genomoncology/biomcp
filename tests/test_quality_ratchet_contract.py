@@ -958,6 +958,47 @@ def test_wrapper_accepts_section_when_one_of_multiple_bash_blocks_has_mustmatch(
     assert summary["lint"]["finding_count"] == 0
 
 
+def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    sources = tmp_path / "src/sources"
+    sources.mkdir(parents=True)
+    (sources / "mod.rs").write_text(
+        "ClientBuilder::new(base_client).with(Cache(())\n"
+        ".with(ResponseBodyLimitMiddleware {})\n",
+        encoding="utf-8",
+    )
+    (sources / "cbioportal_download.rs").write_text(
+        "MAX_ARCHIVE_DOWNLOAD_BYTES account_download_bytes( ArchiveBudget::new(limits)",
+        encoding="utf-8",
+    )
+    (sources / "pmc_oa.rs").write_text("ArchiveBudget::new(limits)", encoding="utf-8")
+    (sources / "clinicaltrials.rs").write_text("bounded bytes", encoding="utf-8")
+    (sources / "pubmed.rs").write_text("bounded bytes", encoding="utf-8")
+
+    assert ratchet.check_remote_resource_bounds(tmp_path)["status"] == "pass"
+
+    (sources / "mod.rs").write_text(
+        ".with(ResponseBodyLimitMiddleware {})\n"
+        "ClientBuilder::new(base_client).with(Cache(())\n",
+        encoding="utf-8",
+    )
+    (sources / "cbioportal_download.rs").write_text(
+        "MAX_ARCHIVE_DOWNLOAD_BYTES account_download_bytes(", encoding="utf-8"
+    )
+    (sources / "clinicaltrials.rs").write_text(
+        "read_limited_body(response, source).await?; bytes.to_vec()", encoding="utf-8"
+    )
+    payload = ratchet.check_remote_resource_bounds(tmp_path)
+
+    assert payload["status"] == "fail"
+    assert payload["finding_count"] == 3
+    assert any("inside the cache" in finding for finding in payload["findings"])
+    assert any("cBioPortal archive expansion" in finding for finding in payload["findings"])
+    assert any("clinicaltrials.rs" in finding for finding in payload["findings"])
+
+
 def test_wrapper_allows_mustmatch_opt_out_later_in_section(tmp_path: Path) -> None:
     spec_path = _write_h2_bash_spec(
         tmp_path / "spec",

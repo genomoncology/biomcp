@@ -73,6 +73,33 @@ fn demo_study_archive() -> Vec<u8> {
     ])
 }
 
+fn tar_gz_with_declared_oversized_member() -> Vec<u8> {
+    fn append_header(tar: &mut Vec<u8>, path: &str, size: u64) {
+        let mut header = Header::new_gnu();
+        header.set_path(path).expect("set archive path");
+        header.set_size(size);
+        header.set_mode(0o644);
+        header.set_cksum();
+        tar.extend_from_slice(header.as_bytes());
+    }
+
+    let metadata = b"cancer_study_identifier: demo_study\nname: Demo Study\n";
+    let mut tar = Vec::new();
+    append_header(&mut tar, "demo_study/meta_study.txt", metadata.len() as u64);
+    tar.extend_from_slice(metadata);
+    tar.resize(tar.len().next_multiple_of(512), 0);
+    append_header(
+        &mut tar,
+        "demo_study/oversized_payload.bin",
+        1024 * 1024 * 1024 + 1,
+    );
+    tar.extend_from_slice(&[0; 1024]);
+
+    let mut gz = GzEncoder::new(Vec::new(), Compression::default());
+    gz.write_all(&tar).expect("write gz");
+    gz.finish().expect("finish gz")
+}
+
 #[test]
 fn parses_study_list_fixture() {
     let content_type = HeaderValue::from_static("application/json");
@@ -207,6 +234,28 @@ fn install_study_archive_skips_existing_valid_target() {
 
     assert!(!result.downloaded);
     assert_eq!(result.path, study_dir);
+}
+
+#[test]
+fn install_study_archive_rejects_declared_oversized_member_without_leaving_files() {
+    let root = TempRoot::new("oversized-member");
+    let archive_path = root.path.join("oversized-study.tar.gz");
+    fs::write(&archive_path, tar_gz_with_declared_oversized_member()).expect("write archive");
+
+    let err = install_study_archive(&root.path, "demo_study", &archive_path).unwrap_err();
+
+    assert!(
+        matches!(err, BioMcpError::SourceUnavailable { .. }),
+        "oversized archive member should be sanitized as source-unavailable, got {err:?}"
+    );
+    assert!(!err.to_string().contains("oversized_payload"));
+    assert!(!root.path.join("demo_study").exists());
+    let remaining = fs::read_dir(&root.path)
+        .expect("read temp root")
+        .map(|entry| entry.map(|entry| entry.path()))
+        .collect::<Result<Vec<_>, _>>()
+        .expect("collect temp root entries");
+    assert_eq!(remaining, vec![archive_path]);
 }
 
 #[test]
