@@ -9,6 +9,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/author.md
   spec/entity/disease-survival-fixture.md
   spec/entity/drug-interactions.md
+  spec/entity/section-outcomes.md
   spec/entity/study.md
   spec/entity/trial-intervention-aliases.md
   spec/entity/trial-documents.md
@@ -63,12 +64,14 @@ mustmatch_dir() {
 
 partition_paths() {
   ARTICLE_MD_PATHS=()
+  SECTION_OUTCOME_MD_PATHS=()
   MD_PATHS=()
   PY_PATHS=()
   local path
   for path in "$@"; do
     case "$path" in
       spec/entity/article.md|spec/entity/author.md) ARTICLE_MD_PATHS+=("$path") ;;
+      spec/entity/section-outcomes.md) SECTION_OUTCOME_MD_PATHS+=("$path") ;;
       *.md) MD_PATHS+=("$path") ;;
       *.py) PY_PATHS+=("$path") ;;
       *) echo "unsupported spec path extension: $path" >&2; return 1 ;;
@@ -153,6 +156,17 @@ run_disease_survival_fixture() {
   bash spec/fixtures/setup-disease-survival-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-disease-survival-env"
   register_cleanup cleanup_disease_survival_fixture
+}
+
+run_section_outcome_specs() {
+  if ((${#SECTION_OUTCOME_MD_PATHS[@]})); then
+    (
+      bash spec/fixtures/setup-section-outcomes-spec-fixture.sh "$ROOT"
+      source_if_present "$ROOT/.cache/spec-section-outcomes-env"
+      trap 'bash spec/fixtures/cleanup-section-outcomes-spec-fixture.sh "$ROOT"' EXIT
+      mustmatch test "${SECTION_OUTCOME_MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
+    )
+  fi
 }
 
 run_article_markdown_specs() {
@@ -274,4 +288,5 @@ fi
 partition_paths "${paths[@]}"
 run_article_markdown_specs
 run_markdown_specs
+run_section_outcome_specs
 run_python_contracts

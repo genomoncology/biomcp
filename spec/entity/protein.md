@@ -42,6 +42,17 @@ trap 'bash ../fixtures/cleanup-complexportal-spec-fixture.sh ../..' EXIT
 cat "$BIOMCP_COMPLEXPORTAL_FIXTURE_REQUEST_LOG" | mustmatch like 'GET /search/P15056 number=25 filters=species_f:("Homo sapiens")'
 ```
 
+## Typed optional-section outcomes
+
+Live protein enrichments retain one bounded state per requested section. The
+same outcomes appear in provenance even when a provider has no rows to return.
+
+```bash
+../../tools/biomcp-ci --json get protein P15056 domains interactions complexes \
+  | jq '[{"entity": .section_outcomes.domains.outcome, "provenance": (._meta.section_sources | map(select(.key == "domains")) | if length == 1 then .[0].outcome else null end)}, {"entity": .section_outcomes.interactions.outcome, "provenance": (._meta.section_sources | map(select(.key == "interactions")) | if length == 1 then .[0].outcome else null end)}, {"entity": .section_outcomes.complexes.outcome, "provenance": (._meta.section_sources | map(select(.key == "complexes")) | if length == 1 then .[0].outcome else null end)}] | all(.[]; (.entity | IN("data", "empty", "degraded", "unavailable")) and .entity == .provenance)' \
+  | mustmatch 'true'
+```
+
 ## Structures Follow-Up
 
 Structure pagination should still render as a structures section with concrete

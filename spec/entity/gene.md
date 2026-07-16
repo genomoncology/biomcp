@@ -48,6 +48,18 @@ stable gene card a user would get from the official symbol.
 "PD-L1"'
 ```
 
+## Typed optional-section outcomes
+
+Requested sections keep a bounded state even when live providers return no rows
+or are temporarily unavailable. Provenance carries the same state rather than
+inferring success from an empty collection.
+
+```bash
+../../tools/biomcp-ci --json get gene BRAF go interactions \
+  | jq '[{"entity": .section_outcomes.go.outcome, "provenance": (._meta.section_sources | map(select(.key == "go")) | if length == 1 then .[0].outcome else null end)}, {"entity": .section_outcomes.interactions.outcome, "provenance": (._meta.section_sources | map(select(.key == "interactions")) | if length == 1 then .[0].outcome else null end)}] | all(.[]; (.entity | IN("data", "empty", "degraded", "unavailable")) and .entity == .provenance)' \
+  | mustmatch 'true'
+```
+
 ## All-Section Warm Budget
 
 Quarantined from routine executable specs by ticket 372 because this timing-only

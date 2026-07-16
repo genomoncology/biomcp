@@ -43,6 +43,18 @@ Top reactions
 Source: CDC VAERS'
 ```
 
+## Typed combined-source outcomes
+
+Combined search keeps FAERS and VAERS outcomes independent while preserving the
+existing VAERS aggregate status. Either source can report bounded uncertainty
+without erasing the other source's result.
+
+```bash
+../../tools/biomcp-ci --json search adverse-event "MMR vaccine" --source all --limit 5 \
+  | jq -r '.vaers.status, .section_outcomes.faers.outcome, .section_outcomes.vaers.outcome' \
+  | mustmatch '/^(ok|empty|unavailable)\n(data|empty|degraded|unavailable)\n(data|empty|degraded|unavailable)/'
+```
+
 ## Source-Specific Limitations
 
 FAERS-style filters should fail truthfully when the user forces the VAERS

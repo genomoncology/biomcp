@@ -837,6 +837,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/author.md",
     "spec/entity/disease-survival-fixture.md",
     "spec/entity/drug-interactions.md",
+    "spec/entity/section-outcomes.md",
     "spec/entity/study.md",
     "spec/entity/trial-intervention-aliases.md",
     "spec/entity/trial-documents.md",
