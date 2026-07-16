@@ -154,6 +154,7 @@ anchors without live PubMed, Europe PMC, PubTator, LitSense2, or Semantic Schola
 calls.
 
 ## Compact Article Search Keeps the Triage Contract
+<!-- mustmatch-lint: skip -->
 
 Article search returns shortlist-sized JSON by default: stable identifiers and
 key triage fields remain alongside pagination, retraction state, and executable
@@ -166,15 +167,21 @@ ranking diagnostics are worth the larger response.
 
 ```json expect=compact-article-search contains
 {
-  "pagination": {"has_more": true},
-  "results": [{
-    "pmid": "51300001",
-    "title": "Williams LS Europe PMC byline match",
-    "journal": "Byline Fixture Journal",
-    "date": "2025-01-01",
-    "source": "europepmc",
-    "is_retracted": false
-  }],
+  "pagination": {"limit": 2},
+  "results": [
+    {
+      "pmid": "51300001",
+      "title": "Williams LS Europe PMC byline match",
+      "journal": "Byline Fixture Journal",
+      "date": "2025-01-01",
+      "source": "europepmc",
+      "is_retracted": false
+    },
+    {
+      "pmid": "51300002",
+      "is_retracted": null
+    }
+  ],
   "_meta": {"next_commands": ["biomcp get article 51300001"]}
 }
 ```
@@ -202,6 +209,7 @@ search, ordering, or result collection.
 ```
 
 ## Date Sort Announces Relevance Replacement
+<!-- mustmatch-lint: skip -->
 
 Date order is useful for recency scans, but it replaces relevance ranking rather
 than refining it. Both machine and human output say so in-band, including the
@@ -218,6 +226,20 @@ compact default response.
     "warnings": [{"code": "date_sort_replaces_relevance"}]
   }
 }
+```
+
+```text expect=date-sort-json contains
+replaces relevance ranking
+```
+
+The warning is response metadata, so opting into detailed rows does not remove it.
+
+```bash run id=full-date-sort-json exit=0
+../../tools/biomcp-ci --json search article --author "Williams LS" --sort date --limit 2 --full
+```
+
+```json expect=full-date-sort-json contains
+{"_meta":{"warnings":[{"code":"date_sort_replaces_relevance"}]}}
 ```
 
 ```bash run id=date-sort-markdown exit=0
