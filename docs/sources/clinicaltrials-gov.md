@@ -20,6 +20,8 @@ This page covers BioMCP's default trial backend. BioMCP also supports `--source 
 | `get trial <nct_id> outcomes` | Primary and secondary outcome measures | Detail-section view |
 | `get trial <nct_id> arms` | Study arms and interventions | Detail-section view |
 | `get trial <nct_id> references` | Linked publications and citations when present | Detail-section view |
+| `--json get trial <nct_id> documents` | Posted-document manifest and BioMCP retrieval handles | ClinicalTrials.gov only; provider URLs are not exposed as handles |
+| `get trial <nct_id> document <filename>` | Exact advertised document bytes | 32 MiB response limit; shared outbound policy protects the CDN fetch |
 
 ## Example commands
 
@@ -52,6 +54,13 @@ biomcp get trial NCT02576665 --limit 3 locations
 ```
 
 Returns a locations table with facility, city, country, status, and contact fields.
+
+## Runtime behavior
+
+Posted-document retrieval validates the fixed ClinicalTrials.gov CDN HTTPS
+origin, port, DNS answers, and every redirect through BioMCP's shared outbound
+policy before contact. Loopback, private, link-local, metadata, non-HTTPS, and
+off-origin destinations are rejected with a sanitized source-unavailable error.
 
 ## API access
 

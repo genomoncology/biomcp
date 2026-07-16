@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::net::IpAddr;
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
 
@@ -8,6 +7,7 @@ use reqwest::{StatusCode, Url, header::CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
+use crate::sources::provider_url_policy::{ProviderUrlConsumer, ProviderUrlPolicy};
 use crate::sources::{RequestBody, RequestPlan, request_from_plan};
 
 const FIGSHARE_BASE: &str = "https://api.figshare.com";
@@ -64,6 +64,7 @@ pub struct FigshareFile {
 pub struct FigshareClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
+    provider_policy: ProviderUrlPolicy,
 }
 
 #[derive(Debug, Deserialize)]
@@ -117,9 +118,20 @@ enum DownloadResponse {
 
 impl FigshareClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(FIGSHARE_BASE, FIGSHARE_BASE_ENV);
+        let base_url = Url::parse(base.as_ref()).map_err(|_| BioMcpError::Api {
+            api: FIGSHARE_API.to_string(),
+            message: "Figshare source unavailable: outbound policy rejected invalid base URL"
+                .into(),
+        })?;
+        let provider_policy = ProviderUrlPolicy::for_consumer(
+            ProviderUrlConsumer::FigshareDownload,
+            Some(&base_url),
+        )?;
         Ok(Self {
-            client: crate::sources::shared_client()?,
-            base: crate::sources::env_base(FIGSHARE_BASE, FIGSHARE_BASE_ENV),
+            client: crate::sources::provider_url_client(&provider_policy)?,
+            base,
+            provider_policy,
         })
     }
 
@@ -299,75 +311,14 @@ impl FigshareClient {
     }
 
     fn validate_download_url(&self, raw: &str) -> Result<Url, BioMcpError> {
-        let url = Url::parse(raw.trim()).map_err(|err| BioMcpError::Api {
-            api: FIGSHARE_API.to_string(),
-            message: format!("unsafe Figshare download_url: invalid URL: {err}"),
+        let url = Url::parse(raw.trim()).map_err(|_| BioMcpError::Api {
+            api: "provider-url-policy".to_string(),
+            message: "Figshare download source unavailable: outbound policy rejected invalid URL"
+                .into(),
         })?;
-        if self.is_explicit_test_download_url(&url) {
-            return Ok(url);
-        }
-        if url.scheme() != "https" {
-            return Err(unsafe_download_url("expected https scheme"));
-        }
-        let host = url
-            .host_str()
-            .ok_or_else(|| unsafe_download_url("missing host"))?
-            .to_ascii_lowercase();
-        if is_private_or_local_host(&host) {
-            return Err(unsafe_download_url("local/private host is not allowed"));
-        }
-        if host != "figshare.com" && !host.ends_with(".figshare.com") {
-            return Err(unsafe_download_url(
-                "host is not a Figshare-controlled domain",
-            ));
-        }
+        self.provider_policy.validate_url(&url)?;
         Ok(url)
     }
-
-    fn is_explicit_test_download_url(&self, url: &Url) -> bool {
-        if self.base.as_ref().trim_end_matches('/') == FIGSHARE_BASE {
-            return false;
-        }
-        let Ok(base) = Url::parse(self.base.as_ref()) else {
-            return false;
-        };
-        same_origin(&base, url)
-    }
-}
-
-fn unsafe_download_url(reason: &str) -> BioMcpError {
-    BioMcpError::Api {
-        api: FIGSHARE_API.to_string(),
-        message: format!("unsafe Figshare download_url: {reason}"),
-    }
-}
-
-fn same_origin(left: &Url, right: &Url) -> bool {
-    left.scheme() == right.scheme()
-        && left.host_str().map(str::to_ascii_lowercase)
-            == right.host_str().map(str::to_ascii_lowercase)
-        && left.port_or_known_default() == right.port_or_known_default()
-}
-
-fn is_private_or_local_host(host: &str) -> bool {
-    if host == "localhost" || host.ends_with(".localhost") {
-        return true;
-    }
-    host.parse::<IpAddr>().is_ok_and(|addr| match addr {
-        IpAddr::V4(addr) => {
-            addr.is_loopback()
-                || addr.is_private()
-                || addr.is_link_local()
-                || addr.is_unspecified()
-                || addr.octets()[0] == 0
-        }
-        IpAddr::V6(addr) => {
-            addr.is_loopback()
-                || addr.is_unspecified()
-                || (addr.segments()[0] & 0xfe00) == 0xfc00
-                || (addr.segments()[0] & 0xffc0) == 0xfe80
-        }
-    })
 }
 
 pub fn parse_figshare_article_url(raw: &str) -> Option<FigshareArticleRef> {

@@ -81,6 +81,11 @@ article leg so operators can distinguish `ok`, `degraded`, and `unavailable`
 without exposing credentials. Degradation of the optional Semantic Scholar leg
 should not be read as a PubMed, Europe PMC, or PubTator failure.
 
+Provider-returned PDF URLs and supported Figshare asset handoffs are fetched
+only through BioMCP's shared outbound policy. PDF, Figshare ndownloader, and
+reviewed CDN origins are explicit HTTPS allowlists; DNS answers and every
+redirect are revalidated before contact, and rejected URLs are not echoed.
+
 ## Official source
 
 [Semantic Scholar](https://www.semanticscholar.org/) is the official literature-graph product behind BioMCP's TLDR and citation helper workflows.

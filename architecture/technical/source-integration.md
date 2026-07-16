@@ -57,14 +57,21 @@ and invalid redirect targets. DNS validation runs in the connector resolver so
 the addresses checked are the addresses used for contact, and every redirect
 hop re-enters the scheme/origin/port policy before contact.
 
-Semantic Scholar is the first adopter: its API requests and provider-returned
-PDF fallback use policy-specific HTTP clients. `x-api-key` is retained only for
-the canonical Semantic Scholar API origin, authenticated responses remain
-no-store, and noncanonical base overrides are unauthenticated. Repository
-fixtures may use only the existing exact loopback
-`BIOMCP_TEST_UNPACED_ORIGIN` signal; this unsafe exception is internal and is
-not exposed through normal CLI/model inputs. PMC OA manifests, Figshare/trial
-consumers, and the enforcing consumer ratchet remain follow-up work.
+The enumerated consumers are Semantic Scholar PDF fallback, PMC OA archive
+links, Figshare file downloads, and ClinicalTrials.gov posted documents. Each
+uses a policy-specific HTTP client. The consumer enum, shared rejection matrix,
+and ownership ratchet must change together, so adding a provider-returned URL
+fetch without naming its policy owner fails the Rust test lane. Reviewed CDN
+transitions are explicit origins (including the PMC archive host, Figshare
+ndownloader/S3 host, and ClinicalTrials.gov document CDN), never suffix-based
+wildcards.
+
+For Semantic Scholar, `x-api-key` is retained only for the canonical API
+origin, authenticated responses remain no-store, and noncanonical base
+overrides are unauthenticated. Repository fixtures may use the exact loopback
+`BIOMCP_TEST_UNPACED_ORIGIN` signal; PMC/Figshare/trial fixture-base seams may
+likewise select only their exact IP-loopback origin. These unsafe exceptions are
+internal test inputs and are not exposed through normal CLI/model inputs.
 
 Policy failures must identify the source and outbound-policy class without
 including the rejected URL, response payload, credentials, or signed query

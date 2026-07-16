@@ -69,6 +69,9 @@ Returns a full-text section with a `Saved to:` cache path.
 XML, PMC HTML, or explicitly opted-in PDF sources can resolve. JATS Markdown can
 render references, figure captions, supplementary-material metadata, and complex-table
 omission markers. Semantic Scholar PDF is attempted only when the caller passes `--pdf`.
+Provider-returned PMC OA archive links are accepted only from reviewed NCBI HTTPS
+origins; scheme, origin, port, DNS answers, and every redirect are checked before
+contact without exposing a rejected URL in the public error.
 
 ## API access
 

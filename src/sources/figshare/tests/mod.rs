@@ -7,6 +7,11 @@ fn production_client() -> FigshareClient {
     FigshareClient {
         client: crate::sources::test_client().unwrap(),
         base: Cow::Borrowed(FIGSHARE_BASE),
+        provider_policy: ProviderUrlPolicy::for_consumer(
+            ProviderUrlConsumer::FigshareDownload,
+            None,
+        )
+        .unwrap(),
     }
 }
 

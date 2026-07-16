@@ -102,10 +102,13 @@ fn production_download_url_validation_rejects_unsafe_targets() {
         "https://example.org/files/1",
     ] {
         let err = client.validate_download_url(raw).unwrap_err();
+        let message = err.to_string();
         assert!(
-            err.to_string().contains("unsafe Figshare download_url"),
-            "{raw} should be rejected with a clear unsafe-url error"
+            message.contains("Figshare download source unavailable")
+                && message.contains("outbound policy"),
+            "{raw} should be rejected with a sanitized policy error"
         );
+        assert!(!message.contains(raw));
     }
 }
 

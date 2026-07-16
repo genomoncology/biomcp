@@ -4,6 +4,7 @@ use std::path::{Component, Path, PathBuf};
 use http_cache_reqwest::CacheMode;
 
 use crate::error::BioMcpError;
+use crate::sources::provider_url_policy::{ProviderUrlConsumer, ProviderUrlPolicy};
 use crate::sources::{RequestPlan, request_from_plan};
 
 // PubMed Central Open Access (OA) service
@@ -40,14 +41,23 @@ pub struct PmcOaClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
     api_key: Option<String>,
+    provider_policy: ProviderUrlPolicy,
 }
 
 impl PmcOaClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(PMC_OA_BASE, PMC_OA_BASE_ENV);
+        let base_url = reqwest::Url::parse(base.as_ref()).map_err(|_| BioMcpError::Api {
+            api: PMC_OA_API.to_string(),
+            message: "PMC OA source unavailable: outbound policy rejected invalid base URL".into(),
+        })?;
+        let provider_policy =
+            ProviderUrlPolicy::for_consumer(ProviderUrlConsumer::PmcOaArchive, Some(&base_url))?;
         Ok(Self {
-            client: crate::sources::shared_client()?,
-            base: crate::sources::env_base(PMC_OA_BASE, PMC_OA_BASE_ENV),
+            client: crate::sources::provider_url_client(&provider_policy)?,
+            base,
             api_key: crate::sources::ncbi_api_key(),
+            provider_policy,
         })
     }
 
@@ -211,9 +221,16 @@ fn parse_archive_manifest_xml(xml: &str) -> Result<Option<PmcOaArchiveManifest>,
 
 impl PmcOaClient {
     async fn archive_bytes(&self, manifest: &PmcOaArchiveManifest) -> Result<Vec<u8>, BioMcpError> {
+        let archive_url =
+            reqwest::Url::parse(manifest.tgz_url.trim()).map_err(|_| BioMcpError::Api {
+                api: "provider-url-policy".into(),
+                message: "PMC OA archive source unavailable: outbound policy rejected invalid URL"
+                    .into(),
+            })?;
+        self.provider_policy.validate_url(&archive_url)?;
         let resp = self
             .client
-            .get(&manifest.tgz_url)
+            .get(archive_url)
             .with_extension(CacheMode::NoStore)
             .send()
             .await?;
