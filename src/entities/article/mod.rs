@@ -36,6 +36,7 @@ use std::path::PathBuf;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
+use crate::entities::section_outcome::SectionOutcomes;
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcSort;
 use crate::sources::semantic_scholar::SemanticScholarAuthMode;
@@ -44,8 +45,37 @@ fn is_false(value: &bool) -> bool {
     !*value
 }
 
+pub(crate) const ARTICLE_OUTCOME_KEYS: &[&str] = &["fulltext"];
+
+fn default_article_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(ARTICLE_OUTCOME_KEYS)
+}
+
+fn deserialize_article_section_outcomes<'de, D>(
+    deserializer: D,
+) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(ARTICLE_OUTCOME_KEYS)
+        .map_err(serde::de::Error::custom)?;
+    if outcomes.get("fulltext").is_none() {
+        return Err(serde::de::Error::custom(
+            "missing section outcome key: fulltext",
+        ));
+    }
+    Ok(outcomes)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Article {
+    #[serde(
+        default = "default_article_section_outcomes",
+        deserialize_with = "deserialize_article_section_outcomes"
+    )]
+    pub section_outcomes: SectionOutcomes,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pmid: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -908,6 +938,35 @@ mod tests {
             "Related"
         );
         assert_eq!(recommendations_json["positive_seeds"][0]["title"], "Anchor");
+    }
+
+    #[test]
+    fn article_section_outcomes_default_to_keyed_not_requested_and_reject_foreign_keys() {
+        let base = serde_json::json!({
+            "title": "Fixture",
+            "author_count": 0,
+            "author_completeness": "unavailable",
+            "author_source": "pubtator"
+        });
+        let article: Article = serde_json::from_value(base.clone()).expect("compatible article");
+        assert_eq!(
+            article
+                .section_outcomes
+                .get("fulltext")
+                .expect("fulltext key")
+                .outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::NotRequested
+        );
+
+        let mut foreign = base.clone();
+        foreign["section_outcomes"] = serde_json::json!({
+            "foreign": {"outcome": "empty", "sources": ["Provider"]}
+        });
+        assert!(serde_json::from_value::<Article>(foreign).is_err());
+
+        let mut empty = base;
+        empty["section_outcomes"] = serde_json::json!({});
+        assert!(serde_json::from_value::<Article>(empty).is_err());
     }
 
     #[test]

@@ -78,6 +78,12 @@ impl NcbiEfetchClient {
         status: reqwest::StatusCode,
         bytes: &[u8],
     ) -> Result<String, BioMcpError> {
+        if matches!(
+            status,
+            reqwest::StatusCode::NOT_FOUND | reqwest::StatusCode::NO_CONTENT
+        ) {
+            return Ok(String::new());
+        }
         if !status.is_success() {
             let excerpt = crate::sources::body_excerpt(bytes);
             return Err(BioMcpError::Api {

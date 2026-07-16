@@ -778,15 +778,10 @@ pub(crate) fn article_section_sources(article: &Article) -> Vec<SectionSource> {
         "Article Indexing",
         ["PubMed"],
     );
-    if let Some(full_text_source) = article.full_text_source.as_ref() {
-        push_section(
-            &mut out,
-            true,
-            "fulltext",
-            "Full Text",
-            [full_text_source.source.as_str()],
-        );
-    }
+    out.extend(outcome_section_sources(
+        &article.section_outcomes,
+        &[("fulltext", "Full Text")],
+    ));
     push_section(
         &mut out,
         article.semantic_scholar.is_some(),
@@ -1813,6 +1808,9 @@ mod tests {
     #[test]
     fn article_section_sources_uses_resolved_fulltext_and_indexing_providers() {
         let mut article = Article {
+            section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+                crate::entities::article::ARTICLE_OUTCOME_KEYS,
+            ),
             pmid: Some("22663011".to_string()),
             pmcid: Some("PMC123456".to_string()),
             doi: Some("10.1000/example".to_string()),
@@ -1843,6 +1841,10 @@ mod tests {
             semantic_scholar: None,
             pubtator_fallback: false,
         };
+        article.section_outcomes.complete(
+            "fulltext",
+            crate::entities::section_outcome::SectionOutcome::data("Europe PMC"),
+        );
 
         let sources = article_section_sources(&article);
         assert!(sources.iter().any(|source| {
@@ -1870,8 +1872,18 @@ mod tests {
     }
 
     #[test]
-    fn article_section_sources_omits_note_only_fulltext_failures() {
+    fn article_section_sources_projects_unavailable_fulltext_without_sources() {
+        let mut outcomes = crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::article::ARTICLE_OUTCOME_KEYS,
+        );
+        outcomes.complete(
+            "fulltext",
+            crate::entities::section_outcome::SectionOutcome::unavailable(
+                "Full text is unavailable because a source failed.",
+            ),
+        );
         let article = Article {
+            section_outcomes: outcomes,
             pmid: Some("22663011".to_string()),
             pmcid: Some("PMC123456".to_string()),
             doi: Some("10.1000/example".to_string()),
@@ -1900,6 +1912,11 @@ mod tests {
         };
 
         let sources = article_section_sources(&article);
-        assert!(!sources.iter().any(|source| source.key == "fulltext"));
+        assert!(sources.iter().any(|source| {
+            source.key == "fulltext"
+                && source.outcome
+                    == crate::entities::section_outcome::SectionOutcomeState::Unavailable
+                && source.sources.is_empty()
+        }));
     }
 }

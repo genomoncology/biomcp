@@ -143,11 +143,9 @@ pub async fn article_asset_bytes(
     }
     match figshare_asset_bytes(&mut article, wanted).await {
         Ok(AssetBytesAttempt::Found(bytes)) => Ok(bytes),
-        Ok(AssetBytesAttempt::AssetMissing) => Err(article_asset_not_found(requested_id, wanted)),
-        Ok(AssetBytesAttempt::SourceAbsent) if !archive_failed => {
-            Err(article_asset_not_found(requested_id, wanted))
-        }
-        Ok(AssetBytesAttempt::SourceAbsent) => Err(asset_sources_unavailable()),
+        Ok(AssetBytesAttempt::AssetMissing | AssetBytesAttempt::SourceAbsent) => Err(
+            final_asset_bytes_error(requested_id, wanted, archive_failed),
+        ),
         Err(_) => {
             tracing::warn!("Figshare request failed for article asset bytes");
             Err(asset_sources_unavailable())
@@ -257,6 +255,14 @@ fn final_asset_source_error(requested_id: &str, failed: bool) -> BioMcpError {
         asset_sources_unavailable()
     } else {
         no_supported_asset_source(requested_id)
+    }
+}
+
+fn final_asset_bytes_error(requested_id: &str, wanted: &str, failed: bool) -> BioMcpError {
+    if failed {
+        asset_sources_unavailable()
+    } else {
+        article_asset_not_found(requested_id, wanted)
     }
 }
 
@@ -994,9 +1000,16 @@ fn child_text(node: Node<'_, '_>, child_name: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    };
+    use crate::test_support::TempDirGuard;
 
     fn sample_article() -> Article {
         Article {
+            section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+                crate::entities::article::ARTICLE_OUTCOME_KEYS,
+            ),
             pmid: Some("22663011".to_string()),
             pmcid: Some("PMC123456".to_string()),
             doi: None,
@@ -1111,6 +1124,82 @@ mod tests {
         ));
         assert!(matches!(
             final_asset_source_error("22663011", true),
+            BioMcpError::SourceUnavailable { .. }
+        ));
+    }
+
+    #[serial_test::serial(article_resolver_env)]
+    #[tokio::test]
+    async fn manifest_and_bytes_preserve_induced_archive_failure_after_figshare_miss() {
+        let fixture = TestHttpFixture::spawn(|request| {
+            let (status, content_type, body) = if request.starts_with(
+                "GET /publications/export/biocjson?",
+            ) {
+                (
+                    "200 OK",
+                    "application/json",
+                    r#"{"PubTator3":[{"pmid":4242,"pmcid":"PMC4242","authors":[],"passages":[{"infons":{"type":"title"},"text":"Asset failure fixture"},{"infons":{"type":"abstract"},"text":"Fixture abstract"}]}]}"#,
+                )
+            } else if request.starts_with("GET /?id=PMC4242") {
+                ("200 OK", "application/xml", "<records>")
+            } else if request.starts_with("GET /PMC4242/supplementaryFiles") {
+                ("404 Not Found", "text/plain", "not found")
+            } else if request.starts_with("GET /graph/v1/paper/PMID:4242") {
+                (
+                    "200 OK",
+                    "application/json",
+                    r#"{"paperId":"paper-4242","title":"Asset failure fixture","openAccessPdf":{"url":"https://aacr.figshare.com/articles/dataset/Fixture/4242"}}"#,
+                )
+            } else if request.starts_with("GET /v2/articles/4242") {
+                (
+                    "200 OK",
+                    "application/json",
+                    r#"{"id":4242,"title":"Asset failure fixture","files":[]}"#,
+                )
+            } else if request.starts_with("POST /v2/articles/search") {
+                ("200 OK", "application/json", "[]")
+            } else {
+                ("404 Not Found", "application/json", r#"{"error":"not found"}"#)
+            };
+            TestHttpReply::Bytes(test_http_response(status, content_type, body.as_bytes()))
+        })
+        .await;
+        let mut env = TestEnv::new();
+        let cache = TempDirGuard::new("article-asset-failure-fold");
+        for key in [
+            "BIOMCP_TEST_UNPACED_ORIGIN",
+            "BIOMCP_PUBTATOR_BASE",
+            "BIOMCP_EUROPEPMC_BASE",
+            "BIOMCP_PMC_OA_BASE",
+            "BIOMCP_S2_BASE",
+            "BIOMCP_FIGSHARE_BASE",
+        ] {
+            env.set(key, &fixture.base);
+        }
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+
+        let manifest_err = article_assets_manifest("4242")
+            .await
+            .expect_err("failed archive plus missing Figshare manifest must be unavailable");
+        assert!(matches!(
+            manifest_err,
+            BioMcpError::SourceUnavailable { .. }
+        ));
+
+        let bytes_err = article_asset_bytes("4242", "missing.csv")
+            .await
+            .expect_err("failed archive plus missing Figshare file must be unavailable");
+        assert!(matches!(bytes_err, BioMcpError::SourceUnavailable { .. }));
+    }
+
+    #[test]
+    fn final_asset_bytes_classification_preserves_prior_failure_after_missing_file() {
+        assert!(matches!(
+            final_asset_bytes_error("22663011", "missing.csv", false),
+            BioMcpError::NotFound { .. }
+        ));
+        assert!(matches!(
+            final_asset_bytes_error("22663011", "missing.csv", true),
             BioMcpError::SourceUnavailable { .. }
         ));
     }

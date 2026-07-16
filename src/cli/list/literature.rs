@@ -33,8 +33,8 @@ pub(super) fn list_article() -> String {
 - `get article <id> tldr` - Semantic Scholar TLDR/influence section (optional auth; shared pool without `S2_API_KEY`)
 - `get article <id> annotations` - PubTator entity mentions
 - `get article <id> indexing` - opt-in PubMed citation authors, affiliations, ORCID, and MeSH headings
-- `get article <id> fulltext` - download/cache full text via XML -> PMC HTML
-- `get article <id> fulltext --pdf` - allow Semantic Scholar PDF after XML and PMC HTML miss
+- `get article <id> fulltext` - download/cache full text via XML -> PMC HTML; JSON distinguishes confirmed empty from unavailable sources
+- `get article <id> fulltext --pdf` - allow Semantic Scholar PDF after XML and PMC HTML miss; failed opt-in discovery remains unavailable
 - `get article <id> assets` - JSON-only article asset manifest (PMC OA, then Europe PMC, then Figshare with same-paper siblings discovered by DOI/title)
 - `get article <id> asset <name>` - return one provider asset as raw bytes with no conversion; handles stay as BioMCP commands
 - Asset quick reference:

@@ -5,6 +5,9 @@ use super::*;
 #[test]
 fn article_batch_item_projection_keeps_requested_id_year_and_top_entities() {
     let article = Article {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::article::ARTICLE_OUTCOME_KEYS,
+        ),
         pmid: Some("22663011".to_string()),
         pmcid: Some("PMC9984800".to_string()),
         doi: Some("10.1056/NEJMoa1203421".to_string()),

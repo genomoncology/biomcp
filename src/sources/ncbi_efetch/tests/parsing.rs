@@ -55,6 +55,18 @@ fn normalize_article_xml_keeps_original_malformed_and_entity_bearing_xml() {
 }
 
 #[test]
+fn decode_text_treats_documented_absence_statuses_as_empty() {
+    assert_eq!(
+        NcbiEfetchClient::decode_text(StatusCode::NOT_FOUND, b"not found").unwrap(),
+        ""
+    );
+    assert_eq!(
+        NcbiEfetchClient::decode_text(StatusCode::NO_CONTENT, b"").unwrap(),
+        ""
+    );
+}
+
+#[test]
 fn decode_text_maps_http_error_status_with_excerpt() {
     let err = NcbiEfetchClient::decode_text(StatusCode::INTERNAL_SERVER_ERROR, b"upstream failure")
         .unwrap_err();

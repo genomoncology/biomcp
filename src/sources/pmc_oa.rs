@@ -299,9 +299,10 @@ fn extract_archive_entries(tgz_bytes: &[u8]) -> Result<Vec<PmcOaArchiveEntry>, B
     use std::io::Read;
 
     if tgz_bytes.len() > MAX_TGZ_BYTES {
-        return Err(BioMcpError::Api {
-            api: PMC_OA_API.to_string(),
-            message: format!("PMC OA archive exceeded {MAX_TGZ_BYTES} bytes"),
+        return Err(BioMcpError::SourceUnavailable {
+            source_name: PMC_OA_API.to_string(),
+            reason: "PMC OA archive failed its resource limit or metadata policy.".to_string(),
+            suggestion: "Try another full-text source or retry later.".to_string(),
         });
     }
 
