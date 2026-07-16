@@ -1011,6 +1011,74 @@ fn article_search_markdown_includes_cross_entity_discover_hint_for_short_keyword
 }
 
 #[test]
+fn article_search_markdown_renders_each_typed_identifier() {
+    let row = |pmid: &str,
+               pmcid: Option<&str>,
+               doi: Option<&str>,
+               arxiv_id: Option<&str>,
+               semantic_scholar_id: Option<&str>| ArticleSearchResult {
+        pmid: pmid.into(),
+        pmcid: pmcid.map(str::to_string),
+        doi: doi.map(str::to_string),
+        arxiv_id: arxiv_id.map(str::to_string),
+        semantic_scholar_id: semantic_scholar_id.map(str::to_string),
+        title: "Typed identifier row".into(),
+        journal: None,
+        date: None,
+        first_index_date: None,
+        citation_count: None,
+        influential_citation_count: None,
+        source: ArticleSource::SemanticScholar,
+        matched_sources: vec![ArticleSource::SemanticScholar],
+        score: None,
+        is_retracted: None,
+        abstract_snippet: None,
+        ranking: None,
+        normalized_title: "typed identifier row".into(),
+        normalized_abstract: String::new(),
+        publication_type: None,
+        source_local_position: 0,
+    };
+    let rows = vec![
+        row("1", None, None, None, None),
+        row("", Some("PMC2"), None, None, None),
+        row("", None, Some("10.1000/example"), None, None),
+        row("", None, None, Some("2401.12345"), None),
+        row("", None, None, None, Some("paper-5")),
+    ];
+
+    let markdown = article_search_markdown_with_footer_and_context(
+        "sort=relevance",
+        &rows,
+        "",
+        &article_filters_for_test(ArticleSort::Relevance),
+        ArticleSearchRenderContext {
+            source_filter: crate::entities::article::ArticleSourceFilter::SemanticScholar,
+            semantic_scholar_enabled: true,
+            warning: None,
+            note: None,
+            debug_plan: None,
+            exact_entity_commands: &[],
+            source_status: &[],
+        },
+    )
+    .expect("typed identifier markdown");
+
+    for identifier in [
+        "PMID 1",
+        "PMCID PMC2",
+        "DOI 10.1000/example",
+        "arXiv 2401.12345",
+        "Semantic Scholar paper-5",
+    ] {
+        assert!(
+            markdown.contains(identifier),
+            "missing {identifier}: {markdown}"
+        );
+    }
+}
+
+#[test]
 fn article_search_markdown_renders_date_sort_warning() {
     let markdown = article_search_markdown_with_footer_and_context(
         "sort=date",
