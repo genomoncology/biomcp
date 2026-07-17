@@ -83,15 +83,28 @@ fn europepmc_result_deserializes_first_index_date() {
 }
 
 #[test]
-fn decode_full_text_xml_returns_none_on_not_found() {
-    let xml = EuropePmcClient::decode_full_text_xml(StatusCode::NOT_FOUND, b"missing").unwrap();
-    assert!(xml.is_none());
+fn decode_full_text_xml_returns_none_on_documented_or_empty_absence() {
+    for (status, body) in [
+        (StatusCode::NOT_FOUND, b"missing".as_slice()),
+        (StatusCode::NO_CONTENT, b"".as_slice()),
+        (StatusCode::OK, b"  \n".as_slice()),
+    ] {
+        let xml = EuropePmcClient::decode_full_text_xml(status, body).unwrap();
+        assert!(xml.is_none(), "expected healthy absence for {status}");
+    }
 }
 
 #[test]
 fn decode_full_text_xml_returns_body_on_success() {
     let xml = EuropePmcClient::decode_full_text_xml(StatusCode::OK, b"<article/>").unwrap();
     assert_eq!(xml, Some("<article/>".to_string()));
+}
+
+#[test]
+fn decode_full_text_xml_rejects_invalid_utf8() {
+    let err = EuropePmcClient::decode_full_text_xml(StatusCode::OK, &[0xff, 0xfe]).unwrap_err();
+    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert!(err.to_string().contains("not valid UTF-8"));
 }
 
 #[test]

@@ -258,17 +258,6 @@ fn pdf_content_type_is_supported(content_type: Option<&reqwest::header::HeaderVa
     media_type.eq_ignore_ascii_case("application/pdf")
 }
 
-#[cfg(test)]
-fn body_limit_error(err: &BioMcpError, max_bytes: usize) -> bool {
-    matches!(
-        err,
-        BioMcpError::BodyLimit {
-            source_name,
-            max_bytes: actual_max,
-        } if source_name == ARTICLE_FULLTEXT_API && *actual_max == max_bytes
-    )
-}
-
 fn pdf_body_signature_matches(body: &[u8]) -> bool {
     body.starts_with(b"%PDF-")
 }
@@ -932,15 +921,6 @@ mod tests {
         ));
     }
 
-    #[test]
-    fn typed_body_limit_error_is_preserved_for_attempt_failure_classification() {
-        let error = BioMcpError::BodyLimit {
-            source_name: ARTICLE_FULLTEXT_API.into(),
-            max_bytes: PDF_MAX_BODY_BYTES,
-        };
-        assert!(body_limit_error(&error, PDF_MAX_BODY_BYTES));
-    }
-
     #[tokio::test]
     async fn semantic_scholar_pdf_policy_rejects_unsafe_urls_without_echoing_them() {
         for raw in [
@@ -1016,6 +996,10 @@ mod tests {
             try_resolve_html("PMC1", "1").await,
             FulltextStepOutcome::Empty
         ));
+        assert!(matches!(
+            try_resolve_pdf(&format!("{}/missing.pdf", not_found.base), "1").await,
+            FulltextStepOutcome::Empty
+        ));
         drop(not_found);
 
         let status_failure = TestHttpFixture::spawn(|_| {
@@ -1028,6 +1012,7 @@ mod tests {
         .await;
         configure_attempt_env(&mut env, &status_failure);
         failed(try_resolve_html("PMC1", "1").await);
+        failed(try_resolve_pdf(&format!("{}/failed.pdf", status_failure.base), "1").await);
         drop(status_failure);
 
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -1038,12 +1023,22 @@ mod tests {
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &refused);
         env.set(PMC_ARTICLE_BASE_ENV, &refused);
         failed(try_resolve_html("PMC1", "1").await);
+        failed(try_resolve_pdf(&format!("{refused}/missing.pdf"), "1").await);
 
-        let oversized = TestHttpFixture::spawn(|_| {
+        let oversized = TestHttpFixture::spawn(|request| {
             TestHttpReply::Bytes(
                 format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    crate::sources::DEFAULT_MAX_BODY_BYTES + 1
+                    "HTTP/1.1 200 OK\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    if request.contains("oversized.pdf") {
+                        "application/pdf"
+                    } else {
+                        "text/html"
+                    },
+                    if request.contains("oversized.pdf") {
+                        PDF_MAX_BODY_BYTES + 1
+                    } else {
+                        crate::sources::DEFAULT_MAX_BODY_BYTES + 1
+                    }
                 )
                 .into_bytes(),
             )
@@ -1054,6 +1049,10 @@ mod tests {
             failed(try_resolve_html("PMC1", "1").await),
             BioMcpError::BodyLimit { .. }
         ));
+        assert!(matches!(
+            failed(try_resolve_pdf(&format!("{}/oversized.pdf", oversized.base), "1").await),
+            BioMcpError::BodyLimit { .. }
+        ));
         drop(oversized);
 
         let unsupported = TestHttpFixture::spawn(|_| {
@@ -1062,6 +1061,7 @@ mod tests {
         .await;
         configure_attempt_env(&mut env, &unsupported);
         failed(try_resolve_html("PMC1", "1").await);
+        failed(try_resolve_pdf(&format!("{}/unsupported.pdf", unsupported.base), "1").await);
         drop(unsupported);
 
         let invalid_utf8 = TestHttpFixture::spawn(|_| {
@@ -1098,13 +1098,17 @@ mod tests {
     }
 
     #[test]
-    fn typed_timeout_failure_is_retained_by_attempt_state() {
-        let timeout = BioMcpError::HttpMiddleware(reqwest_middleware::Error::Middleware(
-            anyhow::anyhow!("operation timed out"),
+    fn typed_timeout_failure_survives_later_healthy_miss_in_final_fold() {
+        let mut state = FulltextAttemptState::default();
+        state.record_failure(BioMcpError::HttpMiddleware(
+            reqwest_middleware::Error::Middleware(anyhow::anyhow!("operation timed out")),
         ));
-        let err = failed(FulltextStepOutcome::Failed(timeout));
+        state.record_empty("PMC");
 
-        assert!(matches!(err, BioMcpError::HttpMiddleware(_)));
+        assert_eq!(
+            final_fulltext_outcome(&state).outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::Unavailable
+        );
     }
 
     #[serial_test::serial(article_resolver_env)]
