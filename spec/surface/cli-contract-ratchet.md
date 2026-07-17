@@ -145,6 +145,45 @@ print("shipped docs omit retired suggest command")
 ' | mustmatch like "shipped docs omit retired suggest command"
 ```
 
+## Trial mutation help explains inclusion verification
+
+A mutation-bearing caller should learn at the flag itself that BioMCP checks
+simple molecular text against registry eligibility after broad CTGov discovery.
+The help also keeps the recall and boolean-expression boundaries explicit.
+
+```bash
+biomcp search trial --help | mustmatch like "checks simple mutation text against registry eligibility
+removes exclusion-only matches
+keeps matches when mutation text is absent from eligibility
+boolean expressions remain discovery-only"
+```
+
+## Trial mutation list reference explains inclusion verification
+
+The agent-facing list page is the compact trial reference, so it must teach the
+same inclusion/exclusion behavior and limits rather than describing only the
+upstream free-text query.
+
+```bash
+biomcp list trial | mustmatch like "checks simple mutation text against registry eligibility
+removes exclusion-only matches
+keeps matches when mutation text is absent from eligibility
+boolean expressions remain discovery-only"
+```
+
+## Trial mutation user docs explain inclusion verification
+
+The trial guide and CLI reference should stay aligned with help and `list`:
+simple molecular text gains a precision-oriented eligibility check without
+turning absent registry wording or boolean expressions into strict matches.
+
+```bash
+cat ../../docs/user-guide/trial.md ../../docs/user-guide/cli-reference.md | mustmatch like "checks simple mutation text against registry eligibility
+removes exclusion-only matches
+keeps matches when mutation text is absent from eligibility
+boolean expressions remain discovery-only"
+```
+
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
 
 The cache configuration reference promises an operator env override for the
