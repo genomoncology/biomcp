@@ -78,6 +78,12 @@ impl NcbiEfetchClient {
         status: reqwest::StatusCode,
         bytes: &[u8],
     ) -> Result<String, BioMcpError> {
+        if matches!(
+            status,
+            reqwest::StatusCode::NOT_FOUND | reqwest::StatusCode::NO_CONTENT
+        ) {
+            return Ok(String::new());
+        }
         if !status.is_success() {
             let excerpt = crate::sources::body_excerpt(bytes);
             return Err(BioMcpError::Api {
@@ -85,7 +91,12 @@ impl NcbiEfetchClient {
                 message: format!("HTTP {status}: {excerpt}"),
             });
         }
-        Ok(String::from_utf8_lossy(bytes).to_string())
+        std::str::from_utf8(bytes)
+            .map(str::to_string)
+            .map_err(|_| BioMcpError::Api {
+                api: NCBI_EFETCH_API.to_string(),
+                message: "Full text XML response was not valid UTF-8".to_string(),
+            })
     }
 
     async fn get_text(

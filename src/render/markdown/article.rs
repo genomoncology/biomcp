@@ -63,6 +63,7 @@ pub fn article_markdown(
         publication_type => &article.publication_type,
         open_access => &article.open_access,
         abstract_text => &article.abstract_text,
+        fulltext_outcome => article.section_outcomes.get("fulltext"),
         full_text_path => &article.full_text_path,
         full_text_note => &article.full_text_note,
         full_text_source => &article.full_text_source,

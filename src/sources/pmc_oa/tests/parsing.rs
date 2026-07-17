@@ -2,9 +2,9 @@
 //! parsers. No network, no server.
 
 use super::super::{
-    MAX_ARCHIVE_ENTRIES, MAX_ARCHIVE_ENTRY_BYTES, PmcOaArchivePackage, decode_archive_bytes,
-    decode_text, extract_archive_entries, extract_first_nxml, parse_archive_manifest_xml,
-    safe_archive_name,
+    MAX_ARCHIVE_ENTRIES, MAX_ARCHIVE_ENTRY_BYTES, MAX_ARCHIVE_METADATA_BYTES, MAX_TGZ_BYTES,
+    PmcOaArchivePackage, decode_archive_bytes, decode_text, extract_archive_entries,
+    extract_first_nxml, parse_archive_manifest_xml, safe_archive_name,
 };
 use crate::error::BioMcpError;
 use flate2::Compression;
@@ -53,6 +53,42 @@ fn tgz_with_numbered_entries(count: usize) -> Vec<u8> {
 
     let mut gz = GzEncoder::new(Vec::new(), Compression::default());
     gz.write_all(&tar_buf).expect("gzip should write tar");
+    gz.finish().expect("gzip should finish")
+}
+
+fn tgz_with_repeated_entries(count: usize, size: usize) -> Vec<u8> {
+    let body = vec![b'x'; size];
+    let mut gz = GzEncoder::new(Vec::new(), Compression::fast());
+    {
+        let mut builder = Builder::new(&mut gz);
+        for index in 0..count {
+            let mut header = Header::new_gnu();
+            header.set_size(size as u64);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder
+                .append_data(&mut header, format!("entry-{index}.bin"), body.as_slice())
+                .expect("archive entry should append");
+        }
+        builder.finish().expect("tar should finish");
+    }
+    gz.finish().expect("gzip should finish")
+}
+
+fn tgz_with_long_name(name_size: usize) -> Vec<u8> {
+    let mut gz = GzEncoder::new(Vec::new(), Compression::fast());
+    {
+        let mut builder = Builder::new(&mut gz);
+        let name = format!("{}.txt", "a".repeat(name_size));
+        let mut header = Header::new_gnu();
+        header.set_size(1);
+        header.set_mode(0o644);
+        header.set_cksum();
+        builder
+            .append_data(&mut header, name, &b"x"[..])
+            .expect("archive entry should append");
+        builder.finish().expect("tar should finish");
+    }
     gz.finish().expect("gzip should finish")
 }
 
@@ -211,12 +247,49 @@ fn extract_archive_entries_rejects_too_many_members() {
 }
 
 #[test]
+fn extract_archive_entries_rejects_aggregate_expansion() {
+    let aggregate = tgz_with_repeated_entries(
+        (super::super::MAX_ARCHIVE_EXPANDED_BYTES / MAX_ARCHIVE_ENTRY_BYTES + 1) as usize,
+        MAX_ARCHIVE_ENTRY_BYTES as usize,
+    );
+    let err = extract_archive_entries(&aggregate).expect_err("aggregate cap should reject");
+    assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
+}
+
+#[test]
+fn extract_archive_entries_rejects_single_metadata_record_over_limit() {
+    let metadata = tgz_with_long_name(MAX_ARCHIVE_METADATA_BYTES as usize + 1);
+    let err = extract_archive_entries(&metadata).expect_err("metadata cap should reject");
+    assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
+}
+
+#[test]
+fn direct_buffered_archive_limit_is_sanitized() {
+    let oversized = vec![0; MAX_TGZ_BYTES + 1];
+    let err = extract_archive_entries(&oversized).expect_err("compressed cap should reject");
+    assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
+    assert!(!err.to_string().contains(&MAX_TGZ_BYTES.to_string()));
+}
+
+#[test]
 fn decode_text_maps_http_error_status_with_excerpt() {
     let err = decode_text(StatusCode::INTERNAL_SERVER_ERROR, b"upstream failure").unwrap_err();
     let msg = err.to_string();
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(msg.contains("pmc-oa"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
+}
+
+#[test]
+fn text_and_fulltext_archive_decoders_reject_invalid_utf8() {
+    let manifest_err = decode_text(StatusCode::OK, b"<records>\xff</records>")
+        .expect_err("invalid manifest bytes must remain a source failure");
+    assert!(matches!(manifest_err, BioMcpError::Api { .. }));
+
+    let archive = tgz_with_entries(&[("article.nxml", b"<article>\xff</article>")]);
+    let article_err = extract_first_nxml(&archive)
+        .expect_err("invalid article XML bytes must remain a source failure");
+    assert!(matches!(article_err, BioMcpError::Api { .. }));
 }
 
 #[test]

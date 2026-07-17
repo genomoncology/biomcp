@@ -272,7 +272,10 @@ impl EuropePmcClient {
         status: reqwest::StatusCode,
         bytes: &[u8],
     ) -> Result<Option<String>, BioMcpError> {
-        if status == reqwest::StatusCode::NOT_FOUND {
+        if matches!(
+            status,
+            reqwest::StatusCode::NOT_FOUND | reqwest::StatusCode::NO_CONTENT
+        ) {
             return Ok(None);
         }
         if !status.is_success() {
@@ -282,8 +285,15 @@ impl EuropePmcClient {
                 message: format!("HTTP {status}: {excerpt}"),
             });
         }
+        let xml = std::str::from_utf8(bytes).map_err(|_| BioMcpError::Api {
+            api: EUROPE_PMC_API.to_string(),
+            message: "Full text XML response was not valid UTF-8".to_string(),
+        })?;
+        if xml.trim().is_empty() {
+            return Ok(None);
+        }
 
-        Ok(Some(String::from_utf8_lossy(bytes).to_string()))
+        Ok(Some(xml.to_string()))
     }
 
     pub async fn get_full_text_xml(

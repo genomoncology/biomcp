@@ -35,6 +35,9 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
 #[test]
 fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
     let mut article = Article {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::article::ARTICLE_OUTCOME_KEYS,
+        ),
         pmid: Some("22663011".to_string()),
         pmcid: None,
         doi: Some("10.1000/example".to_string()),
@@ -163,7 +166,10 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
 
 #[test]
 fn article_markdown_renders_resolved_fulltext_source_label() {
-    let article = Article {
+    let mut article = Article {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::article::ARTICLE_OUTCOME_KEYS,
+        ),
         pmid: Some("22663011".to_string()),
         pmcid: Some("PMC123456".to_string()),
         doi: Some("10.1000/example".to_string()),
@@ -201,6 +207,10 @@ fn article_markdown_renders_resolved_fulltext_source_label() {
         semantic_scholar: None,
         pubtator_fallback: false,
     };
+    article.section_outcomes.complete(
+        "fulltext",
+        crate::entities::section_outcome::SectionOutcome::data("Europe PMC"),
+    );
 
     let markdown =
         article_markdown(&article, &["fulltext".to_string()]).expect("markdown should render");

@@ -442,6 +442,67 @@ source identity plus ranking metadata available to automation.
 Annotations remain a first-class deepen path. The section should keep the
 PubTator heading and explain that the extracted entities are normalized.
 
+## Full-Text Distinguishes Confirmed Absence from Source Unavailability
+
+A base article card does not consult the full-text ladder. Its entity-owned
+outcome records that the section was not requested, and provenance does not
+claim that a full-text source ran.
+
+```bash
+../../tools/biomcp-ci --json get article 22663011 \
+  | jq '(.section_outcomes.fulltext == {"outcome":"not_requested","sources":[]}) and (._meta.section_sources | any(.key == "fulltext") | not)' \
+  | mustmatch 'true'
+```
+
+When a provider returns usable full text, the outcome records data and JSON
+provenance mirrors the successful sources rather than deriving a second answer.
+
+```bash
+../../tools/biomcp-ci --json get article 22663011 fulltext \
+  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "data") and (($outcome.sources | length) > 0) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "data" and .sources == $outcome.sources))' \
+  | mustmatch 'true'
+```
+
+A completed resolver ladder can confidently report that no supported full text
+was found. The entity-owned outcome and JSON provenance both record that
+healthy empty result, while the readable view stays free of degradation claims.
+
+```bash
+../../tools/biomcp-ci --json get article 22663014 fulltext \
+  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "empty") and (($outcome.sources | length) > 0) and ($outcome.sources | all(. != "NCBI ID Converter")) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "empty" and .sources == $outcome.sources))' \
+  | mustmatch 'true'
+```
+
+```bash
+../../tools/biomcp-ci get article 22663014 fulltext \
+  | mustmatch '/(?im)^## Full Text[^\n]*\n\s*\n[^\n]*(no full text|full text[^\n]*not available)/'
+```
+
+```bash
+../../tools/biomcp-ci get article 22663014 fulltext \
+  | mustmatch not '/(?i)unavailable/'
+```
+
+A provider failure means the ladder could not establish absence. Even when the
+remaining sources return healthy misses, JSON and Markdown retain the
+unavailable state instead of making the confident all-sources-empty claim.
+
+```bash
+../../tools/biomcp-ci --json get article 22663019 fulltext \
+  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "unavailable") and ($outcome.sources == []) and (($outcome.message // "") | test("unavailable"; "i")) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|signed\\.example\\.invalid|token=secret"; "i")) | not) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "unavailable" and .sources == $outcome.sources))' \
+  | mustmatch 'true'
+```
+
+```bash
+../../tools/biomcp-ci get article 22663019 fulltext \
+  | mustmatch '/(?im)^## Full Text[^\n]*\n\s*\n[^\n]*unavailable/'
+```
+
+```bash
+../../tools/biomcp-ci get article 22663019 fulltext \
+  | mustmatch not '/(?i)(sources.*did not return full text|SENSITIVE-UPSTREAM-DETAIL|signed\.example\.invalid|token=secret)/'
+```
+
 ## Full-Text HTML Fallback
 
 When the XML ladder misses, BioMCP should fall back to the PMC HTML article page

@@ -267,6 +267,12 @@ ARTICLES = {
         "abstract": "Abstract text.",
         "paper_id": "paper-8",
     },
+    "22663019": {
+        "pmcid": "PMC123462",
+        "title": "Resolver failure control",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-9",
+    },
 }
 
 
@@ -630,7 +636,16 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/22663014/fullTextXML":
+        if decoded_path == "/PMC123462/fullTextXML":
+            send_text(
+                self,
+                500,
+                "SENSITIVE-UPSTREAM-DETAIL https://signed.example.invalid/article?token=secret",
+                "text/plain",
+            )
+            return
+
+        if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML"}:
             append_request_log("fulltext:xml:europepmc-med")
             send_text(self, 404, "not found", "text/plain")
             return
@@ -663,7 +678,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/" and query.get("id") == ["PMC123459"]:
+        if decoded_path == "/" and query.get("id") in (["PMC123459"], ["PMC123462"]):
             append_request_log("fulltext:xml:pmc-oa-archive")
             send_text(self, 200, "<records></records>", "application/xml")
             return
@@ -680,7 +695,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/articles/PMC123459/":
+        if decoded_path in {"/articles/PMC123459/", "/articles/PMC123462/"}:
             append_request_log("fulltext:html:pmc")
             send_text(self, 404, "not found", "text/plain")
             return
@@ -876,8 +891,10 @@ class Handler(BaseHTTPRequestHandler):
                 append_request_log("indexing:xml:pubmed-efetch")
                 send_text(self, 200, PUBMED_INDEXING_XML, "application/xml")
                 return
-            if query.get("id") == ["123459"]:
+            if query.get("id") in (["123459"], ["123462"]):
                 append_request_log("fulltext:xml:ncbi-efetch-pmc")
+                send_text(self, 200, "", "application/xml")
+                return
             send_text(self, 404, "not found", "text/plain")
             return
 

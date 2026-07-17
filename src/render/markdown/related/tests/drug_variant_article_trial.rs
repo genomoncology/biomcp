@@ -318,6 +318,7 @@ fn related_variant_pathogenic_keeps_drug_target_without_vus_literature_pivot() {
 #[test]
 fn related_article_uses_article_entities_helper_command() {
     let article = Article {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(crate::entities::article::ARTICLE_OUTCOME_KEYS),
         pmid: Some("22663011".to_string()),
         pmcid: None,
         doi: None,

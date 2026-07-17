@@ -53,10 +53,10 @@ These are PubTator normalized entity mentions for standardized extraction of gen
 - Mutations: {% for m in annotations.mutations -%}{{ m.text }} ({{ m.count }}){% if not loop.last %}, {% endif %}{% endfor %}
 {% endif -%}
 {% endif -%}
-{% if show_fulltext_section and (full_text_path or full_text_note) -%}
-## Full Text{% if full_text_source %} ({{ full_text_source.label }}){% endif %}
+{% if show_fulltext_section and fulltext_outcome and fulltext_outcome.outcome != "not_requested" -%}
+## Full Text{% if fulltext_outcome.outcome == "data" and full_text_source %} ({{ full_text_source.label }}){% endif %}
 
-{% if full_text_path -%}
+{% if fulltext_outcome.outcome == "data" -%}
 Saved to: {{ full_text_path }}
 {% if not_included -%}
 

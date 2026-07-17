@@ -4,6 +4,9 @@ use super::article_follow_up_workflow;
 
 fn article_with_signal() -> crate::entities::article::Article {
     crate::entities::article::Article {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::article::ARTICLE_OUTCOME_KEYS,
+        ),
         pmid: Some("12345678".to_string()),
         pmcid: None,
         doi: None,

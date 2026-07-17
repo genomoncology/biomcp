@@ -219,7 +219,10 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
 
 #[test]
 fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
-    let article = Article {
+    let mut article = Article {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::article::ARTICLE_OUTCOME_KEYS,
+        ),
         pmid: Some("22663011".to_string()),
         pmcid: Some("PMC9984800".to_string()),
         doi: Some("10.1000/example".to_string()),
@@ -262,6 +265,12 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         }),
         pubtator_fallback: false,
     };
+    article.section_outcomes.complete(
+        "fulltext",
+        crate::entities::section_outcome::SectionOutcome::unavailable(
+            "Full text is unavailable because a source failed.",
+        ),
+    );
     let article_markdown = article_markdown(&article, &["all".to_string()]).expect("article");
     assert!(article_markdown.contains("Source: PubMed / Europe PMC"));
     assert!(article_markdown.contains("## Authors (PubTator3)"));

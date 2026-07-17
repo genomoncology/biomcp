@@ -244,6 +244,13 @@ open-access and explicit PDF fallback status. JSON fulltext also reports
 `not_included` counts and points to the OA package asset manifest when figure
 images, supplementary files, or complex tables are not inlined.
 
+JSON always exposes `section_outcomes.fulltext`: base cards are
+`not_requested`, successful retrieval is `data`, an all-healthy ladder with no
+winner is `empty`, and a ladder with any failed eligible source and no winner is
+`unavailable`. `_meta.section_sources` mirrors that same outcome and provider
+list. Markdown uses the same state, so confirmed absence says full text was not
+found while incomplete retrieval says it is unavailable.
+
 Article assets:
 
 ```bash
@@ -262,8 +269,11 @@ not provider download URLs. Europe PMC reuse remains unknown unless article
 metadata or a retained PMC OA manifest supplies a license; retained licenses
 name PMC OA as their source. A healthy provider ladder with no package returns
 `not_found`, while a failed source with no successful fallback returns
-`source_unavailable` rather than claiming that assets are absent. Figshare
-supplement PDFs and tables remain assets, not full-text article substitutes.
+`source_unavailable` rather than claiming that assets are absent. This also
+holds when an earlier archive provider failed and a healthy Figshare collection
+lacks the requested filename. A filename missing from an already selected
+successful package remains `not_found`. Figshare supplement PDFs and tables
+remain assets, not full-text article substitutes.
 
 Opt in to the final PDF rung only when you want the last-resort open-access PDF
 path after XML and PMC HTML both miss:
@@ -274,8 +284,10 @@ biomcp get article 22663011 fulltext --pdf
 
 With `--pdf`, BioMCP can use a Semantic Scholar open-access PDF URL from an
 explicitly allowed Semantic Scholar/CDN HTTPS origin as the final fallback and
-labels the winner as `Semantic Scholar PDF`. Other provider-returned origins are
-rejected before contact. `--pdf` is only valid with the `fulltext` section;
+labels the winner as `Semantic Scholar PDF`. A successful lookup with no PDF is
+a healthy absence; a failed lookup contributes unavailable state only when PDF
+fallback was requested. Other provider-returned origins are rejected before
+contact. `--pdf` is only valid with the `fulltext` section;
 `biomcp get article 22663011 --pdf` is rejected instead of silently doing
 nothing.
 

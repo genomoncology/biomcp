@@ -530,16 +530,19 @@ pub async fn get(
         enrich_article_with_indexing(&mut article).await;
     }
 
-    if let Err(err) = enrich_article_with_semantic_scholar(&mut article).await {
+    let semantic_scholar_enrichment = enrich_article_with_semantic_scholar(&mut article).await;
+    if let Err(err) = semantic_scholar_enrichment.as_ref() {
         warn!(?err, "Semantic Scholar enrichment failed");
     }
+    let pdf_discovery =
+        fulltext::pdf_discovery_attempt(&article, options.allow_pdf, semantic_scholar_enrichment);
 
     if section_only && !section_flags.include_annotations {
         article.annotations = None;
     }
 
     if section_flags.include_fulltext {
-        fulltext::resolve_fulltext(&mut article, id, options).await?;
+        fulltext::resolve_fulltext(&mut article, id, pdf_discovery).await?;
         if options.include_asset_summary {
             super::assets::attach_not_included(&mut article, id).await;
         }

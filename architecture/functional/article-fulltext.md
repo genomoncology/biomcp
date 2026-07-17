@@ -25,6 +25,12 @@ the selected asset bytes without conversion. A successful manifest makes an unkn
 true asset miss; without a winner, any source failure produces
 `source_unavailable`, while all-healthy absence produces `not_found`.
 
+PMC OA TGZ processing is bounded at the compressed body, entry count,
+per-member size, aggregate expanded size, and archive metadata levels. Checked
+accounting and safe path normalization run before member allocation/read;
+over-limit results cross the provider boundary only as sanitized source
+unavailability.
+
 Full text is saved as a local Markdown artifact. BioMCP prints a source-labeled
 fulltext heading and `Saved to:` path, but it does not inline the full article
 body in the article card.
@@ -64,9 +70,14 @@ Runtime eligibility is separate from license and reuse guidance:
 - PMC HTML accepts `text/html` or `application/xhtml+xml`.
 - PDF accepts `application/pdf` or a `%PDF-` body signature.
 
-Unsupported content types, missing upstream records, oversized HTML/PDF bodies,
-conversion failures, and empty converted output are resolver misses. They do
-not become user-facing hard errors while a later eligible rung can still win.
+Each eligible rung is classified before the ladder is folded. A documented
+not-found/no-content response is a healthy absence. Initialization, identity,
+authentication, throttling, transport, timeout, 5xx, body-limit, malformed or
+unsupported content, decode, conversion, worker, and empty-conversion errors are
+failures. XML conversion belongs to each XML rung, so malformed or empty XML can
+fall through to later XML, HTML, or opt-in PDF sources. A later usable result
+always wins; without a winner, a later healthy absence cannot erase an earlier
+failure.
 
 BioMCP does not enforce article-level reuse licenses at runtime. Users must
 review provider terms and the returned article license context before reusing or
@@ -109,9 +120,14 @@ structured `not_included` summary for figure images, supplementary files, and
 complex tables plus asset retrieval next commands. Non-PMC Figshare assets stay
 on the explicit asset surface; they are not parsed into full text or treated as
 the `fulltext --pdf` article-body fallback.
-JSON `_meta.section_sources` includes a `fulltext` row only
-when `full_text_source` exists. Note-only misses do not publish a `fulltext`
-provenance row.
+Every Article owns `section_outcomes.fulltext`. A base card records
+`not_requested`; a requested ladder completes it once as `data`, `empty`, or
+`unavailable`. JSON `_meta.section_sources` projects that entity-owned outcome:
+`data` retains its winning provider and `empty` retains healthy consulted
+content providers; `unavailable` has no successful sources, and `not_requested`
+is omitted. The compatible
+`full_text_path`, `full_text_source`, `full_text_manifest`, and `full_text_note`
+fields agree with the same outcome.
 
 ## JATS Markdown Coverage
 
@@ -132,12 +148,13 @@ dropping the grid; full span flattening remains out of scope.
 A winning source is visible through the Markdown heading label,
 `full_text_source`, `full_text_manifest`, and `_meta.section_sources`.
 
-There is no public per-leg trace in Markdown or JSON. XML API errors are
-recorded internally and may collapse into `Full text not available: API error`
-when no later eligible source wins. HTML and PDF fetch, conversion, or
-content-type failures are misses. Semantic Scholar enrichment failure is
-swallowed as a warning before fulltext resolution; with `--pdf`, that can make
-PDF ineligible without a PDF-specific public note.
+There is no public per-leg trace in Markdown or JSON. With no winner, an
+all-healthy ladder reports confirmed absence (`empty`) while any failed eligible
+consultation reports a bounded, sanitized `unavailable` outcome and in-band
+Markdown note. Opt-in Semantic Scholar discovery is part of that fold: no PDF is
+a healthy absence, discovery failure is a failure, and discovery has no effect
+without `--pdf`. Saved-artifact failure remains a returned BioMCP error after a
+source winner because local delivery, not provider availability, failed.
 
 ## Module Ownership
 

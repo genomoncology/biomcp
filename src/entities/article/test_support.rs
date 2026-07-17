@@ -14,6 +14,96 @@ pub(super) use crate::error::BioMcpError;
 #[allow(unused_imports)]
 pub(super) use crate::sources::europepmc::EuropePmcSort;
 
+pub(super) struct TestEnv {
+    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+}
+
+impl TestEnv {
+    pub(super) fn new() -> Self {
+        Self {
+            previous: Vec::new(),
+        }
+    }
+
+    pub(super) fn set(&mut self, key: &'static str, value: impl AsRef<std::ffi::OsStr>) {
+        if !self.previous.iter().any(|(existing, _)| *existing == key) {
+            self.previous.push((key, std::env::var_os(key)));
+        }
+        // SAFETY: article tests that mutate provider variables use the same serial-test key.
+        unsafe { std::env::set_var(key, value) };
+    }
+}
+
+impl Drop for TestEnv {
+    fn drop(&mut self) {
+        for (key, previous) in self.previous.drain(..).rev() {
+            // SAFETY: article tests that mutate provider variables use the same serial-test key.
+            unsafe {
+                if let Some(value) = previous {
+                    std::env::set_var(key, value);
+                } else {
+                    std::env::remove_var(key);
+                }
+            }
+        }
+    }
+}
+
+pub(super) enum TestHttpReply {
+    Bytes(Vec<u8>),
+}
+
+pub(super) struct TestHttpFixture {
+    pub(super) base: String,
+    task: tokio::task::JoinHandle<()>,
+}
+
+impl TestHttpFixture {
+    pub(super) async fn spawn(
+        handler: impl Fn(&str) -> TestHttpReply + Send + Sync + 'static,
+    ) -> Self {
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind article fixture");
+        let address = listener.local_addr().expect("article fixture address");
+        let handler = std::sync::Arc::new(handler);
+        let task = tokio::spawn(async move {
+            while let Ok((mut stream, _)) = listener.accept().await {
+                let handler = handler.clone();
+                tokio::spawn(async move {
+                    let mut request = vec![0_u8; 16 * 1024];
+                    let length = stream.read(&mut request).await.unwrap_or(0);
+                    let request = String::from_utf8_lossy(&request[..length]);
+                    let TestHttpReply::Bytes(response) = handler(&request);
+                    let _ = stream.write_all(&response).await;
+                });
+            }
+        });
+        Self {
+            base: format!("http://{address}"),
+            task,
+        }
+    }
+}
+
+impl Drop for TestHttpFixture {
+    fn drop(&mut self) {
+        self.task.abort();
+    }
+}
+
+pub(super) fn test_http_response(status: &str, content_type: &str, body: &[u8]) -> Vec<u8> {
+    let mut response = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+        body.len()
+    )
+    .into_bytes();
+    response.extend_from_slice(body);
+    response
+}
+
 pub(super) fn empty_filters() -> ArticleSearchFilters {
     ArticleSearchFilters {
         gene: None,

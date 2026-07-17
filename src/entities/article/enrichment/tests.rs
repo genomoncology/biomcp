@@ -104,6 +104,9 @@ fn article_base_merge_fills_abstract_when_semantic_scholar_has_none() {
         Some(false),
     );
     let article = Article {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            crate::entities::article::ARTICLE_OUTCOME_KEYS,
+        ),
         pmid: Some("8896569".into()),
         pmcid: None,
         doi: None,
