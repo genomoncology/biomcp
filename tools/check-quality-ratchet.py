@@ -1320,6 +1320,13 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
         "pathway": ("src/entities/pathway.rs", "PATHWAY_OUTCOME_KEYS"),
         "protein": ("src/entities/protein.rs", "PROTEIN_OUTCOME_KEYS"),
     }
+    runtime_key_factories = {
+        "diagnostic": "src/entities/diagnostic/mod.rs",
+        "disease": "src/entities/disease/mod.rs",
+        "drug": "src/entities/drug/mod.rs",
+        "pgx": "src/entities/pgx.rs",
+        "variant": "src/entities/variant/mod.rs",
+    }
     runtime_key_mismatches = []
     for entity, (relative, constant) in runtime_key_lists.items():
         expected = {key for row_entity, key in state_rows if row_entity == entity}
@@ -1327,6 +1334,16 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
         runtime_key_mismatches.extend(
             {"entity": entity, "section": key} for key in sorted(expected ^ actual)
         )
+    for entity, relative in runtime_key_factories.items():
+        expected = {key for row_entity, key in state_rows if row_entity == entity}
+        source = re.sub(
+            r"\s+", "", (root_dir / relative).read_text(encoding="utf-8")
+        )
+        factory_call = f'SectionOutcomes::with_keys(&outcome_keys("{entity}"))'
+        if factory_call not in source:
+            runtime_key_mismatches.extend(
+                {"entity": entity, "section": key} for key in sorted(expected)
+            )
 
     canonical_targets = {
         (entity, canonical)

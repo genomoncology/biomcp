@@ -56,7 +56,7 @@ inferring success from an empty collection.
 
 ```bash
 ../../tools/biomcp-ci --json get gene BRAF go interactions \
-  | jq '[{"entity": .section_outcomes.go.outcome, "provenance": (._meta.section_sources | map(select(.key == "go")) | if length == 1 then .[0].outcome else null end)}, {"entity": .section_outcomes.interactions.outcome, "provenance": (._meta.section_sources | map(select(.key == "interactions")) | if length == 1 then .[0].outcome else null end)}] | all(.[]; (.entity | IN("data", "empty", "unavailable")) and .entity == .provenance)' \
+  | jq '. as $root | ["go", "interactions"] | all(.[]; . as $key | $root.section_outcomes[$key] as $outcome | ($outcome.outcome | IN("data", "empty", "unavailable")) and ($root._meta.section_sources | any(.key == $key and .outcome == $outcome.outcome and .sources == $outcome.sources)) and ($root._meta.section_sources | all(.key != $key or (.outcome == $outcome.outcome and .sources == $outcome.sources))))' \
   | mustmatch 'true'
 ```
 

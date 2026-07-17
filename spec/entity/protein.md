@@ -49,7 +49,7 @@ same outcomes appear in provenance even when a provider has no rows to return.
 
 ```bash
 ../../tools/biomcp-ci --json get protein P15056 domains interactions complexes \
-  | jq '[{"entity": .section_outcomes.domains.outcome, "provenance": (._meta.section_sources | map(select(.key == "domains")) | if length == 1 then .[0].outcome else null end)}, {"entity": .section_outcomes.interactions.outcome, "provenance": (._meta.section_sources | map(select(.key == "interactions")) | if length == 1 then .[0].outcome else null end)}, {"entity": .section_outcomes.complexes.outcome, "provenance": (._meta.section_sources | map(select(.key == "complexes")) | if length == 1 then .[0].outcome else null end)}] | all(.[]; (.entity | IN("data", "empty", "unavailable")) and .entity == .provenance)' \
+  | jq '. as $root | ["domains", "interactions", "complexes"] | all(.[]; . as $key | $root.section_outcomes[$key] as $outcome | ($outcome.outcome | IN("data", "empty", "unavailable")) and ($root._meta.section_sources | any(.key == $key and .outcome == $outcome.outcome and .sources == $outcome.sources)) and ($root._meta.section_sources | all(.key != $key or (.outcome == $outcome.outcome and .sources == $outcome.sources))))' \
   | mustmatch 'true'
 ```
 

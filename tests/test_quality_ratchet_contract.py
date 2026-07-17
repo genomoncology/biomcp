@@ -1113,6 +1113,19 @@ def test_source_state_registry_rejects_unmapped_and_stale_sections(
         for row in stale["stale_registry_entries"]
     )
 
+    without_keyed_default = original.replace(
+        'SectionOutcomes::with_keys(&outcome_keys("disease"))',
+        "SectionOutcomes::default()",
+        1,
+    )
+    assert without_keyed_default != original
+    disease.write_text(without_keyed_default, encoding="utf-8")
+    runtime_default_drift = ratchet.check_source_state_registry(fixture_root)
+    assert runtime_default_drift["status"] == "fail"
+    assert {"entity": "disease", "section": "survival"} in runtime_default_drift[
+        "runtime_key_mismatches"
+    ]
+
     disease.write_text(original, encoding="utf-8")
     architecture_text = architecture.read_text(encoding="utf-8")
     architecture_without_survival = architecture_text.replace(

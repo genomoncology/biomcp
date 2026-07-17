@@ -416,8 +416,9 @@ The exact representation is not universal across the repo. Some sections label
 individual rows, some label source groups, and some preserve provenance through
 source-specific notes and identifiers.
 
-Gene, drug approvals, adverse-event source search, protein, and pathway use an
-entity-owned `section_outcomes` registry for optional sections. Its states are
+Optional source-backed sections across gene, article, pathway, protein, drug,
+adverse-event search, disease, variant, PGx, and diagnostic entities use an
+entity-owned `section_outcomes` registry. Its states are
 `not_requested`, `data`, `empty`, `degraded`, and `unavailable`. `empty` means a
 healthy source confirmed zero rows; `unavailable` means no usable result was
 obtained. `sources` credits only providers that returned usable evidence, so an

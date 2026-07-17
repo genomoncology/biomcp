@@ -42,6 +42,6 @@ so an agent can distinguish evidence from an inferred default.
 
 ```bash
 timeout 20s ../../tools/biomcp-ci --json get disease --name "chronic myeloid leukemia" survival \
-  | jq '(.section_outcomes.survival == {"outcome":"data","sources":["SEER Explorer"]}) and (._meta.section_sources | any(.key == "survival" and .outcome == "data" and .sources == ["SEER Explorer"]))' \
+  | jq '(.section_outcomes.survival == {"outcome":"data","sources":["SEER Explorer"]}) and (._meta.section_sources | any(.key == "survival" and .outcome == "data" and .sources == ["SEER Explorer"]) and all(.key != "survival" or (.outcome == "data" and .sources == ["SEER Explorer"])))' \
   | mustmatch 'true'
 ```

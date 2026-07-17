@@ -215,6 +215,15 @@ fn survival_catalog_resolution_sets_truthful_note_for_unmapped_disease() {
         disease.survival_note.as_deref(),
         Some(SURVIVAL_NO_DATA_NOTE)
     );
+    let outcome = disease
+        .section_outcomes
+        .get(DISEASE_SECTION_SURVIVAL)
+        .expect("survival outcome");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Empty
+    );
+    assert_eq!(outcome.sources(), &["SEER Explorer"]);
 }
 
 #[test]
@@ -235,6 +244,15 @@ fn survival_catalog_resolution_sets_unavailable_note_when_catalog_fails() {
         disease.survival_note.as_deref(),
         Some(SURVIVAL_UNAVAILABLE_NOTE)
     );
+    let outcome = disease
+        .section_outcomes
+        .get(DISEASE_SECTION_SURVIVAL)
+        .expect("survival outcome");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Unavailable
+    );
+    assert!(outcome.sources().is_empty());
 }
 
 pub(crate) async fn proof_enrich_sparse_disease_identity_prefers_exact_ols4_match() {

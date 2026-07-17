@@ -588,14 +588,9 @@ pub async fn get_with_structure_limit(
     if parsed_sections.include_complexes {
         match complexes_res {
             Ok(rows) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_COMPLEXES,
-                    if rows.is_empty() {
-                        SectionOutcome::empty("ComplexPortal")
-                    } else {
-                        SectionOutcome::data("ComplexPortal")
-                    },
-                );
+                protein
+                    .section_outcomes
+                    .complete(PROTEIN_SECTION_COMPLEXES, complexportal_outcome(&rows));
                 protein.complexes = rows;
             }
             Err(_) => {
@@ -608,6 +603,14 @@ pub async fn get_with_structure_limit(
     }
 
     Ok(protein)
+}
+
+fn complexportal_outcome(rows: &[ProteinComplex]) -> SectionOutcome {
+    if rows.is_empty() {
+        SectionOutcome::empty("Complex Portal")
+    } else {
+        SectionOutcome::data("Complex Portal")
+    }
 }
 
 fn map_complexportal_complex(row: ComplexPortalComplex) -> ProteinComplex {
@@ -653,6 +656,17 @@ mod tests {
 
         let err = parse_sections(&["unexpected".to_string()]).unwrap_err();
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    }
+
+    #[test]
+    fn complexportal_outcome_uses_registered_provider_label() {
+        let outcome = complexportal_outcome(&[]);
+        assert_eq!(outcome.sources(), &["Complex Portal"]);
+        assert!(crate::entities::source_state_registry::allows_sources(
+            "protein",
+            PROTEIN_SECTION_COMPLEXES,
+            outcome.sources()
+        ));
     }
 
     #[test]
