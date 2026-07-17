@@ -1,3 +1,4 @@
+// dead-code reason: Cargo also compiles this shared integration helper as a standalone target
 #![allow(dead_code)]
 
 use std::path::Path;

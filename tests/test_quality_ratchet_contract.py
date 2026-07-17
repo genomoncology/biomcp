@@ -134,13 +134,15 @@ def _write_tracked_file(root: Path, relative_path: str, line_count: int) -> Path
     return path
 
 
-def _write_dead_code_fixture(root: Path, source: str) -> None:
+def _write_dead_code_fixture(
+    root: Path, source: str, relative_path: str = "src/lib.rs"
+) -> None:
     root.mkdir(parents=True)
     _init_git_fixture(root)
-    path = root / "src" / "lib.rs"
+    path = root / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(source, encoding="utf-8")
-    subprocess.run(["git", "add", "src/lib.rs"], cwd=root, check=True)
+    subprocess.run(["git", "add", relative_path], cwd=root, check=True)
 
 
 def _write_failing_spec(spec_dir: Path) -> Path:
@@ -423,6 +425,23 @@ def test_dead_code_allowance_audit_rejects_unreasoned_suppression(
     assert payload["finding_count"] == 3
     assert all(row["path"] == "src/lib.rs" for row in payload["findings"])
     assert all("dead-code reason:" in row["message"] for row in payload["findings"])
+
+
+def test_dead_code_allowance_audit_scans_tracked_rust_outside_src(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "test-helper-dead-code"
+    _write_dead_code_fixture(
+        fixture_root,
+        "#![allow(dead_code)]\nfn helper() {}\n",
+        "tests/helper.rs",
+    )
+
+    payload = ratchet.check_dead_code_allowances(fixture_root)
+
+    assert payload["status"] == "fail"
+    assert payload["findings"][0]["path"] == "tests/helper.rs"
 
 
 def test_dead_code_allowance_audit_accepts_adjacent_reason(tmp_path: Path) -> None:

@@ -1,5 +1,4 @@
 use std::fs;
-use std::ops::RangeInclusive;
 use std::path::Path;
 use std::time::Instant;
 
@@ -676,9 +675,4 @@ pub fn score_pdf(metrics: &Value) -> Value {
         "overall_readability": readability,
         "overall_score": overall as u8,
     })
-}
-
-#[allow(dead_code)]
-fn page_range(limit: u32) -> RangeInclusive<u32> {
-    1..=limit.max(1)
 }

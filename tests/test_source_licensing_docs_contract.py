@@ -176,6 +176,17 @@ def test_orcid_is_citation_evidence_not_a_direct_source() -> None:
     assert "pub(crate) mod orcid;" not in _read("src/sources/mod.rs")
     assert all(item["id"] != "orcid" for item in _source_inventory())
 
+    direct_api_marker = re.compile(
+        r"\b(?:api|pub)\.orcid\.org\b|\b(?:BIOMCP_)?ORCID_(?:API|BASE|ENDPOINT|URL)\b"
+    )
+    direct_api_claims = []
+    for root in (REPO_ROOT / "src", REPO_ROOT / "docs", REPO_ROOT / "architecture"):
+        for path in root.rglob("*"):
+            if path.suffix in {".rs", ".md", ".json"}:
+                if direct_api_marker.search(path.read_text(encoding="utf-8")):
+                    direct_api_claims.append(path.relative_to(REPO_ROOT).as_posix())
+    assert not direct_api_claims
+
     pubmed = _inventory_item("PubMed")
     assert "get article <id> indexing" in pubmed["bioMcp_surfaces"]
     assert "ORCID" in pubmed["notes"]

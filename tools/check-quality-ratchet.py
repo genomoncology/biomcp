@@ -149,7 +149,7 @@ def tracked_cli_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
 
 def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     proc = subprocess.run(
-        ["git", "-C", str(root_dir), "ls-files", "--", "src/*.rs", "src/**/*.rs"],
+        ["git", "-C", str(root_dir), "ls-files", "--", "*.rs"],
         capture_output=True,
         text=True,
         check=False,
