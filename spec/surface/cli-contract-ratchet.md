@@ -218,6 +218,20 @@ boolean
 discovery-only"
 ```
 
+## UX architecture reference explains mutation inclusion verification
+
+The maintained UX architecture reference should match the shipped CLI guide rather
+than preserving the old broad-discovery-only behavior.
+
+```bash
+cat ../../architecture/ux/cli-reference.md | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
+```
+
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
 
 The cache configuration reference promises an operator env override for the

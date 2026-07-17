@@ -179,11 +179,13 @@ codes while excluding systematic chemical synonyms. A rejected expanded alias
 preserves successful requested-name results and makes the exact total unknown;
 `--no-alias-expand` performs one literal request for the supplied name.
 `--mutation <text>` remains an exact free-text boolean over title, summary,
-eligibility, and keyword text. `--biomarker <text>` is the gene-level broadening lever
-when mutation wording is too specific; zero-result filtered trial searches do not auto-broaden;
-markdown and JSON `_meta.next_commands` suggest which
-filters to relax. Trial details such as contacts, locations, and eligibility
-remain opt-in through `get trial` sections.
+eligibility, and keyword text. After broad discovery, simple mutation text receives
+a registry eligibility check that removes exclusion-only matches. Trials where the
+term is absent remain discoverable, and boolean expressions are discovery-only.
+`--biomarker <text>` is the gene-level broadening lever when mutation wording is too
+specific; zero-result filtered trial searches do not auto-broaden; markdown and JSON
+`_meta.next_commands` suggest which filters to relax. Trial details such as contacts,
+locations, and eligibility remain opt-in through `get trial` sections.
 
 ## Cross-Entity Pivot Pattern
 
