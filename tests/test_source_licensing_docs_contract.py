@@ -128,7 +128,9 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
 
     inventory = _source_inventory()
     ids = [item["id"] for item in inventory]
-    assert len(ids) == len(set(ids)), f"duplicate id values: {[id for id in ids if ids.count(id) > 1]}"
+    assert len(ids) == len(set(ids)), (
+        f"duplicate id values: {[id for id in ids if ids.count(id) > 1]}"
+    )
     names = sorted(item["name"] for item in inventory)
     assert names == EXPECTED_NAMES
 
@@ -170,6 +172,16 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             assert item["name"] in DIRECT_SOURCE_MODULES.values()
 
 
+def test_orcid_is_citation_evidence_not_a_direct_source() -> None:
+    assert not (REPO_ROOT / "src/sources/orcid.rs").exists()
+    assert "pub(crate) mod orcid;" not in _read("src/sources/mod.rs")
+    assert all(item["id"] != "orcid" for item in _source_inventory())
+
+    pubmed = _inventory_item("PubMed")
+    assert "citation XML" in pubmed["notes"]
+    assert "ORCID" in pubmed["notes"]
+
+
 def test_source_licensing_reference_matches_inventory_and_required_sections() -> None:
     licensing = _read("docs/reference/source-licensing.md")
 
@@ -182,9 +194,18 @@ def test_source_licensing_reference_matches_inventory_and_required_sections() ->
     assert "## Indirect-only providers surfaced through aggregators" in licensing
     assert "## Source notes" in licensing
     assert "BioMCP itself is MIT-licensed" in licensing
-    assert "BioMCP does not vendor, mirror, or ship upstream datasets in the repository." in licensing
-    assert "BioMCP performs on-demand read-only queries against upstream services." in licensing
-    assert "Returned records, downloaded full text, saved output, and downstream reuse" in licensing
+    assert (
+        "BioMCP does not vendor, mirror, or ship upstream datasets in the repository."
+        in licensing
+    )
+    assert (
+        "BioMCP performs on-demand read-only queries against upstream services."
+        in licensing
+    )
+    assert (
+        "Returned records, downloaded full text, saved output, and downstream reuse"
+        in licensing
+    )
     assert "COSMIC" in licensing
     assert "licensing risk" in licensing
     assert "PubMed" in licensing
@@ -248,7 +269,9 @@ def test_readme_and_docs_index_have_consistent_licensing_section() -> None:
         assert "COSMIC" in section
 
 
-def test_api_keys_page_policies_data_sources_and_nav_link_to_licensing_reference() -> None:
+def test_api_keys_page_policies_data_sources_and_nav_link_to_licensing_reference() -> (
+    None
+):
     api_keys = _read("docs/getting-started/api-keys.md")
     policies = _read("docs/policies.md")
     data_sources = _read("docs/reference/data-sources.md")
@@ -268,7 +291,10 @@ def test_api_keys_page_policies_data_sources_and_nav_link_to_licensing_reference
         assert env_var in api_keys
 
     assert "[Source licensing reference](reference/source-licensing.md)" in policies
-    assert "| NCBI E-utilities | `NCBI_API_KEY` | Optional; improves PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom |" in data_sources
+    assert (
+        "| NCBI E-utilities | `NCBI_API_KEY` | Optional; improves PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom |"
+        in data_sources
+    )
     assert "      - Source Licensing: reference/source-licensing.md" in mkdocs
 
 
@@ -280,4 +306,6 @@ def test_docs_index_documentation_section_links_new_reference() -> None:
         "\n## Citation",
     )
 
-    assert "[Source Licensing and Terms](reference/source-licensing.md)" in documentation
+    assert (
+        "[Source Licensing and Terms](reference/source-licensing.md)" in documentation
+    )
