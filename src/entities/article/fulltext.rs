@@ -715,6 +715,10 @@ pub(super) async fn resolve_fulltext(
         PdfDiscoveryAttempt::Failed(err) => state.record_failure(err),
         PdfDiscoveryAttempt::Data(pdf_url) => match try_resolve_pdf(&pdf_url, requested_id).await {
             FulltextStepOutcome::Data(text) => {
+                let mut source_identifier =
+                    parse_pdf_url(&pdf_url).expect("successful PDF resolution validates the URL");
+                source_identifier.set_query(None);
+                source_identifier.set_fragment(None);
                 let source = pdf_source_metadata();
                 let license = article
                     .semantic_scholar
@@ -725,7 +729,7 @@ pub(super) async fn resolve_fulltext(
                 let manifest = ArticleFulltextManifest {
                     source_kind: ArticleFulltextManifestKind::Pdf,
                     provider: manifest_provider(&source),
-                    source_identifier: pdf_url,
+                    source_identifier: source_identifier.to_string(),
                     quality: manifest_quality(true),
                     reuse: manifest_reuse(license),
                     provenance: manifest_provenance(article, true, None, None),
