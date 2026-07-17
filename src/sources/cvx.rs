@@ -68,6 +68,7 @@ struct MvxRow {
     manufacturer_name: String,
 }
 
+// dead-code reason: cvx::CvxAliasRecord preserves the provider shape used by source contract fixtures
 #[cfg_attr(not(test), allow(dead_code))]
 #[derive(Debug, Clone)]
 struct CvxAliasRecord {
@@ -92,6 +93,7 @@ pub(crate) struct CvxVaccineCandidate {
 }
 
 impl CvxClient {
+    // dead-code reason: binary adverse-event dispatch constructs the local CVX client
     #[allow(dead_code)]
     pub(crate) fn new() -> Self {
         Self {

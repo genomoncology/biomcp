@@ -13,6 +13,7 @@ const MYDISEASE_BASE_ENV: &str = "BIOMCP_MYDISEASE_BASE";
 pub(crate) const MYDISEASE_SEARCH_FIELDS: &str = "_id,mondo.name,mondo.synonym,disease_ontology.name,disease_ontology.synonyms,hpo.inheritance.hpo_id,hpo.inheritance.hpo_name,hpo.phenotype_related_to_disease.hpo_id,hpo.clinical_course.hpo_name";
 pub(crate) const MYDISEASE_GET_FIELDS: &str = "_id,mondo.name,mondo.definition,mondo.parents,mondo.synonym,mondo.xrefs,disease_ontology.name,disease_ontology.doid,disease_ontology.def,disease_ontology.parents,disease_ontology.synonyms,disease_ontology.xrefs,umls.mesh,umls.nci,umls.snomed,umls.icd10am,disgenet.genes_related_to_disease,hpo.phenotype_related_to_disease.hpo_id,hpo.phenotype_related_to_disease.evidence,hpo.phenotype_related_to_disease.hp_freq,hpo.inheritance.hpo_id";
 
+// dead-code reason: mydisease::MyDiseaseQueryRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct MyDiseaseQueryRequestPlan {
     pub method: &'static str,
@@ -22,6 +23,7 @@ pub struct MyDiseaseQueryRequestPlan {
     pub status_expectation: &'static str,
 }
 
+// dead-code reason: mydisease::MyDiseaseXrefLookupRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct MyDiseaseXrefLookupRequestPlan {
     pub method: &'static str,
@@ -31,6 +33,7 @@ pub struct MyDiseaseXrefLookupRequestPlan {
     pub status_expectation: &'static str,
 }
 
+// dead-code reason: mydisease::MyDiseaseGetRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct MyDiseaseGetRequestPlan {
     pub method: &'static str,
@@ -93,6 +96,7 @@ impl MyDiseaseClient {
         crate::sources::decode_json(MYDISEASE_API, status, content_type.as_ref(), &bytes, false)
     }
 
+    // dead-code reason: mydisease::legacy_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     fn legacy_plan(
         plan: &RequestPlan,
@@ -120,6 +124,7 @@ impl MyDiseaseClient {
         }
     }
 
+    // dead-code reason: mydisease::legacy_xref_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     fn legacy_xref_plan(
         plan: &RequestPlan,
@@ -147,6 +152,7 @@ impl MyDiseaseClient {
         }
     }
 
+    // dead-code reason: mydisease::legacy_get_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     fn legacy_get_plan(plan: &RequestPlan) -> MyDiseaseGetRequestPlan {
         MyDiseaseGetRequestPlan {
@@ -237,6 +243,7 @@ impl MyDiseaseClient {
     }
 
     #[allow(clippy::too_many_arguments)]
+    // dead-code reason: mydisease::query_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn query_request_plan(
         &self,
@@ -309,6 +316,7 @@ impl MyDiseaseClient {
             .query("fields", MYDISEASE_SEARCH_FIELDS))
     }
 
+    // dead-code reason: mydisease::lookup_disease_by_xref_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn lookup_disease_by_xref_request_plan(
         &self,
@@ -352,6 +360,7 @@ impl MyDiseaseClient {
         Ok(RequestPlan::get(format!("disease/{id}")).query("fields", MYDISEASE_GET_FIELDS))
     }
 
+    // dead-code reason: mydisease::get_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn get_request_plan(&self, id: &str) -> Result<MyDiseaseGetRequestPlan, BioMcpError> {
         let plan = Self::get_plan(id)?;
@@ -387,6 +396,7 @@ impl MyDiseaseClient {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MyDiseaseQueryResponse {
+    // dead-code reason: mydisease::total preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub total: usize,
     pub hits: Vec<MyDiseaseHit>,

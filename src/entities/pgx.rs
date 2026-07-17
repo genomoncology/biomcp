@@ -427,14 +427,6 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
     Ok(out)
 }
 
-#[allow(dead_code)]
-pub async fn search(
-    filters: &PgxSearchFilters,
-    limit: usize,
-) -> Result<Vec<PgxSearchResult>, BioMcpError> {
-    Ok(search_page(filters, limit, 0).await?.results)
-}
-
 pub async fn search_page(
     filters: &PgxSearchFilters,
     limit: usize,

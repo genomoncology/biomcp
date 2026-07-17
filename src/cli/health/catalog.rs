@@ -36,6 +36,7 @@ pub(in crate::cli::health) enum ProbeKind {
         env_var: &'static str,
         param_name: &'static str,
     },
+    // dead-code reason: AuthPostJson models authenticated JSON health probes in the catalog
     #[allow(dead_code)]
     AuthPostJson {
         url: &'static str,
@@ -441,6 +442,7 @@ pub(in crate::cli::health) fn health_sources() -> &'static [SourceDescriptor] {
     HEALTH_SOURCES
 }
 
+// dead-code reason: catalog::affects_for_api is exercised by binary dispatch or CLI contracts
 #[cfg_attr(not(test), allow(dead_code))]
 pub(in crate::cli::health) fn affects_for_api(api: &str) -> Option<&'static str> {
     health_sources()

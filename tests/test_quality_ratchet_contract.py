@@ -125,9 +125,24 @@ def _write_cli_line_cap_allowlist(
 def _write_tracked_file(root: Path, relative_path: str, line_count: int) -> Path:
     path = root / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(["//! fixture", *("// filler" for _ in range(line_count - 1))]) + "\n", encoding="utf-8")
+    path.write_text(
+        "\n".join(["//! fixture", *("// filler" for _ in range(line_count - 1))])
+        + "\n",
+        encoding="utf-8",
+    )
     subprocess.run(["git", "add", relative_path], cwd=root, check=True)
     return path
+
+
+def _write_dead_code_fixture(
+    root: Path, source: str, relative_path: str = "src/lib.rs"
+) -> None:
+    root.mkdir(parents=True)
+    _init_git_fixture(root)
+    path = root / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(source, encoding="utf-8")
+    subprocess.run(["git", "add", relative_path], cwd=root, check=True)
 
 
 def _write_failing_spec(spec_dir: Path) -> Path:
@@ -200,7 +215,7 @@ def _break_skill_positive_policy(shell_file: Path) -> None:
     content = shell_file.read_text(encoding="utf-8")
     updated = content.replace(
         '            matches!(sub.as_str(), "list" | "render")\n'
-        '                || crate::cli::skill::show_use_case(&sub).is_ok()\n',
+        "                || crate::cli::skill::show_use_case(&sub).is_ok()\n",
         '            !matches!(sub.as_str(), "install")\n',
         1,
     )
@@ -356,7 +371,9 @@ def test_mcp_allowlist_audit_reports_description_policy_drift(tmp_path: Path) ->
     assert payload["description_policy_ok"] is False
 
 
-def test_mcp_description_policy_rejects_legacy_update_marker_only(tmp_path: Path) -> None:
+def test_mcp_description_policy_rejects_legacy_update_marker_only(
+    tmp_path: Path,
+) -> None:
     fixture_root = _copy_mcp_fixture(tmp_path)
     _remove_structural_update_description_filter(fixture_root / "build.rs")
 
@@ -375,6 +392,116 @@ def test_mcp_description_policy_rejects_legacy_update_marker_only(tmp_path: Path
     assert result.returncode == 1, result.stdout
     assert payload["status"] == "fail"
     assert payload["description_policy_ok"] is False
+
+
+def test_dead_code_allowance_audit_passes_for_repo() -> None:
+    ratchet = _load_ratchet_module()
+
+    payload = ratchet.check_dead_code_allowances(REPO_ROOT)
+
+    assert payload["status"] == "pass", payload
+    assert payload["findings"] == []
+
+
+def test_dead_code_allowance_audit_rejects_unreasoned_suppression(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "unreasoned-dead-code"
+    _write_dead_code_fixture(
+        fixture_root,
+        "#[allow(dead_code)]\n"
+        "fn ordinary() {}\n\n"
+        "#[cfg_attr(not(test), allow(dead_code))]\n"
+        "fn conditional() {}\n\n"
+        "#![allow(\n"
+        "    dead_code,\n"
+        ")]\n",
+    )
+
+    payload = ratchet.check_dead_code_allowances(fixture_root)
+
+    assert payload["status"] == "fail"
+    assert payload["finding_count"] == 3
+    assert all(row["path"] == "src/lib.rs" for row in payload["findings"])
+    assert all("dead-code reason:" in row["message"] for row in payload["findings"])
+
+
+def test_dead_code_allowance_audit_scans_tracked_rust_outside_src(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "test-helper-dead-code"
+    _write_dead_code_fixture(
+        fixture_root,
+        "#![allow(dead_code)]\nfn helper() {}\n",
+        "tests/helper.rs",
+    )
+
+    payload = ratchet.check_dead_code_allowances(fixture_root)
+
+    assert payload["status"] == "fail"
+    assert payload["findings"][0]["path"] == "tests/helper.rs"
+
+
+def test_dead_code_allowance_audit_accepts_adjacent_reason(tmp_path: Path) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "reasoned-dead-code"
+    _write_dead_code_fixture(
+        fixture_root,
+        "// dead-code reason: retained for the binary-only dispatch seam\n"
+        "#[allow(dead_code)]\n"
+        "fn ordinary() {}\n\n"
+        "// dead-code reason: retained for non-test target compatibility\n"
+        "#[cfg_attr(not(test), allow(dead_code))]\n"
+        "fn conditional() {}\n\n"
+        "// dead-code reason: generated provider client includes unused RPC methods\n"
+        "#![allow(\n"
+        "    dead_code,\n"
+        ")]\n",
+    )
+
+    payload = ratchet.check_dead_code_allowances(fixture_root)
+
+    assert payload["status"] == "pass", payload
+    assert payload["findings"] == []
+
+
+def test_dead_code_allowance_audit_ignores_comment_and_string_tokens(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "lexical-dead-code"
+    _write_dead_code_fixture(
+        fixture_root,
+        "#[cfg_attr(\n"
+        "    not(test), // ] must not close the attribute\n"
+        '    doc = "https://example.test/[contract]",\n'
+        "    allow(dead_code),\n"
+        ")]\n"
+        "fn conditional() {}\n",
+    )
+
+    payload = ratchet.check_dead_code_allowances(fixture_root)
+
+    assert payload["status"] == "fail"
+    assert payload["allowances_checked"] == 1
+    assert payload["findings"][0]["line"] == 1
+
+
+def test_dead_code_allowance_audit_does_not_match_deny_group(tmp_path: Path) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "unrelated-dead-code"
+    _write_dead_code_fixture(
+        fixture_root,
+        "#[cfg_attr(test, allow(unused_variables), deny(dead_code))]\n"
+        "fn conditional() {}\n",
+    )
+
+    payload = ratchet.check_dead_code_allowances(fixture_root)
+
+    assert payload["status"] == "pass", payload
+    assert payload["allowances_checked"] == 0
 
 
 def test_source_registry_audit_passes_for_repo() -> None:
@@ -446,6 +573,7 @@ def test_wrapper_writes_summary_artifacts_for_pass_fixture(tmp_path: Path) -> No
         "quality-ratchet-lint.json",
         "quality-ratchet-mcp-allowlist.json",
         "quality-ratchet-source-registry.json",
+        "quality-ratchet-dead-code-allowances.json",
         "quality-ratchet-cli-line-cap.json",
         "quality-ratchet-terminal-output-boundaries.json",
         "quality-ratchet-summary.json",
@@ -458,6 +586,7 @@ def test_wrapper_writes_summary_artifacts_for_pass_fixture(tmp_path: Path) -> No
     assert summary["lint"]["files_checked"] == 1
     assert summary["lint"]["finding_count"] == 0
     assert summary["cli_line_cap"]["status"] == "pass"
+    assert summary["dead_code_allowances"]["status"] == "pass"
     assert summary["terminal_output_boundaries"]["status"] == "pass"
     assert "smoke_lane" not in summary
 
@@ -541,8 +670,7 @@ def test_terminal_output_boundary_ratchet_detects_removed_seams_and_pretty_bypas
     payload = ratchet.check_terminal_output_boundaries(bypass_fixture)
     assert payload["status"] == "fail"
     assert any(
-        finding["path"] == "src/cli/bypass.rs"
-        and "pretty JSON" in finding["message"]
+        finding["path"] == "src/cli/bypass.rs" and "pretty JSON" in finding["message"]
         for finding in payload["findings"]
     )
 
@@ -1079,7 +1207,9 @@ def test_source_state_registry_rejects_unmapped_and_stale_sections(
     shutil.copytree(REPO_ROOT / "src" / "entities", fixture_root / "src" / "entities")
     architecture = fixture_root / "architecture" / "technical" / "source-integration.md"
     architecture.parent.mkdir(parents=True)
-    shutil.copy2(REPO_ROOT / "architecture" / "technical" / "source-integration.md", architecture)
+    shutil.copy2(
+        REPO_ROOT / "architecture" / "technical" / "source-integration.md", architecture
+    )
 
     clean = ratchet.check_source_state_registry(fixture_root)
     assert clean["status"] == "pass", clean

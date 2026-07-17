@@ -1,3 +1,4 @@
+// dead-code reason: PubMed keeps fixture-only request planners beside live citation execution
 #![allow(dead_code)]
 
 use std::borrow::Cow;
@@ -31,6 +32,7 @@ pub(crate) struct PubMedESearchParams {
     pub date_to: Option<String>,
 }
 
+// dead-code reason: pubmed::PubMedESearchRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct PubMedESearchRequestPlan {
     pub method: &'static str,
@@ -42,6 +44,7 @@ pub struct PubMedESearchRequestPlan {
     pub auth_mode: &'static str,
 }
 
+// dead-code reason: pubmed::PubMedESummaryRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct PubMedESummaryRequestPlan {
     pub method: &'static str,
@@ -53,6 +56,7 @@ pub struct PubMedESummaryRequestPlan {
     pub auth_mode: &'static str,
 }
 
+// dead-code reason: pubmed::PubMedCitationRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct PubMedCitationRequestPlan {
     pub method: &'static str,
@@ -221,6 +225,7 @@ impl PubMedClient {
         Ok(plan)
     }
 
+    // dead-code reason: pubmed::citation_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn citation_request_plan(
         &self,
@@ -378,6 +383,7 @@ impl PubMedClient {
         Ok(plan)
     }
 
+    // dead-code reason: pubmed::esearch_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn esearch_request_plan(
         &self,
@@ -471,6 +477,7 @@ impl PubMedClient {
         Ok(Some(plan))
     }
 
+    // dead-code reason: pubmed::esummary_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn esummary_request_plan(
         &self,
@@ -826,6 +833,7 @@ fn clean_api_key(api_key: Option<&str>) -> Option<&str> {
     api_key.map(str::trim).filter(|key| !key.is_empty())
 }
 
+// dead-code reason: pubmed::pubmed_query_key preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 fn pubmed_query_key(key: &str) -> &'static str {
     match key {

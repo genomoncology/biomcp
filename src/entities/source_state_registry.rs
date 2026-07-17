@@ -3,6 +3,7 @@
 //! The quality ratchet also reads these static rows directly, so selector policy
 //! fields are intentionally retained even when runtime code only queries keys.
 
+// dead-code reason: static source-state registry is also consumed by the quality contract
 #![allow(dead_code)]
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

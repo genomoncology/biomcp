@@ -55,15 +55,6 @@ pub fn pathway_markdown(
     Ok(append_evidence_urls(body, pathway_evidence_urls(pathway)))
 }
 
-#[allow(dead_code)]
-pub fn pathway_search_markdown(
-    query: &str,
-    results: &[PathwaySearchResult],
-    total: Option<usize>,
-) -> Result<String, BioMcpError> {
-    pathway_search_markdown_with_footer(query, results, total, "")
-}
-
 pub fn pathway_search_markdown_with_footer(
     query: &str,
     results: &[PathwaySearchResult],

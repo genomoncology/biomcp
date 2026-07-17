@@ -279,6 +279,7 @@ pub(super) fn build_pubmed_search_term(
     Ok(base)
 }
 
+// dead-code reason: query::build_pubmed_esearch_params is exercised by native tests or binary dispatch
 #[cfg_attr(not(test), allow(dead_code))]
 pub(super) fn build_pubmed_esearch_params(
     filters: &ArticleSearchFilters,

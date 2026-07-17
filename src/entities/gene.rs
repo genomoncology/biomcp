@@ -312,6 +312,7 @@ impl GeneIncludeType {
         }
     }
 
+    // dead-code reason: gene::as_str is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub fn as_str(self) -> &'static str {
         match self {
@@ -333,6 +334,7 @@ impl GeneIncludeType {
         }
     }
 
+    // dead-code reason: gene::all_default is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub fn all_default() -> Vec<Self> {
         vec![
@@ -443,6 +445,7 @@ impl GeneGetStrategy {
         }
     }
 
+    // dead-code reason: gene::from_name is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub fn from_name(value: &str) -> Option<Self> {
         match value.trim().to_ascii_lowercase().as_str() {
@@ -478,24 +481,28 @@ impl Default for GeneGetOptions {
 }
 
 impl GeneGetOptions {
+    // dead-code reason: gene::with_sections is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub fn with_sections(mut self, sections: Vec<GeneSection>) -> Self {
         self.sections = sections;
         self
     }
 
+    // dead-code reason: gene::with_strategy is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub fn with_strategy(mut self, strategy: GeneGetStrategy) -> Self {
         self.strategy = strategy;
         self
     }
 
+    // dead-code reason: gene::with_optional_timeout is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub fn with_optional_timeout(mut self, timeout: Duration) -> Self {
         self.optional_timeout = timeout;
         self
     }
 
+    // dead-code reason: gene::with_timing_path is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub fn with_timing_path(mut self, path: impl Into<PathBuf>) -> Self {
         self.timing_path = Some(path.into());
@@ -2909,6 +2916,7 @@ pub async fn get_with_report(
     Ok(GeneGetResult { gene, timing })
 }
 
+// dead-code reason: gene::search is exercised by native tests or binary dispatch
 #[allow(dead_code)]
 pub async fn search(
     filters: &GeneSearchFilters,

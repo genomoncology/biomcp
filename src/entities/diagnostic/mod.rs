@@ -5,7 +5,7 @@ mod search;
 
 pub use self::get::get;
 #[allow(unused_imports)]
-pub use self::search::{search, search_page, search_query_summary};
+pub use self::search::{search_page, search_query_summary};
 
 use std::sync::OnceLock;
 
@@ -78,6 +78,7 @@ pub enum DiagnosticSourceFilter {
 }
 
 impl DiagnosticSourceFilter {
+    // dead-code reason: mod::from_flag is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub fn from_flag(value: &str) -> Result<Self, crate::error::BioMcpError> {
         match value.trim().to_ascii_lowercase().as_str() {

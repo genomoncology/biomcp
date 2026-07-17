@@ -169,6 +169,7 @@ struct RawWhoVaccineRow {
 }
 
 impl WhoPqClient {
+    // dead-code reason: who_pq::from_root preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub(crate) fn from_root(root: impl Into<PathBuf>) -> Self {
         Self { root: root.into() }

@@ -170,6 +170,7 @@ fn normalize_hpo_id(value: &str) -> Option<String> {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct HpoTerm {
+    // dead-code reason: hpo::id preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub id: String,
     pub name: String,

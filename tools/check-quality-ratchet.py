@@ -147,6 +147,172 @@ def tracked_cli_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     return sorted({line for line in proc.stdout.splitlines() if line}), []
 
 
+def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
+    proc = subprocess.run(
+        ["git", "-C", str(root_dir), "ls-files", "--", "*.rs"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return [], [proc.stderr.strip() or "git ls-files failed"]
+    return sorted({line for line in proc.stdout.splitlines() if line}), []
+
+
+def _mask_rust_non_code(source: str) -> str:
+    """Replace Rust comments and literals with spaces while preserving newlines."""
+    masked = list(source)
+
+    def blank(start: int, end: int) -> None:
+        for position in range(start, end):
+            if masked[position] != "\n":
+                masked[position] = " "
+
+    index = 0
+    while index < len(source):
+        if source.startswith("//", index):
+            end = source.find("\n", index + 2)
+            end = len(source) if end == -1 else end
+            blank(index, end)
+            index = end
+            continue
+
+        if source.startswith("/*", index):
+            end = index + 2
+            depth = 1
+            while end < len(source) and depth:
+                if source.startswith("/*", end):
+                    depth += 1
+                    end += 2
+                elif source.startswith("*/", end):
+                    depth -= 1
+                    end += 2
+                else:
+                    end += 1
+            blank(index, end)
+            index = end
+            continue
+
+        raw = re.match(r'(?:br|cr|r)(?P<hashes>#{0,255})"', source[index:])
+        if raw and (
+            index == 0 or not (source[index - 1].isalnum() or source[index - 1] == "_")
+        ):
+            terminator = '"' + raw.group("hashes")
+            content_start = index + raw.end()
+            closing = source.find(terminator, content_start)
+            end = len(source) if closing == -1 else closing + len(terminator)
+            blank(index, end)
+            index = end
+            continue
+
+        string_prefix = 1 if source[index : index + 2] in {'b"', 'c"'} else 0
+        if source[index] == '"' or string_prefix:
+            end = index + string_prefix + 1
+            while end < len(source):
+                if source[end] == "\\":
+                    end += 2
+                elif source[end] == '"':
+                    end += 1
+                    break
+                else:
+                    end += 1
+            blank(index, min(end, len(source)))
+            index = end
+            continue
+
+        char_literal = re.match(
+            r"(?:b)?'(?:\\(?:.|x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]+\})|[^\\'\n])'",
+            source[index:],
+        )
+        if char_literal:
+            end = index + char_literal.end()
+            blank(index, end)
+            index = end
+            continue
+
+        index += 1
+
+    return "".join(masked)
+
+
+def _rust_attribute_spans(source: str) -> list[tuple[int, str]]:
+    masked = _mask_rust_non_code(source)
+    spans: list[tuple[int, str]] = []
+    index = 0
+    while match := re.search(r"#(?:!)?\[", masked[index:]):
+        opening = index + match.start()
+        cursor = index + match.end()
+        depth = 1
+        while cursor < len(masked) and depth:
+            if masked[cursor] == "[":
+                depth += 1
+            elif masked[cursor] == "]":
+                depth -= 1
+            cursor += 1
+        spans.append((opening, masked[opening:cursor]))
+        index = cursor
+    return spans
+
+
+def _allows_dead_code(attribute: str) -> bool:
+    for match in re.finditer(r"\ballow\s*\(", attribute):
+        cursor = match.end()
+        depth = 1
+        while cursor < len(attribute) and depth:
+            if attribute[cursor] == "(":
+                depth += 1
+            elif attribute[cursor] == ")":
+                depth -= 1
+            cursor += 1
+        if depth == 0 and re.search(
+            r"\bdead_code\b", attribute[match.end() : cursor - 1]
+        ):
+            return True
+    return False
+
+
+def check_dead_code_allowances(root_dir: Path) -> dict[str, object]:
+    tracked_files, errors = tracked_rust_files(root_dir)
+    if errors:
+        return {"status": "error", "findings": [], "errors": errors}
+
+    findings: list[dict[str, object]] = []
+    spans_checked = 0
+    reason_re = re.compile(r"^\s*//.*dead-code reason:\s*\S")
+    for relative_path in tracked_files:
+        path = root_dir / relative_path
+        if not path.is_file():
+            continue
+        source = path.read_text(encoding="utf-8")
+        lines = source.splitlines()
+        for opening, attribute in _rust_attribute_spans(source):
+            if not _allows_dead_code(attribute):
+                continue
+            spans_checked += 1
+            opening_line = source.count("\n", 0, opening)
+            previous = lines[opening_line - 1] if opening_line else ""
+            if not reason_re.match(previous):
+                findings.append(
+                    {
+                        "path": relative_path,
+                        "line": opening_line + 1,
+                        "message": (
+                            "dead-code allowance requires an adjacent concrete "
+                            "`dead-code reason:` comment"
+                        ),
+                    }
+                )
+
+    return {
+        "status": "fail" if findings else "pass",
+        "files_checked": len(tracked_files),
+        "allowances_checked": spans_checked,
+        "finding_count": len(findings),
+        "findings": findings,
+        "errors": [],
+    }
+
+
 def tracked_experiment_result_files(root_dir: Path) -> tuple[list[str], list[str]]:
     proc = subprocess.run(
         [
@@ -1431,6 +1597,12 @@ def main() -> int:
     )
     write_json(args.output_dir / "quality-ratchet-source-registry.json", source_payload)
 
+    dead_code_payload = check_dead_code_allowances(args.root_dir)
+    write_json(
+        args.output_dir / "quality-ratchet-dead-code-allowances.json",
+        dead_code_payload,
+    )
+
     cli_line_cap_payload = check_cli_line_cap(args.root_dir, cli_line_cap_allowlist)
     write_json(args.output_dir / "quality-ratchet-cli-line-cap.json", cli_line_cap_payload)
 
@@ -1488,6 +1660,7 @@ def main() -> int:
         lint_payload["status"],
         mcp_payload.get("status"),
         source_payload.get("status"),
+        dead_code_payload.get("status"),
         cli_line_cap_payload.get("status"),
         section_outcome_policy_payload.get("status"),
         experiment_results_payload.get("status"),
@@ -1508,6 +1681,7 @@ def main() -> int:
         "lint": lint_payload,
         "mcp_allowlist": {"status": mcp_payload.get("status")},
         "source_registry": {"status": source_payload.get("status")},
+        "dead_code_allowances": {"status": dead_code_payload.get("status")},
         "cli_line_cap": {"status": cli_line_cap_payload.get("status")},
         "section_outcome_policy_line_cap": {
             "status": section_outcome_policy_payload.get("status")

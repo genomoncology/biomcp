@@ -340,6 +340,7 @@ impl PaginationMeta {
     }
 }
 
+// dead-code reason: shared::SearchJsonResponse is exercised by binary dispatch or CLI contracts
 #[cfg_attr(not(test), allow(dead_code))]
 #[derive(serde::Serialize)]
 struct SearchJsonResponse<T: serde::Serialize> {
@@ -380,6 +381,7 @@ struct SearchJsonResponseWithMeta<T: serde::Serialize> {
     _meta: Option<SearchJsonMeta>,
 }
 
+// dead-code reason: shared::search_json is exercised by binary dispatch or CLI contracts
 #[cfg_attr(not(test), allow(dead_code))]
 pub(super) fn search_json<T: serde::Serialize>(
     results: Vec<T>,

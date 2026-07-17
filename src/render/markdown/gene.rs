@@ -85,6 +85,7 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
     Ok(append_evidence_urls(body, gene_evidence_urls(gene)))
 }
 
+// dead-code reason: gene::gene_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn gene_search_markdown(
     query: &str,

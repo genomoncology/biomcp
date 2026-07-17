@@ -167,13 +167,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // make test, focused). Compare bytes and write only on a real change so
             // the package stays clean and the build cache works.
             if proto_out.exists() {
-                let new_bytes = fs::read(&proto_out).ok();
+                let generated = fs::read_to_string(&proto_out)?.replace(
+                    "pub mod dna_model_service_client {\n    #![allow(",
+                    "pub mod dna_model_service_client {\n    // dead-code reason: generated provider client includes members unused by this runtime\n    #![allow(",
+                );
+                let new_bytes = generated.as_bytes();
                 let current = fs::read(&vendored).ok();
-                if let Some(new_bytes) = new_bytes
-                    && current.as_deref() != Some(new_bytes.as_slice())
-                {
-                    fs::write(&vendored, &new_bytes)?;
+                if current.as_deref() != Some(new_bytes) {
+                    fs::write(&vendored, new_bytes)?;
                 }
+                fs::write(&proto_out, new_bytes)?;
             }
         }
         Err(e) => {

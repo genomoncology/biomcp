@@ -153,14 +153,6 @@ fn onset_matches(hit: &crate::sources::mydisease::MyDiseaseHit, expected: &str) 
         .unwrap_or(false)
 }
 
-#[allow(dead_code)]
-pub async fn search(
-    filters: &DiseaseSearchFilters,
-    limit: usize,
-) -> Result<Vec<DiseaseSearchResult>, BioMcpError> {
-    Ok(search_page(filters, limit, 0).await?.results)
-}
-
 pub async fn search_page(
     filters: &DiseaseSearchFilters,
     limit: usize,
@@ -367,14 +359,6 @@ async fn resolve_phenotype_query_terms(raw: &str) -> Result<Vec<String>, BioMcpE
     }
 
     Ok(resolved)
-}
-
-#[allow(dead_code)]
-pub async fn search_phenotype(
-    hpo_terms: &str,
-    limit: usize,
-) -> Result<Vec<PhenotypeSearchResult>, BioMcpError> {
-    Ok(search_phenotype_page(hpo_terms, limit, 0).await?.results)
 }
 
 pub async fn search_phenotype_page(

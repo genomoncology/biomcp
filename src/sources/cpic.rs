@@ -283,6 +283,7 @@ fn parse_content_range_total(headers: &reqwest::header::HeaderMap) -> Option<usi
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CpicPairRow {
+    // dead-code reason: cpic::pairid preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub pairid: Option<u64>,
     #[serde(default)]
@@ -298,18 +299,22 @@ pub struct CpicPairRow {
     #[serde(default)]
     pub guidelineurl: Option<String>,
     #[serde(default)]
+    // dead-code reason: cpic::usedforrecommendation preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub usedforrecommendation: Option<String>,
     #[serde(default)]
+    // dead-code reason: cpic::provisional preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub provisional: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CpicRecommendationRow {
+    // dead-code reason: cpic::recommendationid preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub recommendationid: Option<u64>,
     #[serde(default)]
+    // dead-code reason: cpic::lookupkey preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub lookupkey: HashMap<String, String>,
     #[serde(default)]
@@ -369,6 +374,7 @@ pub struct CpicGuidelineGene {
     #[serde(default)]
     pub symbol: String,
     #[serde(default)]
+    // dead-code reason: cpic::url preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub url: Option<String>,
 }

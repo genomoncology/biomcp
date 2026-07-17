@@ -650,7 +650,6 @@ impl MyVariantClient {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MyVariantSearchResponse {
-    #[allow(dead_code)]
     pub total: Option<usize>,
     #[serde(default)]
     pub hits: Vec<MyVariantHit>,
@@ -735,13 +734,6 @@ pub struct MyVariantGnomadAf {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyVariantExac {
     pub af: Option<f64>,
-    pub af_afr: Option<f64>,
-    pub af_amr: Option<f64>,
-    pub af_eas: Option<f64>,
-    pub af_fin: Option<f64>,
-    pub af_nfe: Option<f64>,
-    pub af_oth: Option<f64>,
-    pub af_sas: Option<f64>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

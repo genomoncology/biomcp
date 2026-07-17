@@ -63,11 +63,9 @@ pub use self::drug::{
 #[allow(unused_imports)]
 pub use self::gene::{gene_markdown, gene_search_markdown, gene_search_markdown_with_footer};
 #[allow(unused_imports)]
-pub use self::pathway::{
-    pathway_markdown, pathway_search_markdown, pathway_search_markdown_with_footer,
-};
+pub use self::pathway::{pathway_markdown, pathway_search_markdown_with_footer};
 #[allow(unused_imports)]
-pub use self::pgx::{pgx_markdown, pgx_search_markdown, pgx_search_markdown_with_footer};
+pub use self::pgx::{pgx_markdown, pgx_search_markdown_with_footer};
 #[allow(unused_imports)]
 pub use self::protein::{
     protein_markdown, protein_search_markdown, protein_search_markdown_with_footer,

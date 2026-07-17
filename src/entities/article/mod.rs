@@ -420,6 +420,7 @@ pub enum ArticleSourceAvailability {
 pub struct ArticleSearchPage {
     pub results: Vec<ArticleSearchResult>,
     pub total: Option<usize>,
+    // dead-code reason: mod::next_page_token is exercised by native tests or binary dispatch
     #[allow(dead_code)]
     pub next_page_token: Option<String>,
     pub source_status: Vec<ArticleSourceStatus>,

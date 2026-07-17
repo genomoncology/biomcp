@@ -180,14 +180,6 @@ fn result_sort_key(result: &DiagnosticSearchResult) -> (String, String) {
     )
 }
 
-#[allow(dead_code)]
-pub async fn search(
-    filters: &DiagnosticSearchFilters,
-    limit: usize,
-) -> Result<Vec<DiagnosticSearchResult>, BioMcpError> {
-    Ok(search_page(filters, limit, 0).await?.results)
-}
-
 pub async fn search_page(
     filters: &DiagnosticSearchFilters,
     limit: usize,

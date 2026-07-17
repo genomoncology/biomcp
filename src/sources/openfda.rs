@@ -427,6 +427,7 @@ fn with_api_key(mut plan: RequestPlan, api_key: Option<&str>) -> RequestPlan {
 
 #[derive(Debug, Deserialize)]
 pub struct OpenFdaResponse<T> {
+    // dead-code reason: openfda::meta preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub meta: OpenFdaMeta,
     pub results: Vec<T>,
@@ -434,22 +435,27 @@ pub struct OpenFdaResponse<T> {
 
 #[derive(Debug, Deserialize)]
 pub struct OpenFdaMeta {
+    // dead-code reason: openfda::results preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub results: OpenFdaMetaResults,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct OpenFdaMetaResults {
+    // dead-code reason: openfda::skip preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub skip: usize,
+    // dead-code reason: openfda::limit preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub limit: usize,
+    // dead-code reason: openfda::total preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub total: usize,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct OpenFdaCountResponse {
+    // dead-code reason: openfda::meta preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub meta: serde_json::Value,
     #[serde(default)]
@@ -508,6 +514,7 @@ pub struct FaersReaction {
     #[serde(default)]
     pub reactionmeddrapt: Option<String>,
     #[serde(default)]
+    // dead-code reason: openfda::reactionoutcome preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub reactionoutcome: Option<String>,
 }

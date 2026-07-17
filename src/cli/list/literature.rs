@@ -13,7 +13,7 @@ Semantic Scholar author records remain provider-exact. BioMCP does not merge sam
 
 - `--source semanticscholar` is the only source in this release.
 - IDs are case-sensitive and always provider-qualified.
-- Publication, coauthor, topic, affiliation-filter, PubMed, and ORCID operations are future work.
+- Publication, coauthor, topic, affiliation-filter, and PubMed operations are future work; ORCID remains citation-supplied identity evidence.
 "#.to_string()
 }
 pub(super) fn list_article() -> String {

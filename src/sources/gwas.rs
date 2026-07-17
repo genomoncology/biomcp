@@ -422,6 +422,7 @@ pub struct GwasAssociation {
     #[serde(default, rename = "riskFrequency", deserialize_with = "de_opt_f64")]
     pub risk_frequency: Option<f64>,
     #[serde(default)]
+    // dead-code reason: gwas::description preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub description: Option<String>,
 }
@@ -431,6 +432,7 @@ pub struct GwasSnp {
     #[serde(default, rename = "rsId")]
     pub rs_id: Option<String>,
     #[serde(default, rename = "genomicContexts")]
+    // dead-code reason: gwas::genomic_contexts preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub genomic_contexts: Vec<GwasGenomicContext>,
 }
@@ -438,6 +440,7 @@ pub struct GwasSnp {
 #[derive(Debug, Clone, Deserialize)]
 pub struct GwasGenomicContext {
     #[serde(default)]
+    // dead-code reason: gwas::gene preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub gene: Option<GwasGene>,
 }

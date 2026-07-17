@@ -278,6 +278,7 @@ pub(crate) fn extract_uniprot_accession(value: &serde_json::Value) -> Option<Str
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyGeneSearchResponse {
+    // dead-code reason: mygene::total preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub total: usize,
     pub hits: Vec<MyGeneHit>,
@@ -285,6 +286,7 @@ pub struct MyGeneSearchResponse {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyGeneGetQueryResponse {
+    // dead-code reason: mygene::total preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub total: usize,
     pub hits: Vec<MyGeneGetResponse>,

@@ -364,6 +364,7 @@ struct ReactomeEvent {
     display_name: Option<String>,
 }
 
+// dead-code reason: reactome::ReactomeContainedEvent preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]

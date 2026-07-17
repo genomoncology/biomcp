@@ -120,20 +120,18 @@ biomcp search author -q "Louis S Williams" --source semanticscholar
 biomcp get author semanticscholar:2269573451
 ```
 
-Affiliation filtering, PubMed/ORCID identities, and helper commands remain the
-additive target:
+Affiliation filtering, PubMed name-only candidates, and helper commands remain
+the additive target:
 
 ```bash
 biomcp author publications semanticscholar:2269573451 --limit 20
 biomcp author coauthors semanticscholar:2269573451 --max-publications 100 --offset 0
-biomcp author topics orcid:0000-0002-7433-2740 --source pubmed --max-publications 100 --offset 0
 ```
 
 Current author IDs use the `semanticscholar:` provider qualifier, and BioMCP
-does not mint a global person ID. The later target may add provider-qualified
-ORCID identities and PubMed name-only candidates because PubMed has no author
-entity identifier. Future search and detail distinguish evidence-linked,
-ambiguous, and name-only results. Publication output is grouped into
+does not mint a global person ID. Citation-supplied ORCID values remain identity
+evidence rather than direct-source author IDs. Future search and detail
+distinguish evidence-linked, ambiguous, and name-only results. Publication output is grouped into
 independently paged provider corpora, and coauthor/topic output names its bounded
 supporting publication set. See
 `architecture/functional/author-identity.md` for exact JSON shapes, evidence
@@ -468,4 +466,4 @@ MCP resources include `biomcp://skill/<slug>` for each embedded worked example.
 - `search author -q <name> [--source semanticscholar] [--limit N] [--offset N]`
 - `get author semanticscholar:<id>`
 - Output labels the identity as exact-provider and states that BioMCP has not established an ORCID link in this release.
-- Affiliation filtering, PubMed/ORCID identities, publications, coauthors, and topics remain future work.
+- Affiliation filtering, PubMed name-only candidates, publications, coauthors, and topics remain future work; ORCID remains citation-supplied identity evidence.

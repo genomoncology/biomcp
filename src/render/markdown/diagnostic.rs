@@ -143,6 +143,7 @@ fn render_regulatory_block(rows: Option<&[DiagnosticRegulatoryRecord]>) -> Strin
     out
 }
 
+// dead-code reason: diagnostic::diagnostic_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn diagnostic_search_markdown(
     query: &str,

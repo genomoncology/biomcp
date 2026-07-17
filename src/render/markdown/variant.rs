@@ -163,6 +163,7 @@ fn prediction_interpretations(
     (expr, splice, chrom)
 }
 
+// dead-code reason: variant::variant_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn variant_search_markdown(
     query: &str,
@@ -201,6 +202,7 @@ pub fn variant_search_markdown_with_context(
     Ok(with_pagination_footer(body, pagination_footer))
 }
 
+// dead-code reason: variant::phenotype_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn phenotype_search_markdown(
     query: &str,
@@ -225,6 +227,7 @@ pub fn phenotype_search_markdown_with_footer(
     Ok(with_pagination_footer(body, pagination_footer))
 }
 
+// dead-code reason: variant::gwas_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn gwas_search_markdown(
     query: &str,

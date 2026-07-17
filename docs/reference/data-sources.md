@@ -30,7 +30,6 @@ variables, test-only override seams, cache settings, and release/install knobs.
 | Article enrichment and graph helpers | Semantic Scholar | `https://api.semanticscholar.org` | Optional (`S2_API_KEY`) | Search-leg metadata, TLDR, influential citations, citation/reference graph, recommendations |
 | Article annotations | PubTator3 | `https://www.ncbi.nlm.nih.gov/research/pubtator3-api` | No | Entity annotations |
 | Article indexing | PubMed citation EFetch XML | `https://eutils.ncbi.nlm.nih.gov/entrez/eutils` | Optional (`NCBI_API_KEY`) | Opt-in associated author affiliations/ORCID and structured MeSH; explicit available/unavailable status; included by `all` |
-| Internal ORCID author source seam | ORCID Public API v3.0 | `https://pub.orcid.org/v3.0` | No | Internal/unexposed anonymous public record and works reads only; no author CLI/MCP route, search, member/private access, or works paging |
 | Article full-text resolution | Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + opt-in Semantic Scholar PDF metadata | `https://www.ebi.ac.uk/europepmc/webservices/rest`, `https://eutils.ncbi.nlm.nih.gov/entrez/eutils`, `https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi`, `https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles`, `https://pmc.ncbi.nlm.nih.gov/articles`, `https://api.semanticscholar.org` | Optional (`NCBI_API_KEY`, `S2_API_KEY`) | NCBI ID Converter bridges identifiers; XML/HTML/PDF content rungs save Markdown when available |
 | Drug | MyChem.info | `https://mychem.info/v1` | No | Drug metadata, targets, synonyms, and default U.S. search/get normalization |
 | Drug EU regional context | EMA website JSON batch (local human-medicines download) | `https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format` | No | Supports canonical `search/get drug --region eu|all` for regulatory, safety, and shortage, accepts `ema` as an input alias for `eu`, and auto-downloads into `BIOMCP_EMA_DIR` or the platform data directory on first use; `biomcp ema sync` force-refreshes the local files and omitting `--region` on `get drug <name> regulatory` checks U.S. and EU regulatory data |
@@ -77,9 +76,6 @@ All HTTP-based sources share a common client with:
 The first bounded-client initialization performs a filesystem-locked, one-time
 HTTP-cache epoch migration. It clears entries written before pre-cache body
 limits existed and fails closed if that migration cannot complete.
-
-ORCID is an explicit exception to ordinary anonymous shared caching: every ORCID
-request is forced `NoStore`, regardless of `BIOMCP_CACHE_MODE`.
 
 Provider-returned URL fetches share one outbound policy across Semantic Scholar
 PDFs, PMC OA archives, Figshare files, and ClinicalTrials.gov documents. Before
@@ -149,7 +145,6 @@ and practical ceilings observed in command behavior.
 | NIH Reporter funding sections | Rate-limited to 1 request / second | Use explicit gene symbols or disease phrases/identifiers; BioMCP queries the most recent 5 NIH fiscal years, keeps free-text disease lookups as-entered, falls back to the resolved canonical disease name for identifier lookups, and de-duplicates project-year rows before ranking grants |
 | Semantic Scholar article helpers | 1 request / second with `S2_API_KEY`; 1 request / 2 seconds on the shared pool without it | Explicit helper commands fail fast on shared-pool `429` responses; set `S2_API_KEY` for dedicated quota and retry behavior |
 | Semantic Scholar author search/detail | Author search pages: 1-100 rows | Public provider-exact search/detail; no global identity or ORCID link is established |
-| ORCID internal public-record source seam | Named process-local pacing at 1 request / 100 ms; one body-bounded `/works` read with no continuation | Anonymous guidance is 12/sec sustained, burst 40, and 25,000 reads/day/IP; daily quota is not coordinated across processes. Public API terms limit free use to non-commercial services, so unsupported deployments retain citation-supplied ORCID evidence only |
 | DisGeNET `disgenet` sections | Server-enforced; trial accounts may return first-page-only results and `429` with `X-Rate-Limit-Retry-After-Seconds` | Keep requests explicit, avoid fan-out loops, and retry after the server-provided cooldown |
 
 ## Trial source behavior

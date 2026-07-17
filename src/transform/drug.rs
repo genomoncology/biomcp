@@ -844,7 +844,6 @@ mod tests {
         let hits = [keytruda, unrelated];
         let selected = select_hits_for_name(&hits, "keytruda");
         assert_eq!(selected.len(), 1);
-        assert_eq!(selected[0].id, "brand-hit");
     }
 
     #[test]

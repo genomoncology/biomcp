@@ -36,6 +36,7 @@ pub enum EuropePmcSort {
     Relevance,
 }
 
+// dead-code reason: europepmc::EuropePmcSearchRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct EuropePmcSearchRequestPlan {
     pub method: &'static str,
@@ -199,6 +200,7 @@ impl EuropePmcClient {
         Ok(plan)
     }
 
+    // dead-code reason: europepmc::search_query_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn search_query_request_plan(
         &self,

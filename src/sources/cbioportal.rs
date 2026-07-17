@@ -303,8 +303,10 @@ pub struct CBioMutationSummary {
     pub study_id: String,
     pub sample_list_id: String,
     pub mutation_profile_id: String,
+    // dead-code reason: cbioportal::total_mutations preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub total_mutations: Option<i32>,
+    // dead-code reason: cbioportal::mutation_frequency preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub mutation_frequency: Option<f64>,
     pub cancer_distribution: Vec<CancerFrequency>,

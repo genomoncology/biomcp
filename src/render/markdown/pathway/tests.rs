@@ -69,8 +69,8 @@ fn pathway_search_markdown_shows_source_column() {
         },
     ];
 
-    let markdown =
-        pathway_search_markdown("MAPK", &results, Some(results.len())).expect("markdown");
+    let markdown = pathway_search_markdown_with_footer("MAPK", &results, Some(results.len()), "")
+        .expect("markdown");
     assert!(markdown.contains("| Source | ID | Name |"));
     assert!(markdown.contains("| Reactome | R-HSA-5673001 | RAF/MAP kinase cascade |"));
     assert!(markdown.contains("| KEGG | hsa04010 | MAPK signaling pathway |"));
