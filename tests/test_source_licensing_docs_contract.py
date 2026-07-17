@@ -178,7 +178,7 @@ def test_orcid_is_citation_evidence_not_a_direct_source() -> None:
     assert all(item["id"] != "orcid" for item in _source_inventory())
 
     pubmed = _inventory_item("PubMed")
-    assert "citation XML" in pubmed["notes"]
+    assert "get article <id> indexing" in pubmed["bioMcp_surfaces"]
     assert "ORCID" in pubmed["notes"]
 
 
