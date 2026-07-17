@@ -52,7 +52,6 @@ DIRECT_SOURCE_MODULES = {
     "oncokb": "OncoKB",
     "openfda": "OpenFDA",
     "opentargets": "OpenTargets",
-    "orcid": "ORCID",
     "pharmgkb": "PharmGKB",
     "pmc_oa": "PMC OA",
     "pubmed": "PubMed",

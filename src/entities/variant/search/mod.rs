@@ -237,6 +237,7 @@ pub fn search_query_summary(filters: &VariantSearchFilters) -> String {
     parts.join(", ")
 }
 
+// dead-code reason: mod::search is exercised by native tests or binary dispatch
 #[allow(dead_code)]
 pub async fn search(
     filters: &VariantSearchFilters,

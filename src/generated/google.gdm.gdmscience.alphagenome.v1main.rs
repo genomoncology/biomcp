@@ -1169,6 +1169,7 @@ pub struct MetadataResponse {
 }
 /// Generated client implementations.
 pub mod dna_model_service_client {
+    // dead-code reason: generated provider client includes members unused by this runtime
     #![allow(
         unused_variables,
         dead_code,

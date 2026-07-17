@@ -11,6 +11,7 @@ const MUTALYZER_BASE: &str = "https://mutalyzer.nl/api";
 const MUTALYZER_API: &str = "mutalyzer";
 const MUTALYZER_BASE_ENV: &str = "BIOMCP_MUTALYZER_BASE_URL";
 
+// dead-code reason: mutalyzer::MutalyzerNormalizeRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct MutalyzerNormalizeRequestPlan {
     pub method: &'static str,

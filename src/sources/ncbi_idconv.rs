@@ -136,6 +136,7 @@ impl NcbiIdConverterClient {
 
 #[derive(Debug, Deserialize)]
 pub struct NcbiIdConvResponse {
+    // dead-code reason: ncbi_idconv::status preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub status: Option<String>,
     #[serde(default)]
@@ -145,14 +146,19 @@ pub struct NcbiIdConvResponse {
 #[derive(Debug, Deserialize)]
 pub struct NcbiIdConvRecord {
     pub pmcid: Option<String>,
+    // dead-code reason: ncbi_idconv::pmid preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub pmid: Option<u64>,
+    // dead-code reason: ncbi_idconv::doi preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub doi: Option<String>,
+    // dead-code reason: ncbi_idconv::status preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub status: Option<String>,
+    // dead-code reason: ncbi_idconv::errmsg preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub errmsg: Option<String>,
+    // dead-code reason: ncbi_idconv::requested_id preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     #[serde(rename = "requested-id")]
     pub requested_id: Option<String>,

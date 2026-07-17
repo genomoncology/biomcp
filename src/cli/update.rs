@@ -308,6 +308,7 @@ async fn fetch_checksum_status(
 // ---- 331 fail-closed checksum policy ----
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// dead-code reason: update::ChecksumStatus is exercised by binary dispatch or CLI contracts
 #[allow(dead_code)]
 enum ChecksumStatus {
     Verified,

@@ -11,6 +11,7 @@ const VARIANTVALIDATOR_BASE: &str = "https://rest.variantvalidator.org";
 const VARIANTVALIDATOR_API: &str = "variantvalidator";
 const VARIANTVALIDATOR_BASE_ENV: &str = "BIOMCP_VARIANTVALIDATOR_BASE_URL";
 
+// dead-code reason: variantvalidator::VariantValidatorNormalizeRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct VariantValidatorNormalizeRequestPlan {
     pub method: &'static str,

@@ -147,6 +147,80 @@ def tracked_cli_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     return sorted({line for line in proc.stdout.splitlines() if line}), []
 
 
+def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
+    proc = subprocess.run(
+        ["git", "-C", str(root_dir), "ls-files", "--", "src/*.rs", "src/**/*.rs"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return [], [proc.stderr.strip() or "git ls-files failed"]
+    return sorted({line for line in proc.stdout.splitlines() if line}), []
+
+
+def check_dead_code_allowances(root_dir: Path) -> dict[str, object]:
+    tracked_files, errors = tracked_rust_files(root_dir)
+    if errors:
+        return {"status": "error", "findings": [], "errors": errors}
+
+    findings: list[dict[str, object]] = []
+    spans_checked = 0
+    reason_re = re.compile(r"^\s*//.*dead-code reason:\s*\S")
+    for relative_path in tracked_files:
+        path = root_dir / relative_path
+        if not path.is_file():
+            continue
+        lines = path.read_text(encoding="utf-8").splitlines()
+        line_index = 0
+        while line_index < len(lines):
+            stripped = lines[line_index].lstrip()
+            if not (stripped.startswith("#[") or stripped.startswith("#![")):
+                line_index += 1
+                continue
+
+            opening_line = line_index
+            span_lines = [lines[line_index]]
+            depth = lines[line_index].count("[") - lines[line_index].count("]")
+            while depth > 0 and line_index + 1 < len(lines):
+                line_index += 1
+                span_lines.append(lines[line_index])
+                depth += lines[line_index].count("[") - lines[line_index].count("]")
+
+            span = "\n".join(span_lines)
+            attribute_tokens = re.sub(r'/\*.*?\*/|//[^\n]*', '', span, flags=re.DOTALL)
+            attribute_tokens = re.sub(
+                r'r(?P<hashes>#+)".*?"(?P=hashes)|"(?:\\.|[^"\\])*"',
+                '',
+                attribute_tokens,
+                flags=re.DOTALL,
+            )
+            if re.search(r"\ballow\s*\(.*?\bdead_code\b", attribute_tokens, re.DOTALL):
+                spans_checked += 1
+                previous = lines[opening_line - 1] if opening_line else ""
+                if not reason_re.match(previous):
+                    findings.append(
+                        {
+                            "path": relative_path,
+                            "line": opening_line + 1,
+                            "message": (
+                                "dead-code allowance requires an adjacent concrete "
+                                "`dead-code reason:` comment"
+                            ),
+                        }
+                    )
+            line_index += 1
+
+    return {
+        "status": "fail" if findings else "pass",
+        "files_checked": len(tracked_files),
+        "allowances_checked": spans_checked,
+        "finding_count": len(findings),
+        "findings": findings,
+        "errors": [],
+    }
+
+
 def tracked_experiment_result_files(root_dir: Path) -> tuple[list[str], list[str]]:
     proc = subprocess.run(
         [
@@ -1431,6 +1505,12 @@ def main() -> int:
     )
     write_json(args.output_dir / "quality-ratchet-source-registry.json", source_payload)
 
+    dead_code_payload = check_dead_code_allowances(args.root_dir)
+    write_json(
+        args.output_dir / "quality-ratchet-dead-code-allowances.json",
+        dead_code_payload,
+    )
+
     cli_line_cap_payload = check_cli_line_cap(args.root_dir, cli_line_cap_allowlist)
     write_json(args.output_dir / "quality-ratchet-cli-line-cap.json", cli_line_cap_payload)
 
@@ -1488,6 +1568,7 @@ def main() -> int:
         lint_payload["status"],
         mcp_payload.get("status"),
         source_payload.get("status"),
+        dead_code_payload.get("status"),
         cli_line_cap_payload.get("status"),
         section_outcome_policy_payload.get("status"),
         experiment_results_payload.get("status"),
@@ -1508,6 +1589,7 @@ def main() -> int:
         "lint": lint_payload,
         "mcp_allowlist": {"status": mcp_payload.get("status")},
         "source_registry": {"status": source_payload.get("status")},
+        "dead_code_allowances": {"status": dead_code_payload.get("status")},
         "cli_line_cap": {"status": cli_line_cap_payload.get("status")},
         "section_outcome_policy_line_cap": {
             "status": section_outcome_policy_payload.get("status")

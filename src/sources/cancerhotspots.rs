@@ -34,11 +34,13 @@ impl CancerHotspotRecurrence {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CancerHotspotRow {
+    // dead-code reason: cancerhotspots::hugo_symbol preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub hugo_symbol: Option<String>,
     pub residue: Option<String>,
     pub tumor_count: Option<u32>,
     pub transcript_id: Option<String>,
+    // dead-code reason: cancerhotspots::amino_acid_position preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub amino_acid_position: Option<serde_json::Value>,
     #[serde(default)]

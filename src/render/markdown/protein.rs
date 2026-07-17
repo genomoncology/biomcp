@@ -142,6 +142,7 @@ pub fn protein_markdown(
     Ok(append_evidence_urls(body, protein_evidence_urls(protein)))
 }
 
+// dead-code reason: protein::protein_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn protein_search_markdown(
     query: &str,

@@ -63,7 +63,6 @@ pub(crate) mod ols4;
 pub(crate) mod oncokb;
 pub(crate) mod openfda;
 pub(crate) mod opentargets;
-pub(crate) mod orcid;
 pub(crate) mod pharmgkb;
 pub(crate) mod pmc_oa;
 pub(crate) mod provider_url_policy;
@@ -90,7 +89,6 @@ pub(crate) const DEFAULT_MAX_BODY_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) const BIOTHINGS_MAX_RESULT_WINDOW: usize = 10_000;
 
 static HTTP_CLIENT: OnceLock<ClientWithMiddleware> = OnceLock::new();
-static ORCID_HTTP_CLIENT: OnceLock<ClientWithMiddleware> = OnceLock::new();
 static STREAMING_HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 tokio::task_local! {
@@ -213,7 +211,8 @@ pub(crate) enum HttpMethod {
 pub(crate) enum RequestBody {
     None,
     Form(Vec<(String, String)>),
-    #[allow(dead_code)] // used by sources with JSON request bodies (fan-out)
+    // dead-code reason: RequestBody::Json is reserved for source request-plan JSON fan-out
+    #[allow(dead_code)]
     Json(serde_json::Value),
 }
 
@@ -420,7 +419,6 @@ fn next_retry_sleep(
 #[derive(Clone, Copy)]
 enum SharedHttpClientKind {
     Default,
-    Orcid,
     SemanticScholarSharedPool,
 }
 
@@ -634,10 +632,7 @@ fn build_http_client_with_config(
             .dns_resolver(policy.dns_resolver())
             .redirect(policy.redirect_policy());
     } else {
-        base_client = base_client.redirect(match kind {
-            SharedHttpClientKind::Orcid => rate_limit::orcid_redirect_policy(),
-            _ => rate_limit::redirect_policy(),
-        });
+        base_client = base_client.redirect(rate_limit::redirect_policy());
     }
     let base_client = base_client.build().map_err(BioMcpError::HttpClientInit)?;
 
@@ -662,9 +657,7 @@ fn build_http_client_with_config(
             .with_retry_log_level(tracing::Level::DEBUG),
     );
     let builder = match kind {
-        SharedHttpClientKind::Default | SharedHttpClientKind::Orcid => {
-            builder.with(RetryAfterTooManyRequestsMiddleware)
-        }
+        SharedHttpClientKind::Default => builder.with(RetryAfterTooManyRequestsMiddleware),
         SharedHttpClientKind::SemanticScholarSharedPool => {
             builder.with(SemanticScholarSharedPoolRateLimitMiddleware)
         }
@@ -699,25 +692,6 @@ pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
             api: "http-client".into(),
             message: "Shared HTTP client initialization race".into(),
         }),
-    }
-}
-
-pub(crate) fn orcid_shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
-    if let Some(client) = ORCID_HTTP_CLIENT.get() {
-        return Ok(client.clone());
-    }
-
-    let client = build_http_client(SharedHttpClientKind::Orcid)?;
-
-    match ORCID_HTTP_CLIENT.set(client.clone()) {
-        Ok(()) => Ok(client),
-        Err(_) => ORCID_HTTP_CLIENT
-            .get()
-            .cloned()
-            .ok_or_else(|| BioMcpError::Api {
-                api: "http-client".into(),
-                message: "ORCID shared HTTP client initialization race".into(),
-            }),
     }
 }
 

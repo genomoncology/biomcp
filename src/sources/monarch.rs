@@ -414,6 +414,7 @@ fn predicate_label(value: Option<&str>) -> Option<String> {
 
 #[derive(Debug, Clone, Deserialize)]
 struct MonarchAssociationResponse {
+    // dead-code reason: monarch::total preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     #[serde(default)]
     total: usize,

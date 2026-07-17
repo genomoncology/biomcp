@@ -275,11 +275,13 @@ impl SeerSiteCatalog {
         self.sex_labels.get(&sex_code).map(String::as_str)
     }
 
+    // dead-code reason: seer::race_label preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn race_label(&self, race_code: u16) -> Option<&str> {
         self.race_labels.get(&race_code).map(String::as_str)
     }
 
+    // dead-code reason: seer::age_range_label preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn age_range_label(&self, age_range_code: u16) -> Option<&str> {
         self.age_range_labels

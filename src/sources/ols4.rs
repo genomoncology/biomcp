@@ -11,6 +11,7 @@ const OLS4_API: &str = "ols4";
 const OLS4_BASE_ENV: &str = "BIOMCP_OLS4_BASE";
 const OLS4_ONTOLOGIES: &str = "hgnc,mesh,mondo,doid,hp,go,chebi,dron,ncit,ordo,wikipathways,so";
 
+// dead-code reason: ols4::OlsSearchRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct OlsSearchRequestPlan {
     pub method: &'static str,
@@ -128,6 +129,7 @@ struct OlsSearchResponse {
 #[derive(Debug, Clone, Deserialize)]
 pub struct OlsDoc {
     pub iri: String,
+    // dead-code reason: ols4::ontology_name preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     #[serde(default)]
     pub ontology_name: String,
@@ -139,14 +141,17 @@ pub struct OlsDoc {
     pub obo_id: Option<String>,
     #[serde(default)]
     pub label: String,
+    // dead-code reason: ols4::description preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     #[serde(default)]
     pub description: Vec<String>,
     #[serde(default)]
     pub exact_synonyms: Vec<String>,
+    // dead-code reason: ols4::is_defining_ontology preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     #[serde(default)]
     pub is_defining_ontology: bool,
+    // dead-code reason: ols4::doc_type preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     #[serde(default, rename = "type")]
     pub doc_type: Option<String>,

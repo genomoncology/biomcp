@@ -8,6 +8,7 @@ use crate::sources::gwas::{GwasAssociation, GwasClient, GwasSnp};
 use super::resolution::parse_variant_id;
 use super::{GwasSearchFilters, Variant, VariantGwasAssociation, VariantIdFormat};
 
+// dead-code reason: gwas::search_gwas is exercised by native tests or binary dispatch
 #[allow(dead_code)]
 pub async fn search_gwas(
     filters: &GwasSearchFilters,

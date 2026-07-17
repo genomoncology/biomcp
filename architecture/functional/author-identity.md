@@ -23,20 +23,17 @@ facts that routine tests should fetch from public APIs.
 
 | Case | PubMed evidence | Semantic Scholar evidence | ORCID evidence | Required interpretation |
 |---|---|---|---|---|
-| ORCID-backed identity: Atul J. Butte | Recent citations include ORCID `0000-0002-7433-2740` and UCSF affiliation; some citations omit the ORCID | Search returns several records; `semanticscholar:1716151` has 548 papers but its `externalIds` contains DBLP, not ORCID | Public record `orcid:0000-0002-7433-2740` names Atul Janardhan Butte and carries source-labelled UCSF employment | ORCID and a citation can link exactly. S2 cannot be linked merely from the similar name; shared publication evidence is required and S2 split records must remain visible. |
-| No ORCID on citation: Louis S. Williams, Cleveland Clinic | PMIDs `42146891`, `42056076`, `40717004`, `40221882`, and `36966011` match `Williams LS[au] AND Cleveland Clinic[ad]`; the matched citation author has no ORCID | `semanticscholar:2269573451` owns PMIDs `42146891` and `42056076`; older myeloma papers appear under `semanticscholar:1994488914`, showing a likely split | ORCID expanded search returns seven Louis Williams records but none supplies evidence tying it to these Cleveland Clinic citations | The S2 records are exact provider identities; their shared name/topic is not enough to link them. PubMed membership is `name_affiliation`, not ORCID-backed. |
-| Same-name people | Cleveland Clinic hematology citations identify a Louis S. Williams only by name plus historical publication affiliation | S2 search returns multiple Louis/L. Williams records | `orcid:0000-0002-0220-9057` claims ophthalmology/glaucoma works and is distinct from the Cleveland Clinic hematology corpus; other Louis Williams ORCIDs also exist | Search returns separate candidates or an ambiguous/name-only group. It must not select an ORCID for the clinician. |
-| Provider disagreement | PubMed places the Cleveland Clinic author on both newer and older papers | S2 divides the apparent corpus across at least `2269573451` and `1994488914` | No corroborating ORCID is present | Expose two S2 records and shared-PMID evidence; do not auto-merge. |
-
-Live probes used only public records and intentionally inspected no email,
-private profile, homepage, or inferred demographic field.
+| ORCID-backed identity: Atul J. Butte | Recent citations include ORCID `0000-0002-7433-2740` and UCSF affiliation; some citations omit the ORCID | Search returns several records; `semanticscholar:1716151` has 548 papers but its `externalIds` contains DBLP, not ORCID | Citation-supplied ORCID only | ORCID and a citation can link exactly. S2 cannot be linked merely from the similar name; shared publication evidence is required and S2 split records must remain visible. |
+| No ORCID on citation: Louis S. Williams, Cleveland Clinic | PMIDs `42146891`, `42056076`, `40717004`, `40221882`, and `36966011` match `Williams LS[au] AND Cleveland Clinic[ad]`; the matched citation author has no ORCID | `semanticscholar:2269573451` owns PMIDs `42146891` and `42056076`; older myeloma papers appear under `semanticscholar:1994488914`, showing a likely split | No citation-supplied ORCID | The S2 records are exact provider identities; their shared name/topic is not enough to link them. PubMed membership is `name_affiliation`, not ORCID-backed. |
+| Same-name people | Cleveland Clinic hematology citations identify a Louis S. Williams only by name plus historical publication affiliation | S2 search returns multiple Louis/L. Williams records | An ORCID from another citation cannot be assigned by name | Search returns separate candidates or an ambiguous/name-only group. It must not select an ORCID for the clinician. |
+| Provider disagreement | PubMed places the Cleveland Clinic author on both newer and older papers | S2 divides the apparent corpus across at least `2269573451` and `1994488914` | No corroborating citation ORCID is present | Expose two S2 records and shared-PMID evidence; do not auto-merge. |
 
 ## Public grammar
 
 ```text
 biomcp search author -q <name> [--affiliation <text>] [--source <all|semanticscholar|pubmed>] [--limit N] [--offset N]
-biomcp get author <semanticscholar:ID|orcid:ORCID>
-biomcp author publications <provider-qualified-id> [--source <auto|semanticscholar|pubmed|orcid|all>] [--limit N] [--offset N]
+biomcp get author semanticscholar:<ID>
+biomcp author publications semanticscholar:<ID> [--limit N] [--offset N]
 biomcp author coauthors <provider-qualified-id> [--source <auto|semanticscholar>] [--max-publications N] [--limit N] [--offset N]
 biomcp author topics <provider-qualified-id> [--source pubmed] [--max-publications N] [--limit N] [--offset N]
 ```
@@ -52,16 +49,15 @@ an explicit Semantic Scholar affiliation search fails before network work rather
 than silently treating affiliation as free text or trusting sparse profile data.
 
 The first useful release supports Semantic Scholar name search and exact detail
-without `--affiliation`. Later tickets add PubMed affiliation-capable candidates,
-ORCID detail/link evidence, and aggregates without changing the provider-
-qualified ID grammar.
+without `--affiliation`. Later tickets may add PubMed affiliation-capable candidates
+and aggregates without changing the provider-qualified ID grammar.
 
 ## Domain boundary
 
 Add `src/entities/author/` as a sibling of `src/entities/article/`:
 
 ```text
-src/cli/author/ -> src/entities/author/ -> src/sources/{semantic_scholar,pubmed,orcid}.rs
+src/cli/author/ -> src/entities/author/ -> src/sources/{semantic_scholar,pubmed}.rs
                                            |
                                            +-> shared publication identifiers,
                                                citation author/indexing values
@@ -155,7 +151,6 @@ case not accepted by the matrix defaults to `candidate`.
 enum MembershipKind {
     ProviderAuthorId, // paper returned from an exact provider author endpoint
     OrcidOnCitation,  // citation author ORCID exactly matches requested ORCID
-    OrcidWorkAssertion,
     NameAndAffiliation,
     NameOnly,
 }
@@ -169,9 +164,9 @@ struct PublicationMembership {
 }
 ```
 
-`ProviderAuthorId`, `OrcidOnCitation`, and public `OrcidWorkAssertion` are exact
-within the named provider/assertion. `NameAndAffiliation` and `NameOnly` remain
-candidates and default to `included_in_aggregates: false`. Fuzzy name matching
+`ProviderAuthorId` and `OrcidOnCitation` are exact within the named
+provider/assertion. `NameAndAffiliation` and `NameOnly` remain candidates and
+default to `included_in_aggregates: false`. Fuzzy name matching
 never replaces stronger available evidence.
 
 ## Response contracts
@@ -214,29 +209,9 @@ own next offset. There is no federated offset or total.
 
 ### Detail
 
-```bash
-biomcp --json get author orcid:0000-0002-7433-2740
-```
-
-```json
-{
-  "identity":{"kind":"exact_provider","id":"orcid:0000-0002-7433-2740"},
-  "display_name":"Atul Janardhan Butte",
-  "name_variants":[{"value":"Atul Janardhan Butte","source":{"provider":"orcid","record":"0000-0002-7433-2740"}}],
-  "affiliations":[{"value":"University of California San Francisco","temporal":{"kind":"observed_at","value":"2026-07-14T00:00:00Z"},"source":{"provider":"orcid","record":"0000-0002-7433-2740","put_code":"1576165"}}],
-  "provider_records":[{"id":"orcid:0000-0002-7433-2740","status":"available"}],
-  "conflicts":[],
-  "_meta":{"source_status":[],"evidence_urls":[],"next_commands":["biomcp author publications orcid:0000-0002-7433-2740"]}
-}
-```
-
 An exact provider get that has no proven cross-provider links uses
 `identity.kind: "exact_provider"`; `linked` requires at least one accepted link.
-A linked response names both records and its accepted evidence:
-
-```json
-{"identity":{"kind":"linked","requested":"orcid:0000-0002-7433-2740","records":["orcid:0000-0002-7433-2740","semanticscholar:1716151"],"links":[{"left":"orcid:0000-0002-7433-2740","right":"semanticscholar:1716151","decision":"linked","reasons":["orcid_on_citation","aligned_authorship_on_shared_publication"],"evidence":[{"provider":"pubmed","pmid":"41776157","author_position":3}]}]},"conflicts":[]}
-```
+A linked response names provider records and the accepted citation evidence.
 
 A conflict keeps exact records separate:
 
@@ -276,8 +251,8 @@ the provider named by the requested ID. `--source all` returns independent
 buckets. A caller continues one bucket with that provider and its pagination
 value. For an S2 ID, PubMed is `not_linked` until 523 accepts a link; after an
 accepted ORCID/aligned-authorship link, the PubMed bucket is enumerated by exact
-ORCID-on-citation membership, not by fuzzy name search. ORCID works remain their
-own assertion corpus. Deduplication by PMID, then DOI, is allowed only inside a
+ORCID-on-citation membership, not by fuzzy name search. Deduplication by PMID,
+then DOI, is allowed only inside a
 bounded aggregate operation and must retain all memberships.
 
 ### Coauthors
@@ -301,21 +276,6 @@ are preserved when present; a name-only coauthor is labeled `name_only` and is
 not merged with another same-name coauthor.
 
 ### Topics
-
-```bash
-biomcp --json author topics orcid:0000-0002-7433-2740 --source pubmed --max-publications 100 --limit 20 --offset 0
-```
-
-```json
-{
-  "author":{"kind":"exact_provider","id":"orcid:0000-0002-7433-2740"},
-  "topic_kind":"source_indexing_mesh",
-  "topics":[{"descriptor":{"ui":"D001185","name":"Artificial Intelligence"},"publication_count":12,"major_topic_count":8,"supporting_publications":[{"pmid":"41776157"}]}],
-  "corpus":{"source":"pubmed","examined":23,"eligible":21,"excluded_uncertain":2,"truncated":false,"max_publications":100,"source_status":[]},
-  "pagination":{"kind":"offset","offset":0,"limit":20,"next_offset":null,"total":null,"total_relation":"derived_bounded_corpus"},
-  "_meta":{"source_status":[],"evidence_urls":[],"next_commands":[]}
-}
-```
 
 The first topic surface is deterministic MeSH aggregation and says so. Its
 PubMed corpus is enumerated by exact ORCID-on-citation membership (or by a
@@ -356,10 +316,6 @@ always prints corpus source, examined/eligible/excluded/truncated counts, and a
 - `src/sources/pubmed.rs` reuses ESearch and citation EFetch. PubMed contributes
   name/affiliation candidate evidence and citation ORCID/MeSH assertions; it
   never invents a provider author ID.
-- Add `src/sources/orcid.rs` for public-record and public-work request plans.
-  Parse public fields only and preserve ORCID item source, put-code, visibility,
-  and dates. Public email, homepage, inferred demographic data, and non-public
-  assertions are excluded at the source DTO mapping boundary.
 - All source legs use the entity's bounded outcome type and return
   `available`, `empty`, `degraded`, `unavailable`, `not_linked`, or
   `not_requested`. A failed optional source cannot turn into an apparently
@@ -389,12 +345,8 @@ not accept `--source all`: coauthors use exact S2 author papers and topics use
 an exact ORCID-on-citation/accepted-link PubMed corpus. This avoids an arbitrary
 cross-source allocation policy.
 
-Exact ORCID access mode, public defaults/maxima, practical anonymous ceilings,
-redirect handling, terms, and cache freshness must be decided and pinned by 522
-before 527 enables ORCID grammar. Until then, ORCID-shaped IDs are reserved but
-rejected with an actionable unsupported-source error. If 522 cannot establish a
-safe policy, 527/523 do not enable the network route and citation-supplied ORCID
-remains evidence only.
+ORCID-shaped IDs are reserved but rejected with an actionable unsupported-source
+error; citation-supplied ORCID remains evidence only.
 
 ## Invariants
 
@@ -433,8 +385,8 @@ The build order is deliberately additive:
 2. add S2 author source request contracts without public grammar;
 3. ship exact S2 search/get, then exact S2 publications;
 4. add internal PubMed candidate/membership mapping, then cut it over publicly;
-5. prove the ORCID source, ship exact ORCID detail/publications, then expose
-   evidence-bearing cross-provider links and conflicts;
+5. expose evidence-bearing cross-provider links and conflicts only from
+   citation-supplied identity evidence;
 6. derive S2 coauthors and PubMed MeSH topics from one bounded eligible corpus
    per operation.
 

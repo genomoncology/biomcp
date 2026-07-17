@@ -1078,6 +1078,7 @@ struct DiseaseHpoEvidence {
 
 #[derive(Debug, Deserialize)]
 struct HpoNode {
+    // dead-code reason: opentargets::id preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     id: Option<String>,
     name: Option<String>,
@@ -1179,6 +1180,7 @@ struct TargetAssociatedDiseases {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct TargetAssociatedDiseaseRow {
+    // dead-code reason: opentargets::score preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     score: Option<f64>,
     disease: Option<TargetDiseaseNode>,
@@ -1186,6 +1188,7 @@ struct TargetAssociatedDiseaseRow {
 
 #[derive(Debug, Deserialize)]
 struct TargetDiseaseNode {
+    // dead-code reason: opentargets::id preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     id: Option<String>,
     name: Option<String>,
@@ -1204,6 +1207,7 @@ struct TargetDrugCandidateRow {
 
 #[derive(Debug, Deserialize)]
 struct TargetDrugNode {
+    // dead-code reason: opentargets::id preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     id: Option<String>,
     name: Option<String>,
@@ -1239,6 +1243,7 @@ struct SafetyLiabilityRow {
 #[derive(Debug, Deserialize)]
 struct SafetyEffectRow {
     direction: Option<String>,
+    // dead-code reason: opentargets::dosing preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     dosing: Option<String>,
 }

@@ -17,6 +17,7 @@ const EXPRESSION_FILES: &[&str] = &[
     "data_mrna_seq_v2_rsem.txt",
 ];
 
+// dead-code reason: cbioportal_study::StudyMeta preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct StudyMeta {
@@ -166,6 +167,7 @@ pub enum SurvivalStatus {
 
 #[derive(Debug, Clone)]
 pub struct PatientSurvivalRecord {
+    // dead-code reason: cbioportal_study::patient_id preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub patient_id: String,
     pub status: SurvivalStatus,

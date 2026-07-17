@@ -51,6 +51,7 @@ pub fn adverse_event_markdown(
     ))
 }
 
+// dead-code reason: adverse_event::adverse_event_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn adverse_event_search_markdown(
     query: &str,
@@ -60,6 +61,7 @@ pub fn adverse_event_search_markdown(
     adverse_event_search_markdown_with_footer(query, results, summary, "")
 }
 
+// dead-code reason: adverse_event::adverse_event_search_markdown_with_footer is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn adverse_event_search_markdown_with_footer(
     query: &str,
@@ -302,6 +304,7 @@ pub fn device_event_markdown(event: &DeviceEvent) -> Result<String, BioMcpError>
     ))
 }
 
+// dead-code reason: adverse_event::device_event_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn device_event_search_markdown(
     query: &str,
@@ -325,6 +328,7 @@ pub fn device_event_search_markdown_with_footer(
     Ok(with_pagination_footer(body, pagination_footer))
 }
 
+// dead-code reason: adverse_event::recall_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn recall_search_markdown(
     query: &str,

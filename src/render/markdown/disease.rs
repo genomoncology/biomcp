@@ -365,6 +365,7 @@ pub fn disease_markdown(
     Ok(append_evidence_urls(body, disease_evidence_urls(disease)))
 }
 
+// dead-code reason: disease::disease_search_markdown is exercised by native renderer contracts
 #[allow(dead_code)]
 pub fn disease_search_markdown(
     query: &str,

@@ -44,14 +44,6 @@ pub fn pgx_markdown(pgx: &Pgx, requested_sections: &[String]) -> Result<String, 
     Ok(append_evidence_urls(body, pgx_evidence_urls(pgx)))
 }
 
-#[allow(dead_code)]
-pub fn pgx_search_markdown(
-    query: &str,
-    results: &[PgxSearchResult],
-) -> Result<String, BioMcpError> {
-    pgx_search_markdown_with_footer(query, results, "")
-}
-
 pub fn pgx_search_markdown_with_footer(
     query: &str,
     results: &[PgxSearchResult],

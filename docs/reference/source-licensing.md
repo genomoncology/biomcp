@@ -74,7 +74,6 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | OncoKB | 2 | direct_api | required_env | custom provider terms; academic research access is no-fee but licensed, commercial/clinical use requires a paid license | do not assume open redistribution rights for OncoKB data or proprietary treatment descriptions | <https://faq.oncokb.org/licensing> |
 | OpenFDA | 1 | direct_api | optional_env | FDA-origin public data and API terms | data is broadly reusable, but avoid implying FDA endorsement and preserve source context | <https://open.fda.gov/apis/authentication/> |
 | OpenTargets | 1 | direct_api | none | Open Targets data is CC0; platform code is Apache 2.0 | platform data is dedicated to the public domain, but linked evidence still carries source provenance | <https://platform-docs.opentargets.org/licence> |
-| ORCID | 3 | direct_api | none | free Public API access is limited to non-commercial services under ORCID's Public APIs Terms of Service | preserve assertion provenance and visibility; do not assume the anonymous Public API is available to revenue-generating deployments | <https://info.orcid.org/public-client-terms-of-service/> |
 | PharmGKB | 3 | direct_api | none | ClinPGx API data is CC BY-SA 4.0 and subject to the provider's data usage policy | reuse is allowed with attribution and ShareAlike; some underlying annotations and external assets may add extra constraints | <https://api.pharmgkb.org/> |
 | PMC OA | 1 | direct_api | optional_env | open-access subset only; article licenses vary within PMC OA | full text is reusable only according to each article's specific PMC Open Access license | <https://pmc.ncbi.nlm.nih.gov/tools/openftlist/> |
 | PubMed | 1 | direct_api | optional_env | NLM public-domain search and metadata service | search results are broadly reusable, but article-level abstracts, full text, and downstream reuse still depend on the returned record context | <https://www.ncbi.nlm.nih.gov/books/NBK25501/> |
@@ -800,18 +799,6 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://www.ncbi.nlm.nih.gov/research/litsense2-api/>
 - Reviewed on: `2026-04-10`
 - Notes: LitSense2 is individually selectable with `search article --source litsense2` and contributes semantic-signal metadata; it is not part of the default `--source all` federation.
-
-### ORCID
-
-- BioMCP surfaces: `internal record/works source seam (no public CLI/MCP route)`
-- Integration mode: `direct_api`
-- BioMCP auth: `none`
-- Provider access / registration: anonymous Public API reads of public record data; registered Public API and member/private access are not used
-- License / terms summary: free Public API access is limited to non-commercial services under ORCID's Public APIs Terms of Service
-- Redistribution / reuse summary: preserve assertion provenance and visibility; do not assume the anonymous Public API is available to revenue-generating deployments
-- Official terms URL: <https://info.orcid.org/public-client-terms-of-service/>
-- Reviewed on: `2026-07-14`
-- Notes: BioMCP has an internal-only anonymous v3.0 record/works seam with forced no-store, one-process 10 requests/second pacing, and no works continuation. There is no credential variable or public author route. Deployments outside the Public API terms retain citation-supplied ORCID evidence only.
 
 ### PharmGKB
 

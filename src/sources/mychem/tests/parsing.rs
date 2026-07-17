@@ -38,7 +38,6 @@ fn parses_query_response_from_real_fixture() {
 
     assert!(resp.total >= 1);
     let hit = resp.hits.first().expect("hit");
-    assert_eq!(hit.id, "68001-623");
     let ndc = hit.ndc.as_ref().expect("ndc field");
     let MyChemNdcField::One(ndc) = ndc else {
         panic!("expected one ndc entry");

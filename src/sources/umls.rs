@@ -180,6 +180,7 @@ pub struct UmlsConcept {
     pub name: String,
     pub semantic_types: Vec<String>,
     pub xrefs: Vec<UmlsXref>,
+    // dead-code reason: umls::uri preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub uri: String,
 }

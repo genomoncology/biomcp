@@ -10,6 +10,7 @@ const PUBTATOR_BASE: &str = "https://www.ncbi.nlm.nih.gov/research/pubtator3-api
 const PUBTATOR_API: &str = "pubtator3";
 const PUBTATOR_BASE_ENV: &str = "BIOMCP_PUBTATOR_BASE";
 
+// dead-code reason: pubtator::PubTatorSearchRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct PubTatorSearchRequestPlan {
     pub method: &'static str,
@@ -21,6 +22,7 @@ pub struct PubTatorSearchRequestPlan {
     pub auth_mode: &'static str,
 }
 
+// dead-code reason: pubtator::PubTatorExportRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct PubTatorExportRequestPlan {
     pub method: &'static str,
@@ -32,6 +34,7 @@ pub struct PubTatorExportRequestPlan {
     pub auth_mode: &'static str,
 }
 
+// dead-code reason: pubtator::PubTatorAutocompleteRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct PubTatorAutocompleteRequestPlan {
     pub method: &'static str,
@@ -82,6 +85,7 @@ impl PubTatorClient {
         plan
     }
 
+    // dead-code reason: pubtator::export_biocjson_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn export_biocjson_request_plan(&self, pmid: u32) -> PubTatorExportRequestPlan {
         PubTatorExportRequestPlan {
@@ -133,6 +137,7 @@ impl PubTatorClient {
         Ok(plan)
     }
 
+    // dead-code reason: pubtator::entity_autocomplete_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn entity_autocomplete_request_plan(
         &self,
@@ -220,6 +225,7 @@ impl PubTatorClient {
         Ok(plan)
     }
 
+    // dead-code reason: pubtator::search_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn search_request_plan(
         &self,
@@ -271,6 +277,7 @@ fn clean_api_key(api_key: Option<&str>) -> Option<&str> {
     api_key.map(str::trim).filter(|key| !key.is_empty())
 }
 
+// dead-code reason: pubtator::pubtator_query_key preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 fn pubtator_query_key(key: &str) -> &'static str {
     match key {
@@ -350,6 +357,7 @@ pub struct PubTatorAnnotation {
 pub struct PubTatorAnnotationInfons {
     #[serde(rename = "type")]
     pub kind: Option<String>,
+    // dead-code reason: pubtator::identifier preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub identifier: Option<String>,
 }

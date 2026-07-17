@@ -10,6 +10,7 @@ mod gene;
 pub mod mcp;
 mod next_command;
 
+// dead-code reason: binary-only exports are not all referenced by the library target
 #[cfg_attr(not(test), allow(dead_code))]
 mod cache;
 mod entities;

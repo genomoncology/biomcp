@@ -11,6 +11,7 @@ const LITSENSE2_BASE: &str = "https://www.ncbi.nlm.nih.gov/research/litsense2-ap
 const LITSENSE2_API: &str = "litsense2";
 const LITSENSE2_BASE_ENV: &str = "BIOMCP_LITSENSE2_BASE";
 
+// dead-code reason: litsense2::LitSense2SearchRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct LitSense2SearchRequestPlan {
     pub method: &'static str,
@@ -73,6 +74,7 @@ impl LitSense2Client {
             .query("rerank", "true"))
     }
 
+    // dead-code reason: litsense2::search_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn search_request_plan(
         &self,

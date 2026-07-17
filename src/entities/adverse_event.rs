@@ -584,14 +584,8 @@ fn build_openfda_query(filters: &AdverseEventSearchFilters) -> Result<String, Bi
     Ok(terms.join(" AND "))
 }
 
+// dead-code reason: binary CLI dispatch uses this page-aware entity seam
 #[allow(dead_code)]
-pub async fn search(
-    filters: &AdverseEventSearchFilters,
-    limit: usize,
-) -> Result<Vec<AdverseEventSearchResult>, BioMcpError> {
-    Ok(search_page(filters, limit, 0).await?.results)
-}
-
 pub async fn search_page(
     filters: &AdverseEventSearchFilters,
     limit: usize,
@@ -1219,6 +1213,8 @@ pub async fn search_with_status(
     search_with_status_client(&client, filters, limit, offset).await
 }
 
+// dead-code reason: page-aware adverse-event search preserves report summary metadata
+#[allow(dead_code)]
 pub async fn search_with_summary(
     filters: &AdverseEventSearchFilters,
     limit: usize,

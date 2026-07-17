@@ -335,6 +335,4 @@ pub(crate) use self::fallback::fallback_search_page;
 pub use self::get::get;
 pub(crate) use self::resolution::resolve_disease_hit_by_name;
 #[allow(unused_imports)]
-pub use self::search::{
-    search, search_page, search_phenotype, search_phenotype_page, search_query_summary,
-};
+pub use self::search::{search_page, search_phenotype_page, search_query_summary};

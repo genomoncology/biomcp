@@ -23,14 +23,18 @@ const SEARCH_PAPER_FIELDS: &str =
 const CITATION_EDGE_FIELDS: &str = "contexts,intents,isInfluential,citingPaper.paperId,citingPaper.externalIds,citingPaper.title,citingPaper.venue,citingPaper.year";
 const REFERENCE_EDGE_FIELDS: &str = "contexts,intents,isInfluential,citedPaper.paperId,citedPaper.externalIds,citedPaper.title,citedPaper.venue,citedPaper.year";
 const RECOMMENDATION_FIELDS: &str = "paperId,externalIds,title,venue,year";
+// dead-code reason: semantic_scholar::AUTHOR_FIELDS preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 const AUTHOR_FIELDS: &str =
     "authorId,name,affiliations,externalIds,paperCount,citationCount,hIndex";
+// dead-code reason: semantic_scholar::AUTHOR_PAPER_FIELDS preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 const AUTHOR_PAPER_FIELDS: &str =
     "paperId,corpusId,externalIds,title,year,authors.authorId,authors.name";
+// dead-code reason: semantic_scholar::SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 const SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX: usize = 100;
+// dead-code reason: semantic_scholar::SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 const SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX: usize = 1_000;
 
@@ -41,6 +45,7 @@ pub enum SemanticScholarAuthMode {
     SharedPool,
 }
 
+// dead-code reason: semantic_scholar::SemanticScholarPaperSearchRequestPlan preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 pub struct SemanticScholarPaperSearchRequestPlan {
     pub method: &'static str,
@@ -145,6 +150,7 @@ impl SemanticScholarClient {
     }
 }
 
+// dead-code reason: semantic_scholar::SemanticScholarClient preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 impl SemanticScholarClient {
     pub(crate) fn author_search_plan(
@@ -359,6 +365,7 @@ impl SemanticScholarClient {
         Ok(with_s2_api_key(plan, api_key))
     }
 
+    // dead-code reason: semantic_scholar::paper_search_request_plan preserves the provider shape used by source contract fixtures
     #[allow(dead_code)]
     pub fn paper_search_request_plan(
         &self,
@@ -539,6 +546,7 @@ fn with_s2_api_key(mut plan: RequestPlan, api_key: Option<&str>) -> RequestPlan 
     plan
 }
 
+// dead-code reason: semantic_scholar::semantic_scholar_query_key preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 fn semantic_scholar_query_key(key: &str) -> &'static str {
     match key {
@@ -571,6 +579,7 @@ where
     Ok(Option::<Vec<T>>::deserialize(deserializer)?.unwrap_or_default())
 }
 
+// dead-code reason: semantic_scholar::validate_author_id preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 fn validate_author_id(author_id: &str) -> Result<&str, BioMcpError> {
     let author_id = author_id.trim();
@@ -592,6 +601,7 @@ fn validate_author_id(author_id: &str) -> Result<&str, BioMcpError> {
     Ok(author_id)
 }
 
+// dead-code reason: semantic_scholar::validate_author_page_limit preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 fn validate_author_page_limit(limit: usize) -> Result<usize, BioMcpError> {
     if limit == 0 || limit > SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX {
@@ -626,6 +636,7 @@ fn validate_limit(limit: usize) -> Result<usize, BioMcpError> {
     Ok(limit)
 }
 
+// dead-code reason: semantic_scholar::SemanticScholarAuthor preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct SemanticScholarAuthor {
@@ -643,6 +654,7 @@ pub struct SemanticScholarAuthor {
     pub h_index: Option<u64>,
 }
 
+// dead-code reason: semantic_scholar::SemanticScholarAuthorPaper preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct SemanticScholarAuthorPaper {
@@ -657,6 +669,7 @@ pub struct SemanticScholarAuthorPaper {
     pub authors: Option<Vec<SemanticScholarAuthorPaperAuthor>>,
 }
 
+// dead-code reason: semantic_scholar::SemanticScholarAuthorPaperAuthor preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct SemanticScholarAuthorPaperAuthor {
@@ -665,6 +678,7 @@ pub struct SemanticScholarAuthorPaperAuthor {
     pub name: Option<String>,
 }
 
+// dead-code reason: semantic_scholar::SemanticScholarAuthorSearchResponse preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SemanticScholarAuthorSearchResponse {
@@ -675,6 +689,7 @@ pub struct SemanticScholarAuthorSearchResponse {
     pub data: Vec<SemanticScholarAuthor>,
 }
 
+// dead-code reason: semantic_scholar::SemanticScholarAuthorPapersResponse preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SemanticScholarAuthorPapersResponse {

@@ -229,19 +229,6 @@ fn parse_sections(sections: &[String]) -> Result<ProteinSections, BioMcpError> {
     Ok(out)
 }
 
-#[allow(dead_code)]
-pub async fn search(
-    query: &str,
-    limit: usize,
-    all_species: bool,
-) -> Result<Vec<ProteinSearchResult>, BioMcpError> {
-    Ok(
-        search_page(query, limit, 0, None, all_species, false, None, None)
-            .await?
-            .results,
-    )
-}
-
 pub fn search_query_summary(
     query: &str,
     reviewed: bool,
@@ -692,7 +679,9 @@ mod tests {
 
     #[tokio::test]
     async fn search_rejects_empty_query() {
-        let err = search(" ", 5, false).await.unwrap_err();
+        let err = search_page(" ", 5, 0, None, false, false, None, None)
+            .await
+            .unwrap_err();
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
     }
 
