@@ -152,10 +152,12 @@ simple molecular text against registry eligibility after broad CTGov discovery.
 The help also keeps the recall and boolean-expression boundaries explicit.
 
 ```bash
-biomcp search trial --help | mustmatch like "checks simple mutation text against registry eligibility
-removes exclusion-only matches
-keeps matches when mutation text is absent from eligibility
-boolean expressions remain discovery-only"
+biomcp search trial --help | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
 ```
 
 ## Trial mutation list reference explains inclusion verification
@@ -165,23 +167,55 @@ same inclusion/exclusion behavior and limits rather than describing only the
 upstream free-text query.
 
 ```bash
-biomcp list trial | mustmatch like "checks simple mutation text against registry eligibility
-removes exclusion-only matches
-keeps matches when mutation text is absent from eligibility
-boolean expressions remain discovery-only"
+biomcp list trial | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
 ```
 
-## Trial mutation user docs explain inclusion verification
+## Root trial reference explains inclusion verification
 
-The trial guide and CLI reference should stay aligned with help and `list`:
-simple molecular text gains a precision-oriented eligibility check without
+The root list is a checked command reference as well as an index. Its trial
+filter summary should not preserve the old broad-discovery description after
+the more detailed trial page changes.
+
+```bash
+biomcp list | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
+```
+
+## Trial guide explains mutation inclusion verification
+
+The trial guide should describe the precision-oriented eligibility check without
 turning absent registry wording or boolean expressions into strict matches.
 
 ```bash
-cat ../../docs/user-guide/trial.md ../../docs/user-guide/cli-reference.md | mustmatch like "checks simple mutation text against registry eligibility
-removes exclusion-only matches
-keeps matches when mutation text is absent from eligibility
-boolean expressions remain discovery-only"
+cat ../../docs/user-guide/trial.md | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
+```
+
+## CLI reference explains mutation inclusion verification
+
+The long CLI reference should stay aligned with help, both list surfaces, and
+the focused trial guide.
+
+```bash
+cat ../../docs/user-guide/cli-reference.md | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
 ```
 
 ## Cache Max-Age Env Override Is Reflected in Cache Stats

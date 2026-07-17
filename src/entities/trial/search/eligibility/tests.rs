@@ -182,7 +182,12 @@ fn collect_eligibility_keywords_includes_supported_filters() {
 
     assert_eq!(
         collect_eligibility_keywords(&filters),
-        vec!["mismatch repair deficient", "osimertinib", "pembrolizumab"]
+        vec![
+            "MSI-H",
+            "mismatch repair deficient",
+            "osimertinib",
+            "pembrolizumab"
+        ]
     );
 }
 
