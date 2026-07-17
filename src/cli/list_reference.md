@@ -101,6 +101,9 @@ New to BioMCP? Try:
 - `search gene ... --region --pathway --go` (use GO IDs like `GO:0004672`; search output includes Coordinates (GRCh38)/UniProt/OMIM)
 - `search protein ... --reviewed --disease --existence` (default reviewed mode)
 - `search trial ... --mutation --criteria --study-type --has-results --date-from --date-to`
+  - Broad discovery of simple mutation text gets a registry eligibility check.
+  - It removes exclusion-only matches; absent terms remain discoverable.
+  - Use boolean expressions for discovery-only searches.
   - CTGov intervention workers are quoted literals.
   - Expansion uses plausible trade names and investigational codes while excluding systematic chemical synonyms.
   - A rejected expanded alias preserves successful requested-name results and makes the exact total unknown.

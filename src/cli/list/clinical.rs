@@ -26,7 +26,7 @@ pub(super) fn list_trial() -> String {
 - `--facility <name>`
 - `--age <years>` (decimals accepted, e.g. `0.5`)
 - `--sex <female|male|all>`
-- `--mutation <text>` - CTGov exact free-text boolean over title, summary, eligibility, and keywords; brittle for a specific protein change.
+- `--mutation <text>` - broadly searches CTGov title, summary, eligibility, and keywords. After broad discovery, simple mutation text is checked against registry eligibility to remove exclusion-only matches; trials where the term is absent remain discoverable, while boolean expressions are discovery-only.
 - `--criteria <text>`
 - `--biomarker <text>` - phrase search over keyword, intervention, and condition on CTGov; prefer for gene-level broadening when `--mutation` is too specific.
 - `--sponsor-type <nih|industry|fed|other>`
