@@ -2,8 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use tracing::warn;
-
+use crate::entities::section_outcome::SectionOutcome;
 use crate::sources::chembl::{ChemblClient, ChemblTarget};
 use crate::sources::civic::CivicContext;
 use crate::sources::opentargets::{OpenTargetsClient, OpenTargetsTarget};
@@ -11,13 +10,29 @@ use crate::sources::opentargets::{OpenTargetsClient, OpenTargetsTarget};
 use super::Drug;
 use super::metadata::merge_unique_casefold;
 
-pub(super) async fn enrich_targets(drug: &mut Drug, civic_context: Option<&CivicContext>) {
+pub(super) async fn enrich_targets(
+    drug: &mut Drug,
+    civic_context: Option<&CivicContext>,
+) -> SectionOutcome {
     let mut chembl_rows = Vec::new();
     let mut opentargets_targets = Vec::new();
+    let mut successful_sources = vec!["Guide to PHARMACOLOGY"];
+    let mut contributors = Vec::new();
+    let mut failed = false;
+    if !drug.targets.is_empty() {
+        contributors.push("Guide to PHARMACOLOGY");
+    }
     if let Some(chembl_id) = drug.chembl_id.as_deref() {
         match ChemblClient::new() {
             Ok(client) => match client.drug_targets(chembl_id, 15).await {
                 Ok(rows) => {
+                    successful_sources.push("ChEMBL");
+                    if rows
+                        .iter()
+                        .any(|row| !row.target.eq_ignore_ascii_case("Unknown target"))
+                    {
+                        contributors.push("ChEMBL");
+                    }
                     let targets = rows
                         .iter()
                         .filter(|row| !row.target.eq_ignore_ascii_case("Unknown target"))
@@ -37,14 +52,18 @@ pub(super) async fn enrich_targets(drug: &mut Drug, civic_context: Option<&Civic
                     merge_unique_casefold(&mut drug.mechanisms, mechanisms);
                     chembl_rows = rows;
                 }
-                Err(err) => warn!("ChEMBL unavailable for drug targets section: {err}"),
+                Err(_) => failed = true,
             },
-            Err(err) => warn!("ChEMBL client init failed: {err}"),
+            Err(_) => failed = true,
         }
 
         match OpenTargetsClient::new() {
             Ok(client) => match client.drug_sections(chembl_id, 15).await {
                 Ok(sections) => {
+                    successful_sources.push("Open Targets");
+                    if !sections.targets.is_empty() {
+                        contributors.push("Open Targets");
+                    }
                     let targets = sections
                         .targets
                         .iter()
@@ -53,9 +72,9 @@ pub(super) async fn enrich_targets(drug: &mut Drug, civic_context: Option<&Civic
                     merge_unique_casefold(&mut drug.targets, targets);
                     opentargets_targets = sections.targets;
                 }
-                Err(err) => warn!("OpenTargets unavailable for drug targets section: {err}"),
+                Err(_) => failed = true,
             },
-            Err(err) => warn!("OpenTargets client init failed: {err}"),
+            Err(_) => failed = true,
         }
     }
 
@@ -82,14 +101,14 @@ pub(super) async fn enrich_targets(drug: &mut Drug, civic_context: Option<&Civic
                     drug.target_family_name = inferred_target_family_name.clone();
                 }
                 Ok(_) => {}
-                Err(err) => {
-                    warn!("ChEMBL unavailable for drug target family summary: {err}");
+                Err(_) => {
+                    failed = true;
                     drug.target_family = inferred_target_family.clone();
                     drug.target_family_name = inferred_target_family_name.clone();
                 }
             },
-            Err(err) => {
-                warn!("ChEMBL client init failed: {err}");
+            Err(_) => {
+                failed = true;
                 drug.target_family = inferred_target_family.clone();
                 drug.target_family_name = inferred_target_family_name.clone();
             }
@@ -100,6 +119,25 @@ pub(super) async fn enrich_targets(drug: &mut Drug, civic_context: Option<&Civic
         drug.mechanism = drug.mechanisms.first().cloned();
     }
     drug.mechanisms.truncate(6);
+
+    contributors.sort_unstable();
+    contributors.dedup();
+    successful_sources.sort_unstable();
+    successful_sources.dedup();
+    if failed {
+        if contributors.is_empty() {
+            SectionOutcome::unavailable("Drug target evidence is temporarily unavailable.")
+        } else {
+            SectionOutcome::degraded(
+                contributors,
+                "Drug target evidence is incomplete because a source was unavailable.",
+            )
+        }
+    } else if contributors.is_empty() {
+        SectionOutcome::empty_sources(successful_sources)
+    } else {
+        SectionOutcome::data_sources(contributors)
+    }
 }
 
 fn normalize_variant_target_label(profile_name: &str, gene_symbol: &str) -> Option<String> {
@@ -294,12 +332,17 @@ fn common_prefix_len_casefold(values: &[String]) -> Option<usize> {
     Some(prefix_len)
 }
 
-pub(super) async fn enrich_indications(drug: &mut Drug) {
+pub(super) async fn enrich_indications(drug: &mut Drug) -> SectionOutcome {
+    let has_base_data = !drug.indications.is_empty();
     let Some(chembl_id) = drug.chembl_id.as_deref() else {
-        return;
+        return if has_base_data {
+            SectionOutcome::data("DrugCentral")
+        } else {
+            SectionOutcome::empty("DrugCentral")
+        };
     };
 
-    match OpenTargetsClient::new() {
+    let overlay_outcome = match OpenTargetsClient::new() {
         Ok(client) => match client.drug_sections(chembl_id, 15).await {
             Ok(sections) => {
                 let indications = sections
@@ -316,14 +359,39 @@ pub(super) async fn enrich_indications(drug: &mut Drug) {
                         }
                     })
                     .collect::<Vec<_>>();
+                let outcome = if indications.is_empty() {
+                    SectionOutcome::empty("Open Targets")
+                } else {
+                    SectionOutcome::data("Open Targets")
+                };
                 merge_unique_casefold(&mut drug.indications, indications);
+                outcome
             }
-            Err(err) => warn!("OpenTargets unavailable for drug indications section: {err}"),
+            Err(_) => {
+                SectionOutcome::unavailable("Drug indication evidence is temporarily unavailable.")
+            }
         },
-        Err(err) => warn!("OpenTargets client init failed: {err}"),
-    }
+        Err(_) => {
+            SectionOutcome::unavailable("Drug indication evidence is temporarily unavailable.")
+        }
+    };
 
     drug.indications.truncate(12);
+    match (has_base_data, overlay_outcome.outcome()) {
+        (true, crate::entities::section_outcome::SectionOutcomeState::Unavailable) => {
+            SectionOutcome::degraded(
+                ["DrugCentral"],
+                "Drug indication evidence is incomplete because a source was unavailable.",
+            )
+        }
+        (true, crate::entities::section_outcome::SectionOutcomeState::Empty) => {
+            SectionOutcome::data("DrugCentral")
+        }
+        (true, crate::entities::section_outcome::SectionOutcomeState::Data) => {
+            SectionOutcome::data_sources(["DrugCentral", "Open Targets"])
+        }
+        _ => overlay_outcome,
+    }
 }
 
 fn format_opentargets_clinical_stage(stage: &str) -> Option<String> {

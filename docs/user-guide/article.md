@@ -322,6 +322,11 @@ Semantic Scholar TLDR section:
 biomcp get article 22663011 tldr
 ```
 
+The attempted Semantic Scholar enrichment is recorded in
+`section_outcomes.tldr` as `data`, `empty`, or `unavailable`; its
+`_meta.section_sources` entry projects the same state and credits Semantic
+Scholar only after a successful response.
+
 ## Helper commands
 
 ```bash

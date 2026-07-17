@@ -132,9 +132,10 @@ sections; they are unsupported requests and fail before any data fetch.
 When you request `regulatory`, BioMCP queries OpenFDA device 510(k) and PMA
 records against a bounded set of source-native diagnostic names. Markdown adds
 `## Regulatory (FDA Device)` only when the section is requested. JSON adds a
-top-level `regulatory` field only when the section is requested. A no-match or
-temporary OpenFDA miss returns the same truthful empty state rather than
-failing the base diagnostic card.
+top-level `regulatory` field only when the section is requested. A healthy
+no-match records `section_outcomes.regulatory` as `empty`; a temporary OpenFDA
+failure records `unavailable` with no provider credit. Markdown reports the
+unavailable state in-band rather than presenting it as a healthy no-match.
 
 ## JSON metadata
 

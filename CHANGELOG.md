@@ -29,6 +29,9 @@
 
 ### Fixes
 
+- Standardized optional source-state inventory and provenance reporting, including
+  disease survival `data`/`empty`/`unavailable` outcomes and in-band Markdown
+  unavailability without failed-provider credit.
 - Sanitized terminal-active controls and invisible bidi markers at human CLI,
   MCP, Markdown, diagnostic, and chart-scalar boundaries while preserving typed
   JSON values and trusted chart-backend ANSI styling.

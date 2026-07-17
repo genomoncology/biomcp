@@ -66,6 +66,7 @@ fn disease_markdown_renders_opentargets_scores_in_summary_and_genes_table() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -184,6 +185,7 @@ pub(crate) fn proof_disease_markdown_renders_ot_only_gene_association_table() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -254,6 +256,7 @@ fn disease_markdown_links_source_cells_and_footer_evidence_urls() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::from([
             ("Orphanet".to_string(), "586".to_string()),
             ("OMIM".to_string(), "219700".to_string()),
@@ -333,6 +336,7 @@ fn disease_markdown_preserves_full_definition_text() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -392,6 +396,7 @@ fn disease_markdown_phenotypes_section_renders_key_features() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -444,6 +449,7 @@ fn disease_markdown_phenotypes_section_renders_definition_hint_when_key_features
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -497,6 +503,7 @@ fn disease_markdown_phenotypes_section_without_definition_only_shows_completenes
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -547,6 +554,7 @@ fn disease_markdown_renders_top_variant_summary() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -694,6 +702,7 @@ fn disease_markdown_renders_survival_summary_and_note() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 

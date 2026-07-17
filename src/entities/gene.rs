@@ -6,11 +6,12 @@ use std::time::{Duration, Instant};
 
 use futures::future::try_join_all;
 use serde::{Deserialize, Serialize};
-use tracing::warn;
+use tracing::{debug as warn, warn as local_warn};
 
 use crate::entities::SearchPage;
 use crate::entities::diagnostic::{DiagnosticSearchFilters, DiagnosticSearchResult};
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomeState, SectionOutcomes};
+use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::clingen::{ClinGenClient, GeneClinGen};
@@ -36,9 +37,16 @@ use crate::sources::uniprot::UniProtClient;
 use crate::transform;
 
 /// Gene entity from MyGene.info plus optional enrichment sections.
+fn default_gene_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("gene"))
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Gene {
-    #[serde(default, deserialize_with = "deserialize_gene_section_outcomes")]
+    #[serde(
+        default = "default_gene_section_outcomes",
+        deserialize_with = "deserialize_gene_section_outcomes"
+    )]
     pub section_outcomes: SectionOutcomes,
     pub symbol: String,
     pub name: String,
@@ -258,7 +266,7 @@ where
 {
     let outcomes = SectionOutcomes::deserialize(deserializer)?;
     outcomes
-        .validate_keys(GENE_OUTCOME_KEYS)
+        .validate_keys(&outcome_keys("gene"))
         .map_err(serde::de::Error::custom)?;
     Ok(outcomes)
 }
@@ -546,7 +554,7 @@ impl GeneTimingCollector {
         let bytes = match serde_json::to_vec_pretty(&report) {
             Ok(bytes) => bytes,
             Err(err) => {
-                warn!(path = %path.display(), "Failed to serialize gene timing report: {err}");
+                local_warn!(path = %path.display(), "Failed to serialize gene timing report: {err}");
                 return report;
             }
         };
@@ -554,12 +562,12 @@ impl GeneTimingCollector {
         if let Some(parent) = path.parent()
             && let Err(err) = fs::create_dir_all(parent)
         {
-            warn!(path = %parent.display(), "Failed to create gene timing directory: {err}");
+            local_warn!(path = %parent.display(), "Failed to create gene timing directory: {err}");
             return report;
         }
 
         if let Err(err) = fs::write(&path, bytes) {
-            warn!(path = %path.display(), "Failed to write gene timing report: {err}");
+            local_warn!(path = %path.display(), "Failed to write gene timing report: {err}");
         }
 
         report
@@ -750,6 +758,12 @@ fn complete_gene_section_outcomes(gene: &mut Gene, include: &[GeneIncludeType]) 
         };
         let outcome = if unavailable {
             SectionOutcome::unavailable("The requested gene section is unavailable.")
+        } else if key == GENE_SECTION_DRUGGABILITY {
+            if has_data {
+                SectionOutcome::data_sources(["DGIdb", "Open Targets"])
+            } else {
+                SectionOutcome::empty_sources(["DGIdb", "Open Targets"])
+            }
         } else if has_data {
             SectionOutcome::data(source)
         } else {
@@ -2282,8 +2296,7 @@ async fn populate_sections_parallel_top(
         timing.push(entry);
         let (ontology, diseases) = match result {
             Ok(value) => value,
-            Err(err) => {
-                warn!("Enrichr unavailable for gene enrichment sections: {err}");
+            Err(_) => {
                 for section in &enrichr_sections {
                     gene.section_outcomes.complete(
                         section.as_str(),
@@ -2335,8 +2348,7 @@ async fn populate_sections_parallel_top(
                 );
                 pathways
             }
-            Err(err) => {
-                warn!("Reactome unavailable for gene pathways section: {err}");
+            Err(_) => {
                 gene.section_outcomes.complete(
                     GENE_SECTION_PATHWAYS,
                     pathway_outcome(gene.pathways.as_deref(), false),
@@ -2352,8 +2364,7 @@ async fn populate_sections_parallel_top(
         timing.push(entry);
         gene.protein = match result {
             Ok(value) => value,
-            Err(err) => {
-                warn!("UniProt unavailable for gene protein section: {err}");
+            Err(_) => {
                 gene.section_outcomes.complete(
                     GENE_SECTION_PROTEIN,
                     SectionOutcome::unavailable("UniProt gene protein data is unavailable."),
@@ -2367,8 +2378,7 @@ async fn populate_sections_parallel_top(
         timing.push(entry);
         gene.go = match result {
             Ok(value) => Some(value),
-            Err(err) => {
-                warn!("QuickGO unavailable for gene GO section: {err}");
+            Err(_) => {
                 gene.section_outcomes.complete(
                     GENE_SECTION_GO,
                     SectionOutcome::unavailable("QuickGO gene ontology is unavailable."),
@@ -2382,8 +2392,7 @@ async fn populate_sections_parallel_top(
         timing.push(entry);
         gene.interactions = match result {
             Ok(value) => Some(value),
-            Err(err) => {
-                warn!("STRING unavailable for gene interactions section: {err}");
+            Err(_) => {
                 gene.section_outcomes.complete(
                     GENE_SECTION_INTERACTIONS,
                     SectionOutcome::unavailable("STRING gene interactions are unavailable."),
@@ -2408,8 +2417,7 @@ async fn populate_sections_parallel_top(
 
     if include.contains(&GeneIncludeType::Disgenet) {
         let started = Instant::now();
-        let timing_outcome = if let Err(err) = add_disgenet_section(gene).await {
-            warn!("DisGeNET unavailable for gene disease associations: {err}");
+        let timing_outcome = if add_disgenet_section(gene).await.is_err() {
             gene.section_outcomes.complete(
                 GENE_SECTION_DISGENET,
                 SectionOutcome::unavailable("DisGeNET gene associations are unavailable."),
@@ -2585,8 +2593,7 @@ pub async fn get_with_report(
                 );
                 pathways
             }
-            Err(err) => {
-                warn!("Reactome unavailable for gene pathways section: {err}");
+            Err(_) => {
                 gene.section_outcomes.complete(
                     GENE_SECTION_PATHWAYS,
                     pathway_outcome(gene.pathways.as_deref(), false),
@@ -2618,9 +2625,8 @@ pub async fn get_with_report(
         let enrichr = enrich_gene(&gene.symbol, &enrichr_sections).await;
         let (ontology, diseases) = match enrichr {
             Ok(value) => value,
-            Err(err) => {
+            Err(_) => {
                 timing.record("enrichr", started, "error");
-                warn!("Enrichr unavailable for gene enrichment sections: {err}");
                 for section in &enrichr_sections {
                     gene.section_outcomes.complete(
                         section.as_str(),
@@ -2655,8 +2661,7 @@ pub async fn get_with_report(
         let started = Instant::now();
         gene.protein = match fetch_protein_section(gene.uniprot_id.as_deref(), &gene.symbol).await {
             Ok(v) => v,
-            Err(err) => {
-                warn!("UniProt unavailable for gene protein section: {err}");
+            Err(_) => {
                 gene.section_outcomes.complete(
                     GENE_SECTION_PROTEIN,
                     SectionOutcome::unavailable("UniProt gene protein data is unavailable."),
@@ -2679,8 +2684,7 @@ pub async fn get_with_report(
         let started = Instant::now();
         gene.go = match fetch_go_section(gene.uniprot_id.as_deref(), &gene.symbol).await {
             Ok(v) => Some(v),
-            Err(err) => {
-                warn!("QuickGO unavailable for gene GO section: {err}");
+            Err(_) => {
                 gene.section_outcomes.complete(
                     GENE_SECTION_GO,
                     SectionOutcome::unavailable("QuickGO gene ontology is unavailable."),
@@ -2703,8 +2707,7 @@ pub async fn get_with_report(
         let started = Instant::now();
         gene.interactions = match fetch_interactions_section(&gene.symbol).await {
             Ok(v) => Some(v),
-            Err(err) => {
-                warn!("STRING unavailable for gene interactions section: {err}");
+            Err(_) => {
                 gene.section_outcomes.complete(
                     GENE_SECTION_INTERACTIONS,
                     SectionOutcome::unavailable("STRING gene interactions are unavailable."),

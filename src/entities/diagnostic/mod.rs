@@ -12,6 +12,8 @@ use std::sync::OnceLock;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
+use crate::entities::section_outcome::SectionOutcomes;
+use crate::entities::source_state_registry::outcome_keys;
 use crate::sources::gtr::{GtrIndex, GtrRecord};
 use crate::sources::who_ivd::WhoIvdRecord;
 
@@ -109,8 +111,30 @@ impl DiagnosticSourceFilter {
     }
 }
 
+pub(crate) fn default_diagnostic_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("diagnostic"))
+}
+
+fn deserialize_diagnostic_section_outcomes<'de, D>(
+    deserializer: D,
+) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(&outcome_keys("diagnostic"))
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Diagnostic {
+    #[serde(
+        default = "default_diagnostic_section_outcomes",
+        deserialize_with = "deserialize_diagnostic_section_outcomes"
+    )]
+    pub section_outcomes: SectionOutcomes,
     pub source: String,
     pub source_id: String,
     pub accession: String,

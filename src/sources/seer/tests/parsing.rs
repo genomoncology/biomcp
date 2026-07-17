@@ -78,6 +78,7 @@ fn disease(name: &str, synonyms: Vec<String>) -> Disease {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: HashMap::new(),
     }
 }

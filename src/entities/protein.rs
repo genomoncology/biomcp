@@ -1,11 +1,8 @@
 use std::sync::OnceLock;
 
-use regex::Regex;
-use serde::{Deserialize, Serialize};
-use tracing::warn;
-
 use crate::entities::SearchPage;
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
+use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 use crate::sources::complexportal::{ComplexPortalClient, ComplexPortalComplex};
 use crate::sources::interpro::InterProClient;
@@ -13,10 +10,19 @@ use crate::sources::mygene::MyGeneClient;
 use crate::sources::string::StringClient;
 use crate::sources::uniprot::UniProtClient;
 use crate::transform;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+
+fn default_protein_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("protein"))
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Protein {
-    #[serde(default, deserialize_with = "deserialize_protein_section_outcomes")]
+    #[serde(
+        default = "default_protein_section_outcomes",
+        deserialize_with = "deserialize_protein_section_outcomes"
+    )]
     pub section_outcomes: SectionOutcomes,
     pub accession: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -114,7 +120,7 @@ where
 {
     let outcomes = SectionOutcomes::deserialize(deserializer)?;
     outcomes
-        .validate_keys(PROTEIN_OUTCOME_KEYS)
+        .validate_keys(&outcome_keys("protein"))
         .map_err(serde::de::Error::custom)?;
     Ok(outcomes)
 }
@@ -548,8 +554,7 @@ pub async fn get_with_structure_limit(
                 );
                 protein.domains = domains;
             }
-            Err(err) => {
-                warn!("InterPro unavailable for protein domains: {err}");
+            Err(_) => {
                 protein.section_outcomes.complete(
                     PROTEIN_SECTION_DOMAINS,
                     SectionOutcome::unavailable("InterPro protein domains are unavailable."),
@@ -571,8 +576,7 @@ pub async fn get_with_structure_limit(
                 );
                 protein.interactions = rows;
             }
-            Err(err) => {
-                warn!("STRING unavailable for protein interactions: {err}");
+            Err(_) => {
                 protein.section_outcomes.complete(
                     PROTEIN_SECTION_INTERACTIONS,
                     SectionOutcome::unavailable("STRING protein interactions are unavailable."),
@@ -584,18 +588,12 @@ pub async fn get_with_structure_limit(
     if parsed_sections.include_complexes {
         match complexes_res {
             Ok(rows) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_COMPLEXES,
-                    if rows.is_empty() {
-                        SectionOutcome::empty("ComplexPortal")
-                    } else {
-                        SectionOutcome::data("ComplexPortal")
-                    },
-                );
+                protein
+                    .section_outcomes
+                    .complete(PROTEIN_SECTION_COMPLEXES, complexportal_outcome(&rows));
                 protein.complexes = rows;
             }
-            Err(err) => {
-                warn!("ComplexPortal unavailable for protein complexes: {err}");
+            Err(_) => {
                 protein.section_outcomes.complete(
                     PROTEIN_SECTION_COMPLEXES,
                     SectionOutcome::unavailable("ComplexPortal protein complexes are unavailable."),
@@ -605,6 +603,14 @@ pub async fn get_with_structure_limit(
     }
 
     Ok(protein)
+}
+
+fn complexportal_outcome(rows: &[ProteinComplex]) -> SectionOutcome {
+    if rows.is_empty() {
+        SectionOutcome::empty("Complex Portal")
+    } else {
+        SectionOutcome::data("Complex Portal")
+    }
 }
 
 fn map_complexportal_complex(row: ComplexPortalComplex) -> ProteinComplex {
@@ -650,6 +656,17 @@ mod tests {
 
         let err = parse_sections(&["unexpected".to_string()]).unwrap_err();
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    }
+
+    #[test]
+    fn complexportal_outcome_uses_registered_provider_label() {
+        let outcome = complexportal_outcome(&[]);
+        assert_eq!(outcome.sources(), &["Complex Portal"]);
+        assert!(crate::entities::source_state_registry::allows_sources(
+            "protein",
+            PROTEIN_SECTION_COMPLEXES,
+            outcome.sources()
+        ));
     }
 
     #[test]

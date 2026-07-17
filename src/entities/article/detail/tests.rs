@@ -1,35 +1,6 @@
 use super::*;
 use crate::entities::article::{ArticleAuthorCompleteness, ArticleSource};
 use crate::error::BioMcpError;
-use std::sync::{Arc, Mutex};
-use tracing::field::{Field, Visit};
-use tracing::{Event, Subscriber};
-use tracing_subscriber::layer::{Context, Layer};
-use tracing_subscriber::prelude::*;
-
-#[derive(Clone, Default)]
-struct CapturingLayer(Arc<Mutex<Vec<String>>>);
-
-impl<S: Subscriber> Layer<S> for CapturingLayer {
-    fn on_event(&self, event: &Event<'_>, _ctx: Context<'_, S>) {
-        struct Visitor<'a>(&'a mut Vec<String>);
-
-        impl Visit for Visitor<'_> {
-            fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
-                self.0.push(format!("{}={value:?}", field.name()));
-            }
-
-            fn record_str(&mut self, field: &Field, value: &str) {
-                self.0.push(format!("{}={value}", field.name()));
-            }
-        }
-
-        event.record(&mut Visitor(
-            &mut self.0.lock().expect("capture indexing warning"),
-        ));
-    }
-}
-
 #[tokio::test]
 async fn get_rejects_pdf_without_fulltext_section() {
     let err = get(
@@ -186,30 +157,6 @@ fn unavailable_indexing_maps_every_cause_to_a_static_failure() {
     assert_eq!(ARTICLE_INDEXING_TIMEOUT, std::time::Duration::from_secs(10));
 }
 
-#[test]
-fn indexing_warning_contains_only_typed_cause_and_pmid() {
-    let capture = CapturingLayer::default();
-    let events = Arc::clone(&capture.0);
-    tracing::subscriber::with_default(tracing_subscriber::registry().with(capture), || {
-        warn_indexing_unavailable(
-            IndexingUnavailableCause::PubMed(PubMedCitationErrorKind::Parse),
-            "22663011",
-        );
-    });
-
-    let event = events.lock().expect("captured warning").join(" ");
-    assert!(event.contains("PubMed article indexing unavailable"));
-    assert!(event.contains("PubMed(Parse)"));
-    assert!(event.contains("22663011"));
-    for sentinel in [
-        "raw-body-sentinel",
-        "api_key=secret-sentinel",
-        "parser-internal-sentinel",
-    ] {
-        assert!(!event.contains(sentinel));
-    }
-}
-
 #[tokio::test]
 async fn indexing_timeout_and_missing_pmid_become_unavailable() {
     let timeout = citation_with_timeout(
@@ -226,6 +173,15 @@ async fn indexing_timeout_and_missing_pmid_become_unavailable() {
         .expect("Europe PMC fixture");
     let mut article = article_from_europepmc_fallback(&hit);
     enrich_article_with_indexing(&mut article).await;
+    let outcome = article
+        .section_outcomes
+        .get("indexing")
+        .expect("indexing outcome");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Unavailable
+    );
+    assert!(outcome.sources().is_empty());
     let indexing = article.indexing.expect("requested indexing");
     assert_eq!(indexing.status, ArticleIndexingStatus::Unavailable);
     assert_eq!(

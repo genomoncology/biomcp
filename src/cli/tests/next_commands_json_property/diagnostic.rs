@@ -4,6 +4,7 @@ use crate::entities::diagnostic::{Diagnostic, DiagnosticRegulatoryRecord, Diagno
 #[test]
 fn diagnostic_json_next_commands_parse() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: "GTR000000001.1".to_string(),
         accession: "GTR000000001.1".to_string(),
@@ -81,6 +82,7 @@ fn diagnostic_search_json_next_commands_parse() {
 #[test]
 fn diagnostic_json_next_commands_quote_who_follow_up() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "who-ivd".to_string(),
         source_id: "ITPW02232- TC40".to_string(),
         accession: "ITPW02232- TC40".to_string(),
@@ -123,6 +125,7 @@ fn diagnostic_json_next_commands_quote_who_follow_up() {
 #[test]
 fn diagnostic_json_next_commands_keep_four_visible_gtr_sections() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: "GTR000000001.1".to_string(),
         accession: "GTR000000001.1".to_string(),
@@ -174,6 +177,7 @@ fn diagnostic_json_next_commands_keep_four_visible_gtr_sections() {
 #[test]
 fn diagnostic_json_omits_regulatory_field_when_unrequested() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: "GTR000000001.1".to_string(),
         accession: "GTR000000001.1".to_string(),
@@ -217,7 +221,13 @@ fn diagnostic_json_omits_regulatory_field_when_unrequested() {
 
 #[test]
 fn diagnostic_json_includes_regulatory_field_and_provenance_when_requested() {
+    let mut section_outcomes = crate::entities::diagnostic::default_diagnostic_section_outcomes();
+    section_outcomes.complete(
+        "regulatory",
+        crate::entities::section_outcome::SectionOutcome::data("OpenFDA Device 510(k) / PMA"),
+    );
     let diagnostic = Diagnostic {
+        section_outcomes,
         source: "who-ivd".to_string(),
         source_id: "ITPW02232- TC40".to_string(),
         accession: "ITPW02232- TC40".to_string(),

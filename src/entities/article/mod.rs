@@ -37,6 +37,7 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::entities::section_outcome::SectionOutcomes;
+use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcSort;
 use crate::sources::semantic_scholar::SemanticScholarAuthMode;
@@ -45,10 +46,10 @@ fn is_false(value: &bool) -> bool {
     !*value
 }
 
-pub(crate) const ARTICLE_OUTCOME_KEYS: &[&str] = &["fulltext"];
+pub(crate) const ARTICLE_OUTCOME_KEYS: &[&str] = &["fulltext", "indexing", "tldr"];
 
 fn default_article_section_outcomes() -> SectionOutcomes {
-    SectionOutcomes::with_keys(ARTICLE_OUTCOME_KEYS)
+    SectionOutcomes::with_keys(&outcome_keys("article"))
 }
 
 fn deserialize_article_section_outcomes<'de, D>(
@@ -59,7 +60,7 @@ where
 {
     let outcomes = SectionOutcomes::deserialize(deserializer)?;
     outcomes
-        .validate_keys(ARTICLE_OUTCOME_KEYS)
+        .validate_keys(&outcome_keys("article"))
         .map_err(serde::de::Error::custom)?;
     if outcomes.get("fulltext").is_none() {
         return Err(serde::de::Error::custom(

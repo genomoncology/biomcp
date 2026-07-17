@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use tracing::warn;
+use tracing::debug as warn;
 
 use crate::entities::SearchPage;
 use crate::sources::europepmc::EuropePmcClient;

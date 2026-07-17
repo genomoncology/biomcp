@@ -978,6 +978,7 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
     let top_disease = clinvar_conditions.first().cloned();
 
     Variant {
+        section_outcomes: crate::entities::variant::default_variant_section_outcomes(),
         id: hit.id.clone(),
         gene,
         hgvs_p,

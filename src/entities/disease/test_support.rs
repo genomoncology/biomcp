@@ -45,6 +45,7 @@ pub(super) fn test_disease(id: &str, name: &str) -> Disease {
         diagnostics_note: None,
         civic: None,
         disgenet: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: HashMap::new(),
     }
 }

@@ -98,6 +98,7 @@ pub fn drug_markdown_with_region(
         sections_block => format_sections_block("drug", &drug.name, sections_drug(drug, requested_sections)),
         related_block => format_related_block(related_drug(drug)),
     })?;
+    let body = append_source_state_messages(body, "drug", &drug.section_outcomes);
     Ok(append_evidence_urls(body, drug_evidence_urls(drug)))
 }
 

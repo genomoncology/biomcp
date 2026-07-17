@@ -21,6 +21,7 @@ fn sections_pathway_for_kegg_excludes_unsupported_sections() {
 #[test]
 fn sections_diagnostic_omit_requested_section_from_more_block() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: "GTR000000001.1".to_string(),
         accession: "GTR000000001.1".to_string(),
@@ -69,6 +70,7 @@ fn sections_diagnostic_omit_requested_section_from_more_block() {
 #[test]
 fn sections_diagnostic_for_who_only_offer_conditions_and_quote_accession() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "who-ivd".to_string(),
         source_id: "ITPW02232- TC40".to_string(),
         accession: "ITPW02232- TC40".to_string(),
@@ -109,6 +111,7 @@ fn sections_diagnostic_for_who_only_offer_conditions_and_quote_accession() {
 #[test]
 fn diagnostic_more_block_keeps_four_visible_section_commands() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: "GTR000000001.1".to_string(),
         accession: "GTR000000001.1".to_string(),
@@ -249,6 +252,7 @@ fn sections_disease_base_card_surfaces_diagnostics_before_optional_sections() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 

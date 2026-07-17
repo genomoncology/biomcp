@@ -4,8 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::time::Duration;
 
-use tracing::warn;
-
+use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::gtr::{GtrClient, GtrIndex, GtrRecord, GtrSyncMode};
 use crate::sources::openfda::{Fda510kResult, FdaPmaResult, OpenFdaClient};
@@ -14,9 +13,9 @@ use crate::sources::who_ivd::{WhoIvdClient, WhoIvdRecord, WhoIvdSyncMode};
 use super::{
     DIAGNOSTIC_SECTION_CONDITIONS, DIAGNOSTIC_SECTION_GENES, DIAGNOSTIC_SECTION_METHODS,
     DIAGNOSTIC_SECTION_NAMES, DIAGNOSTIC_SECTION_REGULATORY, DIAGNOSTIC_SOURCE_GTR,
-    DIAGNOSTIC_SOURCE_WHO_IVD, Diagnostic, DiagnosticRegulatoryRecord, diagnostic_source_label,
-    looks_like_gtr_accession, optional_text, preferred_diagnostic_name,
-    supported_diagnostic_sections_for_source,
+    DIAGNOSTIC_SOURCE_WHO_IVD, Diagnostic, DiagnosticRegulatoryRecord,
+    default_diagnostic_section_outcomes, diagnostic_source_label, looks_like_gtr_accession,
+    optional_text, preferred_diagnostic_name, supported_diagnostic_sections_for_source,
 };
 
 const OPTIONAL_REGULATORY_TIMEOUT: Duration = Duration::from_secs(8);
@@ -147,6 +146,7 @@ fn diagnostic_from_record(
     sections: DiagnosticSections,
 ) -> Diagnostic {
     Diagnostic {
+        section_outcomes: default_diagnostic_section_outcomes(),
         source: DIAGNOSTIC_SOURCE_GTR.to_string(),
         source_id: record.accession.clone(),
         accession: record.accession.clone(),
@@ -180,6 +180,7 @@ fn diagnostic_from_who_ivd_record(
     sections: DiagnosticSections,
 ) -> Diagnostic {
     Diagnostic {
+        section_outcomes: default_diagnostic_section_outcomes(),
         source: DIAGNOSTIC_SOURCE_WHO_IVD.to_string(),
         source_id: record.product_code.clone(),
         accession: record.product_code.clone(),
@@ -550,29 +551,23 @@ pub(super) fn regulatory_records_from_fda_rows(
 }
 
 async fn load_regulatory_records(
-    accession: &str,
-    source: &str,
     ctx: &DiagnosticRegulatoryLookupContext,
-) -> Vec<DiagnosticRegulatoryRecord> {
+) -> (Vec<DiagnosticRegulatoryRecord>, SectionOutcome) {
     match tokio::time::timeout(OPTIONAL_REGULATORY_TIMEOUT, fetch_fda_regulatory(ctx)).await {
-        Ok(Ok(records)) => records,
-        Ok(Err(err)) => {
-            warn!(
-                diagnostic = %accession,
-                source = %source,
-                "OpenFDA diagnostic regulatory overlay unavailable: {err}"
-            );
-            Vec::new()
+        Ok(Ok(records)) => {
+            let outcome = if records.is_empty() {
+                SectionOutcome::empty("OpenFDA Device 510(k) / PMA")
+            } else {
+                SectionOutcome::data("OpenFDA Device 510(k) / PMA")
+            };
+            (records, outcome)
         }
-        Err(_) => {
-            warn!(
-                diagnostic = %accession,
-                source = %source,
-                timeout_secs = OPTIONAL_REGULATORY_TIMEOUT.as_secs(),
-                "OpenFDA diagnostic regulatory overlay timed out"
-            );
-            Vec::new()
-        }
+        Ok(Err(_)) | Err(_) => (
+            Vec::new(),
+            SectionOutcome::unavailable(
+                "OpenFDA diagnostic regulatory data is temporarily unavailable.",
+            ),
+        ),
     }
 }
 
@@ -650,8 +645,11 @@ async fn get_from_data(
             .then(|| build_gtr_regulatory_lookup_context(record));
         let mut diagnostic = diagnostic_from_record(record, &index, sections);
         if let Some(ctx) = regulatory_ctx.as_ref() {
-            diagnostic.regulatory =
-                Some(load_regulatory_records(accession, DIAGNOSTIC_SOURCE_GTR, ctx).await);
+            let (records, outcome) = load_regulatory_records(ctx).await;
+            diagnostic.regulatory = Some(records);
+            diagnostic
+                .section_outcomes
+                .complete(DIAGNOSTIC_SECTION_REGULATORY, outcome);
         }
         return Ok(diagnostic);
     }
@@ -674,8 +672,11 @@ async fn get_from_data(
         .then(|| build_who_regulatory_lookup_context(&record));
     let mut diagnostic = diagnostic_from_who_ivd_record(&record, sections);
     if let Some(ctx) = regulatory_ctx.as_ref() {
-        diagnostic.regulatory =
-            Some(load_regulatory_records(accession, DIAGNOSTIC_SOURCE_WHO_IVD, ctx).await);
+        let (records, outcome) = load_regulatory_records(ctx).await;
+        diagnostic.regulatory = Some(records);
+        diagnostic
+            .section_outcomes
+            .complete(DIAGNOSTIC_SECTION_REGULATORY, outcome);
     }
     Ok(diagnostic)
 }

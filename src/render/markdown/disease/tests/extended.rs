@@ -39,6 +39,7 @@ fn disease_markdown_section_only_shows_disgenet_section() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -92,6 +93,7 @@ fn disease_markdown_disgenet_renders_sparse_optional_fields() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -138,6 +140,7 @@ fn disease_markdown_funding_renders_truthful_notes_without_table() {
         funding_note: Some("No NIH funding data found for this query.".to_string()),
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -156,6 +159,30 @@ fn disease_markdown_funding_renders_truthful_notes_without_table() {
     assert!(unavailable.contains("## Funding (NIH Reporter)"));
     assert!(unavailable.contains("NIH Reporter funding data is temporarily unavailable."));
     assert!(!unavailable.contains("| Project | PI | Organization | FY | Amount |"));
+}
+
+#[test]
+fn disease_markdown_reports_unavailable_source_state_in_band() {
+    let disease: Disease = serde_json::from_value(serde_json::json!({
+        "id": "MONDO:0011996",
+        "name": "chronic myeloid leukemia",
+        "section_outcomes": {
+            "survival": {
+                "outcome": "unavailable",
+                "sources": [],
+                "message": "SEER survival data is temporarily unavailable."
+            }
+        },
+        "xrefs": {}
+    }))
+    .expect("disease fixture");
+
+    let markdown = disease_markdown(&disease, &["survival".to_string()])
+        .expect("unavailable survival markdown");
+
+    assert!(markdown.contains("Survival"), "markdown={markdown}");
+    assert!(markdown.contains("SEER Explorer"), "markdown={markdown}");
+    assert!(markdown.contains("unavailable"), "markdown={markdown}");
 }
 
 #[test]

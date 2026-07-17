@@ -6,6 +6,7 @@ use crate::sources::civic::{CivicContext, CivicEvidenceItem};
 
 fn braf_variant_stub() -> Variant {
     Variant {
+        section_outcomes: super::super::default_variant_section_outcomes(),
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
         hgvs_p: Some("p.X999Y".into()),
@@ -239,6 +240,7 @@ fn workflow_signal_detects_clinvar_metadata_before_section_stripping() {
 #[test]
 fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
     let variant = Variant {
+        section_outcomes: super::super::default_variant_section_outcomes(),
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
         hgvs_p: Some("p.V600E".into()),
@@ -314,6 +316,21 @@ fn cancerhotspots_enrichment_uses_requested_change_not_resolved_hgvsp() {
     let recurrence = crate::sources::cancerhotspots::recurrence_for_change(&rows, "V600E");
     assert_eq!(recurrence.position_count, Some(897));
     assert_eq!(recurrence.same_aa_count, Some(833));
+}
+
+#[test]
+fn cancerhotspots_checked_absence_is_empty_not_data() {
+    let recurrence = crate::sources::cancerhotspots::CancerHotspotRecurrence {
+        source: "cancerhotspots.org".to_string(),
+        position_count: None,
+        same_aa_count: None,
+        matched_transcript: None,
+    };
+
+    assert_eq!(
+        cancerhotspots_outcome(&recurrence).outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Empty
+    );
 }
 
 #[test]

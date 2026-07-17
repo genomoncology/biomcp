@@ -4,6 +4,14 @@ BioMCP depends on multiple public biomedical APIs, so transient source failures 
 This guide focuses on practical triage for API failures, slow responses, and environment issues.
 Start with health checks, then narrow to the affected entity and source.
 
+For a successful JSON or MCP response that includes optional source-backed
+sections, inspect `section_outcomes` first. `empty` means a contacted source
+completed successfully with no evidence;
+`unavailable` means no usable result was obtained; and `degraded` preserves
+partial evidence. `_meta.section_sources` is the matching provenance projection
+and credits only successful providers. Enable `RUST_LOG=warn` only after checking
+these in-band fields.
+
 ## 1) Validate connectivity first
 
 Run API-level checks before debugging entity-specific commands:

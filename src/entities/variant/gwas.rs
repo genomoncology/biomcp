@@ -1,9 +1,9 @@
 //! GWAS Catalog search and GWAS enrichment for variant detail retrieval.
 
 use crate::entities::SearchPage;
+use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::gwas::{GwasAssociation, GwasClient, GwasSnp};
-use tracing::warn;
 
 use super::resolution::parse_variant_id;
 use super::{GwasSearchFilters, Variant, VariantGwasAssociation, VariantIdFormat};
@@ -431,13 +431,15 @@ pub(in crate::entities::variant) async fn add_gwas_section(
         .or(fallback_rsid);
 
     let Some(rsid) = rsid else {
+        variant
+            .section_outcomes
+            .complete("gwas", SectionOutcome::empty("GWAS Catalog"));
         return Ok(());
     };
 
     let client = match GwasClient::new() {
         Ok(client) => client,
-        Err(err @ BioMcpError::SourceUnavailable { .. }) => {
-            warn!(rsid = %rsid, "GWAS association data unavailable: {err}");
+        Err(BioMcpError::SourceUnavailable { .. }) => {
             mark_gwas_unavailable(variant);
             return Ok(());
         }
@@ -445,8 +447,7 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     };
     let associations = match client.associations_by_rsid(&rsid, 20).await {
         Ok(associations) => associations,
-        Err(err @ BioMcpError::SourceUnavailable { .. }) => {
-            warn!(rsid = %rsid, "GWAS association data unavailable: {err}");
+        Err(BioMcpError::SourceUnavailable { .. }) => {
             mark_gwas_unavailable(variant);
             return Ok(());
         }
@@ -460,12 +461,22 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     let supporting_pmids = collect_supporting_pmids(&rows);
     variant.gwas = rows;
     variant.supporting_pmids = Some(supporting_pmids);
+    let outcome = if variant.gwas.is_empty() {
+        SectionOutcome::empty("GWAS Catalog")
+    } else {
+        SectionOutcome::data("GWAS Catalog")
+    };
+    variant.section_outcomes.complete("gwas", outcome);
     Ok(())
 }
 
 pub(in crate::entities::variant) fn mark_gwas_unavailable(variant: &mut Variant) {
     variant.supporting_pmids = None;
     variant.gwas_unavailable_reason = Some("GWAS association data temporarily unavailable.".into());
+    variant.section_outcomes.complete(
+        "gwas",
+        SectionOutcome::unavailable("GWAS association data is temporarily unavailable."),
+    );
 }
 
 fn collect_supporting_pmids(rows: &[VariantGwasAssociation]) -> Vec<String> {

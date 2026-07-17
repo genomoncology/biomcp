@@ -46,6 +46,7 @@ fn disease_with_clinical_features() -> Disease {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     }
 }

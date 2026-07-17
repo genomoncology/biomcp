@@ -593,10 +593,11 @@ mod tests {
         DiscoverConfidence, DiscoverIntent, DiscoverResult, DiscoverType, MatchTier,
         PlainLanguageTopic,
     };
+    use crate::entities::disease::Disease;
     use crate::entities::drug::Drug;
     use crate::entities::gene::Gene;
     use crate::error::BioMcpError;
-    use crate::render::provenance::SectionSource;
+    use crate::render::provenance::{SectionSource, disease_section_sources};
     use serde::Serialize;
 
     #[derive(Serialize)]
@@ -650,6 +651,42 @@ mod tests {
         assert!(json.contains("\"code\": \"api\""));
         assert!(json.contains("API error from example: Response body exceeded 42 bytes"));
         assert!(!json.contains("body_limit"));
+    }
+
+    #[test]
+    fn disease_unavailable_outcome_and_provenance_agree_without_source_credit() {
+        let disease: Disease = serde_json::from_value(serde_json::json!({
+            "id": "MONDO:0011996",
+            "name": "chronic myeloid leukemia",
+            "section_outcomes": {
+                "survival": {
+                    "outcome": "unavailable",
+                    "sources": [],
+                    "message": "SEER survival data is temporarily unavailable."
+                }
+            },
+            "xrefs": {}
+        }))
+        .expect("disease fixture");
+
+        let json = to_entity_json(
+            &disease,
+            Vec::<(&str, String)>::new(),
+            Vec::new(),
+            disease_section_sources(&disease),
+        )
+        .expect("disease JSON");
+        let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
+        assert_eq!(
+            value["section_outcomes"]["survival"]["outcome"],
+            "unavailable"
+        );
+        let projection = value["_meta"]["section_sources"]
+            .as_array()
+            .and_then(|rows| rows.iter().find(|row| row["key"] == "survival"))
+            .expect("survival source-state projection");
+        assert_eq!(projection["outcome"], "unavailable");
+        assert_eq!(projection["sources"], serde_json::json!([]));
     }
 
     #[test]
@@ -788,7 +825,7 @@ mod tests {
     #[test]
     fn json_render_drug_entity() {
         let drug = Drug {
-            section_outcomes: Default::default(),
+            section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
             name: "osimertinib".to_string(),
             drugbank_id: Some("DB09330".to_string()),
             chembl_id: Some("CHEMBL3353410".to_string()),
@@ -836,7 +873,7 @@ mod tests {
     #[test]
     fn json_render_drug_entity_omits_family_fields_when_absent() {
         let drug = Drug {
-            section_outcomes: Default::default(),
+            section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
             name: "pembrolizumab".to_string(),
             drugbank_id: Some("DB09037".to_string()),
             chembl_id: Some("CHEMBL3137343".to_string()),

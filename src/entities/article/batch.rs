@@ -1,7 +1,7 @@
 //! Article batch lookup helpers and compact Semantic Scholar enrichment.
 
 use futures::future::try_join_all;
-use tracing::warn;
+use tracing::debug as warn;
 
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcClient;

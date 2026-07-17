@@ -132,9 +132,8 @@ async fn apply_requested_sections_clears_clinical_features_when_not_requested() 
 #[test]
 fn disease_diagnostics_section_populates_from_rows() {
     let mut disease = test_disease("MONDO:0018076", "tuberculosis");
-    apply_diagnostics_section_result(
+    let outcome = apply_diagnostics_section_result(
         &mut disease,
-        "tuberculosis",
         Ok(SearchPage::offset(
             vec![
                 diagnostic_row(
@@ -156,6 +155,10 @@ fn disease_diagnostics_section_populates_from_rows() {
 
     let rows = disease.diagnostics.as_ref().expect("diagnostics rows");
     assert_eq!(rows.len(), 2);
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Data
+    );
     assert_eq!(
         disease.diagnostics_note.as_deref(),
         Some(
@@ -179,9 +182,8 @@ fn disease_diagnostics_section_populates_from_rows() {
 #[test]
 fn disease_diagnostics_unavailable_sets_note() {
     let mut disease = test_disease("MONDO:0018076", "tuberculosis");
-    apply_diagnostics_section_result(
+    let outcome = apply_diagnostics_section_result(
         &mut disease,
-        "tuberculosis",
         Err(BioMcpError::SourceUnavailable {
             source_name: "gtr".to_string(),
             reason: "fixture directory is unavailable".to_string(),
@@ -190,6 +192,11 @@ fn disease_diagnostics_unavailable_sets_note() {
     );
 
     assert!(disease.diagnostics.is_none());
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Unavailable
+    );
+    assert!(outcome.sources().is_empty());
     assert_eq!(
         disease.diagnostics_note.as_deref(),
         Some(DISEASE_DIAGNOSTICS_UNAVAILABLE_NOTE)
@@ -208,6 +215,15 @@ fn survival_catalog_resolution_sets_truthful_note_for_unmapped_disease() {
         disease.survival_note.as_deref(),
         Some(SURVIVAL_NO_DATA_NOTE)
     );
+    let outcome = disease
+        .section_outcomes
+        .get(DISEASE_SECTION_SURVIVAL)
+        .expect("survival outcome");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Empty
+    );
+    assert_eq!(outcome.sources(), &["SEER Explorer"]);
 }
 
 #[test]
@@ -228,6 +244,15 @@ fn survival_catalog_resolution_sets_unavailable_note_when_catalog_fails() {
         disease.survival_note.as_deref(),
         Some(SURVIVAL_UNAVAILABLE_NOTE)
     );
+    let outcome = disease
+        .section_outcomes
+        .get(DISEASE_SECTION_SURVIVAL)
+        .expect("survival outcome");
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Unavailable
+    );
+    assert!(outcome.sources().is_empty());
 }
 
 pub(crate) async fn proof_enrich_sparse_disease_identity_prefers_exact_ols4_match() {

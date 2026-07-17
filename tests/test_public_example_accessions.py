@@ -16,7 +16,7 @@ GTR_TEST_VERSION_FILE = "test_version.gz"
 GTR_CONDITION_GENE_FILE = "test_condition_gene.txt"
 LIVE_GTR_ACCESSION = "GTR000006692.3"
 FICTIONAL_GTR_ACCESSION = "GTR000000001.1"
-REGULATORY_EMPTY_STATE = "No FDA device 510(k) or PMA records matched this diagnostic."
+REGULATORY_UNAVAILABLE_STATE = "OpenFDA diagnostic regulatory data is temporarily unavailable."
 PUBLIC_DIAGNOSTIC_EXAMPLE_SURFACES = (
     "README.md",
     "docs/index.md",
@@ -179,4 +179,5 @@ def test_public_gtr_examples_resolve_against_live_gtr_bundle(tmp_path: Path) -> 
                 assert "## Methods" in result.stdout, command
             elif section == "regulatory":
                 assert "## Regulatory (FDA Device)" in result.stdout, command
-                assert REGULATORY_EMPTY_STATE in result.stdout, command
+                assert REGULATORY_UNAVAILABLE_STATE in result.stdout, command
+                assert "No FDA device 510(k) or PMA records matched" not in result.stdout, command

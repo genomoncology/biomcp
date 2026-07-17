@@ -2,8 +2,7 @@
 
 use std::time::Duration;
 
-use tracing::warn;
-
+use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::alphagenome::AlphaGenomeClient;
 use crate::sources::cancerhotspots::CancerHotspotsClient;
@@ -442,12 +441,14 @@ pub async fn oncokb(id: &str) -> Result<VariantOncoKbResult, BioMcpError> {
     })
 }
 
+const VARIANT_SOURCE_UNAVAILABLE: &str =
+    "Requested variant source data is temporarily unavailable.";
+
 async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
     let Some(caps) = hgvs_coords_re().captures(&variant.id) else {
-        warn!(
-            variant_id = %variant.id,
-            "AlphaGenome prediction skipped (unsupported HGVS format)"
-        );
+        variant
+            .section_outcomes
+            .complete("predict", SectionOutcome::empty("AlphaGenome"));
         return Ok(());
     };
 
@@ -458,7 +459,16 @@ async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
     let reference = caps[3].to_string();
     let alternate = caps[4].to_string();
 
-    let client = AlphaGenomeClient::new().await?;
+    let client = match AlphaGenomeClient::new().await {
+        Ok(client) => client,
+        Err(_) => {
+            variant.section_outcomes.complete(
+                "predict",
+                SectionOutcome::unavailable(VARIANT_SOURCE_UNAVAILABLE),
+            );
+            return Ok(());
+        }
+    };
     match client
         .score_variant(&chr, pos, &reference, &alternate)
         .await
@@ -468,27 +478,30 @@ async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
                 && top_gene.trim().starts_with("ENSG")
             {
                 let query = format!("ensembl.gene:\"{}\"", top_gene.trim());
-                match MyGeneClient::new() {
-                    Ok(client) => {
-                        if let Ok(resp) = client.search(&query, 1, 0, None).await
-                            && let Some(symbol) = resp
-                                .hits
-                                .first()
-                                .and_then(|h| h.symbol.as_deref())
-                                .map(str::trim)
-                                .filter(|s| !s.is_empty())
-                        {
-                            pred.top_gene = Some(symbol.to_string());
-                        }
-                    }
-                    Err(err) => {
-                        warn!("MyGene unavailable for AlphaGenome gene resolution: {err}")
-                    }
+                if let Ok(client) = MyGeneClient::new()
+                    && let Ok(resp) = client.search(&query, 1, 0, None).await
+                    && let Some(symbol) = resp
+                        .hits
+                        .first()
+                        .and_then(|h| h.symbol.as_deref())
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty())
+                {
+                    pred.top_gene = Some(symbol.to_string());
                 }
             }
-            transform::variant::merge_prediction(variant, pred)
+            transform::variant::merge_prediction(variant, pred);
+            let outcome = if variant.prediction.is_some() {
+                SectionOutcome::data("AlphaGenome")
+            } else {
+                SectionOutcome::empty("AlphaGenome")
+            };
+            variant.section_outcomes.complete("predict", outcome);
         }
-        Err(err) => warn!(variant_id = %variant.id, "AlphaGenome unavailable: {err}"),
+        Err(_) => variant.section_outcomes.complete(
+            "predict",
+            SectionOutcome::unavailable(VARIANT_SOURCE_UNAVAILABLE),
+        ),
     }
 
     Ok(())
@@ -496,13 +509,25 @@ async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
 
 async fn add_cancerhotspots(variant: &mut Variant, id_format: &VariantIdFormat) {
     let VariantIdFormat::GeneProteinChange { gene, change } = id_format else {
+        variant.section_outcomes.complete(
+            "cancerhotspots",
+            SectionOutcome::empty("cancerhotspots.org"),
+        );
         return;
     };
     let Some(normalized_change) = super::normalize_protein_change(change) else {
+        variant.section_outcomes.complete(
+            "cancerhotspots",
+            SectionOutcome::empty("cancerhotspots.org"),
+        );
         return;
     };
     let gene = gene.trim();
     if gene.is_empty() {
+        variant.section_outcomes.complete(
+            "cancerhotspots",
+            SectionOutcome::empty("cancerhotspots.org"),
+        );
         return;
     }
 
@@ -516,20 +541,32 @@ async fn add_cancerhotspots(variant: &mut Variant, id_format: &VariantIdFormat) 
     };
 
     match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, cancerhotspots_fut).await {
-        Ok(result) => {
-            if let Err(err) = apply_cancerhotspots_result(variant, result) {
-                warn!(gene = %gene, change = %normalized_change, "cancerhotspots.org unavailable: {err}")
-            }
+        Ok(Ok(recurrence)) => {
+            let outcome = cancerhotspots_outcome(&recurrence);
+            variant.cancerhotspots = Some(recurrence);
+            variant.section_outcomes.complete("cancerhotspots", outcome);
         }
-        Err(_) => warn!(
-            gene = %gene,
-            change = %normalized_change,
-            timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
-            "cancerhotspots.org enrichment timed out"
+        Ok(Err(_)) | Err(_) => variant.section_outcomes.complete(
+            "cancerhotspots",
+            SectionOutcome::unavailable(VARIANT_SOURCE_UNAVAILABLE),
         ),
     }
 }
 
+fn cancerhotspots_outcome(
+    recurrence: &crate::sources::cancerhotspots::CancerHotspotRecurrence,
+) -> SectionOutcome {
+    if recurrence.position_count.is_some()
+        || recurrence.same_aa_count.is_some()
+        || recurrence.matched_transcript.is_some()
+    {
+        SectionOutcome::data("cancerhotspots.org")
+    } else {
+        SectionOutcome::empty("cancerhotspots.org")
+    }
+}
+
+#[cfg(test)]
 fn apply_cancerhotspots_result(
     variant: &mut Variant,
     result: Result<crate::sources::cancerhotspots::CancerHotspotRecurrence, BioMcpError>,
@@ -546,6 +583,9 @@ fn apply_cancerhotspots_result(
 async fn add_cbioportal(variant: &mut Variant) {
     let gene = variant.gene.trim();
     if gene.is_empty() {
+        variant
+            .section_outcomes
+            .complete("cbioportal", SectionOutcome::empty("cBioPortal"));
         return;
     }
 
@@ -556,12 +596,18 @@ async fn add_cbioportal(variant: &mut Variant) {
     };
 
     match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, cbio_fut).await {
-        Ok(Ok(summary)) => transform::variant::merge_cbioportal(variant, &summary),
-        Ok(Err(err)) => warn!(gene = %variant.gene, "cBioPortal unavailable: {err}"),
-        Err(_) => warn!(
-            gene = %variant.gene,
-            timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
-            "cBioPortal enrichment timed out"
+        Ok(Ok(summary)) => {
+            transform::variant::merge_cbioportal(variant, &summary);
+            let outcome = if variant.cancer_frequencies.is_empty() {
+                SectionOutcome::empty("cBioPortal")
+            } else {
+                SectionOutcome::data("cBioPortal")
+            };
+            variant.section_outcomes.complete("cbioportal", outcome);
+        }
+        Ok(Err(_)) | Err(_) => variant.section_outcomes.complete(
+            "cbioportal",
+            SectionOutcome::unavailable(VARIANT_SOURCE_UNAVAILABLE),
         ),
     }
 }
@@ -589,6 +635,9 @@ fn civic_molecular_profile_name(variant: &Variant) -> Option<String> {
 
 async fn add_civic(variant: &mut Variant) {
     let Some(molecular_profile_name) = civic_molecular_profile_name(variant) else {
+        variant
+            .section_outcomes
+            .complete("civic", SectionOutcome::empty("CIViC"));
         return;
     };
 
@@ -601,19 +650,24 @@ async fn add_civic(variant: &mut Variant) {
 
     match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, civic_fut).await {
         Ok(Ok(context)) => {
+            let has_data = context.evidence_total_count > 0
+                || context.assertion_total_count > 0
+                || !context.evidence_items.is_empty()
+                || !context.assertions.is_empty();
             let section = variant
                 .civic
                 .get_or_insert_with(VariantCivicSection::default);
             section.graphql = Some(context);
+            let outcome = if has_data {
+                SectionOutcome::data("CIViC")
+            } else {
+                SectionOutcome::empty("CIViC")
+            };
+            variant.section_outcomes.complete("civic", outcome);
         }
-        Ok(Err(err)) => warn!(
-            molecular_profile = %molecular_profile_name,
-            "CIViC enrichment unavailable: {err}"
-        ),
-        Err(_) => warn!(
-            molecular_profile = %molecular_profile_name,
-            timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
-            "CIViC enrichment timed out"
+        Ok(Err(_)) | Err(_) => variant.section_outcomes.complete(
+            "civic",
+            SectionOutcome::unavailable(VARIANT_SOURCE_UNAVAILABLE),
         ),
     }
 }
@@ -634,6 +688,7 @@ fn is_gwas_only_request(flags: &VariantSections) -> bool {
 
 fn gwas_only_variant_stub(rsid: &str) -> Variant {
     Variant {
+        section_outcomes: super::default_variant_section_outcomes(),
         gene: String::new(),
         id: rsid.to_string(),
         hgvs_p: None,

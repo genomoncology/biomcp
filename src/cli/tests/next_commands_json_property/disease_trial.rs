@@ -34,6 +34,7 @@ fn disease_json_next_commands_parse() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -99,6 +100,7 @@ fn disease_json_next_commands_omit_requested_section_follow_up() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -155,6 +157,7 @@ fn disease_json_suggestions_match_see_also_without_more_hints() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -211,6 +214,7 @@ fn disease_json_next_commands_include_top_gene_context() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -232,6 +236,7 @@ fn disease_json_next_commands_include_top_gene_context() {
 #[test]
 fn pgx_json_next_commands_parse() {
     let pgx = Pgx {
+        section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
         query: "CYP2D6".to_string(),
         gene: Some("CYP2D6".to_string()),
         drug: Some("warfarin sodium".to_string()),

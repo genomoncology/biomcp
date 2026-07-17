@@ -49,13 +49,23 @@ pub fn diagnostic_markdown(
         supports("conditions") && (include_all || has_requested("conditions"));
     let show_methods_section = supports("methods") && (include_all || has_requested("methods"));
     let show_regulatory_section = supports("regulatory") && has_requested("regulatory");
-    let regulatory_block = if show_regulatory_section {
+    let regulatory_unavailable =
+        diagnostic
+            .section_outcomes
+            .get("regulatory")
+            .is_some_and(|outcome| {
+                outcome.outcome()
+                    == crate::entities::section_outcome::SectionOutcomeState::Unavailable
+            });
+    let regulatory_block = if show_regulatory_section && regulatory_unavailable {
+        "## Regulatory (FDA Device)\n\n".to_string()
+    } else if show_regulatory_section {
         render_regulatory_block(diagnostic.regulatory.as_deref())
     } else {
         String::new()
     };
 
-    tmpl.render(context! {
+    let body = tmpl.render(context! {
         accession => &diagnostic.accession,
         source_label => crate::entities::diagnostic::diagnostic_source_label(&diagnostic.source),
         source_id => &diagnostic.source_id,
@@ -87,8 +97,12 @@ pub fn diagnostic_markdown(
             sections_diagnostic(diagnostic, requested_sections),
         ),
         related_block => format_related_block(related_diagnostic(diagnostic)),
-    })
-    .map_err(Into::into)
+    })?;
+    Ok(append_source_state_messages(
+        body,
+        "diagnostic",
+        &diagnostic.section_outcomes,
+    ))
 }
 
 fn render_regulatory_block(rows: Option<&[DiagnosticRegulatoryRecord]>) -> String {
