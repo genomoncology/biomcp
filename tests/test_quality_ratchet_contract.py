@@ -1071,6 +1071,48 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
     assert summary["remote_resource_bounds"]["status"] == "pass"
 
 
+def test_source_state_registry_rejects_unmapped_and_stale_sections(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "source-state-registry"
+    shutil.copytree(REPO_ROOT / "src" / "entities", fixture_root / "src" / "entities")
+    architecture = fixture_root / "architecture" / "technical" / "source-integration.md"
+    architecture.parent.mkdir(parents=True)
+    shutil.copy2(REPO_ROOT / "architecture" / "technical" / "source-integration.md", architecture)
+
+    clean = ratchet.check_source_state_registry(fixture_root)
+    assert clean["status"] == "pass", clean
+    assert clean["unmapped_sections"] == []
+    assert clean["stale_registry_entries"] == []
+
+    disease = fixture_root / "src" / "entities" / "disease" / "mod.rs"
+    original = disease.read_text(encoding="utf-8")
+    with_unmapped = original.replace(
+        "    DISEASE_SECTION_ALL,\n];",
+        '    "fixture_unmapped",\n    DISEASE_SECTION_ALL,\n];',
+        1,
+    )
+    assert with_unmapped != original
+    disease.write_text(with_unmapped, encoding="utf-8")
+    unmapped = ratchet.check_source_state_registry(fixture_root)
+    assert unmapped["status"] == "fail"
+    assert any(
+        row["entity"] == "disease" and row["section"] == "fixture_unmapped"
+        for row in unmapped["unmapped_sections"]
+    )
+
+    with_stale = original.replace("    DISEASE_SECTION_SURVIVAL,\n", "", 1)
+    assert with_stale != original
+    disease.write_text(with_stale, encoding="utf-8")
+    stale = ratchet.check_source_state_registry(fixture_root)
+    assert stale["status"] == "fail"
+    assert any(
+        row["entity"] == "disease" and row["section"] == "survival"
+        for row in stale["stale_registry_entries"]
+    )
+
+
 def test_wrapper_allows_mustmatch_opt_out_later_in_section(tmp_path: Path) -> None:
     spec_path = _write_h2_bash_spec(
         tmp_path / "spec",

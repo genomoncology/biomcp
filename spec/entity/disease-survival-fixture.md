@@ -33,3 +33,15 @@ Source: Chronic Myeloid Leukemia (CML)
 | Sex | Latest observed year | 5-year relative survival | 95% CI | Cases | Latest modeled |
 Both Sexes
 ```
+
+## Disease survival publishes its source outcome
+
+Successful SEER data is reported by the same source-state contract used by
+other entities. The entity-owned outcome and projected provenance must agree,
+so an agent can distinguish evidence from an inferred default.
+
+```bash
+../../tools/biomcp-ci --json get disease --name "chronic myeloid leukemia" survival \
+  | jq '(.section_outcomes.survival == {"outcome":"data","sources":["SEER Explorer"]}) and (._meta.section_sources | any(.key == "survival" and .outcome == "data" and .sources == ["SEER Explorer"]))' \
+  | mustmatch 'true'
+```

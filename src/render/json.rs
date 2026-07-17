@@ -653,6 +653,42 @@ mod tests {
     }
 
     #[test]
+    fn source_errors_include_safe_source_and_recovery() {
+        let sentinels = [
+            "credential=fixture-secret",
+            "https://signed.example/private?token=fixture-secret",
+            "raw provider payload",
+            "/home/operator/private.json",
+        ];
+        let errors = [
+            BioMcpError::BodyLimit {
+                source_name: "Europe PMC".to_string(),
+                max_bytes: 42,
+            },
+            BioMcpError::SourceUnavailable {
+                source_name: "ClinicalTrials.gov".to_string(),
+                reason: format!("{}: {}", sentinels[0], sentinels[2]),
+                suggestion: format!("Read {} then retry {}", sentinels[3], sentinels[1]),
+            },
+        ];
+
+        for (error, expected_source) in errors.iter().zip(["Europe PMC", "ClinicalTrials.gov"]) {
+            let json = to_error_json(error).expect("structured source error JSON");
+            let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
+            assert_eq!(value["error"]["source"], expected_source, "json={value}");
+            assert!(
+                value["error"]["recovery"]
+                    .as_str()
+                    .is_some_and(|recovery| !recovery.trim().is_empty()),
+                "source error needs a safe recovery action: {value}"
+            );
+            for sentinel in sentinels {
+                assert!(!json.contains(sentinel), "JSON leaked {sentinel}: {json}");
+            }
+        }
+    }
+
+    #[test]
     fn structured_error_messages_omit_external_and_local_details() {
         let sentinels = [
             "https://provider.example/private?token=fake-credential",
