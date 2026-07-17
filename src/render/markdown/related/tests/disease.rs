@@ -54,6 +54,7 @@ fn related_disease_suggests_review_when_phenotypes_are_sparse() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -108,6 +109,7 @@ fn related_disease_promotes_top_gene_context_before_generic_pivots() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -152,6 +154,7 @@ fn related_disease_falls_back_to_unscored_top_gene_context() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -201,6 +204,7 @@ fn related_disease_uses_synonym_when_name_is_raw_id() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -242,6 +246,7 @@ fn related_disease_non_oncology_skips_study_hints() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -280,6 +285,7 @@ fn related_disease_quotes_single_word_indication_search() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -318,6 +324,7 @@ fn related_disease_oncology_without_local_match_falls_back_to_download_list() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -365,6 +372,7 @@ fn related_disease_oncology_with_local_match_prefers_top_mutated() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -429,6 +437,7 @@ fn related_disease_oncology_matches_noncontiguous_carcinoma_study_labels() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 

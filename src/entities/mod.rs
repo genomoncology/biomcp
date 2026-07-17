@@ -12,6 +12,7 @@ pub(crate) mod pathway;
 pub(crate) mod pgx;
 pub(crate) mod protein;
 pub(crate) mod section_outcome;
+pub(crate) mod source_state_registry;
 pub(crate) mod study;
 pub(crate) mod trial;
 pub(crate) mod variant;

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use tracing::warn;
 
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
+use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 use crate::sources::gprofiler::GProfilerClient;
 use crate::sources::kegg::{KeggClient, is_human_pathway_id};
@@ -14,9 +15,16 @@ use crate::sources::reactome::ReactomeClient;
 use crate::sources::wikipathways::{WikiPathwaysClient, is_wikipathways_id};
 use crate::transform;
 
+fn default_pathway_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("pathway"))
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pathway {
-    #[serde(default, deserialize_with = "deserialize_pathway_section_outcomes")]
+    #[serde(
+        default = "default_pathway_section_outcomes",
+        deserialize_with = "deserialize_pathway_section_outcomes"
+    )]
     pub section_outcomes: SectionOutcomes,
     pub source: String,
     pub id: String,
@@ -74,7 +82,7 @@ where
 {
     let outcomes = SectionOutcomes::deserialize(deserializer)?;
     outcomes
-        .validate_keys(PATHWAY_OUTCOME_KEYS)
+        .validate_keys(&outcome_keys("pathway"))
         .map_err(serde::de::Error::custom)?;
     Ok(outcomes)
 }
@@ -1037,7 +1045,10 @@ mod tests {
             r#"{"source":"Reactome","id":"R-HSA-1","name":"Example"}"#,
         )
         .expect("legacy pathway JSON should deserialize");
-        assert!(legacy.section_outcomes.iter().next().is_none());
+        assert_eq!(legacy.section_outcomes.iter().count(), 3);
+        assert!(legacy.section_outcomes.iter().all(|(_, outcome)| {
+            outcome.outcome() == crate::entities::section_outcome::SectionOutcomeState::NotRequested
+        }));
 
         let foreign = serde_json::from_str::<Pathway>(
             r#"{"source":"Reactome","id":"R-HSA-1","name":"Example","section_outcomes":{"approvals":{"outcome":"empty","sources":["OpenFDA"]}}}"#,

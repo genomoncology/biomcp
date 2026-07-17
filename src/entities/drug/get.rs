@@ -164,10 +164,13 @@ fn is_section_only_requested(sections: &[String]) -> bool {
         && sections.iter().any(|section| !section.trim().is_empty())
 }
 
-async fn fetch_civic_therapy_context(name: &str) -> Option<CivicContext> {
+async fn fetch_civic_therapy_context(name: &str) -> (Option<CivicContext>, SectionOutcome) {
     let name = name.trim();
     if name.is_empty() {
-        return Some(CivicContext::default());
+        return (
+            Some(CivicContext::default()),
+            SectionOutcome::empty("CIViC"),
+        );
     }
 
     let civic_fut = async {
@@ -176,19 +179,18 @@ async fn fetch_civic_therapy_context(name: &str) -> Option<CivicContext> {
     };
 
     match tokio::time::timeout(OPTIONAL_SAFETY_TIMEOUT, civic_fut).await {
-        Ok(Ok(context)) => Some(context),
-        Ok(Err(err)) => {
-            warn!(drug = %name, "CIViC unavailable for drug section: {err}");
-            None
+        Ok(Ok(context)) => {
+            let outcome = if context.evidence_items.is_empty() && context.assertions.is_empty() {
+                SectionOutcome::empty("CIViC")
+            } else {
+                SectionOutcome::data("CIViC")
+            };
+            (Some(context), outcome)
         }
-        Err(_) => {
-            warn!(
-                drug = %name,
-                timeout_secs = OPTIONAL_SAFETY_TIMEOUT.as_secs(),
-                "CIViC drug section timed out"
-            );
-            None
-        }
+        Ok(Err(_)) | Err(_) => (
+            None,
+            SectionOutcome::unavailable("CIViC drug evidence is temporarily unavailable."),
+        ),
     }
 }
 
@@ -230,8 +232,7 @@ async fn add_approvals_section(drug: &mut Drug) {
             drug.approvals = Some(approvals);
             drug.section_outcomes.complete("approvals", outcome);
         }
-        Ok(Err(err)) => {
-            warn!(drug = %drug.name, "OpenFDA Drugs@FDA unavailable: {err}");
+        Ok(Err(_)) => {
             drug.approvals = Some(Vec::new());
             drug.section_outcomes.complete(
                 "approvals",
@@ -239,11 +240,6 @@ async fn add_approvals_section(drug: &mut Drug) {
             );
         }
         Err(_) => {
-            warn!(
-                drug = %drug.name,
-                timeout_secs = OPTIONAL_SAFETY_TIMEOUT.as_secs(),
-                "OpenFDA Drugs@FDA section timed out"
-            );
             drug.approvals = Some(Vec::new());
             drug.section_outcomes.complete(
                 "approvals",
@@ -256,6 +252,7 @@ async fn add_approvals_section(drug: &mut Drug) {
 pub(super) struct ResolvedDrugBase {
     pub(super) drug: Drug,
     pub(super) label_response: Option<serde_json::Value>,
+    pub(super) label_attempt_failed: bool,
     trial_alias_candidates: Vec<TrialAlias>,
 }
 
@@ -685,6 +682,7 @@ pub(super) async fn resolve_drug_base(
     }
 
     let mut label_response_opt: Option<serde_json::Value> = None;
+    let mut label_attempt_failed = false;
     if fetch_label_response {
         match OpenFdaClient::new() {
             Ok(client) => match client.label_search(&drug.name).await {
@@ -693,12 +691,14 @@ pub(super) async fn resolve_drug_base(
                     if label_required {
                         return Err(err);
                     }
+                    label_attempt_failed = true;
                 }
             },
             Err(err) => {
                 if label_required {
                     return Err(err);
                 }
+                label_attempt_failed = true;
             }
         }
     }
@@ -712,6 +712,7 @@ pub(super) async fn resolve_drug_base(
     Ok(ResolvedDrugBase {
         drug,
         label_response: label_response_opt,
+        label_attempt_failed,
         trial_alias_candidates,
     })
 }
@@ -723,11 +724,15 @@ async fn populate_common_sections(
     section_flags: &DrugSections,
     raw_label: bool,
 ) -> Result<(), BioMcpError> {
-    let civic_context = if section_flags.include_targets || section_flags.include_civic {
-        fetch_civic_therapy_context(&drug.name).await
-    } else {
-        None
-    };
+    let (civic_context, civic_outcome) =
+        if section_flags.include_targets || section_flags.include_civic {
+            fetch_civic_therapy_context(&drug.name).await
+        } else {
+            (
+                None,
+                SectionOutcome::unavailable("CIViC drug evidence is temporarily unavailable."),
+            )
+        };
 
     drug.label = if section_flags.include_label {
         label_response.and_then(|response| extract_inline_label(response, raw_label))
@@ -753,24 +758,27 @@ async fn populate_common_sections(
     }
 
     if section_flags.include_targets {
-        enrich_targets(drug, civic_context.as_ref()).await;
+        let outcome = enrich_targets(drug, civic_context.as_ref()).await;
+        drug.section_outcomes.complete("targets", outcome);
     } else {
         drug.variant_targets.clear();
     }
 
     if section_flags.include_indications {
-        enrich_indications(drug).await;
+        let outcome = enrich_indications(drug).await;
+        drug.section_outcomes.complete("indications", outcome);
     }
 
     if section_flags.include_civic {
         drug.civic = Some(civic_context.unwrap_or_default());
+        drug.section_outcomes.complete("civic", civic_outcome);
     } else {
         drug.civic = None;
     }
     Ok(())
 }
 
-async fn populate_top_adverse_event_preview(drug: &mut Drug) {
+async fn populate_top_adverse_event_preview(drug: &mut Drug) -> bool {
     match tokio::time::timeout(
         OPTIONAL_SAFETY_TIMEOUT,
         fetch_top_adverse_events(&drug.name),
@@ -780,20 +788,9 @@ async fn populate_top_adverse_event_preview(drug: &mut Drug) {
         Ok(Ok((events, faers_query))) => {
             drug.top_adverse_events = events;
             drug.faers_query = faers_query;
+            false
         }
-        Ok(Err(err)) => {
-            warn!(
-                drug = %drug.name,
-                "OpenFDA adverse-event preview unavailable: {err}"
-            );
-        }
-        Err(_) => {
-            warn!(
-                drug = %drug.name,
-                timeout_secs = OPTIONAL_SAFETY_TIMEOUT.as_secs(),
-                "OpenFDA adverse-event preview timed out"
-            );
-        }
+        Ok(Err(_)) | Err(_) => true,
     }
 }
 
@@ -962,12 +959,13 @@ async fn get_with_region_owned(
     )
     .await?;
 
-    if region.includes_us() && (!section_only || section_flags.include_safety) {
-        populate_top_adverse_event_preview(&mut resolved.drug).await;
+    let faers_failed = if region.includes_us() && (!section_only || section_flags.include_safety) {
+        Some(populate_top_adverse_event_preview(&mut resolved.drug).await)
     } else {
         resolved.drug.top_adverse_events.clear();
         resolved.drug.faers_query = None;
-    }
+        None
+    };
 
     if region.includes_us() {
         populate_us_regional_sections(
@@ -994,6 +992,60 @@ async fn get_with_region_owned(
         populate_who_sections(&mut resolved.drug, &name, &section_flags).await?;
     } else {
         resolved.drug.who_prequalification = None;
+    }
+
+    if section_flags.include_safety && (region.includes_us() || region.includes_eu()) {
+        let mut successful_sources = Vec::new();
+        let mut contributors = Vec::new();
+        let mut failed = false;
+        if region.includes_us() {
+            if faers_failed == Some(true) {
+                failed = true;
+            } else {
+                successful_sources.push("OpenFDA FAERS");
+                if !resolved.drug.top_adverse_events.is_empty() {
+                    contributors.push("OpenFDA FAERS");
+                }
+            }
+            if resolved.label_attempt_failed {
+                failed = true;
+            } else {
+                successful_sources.push("OpenFDA label");
+                if resolved
+                    .drug
+                    .us_safety_warnings
+                    .as_deref()
+                    .is_some_and(|value| !value.trim().is_empty())
+                {
+                    contributors.push("OpenFDA label");
+                }
+            }
+        }
+        if region.includes_eu() {
+            successful_sources.push("EMA");
+            if resolved.drug.ema_safety.as_ref().is_some_and(|safety| {
+                !safety.dhpcs.is_empty()
+                    || !safety.referrals.is_empty()
+                    || !safety.psusas.is_empty()
+            }) {
+                contributors.push("EMA");
+            }
+        }
+        let outcome = if failed {
+            if contributors.is_empty() {
+                SectionOutcome::unavailable("Drug safety evidence is temporarily unavailable.")
+            } else {
+                SectionOutcome::degraded(
+                    contributors,
+                    "Drug safety evidence is incomplete because a source was unavailable.",
+                )
+            }
+        } else if contributors.is_empty() {
+            SectionOutcome::empty_sources(successful_sources)
+        } else {
+            SectionOutcome::data_sources(contributors)
+        };
+        resolved.drug.section_outcomes.complete("safety", outcome);
     }
 
     Ok(resolved.drug)

@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::entities::section_outcome::SectionOutcomes;
+use crate::entities::source_state_registry::outcome_keys;
 use crate::sources::civic::{CivicContext, CivicEvidenceItem};
 
 mod get;
@@ -30,8 +32,30 @@ pub use self::structure::{VariantStructureResult, structure};
 pub(crate) use self::normalization::transcript_coding_hgvs_re;
 pub(crate) use self::resolution::{gnomad_variant_slug, is_rsid, normalize_protein_change};
 
+pub(crate) fn default_variant_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("variant"))
+}
+
+fn deserialize_variant_section_outcomes<'de, D>(
+    deserializer: D,
+) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(&outcome_keys("variant"))
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Variant {
+    #[serde(
+        default = "default_variant_section_outcomes",
+        deserialize_with = "deserialize_variant_section_outcomes"
+    )]
+    pub section_outcomes: SectionOutcomes,
     pub gene: String,
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none")]

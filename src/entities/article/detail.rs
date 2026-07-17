@@ -1,5 +1,6 @@
 //! Article detail lookup, identifier parsing, and full-text retrieval.
 
+use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::europepmc::{EuropePmcClient, EuropePmcResult, EuropePmcSearchResponse};
 use crate::sources::pubmed::{PubMedCitation, PubMedCitationErrorKind, PubMedClient};
@@ -390,10 +391,6 @@ impl IndexingUnavailableCause {
     }
 }
 
-fn warn_indexing_unavailable(cause: IndexingUnavailableCause, pmid: &str) {
-    warn!(error = ?cause, pmid, "PubMed article indexing unavailable");
-}
-
 fn unavailable_indexing(cause: IndexingUnavailableCause) -> ArticleIndexing {
     ArticleIndexing {
         status: ArticleIndexingStatus::Unavailable,
@@ -471,22 +468,43 @@ where
 async fn enrich_article_with_indexing(article: &mut Article) {
     let Some(pmid) = article.pmid.as_deref() else {
         article.indexing = Some(unavailable_indexing(IndexingUnavailableCause::MissingPmid));
+        article.section_outcomes.complete(
+            ARTICLE_SECTION_INDEXING,
+            SectionOutcome::unavailable("PubMed indexing is unavailable without a PMID."),
+        );
         return;
     };
     let client = match PubMedClient::new() {
         Ok(client) => client,
         Err(_) => {
-            let cause = IndexingUnavailableCause::Client;
-            warn_indexing_unavailable(cause, pmid);
-            article.indexing = Some(unavailable_indexing(cause));
+            article.indexing = Some(unavailable_indexing(IndexingUnavailableCause::Client));
+            article.section_outcomes.complete(
+                ARTICLE_SECTION_INDEXING,
+                SectionOutcome::unavailable("PubMed indexing is temporarily unavailable."),
+            );
             return;
         }
     };
     match citation_with_timeout(ARTICLE_INDEXING_TIMEOUT, client.citation(pmid)).await {
-        Ok(citation) => article.indexing = Some(article_indexing_from_citation(citation)),
+        Ok(citation) => {
+            let indexing = article_indexing_from_citation(citation);
+            let has_data = !indexing.authors.is_empty() || !indexing.mesh_headings.is_empty();
+            article.indexing = Some(indexing);
+            article.section_outcomes.complete(
+                ARTICLE_SECTION_INDEXING,
+                if has_data {
+                    SectionOutcome::data("PubMed")
+                } else {
+                    SectionOutcome::empty("PubMed")
+                },
+            );
+        }
         Err(cause) => {
-            warn_indexing_unavailable(cause, pmid);
             article.indexing = Some(unavailable_indexing(cause));
+            article.section_outcomes.complete(
+                ARTICLE_SECTION_INDEXING,
+                SectionOutcome::unavailable("PubMed indexing is temporarily unavailable."),
+            );
         }
     }
 }

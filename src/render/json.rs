@@ -825,7 +825,7 @@ mod tests {
     #[test]
     fn json_render_drug_entity() {
         let drug = Drug {
-            section_outcomes: Default::default(),
+            section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
             name: "osimertinib".to_string(),
             drugbank_id: Some("DB09330".to_string()),
             chembl_id: Some("CHEMBL3353410".to_string()),
@@ -873,7 +873,7 @@ mod tests {
     #[test]
     fn json_render_drug_entity_omits_family_fields_when_absent() {
         let drug = Drug {
-            section_outcomes: Default::default(),
+            section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
             name: "pembrolizumab".to_string(),
             drugbank_id: Some("DB09037".to_string()),
             chembl_id: Some("CHEMBL3137343".to_string()),

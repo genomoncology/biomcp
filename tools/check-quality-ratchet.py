@@ -1191,6 +1191,93 @@ def check_remote_resource_bounds(root_dir: Path) -> dict[str, object]:
     }
 
 
+def _rust_section_values(path: Path, entity: str) -> set[str]:
+    text = path.read_text(encoding="utf-8")
+    marker = f"pub const {entity.upper()}_SECTION_NAMES"
+    start = text.find(marker)
+    if start < 0:
+        return set()
+    body_start = text.find("&[", start)
+    body_end = text.find("];", body_start)
+    body = text[body_start + 2 : body_end]
+    values = set(re.findall(r'"([^"]+)"', body))
+    for name in re.findall(r"\b[A-Z][A-Z0-9_]+\b", body):
+        match = re.search(
+            rf'const\s+{re.escape(name)}:\s*&str\s*=\s*"([^"]+)";', text
+        )
+        if match:
+            values.add(match.group(1))
+    return values
+
+
+def _source_state_registry_rows(root_dir: Path) -> tuple[set[tuple[str, str]], set[tuple[str, str]]]:
+    text = (root_dir / "src/entities/source_state_registry.rs").read_text(
+        encoding="utf-8"
+    )
+    states = set(
+        re.findall(r'state\(\s*"([^"]+)"\s*,\s*"([^"]+)"', text, re.DOTALL)
+    )
+    selectors = set(
+        re.findall(r'selector\(\s*"([^"]+)"\s*,\s*"([^"]+)"', text, re.DOTALL)
+    )
+    return states, selectors
+
+
+def check_source_state_registry(root_dir: Path) -> dict[str, object]:
+    entity_paths = {
+        "adverse_event": "src/entities/adverse_event.rs",
+        "article": "src/entities/article/mod.rs",
+        "diagnostic": "src/entities/diagnostic/mod.rs",
+        "disease": "src/entities/disease/mod.rs",
+        "drug": "src/entities/drug/mod.rs",
+        "gene": "src/entities/gene.rs",
+        "pathway": "src/entities/pathway.rs",
+        "pgx": "src/entities/pgx.rs",
+        "protein": "src/entities/protein.rs",
+        "trial": "src/entities/trial/mod.rs",
+        "variant": "src/entities/variant/get.rs",
+    }
+    state_rows, selector_rows = _source_state_registry_rows(root_dir)
+    runtime_selectors = {
+        (entity, section)
+        for entity, relative in entity_paths.items()
+        for section in _rust_section_values(root_dir / relative, entity)
+    }
+    unmapped = sorted(runtime_selectors - selector_rows)
+    stale = sorted(selector_rows - runtime_selectors)
+
+    architecture_text = (
+        root_dir / "architecture/technical/source-integration.md"
+    ).read_text(encoding="utf-8")
+    table = architecture_text.partition("<!-- source-state-registry:start -->")[2].partition(
+        "<!-- source-state-registry:end -->"
+    )[0]
+    architecture_rows = {
+        row
+        for row in re.findall(
+            r"^\|\s*([a-z_]+)\s*\|\s*([a-z0-9_-]+)\s*\|",
+            table,
+            re.MULTILINE,
+        )
+        if row != ("entity", "section")
+    }
+    architecture_mismatches = sorted(state_rows ^ architecture_rows)
+
+    def records(rows: list[tuple[str, str]]) -> list[dict[str, str]]:
+        return [{"entity": entity, "section": section} for entity, section in rows]
+
+    findings = len(unmapped) + len(stale) + len(architecture_mismatches)
+    return {
+        "name": "source_state_registry",
+        "status": "fail" if findings else "pass",
+        "finding_count": findings,
+        "unmapped_sections": records(unmapped),
+        "stale_registry_entries": records(stale),
+        "architecture_mismatches": records(architecture_mismatches),
+        "errors": [],
+    }
+
+
 def main() -> int:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -1281,6 +1368,12 @@ def main() -> int:
         remote_resource_payload,
     )
 
+    source_state_payload = check_source_state_registry(args.root_dir)
+    write_json(
+        args.output_dir / "quality-ratchet-source-state-registry.json",
+        source_state_payload,
+    )
+
     statuses = [
         lint_payload["status"],
         mcp_payload.get("status"),
@@ -1291,6 +1384,7 @@ def main() -> int:
         terminal_output_payload.get("status"),
         cli_surface_payload.get("status"),
         remote_resource_payload.get("status"),
+        source_state_payload.get("status"),
     ]
     if "error" in statuses:
         summary_status = "error"
@@ -1312,6 +1406,7 @@ def main() -> int:
         "terminal_output_boundaries": {"status": terminal_output_payload.get("status")},
         "cli_surface_contract": {"status": cli_surface_payload.get("status")},
         "remote_resource_bounds": {"status": remote_resource_payload.get("status")},
+        "source_state_registry": {"status": source_state_payload.get("status")},
     }
     write_json(args.output_dir / "quality-ratchet-summary.json", summary_payload)
     return 0 if summary_status == "pass" else 1

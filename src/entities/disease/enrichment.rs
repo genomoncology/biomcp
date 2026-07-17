@@ -12,6 +12,7 @@ use super::get::DiseaseSections;
 use super::resolution::{DiseaseLookupInput, normalize_disease_id, parse_disease_lookup_input};
 use crate::entities::SearchPage;
 use crate::entities::diagnostic::{DiagnosticSearchFilters, DiagnosticSearchResult};
+use crate::entities::section_outcome::SectionOutcome;
 
 const OPTIONAL_ENRICHMENT_TIMEOUT: Duration = Duration::from_secs(8);
 const DIAGNOSTIC_PIVOT_LIMIT: usize = 10;
@@ -20,6 +21,18 @@ const SURVIVAL_UNAVAILABLE_NOTE: &str = "SEER survival data is temporarily unava
 const FUNDING_NO_DATA_NOTE: &str = "No NIH funding data found for this query.";
 const FUNDING_UNAVAILABLE_NOTE: &str = "NIH Reporter funding data is temporarily unavailable.";
 const DISEASE_DIAGNOSTICS_UNAVAILABLE_NOTE: &str = "Diagnostic local data is unavailable. Run `biomcp gtr sync` and `biomcp who-ivd sync` to enable disease diagnostic pivots.";
+const GENES_UNAVAILABLE_NOTE: &str = "Disease gene sources are temporarily unavailable.";
+const GENES_DEGRADED_NOTE: &str =
+    "Disease gene evidence is incomplete because an additive source is unavailable.";
+const PATHWAYS_UNAVAILABLE_NOTE: &str = "Reactome pathway data is temporarily unavailable.";
+const PHENOTYPES_UNAVAILABLE_NOTE: &str = "Disease phenotype sources are temporarily unavailable.";
+const PHENOTYPES_DEGRADED_NOTE: &str =
+    "Disease phenotype evidence is incomplete because an additive source is unavailable.";
+const VARIANTS_UNAVAILABLE_NOTE: &str = "CIViC variant data is temporarily unavailable.";
+const MODELS_UNAVAILABLE_NOTE: &str = "Monarch model data is temporarily unavailable.";
+const PREVALENCE_UNAVAILABLE_NOTE: &str =
+    "Open Targets prevalence data is temporarily unavailable.";
+const CIVIC_UNAVAILABLE_NOTE: &str = "CIViC disease context is temporarily unavailable.";
 
 fn normalize_ols_disease_id(value: &str) -> Option<String> {
     normalize_disease_id(value).or_else(|| normalize_disease_id(&value.replace('_', ":")))
@@ -262,10 +275,13 @@ fn map_survival_point(point: crate::sources::seer::SeerSurvivalPoint) -> Disease
 async fn add_survival_section(disease: &mut Disease) -> Result<(), BioMcpError> {
     let client = match SeerClient::new() {
         Ok(client) => client,
-        Err(err) => {
-            warn!("SEER Explorer unavailable for disease survival section: {err}");
+        Err(_) => {
             disease.survival = None;
             disease.survival_note = Some(SURVIVAL_UNAVAILABLE_NOTE.into());
+            disease.section_outcomes.complete(
+                DISEASE_SECTION_SURVIVAL,
+                SectionOutcome::unavailable(SURVIVAL_UNAVAILABLE_NOTE),
+            );
             return Ok(());
         }
     };
@@ -278,16 +294,25 @@ async fn add_survival_section(disease: &mut Disease) -> Result<(), BioMcpError> 
 
     match client.fetch_survival(site.site_code, &catalog).await {
         Ok(payload) => {
-            disease.survival = Some(map_survival_payload(payload));
+            let survival = map_survival_payload(payload);
+            let outcome = if survival.series.is_empty() {
+                SectionOutcome::empty("SEER Explorer")
+            } else {
+                SectionOutcome::data("SEER Explorer")
+            };
+            disease.survival = Some(survival);
             disease.survival_note = None;
+            disease
+                .section_outcomes
+                .complete(DISEASE_SECTION_SURVIVAL, outcome);
         }
-        Err(err) => {
-            warn!(
-                "SEER Explorer survival unavailable for disease {} at site {}: {err}",
-                disease.id, site.site_code
-            );
+        Err(_) => {
             disease.survival = None;
             disease.survival_note = Some(SURVIVAL_UNAVAILABLE_NOTE.into());
+            disease.section_outcomes.complete(
+                DISEASE_SECTION_SURVIVAL,
+                SectionOutcome::unavailable(SURVIVAL_UNAVAILABLE_NOTE),
+            );
         }
     }
 
@@ -300,10 +325,13 @@ fn resolve_survival_site_from_catalog_result(
 ) -> Option<(ResolvedSeerSite, SeerSiteCatalog)> {
     let catalog = match catalog {
         Ok(catalog) => catalog,
-        Err(err) => {
-            warn!("SEER Explorer catalog unavailable for disease survival section: {err}");
+        Err(_) => {
             disease.survival = None;
             disease.survival_note = Some(SURVIVAL_UNAVAILABLE_NOTE.into());
+            disease.section_outcomes.complete(
+                DISEASE_SECTION_SURVIVAL,
+                SectionOutcome::unavailable(SURVIVAL_UNAVAILABLE_NOTE),
+            );
             return None;
         }
     };
@@ -311,16 +339,20 @@ fn resolve_survival_site_from_catalog_result(
     let Some(site) = resolve_site(disease, &catalog) else {
         disease.survival = None;
         disease.survival_note = Some(SURVIVAL_NO_DATA_NOTE.into());
+        disease.section_outcomes.complete(
+            DISEASE_SECTION_SURVIVAL,
+            SectionOutcome::empty("SEER Explorer"),
+        );
         return None;
     };
 
     Some((site, catalog))
 }
 
-async fn add_civic_section(disease: &mut Disease) {
+async fn add_civic_section(disease: &mut Disease) -> SectionOutcome {
     let Some(query) = disease_query_value(disease) else {
         disease.civic = Some(CivicContext::default());
-        return;
+        return SectionOutcome::empty("CIViC");
     };
 
     let civic_fut = async {
@@ -329,43 +361,48 @@ async fn add_civic_section(disease: &mut Disease) {
     };
 
     match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, civic_fut).await {
-        Ok(Ok(context)) => disease.civic = Some(context),
-        Ok(Err(err)) => {
-            warn!(query = %query, "CIViC unavailable for disease section: {err}");
-            disease.civic = Some(CivicContext::default());
+        Ok(Ok(context)) => {
+            let has_data = context.evidence_total_count > 0
+                || context.assertion_total_count > 0
+                || !context.evidence_items.is_empty()
+                || !context.assertions.is_empty();
+            disease.civic = Some(context);
+            if has_data {
+                SectionOutcome::data("CIViC")
+            } else {
+                SectionOutcome::empty("CIViC")
+            }
         }
-        Err(_) => {
-            warn!(
-                query = %query,
-                timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
-                "CIViC disease section timed out"
-            );
+        Ok(Err(_)) | Err(_) => {
             disease.civic = Some(CivicContext::default());
+            SectionOutcome::unavailable(CIVIC_UNAVAILABLE_NOTE)
         }
     }
 }
 
-async fn add_diagnostics_section(disease: &mut Disease) {
+async fn add_diagnostics_section(disease: &mut Disease) -> SectionOutcome {
     let Some(query) = disease_query_value(disease) else {
         disease.diagnostics = Some(Vec::new());
         disease.diagnostics_note = None;
-        return;
+        return SectionOutcome::empty_sources([
+            "NCBI Genetic Testing Registry",
+            "WHO Prequalified IVD",
+        ]);
     };
 
     let filters = DiagnosticSearchFilters {
-        disease: Some(query.clone()),
+        disease: Some(query),
         ..Default::default()
     };
     let result =
         crate::entities::diagnostic::search_page(&filters, DIAGNOSTIC_PIVOT_LIMIT, 0).await;
-    apply_diagnostics_section_result(disease, &query, result);
+    apply_diagnostics_section_result(disease, result)
 }
 
 fn apply_diagnostics_section_result(
     disease: &mut Disease,
-    query: &str,
     result: Result<SearchPage<DiagnosticSearchResult>, BioMcpError>,
-) {
+) -> SectionOutcome {
     match result {
         Ok(page) => {
             let shown = page.results.len();
@@ -385,13 +422,31 @@ fn apply_diagnostics_section_result(
             } else {
                 None
             };
+            let mut sources = Vec::new();
+            for source in page
+                .results
+                .iter()
+                .map(|row| crate::entities::diagnostic::diagnostic_source_label(&row.source))
+            {
+                if !sources.contains(&source) {
+                    sources.push(source);
+                }
+            }
             disease.diagnostics = Some(page.results);
             disease.diagnostics_note = note;
+            if shown == 0 {
+                SectionOutcome::empty_sources([
+                    "NCBI Genetic Testing Registry",
+                    "WHO Prequalified IVD",
+                ])
+            } else {
+                SectionOutcome::data_sources(sources)
+            }
         }
-        Err(err) => {
-            warn!(query = %query, "Diagnostic local data unavailable for disease diagnostic pivot: {err}");
+        Err(_) => {
             disease.diagnostics = None;
             disease.diagnostics_note = Some(DISEASE_DIAGNOSTICS_UNAVAILABLE_NOTE.into());
+            SectionOutcome::unavailable(DISEASE_DIAGNOSTICS_UNAVAILABLE_NOTE)
         }
     }
 }
@@ -405,11 +460,14 @@ fn empty_funding_section(query: String) -> NihReporterFundingSection {
     }
 }
 
-async fn add_funding_section(disease: &mut Disease, requested_lookup: Option<&str>) {
+async fn add_funding_section(
+    disease: &mut Disease,
+    requested_lookup: Option<&str>,
+) -> SectionOutcome {
     let Some(query) = disease_funding_query_value(disease, requested_lookup) else {
         disease.funding = Some(empty_funding_section(String::new()));
         disease.funding_note = Some(FUNDING_NO_DATA_NOTE.into());
-        return;
+        return SectionOutcome::empty("NIH Reporter");
     };
 
     let funding_fut = async {
@@ -426,20 +484,16 @@ async fn add_funding_section(disease: &mut Disease, requested_lookup: Option<&st
             } else {
                 None
             };
+            if no_hits {
+                SectionOutcome::empty("NIH Reporter")
+            } else {
+                SectionOutcome::data("NIH Reporter")
+            }
         }
-        Ok(Err(err)) => {
-            warn!(query = %query, "NIH Reporter unavailable for disease funding section: {err}");
+        Ok(Err(_)) | Err(_) => {
             disease.funding = None;
             disease.funding_note = Some(FUNDING_UNAVAILABLE_NOTE.into());
-        }
-        Err(_) => {
-            warn!(
-                query = %query,
-                timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
-                "NIH Reporter disease funding section timed out"
-            );
-            disease.funding = None;
-            disease.funding_note = Some(FUNDING_UNAVAILABLE_NOTE.into());
+            SectionOutcome::unavailable(FUNDING_UNAVAILABLE_NOTE)
         }
     }
 }
@@ -469,9 +523,7 @@ async fn add_disgenet_section(disease: &mut Disease) -> Result<(), BioMcpError> 
 }
 
 pub(super) async fn enrich_base_context(disease: &mut Disease) {
-    if let Err(err) = add_genes_section(disease).await {
-        warn!("OpenTargets unavailable for disease genes context: {err}");
-    }
+    let _ = add_genes_section(disease).await;
 
     disease.top_genes = if disease.top_gene_scores.is_empty() {
         disease.associated_genes.iter().take(5).cloned().collect()
@@ -499,60 +551,149 @@ pub(super) async fn apply_requested_sections(
     requested_lookup: Option<&str>,
 ) -> Result<(), BioMcpError> {
     if sections.include_genes {
-        if let Err(err) = add_monarch_gene_section(disease).await {
-            warn!("Monarch unavailable for disease genes section: {err}");
-        }
-        if let Err(err) = augment_genes_with_civic(disease).await {
-            warn!("CIViC unavailable for disease gene augmentation: {err}");
-        }
-        if let Err(err) = augment_genes_with_opentargets(disease).await {
-            warn!("OpenTargets unavailable for disease gene augmentation: {err}");
-        }
+        let had_opentargets_data = !disease.top_gene_scores.is_empty();
+        let monarch_result = add_monarch_gene_section(disease).await;
+        let civic_result = augment_genes_with_civic(disease).await;
+        let opentargets_result = augment_genes_with_opentargets(disease).await;
         attach_opentargets_scores(disease);
+
+        let mut contributors = Vec::new();
+        if had_opentargets_data {
+            contributors.push("Open Targets");
+        }
+        if monarch_result.is_ok()
+            && disease.gene_associations.iter().any(|row| {
+                row.source
+                    .as_deref()
+                    .is_some_and(|source| source.to_ascii_lowercase().contains("monarch"))
+            })
+        {
+            contributors.push("Monarch Initiative");
+        }
+        if civic_result.is_ok()
+            && disease.gene_associations.iter().any(|row| {
+                row.source
+                    .as_deref()
+                    .is_some_and(|source| source.to_ascii_lowercase().contains("civic"))
+            })
+        {
+            contributors.push("CIViC");
+        }
+        let failed =
+            monarch_result.is_err() || civic_result.is_err() || opentargets_result.is_err();
+        let outcome = if contributors.is_empty() && failed {
+            SectionOutcome::unavailable(GENES_UNAVAILABLE_NOTE)
+        } else if failed {
+            SectionOutcome::degraded(contributors, GENES_DEGRADED_NOTE)
+        } else if contributors.is_empty() {
+            SectionOutcome::empty_sources(["Monarch Initiative", "CIViC", "Open Targets"])
+        } else {
+            SectionOutcome::data_sources(contributors)
+        };
+        disease
+            .section_outcomes
+            .complete(DISEASE_SECTION_GENES, outcome);
     }
-    if sections.include_pathways
-        && let Err(err) = add_pathways_section(disease).await
-    {
-        warn!("Reactome unavailable for disease pathways section: {err}");
+    if sections.include_pathways {
+        let outcome = match add_pathways_section(disease).await {
+            Ok(()) if disease.pathways.is_empty() => SectionOutcome::empty("Reactome"),
+            Ok(()) => SectionOutcome::data("Reactome"),
+            Err(_) => SectionOutcome::unavailable(PATHWAYS_UNAVAILABLE_NOTE),
+        };
+        disease
+            .section_outcomes
+            .complete(DISEASE_SECTION_PATHWAYS, outcome);
     }
     let needs_backend_phenotypes =
         sections.include_phenotypes || sections.include_clinical_features;
     if needs_backend_phenotypes {
-        if let Err(err) = add_monarch_phenotypes(disease).await {
-            warn!("Monarch unavailable for disease phenotypes section: {err}");
+        let had_mydisease_data = !disease.phenotypes.is_empty();
+        let monarch_result = add_monarch_phenotypes(disease).await;
+        let hpo_result = add_phenotypes_section(disease).await;
+        let failed = monarch_result.is_err() || hpo_result.is_err();
+        let mut contributors = Vec::new();
+        if had_mydisease_data {
+            contributors.push("MyDisease.info");
         }
-        if let Err(err) = add_phenotypes_section(disease).await {
-            warn!("HPO unavailable for disease phenotypes section: {err}");
+        if monarch_result.is_ok()
+            && disease.phenotypes.iter().any(|row| {
+                row.source
+                    .as_deref()
+                    .is_some_and(|source| source.to_ascii_lowercase().contains("monarch"))
+            })
+        {
+            contributors.push("Monarch Initiative");
         }
+        if hpo_result.is_ok() && disease.phenotypes.iter().any(|row| row.name.is_some()) {
+            contributors.push("HPO");
+        }
+        let outcome = if contributors.is_empty() && failed {
+            SectionOutcome::unavailable(PHENOTYPES_UNAVAILABLE_NOTE)
+        } else if failed {
+            SectionOutcome::degraded(contributors, PHENOTYPES_DEGRADED_NOTE)
+        } else if contributors.is_empty() {
+            SectionOutcome::empty_sources(["Monarch Initiative", "HPO"])
+        } else {
+            SectionOutcome::data_sources(contributors)
+        };
+        disease
+            .section_outcomes
+            .complete(DISEASE_SECTION_PHENOTYPES, outcome);
     }
-    if sections.include_variants
-        && let Err(err) = add_civic_variants(disease).await
-    {
-        warn!("CIViC unavailable for disease variants section: {err}");
+    if sections.include_variants {
+        let outcome = match add_civic_variants(disease).await {
+            Ok(()) if disease.variants.is_empty() => SectionOutcome::empty("CIViC"),
+            Ok(()) => SectionOutcome::data("CIViC"),
+            Err(_) => SectionOutcome::unavailable(VARIANTS_UNAVAILABLE_NOTE),
+        };
+        disease
+            .section_outcomes
+            .complete(DISEASE_SECTION_VARIANTS, outcome);
     }
-    if sections.include_models
-        && let Err(err) = add_monarch_models(disease).await
-    {
-        warn!("Monarch unavailable for disease models section: {err}");
+    if sections.include_models {
+        let outcome = match add_monarch_models(disease).await {
+            Ok(()) if disease.models.is_empty() => SectionOutcome::empty("Monarch Initiative"),
+            Ok(()) => SectionOutcome::data("Monarch Initiative"),
+            Err(_) => SectionOutcome::unavailable(MODELS_UNAVAILABLE_NOTE),
+        };
+        disease
+            .section_outcomes
+            .complete(DISEASE_SECTION_MODELS, outcome);
     }
-    if sections.include_prevalence
-        && let Err(err) = add_prevalence_section(disease).await
-    {
-        warn!("OpenTargets unavailable for disease prevalence section: {err}");
-        disease.prevalence.clear();
-        disease.prevalence_note = Some("No prevalence data available from OpenTargets.".into());
+    if sections.include_prevalence {
+        let outcome = match add_prevalence_section(disease).await {
+            Ok(()) if disease.prevalence.is_empty() => SectionOutcome::empty("Open Targets"),
+            Ok(()) => SectionOutcome::data("Open Targets"),
+            Err(_) => {
+                disease.prevalence.clear();
+                disease.prevalence_note = Some(PREVALENCE_UNAVAILABLE_NOTE.into());
+                SectionOutcome::unavailable(PREVALENCE_UNAVAILABLE_NOTE)
+            }
+        };
+        disease
+            .section_outcomes
+            .complete(DISEASE_SECTION_PREVALENCE, outcome);
     }
     if sections.include_survival {
         add_survival_section(disease).await?;
     }
     if sections.include_funding {
-        add_funding_section(disease, requested_lookup).await;
+        let outcome = add_funding_section(disease, requested_lookup).await;
+        disease
+            .section_outcomes
+            .complete(DISEASE_SECTION_FUNDING, outcome);
     }
     if sections.include_diagnostics {
-        add_diagnostics_section(disease).await;
+        let outcome = add_diagnostics_section(disease).await;
+        disease
+            .section_outcomes
+            .complete(DISEASE_SECTION_DIAGNOSTICS, outcome);
     }
     if sections.include_civic {
-        add_civic_section(disease).await;
+        let outcome = add_civic_section(disease).await;
+        disease
+            .section_outcomes
+            .complete(DISEASE_SECTION_CIVIC, outcome);
     }
     if sections.include_disgenet {
         add_disgenet_section(disease).await?;

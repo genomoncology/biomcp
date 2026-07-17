@@ -4,6 +4,7 @@ use crate::entities::diagnostic::DiagnosticRegulatoryRecord;
 #[test]
 fn diagnostic_markdown_renders_requested_sections_and_truthful_empty_states() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: "GTR000000001.1".to_string(),
         accession: "GTR000000001.1".to_string(),
@@ -179,6 +180,7 @@ fn diagnostic_search_rows_escapes_markdown_table_cells() {
 #[test]
 fn diagnostic_markdown_renders_who_summary_fields_and_supported_sections_only() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "who-ivd".to_string(),
         source_id: "ITPW02232- TC40".to_string(),
         accession: "ITPW02232- TC40".to_string(),
@@ -220,6 +222,7 @@ fn diagnostic_markdown_renders_who_summary_fields_and_supported_sections_only() 
 #[test]
 fn diagnostic_markdown_renders_regulatory_section_rows() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: "GTR000000001.1".to_string(),
         accession: "GTR000000001.1".to_string(),
@@ -266,6 +269,7 @@ fn diagnostic_markdown_renders_regulatory_section_rows() {
 #[test]
 fn diagnostic_markdown_keeps_regulatory_hidden_for_all_expansion() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: "GTR000000001.1".to_string(),
         accession: "GTR000000001.1".to_string(),
@@ -310,6 +314,7 @@ fn diagnostic_markdown_keeps_regulatory_hidden_for_all_expansion() {
 #[test]
 fn diagnostic_markdown_renders_regulatory_empty_state_when_requested() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "who-ivd".to_string(),
         source_id: "ITPW02232- TC40".to_string(),
         accession: "ITPW02232- TC40".to_string(),

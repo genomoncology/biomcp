@@ -40,6 +40,7 @@ pub fn pgx_markdown(pgx: &Pgx, requested_sections: &[String]) -> Result<String, 
         sections_block => format_sections_block("pgx", &pgx.query, sections_pgx(pgx, requested_sections)),
         related_block => format_related_block(related_pgx(pgx)),
     })?;
+    let body = append_source_state_messages(body, "pgx", &pgx.section_outcomes);
     Ok(append_evidence_urls(body, pgx_evidence_urls(pgx)))
 }
 

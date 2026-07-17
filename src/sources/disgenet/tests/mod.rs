@@ -75,6 +75,7 @@ fn test_disease(name: &str, umls_cui: Option<&str>) -> Disease {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs,
     }
 }

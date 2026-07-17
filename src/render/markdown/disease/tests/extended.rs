@@ -39,6 +39,7 @@ fn disease_markdown_section_only_shows_disgenet_section() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -92,6 +93,7 @@ fn disease_markdown_disgenet_renders_sparse_optional_fields() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 
@@ -138,6 +140,7 @@ fn disease_markdown_funding_renders_truthful_notes_without_table() {
         funding_note: Some("No NIH funding data found for this query.".to_string()),
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 

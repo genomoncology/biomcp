@@ -117,7 +117,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
     assert!(gene_markdown.contains("biomcp search variant -g CFTR"));
 
     let drug = Drug {
-        section_outcomes: Default::default(),
+        section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
         name: "ivacaftor".to_string(),
         drugbank_id: Some("DB08820".to_string()),
         chembl_id: Some("CHEMBL1200749".to_string()),
@@ -203,6 +203,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
     let disease_markdown =
@@ -441,6 +442,7 @@ fn markdown_detail_outputs_label_variant_protein_pgx_and_openfda_sources() {
     assert!(protein_markdown.contains("## Complexes (ComplexPortal)"));
 
     let pgx = Pgx {
+        section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
         query: "CYP2D6".to_string(),
         gene: Some("CYP2D6".to_string()),
         drug: Some("codeine".to_string()),

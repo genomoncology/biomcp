@@ -239,21 +239,6 @@ pub(crate) fn pathway_source_label(source: &str) -> String {
     }
 }
 
-pub(crate) fn drug_interaction_sources(drug: &Drug) -> Vec<String> {
-    let mut sources = vec!["DDInter".to_string()];
-    if drug
-        .interactions
-        .iter()
-        .any(|row| row.description.as_deref().is_some_and(has_text))
-    {
-        sources.push("DrugBank".to_string());
-    }
-    if has_opt_text(&drug.interaction_text) {
-        sources.push("OpenFDA label".to_string());
-    }
-    normalize_sources(sources)
-}
-
 pub(crate) fn drug_interaction_heading_label(drug: &Drug) -> String {
     if drug.interactions.is_empty() && !has_opt_text(&drug.interaction_text) {
         "Interactions".to_string()
@@ -383,13 +368,6 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         "Brand Names",
         ["DrugBank"],
     );
-    push_section(
-        &mut out,
-        !drug.top_adverse_events.is_empty(),
-        "safety",
-        "Safety",
-        ["OpenFDA FAERS"],
-    );
     let mut regulatory_sources = Vec::new();
     if drug
         .section_outcomes
@@ -411,23 +389,6 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         "Regulatory",
         regulatory_sources.iter().map(String::as_str),
     );
-    let mut safety_sources = Vec::new();
-    if !drug.top_adverse_events.is_empty() {
-        safety_sources.push("OpenFDA FAERS".to_string());
-    }
-    if has_opt_text(&drug.us_safety_warnings) {
-        safety_sources.push("OpenFDA label".to_string());
-    }
-    if drug.ema_safety.is_some() {
-        safety_sources.push("EMA".to_string());
-    }
-    push_section(
-        &mut out,
-        !safety_sources.is_empty(),
-        "regional_safety",
-        "Regional Safety",
-        safety_sources.iter().map(String::as_str),
-    );
     push_section(
         &mut out,
         has_opt_text(&drug.mechanism) || !drug.mechanisms.is_empty(),
@@ -437,32 +398,28 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
     );
     push_section(
         &mut out,
-        !drug.targets.is_empty(),
-        "targets",
-        "Targets",
-        ["ChEMBL", "Open Targets"],
-    );
-    push_section(
-        &mut out,
         !drug.variant_targets.is_empty(),
         "variant_targets",
         "Variant Targets",
         ["CIViC"],
     );
-    push_section(
-        &mut out,
-        !drug.indications.is_empty(),
-        "indications",
-        "Indications",
-        ["Open Targets"],
-    );
-    let interaction_sources = drug_interaction_sources(drug);
+    let mut interaction_sources = vec!["DDInter"];
+    if drug
+        .interactions
+        .iter()
+        .any(|row| row.description.as_deref().is_some_and(has_text))
+    {
+        interaction_sources.push("DrugBank");
+    }
+    if has_opt_text(&drug.interaction_text) {
+        interaction_sources.push("OpenFDA label");
+    }
     push_section(
         &mut out,
         !drug.interactions.is_empty() || has_opt_text(&drug.interaction_text),
         "interactions",
         "Interactions",
-        interaction_sources.iter().map(String::as_str),
+        interaction_sources,
     );
     push_section(
         &mut out,
@@ -487,9 +444,14 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
     );
     out.extend(outcome_section_sources(
         &drug.section_outcomes,
-        &[("approvals", "Drugs@FDA Approvals")],
+        &[
+            ("approvals", "Drugs@FDA Approvals"),
+            ("safety", "Safety"),
+            ("targets", "Targets"),
+            ("indications", "Indications"),
+            ("civic", "CIViC"),
+        ],
     ));
-    push_section(&mut out, drug.civic.is_some(), "civic", "CIViC", ["CIViC"]);
     out
 }
 
@@ -544,86 +506,21 @@ pub(crate) fn disease_section_sources(disease: &Disease) -> Vec<SectionSource> {
         "Associated Genes",
         ["Monarch Initiative", "Open Targets"],
     );
-    push_section(
-        &mut out,
-        !disease.pathways.is_empty(),
-        "pathways",
-        "Pathways",
-        ["Reactome"],
-    );
-    push_section(
-        &mut out,
-        !disease.phenotypes.is_empty(),
-        "phenotypes",
-        "Phenotypes",
-        ["Monarch Initiative", "HPO"],
-    );
-    push_section(
-        &mut out,
-        !disease.clinical_features.is_empty(),
-        "clinical_features",
-        "Clinical Features",
-        ["Monarch Initiative", "HPO"],
-    );
-    if let Some(rows) = &disease.diagnostics {
-        push_section(
-            &mut out,
-            !rows.is_empty(),
-            "diagnostics",
-            "Diagnostics",
-            rows.iter().map(|row| diagnostic_source_label(&row.source)),
-        );
-    } else {
-        push_section(
-            &mut out,
-            has_opt_text(&disease.diagnostics_note),
-            "diagnostics",
-            "Diagnostics",
-            ["NCBI Genetic Testing Registry", "WHO Prequalified IVD"],
-        );
-    }
-    push_section(
-        &mut out,
-        !disease.variants.is_empty(),
-        "variants",
-        "Variants",
-        ["Monarch Initiative", "CIViC"],
-    );
-    push_section(
-        &mut out,
-        !disease.models.is_empty(),
-        "models",
-        "Models",
-        ["Monarch Initiative"],
-    );
-    push_section(
-        &mut out,
-        !disease.prevalence.is_empty() || has_opt_text(&disease.prevalence_note),
-        "prevalence",
-        "Prevalence",
-        ["HPO"],
-    );
-    push_section(
-        &mut out,
-        disease.survival.is_some() || has_opt_text(&disease.survival_note),
-        "survival",
-        "Survival",
-        ["SEER Explorer"],
-    );
-    push_section(
-        &mut out,
-        disease.funding.is_some() || has_opt_text(&disease.funding_note),
-        "funding",
-        "Funding",
-        ["NIH Reporter"],
-    );
-    push_section(
-        &mut out,
-        disease.civic.is_some(),
-        "civic",
-        "CIViC",
-        ["CIViC"],
-    );
+    out.extend(outcome_section_sources(
+        &disease.section_outcomes,
+        &[
+            ("genes", "Genes"),
+            ("pathways", "Pathways"),
+            ("phenotypes", "Phenotypes"),
+            ("diagnostics", "Diagnostics"),
+            ("variants", "Variants"),
+            ("models", "Models"),
+            ("prevalence", "Prevalence"),
+            ("survival", "Survival"),
+            ("funding", "Funding"),
+            ("civic", "CIViC"),
+        ],
+    ));
     push_section(
         &mut out,
         disease.disgenet.is_some(),
@@ -651,13 +548,7 @@ pub(crate) fn variant_section_sources(variant: &Variant) -> Vec<SectionSource> {
         "Identity",
         ["MyVariant.info", "ClinVar"],
     );
-    push_section(
-        &mut out,
-        variant.prediction.is_some(),
-        "prediction",
-        "AlphaGenome Prediction",
-        ["AlphaGenome"],
-    );
+
     push_section(
         &mut out,
         has_opt_text(&variant.clinvar_id)
@@ -708,27 +599,16 @@ pub(crate) fn variant_section_sources(variant: &Variant) -> Vec<SectionSource> {
         "CGI Drug Associations",
         ["Cancer Genome Interpreter"],
     );
-    push_section(
-        &mut out,
-        variant.civic.is_some(),
-        "civic",
-        "CIViC",
-        ["CIViC"],
-    );
-    push_section(
-        &mut out,
-        !variant.cancer_frequencies.is_empty(),
-        "cbioportal",
-        "cBioPortal",
-        ["cBioPortal"],
-    );
-    push_section(
-        &mut out,
-        !variant.gwas.is_empty() || has_opt_text(&variant.gwas_unavailable_reason),
-        "gwas",
-        "GWAS",
-        ["GWAS Catalog"],
-    );
+    out.extend(outcome_section_sources(
+        &variant.section_outcomes,
+        &[
+            ("predict", "Prediction"),
+            ("cancerhotspots", "Cancer Hotspots"),
+            ("civic", "CIViC"),
+            ("cbioportal", "cBioPortal"),
+            ("gwas", "GWAS"),
+        ],
+    ));
     out
 }
 
@@ -771,16 +651,9 @@ pub(crate) fn article_section_sources(article: &Article) -> Vec<SectionSource> {
         "PubTator Annotations",
         ["PubTator3"],
     );
-    push_section(
-        &mut out,
-        article.indexing.is_some(),
-        "indexing",
-        "Article Indexing",
-        ["PubMed"],
-    );
     out.extend(outcome_section_sources(
         &article.section_outcomes,
-        &[("fulltext", "Full Text")],
+        &[("fulltext", "Full Text"), ("indexing", "Article Indexing")],
     ));
     push_section(
         &mut out,
@@ -947,13 +820,7 @@ pub(crate) fn pgx_section_sources(pgx: &Pgx) -> Vec<SectionSource> {
         "Recommendations",
         ["CPIC"],
     );
-    push_section(
-        &mut out,
-        !pgx.frequencies.is_empty(),
-        "frequencies",
-        "Population Frequencies",
-        ["CPIC"],
-    );
+
     push_section(
         &mut out,
         !pgx.guidelines.is_empty(),
@@ -961,13 +828,13 @@ pub(crate) fn pgx_section_sources(pgx: &Pgx) -> Vec<SectionSource> {
         "Guidelines",
         ["CPIC"],
     );
-    push_section(
-        &mut out,
-        !pgx.annotations.is_empty() || has_opt_text(&pgx.annotations_note),
-        "annotations",
-        "PharmGKB Annotations",
-        ["PharmGKB"],
-    );
+    out.extend(outcome_section_sources(
+        &pgx.section_outcomes,
+        &[
+            ("frequencies", "Population Frequencies"),
+            ("annotations", "PharmGKB Annotations"),
+        ],
+    ));
     out
 }
 
@@ -1059,6 +926,7 @@ mod tests {
     use super::*;
     use crate::entities::article::{ArticleAuthorCompleteness, ArticleSource};
     use crate::entities::pathway::Pathway;
+    use crate::entities::section_outcome::SectionOutcome;
     use crate::entities::variant::Variant;
 
     #[test]
@@ -1123,6 +991,16 @@ mod tests {
     #[test]
     fn variant_provenance_includes_gwas_when_requested_section_is_unavailable() {
         let variant = Variant {
+            section_outcomes: {
+                let mut outcomes = crate::entities::variant::default_variant_section_outcomes();
+                outcomes.complete(
+                    "gwas",
+                    crate::entities::section_outcome::SectionOutcome::unavailable(
+                        "GWAS association data is temporarily unavailable.",
+                    ),
+                );
+                outcomes
+            },
             gene: String::new(),
             id: "rs7903146".to_string(),
             hgvs_p: None,
@@ -1167,7 +1045,7 @@ mod tests {
     #[test]
     fn drug_provenance_emits_variant_targets_when_present() {
         let drug = Drug {
-            section_outcomes: Default::default(),
+            section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
             name: "rindopepimut".to_string(),
             drugbank_id: None,
             chembl_id: None,
@@ -1216,7 +1094,7 @@ mod tests {
     #[test]
     fn drug_provenance_adds_who_to_regulatory_sources() {
         let drug = Drug {
-            section_outcomes: Default::default(),
+            section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
             name: "trastuzumab".to_string(),
             drugbank_id: None,
             chembl_id: None,
@@ -1286,7 +1164,7 @@ mod tests {
     #[test]
     fn drug_section_sources_omit_interactions_when_no_interaction_data_is_present() {
         let drug = Drug {
-            section_outcomes: Default::default(),
+            section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
             name: "pembrolizumab".to_string(),
             drugbank_id: Some("DB09037".to_string()),
             chembl_id: None,
@@ -1398,6 +1276,14 @@ mod tests {
             funding_note: None,
             diagnostics: None,
             diagnostics_note: None,
+            section_outcomes: {
+                let mut outcomes = crate::entities::disease::default_disease_section_outcomes();
+                outcomes.complete(
+                    "survival",
+                    crate::entities::section_outcome::SectionOutcome::empty("SEER Explorer"),
+                );
+                outcomes
+            },
             xrefs: std::collections::HashMap::new(),
         };
 
@@ -1627,6 +1513,11 @@ mod tests {
             funding_note: Some("No NIH funding data found for this query.".into()),
             diagnostics: None,
             diagnostics_note: None,
+            section_outcomes: {
+                let mut outcomes = crate::entities::disease::default_disease_section_outcomes();
+                outcomes.complete("funding", SectionOutcome::empty("NIH Reporter"));
+                outcomes
+            },
             xrefs: std::collections::HashMap::new(),
         };
 
@@ -1688,6 +1579,17 @@ mod tests {
                 },
             ]),
             diagnostics_note: None,
+            section_outcomes: {
+                let mut outcomes = crate::entities::disease::default_disease_section_outcomes();
+                outcomes.complete(
+                    "diagnostics",
+                    SectionOutcome::data_sources([
+                        "NCBI Genetic Testing Registry",
+                        "WHO Prequalified IVD",
+                    ]),
+                );
+                outcomes
+            },
             xrefs: std::collections::HashMap::new(),
         };
 
@@ -1745,14 +1647,19 @@ mod tests {
             funding_note: None,
             diagnostics: None,
             diagnostics_note: None,
+            section_outcomes: {
+                let mut outcomes = crate::entities::disease::default_disease_section_outcomes();
+                outcomes.complete("phenotypes", SectionOutcome::data("HPO"));
+                outcomes
+            },
             xrefs: std::collections::HashMap::new(),
         };
 
         let sources = disease_section_sources(&disease);
         assert!(sources.iter().any(|source| {
-            source.key == "clinical_features"
-                && source.label == "Clinical Features"
-                && source.sources == vec!["Monarch Initiative".to_string(), "HPO".to_string()]
+            source.key == "phenotypes"
+                && source.label == "Phenotypes"
+                && source.sources == vec!["HPO".to_string()]
         }));
     }
 
@@ -1790,6 +1697,14 @@ mod tests {
                 "Diagnostic local data is unavailable. Run `biomcp gtr sync` and `biomcp who-ivd sync` to enable disease diagnostic pivots."
                     .to_string(),
             ),
+            section_outcomes: {
+                let mut outcomes = crate::entities::disease::default_disease_section_outcomes();
+                outcomes.complete(
+                    "diagnostics",
+                    SectionOutcome::unavailable("Diagnostic local data is unavailable."),
+                );
+                outcomes
+            },
             xrefs: std::collections::HashMap::new(),
         };
 
@@ -1797,11 +1712,8 @@ mod tests {
         assert!(sources.iter().any(|source| {
             source.key == "diagnostics"
                 && source.label == "Diagnostics"
-                && source.sources
-                    == vec![
-                        "NCBI Genetic Testing Registry".to_string(),
-                        "WHO Prequalified IVD".to_string(),
-                    ]
+                && source.outcome == SectionOutcomeState::Unavailable
+                && source.sources.is_empty()
         }));
     }
 
@@ -1863,11 +1775,19 @@ mod tests {
             mesh_headings: Vec::new(),
             failure: None,
         });
+        article.section_outcomes.complete(
+            "indexing",
+            crate::entities::section_outcome::SectionOutcome::unavailable(
+                "PubMed indexing is temporarily unavailable.",
+            ),
+        );
         let sources = article_section_sources(&article);
         assert!(sources.iter().any(|source| {
             source.key == "indexing"
                 && source.label == "Article Indexing"
-                && source.sources == vec!["PubMed".to_string()]
+                && source.outcome
+                    == crate::entities::section_outcome::SectionOutcomeState::Unavailable
+                && source.sources.is_empty()
         }));
     }
 

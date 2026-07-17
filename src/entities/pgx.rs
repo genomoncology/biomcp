@@ -1,15 +1,15 @@
 use std::collections::HashSet;
 use std::time::Duration;
 
-use serde::{Deserialize, Serialize};
-use tracing::warn;
-
 use crate::entities::SearchPage;
+use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
+use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 use crate::sources::cpic::{
     CpicClient, CpicFrequencyRow, CpicGuidelineSummaryRow, CpicPairRow, CpicRecommendationRow,
 };
 use crate::sources::pharmgkb::{PharmGkbAnnotation, PharmGkbClient};
+use serde::{Deserialize, Serialize};
 
 const PGX_SECTION_RECOMMENDATIONS: &str = "recommendations";
 const PGX_SECTION_FREQUENCIES: &str = "frequencies";
@@ -27,8 +27,28 @@ pub const PGX_SECTION_NAMES: &[&str] = &[
 
 const OPTIONAL_ENRICHMENT_TIMEOUT: Duration = Duration::from_secs(10);
 
+pub(crate) fn default_pgx_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("pgx"))
+}
+
+fn deserialize_pgx_section_outcomes<'de, D>(deserializer: D) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(&outcome_keys("pgx"))
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pgx {
+    #[serde(
+        default = "default_pgx_section_outcomes",
+        deserialize_with = "deserialize_pgx_section_outcomes"
+    )]
+    pub section_outcomes: SectionOutcomes,
     pub query: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gene: Option<String>,
@@ -270,6 +290,7 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
     }
 
     let mut out = Pgx {
+        section_outcomes: default_pgx_section_outcomes(),
         query: query.to_string(),
         gene: mode_gene.clone(),
         drug: mode_drug.clone(),
@@ -294,6 +315,7 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
 
     if parsed_sections.include_frequencies {
         let mut rows: Vec<PgxFrequency> = Vec::new();
+        let mut failed = false;
         if let Some(gene) = mode_gene.as_deref() {
             let frequencies = cpic.frequencies_by_gene(gene, 30).await?;
             rows.extend(map_frequencies(&frequencies));
@@ -306,11 +328,24 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
             for gene in unique_genes.into_iter().take(3) {
                 match cpic.frequencies_by_gene(&gene, 12).await {
                     Ok(frequencies) => rows.extend(map_frequencies(&frequencies)),
-                    Err(err) => warn!(gene = %gene, "CPIC frequency lookup failed: {err}"),
+                    Err(_) => failed = true,
                 }
             }
         }
         out.frequencies = dedupe_frequencies(rows);
+        let outcome = if failed && out.frequencies.is_empty() {
+            SectionOutcome::unavailable("CPIC frequency data is temporarily unavailable.")
+        } else if failed {
+            SectionOutcome::degraded(
+                ["CPIC"],
+                "CPIC frequency data is incomplete because an additive lookup failed.",
+            )
+        } else if out.frequencies.is_empty() {
+            SectionOutcome::empty("CPIC")
+        } else {
+            SectionOutcome::data("CPIC")
+        };
+        out.section_outcomes.complete("frequencies", outcome);
     }
 
     if parsed_sections.include_guidelines {
@@ -328,7 +363,21 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
     }
 
     if parsed_sections.include_annotations {
-        let pharmgkb = PharmGkbClient::new()?;
+        let pharmgkb = match PharmGkbClient::new() {
+            Ok(client) => client,
+            Err(_) => {
+                out.annotations_note = Some(
+                    "PharmGKB annotations unavailable; returned CPIC core content.".to_string(),
+                );
+                out.section_outcomes.complete(
+                    "annotations",
+                    SectionOutcome::unavailable(
+                        "PharmGKB annotations are temporarily unavailable.",
+                    ),
+                );
+                return Ok(out);
+            }
+        };
         let annotation_fut = async {
             if let Some(gene) = mode_gene.as_deref() {
                 pharmgkb.annotations_by_gene(gene, 40).await
@@ -340,20 +389,35 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
         };
 
         match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, annotation_fut).await {
-            Ok(Ok(annotations)) => out.annotations = annotations,
-            Ok(Err(err)) => {
-                warn!("PharmGKB enrichment unavailable: {err}");
+            Ok(Ok(annotations)) => {
+                out.annotations = annotations;
+                let outcome = if out.annotations.is_empty() {
+                    SectionOutcome::empty("PharmGKB")
+                } else {
+                    SectionOutcome::data("PharmGKB")
+                };
+                out.section_outcomes.complete("annotations", outcome);
+            }
+            Ok(Err(_)) => {
                 out.annotations_note = Some(
                     "PharmGKB annotations unavailable; returned CPIC core content.".to_string(),
                 );
+                out.section_outcomes.complete(
+                    "annotations",
+                    SectionOutcome::unavailable(
+                        "PharmGKB annotations are temporarily unavailable.",
+                    ),
+                );
             }
             Err(_) => {
-                warn!(
-                    timeout_secs = OPTIONAL_ENRICHMENT_TIMEOUT.as_secs(),
-                    "PharmGKB enrichment timed out"
-                );
                 out.annotations_note =
                     Some("PharmGKB annotations timed out; returned CPIC core content.".to_string());
+                out.section_outcomes.complete(
+                    "annotations",
+                    SectionOutcome::unavailable(
+                        "PharmGKB annotations are temporarily unavailable.",
+                    ),
+                );
             }
         }
     }

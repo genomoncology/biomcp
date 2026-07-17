@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn pgx_markdown_includes_evidence_links() {
     let pgx = Pgx {
+        section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
         query: "CYP2D6".to_string(),
         gene: Some("CYP2D6".to_string()),
         drug: Some("warfarin".to_string()),

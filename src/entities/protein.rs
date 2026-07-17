@@ -6,6 +6,7 @@ use tracing::warn;
 
 use crate::entities::SearchPage;
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
+use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 use crate::sources::complexportal::{ComplexPortalClient, ComplexPortalComplex};
 use crate::sources::interpro::InterProClient;
@@ -14,9 +15,16 @@ use crate::sources::string::StringClient;
 use crate::sources::uniprot::UniProtClient;
 use crate::transform;
 
+fn default_protein_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("protein"))
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Protein {
-    #[serde(default, deserialize_with = "deserialize_protein_section_outcomes")]
+    #[serde(
+        default = "default_protein_section_outcomes",
+        deserialize_with = "deserialize_protein_section_outcomes"
+    )]
     pub section_outcomes: SectionOutcomes,
     pub accession: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -114,7 +122,7 @@ where
 {
     let outcomes = SectionOutcomes::deserialize(deserializer)?;
     outcomes
-        .validate_keys(PROTEIN_OUTCOME_KEYS)
+        .validate_keys(&outcome_keys("protein"))
         .map_err(serde::de::Error::custom)?;
     Ok(outcomes)
 }

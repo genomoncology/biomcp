@@ -11,6 +11,7 @@ use tracing::warn;
 use crate::entities::SearchPage;
 use crate::entities::diagnostic::{DiagnosticSearchFilters, DiagnosticSearchResult};
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomeState, SectionOutcomes};
+use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::clingen::{ClinGenClient, GeneClinGen};
@@ -36,9 +37,16 @@ use crate::sources::uniprot::UniProtClient;
 use crate::transform;
 
 /// Gene entity from MyGene.info plus optional enrichment sections.
+fn default_gene_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("gene"))
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Gene {
-    #[serde(default, deserialize_with = "deserialize_gene_section_outcomes")]
+    #[serde(
+        default = "default_gene_section_outcomes",
+        deserialize_with = "deserialize_gene_section_outcomes"
+    )]
     pub section_outcomes: SectionOutcomes,
     pub symbol: String,
     pub name: String,
@@ -258,7 +266,7 @@ where
 {
     let outcomes = SectionOutcomes::deserialize(deserializer)?;
     outcomes
-        .validate_keys(GENE_OUTCOME_KEYS)
+        .validate_keys(&outcome_keys("gene"))
         .map_err(serde::de::Error::custom)?;
     Ok(outcomes)
 }

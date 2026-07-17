@@ -102,9 +102,11 @@ Survival (SEER Explorer 5-year relative survival by sex for mapped cancers):
 biomcp get disease "chronic myeloid leukemia" survival
 ```
 
-The survival section is filtered to all ages and all races / ethnicities. When
-the normalized disease does not map cleanly to one SEER cancer site, BioMCP
-returns a stable `survival_note` instead of failing the disease card.
+The survival section is filtered to all ages and all races / ethnicities. JSON
+records the request in `section_outcomes.survival`: `data` credits SEER Explorer,
+`empty` means the disease did not map to usable SEER evidence, and `unavailable`
+reports a source failure without crediting the failed provider. Markdown reports
+unavailability in-band; the existing `survival_note` remains for compatibility.
 
 Diagnostic-test pivot (GTR and WHO IVD tests for the condition):
 

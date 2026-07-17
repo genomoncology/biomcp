@@ -155,6 +155,7 @@ fn disease_evidence_urls_include_record_links() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::from([
             ("Orphanet".to_string(), "586".to_string()),
             ("OMIM".to_string(), "219700".to_string()),
@@ -178,7 +179,7 @@ fn disease_evidence_urls_include_record_links() {
 #[test]
 fn drug_evidence_urls_include_chembl() {
     let drug = Drug {
-        section_outcomes: Default::default(),
+        section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
         name: "osimertinib".to_string(),
         drugbank_id: Some("DB09330".to_string()),
         chembl_id: Some("CHEMBL3353410".to_string()),
@@ -226,7 +227,7 @@ fn drug_evidence_urls_include_chembl() {
 #[test]
 fn drug_evidence_urls_include_faers_and_dailymed_when_sections_exist() {
     let drug = Drug {
-            section_outcomes: Default::default(),
+            section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
             name: "ivacaftor".to_string(),
             drugbank_id: None,
             chembl_id: None,

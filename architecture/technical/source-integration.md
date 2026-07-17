@@ -424,6 +424,60 @@ obtained. `sources` credits only providers that returned usable evidence, so an
 unavailable section has no successful source credit. `_meta.section_sources`
 copies requested outcomes from this registry and omits `not_requested` entries.
 
+<!-- source-state-registry:start -->
+| entity | section | selector class | aggregation | allowed successful providers | rendering |
+|---|---|---|---|---|---|
+| gene | pathways | canonical / outcome-only | additive | Reactome | `pathways` outcome and provenance projection |
+| gene | ontology | canonical / outcome-only | additive | Enrichr | `ontology` outcome and provenance projection |
+| gene | diseases | canonical / outcome-only | additive | Open Targets / DisGeNET | `diseases` outcome and provenance projection |
+| gene | diagnostics | canonical / outcome-only | additive | NCBI Genetic Testing Registry / WHO Prequalified IVD | `diagnostics` outcome and provenance projection |
+| gene | protein | canonical / outcome-only | fallback | UniProt | `protein` outcome and provenance projection |
+| gene | go | canonical / outcome-only | additive | QuickGO | `go` outcome and provenance projection |
+| gene | interactions | canonical / outcome-only | additive | STRING | `interactions` outcome and provenance projection |
+| gene | civic | canonical / outcome-only | additive | CIViC | `civic` outcome and provenance projection |
+| gene | expression | canonical / outcome-only | additive | GTEx | `expression` outcome and provenance projection |
+| gene | hpa | canonical / outcome-only | fallback | Human Protein Atlas | `hpa` outcome and provenance projection |
+| gene | druggability | canonical / outcome-only | additive | ChEMBL | `druggability` outcome and provenance projection |
+| gene | clingen | canonical / outcome-only | fallback | ClinGen | `clingen` outcome and provenance projection |
+| gene | constraint | canonical / outcome-only | fallback | gnomAD | `constraint` outcome and provenance projection |
+| gene | disgenet | canonical / outcome-only | additive | DisGeNET | `disgenet` outcome and provenance projection |
+| gene | funding | canonical / outcome-only | additive | NIH Reporter | `funding` outcome and provenance projection |
+| article | fulltext | canonical / outcome-only | fallback | PMC / Europe PMC / Semantic Scholar | `fulltext` outcome and provenance projection |
+| article | indexing | canonical / outcome-only | fallback | PubMed | `indexing` outcome and provenance projection |
+| pathway | genes | canonical / outcome-only | fallback | Reactome / KEGG / WikiPathways | `genes` outcome and provenance projection |
+| pathway | events | canonical / outcome-only | additive | Reactome | `events` outcome and provenance projection |
+| pathway | enrichment | canonical / outcome-only | additive | g:Profiler | `enrichment` outcome and provenance projection |
+| protein | domains | canonical / outcome-only | additive | InterPro | `domains` outcome and provenance projection |
+| protein | interactions | canonical / outcome-only | additive | STRING | `interactions` outcome and provenance projection |
+| protein | complexes | canonical / outcome-only | additive | Complex Portal | `complexes` outcome and provenance projection |
+| protein | structures | canonical / outcome-only | additive | PDBe | `structures` outcome and provenance projection |
+| drug | approvals | canonical / outcome-only | additive | OpenFDA Drugs@FDA | `approvals` outcome and provenance projection |
+| drug | safety | canonical / outcome-only | additive | OpenFDA FAERS / OpenFDA label / EMA | `safety` outcome and provenance projection |
+| drug | targets | canonical / outcome-only | additive | ChEMBL / Open Targets | `targets` outcome and provenance projection |
+| drug | indications | canonical / outcome-only | additive | Open Targets | `indications` outcome and provenance projection |
+| drug | civic | canonical / outcome-only | fallback | CIViC | `civic` outcome and provenance projection |
+| adverse_event | faers | canonical / outcome-only | additive | OpenFDA FAERS | `faers` outcome and provenance projection |
+| adverse_event | vaers | canonical / outcome-only | additive | CDC CVX / CDC VAERS | `vaers` outcome and provenance projection |
+| disease | genes | canonical / outcome-only | additive | Monarch Initiative / CIViC / Open Targets | `genes` outcome and provenance projection |
+| disease | pathways | canonical / outcome-only | additive | Reactome | `pathways` outcome and provenance projection |
+| disease | phenotypes | canonical / outcome-only | additive | Monarch Initiative / HPO | `phenotypes` outcome and provenance projection |
+| disease | diagnostics | canonical / outcome-only | fallback | NCBI Genetic Testing Registry / WHO Prequalified IVD | `diagnostics` outcome and provenance projection |
+| disease | variants | canonical / outcome-only | additive | CIViC | `variants` outcome and provenance projection |
+| disease | models | canonical / outcome-only | additive | Monarch Initiative | `models` outcome and provenance projection |
+| disease | prevalence | canonical / outcome-only | fallback | Open Targets | `prevalence` outcome and provenance projection |
+| disease | survival | canonical / outcome-only | fallback | SEER Explorer | `survival` outcome and provenance projection |
+| disease | funding | canonical / outcome-only | additive | NIH Reporter | `funding` outcome and provenance projection |
+| disease | civic | canonical / outcome-only | fallback | CIViC | `civic` outcome and provenance projection |
+| variant | predict | canonical / outcome-only | fallback | AlphaGenome | `predict` outcome and provenance projection |
+| variant | cancerhotspots | canonical / outcome-only | fallback | cancerhotspots.org | `cancerhotspots` outcome and provenance projection |
+| variant | civic | canonical / outcome-only | fallback | CIViC | `civic` outcome and provenance projection |
+| variant | cbioportal | canonical / outcome-only | fallback | cBioPortal | `cbioportal` outcome and provenance projection |
+| variant | gwas | canonical / outcome-only | fallback | GWAS Catalog | `gwas` outcome and provenance projection |
+| pgx | frequencies | canonical / outcome-only | additive | CPIC | `frequencies` outcome and provenance projection |
+| pgx | annotations | canonical / outcome-only | fallback | PharmGKB | `annotations` outcome and provenance projection |
+| diagnostic | regulatory | canonical / outcome-only | fallback | OpenFDA Device 510(k) / PMA | `regulatory` outcome and provenance projection |
+<!-- source-state-registry:end -->
+
 ## Auth, Cache, and Secrets
 
 Authenticated or key-gated integrations have extra requirements.

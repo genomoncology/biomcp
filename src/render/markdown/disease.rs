@@ -283,6 +283,27 @@ pub fn disease_markdown(
     let diagnostic_rows =
         super::diagnostic::diagnostic_search_rows(disease.diagnostics.as_deref().unwrap_or(&[]));
     let diagnostic_search_command = disease_diagnostic_search_command(disease);
+    let hide_note = |key: &str| {
+        disease.section_outcomes.get(key).is_some_and(|outcome| {
+            matches!(
+                outcome.outcome(),
+                crate::entities::section_outcome::SectionOutcomeState::Degraded
+                    | crate::entities::section_outcome::SectionOutcomeState::Unavailable
+            )
+        })
+    };
+    let prevalence_note = (!hide_note("prevalence"))
+        .then_some(disease.prevalence_note.as_ref())
+        .flatten();
+    let survival_note = (!hide_note("survival"))
+        .then_some(disease.survival_note.as_ref())
+        .flatten();
+    let funding_note = (!hide_note("funding"))
+        .then_some(disease.funding_note.as_ref())
+        .flatten();
+    let diagnostics_note = (!hide_note("diagnostics"))
+        .then_some(disease.diagnostics_note.as_ref())
+        .flatten();
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(disease_label, requested_sections),
@@ -309,14 +330,14 @@ pub fn disease_markdown(
         top_variant => &disease.top_variant,
         models => model_rows,
         prevalence => &disease.prevalence,
-        prevalence_note => &disease.prevalence_note,
+        prevalence_note => prevalence_note,
         survival => &disease.survival,
-        survival_note => &disease.survival_note,
+        survival_note => survival_note,
         funding => &disease.funding,
-        funding_note => &disease.funding_note,
+        funding_note => funding_note,
         funding_rows => funding_rows,
         funding_summary => funding_summary,
-        diagnostics_note => &disease.diagnostics_note,
+        diagnostics_note => diagnostics_note,
         diagnostic_rows => diagnostic_rows,
         diagnostic_search_command => diagnostic_search_command,
         survival_source_line => survival_source_line,
@@ -340,6 +361,7 @@ pub fn disease_markdown(
         sections_block => format_sections_block("disease", &disease.id, sections_disease(disease, requested_sections)),
         related_block => format_related_block(related_disease(disease)),
     })?;
+    let body = append_source_state_messages(body, "disease", &disease.section_outcomes);
     Ok(append_evidence_urls(body, disease_evidence_urls(disease)))
 }
 

@@ -10,6 +10,8 @@ use tracing::warn;
 use crate::entities::SearchPage;
 use crate::entities::diagnostic::DiagnosticSearchResult;
 use crate::entities::drug::{self, DrugSearchFilters};
+use crate::entities::section_outcome::SectionOutcomes;
+use crate::entities::source_state_registry::outcome_keys;
 use crate::entities::trial::{self, TrialSearchFilters, TrialSource};
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
@@ -27,6 +29,23 @@ use crate::sources::seer::{
     ResolvedSeerSite, SeerClient, SeerSiteCatalog, SeerSurvivalPayload, resolve_site,
 };
 use crate::transform;
+
+pub(crate) fn default_disease_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("disease"))
+}
+
+fn deserialize_disease_section_outcomes<'de, D>(
+    deserializer: D,
+) -> Result<SectionOutcomes, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let outcomes = SectionOutcomes::deserialize(deserializer)?;
+    outcomes
+        .validate_keys(&outcome_keys("disease"))
+        .map_err(serde::de::Error::custom)?;
+    Ok(outcomes)
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Disease {
@@ -84,6 +103,11 @@ pub struct Disease {
     pub civic: Option<CivicContext>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub disgenet: Option<DiseaseDisgenet>,
+    #[serde(
+        default = "default_disease_section_outcomes",
+        deserialize_with = "deserialize_disease_section_outcomes"
+    )]
+    pub section_outcomes: SectionOutcomes,
     #[serde(default)]
     pub xrefs: HashMap<String, String>,
 }

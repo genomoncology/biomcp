@@ -6,6 +6,7 @@ use crate::sources::civic::{CivicContext, CivicEvidenceItem};
 
 fn braf_variant_stub() -> Variant {
     Variant {
+        section_outcomes: super::super::default_variant_section_outcomes(),
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
         hgvs_p: Some("p.X999Y".into()),
@@ -239,6 +240,7 @@ fn workflow_signal_detects_clinvar_metadata_before_section_stripping() {
 #[test]
 fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
     let variant = Variant {
+        section_outcomes: super::super::default_variant_section_outcomes(),
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
         hgvs_p: Some("p.V600E".into()),

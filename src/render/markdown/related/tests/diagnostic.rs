@@ -34,6 +34,7 @@ fn search_next_commands_diagnostic_prefers_top_accession_then_list() {
 #[test]
 fn related_diagnostic_only_points_back_to_list_help() {
     let diagnostic = Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: "GTR000000001.1".to_string(),
         accession: "GTR000000001.1".to_string(),

@@ -5,6 +5,7 @@ use crate::entities::diagnostic::{Diagnostic, DiagnosticSourceFilter};
 
 fn diagnostic_fixture(accession: &str) -> Diagnostic {
     Diagnostic {
+        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
         source: "gtr".to_string(),
         source_id: accession.to_string(),
         accession: accession.to_string(),

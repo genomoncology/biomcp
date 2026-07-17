@@ -31,8 +31,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::entities::SearchPage;
 use crate::entities::section_outcome::SectionOutcomes;
+use crate::entities::source_state_registry::outcome_keys;
 
-pub(crate) const DRUG_SECTION_KEYS: &[&str] = &["approvals"];
+pub(crate) fn default_drug_section_outcomes() -> SectionOutcomes {
+    SectionOutcomes::with_keys(&outcome_keys("drug"))
+}
+
 use crate::error::BioMcpError;
 use crate::sources::civic::CivicContext;
 use crate::sources::ema::EmaDrugIdentity;
@@ -41,7 +45,10 @@ use crate::sources::who_pq::WhoPqIdentity;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Drug {
-    #[serde(default, deserialize_with = "deserialize_drug_section_outcomes")]
+    #[serde(
+        default = "default_drug_section_outcomes",
+        deserialize_with = "deserialize_drug_section_outcomes"
+    )]
     pub section_outcomes: SectionOutcomes,
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -124,7 +131,7 @@ where
 {
     let outcomes = SectionOutcomes::deserialize(deserializer)?;
     outcomes
-        .validate_keys(DRUG_SECTION_KEYS)
+        .validate_keys(&outcome_keys("drug"))
         .map_err(serde::de::Error::custom)?;
     Ok(outcomes)
 }
@@ -576,4 +583,25 @@ async fn direct_drug_lookup(query: &str) -> Result<MyChemQueryResponse, BioMcpEr
     MyChemClient::new()?
         .query_with_fields(query, 25, 0, MYCHEM_FIELDS_GET)
         .await
+}
+
+#[cfg(test)]
+mod outcome_tests {
+    use super::*;
+    use crate::entities::section_outcome::SectionOutcomeState;
+
+    #[test]
+    fn omitted_drug_outcomes_initialize_every_registry_key() {
+        let outcomes = default_drug_section_outcomes();
+        let keys = outcomes.iter().map(|(key, _)| key).collect::<Vec<_>>();
+        assert_eq!(
+            keys,
+            vec!["approvals", "civic", "indications", "safety", "targets",]
+        );
+        assert!(
+            outcomes
+                .iter()
+                .all(|(_, outcome)| outcome.outcome() == SectionOutcomeState::NotRequested)
+        );
+    }
 }

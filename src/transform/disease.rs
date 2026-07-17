@@ -728,6 +728,7 @@ pub fn from_mydisease_hit(hit: MyDiseaseHit) -> Disease {
         diagnostics_note: None,
         civic: None,
         disgenet: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs,
     };
     disease.key_features = derive_key_features(&disease);
@@ -1033,6 +1034,7 @@ mod tests {
             funding_note: None,
             diagnostics: None,
             diagnostics_note: None,
+            section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
             xrefs: HashMap::new(),
         };
 

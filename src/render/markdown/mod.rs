@@ -98,6 +98,38 @@ use std::sync::OnceLock;
 use minijinja::{Environment, context};
 
 use crate::cli::debug_plan::DebugPlan;
+use crate::entities::section_outcome::{SectionOutcomeState, SectionOutcomes};
+use crate::entities::source_state_registry::SOURCE_STATE_ROWS;
+
+fn append_source_state_messages(
+    mut body: String,
+    entity: &str,
+    outcomes: &SectionOutcomes,
+) -> String {
+    for row in SOURCE_STATE_ROWS.iter().filter(|row| row.entity == entity) {
+        let Some(outcome) = outcomes.get(row.key) else {
+            continue;
+        };
+        if !matches!(
+            outcome.outcome(),
+            SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+        ) {
+            continue;
+        }
+        let providers = row.providers.join(" / ");
+        let message = outcome
+            .message()
+            .unwrap_or_else(|| outcome.outcome().as_str());
+        body.push_str(&format!(
+            "\n\n**{} status ({}):** {} — {}",
+            row.label,
+            providers,
+            outcome.outcome().as_str(),
+            message
+        ));
+    }
+    body
+}
 use crate::cli::search_all::SearchAllResults;
 use crate::entities::adverse_event::{
     AdverseEvent, AdverseEventCountBucket, AdverseEventSearchResult, AdverseEventSearchSummary,

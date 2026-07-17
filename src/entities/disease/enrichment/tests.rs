@@ -132,9 +132,8 @@ async fn apply_requested_sections_clears_clinical_features_when_not_requested() 
 #[test]
 fn disease_diagnostics_section_populates_from_rows() {
     let mut disease = test_disease("MONDO:0018076", "tuberculosis");
-    apply_diagnostics_section_result(
+    let outcome = apply_diagnostics_section_result(
         &mut disease,
-        "tuberculosis",
         Ok(SearchPage::offset(
             vec![
                 diagnostic_row(
@@ -156,6 +155,10 @@ fn disease_diagnostics_section_populates_from_rows() {
 
     let rows = disease.diagnostics.as_ref().expect("diagnostics rows");
     assert_eq!(rows.len(), 2);
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Data
+    );
     assert_eq!(
         disease.diagnostics_note.as_deref(),
         Some(
@@ -179,9 +182,8 @@ fn disease_diagnostics_section_populates_from_rows() {
 #[test]
 fn disease_diagnostics_unavailable_sets_note() {
     let mut disease = test_disease("MONDO:0018076", "tuberculosis");
-    apply_diagnostics_section_result(
+    let outcome = apply_diagnostics_section_result(
         &mut disease,
-        "tuberculosis",
         Err(BioMcpError::SourceUnavailable {
             source_name: "gtr".to_string(),
             reason: "fixture directory is unavailable".to_string(),
@@ -190,6 +192,11 @@ fn disease_diagnostics_unavailable_sets_note() {
     );
 
     assert!(disease.diagnostics.is_none());
+    assert_eq!(
+        outcome.outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Unavailable
+    );
+    assert!(outcome.sources().is_empty());
     assert_eq!(
         disease.diagnostics_note.as_deref(),
         Some(DISEASE_DIAGNOSTICS_UNAVAILABLE_NOTE)

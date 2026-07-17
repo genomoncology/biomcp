@@ -99,6 +99,7 @@ pub fn variant_markdown(
         sections_block => format_sections_block("variant", &variant.id, sections_variant(variant, requested_sections)),
         related_block => format_related_block(related_variant(variant)),
     })?;
+    let body = append_source_state_messages(body, "variant", &variant.section_outcomes);
     Ok(append_evidence_urls(body, variant_evidence_urls(variant)))
 }
 

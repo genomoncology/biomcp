@@ -1,6 +1,7 @@
 #[test]
 fn related_pgx_uses_search_flags() {
     let pgx = Pgx {
+        section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
         query: "CYP2D6".to_string(),
         gene: Some("CYP2D6".to_string()),
         drug: Some("warfarin sodium".to_string()),
@@ -48,6 +49,7 @@ fn related_disease_malformed_study_lookup_falls_back_to_download_list() {
         funding_note: None,
         diagnostics: None,
         diagnostics_note: None,
+        section_outcomes: crate::entities::disease::default_disease_section_outcomes(),
         xrefs: std::collections::HashMap::new(),
     };
 

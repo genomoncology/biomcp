@@ -598,9 +598,7 @@ pub fn merge_mychem_hits(hits: &[&MyChemHit], requested_name: &str) -> Drug {
     let approval_summary = approval_summary(approval_date_display.as_deref());
 
     Drug {
-        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
-            crate::entities::drug::DRUG_SECTION_KEYS,
-        ),
+        section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
         name,
         drugbank_id,
         chembl_id,
