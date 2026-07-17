@@ -933,7 +933,7 @@ pub fn start_ols4_stub() -> anyhow::Result<(thread::JoinHandle<()>, String)> {
     listener.set_nonblocking(false)?;
     let url = format!("http://127.0.0.1:{}", listener.local_addr()?.port());
     let handle = thread::spawn(move || {
-        for stream in listener.incoming().take(8).flatten() {
+        for stream in listener.incoming().flatten() {
             handle_ols4_connection(stream);
         }
     });
