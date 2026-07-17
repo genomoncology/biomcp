@@ -33,7 +33,7 @@ facts that routine tests should fetch from public APIs.
 ```text
 biomcp search author -q <name> [--affiliation <text>] [--source <all|semanticscholar|pubmed>] [--limit N] [--offset N]
 biomcp get author semanticscholar:<ID>
-biomcp author publications semanticscholar:<ID> [--limit N] [--offset N]
+biomcp author publications semanticscholar:<ID> [--source <auto|semanticscholar|pubmed|all>] [--limit N] [--offset N]
 biomcp author coauthors <provider-qualified-id> [--source <auto|semanticscholar>] [--max-publications N] [--limit N] [--offset N]
 biomcp author topics <provider-qualified-id> [--source pubmed] [--max-publications N] [--limit N] [--offset N]
 ```
