@@ -281,6 +281,18 @@ fn decode_text_maps_http_error_status_with_excerpt() {
 }
 
 #[test]
+fn text_and_fulltext_archive_decoders_reject_invalid_utf8() {
+    let manifest_err = decode_text(StatusCode::OK, b"<records>\xff</records>")
+        .expect_err("invalid manifest bytes must remain a source failure");
+    assert!(matches!(manifest_err, BioMcpError::Api { .. }));
+
+    let archive = tgz_with_entries(&[("article.nxml", b"<article>\xff</article>")]);
+    let article_err = extract_first_nxml(&archive)
+        .expect_err("invalid article XML bytes must remain a source failure");
+    assert!(matches!(article_err, BioMcpError::Api { .. }));
+}
+
+#[test]
 fn decode_archive_bytes_preserves_success_bytes_and_maps_errors() {
     assert_eq!(
         decode_archive_bytes(StatusCode::OK, b"abc").unwrap(),

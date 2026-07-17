@@ -123,8 +123,9 @@ the `fulltext --pdf` article-body fallback.
 Every Article owns `section_outcomes.fulltext`. A base card records
 `not_requested`; a requested ladder completes it once as `data`, `empty`, or
 `unavailable`. JSON `_meta.section_sources` projects that entity-owned outcome:
-`data` and `empty` retain successful provider labels, `unavailable` has no
-successful sources, and `not_requested` is omitted. The compatible
+`data` retains its winning provider and `empty` retains healthy consulted
+content providers; `unavailable` has no successful sources, and `not_requested`
+is omitted. The compatible
 `full_text_path`, `full_text_source`, `full_text_manifest`, and `full_text_note`
 fields agree with the same outcome.
 

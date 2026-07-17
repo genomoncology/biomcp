@@ -560,10 +560,7 @@ pub(super) async fn resolve_fulltext(
                     Ok(None)
                 };
                 match result {
-                    Ok(value) => {
-                        resolved_pmcid = value;
-                        state.record_empty("NCBI ID Converter");
-                    }
+                    Ok(value) => resolved_pmcid = value,
                     Err(err) => state.record_failure(err),
                 }
             }

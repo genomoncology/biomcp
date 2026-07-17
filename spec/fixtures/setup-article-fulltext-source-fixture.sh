@@ -637,7 +637,12 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if decoded_path == "/PMC123462/fullTextXML":
-            send_text(self, 500, "upstream unavailable", "text/plain")
+            send_text(
+                self,
+                500,
+                "SENSITIVE-UPSTREAM-DETAIL https://signed.example.invalid/article?token=secret",
+                "text/plain",
+            )
             return
 
         if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML"}:

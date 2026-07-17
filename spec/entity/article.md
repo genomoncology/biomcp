@@ -459,7 +459,7 @@ provenance mirrors the successful sources rather than deriving a second answer.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663011 fulltext \
-  | jq '(.section_outcomes.fulltext.outcome == "data") and ((.section_outcomes.fulltext.sources | length) > 0) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["data"]) and ([._meta.section_sources[] | select(.key == "fulltext") | .sources] == [.section_outcomes.fulltext.sources])' \
+  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "data") and (($outcome.sources | length) > 0) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "data" and .sources == $outcome.sources))' \
   | mustmatch 'true'
 ```
 
@@ -469,13 +469,13 @@ healthy empty result, while the readable view stays free of degradation claims.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663014 fulltext \
-  | jq '(.section_outcomes.fulltext.outcome == "empty") and ((.section_outcomes.fulltext.sources | length) > 0) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["empty"]) and ([._meta.section_sources[] | select(.key == "fulltext") | .sources] == [.section_outcomes.fulltext.sources])' \
+  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "empty") and (($outcome.sources | length) > 0) and ($outcome.sources | all(. != "NCBI ID Converter")) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "empty" and .sources == $outcome.sources))' \
   | mustmatch 'true'
 ```
 
 ```bash
 ../../tools/biomcp-ci get article 22663014 fulltext \
-  | mustmatch '/(?is)## Full Text.*(no full text|full text.*not available)/'
+  | mustmatch '/(?im)^## Full Text[^\n]*\n\s*\n[^\n]*(no full text|full text[^\n]*not available)/'
 ```
 
 ```bash
@@ -489,18 +489,18 @@ unavailable state instead of making the confident all-sources-empty claim.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663019 fulltext \
-  | jq '(.section_outcomes.fulltext.outcome == "unavailable") and (.section_outcomes.fulltext.sources == []) and ((.section_outcomes.fulltext.message // "") | test("unavailable"; "i")) and ([._meta.section_sources[] | select(.key == "fulltext") | .outcome] == ["unavailable"]) and ([._meta.section_sources[] | select(.key == "fulltext") | .sources] == [[]])' \
+  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "unavailable") and ($outcome.sources == []) and (($outcome.message // "") | test("unavailable"; "i")) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|signed\\.example\\.invalid|token=secret"; "i")) | not) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "unavailable" and .sources == $outcome.sources))' \
   | mustmatch 'true'
 ```
 
 ```bash
 ../../tools/biomcp-ci get article 22663019 fulltext \
-  | mustmatch '/(?is)## Full Text.*unavailable/'
+  | mustmatch '/(?im)^## Full Text[^\n]*\n\s*\n[^\n]*unavailable/'
 ```
 
 ```bash
 ../../tools/biomcp-ci get article 22663019 fulltext \
-  | mustmatch not '/(?i)sources.*did not return full text/'
+  | mustmatch not '/(?i)(sources.*did not return full text|SENSITIVE-UPSTREAM-DETAIL|signed\.example\.invalid|token=secret)/'
 ```
 
 ## Full-Text HTML Fallback

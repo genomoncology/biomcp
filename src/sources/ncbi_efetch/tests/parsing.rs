@@ -75,3 +75,11 @@ fn decode_text_maps_http_error_status_with_excerpt() {
     assert!(msg.contains("pubmed-eutils"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }
+
+#[test]
+fn decode_text_rejects_invalid_utf8() {
+    let err = NcbiEfetchClient::decode_text(StatusCode::OK, b"<article>\xff</article>")
+        .expect_err("invalid XML bytes must remain a source failure");
+    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert!(!err.to_string().contains('�'));
+}
