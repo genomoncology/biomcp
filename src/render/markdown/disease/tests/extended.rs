@@ -159,6 +159,30 @@ fn disease_markdown_funding_renders_truthful_notes_without_table() {
 }
 
 #[test]
+fn disease_markdown_reports_unavailable_source_state_in_band() {
+    let disease: Disease = serde_json::from_value(serde_json::json!({
+        "id": "MONDO:0011996",
+        "name": "chronic myeloid leukemia",
+        "section_outcomes": {
+            "survival": {
+                "outcome": "unavailable",
+                "sources": [],
+                "message": "SEER survival data is temporarily unavailable."
+            }
+        },
+        "xrefs": {}
+    }))
+    .expect("disease fixture");
+
+    let markdown = disease_markdown(&disease, &["survival".to_string()])
+        .expect("unavailable survival markdown");
+
+    assert!(markdown.contains("Survival"), "markdown={markdown}");
+    assert!(markdown.contains("SEER Explorer"), "markdown={markdown}");
+    assert!(markdown.contains("unavailable"), "markdown={markdown}");
+}
+
+#[test]
 fn disease_markdown_all_keeps_opt_in_sections_hidden() {
     let disease = disease_with_clinical_features();
 

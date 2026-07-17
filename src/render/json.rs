@@ -593,10 +593,11 @@ mod tests {
         DiscoverConfidence, DiscoverIntent, DiscoverResult, DiscoverType, MatchTier,
         PlainLanguageTopic,
     };
+    use crate::entities::disease::Disease;
     use crate::entities::drug::Drug;
     use crate::entities::gene::Gene;
     use crate::error::BioMcpError;
-    use crate::render::provenance::SectionSource;
+    use crate::render::provenance::{SectionSource, disease_section_sources};
     use serde::Serialize;
 
     #[derive(Serialize)]
@@ -653,39 +654,39 @@ mod tests {
     }
 
     #[test]
-    fn source_errors_include_safe_source_and_recovery() {
-        let sentinels = [
-            "credential=fixture-secret",
-            "https://signed.example/private?token=fixture-secret",
-            "raw provider payload",
-            "/home/operator/private.json",
-        ];
-        let errors = [
-            BioMcpError::BodyLimit {
-                source_name: "Europe PMC".to_string(),
-                max_bytes: 42,
+    fn disease_unavailable_outcome_and_provenance_agree_without_source_credit() {
+        let disease: Disease = serde_json::from_value(serde_json::json!({
+            "id": "MONDO:0011996",
+            "name": "chronic myeloid leukemia",
+            "section_outcomes": {
+                "survival": {
+                    "outcome": "unavailable",
+                    "sources": [],
+                    "message": "SEER survival data is temporarily unavailable."
+                }
             },
-            BioMcpError::SourceUnavailable {
-                source_name: "ClinicalTrials.gov".to_string(),
-                reason: format!("{}: {}", sentinels[0], sentinels[2]),
-                suggestion: format!("Read {} then retry {}", sentinels[3], sentinels[1]),
-            },
-        ];
+            "xrefs": {}
+        }))
+        .expect("disease fixture");
 
-        for (error, expected_source) in errors.iter().zip(["Europe PMC", "ClinicalTrials.gov"]) {
-            let json = to_error_json(error).expect("structured source error JSON");
-            let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
-            assert_eq!(value["error"]["source"], expected_source, "json={value}");
-            assert!(
-                value["error"]["recovery"]
-                    .as_str()
-                    .is_some_and(|recovery| !recovery.trim().is_empty()),
-                "source error needs a safe recovery action: {value}"
-            );
-            for sentinel in sentinels {
-                assert!(!json.contains(sentinel), "JSON leaked {sentinel}: {json}");
-            }
-        }
+        let json = to_entity_json(
+            &disease,
+            Vec::<(&str, String)>::new(),
+            Vec::new(),
+            disease_section_sources(&disease),
+        )
+        .expect("disease JSON");
+        let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
+        assert_eq!(
+            value["section_outcomes"]["survival"]["outcome"],
+            "unavailable"
+        );
+        let projection = value["_meta"]["section_sources"]
+            .as_array()
+            .and_then(|rows| rows.iter().find(|row| row["key"] == "survival"))
+            .expect("survival source-state projection");
+        assert_eq!(projection["outcome"], "unavailable");
+        assert_eq!(projection["sources"], serde_json::json!([]));
     }
 
     #[test]

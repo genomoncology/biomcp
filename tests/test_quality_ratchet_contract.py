@@ -1085,6 +1085,7 @@ def test_source_state_registry_rejects_unmapped_and_stale_sections(
     assert clean["status"] == "pass", clean
     assert clean["unmapped_sections"] == []
     assert clean["stale_registry_entries"] == []
+    assert clean["architecture_mismatches"] == []
 
     disease = fixture_root / "src" / "entities" / "disease" / "mod.rs"
     original = disease.read_text(encoding="utf-8")
@@ -1110,6 +1111,20 @@ def test_source_state_registry_rejects_unmapped_and_stale_sections(
     assert any(
         row["entity"] == "disease" and row["section"] == "survival"
         for row in stale["stale_registry_entries"]
+    )
+
+    disease.write_text(original, encoding="utf-8")
+    architecture_text = architecture.read_text(encoding="utf-8")
+    architecture_without_survival = architecture_text.replace(
+        "| disease | survival |", "| disease | omitted-survival |", 1
+    )
+    assert architecture_without_survival != architecture_text
+    architecture.write_text(architecture_without_survival, encoding="utf-8")
+    architecture_drift = ratchet.check_source_state_registry(fixture_root)
+    assert architecture_drift["status"] == "fail"
+    assert any(
+        row["entity"] == "disease" and row["section"] == "survival"
+        for row in architecture_drift["architecture_mismatches"]
     )
 
 
