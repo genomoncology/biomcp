@@ -448,6 +448,43 @@ def test_dead_code_allowance_audit_accepts_adjacent_reason(tmp_path: Path) -> No
     assert payload["findings"] == []
 
 
+def test_dead_code_allowance_audit_ignores_comment_and_string_tokens(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "lexical-dead-code"
+    _write_dead_code_fixture(
+        fixture_root,
+        "#[cfg_attr(\n"
+        "    not(test), // ] must not close the attribute\n"
+        '    doc = "https://example.test/[contract]",\n'
+        "    allow(dead_code),\n"
+        ")]\n"
+        "fn conditional() {}\n",
+    )
+
+    payload = ratchet.check_dead_code_allowances(fixture_root)
+
+    assert payload["status"] == "fail"
+    assert payload["allowances_checked"] == 1
+    assert payload["findings"][0]["line"] == 1
+
+
+def test_dead_code_allowance_audit_does_not_match_deny_group(tmp_path: Path) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "unrelated-dead-code"
+    _write_dead_code_fixture(
+        fixture_root,
+        "#[cfg_attr(test, allow(unused_variables), deny(dead_code))]\n"
+        "fn conditional() {}\n",
+    )
+
+    payload = ratchet.check_dead_code_allowances(fixture_root)
+
+    assert payload["status"] == "pass", payload
+    assert payload["allowances_checked"] == 0
+
+
 def test_source_registry_audit_passes_for_repo() -> None:
     result = _run_python_script(SOURCE_SCRIPT, "--json")
 

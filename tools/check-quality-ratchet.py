@@ -159,6 +159,118 @@ def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     return sorted({line for line in proc.stdout.splitlines() if line}), []
 
 
+def _mask_rust_non_code(source: str) -> str:
+    """Replace Rust comments and literals with spaces while preserving newlines."""
+    masked = list(source)
+
+    def blank(start: int, end: int) -> None:
+        for position in range(start, end):
+            if masked[position] != "\n":
+                masked[position] = " "
+
+    index = 0
+    while index < len(source):
+        if source.startswith("//", index):
+            end = source.find("\n", index + 2)
+            end = len(source) if end == -1 else end
+            blank(index, end)
+            index = end
+            continue
+
+        if source.startswith("/*", index):
+            end = index + 2
+            depth = 1
+            while end < len(source) and depth:
+                if source.startswith("/*", end):
+                    depth += 1
+                    end += 2
+                elif source.startswith("*/", end):
+                    depth -= 1
+                    end += 2
+                else:
+                    end += 1
+            blank(index, end)
+            index = end
+            continue
+
+        raw = re.match(r'(?:br|cr|r)(?P<hashes>#{0,255})"', source[index:])
+        if raw and (
+            index == 0 or not (source[index - 1].isalnum() or source[index - 1] == "_")
+        ):
+            terminator = '"' + raw.group("hashes")
+            content_start = index + raw.end()
+            closing = source.find(terminator, content_start)
+            end = len(source) if closing == -1 else closing + len(terminator)
+            blank(index, end)
+            index = end
+            continue
+
+        string_prefix = 1 if source[index : index + 2] in {'b"', 'c"'} else 0
+        if source[index] == '"' or string_prefix:
+            end = index + string_prefix + 1
+            while end < len(source):
+                if source[end] == "\\":
+                    end += 2
+                elif source[end] == '"':
+                    end += 1
+                    break
+                else:
+                    end += 1
+            blank(index, min(end, len(source)))
+            index = end
+            continue
+
+        char_literal = re.match(
+            r"(?:b)?'(?:\\(?:.|x[0-9A-Fa-f]{2}|u\{[0-9A-Fa-f_]+\})|[^\\'\n])'",
+            source[index:],
+        )
+        if char_literal:
+            end = index + char_literal.end()
+            blank(index, end)
+            index = end
+            continue
+
+        index += 1
+
+    return "".join(masked)
+
+
+def _rust_attribute_spans(source: str) -> list[tuple[int, str]]:
+    masked = _mask_rust_non_code(source)
+    spans: list[tuple[int, str]] = []
+    index = 0
+    while match := re.search(r"#(?:!)?\[", masked[index:]):
+        opening = index + match.start()
+        cursor = index + match.end()
+        depth = 1
+        while cursor < len(masked) and depth:
+            if masked[cursor] == "[":
+                depth += 1
+            elif masked[cursor] == "]":
+                depth -= 1
+            cursor += 1
+        spans.append((opening, masked[opening:cursor]))
+        index = cursor
+    return spans
+
+
+def _allows_dead_code(attribute: str) -> bool:
+    for match in re.finditer(r"\ballow\s*\(", attribute):
+        cursor = match.end()
+        depth = 1
+        while cursor < len(attribute) and depth:
+            if attribute[cursor] == "(":
+                depth += 1
+            elif attribute[cursor] == ")":
+                depth -= 1
+            cursor += 1
+        if depth == 0 and re.search(
+            r"\bdead_code\b", attribute[match.end() : cursor - 1]
+        ):
+            return True
+    return False
+
+
 def check_dead_code_allowances(root_dir: Path) -> dict[str, object]:
     tracked_files, errors = tracked_rust_files(root_dir)
     if errors:
@@ -171,45 +283,25 @@ def check_dead_code_allowances(root_dir: Path) -> dict[str, object]:
         path = root_dir / relative_path
         if not path.is_file():
             continue
-        lines = path.read_text(encoding="utf-8").splitlines()
-        line_index = 0
-        while line_index < len(lines):
-            stripped = lines[line_index].lstrip()
-            if not (stripped.startswith("#[") or stripped.startswith("#![")):
-                line_index += 1
+        source = path.read_text(encoding="utf-8")
+        lines = source.splitlines()
+        for opening, attribute in _rust_attribute_spans(source):
+            if not _allows_dead_code(attribute):
                 continue
-
-            opening_line = line_index
-            span_lines = [lines[line_index]]
-            depth = lines[line_index].count("[") - lines[line_index].count("]")
-            while depth > 0 and line_index + 1 < len(lines):
-                line_index += 1
-                span_lines.append(lines[line_index])
-                depth += lines[line_index].count("[") - lines[line_index].count("]")
-
-            span = "\n".join(span_lines)
-            attribute_tokens = re.sub(r'/\*.*?\*/|//[^\n]*', '', span, flags=re.DOTALL)
-            attribute_tokens = re.sub(
-                r'r(?P<hashes>#+)".*?"(?P=hashes)|"(?:\\.|[^"\\])*"',
-                '',
-                attribute_tokens,
-                flags=re.DOTALL,
-            )
-            if re.search(r"\ballow\s*\(.*?\bdead_code\b", attribute_tokens, re.DOTALL):
-                spans_checked += 1
-                previous = lines[opening_line - 1] if opening_line else ""
-                if not reason_re.match(previous):
-                    findings.append(
-                        {
-                            "path": relative_path,
-                            "line": opening_line + 1,
-                            "message": (
-                                "dead-code allowance requires an adjacent concrete "
-                                "`dead-code reason:` comment"
-                            ),
-                        }
-                    )
-            line_index += 1
+            spans_checked += 1
+            opening_line = source.count("\n", 0, opening)
+            previous = lines[opening_line - 1] if opening_line else ""
+            if not reason_re.match(previous):
+                findings.append(
+                    {
+                        "path": relative_path,
+                        "line": opening_line + 1,
+                        "message": (
+                            "dead-code allowance requires an adjacent concrete "
+                            "`dead-code reason:` comment"
+                        ),
+                    }
+                )
 
     return {
         "status": "fail" if findings else "pass",
