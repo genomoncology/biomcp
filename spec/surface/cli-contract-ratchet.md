@@ -145,6 +145,93 @@ print("shipped docs omit retired suggest command")
 ' | mustmatch like "shipped docs omit retired suggest command"
 ```
 
+## Trial mutation help explains inclusion verification
+
+A mutation-bearing caller should learn at the flag itself that BioMCP checks
+simple molecular text against registry eligibility after broad CTGov discovery.
+The help also keeps the recall and boolean-expression boundaries explicit.
+
+```bash
+biomcp search trial --help | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
+```
+
+## Trial mutation list reference explains inclusion verification
+
+The agent-facing list page is the compact trial reference, so it must teach the
+same inclusion/exclusion behavior and limits rather than describing only the
+upstream free-text query.
+
+```bash
+biomcp list trial | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
+```
+
+## Root trial reference explains inclusion verification
+
+The root list is a checked command reference as well as an index. Its trial
+filter summary should not preserve the old broad-discovery description after
+the more detailed trial page changes.
+
+```bash
+biomcp list | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
+```
+
+## Trial guide explains mutation inclusion verification
+
+The trial guide should describe the precision-oriented eligibility check without
+turning absent registry wording or boolean expressions into strict matches.
+
+```bash
+cat ../../docs/user-guide/trial.md | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
+```
+
+## CLI reference explains mutation inclusion verification
+
+The long CLI reference should stay aligned with help, both list surfaces, and
+the focused trial guide.
+
+```bash
+cat ../../docs/user-guide/cli-reference.md | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
+```
+
+## UX architecture reference explains mutation inclusion verification
+
+The maintained UX architecture reference should match the shipped CLI guide rather
+than preserving the old broad-discovery-only behavior.
+
+```bash
+cat ../../architecture/ux/cli-reference.md | mustmatch like "simple mutation
+registry eligibility
+exclusion-only
+absent
+boolean
+discovery-only"
+```
+
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
 
 The cache configuration reference promises an operator env override for the

@@ -270,12 +270,15 @@ requested-name results, but leaves the exact total unknown. `--no-alias-expand`
 performs one literal request.
 
 For molecular filters, `--mutation <text>` is an exact free-text boolean over
-ClinicalTrials.gov title, summary, eligibility, and keyword fields. It is useful
-for loose mutation wording but brittle for a specific protein change. On CTGov,
-`--biomarker <text>` is a phrase search over keyword, intervention, and
-condition fields; try it for gene-level broadening when a specific `--mutation`
-search returns zero rows. Empty filtered trial searches include broadening
-follow-ups in `_meta.next_commands` for JSON callers.
+ClinicalTrials.gov title, summary, eligibility, and keyword fields. After broad
+discovery, simple mutation text receives a registry eligibility check that removes
+exclusion-only matches. Trials where the term is absent remain discoverable, and
+boolean expressions are discovery-only. On CTGov,
+`--biomarker <text>` is a phrase search over keyword, intervention, and condition
+fields; try it for gene-level broadening when a specific `--mutation` search returns
+zero rows. Empty filtered
+trial searches include broadening follow-ups in `_meta.next_commands` for JSON
+callers.
 
 ### Variant
 

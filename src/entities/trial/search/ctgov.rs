@@ -17,7 +17,7 @@ use super::{
     CtGovSearchContext, build_essie_fragments, essie_escape, essie_escape_boolean_expression,
     normalize_sex, normalize_sponsor_type, prepare_ctgov_search_context, quote_essie_literal,
     sort_trials_by_status_priority, validate_search_page_args, validate_trial_search,
-    verify_age_eligibility, verify_eligibility_criteria, verify_facility_geo,
+    verify_age_eligibility, verify_detail_filters,
 };
 
 pub(super) const CTGOV_COUNT_PAGE_SIZE: usize = 1000;
@@ -228,12 +228,12 @@ async fn apply_ctgov_post_filters(
     context: &CtGovSearchContext,
     mut studies: Vec<CtGovStudy>,
 ) -> Vec<CtGovStudy> {
-    if let Some((facility_name, lat, lon, distance)) = context.facility_geo_verification.as_ref() {
-        studies = verify_facility_geo(client, studies, facility_name, *lat, *lon, *distance).await;
-    }
-    if !context.eligibility_keywords.is_empty() {
-        studies = verify_eligibility_criteria(client, studies, &context.eligibility_keywords).await;
-    }
+    let facility_geo = context
+        .facility_geo_verification
+        .as_ref()
+        .map(|(facility, lat, lon, distance)| (facility.as_str(), *lat, *lon, *distance));
+    studies =
+        verify_detail_filters(client, studies, facility_geo, &context.eligibility_keywords).await;
     if let Some(age) = filters.age {
         studies = verify_age_eligibility(studies, age);
     }

@@ -387,7 +387,7 @@ Source-specific notes:
   - CTGov: a rejected expanded alias preserves successful requested-name results and makes the exact total unknown.
   - CTGov: `--no-alias-expand` sends one literal request.
   - CTGov: `--next-page` is not supported when intervention alias expansion fans out to multiple queries; use `--offset` or `--no-alias-expand`.
-  - CTGov: `--mutation` is an exact free-text boolean over eligibility, title, summary, and keywords; use it for loose mutation wording, not as a guaranteed protein-change matcher.
+  - CTGov: `--mutation` broadly searches eligibility, title, summary, and keywords. After broad discovery, simple mutation text is checked against registry eligibility to remove exclusion-only matches; trials where the term is absent remain discoverable, while boolean expressions are discovery-only.
   - CTGov: `--biomarker` is a phrase search over keyword, intervention, and condition; try it for gene-level broadening when a specific `--mutation` returns zero rows.
   - CTGov: `--phase 1/2` keeps the combined Phase 1/Phase 2 label semantics, not Phase 1 OR Phase 2.
   - NCI: `--condition` grounds to an NCI disease ID when available and otherwise falls back to CTS `keyword`.

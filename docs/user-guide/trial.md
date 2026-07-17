@@ -52,6 +52,11 @@ biomcp search trial -c melanoma --mutation "BRAF V600E" --limit 5
 biomcp search trial -c melanoma --biomarker BRAF --limit 5
 ```
 
+`--mutation` broadly searches CTGov title, summary, eligibility, and keyword
+fields. After broad discovery, simple mutation text receives a registry eligibility
+check that removes exclusion-only matches. Trials where the term is absent remain
+discoverable, and boolean expressions are discovery-only.
+
 Geographic filtering:
 
 ```bash

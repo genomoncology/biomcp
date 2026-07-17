@@ -17,8 +17,7 @@ use self::ctgov::{
     count_all_with_ctgov_client, ctgov_agg_filters, ctgov_query_term, search_page_with_ctgov_client,
 };
 use self::eligibility::{
-    collect_eligibility_keywords, verify_age_eligibility, verify_eligibility_criteria,
-    verify_facility_geo,
+    collect_eligibility_keywords, verify_age_eligibility, verify_detail_filters,
 };
 use self::essie::has_essie_filters;
 use self::essie::{

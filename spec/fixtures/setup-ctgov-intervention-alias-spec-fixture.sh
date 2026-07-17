@@ -284,6 +284,7 @@ CONTACTS_ELIGIBILITY_STUDY = {
                     "state": "Michigan",
                     "country": "United States",
                     "status": "RECRUITING",
+                    "geoPoint": {"lat": 42.2808, "lon": -83.7430},
                     "contacts": [
                         {
                             "name": "Site Coordinator",
@@ -368,6 +369,8 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, {"studies": [study_payload_for_request(parsed, CONTACTS_ELIGIBILITY_STUDY)], "totalCount": 1})
             return
         if parsed.path.startswith("/api/v2/studies/"):
+            with REQUEST_LOG.open("a", encoding="utf-8") as log:
+                log.write(f"{self.path}\n")
             nct_id = parsed.path.rsplit("/", 1)[-1].lower()
             if nct_id in STUDIES:
                 send_json(self, 200, study_payload_for_request(parsed, STUDIES[nct_id]))

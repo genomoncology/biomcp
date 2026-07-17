@@ -15,6 +15,20 @@ Query: condition=melanoma, status=recruiting
 |NCT ID|Title|Status|Phase|Conditions|'
 ```
 
+## Simple mutation search verifies molecular inclusion
+
+For simple molecular text, broad CTGov discovery is followed by a registry
+eligibility check. A trial with a positive inclusion requirement remains, while
+a recorded exclusion-only match is removed; the live check avoids pinning the
+changing result total.
+
+```bash
+../../tools/biomcp-ci --json search trial -c "non-small cell lung cancer" --mutation "EGFR L858R" --limit 50 \
+  | jq -r '([.results[].nct_id] | index("NCT06604689") != null), ([.results[].nct_id] | index("NCT06382129") == null)' \
+  | mustmatch like 'true
+true'
+```
+
 ## NCI Condition Search
 
 The NCI source keeps ordinary condition lookup available independently of CTGov.

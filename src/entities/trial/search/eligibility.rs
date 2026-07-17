@@ -10,8 +10,7 @@ use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovLocation, CtGovS
 use super::super::{TRIAL_SECTION_ELIGIBILITY, TRIAL_SECTION_LOCATIONS, TrialSearchFilters};
 use super::has_boolean_operators;
 
-const FACILITY_GEO_VERIFY_CONCURRENCY: usize = 8;
-const ELIGIBILITY_VERIFY_CONCURRENCY: usize = 8;
+const DETAIL_VERIFY_CONCURRENCY: usize = 8;
 
 fn normalize_facility_text(value: &str) -> Option<String> {
     let normalized = value
@@ -248,6 +247,16 @@ fn eligibility_keyword_in_inclusion(
 pub(super) fn collect_eligibility_keywords(filters: &TrialSearchFilters) -> Vec<String> {
     let mut keywords = Vec::new();
 
+    if let Some(mutation) = filters
+        .mutation
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        && !has_boolean_operators(mutation)
+    {
+        keywords.push(mutation.to_string());
+    }
+
     if let Some(criteria) = filters
         .criteria
         .as_deref()
@@ -279,106 +288,77 @@ pub(super) fn collect_eligibility_keywords(filters: &TrialSearchFilters) -> Vec<
     keywords
 }
 
-pub(super) async fn verify_facility_geo(
+pub(super) async fn verify_detail_filters(
     client: &ClinicalTrialsClient,
     studies: Vec<CtGovStudy>,
-    facility_filter: &str,
-    origin_lat: f64,
-    origin_lon: f64,
-    max_distance_miles: u32,
-) -> Vec<CtGovStudy> {
-    let Some(facility_needle) = normalize_facility_text(facility_filter) else {
-        return studies;
-    };
-
-    let location_section = vec![TRIAL_SECTION_LOCATIONS.to_string()];
-    let mut verification_stream = stream::iter(studies.into_iter().map(|study| {
-        let nct_id = ctgov_nct_id(&study);
-        let sections = location_section.clone();
-        let facility_needle = facility_needle.clone();
-        async move {
-            let Some(nct_id) = nct_id else {
-                return Some(study);
-            };
-            match client.get(&nct_id, &sections).await {
-                Ok(details) => trial_matches_facility_geo(
-                    &details,
-                    &facility_needle,
-                    origin_lat,
-                    origin_lon,
-                    max_distance_miles,
-                )
-                .then_some(study),
-                Err(e) => {
-                    warn!(nct_id, error = %e, "facility-geo detail fetch failed, keeping study");
-                    Some(study)
-                }
-            }
-        }
-    }))
-    .buffered(FACILITY_GEO_VERIFY_CONCURRENCY);
-
-    let mut verified = Vec::new();
-    while let Some(maybe_study) = verification_stream.next().await {
-        if let Some(study) = maybe_study {
-            verified.push(study);
-        }
-    }
-    verified
-}
-
-pub(super) async fn verify_eligibility_criteria(
-    client: &ClinicalTrialsClient,
-    studies: Vec<CtGovStudy>,
+    facility_geo: Option<(&str, f64, f64, u32)>,
     keywords: &[String],
 ) -> Vec<CtGovStudy> {
-    if keywords.is_empty() {
+    let facility_geo = facility_geo.and_then(|(facility, lat, lon, distance)| {
+        normalize_facility_text(facility).map(|facility| (facility, lat, lon, distance))
+    });
+    if facility_geo.is_none() && keywords.is_empty() {
         return studies;
     }
 
-    let eligibility_section = vec![TRIAL_SECTION_ELIGIBILITY.to_string()];
+    let mut sections = Vec::new();
+    if facility_geo.is_some() {
+        sections.push(TRIAL_SECTION_LOCATIONS.to_string());
+    }
+    if !keywords.is_empty() {
+        sections.push(TRIAL_SECTION_ELIGIBILITY.to_string());
+    }
+
     let keywords = keywords.to_vec();
     let mut verification_stream = stream::iter(studies.into_iter().map(|study| {
         let nct_id = ctgov_nct_id(&study);
-        let sections = eligibility_section.clone();
+        let sections = sections.clone();
+        let facility_geo = facility_geo.clone();
         let keywords = keywords.clone();
         async move {
             let Some(nct_id) = nct_id else {
                 return Some(study);
             };
-            match client.get(&nct_id, &sections).await {
-                Ok(details) => {
-                    let Some(criteria) = details
-                        .protocol_section
-                        .as_ref()
-                        .and_then(|section| section.eligibility_module.as_ref())
-                        .and_then(|module| module.eligibility_criteria.as_deref())
-                        .map(str::trim)
-                        .filter(|value| !value.is_empty())
-                    else {
-                        warn!(
-                            nct_id,
-                            "missing eligibility criteria in detail fetch, keeping study"
-                        );
-                        return Some(study);
-                    };
-
-                    let (inclusion, exclusion) = split_eligibility_sections(criteria);
-                    keywords
-                        .iter()
-                        .all(|keyword| {
-                            eligibility_keyword_in_inclusion(&inclusion, &exclusion, keyword)
-                        })
-                        .then_some(study)
-                }
+            let details = match client.get(&nct_id, &sections).await {
+                Ok(details) => details,
                 Err(e) => {
-                    warn!(nct_id, error = %e, "eligibility detail fetch failed, keeping study");
-                    Some(study)
+                    warn!(nct_id, error = %e, "trial detail fetch failed, keeping study");
+                    return Some(study);
                 }
+            };
+
+            if let Some((facility, lat, lon, distance)) = facility_geo
+                && !trial_matches_facility_geo(&details, &facility, lat, lon, distance)
+            {
+                return None;
             }
+
+            if keywords.is_empty() {
+                return Some(study);
+            }
+            let Some(criteria) = details
+                .protocol_section
+                .as_ref()
+                .and_then(|section| section.eligibility_module.as_ref())
+                .and_then(|module| module.eligibility_criteria.as_deref())
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            else {
+                warn!(
+                    nct_id,
+                    "missing eligibility criteria in detail fetch, keeping study"
+                );
+                return Some(study);
+            };
+
+            let (inclusion, exclusion) = split_eligibility_sections(criteria);
+            keywords
+                .iter()
+                .all(|keyword| eligibility_keyword_in_inclusion(&inclusion, &exclusion, keyword))
+                .then_some(study)
         }
     }))
-    .buffered(ELIGIBILITY_VERIFY_CONCURRENCY);
+    .buffered(DETAIL_VERIFY_CONCURRENCY);
 
     let mut verified = Vec::new();
     while let Some(maybe_study) = verification_stream.next().await {

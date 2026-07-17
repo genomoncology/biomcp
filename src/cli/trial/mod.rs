@@ -58,7 +58,11 @@ pub struct TrialSearchArgs {
     /// Filter by trial status [values: recruiting, not_yet_recruiting, enrolling_by_invitation, active_not_recruiting, completed, suspended, terminated, withdrawn]
     #[arg(short = 's', long)]
     pub status: Option<String>,
-    /// CTGov exact free-text boolean over title/summary/eligibility/keywords; brittle for specific protein changes.
+    /// CTGov exact free-text boolean over title, summary, eligibility, and keywords.
+    ///
+    /// After broad discovery, simple mutation text is checked against registry
+    /// eligibility to remove exclusion-only matches; trials where the term is
+    /// absent remain discoverable, while boolean expressions are discovery-only.
     #[arg(long, num_args = 1..)]
     pub mutation: Vec<String>,
     /// Search eligibility criteria with free-text terms (best-effort)
