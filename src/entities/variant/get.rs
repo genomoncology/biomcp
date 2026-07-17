@@ -542,15 +542,27 @@ async fn add_cancerhotspots(variant: &mut Variant, id_format: &VariantIdFormat) 
 
     match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, cancerhotspots_fut).await {
         Ok(Ok(recurrence)) => {
+            let outcome = cancerhotspots_outcome(&recurrence);
             variant.cancerhotspots = Some(recurrence);
-            variant
-                .section_outcomes
-                .complete("cancerhotspots", SectionOutcome::data("cancerhotspots.org"));
+            variant.section_outcomes.complete("cancerhotspots", outcome);
         }
         Ok(Err(_)) | Err(_) => variant.section_outcomes.complete(
             "cancerhotspots",
             SectionOutcome::unavailable(VARIANT_SOURCE_UNAVAILABLE),
         ),
+    }
+}
+
+fn cancerhotspots_outcome(
+    recurrence: &crate::sources::cancerhotspots::CancerHotspotRecurrence,
+) -> SectionOutcome {
+    if recurrence.position_count.is_some()
+        || recurrence.same_aa_count.is_some()
+        || recurrence.matched_transcript.is_some()
+    {
+        SectionOutcome::data("cancerhotspots.org")
+    } else {
+        SectionOutcome::empty("cancerhotspots.org")
     }
 }
 

@@ -1005,10 +1005,7 @@ fn optional_faers_status(
     match result {
         Ok(status) => Ok(status),
         Err(err @ BioMcpError::InvalidArgument(_)) => Err(err),
-        Err(err) => {
-            tracing::warn!("OpenFDA FAERS adverse-event search unavailable: {err}");
-            Ok(FaersSearchStatus::Unavailable)
-        }
+        Err(_) => Ok(FaersSearchStatus::Unavailable),
     }
 }
 

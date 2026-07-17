@@ -16,9 +16,12 @@ pub(super) async fn enrich_targets(
 ) -> SectionOutcome {
     let mut chembl_rows = Vec::new();
     let mut opentargets_targets = Vec::new();
-    let mut successful_sources = Vec::new();
+    let mut successful_sources = vec!["Guide to PHARMACOLOGY"];
     let mut contributors = Vec::new();
     let mut failed = false;
+    if !drug.targets.is_empty() {
+        contributors.push("Guide to PHARMACOLOGY");
+    }
     if let Some(chembl_id) = drug.chembl_id.as_deref() {
         match ChemblClient::new() {
             Ok(client) => match client.drug_targets(chembl_id, 15).await {
@@ -73,8 +76,6 @@ pub(super) async fn enrich_targets(
             },
             Err(_) => failed = true,
         }
-    } else {
-        successful_sources.extend(["ChEMBL", "Open Targets"]);
     }
 
     drug.targets.truncate(12);
@@ -332,11 +333,16 @@ fn common_prefix_len_casefold(values: &[String]) -> Option<usize> {
 }
 
 pub(super) async fn enrich_indications(drug: &mut Drug) -> SectionOutcome {
+    let has_base_data = !drug.indications.is_empty();
     let Some(chembl_id) = drug.chembl_id.as_deref() else {
-        return SectionOutcome::empty("Open Targets");
+        return if has_base_data {
+            SectionOutcome::data("DrugCentral")
+        } else {
+            SectionOutcome::empty("DrugCentral")
+        };
     };
 
-    let outcome = match OpenTargetsClient::new() {
+    let overlay_outcome = match OpenTargetsClient::new() {
         Ok(client) => match client.drug_sections(chembl_id, 15).await {
             Ok(sections) => {
                 let indications = sections
@@ -371,7 +377,21 @@ pub(super) async fn enrich_indications(drug: &mut Drug) -> SectionOutcome {
     };
 
     drug.indications.truncate(12);
-    outcome
+    match (has_base_data, overlay_outcome.outcome()) {
+        (true, crate::entities::section_outcome::SectionOutcomeState::Unavailable) => {
+            SectionOutcome::degraded(
+                ["DrugCentral"],
+                "Drug indication evidence is incomplete because a source was unavailable.",
+            )
+        }
+        (true, crate::entities::section_outcome::SectionOutcomeState::Empty) => {
+            SectionOutcome::data("DrugCentral")
+        }
+        (true, crate::entities::section_outcome::SectionOutcomeState::Data) => {
+            SectionOutcome::data_sources(["DrugCentral", "Open Targets"])
+        }
+        _ => overlay_outcome,
+    }
 }
 
 fn format_opentargets_clinical_stage(stage: &str) -> Option<String> {

@@ -71,7 +71,7 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         "gene",
         "pathways",
         "Pathways",
-        &["Reactome"],
+        &["Reactome", "KEGG"],
         Aggregation::Additive,
     ),
     state(
@@ -85,7 +85,7 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         "gene",
         "diseases",
         "Diseases",
-        &["Open Targets", "DisGeNET"],
+        &["Enrichr"],
         Aggregation::Additive,
     ),
     state(
@@ -135,7 +135,7 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         "gene",
         "druggability",
         "Druggability",
-        &["ChEMBL"],
+        &["DGIdb", "Open Targets"],
         Aggregation::Additive,
     ),
     state(
@@ -170,7 +170,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         "article",
         "fulltext",
         "Full Text",
-        &["PMC", "Europe PMC", "Semantic Scholar"],
+        &[
+            "Europe PMC",
+            "NCBI EFetch",
+            "PMC OA",
+            "PMC",
+            "Semantic Scholar",
+        ],
         Aggregation::Fallback,
     ),
     state(
@@ -181,10 +187,17 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         Aggregation::Fallback,
     ),
     state(
+        "article",
+        "tldr",
+        "Semantic Scholar",
+        &["Semantic Scholar"],
+        Aggregation::Fallback,
+    ),
+    state(
         "pathway",
         "genes",
         "Genes",
-        &["Reactome", "KEGG", "WikiPathways"],
+        &["Reactome", "KEGG", "WikiPathways", "MyGene.info"],
         Aggregation::Fallback,
     ),
     state(
@@ -247,14 +260,14 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         "drug",
         "targets",
         "Targets",
-        &["ChEMBL", "Open Targets"],
+        &["Guide to PHARMACOLOGY", "ChEMBL", "Open Targets"],
         Aggregation::Additive,
     ),
     state(
         "drug",
         "indications",
         "Indications",
-        &["Open Targets"],
+        &["DrugCentral", "Open Targets"],
         Aggregation::Additive,
     ),
     state("drug", "civic", "CIViC", &["CIViC"], Aggregation::Fallback),
@@ -469,7 +482,7 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         Some("fulltext"),
     ),
     selector("article", "annotations", SelectorClass::Local, None),
-    selector("article", "tldr", SelectorClass::Local, None),
+    selector("article", "tldr", SelectorClass::Canonical, Some("tldr")),
     selector(
         "article",
         "indexing",
@@ -477,7 +490,7 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         Some("indexing"),
     ),
     selector("article", "assets", SelectorClass::Local, None),
-    selector("article", "asset", SelectorClass::Alias, None),
+    selector("article", "asset", SelectorClass::Alias, Some("assets")),
     selector("article", "all", SelectorClass::Aggregate, None),
     selector("pathway", "genes", SelectorClass::Canonical, Some("genes")),
     selector(
@@ -655,6 +668,17 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
     selector("trial", "references", SelectorClass::Local, None),
     selector("trial", "all", SelectorClass::Aggregate, None),
 ];
+
+pub(crate) fn allows_sources(entity: &str, key: &str, sources: &[String]) -> bool {
+    SOURCE_STATE_ROWS
+        .iter()
+        .find(|row| row.entity == entity && row.key == key)
+        .is_some_and(|row| {
+            sources
+                .iter()
+                .all(|source| row.providers.contains(&source.as_str()))
+        })
+}
 
 pub(crate) fn outcome_keys(entity: &str) -> Vec<&'static str> {
     SOURCE_STATE_ROWS

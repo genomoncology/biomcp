@@ -51,6 +51,47 @@ fn diagnostic_markdown_renders_requested_sections_and_truthful_empty_states() {
 }
 
 #[test]
+fn diagnostic_markdown_reports_unavailable_regulatory_state_in_band() {
+    let mut outcomes = crate::entities::diagnostic::default_diagnostic_section_outcomes();
+    outcomes.complete(
+        "regulatory",
+        crate::entities::section_outcome::SectionOutcome::unavailable(
+            "OpenFDA diagnostic regulatory data is temporarily unavailable.",
+        ),
+    );
+    let diagnostic = Diagnostic {
+        section_outcomes: outcomes,
+        source: "gtr".to_string(),
+        source_id: "GTR000000001.1".to_string(),
+        accession: "GTR000000001.1".to_string(),
+        name: "Example diagnostic".to_string(),
+        test_type: None,
+        manufacturer: None,
+        target_marker: None,
+        regulatory_version: None,
+        prequalification_year: None,
+        laboratory: None,
+        institution: None,
+        country: None,
+        clia_number: None,
+        state_licenses: None,
+        current_status: None,
+        public_status: None,
+        method_categories: Vec::new(),
+        genes: None,
+        conditions: None,
+        methods: None,
+        regulatory: Some(Vec::new()),
+    };
+
+    let markdown =
+        diagnostic_markdown(&diagnostic, &["regulatory".to_string()]).expect("rendered markdown");
+    assert!(markdown.contains("Regulatory status"));
+    assert!(markdown.contains("unavailable"));
+    assert!(!markdown.contains("No FDA device"));
+}
+
+#[test]
 fn diagnostic_search_markdown_shows_source_column_and_detail_hint() {
     let results = vec![
         DiagnosticSearchResult {

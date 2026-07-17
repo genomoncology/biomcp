@@ -1,9 +1,5 @@
 use std::sync::OnceLock;
 
-use regex::Regex;
-use serde::{Deserialize, Serialize};
-use tracing::warn;
-
 use crate::entities::SearchPage;
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::entities::source_state_registry::outcome_keys;
@@ -14,6 +10,8 @@ use crate::sources::mygene::MyGeneClient;
 use crate::sources::string::StringClient;
 use crate::sources::uniprot::UniProtClient;
 use crate::transform;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
 
 fn default_protein_section_outcomes() -> SectionOutcomes {
     SectionOutcomes::with_keys(&outcome_keys("protein"))
@@ -556,8 +554,7 @@ pub async fn get_with_structure_limit(
                 );
                 protein.domains = domains;
             }
-            Err(err) => {
-                warn!("InterPro unavailable for protein domains: {err}");
+            Err(_) => {
                 protein.section_outcomes.complete(
                     PROTEIN_SECTION_DOMAINS,
                     SectionOutcome::unavailable("InterPro protein domains are unavailable."),
@@ -579,8 +576,7 @@ pub async fn get_with_structure_limit(
                 );
                 protein.interactions = rows;
             }
-            Err(err) => {
-                warn!("STRING unavailable for protein interactions: {err}");
+            Err(_) => {
                 protein.section_outcomes.complete(
                     PROTEIN_SECTION_INTERACTIONS,
                     SectionOutcome::unavailable("STRING protein interactions are unavailable."),
@@ -602,8 +598,7 @@ pub async fn get_with_structure_limit(
                 );
                 protein.complexes = rows;
             }
-            Err(err) => {
-                warn!("ComplexPortal unavailable for protein complexes: {err}");
+            Err(_) => {
                 protein.section_outcomes.complete(
                     PROTEIN_SECTION_COMPLEXES,
                     SectionOutcome::unavailable("ComplexPortal protein complexes are unavailable."),

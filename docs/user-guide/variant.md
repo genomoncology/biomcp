@@ -262,6 +262,12 @@ biomcp --json get variant rs7903146 gwas
 biomcp --json search gwas --trait "type 2 diabetes"
 ```
 
+JSON records requested `predict`, `cancerhotspots`, `civic`, `cbioportal`, and
+`gwas` source states in `section_outcomes`; `_meta.section_sources` projects the
+same state and successful providers. A checked Cancer Hotspots no-match is
+`empty`, while a source failure is `unavailable` and receives no provider
+credit.
+
 ## Practical tips
 
 - Use `search variant` first for shorthand or ambiguous inputs.

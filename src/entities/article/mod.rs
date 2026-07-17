@@ -46,7 +46,7 @@ fn is_false(value: &bool) -> bool {
     !*value
 }
 
-pub(crate) const ARTICLE_OUTCOME_KEYS: &[&str] = &["fulltext", "indexing"];
+pub(crate) const ARTICLE_OUTCOME_KEYS: &[&str] = &["fulltext", "indexing", "tldr"];
 
 fn default_article_section_outcomes() -> SectionOutcomes {
     SectionOutcomes::with_keys(&outcome_keys("article"))

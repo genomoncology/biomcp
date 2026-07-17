@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Mutex, OnceLock};
 
 use regex::Regex;
-use tracing::warn;
+use tracing::debug as warn;
 
 use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
@@ -824,7 +824,7 @@ async fn populate_ema_sections(
     drug: &mut Drug,
     requested_name: &str,
     section_flags: &DrugSections,
-) -> Result<(), BioMcpError> {
+) -> Result<bool, BioMcpError> {
     if !section_flags.include_regulatory
         && !section_flags.include_safety
         && !section_flags.include_shortage
@@ -832,20 +832,45 @@ async fn populate_ema_sections(
         drug.ema_regulatory = None;
         drug.ema_safety = None;
         drug.ema_shortage = None;
-        return Ok(());
+        return Ok(false);
     }
 
-    let client = EmaClient::ready(EmaSyncMode::Auto).await?;
+    let safety_only = section_flags.include_safety
+        && !section_flags.include_regulatory
+        && !section_flags.include_shortage;
+    let client = match EmaClient::ready(EmaSyncMode::Auto).await {
+        Ok(client) => client,
+        Err(_) if safety_only => {
+            drug.ema_safety = None;
+            return Ok(true);
+        }
+        Err(err) => return Err(err),
+    };
     let identity = build_ema_identity(requested_name, drug);
-    let anchor = client.resolve_anchor(&identity)?;
+    let anchor = match client.resolve_anchor(&identity) {
+        Ok(anchor) => anchor,
+        Err(_) if safety_only => {
+            drug.ema_safety = None;
+            return Ok(true);
+        }
+        Err(err) => return Err(err),
+    };
 
     drug.ema_regulatory = if section_flags.include_regulatory {
         Some(client.regulatory(&anchor)?)
     } else {
         None
     };
+    let mut safety_failed = false;
     drug.ema_safety = if section_flags.include_safety {
-        Some(client.safety(&anchor)?)
+        match client.safety(&anchor) {
+            Ok(safety) => Some(safety),
+            Err(_) if safety_only => {
+                safety_failed = true;
+                None
+            }
+            Err(err) => return Err(err),
+        }
     } else {
         None
     };
@@ -855,7 +880,7 @@ async fn populate_ema_sections(
         None
     };
 
-    Ok(())
+    Ok(safety_failed)
 }
 
 async fn populate_who_sections(
@@ -980,13 +1005,14 @@ async fn get_with_region_owned(
         resolved.drug.us_safety_warnings = None;
     }
 
-    if region.includes_eu() {
-        populate_ema_sections(&mut resolved.drug, &name, &section_flags).await?;
+    let ema_safety_failed = if region.includes_eu() {
+        populate_ema_sections(&mut resolved.drug, &name, &section_flags).await?
     } else {
         resolved.drug.ema_regulatory = None;
         resolved.drug.ema_safety = None;
         resolved.drug.ema_shortage = None;
-    }
+        false
+    };
 
     if region.includes_who() {
         populate_who_sections(&mut resolved.drug, &name, &section_flags).await?;
@@ -1022,7 +1048,11 @@ async fn get_with_region_owned(
             }
         }
         if region.includes_eu() {
-            successful_sources.push("EMA");
+            if ema_safety_failed {
+                failed = true;
+            } else {
+                successful_sources.push("EMA");
+            }
             if resolved.drug.ema_safety.as_ref().is_some_and(|safety| {
                 !safety.dhpcs.is_empty()
                     || !safety.referrals.is_empty()

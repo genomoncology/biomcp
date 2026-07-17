@@ -3,7 +3,7 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use tracing::warn;
+use tracing::debug as warn;
 
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::entities::source_state_registry::outcome_keys;
@@ -568,8 +568,7 @@ async fn add_pathway_enrichment(
 
     let client = match GProfilerClient::new() {
         Ok(client) => client,
-        Err(err) => {
-            warn!("g:Profiler enrichment unavailable: {err}");
+        Err(_) => {
             return SectionOutcome::unavailable("Pathway enrichment is unavailable.");
         }
     };
@@ -598,10 +597,7 @@ async fn add_pathway_enrichment(
                 SectionOutcome::data("g:Profiler")
             }
         }
-        Err(err) => {
-            warn!("g:Profiler enrichment unavailable: {err}");
-            SectionOutcome::unavailable("Pathway enrichment is unavailable.")
-        }
+        Err(_) => SectionOutcome::unavailable("Pathway enrichment is unavailable."),
     }
 }
 
@@ -794,26 +790,17 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
                                     pathway.genes = symbols.into_iter().take(50).collect();
                                     wikipathways_gene_outcome(&pathway.genes)
                                 }
-                                Err(err) => {
-                                    warn!(
-                                        "WikiPathways gene symbol resolution unavailable via MyGene: {err}"
-                                    );
-                                    SectionOutcome::unavailable(
-                                        "WikiPathways genes are unavailable.",
-                                    )
-                                }
+                                Err(_) => SectionOutcome::unavailable(
+                                    "WikiPathways genes are unavailable.",
+                                ),
                             },
-                            Err(err) => {
-                                warn!("WikiPathways gene symbol resolution unavailable: {err}");
+                            Err(_) => {
                                 SectionOutcome::unavailable("WikiPathways genes are unavailable.")
                             }
                         }
                     }
                 }
-                Err(err) => {
-                    warn!("WikiPathways xref retrieval unavailable: {err}");
-                    SectionOutcome::unavailable("WikiPathways genes are unavailable.")
-                }
+                Err(_) => SectionOutcome::unavailable("WikiPathways genes are unavailable."),
             };
             pathway
                 .section_outcomes
@@ -835,10 +822,7 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
     if parsed_sections.include_genes || parsed_sections.include_enrichment {
         match client.participants(&pathway.id, 200).await {
             Ok(lines) => participant_lines = lines,
-            Err(err) => {
-                warn!("Reactome participants unavailable: {err}");
-                participants_available = false;
-            }
+            Err(_) => participants_available = false,
         }
         pathway.genes = extract_gene_symbols(&participant_lines, 50);
         if parsed_sections.include_genes || parsed_sections.include_enrichment {
@@ -868,8 +852,7 @@ pub async fn get(st_id: &str, sections: &[String]) -> Result<Pathway, BioMcpErro
                 );
                 pathway.events = events;
             }
-            Err(err) => {
-                warn!("Reactome contained events unavailable: {err}");
+            Err(_) => {
                 pathway.section_outcomes.complete(
                     PATHWAY_SECTION_EVENTS,
                     SectionOutcome::unavailable("Reactome contained events are unavailable."),

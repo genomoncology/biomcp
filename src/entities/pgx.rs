@@ -317,8 +317,10 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
         let mut rows: Vec<PgxFrequency> = Vec::new();
         let mut failed = false;
         if let Some(gene) = mode_gene.as_deref() {
-            let frequencies = cpic.frequencies_by_gene(gene, 30).await?;
-            rows.extend(map_frequencies(&frequencies));
+            match cpic.frequencies_by_gene(gene, 30).await {
+                Ok(frequencies) => rows.extend(map_frequencies(&frequencies)),
+                Err(_) => failed = true,
+            }
         } else {
             let unique_genes = out
                 .interactions

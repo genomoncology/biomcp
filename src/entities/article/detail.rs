@@ -7,7 +7,6 @@ use crate::sources::pubmed::{PubMedCitation, PubMedCitationErrorKind, PubMedClie
 use crate::sources::pubtator::PubTatorClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 use crate::transform;
-use tracing::warn;
 
 use super::{
     ARTICLE_SECTION_ALL, ARTICLE_SECTION_ANNOTATIONS, ARTICLE_SECTION_ASSET,
@@ -549,9 +548,16 @@ pub async fn get(
     }
 
     let semantic_scholar_enrichment = enrich_article_with_semantic_scholar(&mut article).await;
-    if let Err(err) = semantic_scholar_enrichment.as_ref() {
-        warn!(?err, "Semantic Scholar enrichment failed");
-    }
+    let tldr_outcome = match &semantic_scholar_enrichment {
+        Ok(()) if article.semantic_scholar.is_some() => SectionOutcome::data("Semantic Scholar"),
+        Ok(()) => SectionOutcome::empty("Semantic Scholar"),
+        Err(_) => SectionOutcome::unavailable(
+            "Semantic Scholar article context is temporarily unavailable.",
+        ),
+    };
+    article
+        .section_outcomes
+        .complete(ARTICLE_SECTION_TLDR, tldr_outcome);
     let pdf_discovery =
         fulltext::pdf_discovery_attempt(&article, options.allow_pdf, semantic_scholar_enrichment);
 

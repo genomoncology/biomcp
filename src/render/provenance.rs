@@ -107,6 +107,7 @@ fn push_section<I, S>(
 }
 
 fn outcome_section_sources(
+    entity: &str,
     outcomes: &SectionOutcomes,
     labels: &[(&str, &str)],
 ) -> Vec<SectionSource> {
@@ -114,6 +115,14 @@ fn outcome_section_sources(
         .iter()
         .filter_map(|(key, label)| {
             let outcome = outcomes.get(key)?;
+            assert!(
+                crate::entities::source_state_registry::allows_sources(
+                    entity,
+                    key,
+                    outcome.sources()
+                ),
+                "section outcome credits a provider outside the source-state registry: {entity}/{key}"
+            );
             SectionSource {
                 key: (*key).to_string(),
                 label: (*label).to_string(),
@@ -197,13 +206,11 @@ pub(crate) fn diagnostic_section_sources(diagnostic: &Diagnostic) -> Vec<Section
         "Methods",
         [source_label],
     );
-    push_section(
-        &mut out,
-        diagnostic.regulatory.is_some(),
-        "regulatory",
-        "Regulatory",
-        ["OpenFDA Device 510(k) / PMA"],
-    );
+    out.extend(outcome_section_sources(
+        "diagnostic",
+        &diagnostic.section_outcomes,
+        &[("regulatory", "Regulatory")],
+    ));
     out
 }
 
@@ -237,6 +244,21 @@ pub(crate) fn pathway_source_label(source: &str) -> String {
     } else {
         source.to_string()
     }
+}
+
+pub(crate) fn drug_interaction_sources(drug: &Drug) -> Vec<String> {
+    let mut sources = vec!["DDInter".to_string()];
+    if drug
+        .interactions
+        .iter()
+        .any(|row| row.description.as_deref().is_some_and(has_text))
+    {
+        sources.push("DrugBank".to_string());
+    }
+    if has_opt_text(&drug.interaction_text) {
+        sources.push("OpenFDA label".to_string());
+    }
+    normalize_sources(sources)
 }
 
 pub(crate) fn drug_interaction_heading_label(drug: &Drug) -> String {
@@ -317,6 +339,7 @@ pub(crate) fn gene_section_sources(gene: &Gene) -> Vec<SectionSource> {
         ["NCBI Gene / MyGene.info"],
     );
     out.extend(outcome_section_sources(
+        "gene",
         &gene.section_outcomes,
         &[
             ("pathways", "Pathways"),
@@ -403,23 +426,13 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         "Variant Targets",
         ["CIViC"],
     );
-    let mut interaction_sources = vec!["DDInter"];
-    if drug
-        .interactions
-        .iter()
-        .any(|row| row.description.as_deref().is_some_and(has_text))
-    {
-        interaction_sources.push("DrugBank");
-    }
-    if has_opt_text(&drug.interaction_text) {
-        interaction_sources.push("OpenFDA label");
-    }
+    let interaction_sources = drug_interaction_sources(drug);
     push_section(
         &mut out,
         !drug.interactions.is_empty() || has_opt_text(&drug.interaction_text),
         "interactions",
         "Interactions",
-        interaction_sources,
+        interaction_sources.iter().map(String::as_str),
     );
     push_section(
         &mut out,
@@ -443,6 +456,7 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         ["EMA"],
     );
     out.extend(outcome_section_sources(
+        "drug",
         &drug.section_outcomes,
         &[
             ("approvals", "Drugs@FDA Approvals"),
@@ -507,6 +521,7 @@ pub(crate) fn disease_section_sources(disease: &Disease) -> Vec<SectionSource> {
         ["Monarch Initiative", "Open Targets"],
     );
     out.extend(outcome_section_sources(
+        "disease",
         &disease.section_outcomes,
         &[
             ("genes", "Genes"),
@@ -600,6 +615,7 @@ pub(crate) fn variant_section_sources(variant: &Variant) -> Vec<SectionSource> {
         ["Cancer Genome Interpreter"],
     );
     out.extend(outcome_section_sources(
+        "variant",
         &variant.section_outcomes,
         &[
             ("predict", "Prediction"),
@@ -652,16 +668,14 @@ pub(crate) fn article_section_sources(article: &Article) -> Vec<SectionSource> {
         ["PubTator3"],
     );
     out.extend(outcome_section_sources(
+        "article",
         &article.section_outcomes,
-        &[("fulltext", "Full Text"), ("indexing", "Article Indexing")],
+        &[
+            ("fulltext", "Full Text"),
+            ("indexing", "Article Indexing"),
+            ("tldr", "Semantic Scholar"),
+        ],
     ));
-    push_section(
-        &mut out,
-        article.semantic_scholar.is_some(),
-        "semantic_scholar",
-        "Semantic Scholar",
-        ["Semantic Scholar"],
-    );
     out
 }
 
@@ -760,6 +774,7 @@ pub(crate) fn pathway_section_sources(pathway: &Pathway) -> Vec<SectionSource> {
         source_ref,
     );
     out.extend(outcome_section_sources(
+        "pathway",
         &pathway.section_outcomes,
         &[
             ("genes", "Genes"),
@@ -793,6 +808,7 @@ pub(crate) fn protein_section_sources(protein: &Protein) -> Vec<SectionSource> {
         ["UniProt"],
     );
     out.extend(outcome_section_sources(
+        "protein",
         &protein.section_outcomes,
         &[
             ("structures", "Structures"),
@@ -829,6 +845,7 @@ pub(crate) fn pgx_section_sources(pgx: &Pgx) -> Vec<SectionSource> {
         ["CPIC"],
     );
     out.extend(outcome_section_sources(
+        "pgx",
         &pgx.section_outcomes,
         &[
             ("frequencies", "Population Frequencies"),
@@ -842,6 +859,7 @@ pub(crate) fn adverse_event_source_search_section_sources(
     search: &AdverseEventSourceSearch,
 ) -> Vec<SectionSource> {
     outcome_section_sources(
+        "adverse_event",
         &search.section_outcomes,
         &[("faers", "OpenFDA FAERS"), ("vaers", "CDC CVX/VAERS")],
     )
@@ -986,6 +1004,49 @@ mod tests {
         let keys: Vec<&str> = sections.iter().map(|s| s.key.as_str()).collect();
         assert!(keys.contains(&"identity"), "identity section expected");
         assert!(keys.contains(&"genes"), "genes section expected");
+    }
+
+    #[test]
+    fn diagnostic_unavailable_regulatory_outcome_has_no_source_credit() {
+        let diagnostic: crate::entities::diagnostic::Diagnostic =
+            serde_json::from_value(serde_json::json!({
+                "section_outcomes": {
+                    "regulatory": {
+                        "outcome": "unavailable",
+                        "sources": [],
+                        "message": "OpenFDA diagnostic regulatory data is temporarily unavailable."
+                    }
+                },
+                "source": "gtr",
+                "source_id": "GTR000000001.1",
+                "accession": "GTR000000001.1",
+                "name": "Example",
+                "test_type": null,
+                "manufacturer": null,
+                "target_marker": null,
+                "regulatory_version": null,
+                "prequalification_year": null,
+                "laboratory": null,
+                "institution": null,
+                "country": null,
+                "clia_number": null,
+                "state_licenses": null,
+                "current_status": null,
+                "public_status": null,
+                "method_categories": [],
+                "genes": null,
+                "conditions": null,
+                "methods": null,
+                "regulatory": []
+            }))
+            .expect("diagnostic fixture");
+
+        let source = diagnostic_section_sources(&diagnostic)
+            .into_iter()
+            .find(|source| source.key == "regulatory")
+            .expect("regulatory projection");
+        assert_eq!(source.outcome, SectionOutcomeState::Unavailable);
+        assert!(source.sources.is_empty());
     }
 
     #[test]

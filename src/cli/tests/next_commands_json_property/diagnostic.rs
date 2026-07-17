@@ -221,8 +221,13 @@ fn diagnostic_json_omits_regulatory_field_when_unrequested() {
 
 #[test]
 fn diagnostic_json_includes_regulatory_field_and_provenance_when_requested() {
+    let mut section_outcomes = crate::entities::diagnostic::default_diagnostic_section_outcomes();
+    section_outcomes.complete(
+        "regulatory",
+        crate::entities::section_outcome::SectionOutcome::data("OpenFDA Device 510(k) / PMA"),
+    );
     let diagnostic = Diagnostic {
-        section_outcomes: crate::entities::diagnostic::default_diagnostic_section_outcomes(),
+        section_outcomes,
         source: "who-ivd".to_string(),
         source_id: "ITPW02232- TC40".to_string(),
         accession: "ITPW02232- TC40".to_string(),

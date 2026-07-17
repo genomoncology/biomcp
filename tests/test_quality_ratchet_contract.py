@@ -1127,6 +1127,35 @@ def test_source_state_registry_rejects_unmapped_and_stale_sections(
         for row in architecture_drift["architecture_mismatches"]
     )
 
+    architecture.write_text(architecture_text, encoding="utf-8")
+    article = fixture_root / "src" / "entities" / "article" / "mod.rs"
+    article_text = article.read_text(encoding="utf-8")
+    article.write_text(
+        article_text.replace(', "tldr"]', "]", 1),
+        encoding="utf-8",
+    )
+    runtime_drift = ratchet.check_source_state_registry(fixture_root)
+    assert runtime_drift["status"] == "fail"
+    assert {"entity": "article", "section": "tldr"} in runtime_drift[
+        "runtime_key_mismatches"
+    ]
+
+    article.write_text(article_text, encoding="utf-8")
+    architecture.write_text(
+        architecture_text.replace(
+            "MyDisease.info / Monarch Initiative / HPO",
+            "Monarch Initiative / HPO",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    provider_drift = ratchet.check_source_state_registry(fixture_root)
+    assert provider_drift["status"] == "fail"
+    assert any(
+        row["entity"] == "disease" and row["section"] == "phenotypes"
+        for row in provider_drift["architecture_mismatches"]
+    )
+
 
 def test_wrapper_allows_mustmatch_opt_out_later_in_section(tmp_path: Path) -> None:
     spec_path = _write_h2_bash_spec(

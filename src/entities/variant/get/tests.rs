@@ -319,6 +319,21 @@ fn cancerhotspots_enrichment_uses_requested_change_not_resolved_hgvsp() {
 }
 
 #[test]
+fn cancerhotspots_checked_absence_is_empty_not_data() {
+    let recurrence = crate::sources::cancerhotspots::CancerHotspotRecurrence {
+        source: "cancerhotspots.org".to_string(),
+        position_count: None,
+        same_aa_count: None,
+        matched_transcript: None,
+    };
+
+    assert_eq!(
+        cancerhotspots_outcome(&recurrence).outcome(),
+        crate::entities::section_outcome::SectionOutcomeState::Empty
+    );
+}
+
+#[test]
 fn cancerhotspots_upstream_failure_omits_recurrence_and_preserves_cbioportal() {
     let mut variant = braf_variant_stub();
     variant

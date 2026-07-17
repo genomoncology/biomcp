@@ -93,6 +93,12 @@ biomcp --json search pgx -g CYP2D6
 biomcp --json get pgx CYP2D6 recommendations
 ```
 
+Requested `frequencies` and `annotations` are also represented in
+`section_outcomes`. CPIC frequency aggregation is `degraded` when some additive
+lookups fail but usable rows remain, and `unavailable` when no usable rows
+survive. PharmGKB annotation failures are `unavailable`; healthy no-results are
+`empty`.
+
 ## Practical tips
 
 - Start with `search pgx` when you only know the gene or drug and need the matching guideline rows first.

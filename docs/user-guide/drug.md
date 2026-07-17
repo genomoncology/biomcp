@@ -373,12 +373,13 @@ single-region wrapper fields `pagination`, `count`, and `results`.
   `_meta.evidence_urls`, `_meta.section_sources`, and helper-specific
   `_meta.next_commands`.
 
-## Approval-section outcomes
+## Source-section outcomes
 
-JSON and MCP drug records include `section_outcomes.approvals`. `empty` with
-`OpenFDA Drugs@FDA` in `sources` means the source successfully confirmed no
-approval rows; `unavailable` means approval retrieval did not produce a usable
-result. The compatible `approvals` array remains present.
+JSON and MCP drug records include outcomes for `approvals`, `safety`, `targets`,
+`indications`, and `civic`. `empty` credits the providers that completed without
+evidence, `degraded` preserves usable evidence when an additive provider fails,
+and `unavailable` carries no failed-provider credit. Existing biomedical fields,
+including the compatible `approvals` array, remain at their current paths.
 
 ## Practical tips
 

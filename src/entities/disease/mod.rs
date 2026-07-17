@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
-use tracing::warn;
+use tracing::debug as warn;
 
 use crate::entities::SearchPage;
 use crate::entities::diagnostic::DiagnosticSearchResult;

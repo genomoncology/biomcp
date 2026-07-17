@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use reqwest::Url;
 use reqwest::header::CONTENT_TYPE;
-use tracing::warn;
+use tracing::debug;
 
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcClient;
@@ -367,7 +367,7 @@ async fn try_resolve_html(pmcid: &str, requested_id: &str) -> FulltextStepOutcom
     let bytes = match crate::sources::read_limited_body(response, ARTICLE_FULLTEXT_API).await {
         Ok(bytes) => bytes,
         Err(err) => {
-            warn!(?err, requested_id, pmcid, "PMC HTML body read failed");
+            debug!(?err, requested_id, pmcid, "PMC HTML body read failed");
             return FulltextStepOutcome::Failed(err);
         }
     };
@@ -383,7 +383,7 @@ async fn try_resolve_html(pmcid: &str, requested_id: &str) -> FulltextStepOutcom
     let markdown = match transform::article::extract_text_from_html(&html, url.as_str()) {
         Ok(markdown) => markdown,
         Err(err) => {
-            warn!(?err, requested_id, pmcid, "PMC HTML conversion failed");
+            debug!(?err, requested_id, pmcid, "PMC HTML conversion failed");
             return FulltextStepOutcome::Failed(err);
         }
     };
@@ -450,7 +450,7 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
     {
         Ok(bytes) => bytes,
         Err(err) => {
-            warn!(?err, requested_id, "Semantic Scholar PDF body read failed");
+            debug!(?err, requested_id, "Semantic Scholar PDF body read failed");
             return FulltextStepOutcome::Failed(err);
         }
     };
@@ -465,7 +465,7 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
     let markdown = match render_fulltext_pdf(bytes, PDF_PAGE_LIMIT).await {
         Ok(markdown) => markdown,
         Err(err) => {
-            warn!(?err, requested_id, "Semantic Scholar PDF conversion failed");
+            debug!(?err, requested_id, "Semantic Scholar PDF conversion failed");
             return FulltextStepOutcome::Failed(err);
         }
     };
@@ -735,8 +735,7 @@ pub(super) async fn resolve_fulltext(
         },
     }
 
-    if let Some(err) = state.failure.as_ref() {
-        warn!(?err, requested_id, "Full text retrieval incomplete");
+    if state.failure.is_some() {
         article.full_text_note = Some(unavailable_fulltext_note());
     } else {
         article.full_text_note = Some(empty_fulltext_note(&state.healthy_sources));

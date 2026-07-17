@@ -1210,17 +1210,74 @@ def _rust_section_values(path: Path, entity: str) -> set[str]:
     return values
 
 
-def _source_state_registry_rows(root_dir: Path) -> tuple[set[tuple[str, str]], set[tuple[str, str]]]:
-    text = (root_dir / "src/entities/source_state_registry.rs").read_text(
-        encoding="utf-8"
+def _rust_const_values(path: Path, constant: str) -> set[str]:
+    text = path.read_text(encoding="utf-8")
+    match = re.search(
+        rf"(?:pub(?:\(crate\))?\s+)?const\s+{re.escape(constant)}[^=]*=\s*&\[(.*?)\];",
+        text,
+        re.DOTALL,
     )
-    states = set(
-        re.findall(r'state\(\s*"([^"]+)"\s*,\s*"([^"]+)"', text, re.DOTALL)
+    if not match:
+        return set()
+    body = match.group(1)
+    values = set(re.findall(r'"([^"]+)"', body))
+    for name in re.findall(r"\b[A-Z][A-Z0-9_]+\b", body):
+        value = re.search(rf'const\s+{re.escape(name)}:\s*&str\s*=\s*"([^"]+)";', text)
+        if value:
+            values.add(value.group(1))
+    return values
+
+
+def _source_state_registry_rows(
+    root_dir: Path,
+) -> tuple[
+    dict[tuple[str, str], tuple[str, tuple[str, ...], str]],
+    dict[tuple[str, str], tuple[str, str | None]],
+    list[dict[str, str]],
+]:
+    text = (root_dir / "src/entities/source_state_registry.rs").read_text(encoding="utf-8")
+    errors: list[dict[str, str]] = []
+    states: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {}
+    state_pattern = re.compile(
+        r'state\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*&\[(.*?)\]\s*,\s*Aggregation::(\w+)\s*,?\s*\)',
+        re.DOTALL,
     )
-    selectors = set(
-        re.findall(r'selector\(\s*"([^"]+)"\s*,\s*"([^"]+)"', text, re.DOTALL)
+    for entity, key, label, provider_body, aggregation in state_pattern.findall(text):
+        identity = (entity, key)
+        if identity in states:
+            errors.append({"kind": "duplicate_state", "entity": entity, "section": key})
+        providers = tuple(re.findall(r'"([^"]+)"', provider_body))
+        states[identity] = (label, providers, aggregation.lower())
+
+    selectors: dict[tuple[str, str], tuple[str, str | None]] = {}
+    selector_pattern = re.compile(
+        r'selector\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*SelectorClass::(\w+)\s*,\s*(None|Some\("([^"]+)"\))\s*,?\s*\)',
+        re.DOTALL,
     )
-    return states, selectors
+    for entity, selector, selector_class, canonical_expr, canonical in selector_pattern.findall(text):
+        identity = (entity, selector)
+        if identity in selectors:
+            errors.append({"kind": "duplicate_selector", "entity": entity, "section": selector})
+        selectors[identity] = (
+            selector_class.lower(),
+            canonical if canonical_expr != "None" else None,
+        )
+    return states, selectors, errors
+
+
+def _source_state_architecture_rows(root_dir: Path) -> set[tuple[str, ...]]:
+    text = (root_dir / "architecture/technical/source-integration.md").read_text(encoding="utf-8")
+    table = text.partition("<!-- source-state-registry:start -->")[2].partition(
+        "<!-- source-state-registry:end -->"
+    )[0]
+    rows = set()
+    for line in table.splitlines():
+        if not line.startswith("|"):
+            continue
+        columns = tuple(column.strip() for column in line.strip().strip("|").split("|"))
+        if len(columns) == 6 and columns[0] not in {"entity", "---"}:
+            rows.add(columns)
+    return rows
 
 
 def check_source_state_registry(root_dir: Path) -> dict[str, object]:
@@ -1237,44 +1294,80 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
         "trial": "src/entities/trial/mod.rs",
         "variant": "src/entities/variant/get.rs",
     }
-    state_rows, selector_rows = _source_state_registry_rows(root_dir)
+    state_rows, selector_rows, errors = _source_state_registry_rows(root_dir)
     runtime_selectors = {
         (entity, section)
         for entity, relative in entity_paths.items()
         for section in _rust_section_values(root_dir / relative, entity)
     }
-    unmapped = sorted(runtime_selectors - selector_rows)
-    stale = sorted(selector_rows - runtime_selectors)
+    unmapped = sorted(runtime_selectors - set(selector_rows))
+    stale = sorted(set(selector_rows) - runtime_selectors)
 
-    architecture_text = (
-        root_dir / "architecture/technical/source-integration.md"
-    ).read_text(encoding="utf-8")
-    table = architecture_text.partition("<!-- source-state-registry:start -->")[2].partition(
-        "<!-- source-state-registry:end -->"
-    )[0]
-    architecture_rows = {
-        row
-        for row in re.findall(
-            r"^\|\s*([a-z_]+)\s*\|\s*([a-z0-9_-]+)\s*\|",
-            table,
-            re.MULTILINE,
-        )
-        if row != ("entity", "section")
+    for (entity, selector), (selector_class, canonical) in selector_rows.items():
+        if selector_class == "canonical" and (entity, canonical or "") not in state_rows:
+            errors.append({"kind": "missing_canonical_state", "entity": entity, "section": selector})
+        elif selector_class == "alias" and (
+            canonical is None or (entity, canonical) not in runtime_selectors
+        ):
+            errors.append({"kind": "invalid_alias_target", "entity": entity, "section": selector})
+        elif selector_class in {"aggregate", "local"} and canonical is not None:
+            errors.append({"kind": "unexpected_canonical_target", "entity": entity, "section": selector})
+
+    runtime_key_lists = {
+        "adverse_event": ("src/entities/adverse_event.rs", "ADVERSE_EVENT_OUTCOME_KEYS"),
+        "article": ("src/entities/article/mod.rs", "ARTICLE_OUTCOME_KEYS"),
+        "gene": ("src/entities/gene.rs", "GENE_OUTCOME_KEYS"),
+        "pathway": ("src/entities/pathway.rs", "PATHWAY_OUTCOME_KEYS"),
+        "protein": ("src/entities/protein.rs", "PROTEIN_OUTCOME_KEYS"),
     }
-    architecture_mismatches = sorted(state_rows ^ architecture_rows)
+    runtime_key_mismatches = []
+    for entity, (relative, constant) in runtime_key_lists.items():
+        expected = {key for row_entity, key in state_rows if row_entity == entity}
+        actual = _rust_const_values(root_dir / relative, constant)
+        runtime_key_mismatches.extend(
+            {"entity": entity, "section": key} for key in sorted(expected ^ actual)
+        )
+
+    canonical_targets = {
+        (entity, canonical)
+        for (entity, _), (selector_class, canonical) in selector_rows.items()
+        if selector_class == "canonical" and canonical is not None
+    }
+    expected_architecture = {
+        (
+            entity,
+            key,
+            "canonical" if (entity, key) in canonical_targets else "outcome-only",
+            aggregation,
+            " / ".join(providers),
+            f"`{key}` outcome and provenance projection",
+        )
+        for (entity, key), (_, providers, aggregation) in state_rows.items()
+    }
+    architecture_mismatches = [
+        {"entity": row[0], "section": row[1]}
+        for row in sorted(expected_architecture ^ _source_state_architecture_rows(root_dir))
+    ]
 
     def records(rows: list[tuple[str, str]]) -> list[dict[str, str]]:
         return [{"entity": entity, "section": section} for entity, section in rows]
 
-    findings = len(unmapped) + len(stale) + len(architecture_mismatches)
+    findings = (
+        len(unmapped)
+        + len(stale)
+        + len(runtime_key_mismatches)
+        + len(architecture_mismatches)
+        + len(errors)
+    )
     return {
         "name": "source_state_registry",
         "status": "fail" if findings else "pass",
         "finding_count": findings,
         "unmapped_sections": records(unmapped),
         "stale_registry_entries": records(stale),
-        "architecture_mismatches": records(architecture_mismatches),
-        "errors": [],
+        "runtime_key_mismatches": runtime_key_mismatches,
+        "architecture_mismatches": architecture_mismatches,
+        "errors": errors,
     }
 
 
