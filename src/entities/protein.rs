@@ -766,7 +766,6 @@ mod tests {
         assert_eq!(outcome.outcome(), expected, "wrong outcome for {key}");
         if expected == SectionOutcomeState::Unavailable {
             assert!(outcome.sources().is_empty());
-            assert_ne!(outcome.outcome(), SectionOutcomeState::Empty);
         } else {
             assert_eq!(outcome.sources(), &[successful_source.to_string()]);
         }

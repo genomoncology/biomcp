@@ -3645,7 +3645,6 @@ mod tests {
                 outcome.sources().is_empty(),
                 "failed {key} source received successful credit"
             );
-            assert_ne!(outcome.outcome(), SectionOutcomeState::Empty);
         } else {
             assert_eq!(outcome.sources(), &[successful_source.to_string()]);
         }
@@ -3740,70 +3739,91 @@ mod tests {
         entries
     }
 
-    #[test]
-    fn gene_section_result_application_is_strategy_order_invariant() {
-        let go_rows = || {
-            vec![GeneGoTerm {
+    fn parity_go_result(case: &str) -> Result<Vec<GeneGoTerm>, BioMcpError> {
+        match case {
+            "healthy-empty" => Ok(Vec::new()),
+            "data" => Ok(vec![GeneGoTerm {
                 id: "GO:0004672".to_string(),
                 name: "protein kinase activity".to_string(),
                 aspect: None,
                 evidence: None,
-            }]
-        };
-        let interaction_rows = || {
-            vec![GeneInteraction {
+            }]),
+            failure => Err(injected_section_failure("QuickGO", failure)),
+        }
+    }
+
+    fn parity_interactions_result(case: &str) -> Result<Vec<GeneInteraction>, BioMcpError> {
+        match case {
+            "healthy-empty" => Ok(Vec::new()),
+            "data" => Ok(vec![GeneInteraction {
                 partner: "MAP2K1".to_string(),
                 score: Some(0.99),
-            }]
-        };
+            }]),
+            failure => Err(injected_section_failure("STRING", failure)),
+        }
+    }
 
-        let mut baseline = test_gene("BRAF");
-        apply_go_section_result(&mut baseline, Ok(go_rows()));
-        apply_gene_interactions_result(&mut baseline, Ok(interaction_rows()));
+    #[test]
+    fn gene_section_result_application_is_strategy_order_invariant() {
+        for case in [
+            "connection-refused",
+            "timeout",
+            "malformed-body",
+            "healthy-empty",
+            "data",
+        ] {
+            let mut baseline = test_gene("BRAF");
+            apply_go_section_result(&mut baseline, parity_go_result(case));
+            apply_gene_interactions_result(&mut baseline, parity_interactions_result(case));
 
-        let mut parallel_top = test_gene("BRAF");
-        apply_gene_interactions_result(&mut parallel_top, Ok(interaction_rows()));
-        apply_go_section_result(&mut parallel_top, Ok(go_rows()));
+            let mut parallel_top = test_gene("BRAF");
+            apply_gene_interactions_result(&mut parallel_top, parity_interactions_result(case));
+            apply_go_section_result(&mut parallel_top, parity_go_result(case));
 
-        assert_eq!(
-            serde_json::to_value(&baseline).expect("baseline serializes"),
-            serde_json::to_value(&parallel_top).expect("parallel-top serializes")
-        );
-        assert_eq!(
-            crate::render::provenance::gene_section_sources(&baseline),
-            crate::render::provenance::gene_section_sources(&parallel_top)
-        );
+            assert_eq!(
+                serde_json::to_value(&baseline).expect("baseline serializes"),
+                serde_json::to_value(&parallel_top).expect("parallel-top serializes"),
+                "entity parity failed for {case}"
+            );
+            assert_eq!(
+                crate::render::provenance::gene_section_sources(&baseline),
+                crate::render::provenance::gene_section_sources(&parallel_top),
+                "provenance parity failed for {case}"
+            );
 
-        let mut baseline_timing = GeneTimingCollector::new("BRAF", GeneGetStrategy::Baseline, None);
-        baseline_timing.push(GeneTimingEntry {
-            section: GENE_SECTION_GO.to_string(),
-            elapsed_ms: 1,
-            outcome: SectionOutcomeState::Unavailable,
-        });
-        baseline_timing.push(GeneTimingEntry {
-            section: GENE_SECTION_INTERACTIONS.to_string(),
-            elapsed_ms: 2,
-            outcome: SectionOutcomeState::Unavailable,
-        });
-        sync_timing_outcomes(&mut baseline_timing, &baseline);
+            let mut baseline_timing =
+                GeneTimingCollector::new("BRAF", GeneGetStrategy::Baseline, None);
+            baseline_timing.push(GeneTimingEntry {
+                section: GENE_SECTION_GO.to_string(),
+                elapsed_ms: 1,
+                outcome: SectionOutcomeState::Unavailable,
+            });
+            baseline_timing.push(GeneTimingEntry {
+                section: GENE_SECTION_INTERACTIONS.to_string(),
+                elapsed_ms: 2,
+                outcome: SectionOutcomeState::Unavailable,
+            });
+            sync_timing_outcomes(&mut baseline_timing, &baseline);
 
-        let mut parallel_timing =
-            GeneTimingCollector::new("BRAF", GeneGetStrategy::ParallelTop, None);
-        parallel_timing.push(GeneTimingEntry {
-            section: GENE_SECTION_INTERACTIONS.to_string(),
-            elapsed_ms: 9,
-            outcome: SectionOutcomeState::Unavailable,
-        });
-        parallel_timing.push(GeneTimingEntry {
-            section: GENE_SECTION_GO.to_string(),
-            elapsed_ms: 7,
-            outcome: SectionOutcomeState::Unavailable,
-        });
-        sync_timing_outcomes(&mut parallel_timing, &parallel_top);
+            let mut parallel_timing =
+                GeneTimingCollector::new("BRAF", GeneGetStrategy::ParallelTop, None);
+            parallel_timing.push(GeneTimingEntry {
+                section: GENE_SECTION_INTERACTIONS.to_string(),
+                elapsed_ms: 9,
+                outcome: SectionOutcomeState::Unavailable,
+            });
+            parallel_timing.push(GeneTimingEntry {
+                section: GENE_SECTION_GO.to_string(),
+                elapsed_ms: 7,
+                outcome: SectionOutcomeState::Unavailable,
+            });
+            sync_timing_outcomes(&mut parallel_timing, &parallel_top);
 
-        assert_eq!(
-            normalized_timing(&baseline_timing),
-            normalized_timing(&parallel_timing)
-        );
+            assert_eq!(
+                normalized_timing(&baseline_timing),
+                normalized_timing(&parallel_timing),
+                "timing parity failed for {case}"
+            );
+        }
     }
 }

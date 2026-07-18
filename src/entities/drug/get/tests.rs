@@ -302,7 +302,6 @@ fn assert_approval_outcome(
     assert_eq!(outcome.outcome(), expected);
     if expected == SectionOutcomeState::Unavailable {
         assert!(outcome.sources().is_empty());
-        assert_ne!(outcome.outcome(), SectionOutcomeState::Empty);
     } else {
         assert_eq!(outcome.sources(), &["OpenFDA Drugs@FDA".to_string()]);
     }

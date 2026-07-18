@@ -2528,7 +2528,6 @@ mod tests {
         if expected == SectionOutcomeState::Unavailable {
             assert_eq!(payload.status, VaersSearchStatus::Unavailable);
             assert!(outcome.sources().is_empty());
-            assert_ne!(outcome.outcome(), SectionOutcomeState::Empty);
         } else {
             assert_eq!(outcome.sources(), &["CDC CVX", "CDC VAERS"]);
         }
