@@ -158,6 +158,12 @@ fn source_kind_for_pathway_id(st_id: &str) -> PathwaySourceKind {
 }
 
 fn pathway_lookup_error(st_id: &str, err: BioMcpError) -> BioMcpError {
+    let err = match err {
+        BioMcpError::WithSourceContext { context, source } => {
+            return pathway_lookup_error(st_id, *source).with_source_context(context);
+        }
+        other => other,
+    };
     let trimmed = st_id.trim();
     let redirect = if crate::entities::protein::is_uniprot_accession(trimmed) {
         Some(format!(
@@ -961,6 +967,26 @@ mod tests {
     }
 
     #[test]
+    fn pathway_lookup_error_preserves_source_context_while_remapping() {
+        let error = pathway_lookup_error(
+            "BRAF",
+            BioMcpError::NotFound {
+                entity: "pathway".to_string(),
+                id: "BRAF".to_string(),
+                suggestion: "search pathway".to_string(),
+            }
+            .with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::REACTOME,
+            )),
+        );
+
+        assert_eq!(error.code(), "invalid_argument");
+        assert_eq!(error.exit_code(), 2);
+        assert_eq!(error.public_projection().source, Some("Reactome"));
+        assert!(error.to_string().contains("biomcp get gene BRAF"));
+    }
+
+    #[test]
     fn kegg_explicit_events_section_is_rejected() {
         let err = resolve_sections_for_pathway_id("hsa05200", &["events".to_string()])
             .expect_err("KEGG events should fail fast");
@@ -1271,7 +1297,9 @@ mod tests {
     fn kegg_disabled_error_is_actionable() {
         let err = kegg_disabled_error("hsa05200");
         let msg = err.to_string();
-        assert!(msg.contains("BIOMCP_DISABLE_KEGG=1"));
-        assert!(msg.contains("R-HSA-5673001"));
+        assert!(msg.contains("KEGG"));
+        assert!(msg.to_ascii_lowercase().contains("retry"));
+        assert!(!msg.contains("BIOMCP_DISABLE_KEGG=1"));
+        assert!(!msg.contains("R-HSA-5673001"));
     }
 }

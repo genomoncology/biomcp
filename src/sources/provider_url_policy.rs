@@ -370,7 +370,8 @@ mod tests {
         ] {
             let error = policy.validate_url(&Url::parse(raw).unwrap()).unwrap_err();
             let message = error.to_string();
-            assert!(message.contains("outbound policy"));
+            assert!(message.contains("BioMCP source"));
+            assert!(message.to_ascii_lowercase().contains("retry"));
             assert!(!message.contains(raw));
             assert!(!message.contains("secret"));
             assert!(!message.contains("private-token"));
@@ -421,7 +422,7 @@ mod tests {
                 "https://example.com:444/private",
             ] {
                 let error = policy.validate_url(&Url::parse(raw).unwrap()).unwrap_err();
-                let message = error.to_string();
+                let message = format!("{error:?}");
                 assert!(message.contains("outbound policy"));
                 assert!(!message.contains(raw));
             }

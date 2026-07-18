@@ -103,11 +103,8 @@ fn production_download_url_validation_rejects_unsafe_targets() {
     ] {
         let err = client.validate_download_url(raw).unwrap_err();
         let message = err.to_string();
-        assert!(
-            message.contains("Figshare download source unavailable")
-                && message.contains("outbound policy"),
-            "{raw} should be rejected with a sanitized policy error"
-        );
+        assert!(message.contains("BioMCP source"));
+        assert!(message.to_ascii_lowercase().contains("retry"));
         assert!(!message.contains(raw));
     }
 }

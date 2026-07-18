@@ -63,7 +63,7 @@ fn gene_constraint_propagates_non_not_found_graphql_errors() {
         .expect_err("non-not-found graphql errors should surface");
 
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("upstream exploded"));
+    assert!(format!("{err:?}").contains("upstream exploded"));
 }
 
 #[test]
@@ -75,8 +75,8 @@ fn decode_json_response_maps_http_and_content_type_errors() {
         b"upstream failed",
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
     assert!(msg.contains("500"), "got: {msg}");
     assert!(msg.contains("upstream failed"), "got: {msg}");
 
@@ -87,5 +87,5 @@ fn decode_json_response_maps_http_and_content_type_errors() {
         b"<html></html>",
     )
     .unwrap_err();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert_eq!(err.code(), "api");
 }

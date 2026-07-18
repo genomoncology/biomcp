@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::de::DeserializeOwned;
@@ -7,7 +8,6 @@ use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
 const CTGOV_BASE: &str = "https://clinicaltrials.gov/api/v2";
-const CTGOV_API: &str = "clinicaltrials.gov";
 const CTGOV_BASE_ENV: &str = "BIOMCP_CTGOV_BASE";
 const CTGOV_INTERVENTION_QUERY_ERROR_PREFIX: &str =
     "Error parsing query in Intervention / treatment:";
@@ -165,9 +165,17 @@ impl ClinicalTrialsClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<(reqwest::StatusCode, Vec<u8>), BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CLINICAL_TRIALS,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, CTGOV_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CLINICAL_TRIALS),
+        )
+        .await?;
         Ok((status, bytes))
     }
 
@@ -176,7 +184,11 @@ impl ClinicalTrialsClient {
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
         let (status, bytes) = self.send(req).await?;
-        Self::decode_json_response(status, &bytes)
+        Self::decode_json_response(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CLINICAL_TRIALS,
+            ))
+        })
     }
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(
@@ -189,7 +201,13 @@ impl ClinicalTrialsClient {
             let reason = String::from_utf8_lossy(&bytes[..bytes.len().min(256)]).into_owned();
             return Err(BioMcpError::CtGovInterventionQueryRejected { reason });
         }
-        crate::sources::decode_json(CTGOV_API, status, None, bytes, false)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::CLINICAL_TRIALS),
+            status,
+            None,
+            bytes,
+            false,
+        )
     }
 
     pub(crate) fn search_plan(params: &CtGovSearchParams) -> RequestPlan {
@@ -302,7 +320,11 @@ impl ClinicalTrialsClient {
         let plan = Self::get_plan(nct_id, sections);
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let (status, bytes) = self.send(req).await?;
-        Self::decode_get_response(nct_id, status, &bytes)
+        Self::decode_get_response(nct_id, status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CLINICAL_TRIALS,
+            ))
+        })
     }
 }
 

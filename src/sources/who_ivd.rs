@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write as _;
@@ -307,16 +308,21 @@ async fn sync_export(root: &Path, mode: WhoIvdSyncMode) -> Result<(), BioMcpErro
     }
     let response =
         crate::sources::with_response_body_limit(request, WHO_IVD_MAX_BODY_BYTES, WHO_IVD_API)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::WHO_IVD,
+            ))
             .await?;
     let status = response.status();
     let content_type = response
         .headers()
         .get(reqwest::header::CONTENT_TYPE)
         .cloned();
-    let body =
-        crate::sources::read_limited_body_with_limit(response, WHO_IVD_API, WHO_IVD_MAX_BODY_BYTES)
-            .await?;
+    let body = crate::sources::read_limited_source_body_with_limit(
+        response,
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::WHO_IVD),
+        WHO_IVD_MAX_BODY_BYTES,
+    )
+    .await?;
 
     if !status.is_success() {
         return Err(BioMcpError::Api {

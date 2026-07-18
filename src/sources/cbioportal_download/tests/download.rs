@@ -61,7 +61,7 @@ async fn archive_download_rejects_declared_oversize_before_creating_destination(
         matches!(err, BioMcpError::SourceUnavailable { .. }),
         "download resource limits should be source-unavailable, got {err:?}"
     );
-    assert!(err.to_string().contains("resource limit"));
+    assert!(format!("{err:?}").contains("resource limit"));
     assert!(!destination.exists());
     server.await.expect("test server should finish");
 }
@@ -99,7 +99,7 @@ async fn archive_download_rejects_chunked_max_plus_one_and_removes_partial_file(
         .expect_err("chunked max+1 response should be rejected");
 
     assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
-    assert!(err.to_string().contains("resource limit"));
+    assert!(format!("{err:?}").contains("resource limit"));
     assert_eq!(
         std::fs::read_dir(root.path())
             .expect("read download root")

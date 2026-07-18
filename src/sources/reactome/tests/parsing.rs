@@ -52,7 +52,7 @@ fn decode_json_response_maps_http_and_json_errors() {
         br#"{"error":"upstream"}"#,
     )
     .unwrap_err();
-    assert!(err.to_string().contains("HTTP 502 Bad Gateway"));
+    assert!(format!("{err:?}").contains("HTTP 502 Bad Gateway"));
 
     let err =
         ReactomeClient::decode_json_response::<ReactomeSearchResponse>(StatusCode::OK, b"not json")

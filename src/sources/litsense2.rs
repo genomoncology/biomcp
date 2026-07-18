@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use reqwest_middleware::ClientWithMiddleware;
@@ -8,7 +9,6 @@ use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
 const LITSENSE2_BASE: &str = "https://www.ncbi.nlm.nih.gov/research/litsense2-api/api";
-const LITSENSE2_API: &str = "litsense2";
 const LITSENSE2_BASE_ENV: &str = "BIOMCP_LITSENSE2_BASE";
 
 // dead-code reason: litsense2::LitSense2SearchRequestPlan preserves the provider shape used by source contract fixtures
@@ -40,11 +40,25 @@ impl LitSense2Client {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::LITSENSE2,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, LITSENSE2_API).await?;
-        crate::sources::decode_json(LITSENSE2_API, status, content_type.as_ref(), &bytes, true)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::LITSENSE2),
+        )
+        .await?;
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::LITSENSE2),
+            status,
+            content_type.as_ref(),
+            &bytes,
+            true,
+        )
     }
 
     pub(crate) fn search_plan(path: &str, query: &str) -> Result<RequestPlan, BioMcpError> {

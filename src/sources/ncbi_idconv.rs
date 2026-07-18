@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::Deserialize;
@@ -9,7 +10,6 @@ use crate::sources::{RequestPlan, request_from_plan};
 // NCBI PMC ID Converter API
 // Docs: https://pmc.ncbi.nlm.nih.gov/tools/id-converter-api/
 const NCBI_IDCONV_BASE: &str = "https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles";
-const NCBI_IDCONV_API: &str = "ncbi-idconv";
 const NCBI_IDCONV_BASE_ENV: &str = "BIOMCP_NCBI_IDCONV_BASE";
 
 #[derive(Clone)]
@@ -33,13 +33,19 @@ impl NcbiIdConverterClient {
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
         let resp = crate::sources::apply_cache_mode_with_auth(req, self.api_key.is_some())
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::NCBI_ID_CONVERTER,
+            ))
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, NCBI_IDCONV_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::NCBI_ID_CONVERTER),
+        )
+        .await?;
         crate::sources::decode_json(
-            NCBI_IDCONV_API,
+            crate::error::SourceContext::retry(crate::error::SourceProvider::NCBI_ID_CONVERTER),
             status,
             content_type.as_ref(),
             &bytes,

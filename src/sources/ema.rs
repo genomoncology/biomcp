@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::fs::File;
@@ -811,15 +812,21 @@ async fn sync_feed(root: &Path, plan: FeedSyncPlan) -> Result<(), BioMcpError> {
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
     }
     let response = crate::sources::with_response_body_limit(request, EMA_MAX_BODY_BYTES, EMA_API)
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::EMA,
+        ))
         .await?;
     let status = response.status();
     let content_type = response
         .headers()
         .get(reqwest::header::CONTENT_TYPE)
         .cloned();
-    let body =
-        crate::sources::read_limited_body_with_limit(response, EMA_API, EMA_MAX_BODY_BYTES).await?;
+    let body = crate::sources::read_limited_source_body_with_limit(
+        response,
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::EMA),
+        EMA_MAX_BODY_BYTES,
+    )
+    .await?;
     if !status.is_success() {
         return Err(BioMcpError::Api {
             api: EMA_API.to_string(),
@@ -831,7 +838,11 @@ async fn sync_feed(root: &Path, plan: FeedSyncPlan) -> Result<(), BioMcpError> {
         });
     }
 
-    crate::sources::ensure_json_content_type(EMA_API, content_type.as_ref(), &body)?;
+    crate::sources::ensure_json_content_type(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::EMA),
+        content_type.as_ref(),
+        &body,
+    )?;
     validate_feed_payload(plan.feed, &body)?;
 
     let path = root.join(plan.feed.local_name);

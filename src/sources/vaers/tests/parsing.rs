@@ -61,7 +61,7 @@ fn parse_processing_error_returns_api_message() {
     )
     .expect_err("processing error should fail");
 
-    assert!(err.to_string().contains("Request rate exceeded"));
+    assert!(format!("{err:?}").contains("Request rate exceeded"));
 }
 
 #[test]
@@ -74,16 +74,16 @@ fn decode_aggregate_response_rejects_http_html_and_non_utf8_errors() {
     )
     .unwrap_err();
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("502"));
+    assert!(format!("{err:?}").contains("502"));
 
     let err = decode_aggregate_response(StatusCode::OK, Some(&html), b"<html></html>".to_vec())
         .unwrap_err();
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("HTML"));
+    assert!(format!("{err:?}").contains("HTML"));
 
     let xml_content_type = HeaderValue::from_static("text/xml");
     let err =
         decode_aggregate_response(StatusCode::OK, Some(&xml_content_type), vec![0xff]).unwrap_err();
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("UTF-8"));
+    assert!(format!("{err:?}").contains("UTF-8"));
 }

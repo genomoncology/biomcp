@@ -2,7 +2,6 @@
 //! and response types. No network, no server.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
@@ -24,7 +23,7 @@ fn json_ct() -> HeaderValue {
 #[test]
 fn parses_export_response_fixture() {
     let resp: PubTatorExportResponse = decode_json(
-        PUBTATOR_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("export_22663011.json"),
@@ -55,7 +54,7 @@ fn parses_export_response_fixture() {
 #[test]
 fn parses_autocomplete_response_fixture() {
     let resp: Vec<PubTatorAutocompleteResult> = decode_json(
-        PUBTATOR_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("autocomplete_braf.json"),
@@ -73,7 +72,7 @@ fn parses_autocomplete_response_fixture() {
 #[test]
 fn parses_search_response_fixture_and_stringifies_numeric_pmid() {
     let resp: PubTatorSearchResponse = decode_json(
-        PUBTATOR_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("search_braf.json"),
@@ -106,16 +105,16 @@ fn search_result_trims_empty_string_pmids_to_none() {
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<PubTatorSearchResponse>(
-        PUBTATOR_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("pubtator3"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("PubTator 3"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
     assert!(msg.contains("upstream failure"), "got: {msg}");
 }
@@ -124,14 +123,14 @@ fn decode_json_maps_http_error_status_with_excerpt() {
 fn decode_json_rejects_non_json_content_type() {
     let html = HeaderValue::from_static("text/html");
     let err = decode_json::<PubTatorSearchResponse>(
-        PUBTATOR_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
         StatusCode::OK,
         Some(&html),
         b"<html><body>error</body></html>",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(msg.contains("pubtator3"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert!(msg.contains("PubTator 3"), "got: {msg}");
     assert!(msg.contains("HTML"), "got: {msg}");
 }

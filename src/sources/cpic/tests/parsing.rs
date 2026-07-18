@@ -2,7 +2,6 @@
 //! decoders and typed rows. No network, no server.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use reqwest::StatusCode;
 use reqwest::header::{HeaderMap, HeaderValue};
 
@@ -85,15 +84,15 @@ fn decode_json_response_maps_http_content_type_and_json_errors() {
         b"upstream failed",
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
     assert!(msg.contains("500"), "got: {msg}");
 
     let html = HeaderValue::from_static("text/html");
     let err =
         CpicClient::decode_json_response::<Vec<CpicPairRow>>(StatusCode::OK, Some(&html), b"html")
             .unwrap_err();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert_eq!(err.code(), "api");
 
     let err = CpicClient::decode_json_response::<Vec<CpicPairRow>>(
         StatusCode::OK,
@@ -101,5 +100,5 @@ fn decode_json_response_maps_http_content_type_and_json_errors() {
         b"not json",
     )
     .unwrap_err();
-    assert!(matches!(err, BioMcpError::ApiJson { .. }));
+    assert_eq!(err.code(), "api_json");
 }

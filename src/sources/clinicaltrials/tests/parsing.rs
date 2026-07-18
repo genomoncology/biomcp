@@ -119,7 +119,7 @@ fn decode_json_classifies_only_intervention_parser_bad_requests() {
     ] {
         let err = ClinicalTrialsClient::decode_json_response::<CtGovSearchResponse>(status, body)
             .unwrap_err();
-        assert!(matches!(err, BioMcpError::Api { .. }));
+        assert_eq!(err.code(), "api");
     }
 }
 
@@ -130,9 +130,9 @@ fn decode_json_maps_http_error_status_with_excerpt() {
         b"upstream failure",
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("clinicaltrials.gov"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("ClinicalTrials.gov"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
     assert!(msg.contains("upstream failure"), "got: {msg}");
 }

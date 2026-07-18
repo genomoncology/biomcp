@@ -244,11 +244,14 @@ fn semantic_scholar_enrichment_from_paper(
 }
 
 pub(super) fn is_pubtator_lag_error(err: &BioMcpError) -> bool {
-    matches!(
-        err,
-        BioMcpError::Api { api, message }
-            if api == "pubtator3" && (message.contains("HTTP 400") || message.contains("HTTP 404"))
-    )
+    match err {
+        BioMcpError::WithSourceContext { source, .. } => is_pubtator_lag_error(source),
+        BioMcpError::Api { api, message } => {
+            (api == "pubtator3" || api == crate::error::SourceProvider::PUBTATOR3.label())
+                && (message.contains("HTTP 400") || message.contains("HTTP 404"))
+        }
+        _ => false,
+    }
 }
 
 pub(super) async fn resolve_article_from_pmid(

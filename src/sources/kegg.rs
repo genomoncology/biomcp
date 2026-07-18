@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use reqwest::StatusCode;
@@ -43,10 +44,22 @@ impl KeggClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<String, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::KEGG,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, KEGG_API).await?;
-        Self::decode_text_response(status, bytes.to_vec())
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::KEGG),
+        )
+        .await?;
+        Self::decode_text_response(status, bytes.to_vec()).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::KEGG,
+            ))
+        })
     }
 
     pub(crate) fn decode_text_response(
@@ -108,7 +121,11 @@ impl KeggClient {
         let refs = segments.iter().map(String::as_str).collect::<Vec<_>>();
         let url = self.build_segment_url(&refs)?;
         let body = self.get_text(self.client.get(url)).await?;
-        parse_pathway_record(&body)
+        parse_pathway_record(&body).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::KEGG,
+            ))
+        })
     }
 }
 

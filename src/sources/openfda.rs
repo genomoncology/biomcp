@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use reqwest::StatusCode;
@@ -244,7 +245,14 @@ impl OpenFdaClient {
         if status.as_u16() == 404 {
             return Ok(None);
         }
-        crate::sources::decode_json(OPENFDA_API, status, None, bytes, false).map(Some)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::OPENFDA),
+            status,
+            None,
+            bytes,
+            false,
+        )
+        .map(Some)
     }
 
     fn count_value_requests_exact_retry(value: &serde_json::Value, count_field: &str) -> bool {
@@ -269,11 +277,21 @@ impl OpenFdaClient {
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<Option<T>, BioMcpError> {
         let resp = crate::sources::apply_cache_mode_with_auth(req, self.api_key.is_some())
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OPENFDA,
+            ))
             .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, OPENFDA_API).await?;
-        Self::decode_json_optional(status, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::OPENFDA),
+        )
+        .await?;
+        Self::decode_json_optional(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OPENFDA,
+            ))
+        })
     }
 
     pub async fn faers_search(
@@ -297,10 +315,16 @@ impl OpenFdaClient {
         for (count_field, plan) in plans {
             let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
             let resp = crate::sources::apply_cache_mode_with_auth(req, self.api_key.is_some())
-                .send()
+                .send_with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::OPENFDA,
+                ))
                 .await?;
             let status = resp.status();
-            let bytes = crate::sources::read_limited_body(resp, OPENFDA_API).await?;
+            let bytes = crate::sources::read_limited_source_body(
+                resp,
+                crate::error::SourceContext::narrow(crate::error::SourceProvider::OPENFDA),
+            )
+            .await?;
 
             let Some(value) = Self::decode_json_optional::<serde_json::Value>(status, &bytes)?
             else {

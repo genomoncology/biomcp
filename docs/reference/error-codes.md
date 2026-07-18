@@ -6,6 +6,14 @@ JSON output renders variant names as stable snake-case `error.code` values; for 
 missing credentials use `api_key_required`, while configured credentials rejected by a
 provider use `api_key_rejected`.
 
+Hard remote-source failures can also include additive `error.source` and
+`error.recovery` fields. `source` is a canonical allowlisted provider label
+(maximum 80 bytes), and `recovery` is a bounded action (maximum 160 bytes).
+Both fields are omitted when BioMCP no longer knows which source failed. The
+human diagnostic uses the same source and recovery policy; neither output
+includes request destinations, credentials, provider bodies, parser details,
+or local paths.
+
 ## Process exit codes
 
 BioMCP uses process exit codes to distinguish invalid usage from command
@@ -36,10 +44,23 @@ execution failures:
 | `InvalidArgument` | Command arguments are invalid or inconsistent | Re-run with `--help` and correct flag values/section names |
 | `ApiKeyRequired` | Source requires an API key that is not set | Export the listed environment variable and retry |
 | `ApiKeyRejected` | Provider rejected the configured API key or the account lacks access | Check the credential is valid and that the account has provider access |
-| `SourceUnavailable` | Requested source could not be used | Switch sources if possible or retry later |
+| `SourceUnavailable` | Requested source could not be used | Review source configuration and retry |
 | `Template` | Markdown/templating render failed | Report issue (rendering bug) |
 | `Json` | Local JSON serialization/deserialization failed | Retry; if persistent, report issue with command and payload context |
 | `Io` | File system I/O failed | Check permissions, available disk space, and install/cache paths |
+
+## Structured source recovery
+
+The three stable recovery meanings are:
+
+- **Retry the remote source** — a transport, status, or decode failure may be transient.
+- **Review source configuration and retry** — check required credentials or source setup first.
+- **Narrow the request and retry** — reduce the requested result/body size.
+
+Legacy source errors with an unknown or unsafe provider name use the conservative
+label `BioMCP source` and configuration guidance instead of copying that name.
+The existing `error.code`, `_meta.not_found`, envelope, output stream, and exit
+status remain unchanged when source context is present.
 
 ## Key environment variables
 

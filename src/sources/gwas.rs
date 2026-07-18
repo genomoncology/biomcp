@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use http_cache_reqwest::CacheMode;
@@ -118,22 +119,41 @@ impl GwasClient {
         if status == StatusCode::NOT_FOUND {
             return Ok(None);
         }
-        crate::sources::decode_json(GWAS_API, status, content_type, bytes, true).map(Some)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::GWAS),
+            status,
+            content_type,
+            bytes,
+            true,
+        )
+        .map(Some)
     }
 
     async fn get_json_optional<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<Option<T>, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GWAS,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, GWAS_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::GWAS),
+        )
+        .await?;
 
         if status == reqwest::StatusCode::NOT_FOUND {
             return Ok(None);
         }
-        Self::decode_json_optional(status, content_type.as_ref(), &bytes)
+        Self::decode_json_optional(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GWAS,
+            ))
+        })
     }
 
     pub async fn associations_by_rsid(
@@ -246,11 +266,18 @@ impl GwasClient {
 
 fn remap_gwas_error(err: BioMcpError) -> BioMcpError {
     match err {
-        BioMcpError::ApiJson { api, .. } if api == GWAS_API => BioMcpError::SourceUnavailable {
-            source_name: "GWAS Catalog".to_string(),
-            reason: "GWAS Catalog returned a response BioMCP could not decode.".to_string(),
-            suggestion: "Retry later: biomcp get variant <id> gwas".to_string(),
-        },
+        BioMcpError::WithSourceContext { context, source } => {
+            remap_gwas_error(*source).with_source_context(context)
+        }
+        BioMcpError::ApiJson { api, .. }
+            if api == GWAS_API || api == crate::error::SourceProvider::GWAS.label() =>
+        {
+            BioMcpError::SourceUnavailable {
+                source_name: "GWAS Catalog".to_string(),
+                reason: "GWAS Catalog returned a response BioMCP could not decode.".to_string(),
+                suggestion: "Retry later: biomcp get variant <id> gwas".to_string(),
+            }
+        }
         BioMcpError::Http(source) if source.is_timeout() || source.is_connect() => {
             BioMcpError::SourceUnavailable {
                 source_name: "GWAS Catalog".to_string(),
@@ -259,7 +286,8 @@ fn remap_gwas_error(err: BioMcpError) -> BioMcpError {
             }
         }
         BioMcpError::Api { api, message }
-            if api == GWAS_API && gwas_status_is_transient(&message) =>
+            if (api == GWAS_API || api == crate::error::SourceProvider::GWAS.label())
+                && gwas_status_is_transient(&message) =>
         {
             BioMcpError::SourceUnavailable {
                 source_name: "GWAS Catalog".to_string(),

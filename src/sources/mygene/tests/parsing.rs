@@ -1,7 +1,6 @@
 //! Tier 3 — response parsing. Pure: feeds committed fixture bytes to `decode_json` and
 //! the response types, plus the pure post-processing helpers. No network, no server.
 
-use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use crate::sources::mygene::{
     MyGeneBatchGeneHit, MyGeneClient, MyGeneGetQueryResponse, MyGeneSearchResponse,
@@ -9,8 +8,6 @@ use crate::sources::mygene::{
 };
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
-
-const MYGENE_API: &str = "mygene.info";
 
 macro_rules! fixture {
     ($name:expr) => {
@@ -29,7 +26,7 @@ fn json_ct() -> HeaderValue {
 #[test]
 fn parses_search_response_from_real_fixture() {
     let resp: MyGeneSearchResponse = decode_json(
-        MYGENE_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("search_egfr.json"),
@@ -43,7 +40,7 @@ fn parses_search_response_from_real_fixture() {
 #[test]
 fn parses_get_response_fields_from_real_fixture() {
     let resp: MyGeneGetQueryResponse = decode_json(
-        MYGENE_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("get_braf.json"),
@@ -71,7 +68,7 @@ fn parses_get_response_fields_from_real_fixture() {
 #[test]
 fn extract_uniprot_prefers_swiss_prot_from_real_fixture() {
     let resp: MyGeneGetQueryResponse = decode_json(
-        MYGENE_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("get_braf.json"),
@@ -100,7 +97,7 @@ fn extract_uniprot_returns_none_for_empty_object() {
 #[test]
 fn dedupe_symbols_maps_real_batch_in_input_order() {
     let rows: Vec<MyGeneBatchGeneHit> = decode_json(
-        MYGENE_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("batch_symbols.json"),
@@ -131,16 +128,16 @@ fn dedupe_symbols_dedupes_repeated_ids_keeping_first_position() {
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<MyGeneSearchResponse>(
-        MYGENE_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("mygene.info"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("MyGene.info"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }
 
@@ -148,14 +145,14 @@ fn decode_json_maps_http_error_status_with_excerpt() {
 fn decode_json_rejects_non_json_content_type() {
     let html = HeaderValue::from_static("text/html");
     let err = decode_json::<MyGeneSearchResponse>(
-        MYGENE_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
         StatusCode::OK,
         Some(&html),
         b"<html><body>error</body></html>",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(msg.contains("mygene.info"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert!(msg.contains("MyGene.info"), "got: {msg}");
     assert!(msg.contains("HTML"), "got: {msg}");
 }

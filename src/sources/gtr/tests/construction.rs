@@ -100,7 +100,7 @@ fn sync_intro_matches_missing_stale_and_force_modes() {
 fn gtr_sync_error_mentions_recovery_paths() {
     let root = TempDirGuard::new("gtr-sync-error");
     let err = gtr_sync_error(root.path(), "test_condition_gene.txt: HTTP 503");
-    let message = err.to_string();
+    let message = format!("{err:?}");
 
     assert!(message.contains("GTR"));
     assert!(message.contains("test_condition_gene.txt: HTTP 503"));

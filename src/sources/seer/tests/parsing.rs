@@ -107,7 +107,7 @@ fn decode_json_response_maps_bad_status_and_content_type_to_source_unavailable()
     )
     .unwrap_err();
     assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
-    assert!(err.to_string().contains("HTTP 500"));
+    assert!(format!("{err:?}").contains("HTTP 500"));
 
     let err = SeerClient::decode_json_response::<Value>(
         StatusCode::OK,
@@ -193,5 +193,5 @@ fn rejects_response_when_requested_site_code_is_not_returned() {
         .expect_err("site mismatch should fail");
 
     assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
-    assert!(err.to_string().contains("different site"));
+    assert!(format!("{err:?}").contains("different site"));
 }

@@ -2,12 +2,9 @@
 //! fixture bytes to `decode_json` and pure mappers. No network, no server.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
-
-const NIH_REPORTER_API_NAME: &str = "nih_reporter";
 
 macro_rules! fixture {
     ($name:expr) => {
@@ -44,7 +41,7 @@ fn test_grant(
 #[test]
 fn parses_funding_response_fixture_and_maps_section() {
     let response: NihReporterSearchResponse = decode_json(
-        NIH_REPORTER_API_NAME,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::NIH_REPORTER),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("funding_erbb2.json"),
@@ -185,16 +182,16 @@ fn deduplicate_grants_truncates_to_top_ten_after_sorting() {
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<NihReporterSearchResponse>(
-        NIH_REPORTER_API_NAME,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::NIH_REPORTER),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("nih_reporter"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("NIH RePORTER"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }
 
@@ -202,14 +199,14 @@ fn decode_json_maps_http_error_status_with_excerpt() {
 fn decode_json_rejects_non_json_content_type() {
     let html = HeaderValue::from_static("text/html");
     let err = decode_json::<NihReporterSearchResponse>(
-        NIH_REPORTER_API_NAME,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::NIH_REPORTER),
         StatusCode::OK,
         Some(&html),
         b"<html><body>error</body></html>",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(msg.contains("nih_reporter"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert!(msg.contains("NIH RePORTER"), "got: {msg}");
     assert!(msg.contains("HTML"), "got: {msg}");
 }

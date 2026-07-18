@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write as _;
@@ -964,15 +965,21 @@ async fn sync_export(
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
     }
     let response = crate::sources::with_response_body_limit(request, max_body_bytes, WHO_PQ_API)
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::WHO_PREQUALIFICATION,
+        ))
         .await?;
     let status = response.status();
     let content_type = response
         .headers()
         .get(reqwest::header::CONTENT_TYPE)
         .cloned();
-    let body =
-        crate::sources::read_limited_body_with_limit(response, WHO_PQ_API, max_body_bytes).await?;
+    let body = crate::sources::read_limited_source_body_with_limit(
+        response,
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::WHO_PREQUALIFICATION),
+        max_body_bytes,
+    )
+    .await?;
 
     if !status.is_success() {
         return Err(BioMcpError::Api {

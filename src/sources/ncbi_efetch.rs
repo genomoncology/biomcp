@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use http_cache_reqwest::CacheMode;
@@ -103,10 +104,23 @@ impl NcbiEfetchClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<String, BioMcpError> {
-        let resp = req.with_extension(CacheMode::NoStore).send().await?;
+        let resp = req
+            .with_extension(CacheMode::NoStore)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::NCBI_EFETCH,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, NCBI_EFETCH_API).await?;
-        Self::decode_text(status, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::NCBI_EFETCH),
+        )
+        .await?;
+        Self::decode_text(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::NCBI_EFETCH,
+            ))
+        })
     }
 
     pub async fn get_full_text_xml(&self, pmcid: &str) -> Result<Option<String>, BioMcpError> {

@@ -278,9 +278,12 @@ fn pubtator_lag_error_is_400_or_404_only() {
         message: "HTTP 400 Bad Request: pending".into(),
     };
     let err_404 = BioMcpError::Api {
-        api: "pubtator3".into(),
+        api: "PubTator 3".into(),
         message: "HTTP 404 Not Found: pending".into(),
-    };
+    }
+    .with_source_context(crate::error::SourceContext::retry(
+        crate::error::SourceProvider::PUBTATOR3,
+    ));
     let err_500 = BioMcpError::Api {
         api: "pubtator3".into(),
         message: "HTTP 500 Internal Server Error".into(),

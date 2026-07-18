@@ -65,7 +65,7 @@ fn decode_json_response_rejects_html_content_type_before_json_parse() {
     )
     .unwrap_err();
 
-    assert!(err.to_string().contains("Unexpected HTML response"));
+    assert!(format!("{err:?}").contains("Unexpected HTML response"));
 }
 
 #[test]
@@ -79,8 +79,10 @@ fn decode_json_response_sanitizes_404_html_error_body() {
     .unwrap_err();
     let msg = err.to_string();
 
-    assert!(msg.contains("HTTP 404"));
-    assert!(msg.contains("HTML error page"));
+    assert!(msg.contains("WikiPathways"));
+    assert!(msg.to_ascii_lowercase().contains("retry"));
+    assert!(!msg.contains("HTTP 404"));
+    assert!(!msg.contains("HTML error page"));
     assert!(!msg.contains("<!DOCTYPE"));
     assert!(!msg.contains("<html"));
     assert!(!msg.contains("<head"));

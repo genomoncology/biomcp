@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::Deserialize;
@@ -99,11 +100,23 @@ impl NciCtsClient {
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
         let resp = crate::sources::apply_cache_mode_with_auth(req, true)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::NCI_CTS,
+            ))
             .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, NCI_CTS_API).await?;
-        crate::sources::decode_json(NCI_CTS_API, status, None, &bytes, false)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::NCI_CTS),
+        )
+        .await?;
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::NCI_CTS),
+            status,
+            None,
+            &bytes,
+            false,
+        )
     }
 
     /// Build the outbound trials-search request (pure — Tier-2 testable, never sent).

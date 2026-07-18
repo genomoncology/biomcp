@@ -1,13 +1,10 @@
 //! Tier 3 — response parsing. Pure: feeds committed fixture bytes to `decode_json`
 //! and response types. No network, no server.
 
-use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use crate::sources::litsense2::LitSense2SearchHit;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
-
-const LITSENSE2_API: &str = "litsense2";
 
 macro_rules! fixture {
     ($name:expr) => {
@@ -26,7 +23,7 @@ fn json_ct() -> HeaderValue {
 #[test]
 fn parses_sentence_response_from_real_fixture() {
     let hits: Vec<LitSense2SearchHit> = decode_json(
-        LITSENSE2_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::LITSENSE2),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("sentence_hirschsprung.json"),
@@ -79,7 +76,7 @@ fn paragraph_shape_tolerates_null_annotations_and_trimmed_optionals() {
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<Vec<LitSense2SearchHit>>(
-        LITSENSE2_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::LITSENSE2),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
@@ -87,17 +84,17 @@ fn decode_json_maps_http_error_status_with_excerpt() {
     )
     .unwrap_err();
     let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("litsense2"), "got: {msg}");
-    assert!(msg.contains("500"), "got: {msg}");
-    assert!(msg.contains("upstream failure"), "got: {msg}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("LitSense 2"), "got: {msg}");
+    assert!(!msg.contains("500"), "got: {msg}");
+    assert!(!msg.contains("upstream failure"), "got: {msg}");
 }
 
 #[test]
 fn decode_json_rejects_non_json_content_type() {
     let html = HeaderValue::from_static("text/html");
     let err = decode_json::<Vec<LitSense2SearchHit>>(
-        LITSENSE2_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::LITSENSE2),
         StatusCode::OK,
         Some(&html),
         b"<html><body>error</body></html>",
@@ -105,6 +102,6 @@ fn decode_json_rejects_non_json_content_type() {
     )
     .unwrap_err();
     let msg = err.to_string();
-    assert!(msg.contains("litsense2"), "got: {msg}");
-    assert!(msg.contains("HTML"), "got: {msg}");
+    assert!(msg.contains("LitSense 2"), "got: {msg}");
+    assert!(!msg.contains("HTML"), "got: {msg}");
 }

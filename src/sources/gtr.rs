@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufReader, Read, Write as _};
@@ -321,11 +322,17 @@ async fn download_payload(
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
     }
     let response = crate::sources::with_response_body_limit(request, max_body_bytes, GTR_API)
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::GTR,
+        ))
         .await?;
     let status = response.status();
-    let body =
-        crate::sources::read_limited_body_with_limit(response, GTR_API, max_body_bytes).await?;
+    let body = crate::sources::read_limited_source_body_with_limit(
+        response,
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::GTR),
+        max_body_bytes,
+    )
+    .await?;
     if !status.is_success() {
         return Err(gtr_sync_error(
             root,

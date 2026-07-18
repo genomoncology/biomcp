@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
@@ -9,7 +10,6 @@ use crate::sources::{RequestPlan, is_valid_gene_symbol, request_from_plan};
 use crate::utils::serde::StringOrVec;
 
 const MYGENE_BASE: &str = "https://mygene.info/v3";
-const MYGENE_API: &str = "mygene.info";
 const MYGENE_BASE_ENV: &str = "BIOMCP_MYGENE_BASE";
 const MYGENE_MAX_RESULT_WINDOW: usize = 10_000;
 const MYGENE_BATCH_GENE_LIMIT: usize = 200;
@@ -51,11 +51,25 @@ impl MyGeneClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::MYGENE,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, MYGENE_API).await?;
-        crate::sources::decode_json(MYGENE_API, status, content_type.as_ref(), &bytes, true)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::MYGENE),
+        )
+        .await?;
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
+            status,
+            content_type.as_ref(),
+            &bytes,
+            true,
+        )
     }
 
     /// Build the outbound search request (pure — Tier-2 testable, never sent).

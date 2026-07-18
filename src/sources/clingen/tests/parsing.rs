@@ -146,7 +146,7 @@ fn decode_text_and_json_map_http_errors() {
     let err = ClinGenClient::decode_text_response(CLINGEN_API, StatusCode::BAD_GATEWAY, b"down")
         .unwrap_err();
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("502"));
+    assert!(format!("{err:?}").contains("502"));
 
     let err = ClinGenClient::decode_json_response::<Vec<ClinGenLookupGeneRow>>(
         CLINGEN_API,
@@ -156,5 +156,5 @@ fn decode_text_and_json_map_http_errors() {
     )
     .unwrap_err();
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("500"));
+    assert!(format!("{err:?}").contains("500"));
 }

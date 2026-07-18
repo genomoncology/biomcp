@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write as _;
@@ -634,15 +635,21 @@ async fn sync_export(
     }
 
     let response = crate::sources::with_response_body_limit(request, max_body_bytes, CVX_API)
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::CVX,
+        ))
         .await?;
     let status = response.status();
     let content_type = response
         .headers()
         .get(reqwest::header::CONTENT_TYPE)
         .cloned();
-    let body =
-        crate::sources::read_limited_body_with_limit(response, CVX_API, max_body_bytes).await?;
+    let body = crate::sources::read_limited_source_body_with_limit(
+        response,
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::CVX),
+        max_body_bytes,
+    )
+    .await?;
     if !status.is_success() {
         return Err(BioMcpError::Api {
             api: CVX_API.to_string(),

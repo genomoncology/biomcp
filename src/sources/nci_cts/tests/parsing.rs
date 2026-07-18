@@ -1,12 +1,9 @@
 //! Tier 3 — response parsing. Pure: feeds committed fixture bytes to `decode_json` and
 //! the `NciSearchResponse` shape. No network, no server.
 
-use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use crate::sources::nci_cts::NciSearchResponse;
 use reqwest::StatusCode;
-
-const NCI_CTS_API: &str = "nci_cts";
 
 macro_rules! fixture {
     ($name:expr) => {
@@ -21,7 +18,7 @@ macro_rules! fixture {
 #[test]
 fn parses_real_search_response_total_and_hits() {
     let resp: NciSearchResponse = decode_json(
-        NCI_CTS_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::NCI_CTS),
         StatusCode::OK,
         None,
         fixture!("search_melanoma.json"),
@@ -65,15 +62,15 @@ fn total_accepts_total_count_alias() {
 #[test]
 fn decode_json_maps_http_error_for_nci() {
     let err = decode_json::<NciSearchResponse>(
-        NCI_CTS_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::NCI_CTS),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
         false,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("nci_cts"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("NCI Clinical Trials Search"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }

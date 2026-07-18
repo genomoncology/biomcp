@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
@@ -243,12 +244,24 @@ impl FigshareClient {
         let resp = self
             .client_from_plan(&plan)
             .with_extension(CacheMode::NoStore)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::FIGSHARE,
+            ))
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, FIGSHARE_API).await?;
-        Self::decode_article_response(status, content_type.as_ref(), &bytes, reference)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::FIGSHARE),
+        )
+        .await?;
+        Self::decode_article_response(status, content_type.as_ref(), &bytes, reference).map_err(
+            |error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::FIGSHARE,
+                ))
+            },
+        )
     }
 
     pub async fn search_articles(
@@ -261,12 +274,22 @@ impl FigshareClient {
         let resp = self
             .client_from_plan(&plan)
             .with_extension(CacheMode::NoStore)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::FIGSHARE,
+            ))
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, FIGSHARE_API).await?;
-        Self::decode_search_response(status, content_type.as_ref(), &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::FIGSHARE),
+        )
+        .await?;
+        Self::decode_search_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::FIGSHARE,
+            ))
+        })
     }
 
     pub async fn download_file(&self, file: &FigshareFile) -> Result<Vec<u8>, BioMcpError> {
@@ -277,13 +300,15 @@ impl FigshareClient {
                 .client
                 .get(download_url.clone())
                 .with_extension(CacheMode::NoStore)
-                .send()
+                .send_with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::FIGSHARE,
+                ))
                 .await?;
             let status = resp.status();
             let content_type = resp.headers().get(CONTENT_TYPE).cloned();
-            let bytes = crate::sources::read_limited_body_with_limit(
+            let bytes = crate::sources::read_limited_source_body_with_limit(
                 resp,
-                FIGSHARE_API,
+                crate::error::SourceContext::narrow(crate::error::SourceProvider::FIGSHARE),
                 MAX_FIGSHARE_FILE_BYTES,
             )
             .await?;
@@ -292,7 +317,12 @@ impl FigshareClient {
                 content_type.as_ref(),
                 bytes,
                 accepted_retries,
-            )? {
+            )
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::FIGSHARE,
+                ))
+            })? {
                 DownloadResponse::Retry => {
                     accepted_retries += 1;
                     tokio::time::sleep(Duration::from_millis(

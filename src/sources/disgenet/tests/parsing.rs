@@ -128,7 +128,7 @@ fn rate_limit_error_includes_retry_after_seconds() {
         br#"{"message": "Too many requests"}"#,
     )
     .unwrap_err();
-    let message = err.to_string();
+    let message = format!("{err:?}");
 
     assert!(message.contains("85564"));
     assert!(message.contains("Too many requests"));

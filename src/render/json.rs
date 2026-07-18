@@ -307,6 +307,10 @@ pub fn to_discover_json(result: &DiscoverResult) -> Result<String, BioMcpError> 
 struct AliasError {
     code: &'static str,
     message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    source: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    recovery: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -320,60 +324,17 @@ struct ErrorMeta {
     not_found: bool,
 }
 
-fn safe_error_message(error: &BioMcpError) -> String {
-    match error {
-        BioMcpError::HttpClientInit(_) => "HTTP client initialization failed.".to_string(),
-        BioMcpError::Http(_) | BioMcpError::HttpMiddleware(_) => "HTTP request failed.".to_string(),
-        BioMcpError::Api { api, .. } => format!("API request to {api} failed."),
-        BioMcpError::ApiJson { api, .. } => {
-            format!("API response from {api} could not be decoded.")
-        }
-        BioMcpError::BodyLimit {
-            source_name,
-            max_bytes,
-        } => format!("API error from {source_name}: Response body exceeded {max_bytes} bytes"),
-        BioMcpError::CtGovInterventionQueryRejected { .. } => {
-            "ClinicalTrials.gov rejected the intervention query.".to_string()
-        }
-        BioMcpError::NotFound { .. }
-        | BioMcpError::InvalidArgument(_)
-        | BioMcpError::ApiKeyRequired { .. }
-        | BioMcpError::ApiKeyRejected { .. } => error.to_string(),
-        BioMcpError::SourceUnavailable { source_name, .. } => format!(
-            "Source unavailable: {source_name} is not available.\n\nCheck source setup and retry."
-        ),
-        BioMcpError::Template(_) => "Template rendering failed.".to_string(),
-        BioMcpError::Json(_) => "JSON processing failed.".to_string(),
-        BioMcpError::Io(_) => "I/O operation failed.".to_string(),
-    }
-}
-
 pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> {
-    let code = match error {
-        BioMcpError::HttpClientInit(_) => "http_client_init",
-        BioMcpError::Http(_) => "http",
-        BioMcpError::HttpMiddleware(_) => "http_middleware",
-        BioMcpError::Api { .. } => "api",
-        BioMcpError::ApiJson { .. } => "api_json",
-        BioMcpError::BodyLimit { .. } => "api",
-        BioMcpError::CtGovInterventionQueryRejected { .. } => "api",
-        BioMcpError::NotFound { .. } => "not_found",
-        BioMcpError::InvalidArgument(_) => "invalid_argument",
-        BioMcpError::ApiKeyRequired { .. } => "api_key_required",
-        BioMcpError::ApiKeyRejected { .. } => "api_key_rejected",
-        BioMcpError::SourceUnavailable { .. } => "source_unavailable",
-        BioMcpError::Template(_) => "template",
-        BioMcpError::Json(_) => "json",
-        BioMcpError::Io(_) => "io",
-    };
-
+    let projection = error.public_projection();
     to_pretty(&ErrorJsonResponse {
         error: AliasError {
-            code,
-            message: safe_error_message(error),
+            code: error.code(),
+            message: projection.message,
+            source: projection.source,
+            recovery: projection.recovery,
         },
         _meta: ErrorMeta {
-            not_found: matches!(error, BioMcpError::NotFound { .. }),
+            not_found: error.is_not_found(),
         },
     })
 }
@@ -465,6 +426,8 @@ pub(crate) fn to_alias_suggestion_json(
                     alias.requested_entity.cli_name(),
                     alias.query
                 ),
+                source: None,
+                recovery: None,
             },
             _meta: AliasMeta {
                 not_found: true,
@@ -488,6 +451,8 @@ pub(crate) fn to_alias_suggestion_json(
                     alias.requested_entity.cli_name(),
                     alias.query
                 ),
+                source: None,
+                recovery: None,
             },
             _meta: AliasMeta {
                 not_found: true,
@@ -553,6 +518,8 @@ pub(crate) fn to_variant_guidance_json(guidance: &VariantGuidance) -> Result<Str
         error: AliasError {
             code: "not_found",
             message: variant_guidance_message(guidance),
+            source: None,
+            recovery: None,
         },
         _meta: VariantGuidanceMeta {
             not_found: true,
@@ -649,7 +616,8 @@ mod tests {
         let json = to_error_json(&error).unwrap();
 
         assert!(json.contains("\"code\": \"api\""));
-        assert!(json.contains("API error from example: Response body exceeded 42 bytes"));
+        assert!(json.contains("API error from BioMCP source: Response body exceeded 42 bytes"));
+        assert!(json.contains("\"source\": \"BioMCP source\""));
         assert!(!json.contains("body_limit"));
     }
 

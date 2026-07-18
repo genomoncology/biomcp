@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::time::Duration;
 
@@ -42,10 +43,23 @@ impl GProfilerClient {
         req: reqwest::RequestBuilder,
         body: &B,
     ) -> Result<T, BioMcpError> {
-        let resp = req.json(body).send().await?;
+        let resp = req
+            .json(body)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GPROFILER,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, GPROFILER_API).await?;
-        Self::decode_json_response(status, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::GPROFILER),
+        )
+        .await?;
+        Self::decode_json_response(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GPROFILER,
+            ))
+        })
     }
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(
@@ -128,6 +142,9 @@ fn gprofiler_http_client(timeout: Duration) -> Result<reqwest::Client, BioMcpErr
 
 fn remap_gprofiler_error(err: BioMcpError) -> BioMcpError {
     match err {
+        BioMcpError::WithSourceContext { context, source } => {
+            remap_gprofiler_error(*source).with_source_context(context)
+        }
         BioMcpError::Http(source) if source.is_timeout() || source.is_connect() => {
             gprofiler_source_unavailable(
                 "The upstream is temporarily unavailable or too slow to respond.".to_string(),

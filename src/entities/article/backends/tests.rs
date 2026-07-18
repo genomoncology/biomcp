@@ -252,8 +252,8 @@ fn search_pubmed_page_hard_fails_on_blank_title() {
     )
     .expect_err("blank title should be a contract error");
 
-    let msg = err.to_string();
-    assert!(msg.contains("pubmed-eutils"));
+    let msg = format!("{err:?}");
+    assert!(msg.contains("pubmed"));
     assert!(msg.contains("1"));
     assert!(msg.contains("title"));
 }

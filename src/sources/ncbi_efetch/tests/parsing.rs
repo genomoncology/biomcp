@@ -70,7 +70,7 @@ fn decode_text_treats_documented_absence_statuses_as_empty() {
 fn decode_text_maps_http_error_status_with_excerpt() {
     let err = NcbiEfetchClient::decode_text(StatusCode::INTERNAL_SERVER_ERROR, b"upstream failure")
         .unwrap_err();
-    let msg = err.to_string();
+    let msg = format!("{err:?}");
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(msg.contains("pubmed-eutils"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");

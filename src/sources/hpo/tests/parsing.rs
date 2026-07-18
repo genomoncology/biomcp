@@ -27,7 +27,7 @@ fn decode_json_response_maps_not_found_and_http_errors() {
         br#"{"error":"upstream"}"#,
     )
     .unwrap_err();
-    assert!(err.to_string().contains("HTTP 502 Bad Gateway"));
+    assert!(format!("{err:?}").contains("HTTP 502 Bad Gateway"));
 }
 
 #[test]

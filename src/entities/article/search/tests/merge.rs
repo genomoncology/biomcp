@@ -206,7 +206,7 @@ fn merge_federated_pages_returns_first_error_when_both_fail() {
         &empty_filters(),
     )
     .expect_err("both failing legs should return first error");
-    let msg = err.to_string();
+    let msg = format!("{err:?}");
     assert!(msg.contains("pubtator"));
 }
 

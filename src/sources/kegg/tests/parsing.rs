@@ -67,8 +67,8 @@ fn parse_pathway_record_extracts_summary_and_genes() {
 fn decode_text_response_maps_status_and_utf8_errors() {
     let err = KeggClient::decode_text_response(StatusCode::BAD_GATEWAY, b"upstream".to_vec())
         .unwrap_err();
-    assert!(err.to_string().contains("HTTP 502 Bad Gateway"));
+    assert!(format!("{err:?}").contains("HTTP 502 Bad Gateway"));
 
     let err = KeggClient::decode_text_response(StatusCode::OK, vec![0xff]).unwrap_err();
-    assert!(err.to_string().contains("valid UTF-8"));
+    assert!(format!("{err:?}").contains("valid UTF-8"));
 }

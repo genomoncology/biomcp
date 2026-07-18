@@ -70,7 +70,7 @@ fn sync_intro_matches_missing_stale_and_force_modes() {
 fn cvx_read_error_mentions_recovery_paths() {
     let root = TempDirGuard::new("cvx-read-error");
     let err = cvx_read_error(root.path(), "mvx.txt: HTTP 503");
-    let message = err.to_string();
+    let message = format!("{err:?}");
 
     assert!(message.contains("CDC CVX/MVX"));
     assert!(message.contains("mvx.txt: HTTP 503"));

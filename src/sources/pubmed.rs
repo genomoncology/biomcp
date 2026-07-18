@@ -1,6 +1,7 @@
 // dead-code reason: PubMed keeps fixture-only request planners beside live citation execution
 #![allow(dead_code)]
 
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::HashSet;
 
@@ -196,11 +197,17 @@ impl PubMedClient {
         BioMcpError,
     > {
         let resp = crate::sources::apply_cache_mode_with_auth(req, authenticated)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PUBMED,
+            ))
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, PUBMED_EUTILS_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::PUBMED),
+        )
+        .await?;
         Ok((status, content_type, bytes))
     }
 
@@ -265,9 +272,10 @@ impl PubMedClient {
             .map_err(|_| PubMedCitationErrorKind::InvalidResponse)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let response = crate::sources::apply_cache_mode_with_auth(req, authenticated)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PUBMED,
+            ))
             .await
-            .map_err(BioMcpError::from)
             .map_err(Self::citation_request_error)?;
         let status = response.status();
         Self::validate_citation_status(status)?;
@@ -275,9 +283,12 @@ impl PubMedClient {
             .headers()
             .get(reqwest::header::CONTENT_TYPE)
             .cloned();
-        let bytes = crate::sources::read_limited_body(response, PUBMED_EUTILS_API)
-            .await
-            .map_err(Self::citation_request_error)?;
+        let bytes = crate::sources::read_limited_source_body(
+            response,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::PUBMED),
+        )
+        .await
+        .map_err(Self::citation_request_error)?;
         let xml = Self::decode_citation_response(status, content_type.as_ref(), bytes)?;
         let pmid = pmid.trim().to_string();
         tokio::task::spawn_blocking(move || parse_citation_xml(&pmid, &xml))
@@ -287,6 +298,7 @@ impl PubMedClient {
 
     fn citation_request_error(error: BioMcpError) -> PubMedCitationErrorKind {
         match error {
+            BioMcpError::WithSourceContext { source, .. } => Self::citation_request_error(*source),
             BioMcpError::Http(_) | BioMcpError::HttpMiddleware(_) => {
                 PubMedCitationErrorKind::Network
             }
@@ -422,7 +434,11 @@ impl PubMedClient {
         let plan = Self::esearch_plan(params, self.api_key.as_deref())?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let (status, content_type, bytes) = self.send(req, authenticated).await?;
-        Self::decode_esearch_response(status, content_type.as_ref(), &bytes)
+        Self::decode_esearch_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PUBMED,
+            ))
+        })
     }
 
     pub(crate) fn decode_esearch_response(
@@ -430,8 +446,13 @@ impl PubMedClient {
         content_type: Option<&reqwest::header::HeaderValue>,
         bytes: &[u8],
     ) -> Result<PubMedESearchResponse, BioMcpError> {
-        let response: ESearchEnvelope =
-            crate::sources::decode_json(PUBMED_EUTILS_API, status, content_type, bytes, true)?;
+        let response: ESearchEnvelope = crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::PUBMED),
+            status,
+            content_type,
+            bytes,
+            true,
+        )?;
         let count = response
             .esearchresult
             .count
@@ -519,7 +540,13 @@ impl PubMedClient {
         let authenticated = self.api_key.is_some();
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let (status, content_type, bytes) = self.send(req, authenticated).await?;
-        Self::decode_esummary_response(ids, status, content_type.as_ref(), &bytes)
+        Self::decode_esummary_response(ids, status, content_type.as_ref(), &bytes).map_err(
+            |error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::PUBMED,
+                ))
+            },
+        )
     }
 
     pub(crate) fn decode_esummary_response(
@@ -530,8 +557,13 @@ impl PubMedClient {
     ) -> Result<Vec<ESummaryEntry>, BioMcpError> {
         let requested_ids = ids.iter().map(|id| id.trim()).collect::<Vec<_>>();
         let requested_set = requested_ids.iter().copied().collect::<HashSet<_>>();
-        let response: ESummaryEnvelope =
-            crate::sources::decode_json(PUBMED_EUTILS_API, status, content_type, bytes, true)?;
+        let response: ESummaryEnvelope = crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::PUBMED),
+            status,
+            content_type,
+            bytes,
+            true,
+        )?;
 
         let uids = response
             .result

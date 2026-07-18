@@ -1,4 +1,5 @@
 use crate::error::BioMcpError;
+use crate::sources::RequestBuilderSourceContextExt;
 use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovLargeDocument, CtGovStudy};
 use crate::sources::provider_url_policy::{ProviderUrlConsumer, ProviderUrlPolicy};
 
@@ -231,19 +232,34 @@ async fn download_document_with_policy(
         .dns_resolver(policy.dns_resolver())
         .redirect(policy.redirect_policy())
         .build()?;
-    let response = client.get(url).send().await?;
+    let response = client
+        .get(url)
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::CLINICAL_TRIALS,
+        ))
+        .await?;
     if !response.status().is_success() {
         return Err(BioMcpError::Api {
             api: CTGOV_CDN_API.into(),
             message: format!("HTTP {} retrieving trial document", response.status()),
-        });
+        }
+        .with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::CLINICAL_TRIALS,
+        )));
     }
     read_document_body(response).await
 }
 
 async fn read_document_body(mut response: reqwest::Response) -> Result<Vec<u8>, BioMcpError> {
+    let context =
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::CLINICAL_TRIALS);
     let mut body = Vec::new();
-    while let Some(chunk) = response.chunk().await? {
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(BioMcpError::from)
+        .map_err(|error| error.with_source_context(context))?
+    {
         let remaining_with_overflow = DOCUMENT_MAX_BYTES
             .saturating_sub(body.len())
             .saturating_add(1);
@@ -252,7 +268,8 @@ async fn read_document_body(mut response: reqwest::Response) -> Result<Vec<u8>, 
             return Err(BioMcpError::Api {
                 api: CTGOV_CDN_API.into(),
                 message: format!("Response body exceeded {DOCUMENT_MAX_BYTES} bytes"),
-            });
+            }
+            .with_source_context(context));
         }
     }
     Ok(body)
@@ -439,7 +456,7 @@ mod tests {
         let error = download_fixture(base, "NCT03361748", "too-large.pdf")
             .await
             .unwrap_err();
-        assert!(error.to_string().contains("exceeded 33554432 bytes"));
+        assert!(format!("{error:?}").contains("exceeded 33554432 bytes"));
         task.abort();
     }
 
@@ -471,7 +488,7 @@ mod tests {
         let error = download_fixture(approved_base, "NCT03361748", "Protocol.pdf")
             .await
             .unwrap_err();
-        assert!(error.to_string().contains("redirect"));
+        assert!(format!("{error:?}").contains("redirect"));
         assert_eq!(target_requests.load(Ordering::SeqCst), 0);
         redirect_task.abort();
         target_task.abort();

@@ -363,6 +363,16 @@ pub(crate) async fn resolve_query(
         }
         Err(err) => {
             return Err(match err {
+                BioMcpError::WithSourceContext { context, source } => match *source {
+                    BioMcpError::Api { api, message } if api == "ols4" || api == "OLS4" => {
+                        BioMcpError::Api {
+                            api,
+                            message: format!("discover requires OLS4: {message}"),
+                        }
+                        .with_source_context(context)
+                    }
+                    other => other.with_source_context(context),
+                },
                 BioMcpError::Api { api, message } if api == "ols4" => BioMcpError::Api {
                     api,
                     message: format!("discover requires OLS4: {message}"),

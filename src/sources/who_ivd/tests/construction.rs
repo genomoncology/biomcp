@@ -102,7 +102,7 @@ fn who_ivd_sync_error_mentions_recovery_paths() {
         root.path(),
         "who_ivd.csv is missing required column: product code",
     );
-    let message = err.to_string();
+    let message = format!("{err:?}");
 
     assert!(message.contains("WHO Prequalified IVD"));
     assert!(message.contains("who_ivd.csv is missing required column: product code"));

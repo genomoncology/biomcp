@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::HashSet;
 
@@ -38,17 +39,23 @@ impl WikiPathwaysClient {
             WIKIPATHWAYS_MAX_BODY_BYTES,
             WIKIPATHWAYS_API,
         )
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::WIKIPATHWAYS,
+        ))
         .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body_with_limit(
+        let bytes = crate::sources::read_limited_source_body_with_limit(
             resp,
-            WIKIPATHWAYS_API,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::WIKIPATHWAYS),
             WIKIPATHWAYS_MAX_BODY_BYTES,
         )
         .await?;
-        Self::decode_json_response(status, content_type.as_ref(), &bytes)
+        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::WIKIPATHWAYS,
+            ))
+        })
     }
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(
@@ -63,7 +70,11 @@ impl WikiPathwaysClient {
                 message: format!("HTTP {status}: {excerpt}"),
             });
         }
-        crate::sources::ensure_json_content_type(WIKIPATHWAYS_API, content_type, bytes)?;
+        crate::sources::ensure_json_content_type(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::WIKIPATHWAYS),
+            content_type,
+            bytes,
+        )?;
         serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
             api: WIKIPATHWAYS_API.to_string(),
             source,

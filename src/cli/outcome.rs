@@ -8,10 +8,7 @@ use super::response_contract::{
 use super::{Cli, CliOutput, CommandOutcome, Commands, GetEntity, SearchEntity, StudyCommand};
 
 fn bio_mcp_error_exit_code(error: &crate::error::BioMcpError) -> u8 {
-    match error {
-        crate::error::BioMcpError::InvalidArgument(_) => 2,
-        _ => 1,
-    }
+    error.exit_code()
 }
 
 fn outcome_to_string(outcome: CommandOutcome) -> anyhow::Result<String> {

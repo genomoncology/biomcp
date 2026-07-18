@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -78,13 +79,23 @@ impl ClinGenClient {
         let allow_mislabeled_json = content_type
             .is_some_and(|header| is_html_content_type(header) && looks_like_json(bytes));
         if !allow_mislabeled_json {
-            crate::sources::ensure_json_content_type(api, content_type, bytes)?;
+            crate::sources::ensure_json_content_type(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::CLINGEN),
+                content_type,
+                bytes,
+            )?;
         }
 
-        serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
-            api: api.to_string(),
-            source,
-        })
+        serde_json::from_slice(bytes)
+            .map_err(|source| BioMcpError::ApiJson {
+                api: api.to_string(),
+                source,
+            })
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::CLINGEN,
+                ))
+            })
     }
 
     async fn get_text(
@@ -92,10 +103,22 @@ impl ClinGenClient {
         req: reqwest_middleware::RequestBuilder,
         api: &str,
     ) -> Result<String, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CLINGEN,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, api).await?;
-        Self::decode_text_response(api, status, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CLINGEN),
+        )
+        .await?;
+        Self::decode_text_response(api, status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CLINGEN,
+            ))
+        })
     }
 
     async fn get_json<T: DeserializeOwned>(
@@ -103,11 +126,23 @@ impl ClinGenClient {
         req: reqwest_middleware::RequestBuilder,
         api: &str,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CLINGEN,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, api).await?;
-        Self::decode_json_response(api, status, content_type.as_ref(), &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CLINGEN),
+        )
+        .await?;
+        Self::decode_json_response(api, status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CLINGEN,
+            ))
+        })
     }
 
     pub async fn gene_context(&self, gene_symbol: &str) -> Result<GeneClinGen, BioMcpError> {

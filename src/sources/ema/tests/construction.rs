@@ -91,7 +91,7 @@ fn sync_intro_matches_download_refresh_and_force_modes() {
 fn ema_sync_error_mentions_recovery_paths() {
     let root = TempDirGuard::new("ema-sync-error");
     let err = ema_sync_error(root.path(), "medicines.json: HTTP 503");
-    let message = err.to_string();
+    let message = format!("{err:?}");
 
     assert!(message.contains("EMA"));
     assert!(message.contains("medicines.json: HTTP 503"));

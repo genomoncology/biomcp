@@ -440,7 +440,7 @@ pub(in crate::entities::variant) async fn add_gwas_section(
 
     let client = match GwasClient::new() {
         Ok(client) => client,
-        Err(BioMcpError::SourceUnavailable { .. }) => {
+        Err(err) if err.code() == "source_unavailable" => {
             mark_gwas_unavailable(variant);
             return Ok(());
         }
@@ -448,7 +448,7 @@ pub(in crate::entities::variant) async fn add_gwas_section(
     };
     let associations = match client.associations_by_rsid(&rsid, 20).await {
         Ok(associations) => associations,
-        Err(BioMcpError::SourceUnavailable { .. }) => {
+        Err(err) if err.code() == "source_unavailable" => {
             mark_gwas_unavailable(variant);
             return Ok(());
         }

@@ -343,7 +343,7 @@ fn canonical_fallback_row(
 ) -> Result<Option<DiseaseSearchResult>, BioMcpError> {
     let hit = match hit {
         Ok(hit) => hit,
-        Err(BioMcpError::NotFound { .. }) => return Ok(None),
+        Err(err) if err.is_not_found() => return Ok(None),
         Err(err) => return Err(err),
     };
     let mut row = transform::disease::from_mydisease_search_hit(&hit);

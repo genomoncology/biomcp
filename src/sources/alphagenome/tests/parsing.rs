@@ -65,5 +65,5 @@ fn decompress_tensor_bytes_rejects_oversized_chunk() {
     }];
     let err = decompress_tensor_bytes(&chunks).unwrap_err();
 
-    assert!(format!("{err}").contains("Tensor chunk exceeded"));
+    assert!(format!("{err:?}").contains("Tensor chunk exceeded"));
 }

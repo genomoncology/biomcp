@@ -234,7 +234,7 @@ fn author_response_types_keep_null_data_explicit_and_map_bad_responses() {
         SemanticScholarAuthorPapersResponse,
     >(StatusCode::OK, b"{not-json", false)
     .unwrap_err();
-    assert!(matches!(malformed, BioMcpError::ApiJson { .. }));
+    assert_eq!(malformed.code(), "api_json");
 
     let unavailable = SemanticScholarClient::decode_json_response::<SemanticScholarAuthor>(
         StatusCode::SERVICE_UNAVAILABLE,
@@ -242,8 +242,8 @@ fn author_response_types_keep_null_data_explicit_and_map_bad_responses() {
         false,
     )
     .unwrap_err();
-    let message = unavailable.to_string();
-    assert!(matches!(unavailable, BioMcpError::Api { .. }));
+    let message = format!("{unavailable:?}");
+    assert_eq!(unavailable.code(), "api");
     assert!(message.contains("503"), "got: {message}");
     assert!(message.contains("source unavailable"), "got: {message}");
     assert!(
@@ -255,7 +255,7 @@ fn author_response_types_keep_null_data_explicit_and_map_bad_responses() {
         SemanticScholarAuthorSearchResponse,
     >(StatusCode::TOO_MANY_REQUESTS, b"shared rate limit", true)
     .unwrap_err();
-    assert!(rate_limited.to_string().contains("Set S2_API_KEY"));
+    assert!(format!("{rate_limited:?}").contains("Set S2_API_KEY"));
 }
 
 #[test]
@@ -289,8 +289,9 @@ fn authenticated_http_error_keeps_status_and_sanitizes_payload() {
     )
     .unwrap_err();
     let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("semantic_scholar"), "got: {msg}");
-    assert!(msg.contains("403"), "got: {msg}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("Semantic Scholar"), "got: {msg}");
+    assert!(msg.to_ascii_lowercase().contains("retry"), "got: {msg}");
+    assert!(!msg.contains("403"), "got: {msg}");
     assert!(!msg.contains("forbidden"), "got: {msg}");
 }

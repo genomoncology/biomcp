@@ -2,7 +2,6 @@
 //! decoders and mappers. No network, no server.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 
@@ -84,8 +83,8 @@ fn decode_json_optional_maps_404_http_content_type_and_json_errors() {
         b"upstream failed",
     )
     .unwrap_err();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("500"));
+    assert_eq!(err.code(), "api");
+    assert!(format!("{err:?}").contains("500"));
 
     let html = HeaderValue::from_static("text/html");
     let err = PharmGkbClient::decode_json_optional::<PharmGkbDataResponse>(
@@ -94,7 +93,7 @@ fn decode_json_optional_maps_404_http_content_type_and_json_errors() {
         b"<html></html>",
     )
     .unwrap_err();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert_eq!(err.code(), "api");
 
     let err = PharmGkbClient::decode_json_optional::<PharmGkbDataResponse>(
         StatusCode::OK,
@@ -102,5 +101,5 @@ fn decode_json_optional_maps_404_http_content_type_and_json_errors() {
         b"not json",
     )
     .unwrap_err();
-    assert!(matches!(err, BioMcpError::ApiJson { .. }));
+    assert_eq!(err.code(), "api_json");
 }

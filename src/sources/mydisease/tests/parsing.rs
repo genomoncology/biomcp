@@ -7,8 +7,6 @@ use crate::sources::mydisease::{MyDiseaseClient, MyDiseaseHit, MyDiseaseQueryRes
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 
-const MYDISEASE_API: &str = "mydisease.info";
-
 macro_rules! fixture {
     ($name:expr) => {
         include_bytes!(concat!(
@@ -26,7 +24,7 @@ fn json_ct() -> HeaderValue {
 #[test]
 fn parses_query_response_from_real_fixture() {
     let resp: MyDiseaseQueryResponse = decode_json(
-        MYDISEASE_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYDISEASE),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("query_melanoma.json"),
@@ -97,15 +95,15 @@ fn hpo_fields_deserialize_from_hit() {
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<MyDiseaseQueryResponse>(
-        MYDISEASE_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYDISEASE),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
         false,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("mydisease.info"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("MyDisease.info"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }

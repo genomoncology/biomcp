@@ -1,13 +1,10 @@
 //! Tier 3 — response parsing. Pure: feeds committed fixture bytes to `decode_json`
 //! and response helpers. No network, no server.
 
-use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use crate::sources::ncbi_idconv::{NcbiIdConvResponse, NcbiIdConverterClient};
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
-
-const NCBI_IDCONV_API: &str = "ncbi-idconv";
 
 macro_rules! fixture {
     ($name:expr) => {
@@ -26,7 +23,7 @@ fn json_ct() -> HeaderValue {
 #[test]
 fn parses_lookup_response_from_real_fixture() {
     let resp: NcbiIdConvResponse = decode_json(
-        NCBI_IDCONV_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::NCBI_ID_CONVERTER),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("pmid_22663011.json"),
@@ -65,15 +62,15 @@ fn extract_first_pmcid_returns_none_for_missing_or_blank_value() {
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<NcbiIdConvResponse>(
-        NCBI_IDCONV_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::NCBI_ID_CONVERTER),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
         false,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("ncbi-idconv"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("NCBI ID Converter"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }

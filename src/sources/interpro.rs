@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::Deserialize;
@@ -27,20 +28,37 @@ impl InterProClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::INTERPRO,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, INTERPRO_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::INTERPRO),
+        )
+        .await?;
         if !status.is_success() {
             let excerpt = crate::sources::body_excerpt(&bytes);
             return Err(BioMcpError::Api {
                 api: INTERPRO_API.to_string(),
                 message: format!("HTTP {status}: {excerpt}"),
-            });
+            }
+            .with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::INTERPRO,
+            )));
         }
-        serde_json::from_slice(&bytes).map_err(|source| BioMcpError::ApiJson {
-            api: INTERPRO_API.to_string(),
-            source,
-        })
+        serde_json::from_slice(&bytes)
+            .map_err(|source| BioMcpError::ApiJson {
+                api: INTERPRO_API.to_string(),
+                source,
+            })
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::INTERPRO,
+                ))
+            })
     }
 
     pub(crate) fn domains_plan(
