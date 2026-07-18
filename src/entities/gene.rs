@@ -3611,4 +3611,199 @@ mod tests {
         assert!(merged.tractability.is_empty());
         assert!(merged.safety_liabilities.is_empty());
     }
+
+    fn injected_section_failure(source: &str, kind: &str) -> BioMcpError {
+        match kind {
+            "connection-refused" => BioMcpError::Api {
+                api: source.to_string(),
+                message: "connection refused".to_string(),
+            },
+            "timeout" => BioMcpError::SourceUnavailable {
+                source_name: source.to_string(),
+                reason: "request timed out".to_string(),
+                suggestion: "retry".to_string(),
+            },
+            "malformed-body" => BioMcpError::ApiJson {
+                api: source.to_string(),
+                source: serde_json::from_str::<serde_json::Value>("{")
+                    .expect_err("fixture body must be malformed"),
+            },
+            other => panic!("unknown injected failure: {other}"),
+        }
+    }
+
+    fn assert_gene_section_outcome(
+        gene: &Gene,
+        key: &str,
+        expected: SectionOutcomeState,
+        successful_source: &str,
+    ) {
+        let outcome = gene.section_outcomes.get(key).expect("registered outcome");
+        assert_eq!(outcome.outcome(), expected, "wrong outcome for {key}");
+        if expected == SectionOutcomeState::Unavailable {
+            assert!(
+                outcome.sources().is_empty(),
+                "failed {key} source received successful credit"
+            );
+            assert_ne!(outcome.outcome(), SectionOutcomeState::Empty);
+        } else {
+            assert_eq!(outcome.sources(), &[successful_source.to_string()]);
+        }
+    }
+
+    #[test]
+    fn quickgo_and_string_failure_state_matrix() {
+        for failure in ["connection-refused", "timeout", "malformed-body"] {
+            let mut gene = test_gene("BRAF");
+            apply_go_section_result(
+                &mut gene,
+                Err::<Vec<GeneGoTerm>, _>(injected_section_failure("QuickGO", failure)),
+            );
+            assert!(gene.go.as_ref().is_some_and(Vec::is_empty));
+            assert_gene_section_outcome(
+                &gene,
+                GENE_SECTION_GO,
+                SectionOutcomeState::Unavailable,
+                "QuickGO",
+            );
+
+            let mut gene = test_gene("BRAF");
+            apply_gene_interactions_result(
+                &mut gene,
+                Err::<Vec<GeneInteraction>, _>(injected_section_failure("STRING", failure)),
+            );
+            assert!(gene.interactions.as_ref().is_some_and(Vec::is_empty));
+            assert_gene_section_outcome(
+                &gene,
+                GENE_SECTION_INTERACTIONS,
+                SectionOutcomeState::Unavailable,
+                "STRING",
+            );
+        }
+
+        let mut empty = test_gene("BRAF");
+        apply_go_section_result(&mut empty, Ok(Vec::new()));
+        assert_gene_section_outcome(
+            &empty,
+            GENE_SECTION_GO,
+            SectionOutcomeState::Empty,
+            "QuickGO",
+        );
+        let mut data = test_gene("BRAF");
+        apply_go_section_result(
+            &mut data,
+            Ok(vec![GeneGoTerm {
+                id: "GO:0004672".to_string(),
+                name: "protein kinase activity".to_string(),
+                aspect: Some("molecular_function".to_string()),
+                evidence: Some("IDA".to_string()),
+            }]),
+        );
+        assert_eq!(data.go.as_ref().expect("GO payload")[0].id, "GO:0004672");
+        assert_gene_section_outcome(&data, GENE_SECTION_GO, SectionOutcomeState::Data, "QuickGO");
+
+        let mut empty = test_gene("BRAF");
+        apply_gene_interactions_result(&mut empty, Ok(Vec::new()));
+        assert_gene_section_outcome(
+            &empty,
+            GENE_SECTION_INTERACTIONS,
+            SectionOutcomeState::Empty,
+            "STRING",
+        );
+        let mut data = test_gene("BRAF");
+        apply_gene_interactions_result(
+            &mut data,
+            Ok(vec![GeneInteraction {
+                partner: "MAP2K1".to_string(),
+                score: Some(0.99),
+            }]),
+        );
+        assert_eq!(
+            data.interactions.as_ref().expect("interaction payload")[0].partner,
+            "MAP2K1"
+        );
+        assert_gene_section_outcome(
+            &data,
+            GENE_SECTION_INTERACTIONS,
+            SectionOutcomeState::Data,
+            "STRING",
+        );
+    }
+
+    fn normalized_timing(timing: &GeneTimingCollector) -> Vec<(String, SectionOutcomeState)> {
+        let mut entries = timing
+            .sections
+            .iter()
+            .map(|entry| (entry.section.clone(), entry.outcome))
+            .collect::<Vec<_>>();
+        entries.sort_by(|left, right| left.0.cmp(&right.0));
+        entries
+    }
+
+    #[test]
+    fn gene_section_result_application_is_strategy_order_invariant() {
+        let go_rows = || {
+            vec![GeneGoTerm {
+                id: "GO:0004672".to_string(),
+                name: "protein kinase activity".to_string(),
+                aspect: None,
+                evidence: None,
+            }]
+        };
+        let interaction_rows = || {
+            vec![GeneInteraction {
+                partner: "MAP2K1".to_string(),
+                score: Some(0.99),
+            }]
+        };
+
+        let mut baseline = test_gene("BRAF");
+        apply_go_section_result(&mut baseline, Ok(go_rows()));
+        apply_gene_interactions_result(&mut baseline, Ok(interaction_rows()));
+
+        let mut parallel_top = test_gene("BRAF");
+        apply_gene_interactions_result(&mut parallel_top, Ok(interaction_rows()));
+        apply_go_section_result(&mut parallel_top, Ok(go_rows()));
+
+        assert_eq!(
+            serde_json::to_value(&baseline).expect("baseline serializes"),
+            serde_json::to_value(&parallel_top).expect("parallel-top serializes")
+        );
+        assert_eq!(
+            crate::render::provenance::gene_section_sources(&baseline),
+            crate::render::provenance::gene_section_sources(&parallel_top)
+        );
+
+        let mut baseline_timing = GeneTimingCollector::new("BRAF", GeneGetStrategy::Baseline, None);
+        baseline_timing.push(GeneTimingEntry {
+            section: GENE_SECTION_GO.to_string(),
+            elapsed_ms: 1,
+            outcome: SectionOutcomeState::Unavailable,
+        });
+        baseline_timing.push(GeneTimingEntry {
+            section: GENE_SECTION_INTERACTIONS.to_string(),
+            elapsed_ms: 2,
+            outcome: SectionOutcomeState::Unavailable,
+        });
+        sync_timing_outcomes(&mut baseline_timing, &baseline);
+
+        let mut parallel_timing =
+            GeneTimingCollector::new("BRAF", GeneGetStrategy::ParallelTop, None);
+        parallel_timing.push(GeneTimingEntry {
+            section: GENE_SECTION_INTERACTIONS.to_string(),
+            elapsed_ms: 9,
+            outcome: SectionOutcomeState::Unavailable,
+        });
+        parallel_timing.push(GeneTimingEntry {
+            section: GENE_SECTION_GO.to_string(),
+            elapsed_ms: 7,
+            outcome: SectionOutcomeState::Unavailable,
+        });
+        sync_timing_outcomes(&mut parallel_timing, &parallel_top);
+
+        assert_eq!(
+            normalized_timing(&baseline_timing),
+            normalized_timing(&parallel_timing)
+        );
+    }
 }

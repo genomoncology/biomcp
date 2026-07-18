@@ -2488,4 +2488,84 @@ mod tests {
             }
         }
     }
+
+    fn injected_cvx_vaers_failure(kind: &str) -> BioMcpError {
+        match kind {
+            "connection-refused" => BioMcpError::Api {
+                api: "VAERS".to_string(),
+                message: "connection refused".to_string(),
+            },
+            "timeout" => BioMcpError::SourceUnavailable {
+                source_name: "CDC CVX/MVX".to_string(),
+                reason: "request timed out".to_string(),
+                suggestion: "retry".to_string(),
+            },
+            "malformed-body" => BioMcpError::ApiJson {
+                api: "VAERS".to_string(),
+                source: serde_json::from_str::<serde_json::Value>("{")
+                    .expect_err("fixture body must be malformed"),
+            },
+            other => panic!("unknown injected failure: {other}"),
+        }
+    }
+
+    fn matched_mmr() -> VaersMatchedVaccine {
+        VaersMatchedVaccine {
+            display_name: "MMR".to_string(),
+            wonder_code: "MMR".to_string(),
+            cvx_codes: vec!["03".to_string(), "94".to_string()],
+        }
+    }
+
+    fn assert_cvx_vaers_outcome(
+        payload: &VaersSearchPayload,
+        expected: crate::entities::section_outcome::SectionOutcomeState,
+    ) {
+        use crate::entities::section_outcome::SectionOutcomeState;
+
+        let outcome = vaers_section_outcome(payload);
+        assert_eq!(outcome.outcome(), expected);
+        if expected == SectionOutcomeState::Unavailable {
+            assert_eq!(payload.status, VaersSearchStatus::Unavailable);
+            assert!(outcome.sources().is_empty());
+            assert_ne!(outcome.outcome(), SectionOutcomeState::Empty);
+        } else {
+            assert_eq!(outcome.sources(), &["CDC CVX", "CDC VAERS"]);
+        }
+    }
+
+    #[test]
+    fn cvx_vaers_failure_state_matrix() {
+        use crate::entities::section_outcome::SectionOutcomeState;
+
+        for failure in ["connection-refused", "timeout", "malformed-body"] {
+            let result: Result<VaersSearchPayload, BioMcpError> =
+                Err(injected_cvx_vaers_failure(failure));
+            let payload = vaers_payload_from_result(result);
+            assert_cvx_vaers_outcome(&payload, SectionOutcomeState::Unavailable);
+        }
+
+        let mut empty_tables = vaers_summary_tables_fixture();
+        empty_tables.total_reports = 0;
+        empty_tables.serious_reports = 0;
+        empty_tables.non_serious_reports = 0;
+        empty_tables.reactions.clear();
+        empty_tables.age_distribution.clear();
+        let empty =
+            vaers_payload_from_result(Ok(vaers_summary_from_tables(matched_mmr(), empty_tables)));
+        assert_eq!(empty.status, VaersSearchStatus::Empty);
+        assert_cvx_vaers_outcome(&empty, SectionOutcomeState::Empty);
+
+        let data = vaers_payload_from_result(Ok(vaers_summary_from_tables(
+            matched_mmr(),
+            vaers_summary_tables_fixture(),
+        )));
+        assert_eq!(data.status, VaersSearchStatus::Ok);
+        assert!(
+            data.summary
+                .as_ref()
+                .is_some_and(|summary| summary.total_reports > 0)
+        );
+        assert_cvx_vaers_outcome(&data, SectionOutcomeState::Data);
+    }
 }

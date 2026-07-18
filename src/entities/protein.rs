@@ -712,4 +712,145 @@ mod tests {
         let page = paginate_structures(rows, 2, 1);
         assert_eq!(page, vec!["2abc".to_string(), "3abc".to_string()]);
     }
+
+    fn test_protein() -> Protein {
+        Protein {
+            section_outcomes: default_protein_section_outcomes(),
+            accession: "P15056".to_string(),
+            entry_id: Some("BRAF_HUMAN".to_string()),
+            name: "Serine/threonine-protein kinase B-raf".to_string(),
+            gene_symbol: Some("BRAF".to_string()),
+            organism: Some("Homo sapiens".to_string()),
+            length: Some(766),
+            function: None,
+            structures: Vec::new(),
+            structure_count: None,
+            domains: Vec::new(),
+            interactions: Vec::new(),
+            complexes: Vec::new(),
+        }
+    }
+
+    fn injected_protein_failure(source: &str, kind: &str) -> BioMcpError {
+        match kind {
+            "connection-refused" => BioMcpError::Api {
+                api: source.to_string(),
+                message: "connection refused".to_string(),
+            },
+            "timeout" => BioMcpError::SourceUnavailable {
+                source_name: source.to_string(),
+                reason: "request timed out".to_string(),
+                suggestion: "retry".to_string(),
+            },
+            "malformed-body" => BioMcpError::ApiJson {
+                api: source.to_string(),
+                source: serde_json::from_str::<serde_json::Value>("{")
+                    .expect_err("fixture body must be malformed"),
+            },
+            other => panic!("unknown injected failure: {other}"),
+        }
+    }
+
+    fn assert_protein_outcome(
+        protein: &Protein,
+        key: &str,
+        expected: crate::entities::section_outcome::SectionOutcomeState,
+        successful_source: &str,
+    ) {
+        use crate::entities::section_outcome::SectionOutcomeState;
+
+        let outcome = protein
+            .section_outcomes
+            .get(key)
+            .expect("registered protein outcome");
+        assert_eq!(outcome.outcome(), expected, "wrong outcome for {key}");
+        if expected == SectionOutcomeState::Unavailable {
+            assert!(outcome.sources().is_empty());
+            assert_ne!(outcome.outcome(), SectionOutcomeState::Empty);
+        } else {
+            assert_eq!(outcome.sources(), &[successful_source.to_string()]);
+        }
+    }
+
+    #[test]
+    fn interpro_and_string_failure_state_matrix() {
+        use crate::entities::section_outcome::SectionOutcomeState;
+
+        for failure in ["connection-refused", "timeout", "malformed-body"] {
+            let mut protein = test_protein();
+            apply_domains_result(
+                &mut protein,
+                Err::<Vec<ProteinDomain>, _>(injected_protein_failure("InterPro", failure)),
+            );
+            assert!(protein.domains.is_empty());
+            assert_protein_outcome(
+                &protein,
+                PROTEIN_SECTION_DOMAINS,
+                SectionOutcomeState::Unavailable,
+                "InterPro",
+            );
+
+            let mut protein = test_protein();
+            apply_protein_interactions_result(
+                &mut protein,
+                Err::<Vec<ProteinInteraction>, _>(injected_protein_failure("STRING", failure)),
+            );
+            assert!(protein.interactions.is_empty());
+            assert_protein_outcome(
+                &protein,
+                PROTEIN_SECTION_INTERACTIONS,
+                SectionOutcomeState::Unavailable,
+                "STRING",
+            );
+        }
+
+        let mut empty = test_protein();
+        apply_domains_result(&mut empty, Ok(Vec::new()));
+        assert_protein_outcome(
+            &empty,
+            PROTEIN_SECTION_DOMAINS,
+            SectionOutcomeState::Empty,
+            "InterPro",
+        );
+        let mut data = test_protein();
+        apply_domains_result(
+            &mut data,
+            Ok(vec![ProteinDomain {
+                accession: "IPR000719".to_string(),
+                name: Some("Protein kinase domain".to_string()),
+                domain_type: Some("domain".to_string()),
+            }]),
+        );
+        assert_eq!(data.domains[0].accession, "IPR000719");
+        assert_protein_outcome(
+            &data,
+            PROTEIN_SECTION_DOMAINS,
+            SectionOutcomeState::Data,
+            "InterPro",
+        );
+
+        let mut empty = test_protein();
+        apply_protein_interactions_result(&mut empty, Ok(Vec::new()));
+        assert_protein_outcome(
+            &empty,
+            PROTEIN_SECTION_INTERACTIONS,
+            SectionOutcomeState::Empty,
+            "STRING",
+        );
+        let mut data = test_protein();
+        apply_protein_interactions_result(
+            &mut data,
+            Ok(vec![ProteinInteraction {
+                partner: "MAP2K1".to_string(),
+                score: Some(0.99),
+            }]),
+        );
+        assert_eq!(data.interactions[0].partner, "MAP2K1");
+        assert_protein_outcome(
+            &data,
+            PROTEIN_SECTION_INTERACTIONS,
+            SectionOutcomeState::Data,
+            "STRING",
+        );
+    }
 }
