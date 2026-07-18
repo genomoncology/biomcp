@@ -25,8 +25,8 @@ use super::targets::{enrich_indications, enrich_targets};
 use super::{
     DRUG_SECTION_ALL, DRUG_SECTION_APPROVALS, DRUG_SECTION_CIVIC, DRUG_SECTION_INDICATIONS,
     DRUG_SECTION_INTERACTIONS, DRUG_SECTION_LABEL, DRUG_SECTION_NAMES, DRUG_SECTION_REGULATORY,
-    DRUG_SECTION_SAFETY, DRUG_SECTION_SHORTAGE, DRUG_SECTION_TARGETS, Drug, DrugRegion,
-    DrugSearchFilters, OPTIONAL_SAFETY_TIMEOUT, build_ema_identity, build_who_identity,
+    DRUG_SECTION_SAFETY, DRUG_SECTION_SHORTAGE, DRUG_SECTION_TARGETS, Drug, DrugApproval,
+    DrugRegion, DrugSearchFilters, OPTIONAL_SAFETY_TIMEOUT, build_ema_identity, build_who_identity,
     direct_drug_lookup,
 };
 
@@ -194,6 +194,27 @@ async fn fetch_civic_therapy_context(name: &str) -> (Option<CivicContext>, Secti
     }
 }
 
+fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, BioMcpError>) {
+    match result {
+        Ok(rows) => {
+            let outcome = if rows.is_empty() {
+                SectionOutcome::empty("OpenFDA Drugs@FDA")
+            } else {
+                SectionOutcome::data("OpenFDA Drugs@FDA")
+            };
+            drug.approvals = Some(rows);
+            drug.section_outcomes.complete("approvals", outcome);
+        }
+        Err(_) => {
+            drug.approvals = Some(Vec::new());
+            drug.section_outcomes.complete(
+                "approvals",
+                SectionOutcome::unavailable("Drugs@FDA approvals are unavailable."),
+            );
+        }
+    }
+}
+
 async fn add_approvals_section(drug: &mut Drug) {
     let name = drug.name.trim();
     if name.is_empty() {
@@ -221,32 +242,16 @@ async fn add_approvals_section(drug: &mut Drug) {
         client.drugsfda_search(&query, 8, 0).await
     };
 
-    match tokio::time::timeout(OPTIONAL_SAFETY_TIMEOUT, approvals_fut).await {
-        Ok(Ok(resp)) => {
-            let approvals = resp.map(map_drugsfda_approvals).unwrap_or_default();
-            let outcome = if approvals.is_empty() {
-                SectionOutcome::empty("OpenFDA Drugs@FDA")
-            } else {
-                SectionOutcome::data("OpenFDA Drugs@FDA")
-            };
-            drug.approvals = Some(approvals);
-            drug.section_outcomes.complete("approvals", outcome);
-        }
-        Ok(Err(_)) => {
-            drug.approvals = Some(Vec::new());
-            drug.section_outcomes.complete(
-                "approvals",
-                SectionOutcome::unavailable("Drugs@FDA approvals are unavailable."),
-            );
-        }
-        Err(_) => {
-            drug.approvals = Some(Vec::new());
-            drug.section_outcomes.complete(
-                "approvals",
-                SectionOutcome::unavailable("Drugs@FDA approvals are unavailable."),
-            );
-        }
-    }
+    let result = match tokio::time::timeout(OPTIONAL_SAFETY_TIMEOUT, approvals_fut).await {
+        Ok(Ok(resp)) => Ok(resp.map(map_drugsfda_approvals).unwrap_or_default()),
+        Ok(Err(err)) => Err(err),
+        Err(_) => Err(BioMcpError::SourceUnavailable {
+            source_name: "OpenFDA Drugs@FDA".to_string(),
+            reason: "request timed out".to_string(),
+            suggestion: "Retry the request.".to_string(),
+        }),
+    };
+    apply_approvals_result(drug, result);
 }
 
 pub(super) struct ResolvedDrugBase {

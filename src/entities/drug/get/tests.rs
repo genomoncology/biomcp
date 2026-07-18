@@ -1,6 +1,7 @@
 //! Get-module tests split from the legacy drug facade.
 
 use super::*;
+use crate::entities::drug::DrugApproval;
 
 #[test]
 fn parse_sections_supports_all_and_rejects_unknown() {
@@ -262,4 +263,99 @@ fn trial_alias_resolution_keeps_generic_requests_canonical() {
         vec!["pembrolizumab", "Keytruda"]
     );
     assert!(cacheable);
+}
+
+fn test_approval_drug() -> Drug {
+    crate::transform::drug::merge_mychem_hits(&[], "fixture-drug")
+}
+
+fn injected_approval_failure(kind: &str) -> BioMcpError {
+    match kind {
+        "connection-refused" => BioMcpError::Api {
+            api: "OpenFDA".to_string(),
+            message: "connection refused".to_string(),
+        },
+        "timeout" => BioMcpError::SourceUnavailable {
+            source_name: "OpenFDA".to_string(),
+            reason: "request timed out".to_string(),
+            suggestion: "retry".to_string(),
+        },
+        "malformed-body" => BioMcpError::ApiJson {
+            api: "OpenFDA".to_string(),
+            source: serde_json::from_str::<serde_json::Value>("{")
+                .expect_err("fixture body must be malformed"),
+        },
+        other => panic!("unknown injected failure: {other}"),
+    }
+}
+
+fn assert_approval_outcome(
+    drug: &Drug,
+    expected: crate::entities::section_outcome::SectionOutcomeState,
+) {
+    use crate::entities::section_outcome::SectionOutcomeState;
+
+    let outcome = drug
+        .section_outcomes
+        .get("approvals")
+        .expect("registered approvals outcome");
+    assert_eq!(outcome.outcome(), expected);
+    if expected == SectionOutcomeState::Unavailable {
+        assert!(outcome.sources().is_empty());
+    } else {
+        assert_eq!(outcome.sources(), &["OpenFDA Drugs@FDA".to_string()]);
+    }
+}
+
+#[test]
+fn drugsfda_failure_state_matrix() {
+    use crate::entities::section_outcome::SectionOutcomeState;
+
+    for failure in ["connection-refused", "timeout", "malformed-body"] {
+        let mut drug = test_approval_drug();
+        let error = injected_approval_failure(failure);
+        let private_detail = error.to_string();
+        apply_approvals_result(&mut drug, Err::<Vec<DrugApproval>, _>(error));
+        assert!(
+            drug.approvals
+                .as_ref()
+                .expect("compatibility array")
+                .is_empty()
+        );
+        assert_approval_outcome(&drug, SectionOutcomeState::Unavailable);
+        assert!(
+            !serde_json::to_string(&drug)
+                .expect("failed approvals state serializes")
+                .contains(&private_detail)
+        );
+    }
+
+    let mut empty = test_approval_drug();
+    apply_approvals_result(&mut empty, Ok(Vec::new()));
+    assert!(
+        empty
+            .approvals
+            .as_ref()
+            .expect("healthy empty array")
+            .is_empty()
+    );
+    assert_approval_outcome(&empty, SectionOutcomeState::Empty);
+
+    let mut data = test_approval_drug();
+    apply_approvals_result(
+        &mut data,
+        Ok(vec![DrugApproval {
+            application_number: "NDA021304".to_string(),
+            sponsor_name: Some("Example Pharma".to_string()),
+            openfda_brand_names: vec!["DrugX".to_string()],
+            openfda_generic_names: vec!["drugx".to_string()],
+            products: Vec::new(),
+            submissions: Vec::new(),
+        }]),
+    );
+    assert_eq!(
+        data.approvals.as_ref().expect("approval payload")[0].application_number,
+        "NDA021304"
+    );
+    assert_approval_outcome(&data, SectionOutcomeState::Data);
 }

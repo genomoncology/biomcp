@@ -968,6 +968,17 @@ async fn fetch_vaers_payload(
     }
 }
 
+fn vaers_payload_from_result(
+    result: Result<VaersSearchPayload, BioMcpError>,
+) -> VaersSearchPayload {
+    result.unwrap_or_else(|_| {
+        VaersSearchPayload::status_only(
+            VaersSearchStatus::Unavailable,
+            "CDC CVX/VAERS adverse events are unavailable.".to_string(),
+        )
+    })
+}
+
 fn explicit_vaers_filter_error(unsupported: &[&str]) -> BioMcpError {
     BioMcpError::InvalidArgument(format!(
         "--source vaers only supports the vaccine query text in this ticket; unsupported flags: {}",
@@ -1106,14 +1117,9 @@ pub async fn search_with_source(
         AdverseEventSourceFilter::Vaers => {
             validate_explicit_vaers_source(filters, offset)?;
 
-            let vaers = fetch_vaers_payload(query, CvxLookupMode::AutoSync)
-                .await
-                .unwrap_or_else(|_| {
-                    VaersSearchPayload::status_only(
-                        VaersSearchStatus::Unavailable,
-                        "CDC CVX/VAERS adverse events are unavailable.".to_string(),
-                    )
-                });
+            let vaers = vaers_payload_from_result(
+                fetch_vaers_payload(query, CvxLookupMode::AutoSync).await,
+            );
             Ok(source_search(source, None, Some(vaers)))
         }
         AdverseEventSourceFilter::All => {
@@ -1122,13 +1128,7 @@ pub async fn search_with_source(
                     search_with_status(filters, limit, offset),
                     fetch_vaers_payload(query, CvxLookupMode::LocalOnly)
                 );
-                let vaers = match vaers_result {
-                    Ok(payload) => payload,
-                    Err(_) => VaersSearchPayload::status_only(
-                        VaersSearchStatus::Unavailable,
-                        "CDC CVX/VAERS adverse events are unavailable.".to_string(),
-                    ),
-                };
+                let vaers = vaers_payload_from_result(vaers_result);
                 Ok(all_source_search_with_vaers_payload(
                     optional_faers_status(faers_result)?,
                     vaers,
@@ -2487,5 +2487,109 @@ mod tests {
                 assert_eq!(rows[1].trial_count, 1);
             }
         }
+    }
+
+    fn injected_cvx_vaers_failure(kind: &str) -> BioMcpError {
+        match kind {
+            "connection-refused" => BioMcpError::Api {
+                api: "VAERS".to_string(),
+                message: "connection refused".to_string(),
+            },
+            "timeout" => BioMcpError::SourceUnavailable {
+                source_name: "CDC CVX/MVX".to_string(),
+                reason: "request timed out".to_string(),
+                suggestion: "retry".to_string(),
+            },
+            "malformed-body" => BioMcpError::ApiJson {
+                api: "VAERS".to_string(),
+                source: serde_json::from_str::<serde_json::Value>("{")
+                    .expect_err("fixture body must be malformed"),
+            },
+            other => panic!("unknown injected failure: {other}"),
+        }
+    }
+
+    fn matched_mmr() -> VaersMatchedVaccine {
+        VaersMatchedVaccine {
+            display_name: "MMR".to_string(),
+            wonder_code: "MMR".to_string(),
+            cvx_codes: vec!["03".to_string(), "94".to_string()],
+        }
+    }
+
+    fn assert_cvx_vaers_outcome(
+        payload: &VaersSearchPayload,
+        expected: crate::entities::section_outcome::SectionOutcomeState,
+    ) {
+        use crate::entities::section_outcome::SectionOutcomeState;
+
+        let search = source_search(AdverseEventSourceFilter::Vaers, None, Some(payload.clone()));
+        let outcome = search
+            .section_outcomes
+            .get("vaers")
+            .expect("production search completes VAERS outcome");
+        assert_eq!(outcome.outcome(), expected);
+        assert_eq!(
+            search
+                .vaers
+                .as_ref()
+                .expect("VAERS payload retained")
+                .status,
+            payload.status
+        );
+        if expected == SectionOutcomeState::Unavailable {
+            assert_eq!(payload.status, VaersSearchStatus::Unavailable);
+            assert!(outcome.sources().is_empty());
+        } else {
+            assert_eq!(outcome.sources(), &["CDC CVX", "CDC VAERS"]);
+        }
+    }
+
+    #[test]
+    fn cvx_vaers_failure_state_matrix() {
+        use crate::entities::section_outcome::SectionOutcomeState;
+
+        for failure in ["connection-refused", "timeout", "malformed-body"] {
+            let error = injected_cvx_vaers_failure(failure);
+            let private_detail = error.to_string();
+            let payload = vaers_payload_from_result(Err(error));
+            assert_cvx_vaers_outcome(&payload, SectionOutcomeState::Unavailable);
+            assert!(
+                !serde_json::to_string(&payload)
+                    .expect("failed VAERS payload serializes")
+                    .contains(&private_detail)
+            );
+        }
+
+        let mut empty_tables = vaers_summary_tables_fixture();
+        empty_tables.total_reports = 0;
+        empty_tables.serious_reports = 0;
+        empty_tables.non_serious_reports = 0;
+        empty_tables.reactions.clear();
+        empty_tables.age_distribution.clear();
+        let empty_input = vaers_summary_from_tables(matched_mmr(), empty_tables);
+        let empty_expected = serde_json::to_value(&empty_input).expect("empty payload serializes");
+        let empty = vaers_payload_from_result(Ok(empty_input));
+        assert_eq!(
+            serde_json::to_value(&empty).expect("normalized empty payload serializes"),
+            empty_expected
+        );
+        assert_eq!(empty.status, VaersSearchStatus::Empty);
+        assert_cvx_vaers_outcome(&empty, SectionOutcomeState::Empty);
+
+        let data_input = vaers_summary_from_tables(matched_mmr(), vaers_summary_tables_fixture());
+        let data_expected = serde_json::to_value(&data_input).expect("data payload serializes");
+        let data = vaers_payload_from_result(Ok(data_input));
+        assert_eq!(
+            serde_json::to_value(&data).expect("normalized data payload serializes"),
+            data_expected
+        );
+        assert_eq!(data.status, VaersSearchStatus::Ok);
+        assert!(
+            data.summary
+                .as_ref()
+                .is_some_and(|summary| summary.total_reports > 0)
+        );
+        assert_cvx_vaers_outcome(&data, SectionOutcomeState::Data);
     }
 }

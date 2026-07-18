@@ -394,6 +394,55 @@ pub async fn search_page(
     Ok(SearchPage::cursor(rows, resolved_total, next))
 }
 
+fn apply_domains_result(protein: &mut Protein, result: Result<Vec<ProteinDomain>, BioMcpError>) {
+    match result {
+        Ok(rows) => {
+            let outcome = if rows.is_empty() {
+                SectionOutcome::empty("InterPro")
+            } else {
+                SectionOutcome::data("InterPro")
+            };
+            protein.domains = rows;
+            protein
+                .section_outcomes
+                .complete(PROTEIN_SECTION_DOMAINS, outcome);
+        }
+        Err(_) => {
+            protein.domains = Vec::new();
+            protein.section_outcomes.complete(
+                PROTEIN_SECTION_DOMAINS,
+                SectionOutcome::unavailable("InterPro protein domains are unavailable."),
+            );
+        }
+    }
+}
+
+fn apply_protein_interactions_result(
+    protein: &mut Protein,
+    result: Result<Vec<ProteinInteraction>, BioMcpError>,
+) {
+    match result {
+        Ok(rows) => {
+            let outcome = if rows.is_empty() {
+                SectionOutcome::empty("STRING")
+            } else {
+                SectionOutcome::data("STRING")
+            };
+            protein.interactions = rows;
+            protein
+                .section_outcomes
+                .complete(PROTEIN_SECTION_INTERACTIONS, outcome);
+        }
+        Err(_) => {
+            protein.interactions = Vec::new();
+            protein.section_outcomes.complete(
+                PROTEIN_SECTION_INTERACTIONS,
+                SectionOutcome::unavailable("STRING protein interactions are unavailable."),
+            );
+        }
+    }
+}
+
 pub async fn get(accession: &str, sections: &[String]) -> Result<Protein, BioMcpError> {
     get_with_structure_limit(accession, sections, None, None).await
 }
@@ -529,47 +578,11 @@ pub async fn get_with_structure_limit(
         tokio::join!(domains_fut, interactions_fut, complexes_fut);
 
     if parsed_sections.include_domains {
-        match domains_res {
-            Ok(domains) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_DOMAINS,
-                    if domains.is_empty() {
-                        SectionOutcome::empty("InterPro")
-                    } else {
-                        SectionOutcome::data("InterPro")
-                    },
-                );
-                protein.domains = domains;
-            }
-            Err(_) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_DOMAINS,
-                    SectionOutcome::unavailable("InterPro protein domains are unavailable."),
-                );
-            }
-        }
+        apply_domains_result(&mut protein, domains_res);
     }
 
     if parsed_sections.include_interactions {
-        match interactions_res {
-            Ok(rows) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_INTERACTIONS,
-                    if rows.is_empty() {
-                        SectionOutcome::empty("STRING")
-                    } else {
-                        SectionOutcome::data("STRING")
-                    },
-                );
-                protein.interactions = rows;
-            }
-            Err(_) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_INTERACTIONS,
-                    SectionOutcome::unavailable("STRING protein interactions are unavailable."),
-                );
-            }
-        }
+        apply_protein_interactions_result(&mut protein, interactions_res);
     }
 
     if parsed_sections.include_complexes {
@@ -711,5 +724,176 @@ mod tests {
         ];
         let page = paginate_structures(rows, 2, 1);
         assert_eq!(page, vec!["2abc".to_string(), "3abc".to_string()]);
+    }
+
+    fn test_protein() -> Protein {
+        Protein {
+            section_outcomes: default_protein_section_outcomes(),
+            accession: "P15056".to_string(),
+            entry_id: Some("BRAF_HUMAN".to_string()),
+            name: "Serine/threonine-protein kinase B-raf".to_string(),
+            gene_symbol: Some("BRAF".to_string()),
+            organism: Some("Homo sapiens".to_string()),
+            length: Some(766),
+            function: None,
+            structures: Vec::new(),
+            structure_count: None,
+            domains: Vec::new(),
+            interactions: Vec::new(),
+            complexes: Vec::new(),
+        }
+    }
+
+    fn injected_protein_failure(source: &str, kind: &str) -> BioMcpError {
+        match kind {
+            "connection-refused" => BioMcpError::Api {
+                api: source.to_string(),
+                message: "connection refused".to_string(),
+            },
+            "timeout" => BioMcpError::SourceUnavailable {
+                source_name: source.to_string(),
+                reason: "request timed out".to_string(),
+                suggestion: "retry".to_string(),
+            },
+            "malformed-body" => BioMcpError::ApiJson {
+                api: source.to_string(),
+                source: serde_json::from_str::<serde_json::Value>("{")
+                    .expect_err("fixture body must be malformed"),
+            },
+            other => panic!("unknown injected failure: {other}"),
+        }
+    }
+
+    fn assert_protein_outcome(
+        protein: &Protein,
+        key: &str,
+        expected: crate::entities::section_outcome::SectionOutcomeState,
+        successful_source: &str,
+    ) {
+        use crate::entities::section_outcome::SectionOutcomeState;
+
+        let outcome = protein
+            .section_outcomes
+            .get(key)
+            .expect("registered protein outcome");
+        assert_eq!(outcome.outcome(), expected, "wrong outcome for {key}");
+        if expected == SectionOutcomeState::Unavailable {
+            assert!(outcome.sources().is_empty());
+        } else {
+            assert_eq!(outcome.sources(), &[successful_source.to_string()]);
+        }
+    }
+
+    #[test]
+    fn interpro_and_string_failure_state_matrix() {
+        use crate::entities::section_outcome::SectionOutcomeState;
+
+        for failure in ["connection-refused", "timeout", "malformed-body"] {
+            let mut protein = test_protein();
+            protein.domains.push(ProteinDomain {
+                accession: "stale-domain".to_string(),
+                name: None,
+                domain_type: None,
+            });
+            let error = injected_protein_failure("InterPro", failure);
+            let private_detail = error.to_string();
+            apply_domains_result(&mut protein, Err::<Vec<ProteinDomain>, _>(error));
+            assert!(protein.domains.is_empty());
+            assert!(
+                !serde_json::to_string(&protein)
+                    .expect("failed domain state serializes")
+                    .contains(&private_detail)
+            );
+            assert_protein_outcome(
+                &protein,
+                PROTEIN_SECTION_DOMAINS,
+                SectionOutcomeState::Unavailable,
+                "InterPro",
+            );
+
+            let mut protein = test_protein();
+            protein.interactions.push(ProteinInteraction {
+                partner: "stale-partner".to_string(),
+                score: None,
+            });
+            let error = injected_protein_failure("STRING", failure);
+            let private_detail = error.to_string();
+            apply_protein_interactions_result(
+                &mut protein,
+                Err::<Vec<ProteinInteraction>, _>(error),
+            );
+            assert!(protein.interactions.is_empty());
+            assert!(
+                !serde_json::to_string(&protein)
+                    .expect("failed interaction state serializes")
+                    .contains(&private_detail)
+            );
+            assert_protein_outcome(
+                &protein,
+                PROTEIN_SECTION_INTERACTIONS,
+                SectionOutcomeState::Unavailable,
+                "STRING",
+            );
+        }
+
+        let mut empty = test_protein();
+        empty.domains.push(ProteinDomain {
+            accession: "stale-domain".to_string(),
+            name: None,
+            domain_type: None,
+        });
+        apply_domains_result(&mut empty, Ok(Vec::new()));
+        assert!(empty.domains.is_empty());
+        assert_protein_outcome(
+            &empty,
+            PROTEIN_SECTION_DOMAINS,
+            SectionOutcomeState::Empty,
+            "InterPro",
+        );
+        let mut data = test_protein();
+        apply_domains_result(
+            &mut data,
+            Ok(vec![ProteinDomain {
+                accession: "IPR000719".to_string(),
+                name: Some("Protein kinase domain".to_string()),
+                domain_type: Some("domain".to_string()),
+            }]),
+        );
+        assert_eq!(data.domains[0].accession, "IPR000719");
+        assert_protein_outcome(
+            &data,
+            PROTEIN_SECTION_DOMAINS,
+            SectionOutcomeState::Data,
+            "InterPro",
+        );
+
+        let mut empty = test_protein();
+        empty.interactions.push(ProteinInteraction {
+            partner: "stale-partner".to_string(),
+            score: None,
+        });
+        apply_protein_interactions_result(&mut empty, Ok(Vec::new()));
+        assert!(empty.interactions.is_empty());
+        assert_protein_outcome(
+            &empty,
+            PROTEIN_SECTION_INTERACTIONS,
+            SectionOutcomeState::Empty,
+            "STRING",
+        );
+        let mut data = test_protein();
+        apply_protein_interactions_result(
+            &mut data,
+            Ok(vec![ProteinInteraction {
+                partner: "MAP2K1".to_string(),
+                score: Some(0.99),
+            }]),
+        );
+        assert_eq!(data.interactions[0].partner, "MAP2K1");
+        assert_protein_outcome(
+            &data,
+            PROTEIN_SECTION_INTERACTIONS,
+            SectionOutcomeState::Data,
+            "STRING",
+        );
     }
 }
