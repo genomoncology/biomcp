@@ -3666,11 +3666,15 @@ mod tests {
     fn quickgo_and_string_failure_state_matrix() {
         for failure in ["connection-refused", "timeout", "malformed-body"] {
             let mut gene = test_gene("BRAF");
-            apply_go_section_result(
-                &mut gene,
-                Err::<Vec<GeneGoTerm>, _>(injected_section_failure("QuickGO", failure)),
-            );
+            let error = injected_section_failure("QuickGO", failure);
+            let private_detail = error.to_string();
+            apply_go_section_result(&mut gene, Err::<Vec<GeneGoTerm>, _>(error));
             assert!(gene.go.as_ref().is_some_and(Vec::is_empty));
+            assert!(
+                !serde_json::to_string(&gene)
+                    .expect("failed GO state serializes")
+                    .contains(&private_detail)
+            );
             assert_gene_section_outcome(
                 &gene,
                 GENE_SECTION_GO,
@@ -3679,11 +3683,15 @@ mod tests {
             );
 
             let mut gene = test_gene("BRAF");
-            apply_gene_interactions_result(
-                &mut gene,
-                Err::<Vec<GeneInteraction>, _>(injected_section_failure("STRING", failure)),
-            );
+            let error = injected_section_failure("STRING", failure);
+            let private_detail = error.to_string();
+            apply_gene_interactions_result(&mut gene, Err::<Vec<GeneInteraction>, _>(error));
             assert!(gene.interactions.as_ref().is_some_and(Vec::is_empty));
+            assert!(
+                !serde_json::to_string(&gene)
+                    .expect("failed interaction state serializes")
+                    .contains(&private_detail)
+            );
             assert_gene_section_outcome(
                 &gene,
                 GENE_SECTION_INTERACTIONS,

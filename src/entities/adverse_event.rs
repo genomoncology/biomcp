@@ -2523,8 +2523,20 @@ mod tests {
     ) {
         use crate::entities::section_outcome::SectionOutcomeState;
 
-        let outcome = vaers_section_outcome(payload);
+        let search = source_search(AdverseEventSourceFilter::Vaers, None, Some(payload.clone()));
+        let outcome = search
+            .section_outcomes
+            .get("vaers")
+            .expect("production search completes VAERS outcome");
         assert_eq!(outcome.outcome(), expected);
+        assert_eq!(
+            search
+                .vaers
+                .as_ref()
+                .expect("VAERS payload retained")
+                .status,
+            payload.status
+        );
         if expected == SectionOutcomeState::Unavailable {
             assert_eq!(payload.status, VaersSearchStatus::Unavailable);
             assert!(outcome.sources().is_empty());
@@ -2538,10 +2550,15 @@ mod tests {
         use crate::entities::section_outcome::SectionOutcomeState;
 
         for failure in ["connection-refused", "timeout", "malformed-body"] {
-            let result: Result<VaersSearchPayload, BioMcpError> =
-                Err(injected_cvx_vaers_failure(failure));
-            let payload = vaers_payload_from_result(result);
+            let error = injected_cvx_vaers_failure(failure);
+            let private_detail = error.to_string();
+            let payload = vaers_payload_from_result(Err(error));
             assert_cvx_vaers_outcome(&payload, SectionOutcomeState::Unavailable);
+            assert!(
+                !serde_json::to_string(&payload)
+                    .expect("failed VAERS payload serializes")
+                    .contains(&private_detail)
+            );
         }
 
         let mut empty_tables = vaers_summary_tables_fixture();

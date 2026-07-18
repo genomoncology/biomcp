@@ -313,10 +313,9 @@ fn drugsfda_failure_state_matrix() {
 
     for failure in ["connection-refused", "timeout", "malformed-body"] {
         let mut drug = test_approval_drug();
-        apply_approvals_result(
-            &mut drug,
-            Err::<Vec<DrugApproval>, _>(injected_approval_failure(failure)),
-        );
+        let error = injected_approval_failure(failure);
+        let private_detail = error.to_string();
+        apply_approvals_result(&mut drug, Err::<Vec<DrugApproval>, _>(error));
         assert!(
             drug.approvals
                 .as_ref()
@@ -324,6 +323,11 @@ fn drugsfda_failure_state_matrix() {
                 .is_empty()
         );
         assert_approval_outcome(&drug, SectionOutcomeState::Unavailable);
+        assert!(
+            !serde_json::to_string(&drug)
+                .expect("failed approvals state serializes")
+                .contains(&private_detail)
+        );
     }
 
     let mut empty = test_approval_drug();

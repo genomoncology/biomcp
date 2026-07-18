@@ -790,11 +790,20 @@ mod tests {
 
         for failure in ["connection-refused", "timeout", "malformed-body"] {
             let mut protein = test_protein();
-            apply_domains_result(
-                &mut protein,
-                Err::<Vec<ProteinDomain>, _>(injected_protein_failure("InterPro", failure)),
-            );
+            protein.domains.push(ProteinDomain {
+                accession: "stale-domain".to_string(),
+                name: None,
+                domain_type: None,
+            });
+            let error = injected_protein_failure("InterPro", failure);
+            let private_detail = error.to_string();
+            apply_domains_result(&mut protein, Err::<Vec<ProteinDomain>, _>(error));
             assert!(protein.domains.is_empty());
+            assert!(
+                !serde_json::to_string(&protein)
+                    .expect("failed domain state serializes")
+                    .contains(&private_detail)
+            );
             assert_protein_outcome(
                 &protein,
                 PROTEIN_SECTION_DOMAINS,
@@ -803,11 +812,22 @@ mod tests {
             );
 
             let mut protein = test_protein();
+            protein.interactions.push(ProteinInteraction {
+                partner: "stale-partner".to_string(),
+                score: None,
+            });
+            let error = injected_protein_failure("STRING", failure);
+            let private_detail = error.to_string();
             apply_protein_interactions_result(
                 &mut protein,
-                Err::<Vec<ProteinInteraction>, _>(injected_protein_failure("STRING", failure)),
+                Err::<Vec<ProteinInteraction>, _>(error),
             );
             assert!(protein.interactions.is_empty());
+            assert!(
+                !serde_json::to_string(&protein)
+                    .expect("failed interaction state serializes")
+                    .contains(&private_detail)
+            );
             assert_protein_outcome(
                 &protein,
                 PROTEIN_SECTION_INTERACTIONS,
