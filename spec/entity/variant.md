@@ -53,6 +53,7 @@ confident empty result.
 | --gerp-min | 1e309 | GERP overflow |
 | --min-cadd | NaN | CADD NaN |
 | --min-cadd | +inf | CADD positive infinity |
+| --min-cadd | -inf | CADD negative infinity |
 | --min-cadd | 1e309 | CADD overflow |
 
 ```bash run id=non-finite-threshold exit=2 each_row="Finite score thresholds"
