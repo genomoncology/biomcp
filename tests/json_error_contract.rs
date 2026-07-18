@@ -6,6 +6,8 @@ use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use biomcp_mcp_contract_client::start_ols4_stub;
+
 struct CommandResult {
     code: Option<i32>,
     stdout: String,
@@ -203,9 +205,15 @@ fn mygene_fixture_without_request_stops_on_drop() {
 #[test]
 fn json_mode_gene_not_found_error_writes_json_stdout_and_exit_1() {
     let fixture = MyGeneFixture::start();
+    let (_ols_thread, ols_url) = start_ols4_stub().expect("start OLS4 fixture");
     let result = run_biomcp_with_env(
         &["--json", "get", "gene", "ZZZNOTAREALGENE"],
-        &[("BIOMCP_MYGENE_BASE", &fixture.base_url)],
+        &[
+            ("BIOMCP_MYGENE_BASE", &fixture.base_url),
+            ("BIOMCP_OLS4_BASE", &ols_url),
+            ("BIOMCP_HPO_BASE", "http://127.0.0.1:9"),
+            ("UMLS_API_KEY", ""),
+        ],
     );
     let request_target = fixture.received_request();
 
@@ -298,7 +306,11 @@ fn parsed_json_errors_keep_command_collection_paths_iterable() {
 fn runtime_json_errors_keep_discover_concepts_iterable() {
     let result = run_biomcp_with_env(
         &["--no-cache", "--json", "discover", "melanoma"],
-        &[("BIOMCP_OLS4_BASE", "http://127.0.0.1:9")],
+        &[
+            ("BIOMCP_OLS4_BASE", "http://127.0.0.1:9"),
+            ("BIOMCP_MEDLINEPLUS_BASE", "http://127.0.0.1:9"),
+            ("UMLS_API_KEY", ""),
+        ],
     );
 
     assert_json_error(&result, 1, "http_middleware");
