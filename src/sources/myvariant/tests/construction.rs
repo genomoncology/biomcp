@@ -100,6 +100,19 @@ fn search_plan_sets_path_size_from_and_fields() {
 }
 
 #[test]
+fn search_plan_uses_bounded_gerp_projection() {
+    let plan = MyVariantClient::search_plan(&VariantSearchParams {
+        gene: Some("BRAF".into()),
+        ..params()
+    })
+    .unwrap();
+    let fields = plan.query_value("fields").expect("fields present");
+    assert!(fields.contains("dbnsfp.gerp*.rs"));
+    assert!(!fields.contains("dbnsfp.gerp++.rs"));
+    assert!(!fields.contains("dbnsfp.*"));
+}
+
+#[test]
 fn search_plan_builds_gene_and_hgvsp_clauses_joined_with_and() {
     let plan = MyVariantClient::search_plan(&VariantSearchParams {
         gene: Some("BRAF".into()),

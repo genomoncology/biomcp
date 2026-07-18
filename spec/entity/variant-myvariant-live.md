@@ -32,7 +32,7 @@ filter. This positive result check catches a stale field path that turns a valid
 filter into a successful but empty response.
 
 ```bash
-biomcp --json --no-cache search variant --gerp-min 4 --limit 1 \
-  | jq '.results | length > 0' \
+biomcp --json --no-cache search variant --gerp-min 4 --limit 5 \
+  | jq '(.results | length > 0) and (.results | all((.gerp | type == "number") and (.gerp >= 4)))' \
   | mustmatch 'true'
 ```
