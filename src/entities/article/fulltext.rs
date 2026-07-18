@@ -964,7 +964,7 @@ mod tests {
                 panic!("unsafe PDF URL should fail before contact: {raw}");
             };
             let message = error.to_string();
-            assert!(message.contains("BioMCP source"));
+            assert!(message.contains("Semantic Scholar"));
             assert!(message.to_ascii_lowercase().contains("retry"));
             assert!(!message.contains(raw));
             assert!(!message.contains("secret"));

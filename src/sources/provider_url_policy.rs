@@ -10,7 +10,7 @@ use std::sync::Arc;
 use reqwest::Url;
 use reqwest::dns::{Addrs, Name, Resolve, Resolving};
 
-use crate::error::BioMcpError;
+use crate::error::{BioMcpError, SourceContext, SourceProvider};
 
 const MAX_REDIRECTS: usize = 10;
 const S2_API_ORIGIN: &str = "https://api.semanticscholar.org";
@@ -82,6 +82,7 @@ impl AllowedOrigin {
 #[derive(Clone, Debug)]
 pub(crate) struct ProviderUrlPolicy {
     source: &'static str,
+    provider: SourceProvider,
     allowed_origins: Vec<AllowedOrigin>,
     credential_origins: Vec<AllowedOrigin>,
     unsafe_test_origin: Option<AllowedOrigin>,
@@ -101,6 +102,7 @@ impl ProviderUrlPolicy {
         }
         let policy = Self {
             source: "Semantic Scholar",
+            provider: SourceProvider::SEMANTIC_SCHOLAR,
             allowed_origins,
             credential_origins: vec![canonical],
             unsafe_test_origin: unsafe_test_origin(),
@@ -121,13 +123,27 @@ impl ProviderUrlPolicy {
         consumer: ProviderUrlConsumer,
         selected_origin: Option<&Url>,
     ) -> Result<Self, BioMcpError> {
-        let (source, origins): (&'static str, &[&str]) = match consumer {
-            ProviderUrlConsumer::SemanticScholarPdf => ("Semantic Scholar PDF", S2_PDF_ORIGINS),
-            ProviderUrlConsumer::PmcOaArchive => ("PMC OA archive", PMC_OA_ORIGINS),
-            ProviderUrlConsumer::FigshareDownload => ("Figshare download", FIGSHARE_ORIGINS),
-            ProviderUrlConsumer::ClinicalTrialsDocument => {
-                ("ClinicalTrials.gov document", CTGOV_DOCUMENT_ORIGINS)
-            }
+        let (source, provider, origins): (&'static str, SourceProvider, &[&str]) = match consumer {
+            ProviderUrlConsumer::SemanticScholarPdf => (
+                "Semantic Scholar PDF",
+                SourceProvider::SEMANTIC_SCHOLAR,
+                S2_PDF_ORIGINS,
+            ),
+            ProviderUrlConsumer::PmcOaArchive => (
+                "PMC OA archive",
+                SourceProvider::PMC_OPEN_ACCESS,
+                PMC_OA_ORIGINS,
+            ),
+            ProviderUrlConsumer::FigshareDownload => (
+                "Figshare download",
+                SourceProvider::FIGSHARE,
+                FIGSHARE_ORIGINS,
+            ),
+            ProviderUrlConsumer::ClinicalTrialsDocument => (
+                "ClinicalTrials.gov document",
+                SourceProvider::CLINICAL_TRIALS,
+                CTGOV_DOCUMENT_ORIGINS,
+            ),
         };
         let mut allowed_origins = origins
             .iter()
@@ -142,6 +158,7 @@ impl ProviderUrlPolicy {
         }
         let policy = Self {
             source,
+            provider,
             allowed_origins,
             credential_origins: Vec::new(),
             unsafe_test_origin: unsafe_test_origin()
@@ -233,12 +250,13 @@ impl ProviderUrlPolicy {
 
     fn error(&self, class: &str) -> BioMcpError {
         BioMcpError::Api {
-            api: "provider-url-policy".to_string(),
+            api: self.provider.label().to_string(),
             message: format!(
                 "{} source unavailable: outbound policy rejected {class}",
                 self.source
             ),
         }
+        .with_source_context(SourceContext::retry(self.provider))
     }
 }
 
@@ -351,6 +369,7 @@ mod tests {
     fn pdf_policy() -> ProviderUrlPolicy {
         ProviderUrlPolicy {
             source: "test provider",
+            provider: SourceProvider::SEMANTIC_SCHOLAR,
             allowed_origins: vec![
                 AllowedOrigin::parse("https://pdfs.semanticscholar.org").unwrap(),
             ],
@@ -370,7 +389,7 @@ mod tests {
         ] {
             let error = policy.validate_url(&Url::parse(raw).unwrap()).unwrap_err();
             let message = error.to_string();
-            assert!(message.contains("BioMCP source"));
+            assert!(message.contains("Semantic Scholar"));
             assert!(message.to_ascii_lowercase().contains("retry"));
             assert!(!message.contains(raw));
             assert!(!message.contains("secret"));
@@ -403,15 +422,24 @@ mod tests {
 
     #[test]
     fn consumer_matrix_enumerates_valid_origins_and_shared_rejections() {
-        let valid = [
-            "https://pdfs.semanticscholar.org/paper.pdf",
-            "https://ftp.ncbi.nlm.nih.gov/pub/pmc/archive.tgz",
-            "https://ndownloader.figshare.com/files/1",
-            "https://cdn.clinicaltrials.gov/large-docs/48/NCT03361748/Protocol.pdf",
-        ];
-        assert_eq!(ProviderUrlConsumer::ALL.len(), valid.len());
-
-        for (consumer, valid_url) in ProviderUrlConsumer::ALL.iter().copied().zip(valid) {
+        for consumer in ProviderUrlConsumer::ALL.iter().copied() {
+            let (valid_url, expected_source) = match consumer {
+                ProviderUrlConsumer::SemanticScholarPdf => (
+                    "https://pdfs.semanticscholar.org/paper.pdf",
+                    "Semantic Scholar",
+                ),
+                ProviderUrlConsumer::PmcOaArchive => (
+                    "https://ftp.ncbi.nlm.nih.gov/pub/pmc/archive.tgz",
+                    "PMC Open Access",
+                ),
+                ProviderUrlConsumer::FigshareDownload => {
+                    ("https://ndownloader.figshare.com/files/1", "Figshare")
+                }
+                ProviderUrlConsumer::ClinicalTrialsDocument => (
+                    "https://cdn.clinicaltrials.gov/large-docs/48/NCT03361748/Protocol.pdf",
+                    "ClinicalTrials.gov",
+                ),
+            };
             let policy = ProviderUrlPolicy::for_consumer(consumer, None).unwrap();
             assert!(policy.validate_url(&Url::parse(valid_url).unwrap()).is_ok());
             for raw in [
@@ -422,9 +450,15 @@ mod tests {
                 "https://example.com:444/private",
             ] {
                 let error = policy.validate_url(&Url::parse(raw).unwrap()).unwrap_err();
-                let message = format!("{error:?}");
-                assert!(message.contains("outbound policy"));
-                assert!(!message.contains(raw));
+                let projection = error.public_projection();
+                assert_eq!(projection.source, Some(expected_source));
+                assert!(
+                    projection
+                        .recovery
+                        .is_some_and(|recovery| recovery.to_ascii_lowercase().contains("retry"))
+                );
+                let diagnostic = error.to_string();
+                assert!(!diagnostic.contains(raw));
             }
             assert!(
                 policy

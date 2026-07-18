@@ -64,10 +64,21 @@ impl DisgenetClient {
         )
         .await?;
         Self::decode_json_response(status, &headers, &bytes).map_err(|error| {
-            error.with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::DISGENET,
-            ))
+            let context = Self::error_context(&error);
+            error.with_source_context(context)
         })
+    }
+
+    fn error_context(error: &BioMcpError) -> crate::error::SourceContext {
+        let recovery = if matches!(
+            error,
+            BioMcpError::ApiKeyRequired { .. } | BioMcpError::ApiKeyRejected { .. }
+        ) {
+            crate::error::RecoveryAction::ReviewSourceConfiguration
+        } else {
+            crate::error::RecoveryAction::RetryRemoteSource
+        };
+        crate::error::SourceContext::new(crate::error::SourceProvider::DISGENET, recovery)
     }
 
     fn decode_json_response<T: DeserializeOwned>(

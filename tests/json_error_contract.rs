@@ -363,6 +363,45 @@ fn human_runtime_source_error_is_safe_and_actionable() {
 }
 
 #[test]
+fn swallowed_source_failures_do_not_log_credentials() {
+    let secret = "VERIFY_SECRET_586";
+    let result = run_biomcp_with_env(
+        &[
+            "--no-cache",
+            "variant",
+            "articles",
+            "BRAF V600E",
+            "--limit",
+            "1",
+        ],
+        &[
+            ("BIOMCP_PUBTATOR_BASE", "http://127.0.0.1:0"),
+            ("NCBI_API_KEY", secret),
+        ],
+    );
+
+    assert_eq!(result.code, Some(1));
+    assert!(result.stdout.trim().is_empty(), "stdout={}", result.stdout);
+    assert!(
+        result.stderr.contains("PubTator 3"),
+        "stderr={}",
+        result.stderr
+    );
+    assert!(
+        result.stderr.to_ascii_lowercase().contains("retry"),
+        "stderr={}",
+        result.stderr
+    );
+    for leaked_detail in [secret, "api_key=", "127.0.0.1:0", "error sending request"] {
+        assert!(
+            !result.stderr.contains(leaked_detail),
+            "swallowed source failure leaked {leaked_detail}: {}",
+            result.stderr
+        );
+    }
+}
+
+#[test]
 fn vaers_aggregate_and_pre_dispatch_errors_remain_keyless() {
     let vaers = run_biomcp(&[
         "--json",
