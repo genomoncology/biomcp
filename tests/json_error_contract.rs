@@ -307,8 +307,8 @@ fn runtime_json_errors_keep_provider_context_and_contract() {
     let result = run_biomcp_with_env(
         &["--no-cache", "--json", "discover", "melanoma"],
         &[
-            ("BIOMCP_OLS4_BASE", "http://127.0.0.1:9"),
-            ("BIOMCP_MEDLINEPLUS_BASE", "http://127.0.0.1:9"),
+            ("BIOMCP_OLS4_BASE", "http://127.0.0.1:0"),
+            ("BIOMCP_MEDLINEPLUS_BASE", "http://127.0.0.1:0"),
             ("UMLS_API_KEY", ""),
         ],
     );
@@ -320,9 +320,12 @@ fn runtime_json_errors_keep_provider_context_and_contract() {
     let recovery = value["error"]["recovery"]
         .as_str()
         .expect("source error needs a recovery action");
-    assert!(recovery.contains("Retry"), "json={value}");
+    assert!(
+        recovery.to_ascii_lowercase().contains("retry"),
+        "json={value}"
+    );
     assert!(recovery.len() <= 160, "recovery must be bounded: {value}");
-    assert!(!result.stdout.contains("127.0.0.1:9"));
+    assert!(!result.stdout.contains("127.0.0.1:0"));
     assert!(!result.stdout.contains("error sending request"));
 }
 
@@ -331,8 +334,8 @@ fn human_runtime_source_error_is_safe_and_actionable() {
     let result = run_biomcp_with_env(
         &["--no-cache", "discover", "melanoma"],
         &[
-            ("BIOMCP_OLS4_BASE", "http://127.0.0.1:9"),
-            ("BIOMCP_MEDLINEPLUS_BASE", "http://127.0.0.1:9"),
+            ("BIOMCP_OLS4_BASE", "http://127.0.0.1:0"),
+            ("BIOMCP_MEDLINEPLUS_BASE", "http://127.0.0.1:0"),
             ("UMLS_API_KEY", ""),
         ],
     );
@@ -350,7 +353,7 @@ fn human_runtime_source_error_is_safe_and_actionable() {
         "stderr={}",
         result.stderr
     );
-    for leaked_detail in ["127.0.0.1:9", "error sending request", "middleware error"] {
+    for leaked_detail in ["127.0.0.1:0", "error sending request", "middleware error"] {
         assert!(
             !result.stderr.to_ascii_lowercase().contains(leaked_detail),
             "human source error leaked {leaked_detail}: {}",

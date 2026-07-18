@@ -170,6 +170,8 @@ mod tests {
             "parser detail at byte 42",
             "/home/operator/private.json",
             "hostile-provider-label",
+            "\u{1b}[31mterminal-red",
+            "\u{202e}bidi-override",
         ];
         let errors = [
             (
@@ -189,7 +191,10 @@ mod tests {
             ),
             (
                 BioMcpError::Api {
-                    api: format!("{} {}", sentinels[5], sentinels[0]),
+                    api: format!(
+                        "{} {} {} {}",
+                        sentinels[5], sentinels[0], sentinels[6], sentinels[7]
+                    ),
                     message: format!("{} {}", sentinels[2], sentinels[4]),
                 },
                 "BioMCP source",

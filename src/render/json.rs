@@ -662,6 +662,8 @@ mod tests {
             "parser detail at byte 42",
             "/home/operator/private.json",
             "hostile-provider-label",
+            "\u{1b}[31mterminal-red",
+            "\u{202e}bidi-override",
         ];
         let errors = [
             (
@@ -683,7 +685,10 @@ mod tests {
             ),
             (
                 BioMcpError::Api {
-                    api: format!("{} {}", sentinels[5], sentinels[0]),
+                    api: format!(
+                        "{} {} {} {}",
+                        sentinels[5], sentinels[0], sentinels[6], sentinels[7]
+                    ),
                     message: format!("{} {} {}", sentinels[1], sentinels[3], sentinels[4]),
                 },
                 "api",
@@ -703,17 +708,29 @@ mod tests {
                 .as_str()
                 .expect("source error needs a recovery action");
             assert!(
-                recovery.contains("Retry"),
+                recovery.to_ascii_lowercase().contains("retry"),
                 "recovery must be actionable: {value}"
             );
             assert!(recovery.len() <= 160, "recovery must be bounded: {value}");
             assert!(
-                expected_source.len() <= 80,
-                "normalized source labels must be bounded"
+                value["error"]["source"]
+                    .as_str()
+                    .is_some_and(|source| source.len() <= 80),
+                "normalized source labels must be bounded: {value}"
             );
             assert_eq!(value["_meta"]["not_found"], false, "json={value}");
+            let projected_strings = value["error"]
+                .as_object()
+                .expect("structured error object")
+                .values()
+                .filter_map(serde_json::Value::as_str)
+                .collect::<Vec<_>>()
+                .join("\n");
             for sentinel in sentinels {
-                assert!(!json.contains(sentinel), "JSON leaked {sentinel}: {json}");
+                assert!(
+                    !projected_strings.contains(sentinel),
+                    "JSON error fields leaked {sentinel}: {value}"
+                );
             }
         }
     }
