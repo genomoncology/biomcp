@@ -341,7 +341,10 @@ async fn download_payload(
                 file_name,
                 crate::sources::body_excerpt(&body)
             ),
-        ));
+        )
+        .with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::GTR,
+        )));
     }
     Ok(body)
 }
@@ -351,8 +354,11 @@ async fn write_validated_pair(
     test_version_body: &[u8],
     condition_gene_body: &[u8],
 ) -> Result<(), BioMcpError> {
-    validate_test_version_payload(test_version_body)?;
-    validate_condition_gene_payload(condition_gene_body)?;
+    let context = crate::error::SourceContext::retry(crate::error::SourceProvider::GTR);
+    validate_test_version_payload(test_version_body)
+        .map_err(|error| error.with_source_context(context))?;
+    validate_condition_gene_payload(condition_gene_body)
+        .map_err(|error| error.with_source_context(context))?;
 
     let test_version_path = root.join(GTR_TEST_VERSION_FILE);
     let condition_gene_path = root.join(GTR_CONDITION_GENE_FILE);

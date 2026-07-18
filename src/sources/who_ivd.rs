@@ -324,6 +324,7 @@ async fn sync_export(root: &Path, mode: WhoIvdSyncMode) -> Result<(), BioMcpErro
     )
     .await?;
 
+    let context = crate::error::SourceContext::retry(crate::error::SourceProvider::WHO_IVD);
     if !status.is_success() {
         return Err(BioMcpError::Api {
             api: WHO_IVD_API.to_string(),
@@ -332,15 +333,19 @@ async fn sync_export(root: &Path, mode: WhoIvdSyncMode) -> Result<(), BioMcpErro
                 WHO_IVD_CSV_FILE,
                 crate::sources::body_excerpt(&body)
             ),
-        });
+        }
+        .with_source_context(context));
     }
 
-    ensure_csv_content_type(content_type.as_ref(), &body)?;
-    let payload = std::str::from_utf8(&body).map_err(|source| BioMcpError::Api {
-        api: WHO_IVD_API.to_string(),
-        message: format!("{WHO_IVD_CSV_FILE} was not valid UTF-8: {source}"),
-    })?;
-    parse_who_ivd_csv(payload)?;
+    ensure_csv_content_type(content_type.as_ref(), &body)
+        .map_err(|error| error.with_source_context(context))?;
+    let payload = std::str::from_utf8(&body)
+        .map_err(|source| BioMcpError::Api {
+            api: WHO_IVD_API.to_string(),
+            message: format!("{WHO_IVD_CSV_FILE} was not valid UTF-8: {source}"),
+        })
+        .map_err(|error| error.with_source_context(context))?;
+    parse_who_ivd_csv(payload).map_err(|error| error.with_source_context(context))?;
 
     let path = root.join(WHO_IVD_CSV_FILE);
     if let Ok(existing) = tokio::fs::read(&path).await

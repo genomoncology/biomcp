@@ -380,6 +380,7 @@ async fn sync_export(
     )
     .await?;
 
+    let context = crate::error::SourceContext::retry(crate::error::SourceProvider::DDINTER);
     if !status.is_success() {
         return Err(BioMcpError::Api {
             api: DDINTER_API.to_string(),
@@ -387,11 +388,13 @@ async fn sync_export(
                 "{file_name}: HTTP {status}: {}",
                 crate::sources::body_excerpt(&body)
             ),
-        });
+        }
+        .with_source_context(context));
     }
 
-    ensure_csv_content_type(content_type.as_ref(), &body)?;
-    parse_csv_rows(file_name, &body)?;
+    ensure_csv_content_type(content_type.as_ref(), &body)
+        .map_err(|error| error.with_source_context(context))?;
+    parse_csv_rows(file_name, &body).map_err(|error| error.with_source_context(context))?;
     crate::utils::download::write_atomic_bytes(&root.join(file_name), &body).await
 }
 

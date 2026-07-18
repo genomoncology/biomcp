@@ -120,14 +120,31 @@ impl SemanticScholarClient {
                     crate::error::RecoveryAction::ReviewSourceConfiguration,
                 )));
             }
-            Err(error) => return Err(error),
+            Err(_) => {
+                return Err(BioMcpError::Api {
+                    api: SEMANTIC_SCHOLAR_API.to_string(),
+                    message:
+                        "Semantic Scholar source unavailable: outbound request rejected or failed"
+                            .to_string(),
+                }
+                .with_source_context(context));
+            }
         };
         let status = resp.status();
-        let bytes = crate::sources::read_limited_source_body(
-            resp,
-            crate::error::SourceContext::narrow(crate::error::SourceProvider::SEMANTIC_SCHOLAR),
-        )
-        .await?;
+        let bytes = crate::sources::read_limited_source_body(resp, context)
+            .await
+            .map_err(|error| {
+                let error_context = match error {
+                    BioMcpError::WithSourceContext { context, .. } => context,
+                    _ => context,
+                };
+                BioMcpError::Api {
+                    api: SEMANTIC_SCHOLAR_API.to_string(),
+                    message: "Semantic Scholar source unavailable: response body could not be read"
+                        .to_string(),
+                }
+                .with_source_context(error_context)
+            })?;
         Self::decode_json_response(status, &bytes, self.api_key.is_none())
             .map_err(|error| error.with_source_context(context))
     }

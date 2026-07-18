@@ -1,7 +1,6 @@
 //! Local transport contracts for bounded archive download behavior.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use crate::test_support::TempDirGuard;
 use std::borrow::Cow;
 use std::time::Duration;
@@ -57,8 +56,9 @@ async fn archive_download_rejects_declared_oversize_before_creating_destination(
         .await
         .expect_err("declared oversized response should be rejected");
 
-    assert!(
-        matches!(err, BioMcpError::SourceUnavailable { .. }),
+    assert_eq!(
+        err.code(),
+        "source_unavailable",
         "download resource limits should be source-unavailable, got {err:?}"
     );
     assert!(format!("{err:?}").contains("resource limit"));
@@ -98,7 +98,7 @@ async fn archive_download_rejects_chunked_max_plus_one_and_removes_partial_file(
         .await
         .expect_err("chunked max+1 response should be rejected");
 
-    assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
+    assert_eq!(err.code(), "source_unavailable");
     assert!(format!("{err:?}").contains("resource limit"));
     assert_eq!(
         std::fs::read_dir(root.path())

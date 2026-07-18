@@ -827,6 +827,7 @@ async fn sync_feed(root: &Path, plan: FeedSyncPlan) -> Result<(), BioMcpError> {
         EMA_MAX_BODY_BYTES,
     )
     .await?;
+    let context = crate::error::SourceContext::retry(crate::error::SourceProvider::EMA);
     if !status.is_success() {
         return Err(BioMcpError::Api {
             api: EMA_API.to_string(),
@@ -835,15 +836,12 @@ async fn sync_feed(root: &Path, plan: FeedSyncPlan) -> Result<(), BioMcpError> {
                 plan.feed.local_name,
                 crate::sources::body_excerpt(&body)
             ),
-        });
+        }
+        .with_source_context(context));
     }
 
-    crate::sources::ensure_json_content_type(
-        crate::error::SourceContext::retry(crate::error::SourceProvider::EMA),
-        content_type.as_ref(),
-        &body,
-    )?;
-    validate_feed_payload(plan.feed, &body)?;
+    crate::sources::ensure_json_content_type(context, content_type.as_ref(), &body)?;
+    validate_feed_payload(plan.feed, &body).map_err(|error| error.with_source_context(context))?;
 
     let path = root.join(plan.feed.local_name);
     if let Ok(existing) = tokio::fs::read(&path).await

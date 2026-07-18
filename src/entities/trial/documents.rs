@@ -251,14 +251,13 @@ async fn download_document_with_policy(
 }
 
 async fn read_document_body(mut response: reqwest::Response) -> Result<Vec<u8>, BioMcpError> {
-    let context =
-        crate::error::SourceContext::narrow(crate::error::SourceProvider::CLINICAL_TRIALS);
+    let provider = crate::error::SourceProvider::CLINICAL_TRIALS;
     let mut body = Vec::new();
     while let Some(chunk) = response
         .chunk()
         .await
         .map_err(BioMcpError::from)
-        .map_err(|error| error.with_source_context(context))?
+        .map_err(|error| error.with_source_context(crate::error::SourceContext::retry(provider)))?
     {
         let remaining_with_overflow = DOCUMENT_MAX_BYTES
             .saturating_sub(body.len())
@@ -269,7 +268,7 @@ async fn read_document_body(mut response: reqwest::Response) -> Result<Vec<u8>, 
                 api: CTGOV_CDN_API.into(),
                 message: format!("Response body exceeded {DOCUMENT_MAX_BYTES} bytes"),
             }
-            .with_source_context(context));
+            .with_source_context(crate::error::SourceContext::narrow(provider)));
         }
     }
     Ok(body)

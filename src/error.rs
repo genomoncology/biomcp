@@ -338,7 +338,21 @@ impl BioMcpError {
             Self::SourceUnavailable { .. } => {
                 format!("Source unavailable: {source} is not available.")
             }
-            other => other.non_source_message(),
+            Self::CtGovInterventionQueryRejected { .. } => {
+                format!("API request to {source} was rejected.")
+            }
+            Self::NotFound { .. } => format!("Requested item was not found in {source}."),
+            Self::InvalidArgument(_) => format!("Invalid request for {source}."),
+            Self::ApiKeyRequired { .. } => {
+                format!("Source configuration for {source} is incomplete.")
+            }
+            Self::ApiKeyRejected { .. } => {
+                format!("Source configuration for {source} was rejected.")
+            }
+            Self::Template(_) | Self::Json(_) | Self::Io(_) => {
+                format!("Response from {source} could not be processed.")
+            }
+            Self::WithSourceContext { .. } => unreachable!("underlying error is never wrapped"),
         }
     }
 
@@ -462,7 +476,7 @@ impl BioMcpError {
         }
     }
 
-    pub(crate) fn exit_code(&self) -> u8 {
+    pub fn exit_code(&self) -> u8 {
         match self {
             Self::WithSourceContext { source, .. } => source.exit_code(),
             Self::InvalidArgument(_) => 2,
@@ -710,6 +724,40 @@ mod tests {
             assert_eq!(wrapped.code(), code);
             assert_eq!(wrapped.is_not_found(), not_found);
             assert_eq!(wrapped.exit_code(), exit_code);
+        }
+    }
+
+    #[test]
+    fn source_wrapper_never_projects_raw_non_source_fields() {
+        let sentinel = "credential=fixture-secret /home/operator/private.json";
+        let errors = [
+            BioMcpError::NotFound {
+                entity: sentinel.into(),
+                id: sentinel.into(),
+                suggestion: sentinel.into(),
+            },
+            BioMcpError::InvalidArgument(sentinel.into()),
+            BioMcpError::CtGovInterventionQueryRejected {
+                reason: sentinel.into(),
+            },
+            BioMcpError::ApiKeyRequired {
+                api: sentinel.into(),
+                env_var: sentinel.into(),
+                docs_url: sentinel.into(),
+            },
+            BioMcpError::ApiKeyRejected {
+                api: sentinel.into(),
+                env_var: sentinel.into(),
+                docs_url: sentinel.into(),
+            },
+            BioMcpError::Io(std::io::Error::other(sentinel)),
+        ];
+
+        for error in errors {
+            let wrapped = error.with_source_context(SourceContext::retry(SourceProvider::OLS4));
+            let projection = wrapped.public_projection();
+            assert!(!projection.message.contains(sentinel), "{projection:?}");
+            assert!(!wrapped.to_string().contains(sentinel));
         }
     }
 

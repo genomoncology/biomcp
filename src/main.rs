@@ -72,14 +72,7 @@ async fn main() -> std::process::ExitCode {
                 if let Some(bio_err) = err.downcast_ref::<biomcp_cli::error::BioMcpError>() {
                     eprintln!("Error: {}", human_error(bio_err));
                     let _ = std::io::stderr().flush();
-                    match bio_err {
-                        biomcp_cli::error::BioMcpError::InvalidArgument(_) => {
-                            std::process::exit(2);
-                        }
-                        _ => {
-                            std::process::exit(1);
-                        }
-                    }
+                    std::process::exit(i32::from(bio_err.exit_code()));
                 } else {
                     eprintln!("Error: {}", human_error(&err));
                     let _ = std::io::stderr().flush();

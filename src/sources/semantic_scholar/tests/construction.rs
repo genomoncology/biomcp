@@ -73,6 +73,22 @@ async fn author_fixture_client(
     )
 }
 
+#[tokio::test]
+async fn transport_failures_keep_legacy_api_code_with_source_context() {
+    let client = client_with_api_key(None);
+    let error = client
+        .send_json::<serde_json::Value>(client.client.get("http://127.0.0.1:0"))
+        .await
+        .expect_err("reserved port zero should be unreachable");
+
+    assert_eq!(error.code(), "api");
+    assert_eq!(error.public_projection().source, Some("Semantic Scholar"));
+    assert_eq!(
+        error.public_projection().recovery,
+        Some(crate::error::RecoveryAction::RetryRemoteSource.message())
+    );
+}
+
 #[test]
 fn credential_attachment_requires_canonical_or_explicit_unsafe_fixture_origin() {
     let canonical = reqwest::Url::parse(SEMANTIC_SCHOLAR_BASE).unwrap();

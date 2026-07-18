@@ -9,8 +9,10 @@ provider use `api_key_rejected`.
 Hard remote-source failures can also include additive `error.source` and
 `error.recovery` fields. `source` is a canonical allowlisted provider label
 (maximum 80 bytes), and `recovery` is a bounded action (maximum 160 bytes).
-Both fields are omitted when BioMCP no longer knows which source failed. The
-human diagnostic uses the same source and recovery policy; neither output
+Both fields are omitted for unwrapped transport errors when BioMCP no longer
+knows which source failed. Legacy source-shaped errors with an unknown name use
+the safe fallback described below. The human diagnostic uses the same source
+and recovery policy; neither output
 includes request destinations, credentials, provider bodies, parser details,
 or local paths.
 

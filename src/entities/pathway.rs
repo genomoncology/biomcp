@@ -160,7 +160,13 @@ fn source_kind_for_pathway_id(st_id: &str) -> PathwaySourceKind {
 fn pathway_lookup_error(st_id: &str, err: BioMcpError) -> BioMcpError {
     let err = match err {
         BioMcpError::WithSourceContext { context, source } => {
-            return pathway_lookup_error(st_id, *source).with_source_context(context);
+            let source_code = source.code();
+            let remapped = pathway_lookup_error(st_id, *source);
+            return if remapped.code() == source_code {
+                remapped.with_source_context(context)
+            } else {
+                remapped
+            };
         }
         other => other,
     };
@@ -967,7 +973,7 @@ mod tests {
     }
 
     #[test]
-    fn pathway_lookup_error_preserves_source_context_while_remapping() {
+    fn pathway_lookup_error_preserves_redirect_without_duplicate_source_recovery() {
         let error = pathway_lookup_error(
             "BRAF",
             BioMcpError::NotFound {
@@ -982,8 +988,10 @@ mod tests {
 
         assert_eq!(error.code(), "invalid_argument");
         assert_eq!(error.exit_code(), 2);
-        assert_eq!(error.public_projection().source, Some("Reactome"));
-        assert!(error.to_string().contains("biomcp get gene BRAF"));
+        assert_eq!(error.public_projection().source, None);
+        let message = error.to_string();
+        assert!(message.contains("biomcp get gene BRAF"));
+        assert!(!message.contains("Retry the remote source"));
     }
 
     #[test]

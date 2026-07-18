@@ -114,7 +114,11 @@ impl CBioPortalDownloadClient {
                 ),
             )
             .await?;
-            return Self::decode_archive_status(study_id, status, &body);
+            return Self::decode_archive_status(study_id, status, &body).map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+                ))
+            });
         }
         if resp
             .content_length()
@@ -124,7 +128,10 @@ impl CBioPortalDownloadClient {
                 source_name: "cBioPortal DataHub".to_string(),
                 reason: "Archive download exceeded its resource limit.".to_string(),
                 suggestion: "Retry the study download later.".to_string(),
-            });
+            }
+            .with_source_context(crate::error::SourceContext::narrow(
+                crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+            )));
         }
         let mut file = tokio::fs::File::create(dest).await?;
         let mut downloaded = 0;
@@ -135,13 +142,18 @@ impl CBioPortalDownloadClient {
                         downloaded,
                         chunk.len(),
                         self.max_archive_download_bytes,
-                    )?;
+                    )
+                    .map_err(|error| {
+                        error.with_source_context(crate::error::SourceContext::narrow(
+                            crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+                        ))
+                    })?;
                     file.write_all(&chunk).await?;
                 }
                 Ok(Ok(None)) => break,
                 Ok(Err(err)) => {
                     return Err(BioMcpError::from(err).with_source_context(
-                        crate::error::SourceContext::narrow(
+                        crate::error::SourceContext::retry(
                             crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
                         ),
                     ));
@@ -154,7 +166,10 @@ impl CBioPortalDownloadClient {
                             self.download_idle_timeout
                         ),
                         suggestion: "Retry the study download later.".to_string(),
-                    });
+                    }
+                    .with_source_context(crate::error::SourceContext::retry(
+                        crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+                    )));
                 }
             }
         }
