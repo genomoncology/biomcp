@@ -817,7 +817,13 @@ mod tests {
         }
 
         let mut empty = test_protein();
+        empty.domains.push(ProteinDomain {
+            accession: "stale-domain".to_string(),
+            name: None,
+            domain_type: None,
+        });
         apply_domains_result(&mut empty, Ok(Vec::new()));
+        assert!(empty.domains.is_empty());
         assert_protein_outcome(
             &empty,
             PROTEIN_SECTION_DOMAINS,
@@ -842,7 +848,12 @@ mod tests {
         );
 
         let mut empty = test_protein();
+        empty.interactions.push(ProteinInteraction {
+            partner: "stale-partner".to_string(),
+            score: None,
+        });
         apply_protein_interactions_result(&mut empty, Ok(Vec::new()));
+        assert!(empty.interactions.is_empty());
         assert_protein_outcome(
             &empty,
             PROTEIN_SECTION_INTERACTIONS,

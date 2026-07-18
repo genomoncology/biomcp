@@ -3694,6 +3694,7 @@ mod tests {
 
         let mut empty = test_gene("BRAF");
         apply_go_section_result(&mut empty, Ok(Vec::new()));
+        assert!(empty.go.as_ref().is_some_and(Vec::is_empty));
         assert_gene_section_outcome(
             &empty,
             GENE_SECTION_GO,
@@ -3715,6 +3716,7 @@ mod tests {
 
         let mut empty = test_gene("BRAF");
         apply_gene_interactions_result(&mut empty, Ok(Vec::new()));
+        assert!(empty.interactions.as_ref().is_some_and(Vec::is_empty));
         assert_gene_section_outcome(
             &empty,
             GENE_SECTION_INTERACTIONS,
@@ -3831,6 +3833,23 @@ mod tests {
             });
             sync_timing_outcomes(&mut parallel_timing, &parallel_top);
 
+            let expected_outcome = match case {
+                "healthy-empty" => SectionOutcomeState::Empty,
+                "data" => SectionOutcomeState::Data,
+                _ => SectionOutcomeState::Unavailable,
+            };
+            assert!(
+                normalized_timing(&baseline_timing)
+                    .iter()
+                    .all(|(_, outcome)| *outcome == expected_outcome),
+                "baseline timing classification failed for {case}"
+            );
+            assert!(
+                normalized_timing(&parallel_timing)
+                    .iter()
+                    .all(|(_, outcome)| *outcome == expected_outcome),
+                "parallel-top timing classification failed for {case}"
+            );
             assert_eq!(
                 normalized_timing(&baseline_timing),
                 normalized_timing(&parallel_timing),

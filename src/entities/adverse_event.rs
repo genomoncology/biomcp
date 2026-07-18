@@ -2550,15 +2550,23 @@ mod tests {
         empty_tables.non_serious_reports = 0;
         empty_tables.reactions.clear();
         empty_tables.age_distribution.clear();
-        let empty =
-            vaers_payload_from_result(Ok(vaers_summary_from_tables(matched_mmr(), empty_tables)));
+        let empty_input = vaers_summary_from_tables(matched_mmr(), empty_tables);
+        let empty_expected = serde_json::to_value(&empty_input).expect("empty payload serializes");
+        let empty = vaers_payload_from_result(Ok(empty_input));
+        assert_eq!(
+            serde_json::to_value(&empty).expect("normalized empty payload serializes"),
+            empty_expected
+        );
         assert_eq!(empty.status, VaersSearchStatus::Empty);
         assert_cvx_vaers_outcome(&empty, SectionOutcomeState::Empty);
 
-        let data = vaers_payload_from_result(Ok(vaers_summary_from_tables(
-            matched_mmr(),
-            vaers_summary_tables_fixture(),
-        )));
+        let data_input = vaers_summary_from_tables(matched_mmr(), vaers_summary_tables_fixture());
+        let data_expected = serde_json::to_value(&data_input).expect("data payload serializes");
+        let data = vaers_payload_from_result(Ok(data_input));
+        assert_eq!(
+            serde_json::to_value(&data).expect("normalized data payload serializes"),
+            data_expected
+        );
         assert_eq!(data.status, VaersSearchStatus::Ok);
         assert!(
             data.summary
