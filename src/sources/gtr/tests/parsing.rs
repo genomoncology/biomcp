@@ -199,7 +199,7 @@ fn validate_test_version_rejects_missing_header() {
     let invalid = gzip_bytes(payload);
 
     let err = validate_test_version_payload(&invalid).expect_err("missing header should fail");
-    assert!(err.to_string().contains("now_current"));
+    assert!(format!("{err:?}").contains("now_current"));
 }
 
 #[test]
@@ -207,7 +207,7 @@ fn validate_condition_gene_rejects_missing_header() {
     let invalid = b"accession_version\tobject\tobject_name\nGTR1\tgene\tBRCA1\n";
 
     let err = validate_condition_gene_payload(invalid).expect_err("missing header should fail");
-    assert!(err.to_string().contains("#accession_version"));
+    assert!(format!("{err:?}").contains("#accession_version"));
 }
 
 #[tokio::test]
@@ -223,7 +223,7 @@ async fn write_validated_pair_preserves_existing_files_when_validation_fails() {
     let err = write_validated_pair(root.path(), &invalid, &condition_gene_bytes())
         .await
         .expect_err("invalid pair should fail");
-    assert!(err.to_string().contains(GTR_TEST_VERSION_FILE));
+    assert!(format!("{err:?}").contains(GTR_TEST_VERSION_FILE));
 
     assert_eq!(
         std::fs::read(root.path().join(GTR_TEST_VERSION_FILE)).expect("gzip unchanged"),

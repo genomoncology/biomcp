@@ -41,5 +41,5 @@ fn decode_enrich_response_parses_json_and_rejects_html() {
         b"<html>not json</html>",
     )
     .unwrap_err();
-    assert!(err.to_string().contains("Unexpected HTML response"));
+    assert!(format!("{err:?}").contains("Unexpected HTML response"));
 }

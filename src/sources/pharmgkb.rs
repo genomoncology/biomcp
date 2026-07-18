@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::HashSet;
 
@@ -10,7 +11,6 @@ use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
 const PHARMGKB_BASE: &str = "https://api.pharmgkb.org/v1";
-const PHARMGKB_API: &str = "pharmgkb";
 const PHARMGKB_BASE_ENV: &str = "BIOMCP_PHARMGKB_BASE";
 
 pub struct PharmGkbClient {
@@ -96,7 +96,14 @@ impl PharmGkbClient {
         if status == StatusCode::NOT_FOUND {
             return Ok(None);
         }
-        crate::sources::decode_json(PHARMGKB_API, status, content_type, bytes, true).map(Some)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::PHARMGKB),
+            status,
+            content_type,
+            bytes,
+            true,
+        )
+        .map(Some)
     }
 
     pub(crate) fn annotations_from_response(
@@ -120,11 +127,23 @@ impl PharmGkbClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<Option<T>, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PHARMGKB,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, PHARMGKB_API).await?;
-        Self::decode_json_optional(status, content_type.as_ref(), &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::PHARMGKB),
+        )
+        .await?;
+        Self::decode_json_optional(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PHARMGKB,
+            ))
+        })
     }
 
     pub async fn annotations_by_drug(

@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
@@ -8,7 +9,6 @@ use crate::error::BioMcpError;
 use crate::sources::{RequestBody, RequestPlan, request_from_plan};
 
 const CBIOPORTAL_BASE: &str = "https://www.cbioportal.org/api";
-const CBIOPORTAL_API: &str = "cbioportal";
 const CBIOPORTAL_BASE_ENV: &str = "BIOMCP_CBIOPORTAL_BASE";
 
 // Pragmatic default: pan-cancer cohort with a public mutation profile.
@@ -57,10 +57,24 @@ impl CBioPortalClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CBIOPORTAL,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, CBIOPORTAL_API).await?;
-        crate::sources::decode_json(CBIOPORTAL_API, status, None, &bytes, false)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CBIOPORTAL),
+        )
+        .await?;
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::CBIOPORTAL),
+            status,
+            None,
+            &bytes,
+            false,
+        )
     }
 
     pub(crate) fn gene_resolution_plan(gene: &str) -> Result<RequestPlan, BioMcpError> {

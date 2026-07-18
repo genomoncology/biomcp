@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -13,7 +14,6 @@ use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
 const GTEX_BASE: &str = "https://gtexportal.org";
-const GTEX_API: &str = "gtex";
 const GTEX_BASE_ENV: &str = "BIOMCP_GTEX_BASE";
 const GTEX_DATASET_ID: &str = "gtex_v8";
 const GTEX_GENCODE_VERSION: &str = "v26";
@@ -51,18 +51,36 @@ impl GtexClient {
         content_type: Option<&HeaderValue>,
         bytes: &[u8],
     ) -> Result<T, BioMcpError> {
-        crate::sources::decode_json(GTEX_API, status, content_type, bytes, true)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::GTEX),
+            status,
+            content_type,
+            bytes,
+            true,
+        )
     }
 
     async fn get_json<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GTEX,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, GTEX_API).await?;
-        Self::decode_json_response(status, content_type.as_ref(), &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::GTEX),
+        )
+        .await?;
+        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GTEX,
+            ))
+        })
     }
 
     pub async fn median_gene_expression(

@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
@@ -30,10 +31,22 @@ impl HpoClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::HPO,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, HPO_API).await?;
-        Self::decode_json_response(status, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::HPO),
+        )
+        .await?;
+        Self::decode_json_response(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::HPO,
+            ))
+        })
     }
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(
@@ -105,7 +118,7 @@ impl HpoClient {
                         out.insert(id, name.to_string());
                     }
                 }
-                Err(BioMcpError::NotFound { .. }) => {}
+                Err(err) if err.is_not_found() => {}
                 Err(err) => return Err(err),
             }
         }

@@ -2,7 +2,6 @@
 //! No network, no server, no token needed.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use reqwest::StatusCode;
 
 macro_rules! fixture {
@@ -44,10 +43,10 @@ fn decode_json_response_maps_http_errors_with_excerpt() {
         b"upstream failed",
     )
     .unwrap_err();
-    let msg = err.to_string();
+    let msg = format!("{err:?}");
 
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("oncokb"), "got: {msg}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("OncoKB"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
     assert!(msg.contains("upstream failed"), "got: {msg}");
 }
@@ -57,5 +56,5 @@ fn decode_json_response_maps_invalid_json() {
     let err = OncoKBClient::decode_json_response::<OncoKBAnnotation>(StatusCode::OK, b"not json")
         .unwrap_err();
 
-    assert!(matches!(err, BioMcpError::ApiJson { .. }));
+    assert_eq!(err.code(), "api_json");
 }

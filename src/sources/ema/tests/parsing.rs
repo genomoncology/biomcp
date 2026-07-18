@@ -15,11 +15,11 @@ fn fixture_client() -> EmaClient {
 fn validate_feed_payload_rejects_bad_payloads_before_write() {
     let err = validate_feed_payload(EMA_FEEDS[0], b"<html>error</html>")
         .expect_err("html should fail JSON validation");
-    assert!(err.to_string().contains("API JSON error from ema"));
+    assert!(format!("{err:?}").contains("ApiJson"));
 
     let err = validate_feed_payload(EMA_FEEDS[0], br#"{"data":"oops"}"#)
         .expect_err("missing array should fail");
-    assert!(err.to_string().contains("top-level `data` array"));
+    assert!(format!("{err:?}").contains("top-level `data` array"));
 }
 
 #[test]

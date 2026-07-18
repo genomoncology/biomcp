@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use reqwest::StatusCode;
@@ -51,12 +52,33 @@ impl DisgenetClient {
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
         let resp = crate::sources::apply_cache_mode_with_auth(req, true)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::DISGENET,
+            ))
             .await?;
         let status = resp.status();
         let headers = resp.headers().clone();
-        let bytes = crate::sources::read_limited_body(resp, DISGENET_API).await?;
-        Self::decode_json_response(status, &headers, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::DISGENET),
+        )
+        .await?;
+        Self::decode_json_response(status, &headers, &bytes).map_err(|error| {
+            let context = Self::error_context(&error);
+            error.with_source_context(context)
+        })
+    }
+
+    fn error_context(error: &BioMcpError) -> crate::error::SourceContext {
+        let recovery = if matches!(
+            error,
+            BioMcpError::ApiKeyRequired { .. } | BioMcpError::ApiKeyRejected { .. }
+        ) {
+            crate::error::RecoveryAction::ReviewSourceConfiguration
+        } else {
+            crate::error::RecoveryAction::RetryRemoteSource
+        };
+        crate::error::SourceContext::new(crate::error::SourceProvider::DISGENET, recovery)
     }
 
     fn decode_json_response<T: DeserializeOwned>(
@@ -74,7 +96,11 @@ impl DisgenetClient {
 
         let retry_after = parse_retry_after_seconds(headers);
         let content_type = headers.get(CONTENT_TYPE).cloned();
-        crate::sources::ensure_json_content_type(DISGENET_API, content_type.as_ref(), bytes)?;
+        crate::sources::ensure_json_content_type(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::DISGENET),
+            content_type.as_ref(),
+            bytes,
+        )?;
 
         if status == StatusCode::TOO_MANY_REQUESTS {
             let excerpt = crate::sources::body_excerpt(bytes);

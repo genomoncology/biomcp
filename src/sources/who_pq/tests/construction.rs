@@ -107,7 +107,7 @@ fn sync_intro_matches_missing_stale_and_force_modes() {
 fn who_pq_sync_error_mentions_recovery_paths() {
     let root = TempDirGuard::new("who-pq-sync-error");
     let err = who_pq_sync_error(root.path(), "who_api.csv is missing required column: inn");
-    let message = err.to_string();
+    let message = format!("{err:?}");
 
     assert!(message.contains("WHO Prequalification"));
     assert!(message.contains("who_api.csv is missing required column: inn"));

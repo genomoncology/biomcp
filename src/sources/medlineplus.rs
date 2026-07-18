@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::sync::OnceLock;
 
@@ -80,19 +81,40 @@ impl MedlinePlusClient {
             self.base.as_ref(),
             &plan,
         ))
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::MEDLINEPLUS,
+        ))
         .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, MEDLINEPLUS_API).await?;
-        let xml = Self::decode_response_body(status, content_type.as_ref(), bytes)?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::MEDLINEPLUS),
+        )
+        .await?;
+        let xml =
+            Self::decode_response_body(status, content_type.as_ref(), bytes).map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::MEDLINEPLUS,
+                ))
+            })?;
 
         tokio::task::spawn_blocking(move || parse_topics(&xml))
             .await
-            .map_err(|err| BioMcpError::Api {
-                api: MEDLINEPLUS_API.to_string(),
-                message: format!("XML parse task failed: {err}"),
+            .map_err(|err| {
+                BioMcpError::Api {
+                    api: MEDLINEPLUS_API.to_string(),
+                    message: format!("XML parse task failed: {err}"),
+                }
+                .with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::MEDLINEPLUS,
+                ))
             })?
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::MEDLINEPLUS,
+                ))
+            })
     }
 
     pub async fn search(&self, query: &str) -> Result<Vec<MedlinePlusTopic>, BioMcpError> {

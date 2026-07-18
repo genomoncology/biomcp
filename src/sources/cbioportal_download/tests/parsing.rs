@@ -148,8 +148,8 @@ fn study_list_decode_maps_http_and_content_type_errors() {
         b"upstream failure",
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
     assert!(msg.contains("500"), "got: {msg}");
     assert!(msg.contains("upstream failure"), "got: {msg}");
 
@@ -170,7 +170,7 @@ fn study_list_decode_maps_http_and_content_type_errors() {
         b"<html><body>not json</body></html>",
     )
     .unwrap_err();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert_eq!(err.code(), "api");
 }
 
 #[test]
@@ -209,7 +209,7 @@ fn archive_status_maps_other_http_errors_with_excerpt() {
         b"upstream failure",
     )
     .unwrap_err();
-    let msg = err.to_string();
+    let msg = format!("{err:?}");
 
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(msg.contains("500"), "got: {msg}");
@@ -269,8 +269,8 @@ fn install_study_archive_rejects_declared_oversized_member_without_leaving_files
         matches!(err, BioMcpError::SourceUnavailable { .. }),
         "oversized archive member should be sanitized as source-unavailable, got {err:?}"
     );
-    assert!(err.to_string().contains("resource limit"));
-    assert!(!err.to_string().contains("oversized_payload"));
+    assert!(format!("{err:?}").contains("resource limit"));
+    assert!(!format!("{err:?}").contains("oversized_payload"));
     assert!(!root.path.join("demo_study").exists());
     let remaining = fs::read_dir(&root.path)
         .expect("read temp root")
@@ -292,7 +292,7 @@ fn install_study_archive_rejects_oversized_path_metadata_before_buffering_it() {
         matches!(err, BioMcpError::SourceUnavailable { .. }),
         "archive metadata limits should be source-unavailable, got {err:?}"
     );
-    assert!(err.to_string().contains("resource limit"));
+    assert!(format!("{err:?}").contains("resource limit"));
     assert!(!root.path.join("demo_study").exists());
 }
 

@@ -10,8 +10,6 @@ use crate::sources::europepmc::{
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 
-const EUROPE_PMC_API: &str = "europepmc";
-
 macro_rules! fixture {
     ($name:expr) => {
         include_bytes!(concat!(
@@ -48,7 +46,7 @@ fn zip_bytes(entries: &[(&str, &[u8])], directories: &[&str]) -> Vec<u8> {
 #[test]
 fn parses_search_response_from_real_fixture() {
     let resp: EuropePmcSearchResponse = decode_json(
-        EUROPE_PMC_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::EUROPE_PMC),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("search_pmid_22663011.json"),
@@ -104,7 +102,7 @@ fn decode_full_text_xml_returns_body_on_success() {
 fn decode_full_text_xml_rejects_invalid_utf8() {
     let err = EuropePmcClient::decode_full_text_xml(StatusCode::OK, &[0xff, 0xfe]).unwrap_err();
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("not valid UTF-8"));
+    assert!(format!("{err:?}").contains("not valid UTF-8"));
 }
 
 #[test]
@@ -114,7 +112,7 @@ fn decode_full_text_xml_maps_http_error_status_with_excerpt() {
         b"upstream failure",
     )
     .unwrap_err();
-    let msg = err.to_string();
+    let msg = format!("{err:?}");
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(msg.contains("europepmc"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
@@ -190,15 +188,15 @@ fn supplementary_zip_enforces_all_size_and_count_limits() {
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<EuropePmcSearchResponse>(
-        EUROPE_PMC_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::EUROPE_PMC),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
         false,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("europepmc"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("Europe PMC"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }

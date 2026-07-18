@@ -220,8 +220,8 @@ fn extract_archive_entries_skips_unsafe_and_empty_members_but_rejects_oversized_
     let oversized_tgz = tgz_with_entries(&[("huge.bin", oversized.as_slice())]);
     let err = extract_archive_entries(&oversized_tgz)
         .expect_err("archive member resource cap should reject the package");
-    assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
-    assert!(err.to_string().contains("resource limit"));
+    assert_eq!(err.code(), "source_unavailable");
+    assert!(format!("{err:?}").contains("resource limit"));
 }
 
 #[test]
@@ -243,7 +243,7 @@ fn extract_archive_entries_rejects_too_many_members() {
         matches!(err, BioMcpError::SourceUnavailable { .. }),
         "archive resource limits should be source-unavailable, got {err:?}"
     );
-    assert!(err.to_string().contains("resource limit"));
+    assert!(format!("{err:?}").contains("resource limit"));
 }
 
 #[test]
@@ -274,7 +274,7 @@ fn direct_buffered_archive_limit_is_sanitized() {
 #[test]
 fn decode_text_maps_http_error_status_with_excerpt() {
     let err = decode_text(StatusCode::INTERNAL_SERVER_ERROR, b"upstream failure").unwrap_err();
-    let msg = err.to_string();
+    let msg = format!("{err:?}");
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(msg.contains("pmc-oa"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
@@ -300,7 +300,7 @@ fn decode_archive_bytes_preserves_success_bytes_and_maps_errors() {
     );
 
     let err = decode_archive_bytes(StatusCode::BAD_GATEWAY, b"upstream failure").unwrap_err();
-    let msg = err.to_string();
+    let msg = format!("{err:?}");
     assert!(matches!(err, BioMcpError::Api { .. }));
     assert!(msg.contains("502"), "got: {msg}");
 }

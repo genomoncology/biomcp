@@ -2,7 +2,6 @@
 //! decoders and typed result structs. No network, no server.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use reqwest::StatusCode;
 
 macro_rules! fixture {
@@ -90,8 +89,8 @@ fn decode_json_optional_maps_404_http_and_json_errors() {
         b"upstream failed",
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
     assert!(msg.contains("500"), "got: {msg}");
     assert!(msg.contains("upstream failed"), "got: {msg}");
 
@@ -100,7 +99,7 @@ fn decode_json_optional_maps_404_http_and_json_errors() {
         b"not json",
     )
     .unwrap_err();
-    assert!(matches!(err, BioMcpError::ApiJson { .. }));
+    assert_eq!(err.code(), "api_json");
 }
 
 #[test]

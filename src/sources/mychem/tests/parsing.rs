@@ -1,15 +1,12 @@
 //! Tier 3 — response parsing. Pure: feeds committed fixture bytes to `decode_json`
 //! and the response types. No network, no server.
 
-use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use crate::sources::mychem::{
     MyChemChebiField, MyChemNdcField, MyChemPharmClass, MyChemQueryResponse,
 };
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
-
-const MYCHEM_API: &str = "mychem.info";
 
 macro_rules! fixture {
     ($name:expr) => {
@@ -28,7 +25,7 @@ fn json_ct() -> HeaderValue {
 #[test]
 fn parses_query_response_from_real_fixture() {
     let resp: MyChemQueryResponse = decode_json(
-        MYCHEM_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYCHEM),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("query_imatinib.json"),
@@ -230,16 +227,16 @@ fn drugbank_interactions_support_object_and_list() {
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<MyChemQueryResponse>(
-        MYCHEM_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYCHEM),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("mychem.info"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("MyChem.info"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }
 
@@ -247,14 +244,14 @@ fn decode_json_maps_http_error_status_with_excerpt() {
 fn decode_json_rejects_non_json_content_type() {
     let html = HeaderValue::from_static("text/html");
     let err = decode_json::<MyChemQueryResponse>(
-        MYCHEM_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYCHEM),
         StatusCode::OK,
         Some(&html),
         b"<html><body>error</body></html>",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(msg.contains("mychem.info"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert!(msg.contains("MyChem.info"), "got: {msg}");
     assert!(msg.contains("HTML"), "got: {msg}");
 }

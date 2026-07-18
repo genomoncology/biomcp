@@ -5,6 +5,7 @@ use reqwest::header::CONTENT_TYPE;
 use tracing::debug;
 
 use crate::error::BioMcpError;
+use crate::sources::RequestBuilderSourceContextExt;
 use crate::sources::europepmc::EuropePmcClient;
 use crate::sources::ncbi_efetch::NcbiEfetchClient;
 use crate::sources::ncbi_idconv::NcbiIdConverterClient;
@@ -342,29 +343,46 @@ async fn try_resolve_html(pmcid: &str, requested_id: &str) -> FulltextStepOutcom
         Err(err) => return FulltextStepOutcome::Failed(err),
     };
     let response = match crate::sources::apply_cache_mode(client.get(url.clone()))
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::PMC_OPEN_ACCESS,
+        ))
         .await
     {
         Ok(response) => response,
-        Err(err) => return FulltextStepOutcome::Failed(err.into()),
+        Err(err) => return FulltextStepOutcome::Failed(err),
     };
     if documented_fulltext_absence(response.status()) {
         return FulltextStepOutcome::Empty;
     }
     if !response.status().is_success() {
-        return FulltextStepOutcome::Failed(BioMcpError::Api {
-            api: ARTICLE_FULLTEXT_API.to_string(),
-            message: format!("PMC HTML returned HTTP {}", response.status()),
-        });
+        return FulltextStepOutcome::Failed(
+            BioMcpError::Api {
+                api: ARTICLE_FULLTEXT_API.to_string(),
+                message: format!("PMC HTML returned HTTP {}", response.status()),
+            }
+            .with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PMC_OPEN_ACCESS,
+            )),
+        );
     }
     if !html_content_type_is_supported(response.headers().get(CONTENT_TYPE)) {
-        return FulltextStepOutcome::Failed(BioMcpError::Api {
-            api: ARTICLE_FULLTEXT_API.to_string(),
-            message: "PMC HTML returned unsupported content".to_string(),
-        });
+        return FulltextStepOutcome::Failed(
+            BioMcpError::Api {
+                api: ARTICLE_FULLTEXT_API.to_string(),
+                message: "PMC HTML returned unsupported content".to_string(),
+            }
+            .with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PMC_OPEN_ACCESS,
+            )),
+        );
     }
 
-    let bytes = match crate::sources::read_limited_body(response, ARTICLE_FULLTEXT_API).await {
+    let bytes = match crate::sources::read_limited_source_body(
+        response,
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::PMC_OPEN_ACCESS),
+    )
+    .await
+    {
         Ok(bytes) => bytes,
         Err(err) => {
             debug!(?err, requested_id, pmcid, "PMC HTML body read failed");
@@ -374,10 +392,15 @@ async fn try_resolve_html(pmcid: &str, requested_id: &str) -> FulltextStepOutcom
     let html = match String::from_utf8(bytes.to_vec()) {
         Ok(html) => html,
         Err(_) => {
-            return FulltextStepOutcome::Failed(BioMcpError::Api {
-                api: ARTICLE_FULLTEXT_API.to_string(),
-                message: "PMC HTML response was not valid UTF-8".to_string(),
-            });
+            return FulltextStepOutcome::Failed(
+                BioMcpError::Api {
+                    api: ARTICLE_FULLTEXT_API.to_string(),
+                    message: "PMC HTML response was not valid UTF-8".to_string(),
+                }
+                .with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
+                )),
+            );
         }
     };
     let markdown = match transform::article::extract_text_from_html(&html, url.as_str()) {
@@ -424,26 +447,33 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
         PDF_MAX_BODY_BYTES,
         ARTICLE_FULLTEXT_API,
     )
-    .send()
+    .send_with_source_context(crate::error::SourceContext::retry(
+        crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+    ))
     .await
     {
         Ok(response) => response,
-        Err(err) => return FulltextStepOutcome::Failed(err.into()),
+        Err(err) => return FulltextStepOutcome::Failed(err),
     };
     if documented_fulltext_absence(response.status()) {
         return FulltextStepOutcome::Empty;
     }
     if !response.status().is_success() {
-        return FulltextStepOutcome::Failed(BioMcpError::Api {
-            api: ARTICLE_FULLTEXT_API.to_string(),
-            message: format!("Semantic Scholar PDF returned HTTP {}", response.status()),
-        });
+        return FulltextStepOutcome::Failed(
+            BioMcpError::Api {
+                api: ARTICLE_FULLTEXT_API.to_string(),
+                message: format!("Semantic Scholar PDF returned HTTP {}", response.status()),
+            }
+            .with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+            )),
+        );
     }
 
     let content_type = response.headers().get(CONTENT_TYPE).cloned();
-    let bytes = match crate::sources::read_limited_body_with_limit(
+    let bytes = match crate::sources::read_limited_source_body_with_limit(
         response,
-        ARTICLE_FULLTEXT_API,
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::SEMANTIC_SCHOLAR),
         PDF_MAX_BODY_BYTES,
     )
     .await
@@ -456,10 +486,15 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
     };
     if !pdf_content_type_is_supported(content_type.as_ref()) && !pdf_body_signature_matches(&bytes)
     {
-        return FulltextStepOutcome::Failed(BioMcpError::Api {
-            api: ARTICLE_FULLTEXT_API.to_string(),
-            message: "Semantic Scholar PDF returned unsupported content".to_string(),
-        });
+        return FulltextStepOutcome::Failed(
+            BioMcpError::Api {
+                api: ARTICLE_FULLTEXT_API.to_string(),
+                message: "Semantic Scholar PDF returned unsupported content".to_string(),
+            }
+            .with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+            )),
+        );
     }
 
     let markdown = match render_fulltext_pdf(bytes, PDF_PAGE_LIMIT).await {
@@ -929,7 +964,8 @@ mod tests {
                 panic!("unsafe PDF URL should fail before contact: {raw}");
             };
             let message = error.to_string();
-            assert!(message.contains("outbound policy"));
+            assert!(message.contains("Semantic Scholar"));
+            assert!(message.to_ascii_lowercase().contains("retry"));
             assert!(!message.contains(raw));
             assert!(!message.contains("secret"));
             assert!(!message.contains("private-token"));
@@ -1041,14 +1077,13 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &oversized);
-        assert!(matches!(
-            failed(try_resolve_html("PMC1", "1").await),
-            BioMcpError::BodyLimit { .. }
-        ));
-        assert!(matches!(
-            failed(try_resolve_pdf(&format!("{}/oversized.pdf", oversized.base), "1").await),
-            BioMcpError::BodyLimit { .. }
-        ));
+        let html_error = failed(try_resolve_html("PMC1", "1").await);
+        assert_eq!(html_error.code(), "api");
+        assert!(format!("{html_error:?}").contains("BodyLimit"));
+        let pdf_error =
+            failed(try_resolve_pdf(&format!("{}/oversized.pdf", oversized.base), "1").await);
+        assert_eq!(pdf_error.code(), "api");
+        assert!(format!("{pdf_error:?}").contains("BodyLimit"));
         drop(oversized);
 
         let unsupported = TestHttpFixture::spawn(|_| {

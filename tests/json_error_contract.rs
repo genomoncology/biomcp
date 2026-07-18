@@ -303,12 +303,12 @@ fn parsed_json_errors_keep_command_collection_paths_iterable() {
 }
 
 #[test]
-fn runtime_json_errors_keep_discover_concepts_iterable() {
+fn runtime_json_errors_keep_provider_context_and_contract() {
     let result = run_biomcp_with_env(
         &["--no-cache", "--json", "discover", "melanoma"],
         &[
-            ("BIOMCP_OLS4_BASE", "http://127.0.0.1:9"),
-            ("BIOMCP_MEDLINEPLUS_BASE", "http://127.0.0.1:9"),
+            ("BIOMCP_OLS4_BASE", "http://127.0.0.1:0"),
+            ("BIOMCP_MEDLINEPLUS_BASE", "http://127.0.0.1:0"),
             ("UMLS_API_KEY", ""),
         ],
     );
@@ -316,6 +316,89 @@ fn runtime_json_errors_keep_discover_concepts_iterable() {
     assert_json_error(&result, 1, "http_middleware");
     let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
     assert_eq!(value["concepts"], serde_json::json!([]), "json={value}");
+    assert_eq!(value["error"]["source"], "OLS4", "json={value}");
+    let recovery = value["error"]["recovery"]
+        .as_str()
+        .expect("source error needs a recovery action");
+    assert!(
+        recovery.to_ascii_lowercase().contains("retry"),
+        "json={value}"
+    );
+    assert!(recovery.len() <= 160, "recovery must be bounded: {value}");
+    assert!(!result.stdout.contains("127.0.0.1:0"));
+    assert!(!result.stdout.contains("error sending request"));
+}
+
+#[test]
+fn human_runtime_source_error_is_safe_and_actionable() {
+    let result = run_biomcp_with_env(
+        &["--no-cache", "discover", "melanoma"],
+        &[
+            ("BIOMCP_OLS4_BASE", "http://127.0.0.1:0"),
+            ("BIOMCP_MEDLINEPLUS_BASE", "http://127.0.0.1:0"),
+            ("UMLS_API_KEY", ""),
+        ],
+    );
+
+    assert_eq!(result.code, Some(1));
+    assert!(result.stdout.trim().is_empty(), "stdout={}", result.stdout);
+    assert!(
+        result.stderr.starts_with("Error: "),
+        "stderr={}",
+        result.stderr
+    );
+    assert!(result.stderr.contains("OLS4"), "stderr={}", result.stderr);
+    assert!(
+        result.stderr.to_ascii_lowercase().contains("retry"),
+        "stderr={}",
+        result.stderr
+    );
+    for leaked_detail in ["127.0.0.1:0", "error sending request", "middleware error"] {
+        assert!(
+            !result.stderr.to_ascii_lowercase().contains(leaked_detail),
+            "human source error leaked {leaked_detail}: {}",
+            result.stderr
+        );
+    }
+}
+
+#[test]
+fn swallowed_source_failures_do_not_log_credentials() {
+    let secret = "VERIFY_SECRET_586";
+    let result = run_biomcp_with_env(
+        &[
+            "--no-cache",
+            "variant",
+            "articles",
+            "BRAF V600E",
+            "--limit",
+            "1",
+        ],
+        &[
+            ("BIOMCP_PUBTATOR_BASE", "http://127.0.0.1:0"),
+            ("NCBI_API_KEY", secret),
+        ],
+    );
+
+    assert_eq!(result.code, Some(1));
+    assert!(result.stdout.trim().is_empty(), "stdout={}", result.stdout);
+    assert!(
+        result.stderr.contains("PubTator 3"),
+        "stderr={}",
+        result.stderr
+    );
+    assert!(
+        result.stderr.to_ascii_lowercase().contains("retry"),
+        "stderr={}",
+        result.stderr
+    );
+    for leaked_detail in [secret, "api_key=", "127.0.0.1:0", "error sending request"] {
+        assert!(
+            !result.stderr.contains(leaked_detail),
+            "swallowed source failure leaked {leaked_detail}: {}",
+            result.stderr
+        );
+    }
 }
 
 #[test]

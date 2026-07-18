@@ -2,7 +2,6 @@
 //! and GWAS error mapper. No network, no server.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 use serde::Deserialize;
@@ -88,15 +87,10 @@ fn decode_failures_remap_to_source_unavailable() {
     .map_err(remap_gwas_error)
     .expect_err("decode failure should be remapped");
 
-    assert!(matches!(
-        err,
-        BioMcpError::SourceUnavailable {
-            ref source_name,
-            ref reason,
-            ..
-        } if source_name == "GWAS Catalog"
-            && reason.contains("could not decode")
-    ));
+    assert_eq!(err.code(), "source_unavailable");
+    let detail = format!("{err:?}");
+    assert!(detail.contains("GWAS Catalog"));
+    assert!(detail.contains("could not decode"));
 }
 
 #[test]
@@ -110,13 +104,8 @@ fn transient_http_failures_remap_to_source_unavailable() {
     .map_err(remap_gwas_error)
     .expect_err("503 should be remapped");
 
-    assert!(matches!(
-        err,
-        BioMcpError::SourceUnavailable {
-            ref source_name,
-            ref reason,
-            ..
-        } if source_name == "GWAS Catalog"
-            && reason.contains("temporarily unavailable")
-    ));
+    assert_eq!(err.code(), "source_unavailable");
+    let detail = format!("{err:?}");
+    assert!(detail.contains("GWAS Catalog"));
+    assert!(detail.contains("temporarily unavailable"));
 }

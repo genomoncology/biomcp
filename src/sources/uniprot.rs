@@ -71,16 +71,28 @@ impl UniProtClient {
     where
         T: DeserializeOwned,
     {
-        let resp = crate::sources::retry_send(UNIPROT_API, 3, || {
-            request
-                .try_clone()
-                .expect("request should be cloneable")
-                .send()
-        })
+        let resp = crate::sources::retry_send(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::UNIPROT),
+            3,
+            || {
+                request
+                    .try_clone()
+                    .expect("request should be cloneable")
+                    .send()
+            },
+        )
         .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, UNIPROT_API).await?;
-        Self::decode_json_response(status, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::UNIPROT),
+        )
+        .await?;
+        Self::decode_json_response(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::UNIPROT,
+            ))
+        })
     }
 
     pub(crate) fn get_record_plan(accession: &str) -> Result<RequestPlan, BioMcpError> {
@@ -198,14 +210,24 @@ impl UniProtClient {
         let plan = Self::search_plan(query, limit, offset, next_page)?;
         let url = self.plan_url(&plan);
         crate::sources::rate_limit::wait_for_url_str(&url).await;
-        let resp = crate::sources::retry_send(UNIPROT_API, 3, || async {
-            self.request_from_plan(&plan).send().await
-        })
+        let resp = crate::sources::retry_send(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::UNIPROT),
+            3,
+            || async { self.request_from_plan(&plan).send().await },
+        )
         .await?;
         let status = resp.status();
         let headers = resp.headers().clone();
-        let bytes = crate::sources::read_limited_body(resp, UNIPROT_API).await?;
-        Self::decode_search_response(status, &headers, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::UNIPROT),
+        )
+        .await?;
+        Self::decode_search_response(status, &headers, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::UNIPROT,
+            ))
+        })
     }
 }
 

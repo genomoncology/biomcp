@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
@@ -10,7 +11,6 @@ use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
 const CPIC_BASE: &str = "https://api.cpicpgx.org/v1";
-const CPIC_API: &str = "cpic";
 const CPIC_BASE_ENV: &str = "BIOMCP_CPIC_BASE";
 
 #[derive(Debug, Clone)]
@@ -118,7 +118,13 @@ impl CpicClient {
         content_type: Option<&HeaderValue>,
         bytes: &[u8],
     ) -> Result<T, BioMcpError> {
-        crate::sources::decode_json(CPIC_API, status, content_type, bytes, true)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::CPIC),
+            status,
+            content_type,
+            bytes,
+            true,
+        )
     }
 
     pub(crate) fn decode_json_page_response<T: DeserializeOwned>(
@@ -136,23 +142,49 @@ impl CpicClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CPIC,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, CPIC_API).await?;
-        Self::decode_json_response(status, content_type.as_ref(), &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CPIC),
+        )
+        .await?;
+        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CPIC,
+            ))
+        })
     }
 
     async fn get_json_with_total<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<CpicPage<T>, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CPIC,
+            ))
+            .await?;
         let status = resp.status();
         let headers = resp.headers().clone();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, CPIC_API).await?;
-        Self::decode_json_page_response(status, &headers, content_type.as_ref(), &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CPIC),
+        )
+        .await?;
+        Self::decode_json_page_response(status, &headers, content_type.as_ref(), &bytes).map_err(
+            |error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::CPIC,
+                ))
+            },
+        )
     }
 
     pub async fn pairs_by_gene(

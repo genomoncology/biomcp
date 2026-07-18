@@ -69,7 +69,7 @@ fn download_response_rejects_oversized_file_bytes() {
     .unwrap_err();
 
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("exceeded"));
+    assert!(format!("{err:?}").contains("exceeded"));
 }
 
 #[test]
@@ -83,7 +83,9 @@ fn download_error_sanitizes_html_body() {
     .unwrap_err();
     let message = err.to_string();
 
-    assert!(message.contains("HTML error page"));
+    assert!(message.contains("Figshare"));
+    assert!(message.to_ascii_lowercase().contains("retry"));
+    assert!(!message.contains("HTML error page"));
     assert!(!message.contains("<html"));
     assert!(!message.contains("upstream detail"));
 }
@@ -111,7 +113,7 @@ fn download_errors_after_repeated_accepted_responses() {
     )
     .unwrap_err();
 
-    assert!(err.to_string().contains("still staging"));
+    assert!(format!("{err:?}").contains("still staging"));
 }
 
 #[test]
@@ -125,7 +127,9 @@ fn article_error_sanitizes_html_body() {
     .unwrap_err();
     let message = err.to_string();
 
-    assert!(message.contains("HTML error page"));
+    assert!(message.contains("Figshare"));
+    assert!(message.to_ascii_lowercase().contains("retry"));
+    assert!(!message.contains("HTML error page"));
     assert!(!message.contains("<html"));
     assert!(!message.contains("upstream detail"));
 }

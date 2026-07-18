@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::path::{Component, Path, PathBuf};
 
@@ -69,10 +70,23 @@ impl PmcOaClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<String, BioMcpError> {
-        let resp = req.with_extension(CacheMode::NoStore).send().await?;
+        let resp = req
+            .with_extension(CacheMode::NoStore)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PMC_OPEN_ACCESS,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, PMC_OA_API).await?;
-        decode_text(status, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::PMC_OPEN_ACCESS),
+        )
+        .await?;
+        decode_text(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PMC_OPEN_ACCESS,
+            ))
+        })
     }
 
     pub(crate) fn oa_archive_manifest_plan(
@@ -103,7 +117,11 @@ impl PmcOaClient {
         };
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let xml = self.get_text(req).await?;
-        parse_archive_manifest_xml(&xml)
+        parse_archive_manifest_xml(&xml).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PMC_OPEN_ACCESS,
+            ))
+        })
     }
 
     pub async fn get_full_text_xml_with_manifest(
@@ -117,10 +135,20 @@ impl PmcOaClient {
         let bytes = self.archive_bytes(&manifest).await?;
         let xml = tokio::task::spawn_blocking(move || extract_first_nxml(&bytes))
             .await
-            .map_err(|err| BioMcpError::Api {
-                api: PMC_OA_API.to_string(),
-                message: format!("Task join error: {err}"),
-            })??;
+            .map_err(|err| {
+                BioMcpError::Api {
+                    api: PMC_OA_API.to_string(),
+                    message: format!("Task join error: {err}"),
+                }
+                .with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
+                ))
+            })?
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
+                ))
+            })?;
 
         Ok(xml.map(|xml| (xml, manifest)))
     }
@@ -132,10 +160,20 @@ impl PmcOaClient {
         let bytes = self.archive_bytes(&manifest).await?;
         let entries = tokio::task::spawn_blocking(move || extract_archive_entries(&bytes))
             .await
-            .map_err(|err| BioMcpError::Api {
-                api: PMC_OA_API.to_string(),
-                message: format!("Task join error: {err}"),
-            })??;
+            .map_err(|err| {
+                BioMcpError::Api {
+                    api: PMC_OA_API.to_string(),
+                    message: format!("Task join error: {err}"),
+                }
+                .with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
+                ))
+            })?
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
+                ))
+            })?;
         Ok(PmcOaArchivePackage { manifest, entries })
     }
 }
@@ -242,12 +280,22 @@ impl PmcOaClient {
             .get(archive_url)
             .with_extension(CacheMode::NoStore);
         let resp = crate::sources::with_response_body_limit(request, MAX_TGZ_BYTES, PMC_OA_API)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PMC_OPEN_ACCESS,
+            ))
             .await?;
         let status = resp.status();
-        let bytes =
-            crate::sources::read_limited_body_with_limit(resp, PMC_OA_API, MAX_TGZ_BYTES).await?;
-        decode_archive_bytes(status, &bytes)
+        let bytes = crate::sources::read_limited_source_body_with_limit(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::PMC_OPEN_ACCESS),
+            MAX_TGZ_BYTES,
+        )
+        .await?;
+        decode_archive_bytes(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PMC_OPEN_ACCESS,
+            ))
+        })
     }
 }
 

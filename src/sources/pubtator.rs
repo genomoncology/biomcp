@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::de::DeserializeOwned;
@@ -7,7 +8,6 @@ use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
 const PUBTATOR_BASE: &str = "https://www.ncbi.nlm.nih.gov/research/pubtator3-api";
-const PUBTATOR_API: &str = "pubtator3";
 const PUBTATOR_BASE_ENV: &str = "BIOMCP_PUBTATOR_BASE";
 
 // dead-code reason: pubtator::PubTatorSearchRequestPlan preserves the provider shape used by source contract fixtures
@@ -68,12 +68,24 @@ impl PubTatorClient {
         authenticated: bool,
     ) -> Result<T, BioMcpError> {
         let resp = crate::sources::apply_cache_mode_with_auth(req, authenticated)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::PUBTATOR3,
+            ))
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, PUBTATOR_API).await?;
-        crate::sources::decode_json(PUBTATOR_API, status, content_type.as_ref(), &bytes, true)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::PUBTATOR3),
+        )
+        .await?;
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
+            status,
+            content_type.as_ref(),
+            &bytes,
+            true,
+        )
     }
 
     pub fn export_biocjson_plan(pmid: u32, api_key: Option<&str>) -> RequestPlan {

@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write as _;
@@ -634,15 +635,22 @@ async fn sync_export(
     }
 
     let response = crate::sources::with_response_body_limit(request, max_body_bytes, CVX_API)
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::CVX,
+        ))
         .await?;
     let status = response.status();
     let content_type = response
         .headers()
         .get(reqwest::header::CONTENT_TYPE)
         .cloned();
-    let body =
-        crate::sources::read_limited_body_with_limit(response, CVX_API, max_body_bytes).await?;
+    let body = crate::sources::read_limited_source_body_with_limit(
+        response,
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::CVX),
+        max_body_bytes,
+    )
+    .await?;
+    let context = crate::error::SourceContext::retry(crate::error::SourceProvider::CVX);
     if !status.is_success() {
         return Err(BioMcpError::Api {
             api: CVX_API.to_string(),
@@ -651,15 +659,19 @@ async fn sync_export(
                 file_name,
                 crate::sources::body_excerpt(&body)
             ),
-        });
+        }
+        .with_source_context(context));
     }
 
-    ensure_csv_content_type(content_type.as_ref(), &body)?;
-    let payload = std::str::from_utf8(&body).map_err(|source| BioMcpError::Api {
-        api: CVX_API.to_string(),
-        message: format!("{file_name} was not valid UTF-8: {source}"),
-    })?;
-    parser(&path, payload)?;
+    ensure_csv_content_type(content_type.as_ref(), &body)
+        .map_err(|error| error.with_source_context(context))?;
+    let payload = std::str::from_utf8(&body)
+        .map_err(|source| BioMcpError::Api {
+            api: CVX_API.to_string(),
+            message: format!("{file_name} was not valid UTF-8: {source}"),
+        })
+        .map_err(|error| error.with_source_context(context))?;
+    parser(&path, payload).map_err(|error| error.with_source_context(context))?;
 
     if let Ok(existing) = tokio::fs::read(&path).await
         && existing == body

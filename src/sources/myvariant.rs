@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::de::DeserializeOwned;
@@ -288,11 +289,25 @@ impl MyVariantClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::MYVARIANT,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, MYVARIANT_API).await?;
-        crate::sources::decode_json(MYVARIANT_API, status, content_type.as_ref(), &bytes, true)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::MYVARIANT),
+        )
+        .await?;
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
+            status,
+            content_type.as_ref(),
+            &bytes,
+            true,
+        )
     }
 
     /// Build the outbound free-form `/query` request (pure — Tier-2 testable, never sent).

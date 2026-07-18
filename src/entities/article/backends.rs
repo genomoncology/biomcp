@@ -407,7 +407,7 @@ pub(super) async fn search_semantic_scholar_candidates(
     {
         Ok(response) => response,
         Err(err) => {
-            warn!(?err, query, "Semantic Scholar article search leg failed");
+            warn!(%err, query, "Semantic Scholar article search leg failed");
             return Ok(semantic_scholar_unavailable_outcome(auth_mode));
         }
     };

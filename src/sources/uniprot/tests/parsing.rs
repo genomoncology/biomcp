@@ -47,12 +47,12 @@ fn decode_json_response_maps_http_and_json_errors() {
         br#"{"error":"upstream"}"#,
     )
     .unwrap_err();
-    assert!(err.to_string().contains("HTTP 502 Bad Gateway"));
+    assert!(format!("{err:?}").contains("HTTP 502 Bad Gateway"));
 
     let err =
         UniProtClient::decode_json_response::<UniProtSearchResponse>(StatusCode::OK, b"not json")
             .unwrap_err();
-    assert!(err.to_string().contains("Invalid JSON response"));
+    assert!(format!("{err:?}").contains("Invalid JSON response"));
 }
 
 #[test]

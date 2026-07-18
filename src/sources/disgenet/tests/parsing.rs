@@ -105,6 +105,23 @@ fn assert_rejected_credential_status(status: StatusCode) {
 }
 
 #[test]
+fn rejected_credential_recovery_points_to_configuration() {
+    let error = BioMcpError::ApiKeyRejected {
+        api: "disgenet".into(),
+        env_var: "DISGENET_API_KEY".into(),
+        docs_url: "https://www.disgenet.com/".into(),
+    };
+    let context = DisgenetClient::error_context(&error);
+    let projection = error.with_source_context(context).public_projection();
+
+    assert_eq!(projection.source, Some("DisGeNET"));
+    assert_eq!(
+        projection.recovery,
+        Some(crate::error::RecoveryAction::ReviewSourceConfiguration.message())
+    );
+}
+
+#[test]
 fn unauthorized_response_reports_rejected_credential() {
     assert_rejected_credential_status(StatusCode::UNAUTHORIZED);
 }
@@ -128,7 +145,7 @@ fn rate_limit_error_includes_retry_after_seconds() {
         br#"{"message": "Too many requests"}"#,
     )
     .unwrap_err();
-    let message = err.to_string();
+    let message = format!("{err:?}");
 
     assert!(message.contains("85564"));
     assert!(message.contains("Too many requests"));

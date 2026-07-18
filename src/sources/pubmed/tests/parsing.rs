@@ -63,7 +63,7 @@ fn esearch_handles_empty_idlist_and_rejects_bad_count() {
         br#"{"esearchresult":{"count":"not-a-number","idlist":["123"]}}"#,
     )
     .unwrap_err();
-    assert!(err.to_string().contains("count"));
+    assert!(format!("{err:?}").contains("count"));
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn esummary_strictly_validates_uids_and_entries() {
         }),
     )
     .unwrap_err();
-    assert!(missing_uids.to_string().contains("uids"));
+    assert!(format!("{missing_uids:?}").contains("uids"));
 
     let duplicate = decode_esummary(
         &["1"],
@@ -111,7 +111,7 @@ fn esummary_strictly_validates_uids_and_entries() {
         }),
     )
     .unwrap_err();
-    assert!(duplicate.to_string().contains("duplicate"));
+    assert!(format!("{duplicate:?}").contains("duplicate"));
 
     let missing_requested = decode_esummary(
         &["1", "2"],
@@ -123,7 +123,7 @@ fn esummary_strictly_validates_uids_and_entries() {
         }),
     )
     .unwrap_err();
-    assert!(missing_requested.to_string().contains("2"));
+    assert!(format!("{missing_requested:?}").contains("2"));
 
     let unexpected = decode_esummary(
         &["1"],
@@ -136,7 +136,7 @@ fn esummary_strictly_validates_uids_and_entries() {
         }),
     )
     .unwrap_err();
-    assert!(unexpected.to_string().contains("unexpected"));
+    assert!(format!("{unexpected:?}").contains("unexpected"));
 
     let missing_entry = decode_esummary(
         &["1"],
@@ -145,7 +145,7 @@ fn esummary_strictly_validates_uids_and_entries() {
         }),
     )
     .unwrap_err();
-    assert!(missing_entry.to_string().contains("entry"));
+    assert!(format!("{missing_entry:?}").contains("entry"));
 
     let malformed = decode_esummary(
         &["1"],
@@ -157,7 +157,7 @@ fn esummary_strictly_validates_uids_and_entries() {
         }),
     )
     .unwrap_err();
-    assert!(malformed.to_string().contains("parse"));
+    assert!(format!("{malformed:?}").contains("parse"));
 
     let conflicting = decode_esummary(
         &["1"],
@@ -169,8 +169,8 @@ fn esummary_strictly_validates_uids_and_entries() {
         }),
     )
     .unwrap_err();
-    assert!(conflicting.to_string().contains("uid"));
-    assert!(conflicting.to_string().contains("2"));
+    assert!(format!("{conflicting:?}").contains("uid"));
+    assert!(format!("{conflicting:?}").contains("2"));
 }
 
 #[test]
@@ -384,9 +384,9 @@ fn decode_json_maps_http_and_content_type_errors() {
         b"upstream failure",
     )
     .unwrap_err();
-    let msg = http.to_string();
-    assert!(matches!(http, BioMcpError::Api { .. }));
-    assert!(msg.contains("pubmed-eutils"), "got: {msg}");
+    let msg = format!("{http:?}");
+    assert_eq!(http.code(), "api");
+    assert!(msg.contains("PubMed"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 
     let html = HeaderValue::from_static("text/html");
@@ -396,5 +396,5 @@ fn decode_json_maps_http_and_content_type_errors() {
         b"<html><body>error</body></html>",
     )
     .unwrap_err();
-    assert!(content_type.to_string().contains("HTML"));
+    assert!(format!("{content_type:?}").contains("HTML"));
 }

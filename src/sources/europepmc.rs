@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::BTreeSet;
 use std::io::{Cursor, Read};
@@ -65,11 +66,25 @@ impl EuropePmcClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::EUROPE_PMC,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, EUROPE_PMC_API).await?;
-        crate::sources::decode_json(EUROPE_PMC_API, status, content_type.as_ref(), &bytes, false)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::EUROPE_PMC),
+        )
+        .await?;
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::EUROPE_PMC),
+            status,
+            content_type.as_ref(),
+            &bytes,
+            false,
+        )
     }
 
     pub async fn search_by_doi(&self, doi: &str) -> Result<EuropePmcSearchResponse, BioMcpError> {
@@ -112,24 +127,40 @@ impl EuropePmcClient {
             MAX_SUPPLEMENTARY_ZIP_BYTES,
             EUROPE_PMC_API,
         )
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::EUROPE_PMC,
+        ))
         .await?;
         let status = resp.status();
-        if !supplementary_status_has_package(status)? {
+        if !supplementary_status_has_package(status).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::EUROPE_PMC,
+            ))
+        })? {
             return Ok(None);
         }
-        let bytes = crate::sources::read_limited_body_with_limit(
+        let bytes = crate::sources::read_limited_source_body_with_limit(
             resp,
-            EUROPE_PMC_API,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::EUROPE_PMC),
             MAX_SUPPLEMENTARY_ZIP_BYTES,
         )
         .await?;
         let package = tokio::task::spawn_blocking(move || parse_supplementary_zip(&bytes))
             .await
-            .map_err(|err| BioMcpError::Api {
-                api: EUROPE_PMC_API.to_string(),
-                message: format!("Task join error: {err}"),
-            })??;
+            .map_err(|err| {
+                BioMcpError::Api {
+                    api: EUROPE_PMC_API.to_string(),
+                    message: format!("Task join error: {err}"),
+                }
+                .with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::EUROPE_PMC,
+                ))
+            })?
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::EUROPE_PMC,
+                ))
+            })?;
         Ok(Some(package))
     }
 
@@ -308,10 +339,23 @@ impl EuropePmcClient {
         };
 
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let resp = req.with_extension(CacheMode::NoStore).send().await?;
+        let resp = req
+            .with_extension(CacheMode::NoStore)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::EUROPE_PMC,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, EUROPE_PMC_API).await?;
-        Self::decode_full_text_xml(status, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::EUROPE_PMC),
+        )
+        .await?;
+        Self::decode_full_text_xml(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::EUROPE_PMC,
+            ))
+        })
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use futures::future::join_all;
@@ -69,7 +70,11 @@ impl UmlsClient {
                 message: format!("HTTP {status}: {}", crate::sources::body_excerpt(bytes)),
             });
         }
-        crate::sources::ensure_json_content_type(UMLS_API, content_type, bytes)?;
+        crate::sources::ensure_json_content_type(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::UMLS),
+            content_type,
+            bytes,
+        )?;
         serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
             api: UMLS_API.to_string(),
             source,
@@ -105,13 +110,23 @@ impl UmlsClient {
             request_from_plan(&self.client, self.base.as_ref(), &plan),
             true,
         )
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::UMLS,
+        ))
         .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, UMLS_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::UMLS),
+        )
+        .await?;
         let search: UmlsSearchEnvelope =
-            Self::decode_json_response(status, content_type.as_ref(), &bytes)?;
+            Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::UMLS,
+                ))
+            })?;
 
         let tasks = Self::search_hits(search)
             .into_iter()
@@ -134,13 +149,23 @@ impl UmlsClient {
             request_from_plan(&self.client, self.base.as_ref(), &plan),
             true,
         )
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::UMLS,
+        ))
         .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, UMLS_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::UMLS),
+        )
+        .await?;
         let atoms: UmlsAtomsEnvelope =
-            Self::decode_json_response(status, content_type.as_ref(), &bytes)?;
+            Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::UMLS,
+                ))
+            })?;
 
         Ok(Self::map_atoms(atoms))
     }

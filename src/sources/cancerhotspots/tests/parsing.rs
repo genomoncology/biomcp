@@ -2,7 +2,6 @@
 //! and recurrence logic. No network, no server.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 
@@ -40,8 +39,8 @@ fn decode_by_gene_maps_http_and_html_errors() {
         b"upstream failure",
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
     assert!(msg.contains("500"), "got: {msg}");
     assert!(msg.contains("upstream failure"), "got: {msg}");
 
@@ -52,7 +51,7 @@ fn decode_by_gene_maps_http_and_html_errors() {
         b"<html><body>not json</body></html>",
     )
     .unwrap_err();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert_eq!(err.code(), "api");
 }
 
 #[test]

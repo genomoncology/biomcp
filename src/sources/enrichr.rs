@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::Deserialize;
@@ -45,10 +46,18 @@ impl EnrichrClient {
         ),
         BioMcpError,
     > {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::ENRICHR,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, ENRICHR_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::ENRICHR),
+        )
+        .await?;
         Ok((status, content_type, bytes))
     }
 
@@ -66,12 +75,19 @@ impl EnrichrClient {
     where
         F: Fn() -> reqwest::RequestBuilder,
     {
-        let resp =
-            crate::sources::retry_send(ENRICHR_API, 3, || async { build_request().send().await })
-                .await?;
+        let resp = crate::sources::retry_send(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::ENRICHR),
+            3,
+            || async { build_request().send().await },
+        )
+        .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, ENRICHR_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::ENRICHR),
+        )
+        .await?;
         Ok((status, content_type, bytes))
     }
 
@@ -143,7 +159,11 @@ impl EnrichrClient {
             })
             .await?;
 
-        Self::decode_add_list_response(status, &bytes)
+        Self::decode_add_list_response(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::ENRICHR,
+            ))
+        })
     }
 
     pub(crate) fn enrich_plan(user_list_id: i64, library: &str) -> RequestPlan {
@@ -158,7 +178,11 @@ impl EnrichrClient {
         bytes: &[u8],
     ) -> Result<serde_json::Value, BioMcpError> {
         if status.is_success() {
-            crate::sources::ensure_json_content_type(ENRICHR_API, content_type, bytes)?;
+            crate::sources::ensure_json_content_type(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::ENRICHR),
+                content_type,
+                bytes,
+            )?;
             return serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
                 api: ENRICHR_API.to_string(),
                 source,
@@ -192,7 +216,11 @@ impl EnrichrClient {
             .send_bytes(request_from_plan(&self.client, self.base.as_ref(), &plan))
             .await?;
 
-        Self::decode_enrich_response(status, content_type.as_ref(), &bytes)
+        Self::decode_enrich_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::ENRICHR,
+            ))
+        })
     }
 }
 

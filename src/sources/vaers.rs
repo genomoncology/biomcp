@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::time::Duration;
 
@@ -164,19 +165,42 @@ impl VaersClient {
         wonder_code: &str,
     ) -> Result<VaersAggregateTable, BioMcpError> {
         let plan = aggregate_request_plan(kind, wonder_code)?;
-        let response = self.request_from_plan(&plan).send().await?;
+        let response = self
+            .request_from_plan(&plan)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::VAERS,
+            ))
+            .await?;
         let status = response.status();
         let content_type = response.headers().get(CONTENT_TYPE).cloned();
-        let body =
-            crate::sources::read_limited_body_with_limit(response, VAERS_API, VAERS_MAX_BODY_BYTES)
-                .await?;
-        let xml = decode_aggregate_response(status, content_type.as_ref(), body)?;
+        let body = crate::sources::read_limited_source_body_with_limit(
+            response,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::VAERS),
+            VAERS_MAX_BODY_BYTES,
+        )
+        .await?;
+        let xml =
+            decode_aggregate_response(status, content_type.as_ref(), body).map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::VAERS,
+                ))
+            })?;
         tokio::task::spawn_blocking(move || parse_aggregate_response(&xml))
             .await
-            .map_err(|err| BioMcpError::Api {
-                api: VAERS_API.to_string(),
-                message: format!("CDC WONDER VAERS XML parse task failed: {err}"),
+            .map_err(|err| {
+                BioMcpError::Api {
+                    api: VAERS_API.to_string(),
+                    message: format!("CDC WONDER VAERS XML parse task failed: {err}"),
+                }
+                .with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::VAERS,
+                ))
             })?
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::VAERS,
+                ))
+            })
     }
 
     fn request_from_plan(&self, plan: &RequestPlan) -> reqwest_middleware::RequestBuilder {

@@ -10,7 +10,7 @@ fn ensure_csv_content_type_rejects_html_response_without_raw_tags() {
     let content_type = HeaderValue::from_static("text/html; charset=utf-8");
     let err = ensure_csv_content_type(Some(&content_type), b"<html><body>not csv</body></html>")
         .expect_err("html should be rejected");
-    let message = err.to_string();
+    let message = format!("{err:?}");
 
     assert!(message.contains("Unexpected HTML response"));
     assert!(message.contains("HTML error page"));
@@ -73,7 +73,7 @@ fn parse_mvx_rows_rejects_short_rows() {
     )
     .expect_err("short mvx row should error");
 
-    assert!(err.to_string().contains("expected at least 5 fields"));
+    assert!(format!("{err:?}").contains("expected at least 5 fields"));
 }
 
 #[test]

@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use reqwest::StatusCode;
@@ -84,13 +85,23 @@ impl OlsClient {
 
         let resp = crate::sources::apply_cache_mode(self.client.get(self.endpoint(path)))
             .query(&plan.query_params)
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OLS4,
+            ))
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, OLS4_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::OLS4),
+        )
+        .await?;
 
-        Self::decode_search_response(status, content_type.as_ref(), &bytes)
+        Self::decode_search_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OLS4,
+            ))
+        })
     }
 
     pub(crate) fn decode_search_response(
@@ -105,7 +116,11 @@ impl OlsClient {
             });
         }
 
-        crate::sources::ensure_json_content_type(OLS4_API, content_type, bytes)?;
+        crate::sources::ensure_json_content_type(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::OLS4),
+            content_type,
+            bytes,
+        )?;
         let response: OlsSearchEnvelope =
             serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
                 api: OLS4_API.to_string(),

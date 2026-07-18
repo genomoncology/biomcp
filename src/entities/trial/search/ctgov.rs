@@ -374,6 +374,10 @@ fn handle_ctgov_worker_outcome(
 ) -> Result<Option<CtGovFilteredPage>, BioMcpError> {
     match result {
         Ok(page) => Ok(Some(page)),
+        Err(BioMcpError::WithSourceContext { context, source }) => {
+            handle_ctgov_worker_outcome(worker_index, worker, Err(*source))
+                .map_err(|error| error.with_source_context(context))
+        }
         Err(BioMcpError::CtGovInterventionQueryRejected { reason }) if worker_index > 0 => {
             warn!(
                 alias = worker.intervention_query.as_deref().unwrap_or_default(),

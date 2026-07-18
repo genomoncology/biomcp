@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write as _;
@@ -964,16 +965,24 @@ async fn sync_export(
         request = request.header(reqwest::header::CACHE_CONTROL, "no-cache");
     }
     let response = crate::sources::with_response_body_limit(request, max_body_bytes, WHO_PQ_API)
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::WHO_PREQUALIFICATION,
+        ))
         .await?;
     let status = response.status();
     let content_type = response
         .headers()
         .get(reqwest::header::CONTENT_TYPE)
         .cloned();
-    let body =
-        crate::sources::read_limited_body_with_limit(response, WHO_PQ_API, max_body_bytes).await?;
+    let body = crate::sources::read_limited_source_body_with_limit(
+        response,
+        crate::error::SourceContext::narrow(crate::error::SourceProvider::WHO_PREQUALIFICATION),
+        max_body_bytes,
+    )
+    .await?;
 
+    let context =
+        crate::error::SourceContext::retry(crate::error::SourceProvider::WHO_PREQUALIFICATION);
     if !status.is_success() {
         return Err(BioMcpError::Api {
             api: WHO_PQ_API.to_string(),
@@ -982,15 +991,19 @@ async fn sync_export(
                 file_name,
                 crate::sources::body_excerpt(&body)
             ),
-        });
+        }
+        .with_source_context(context));
     }
 
-    ensure_csv_content_type(content_type.as_ref(), &body)?;
-    let payload = std::str::from_utf8(&body).map_err(|source| BioMcpError::Api {
-        api: WHO_PQ_API.to_string(),
-        message: format!("{file_name} was not valid UTF-8: {source}"),
-    })?;
-    parser(payload)?;
+    ensure_csv_content_type(content_type.as_ref(), &body)
+        .map_err(|error| error.with_source_context(context))?;
+    let payload = std::str::from_utf8(&body)
+        .map_err(|source| BioMcpError::Api {
+            api: WHO_PQ_API.to_string(),
+            message: format!("{file_name} was not valid UTF-8: {source}"),
+        })
+        .map_err(|error| error.with_source_context(context))?;
+    parser(payload).map_err(|error| error.with_source_context(context))?;
 
     let path = root.join(file_name);
     if let Ok(existing) = tokio::fs::read(&path).await

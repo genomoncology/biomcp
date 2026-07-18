@@ -2,7 +2,6 @@
 //! and local row processors. No network, no server.
 
 use super::super::*;
-use crate::error::BioMcpError;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 
@@ -79,8 +78,8 @@ fn decode_json_response_maps_http_and_content_type_errors() {
         b"upstream failed",
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
     assert!(msg.contains("500"), "got: {msg}");
     assert!(msg.contains("upstream failed"), "got: {msg}");
 
@@ -91,5 +90,5 @@ fn decode_json_response_maps_http_and_content_type_errors() {
         b"<html></html>",
     )
     .unwrap_err();
-    assert!(matches!(err, BioMcpError::Api { .. }));
+    assert_eq!(err.code(), "api");
 }

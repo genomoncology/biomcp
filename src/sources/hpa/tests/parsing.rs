@@ -68,5 +68,5 @@ fn decode_protein_data_xml_accepts_xml_and_rejects_html() {
         b"<html>not xml</html>".to_vec(),
     )
     .expect_err("HTML should fail");
-    assert!(err.to_string().contains("Unexpected HTML response"));
+    assert!(format!("{err:?}").contains("Unexpected HTML response"));
 }

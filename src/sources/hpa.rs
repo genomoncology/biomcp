@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use reqwest::StatusCode;
@@ -63,24 +64,46 @@ impl HpaClient {
             self.base.as_ref(),
             &plan,
         ))
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::HPA,
+        ))
         .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, HPA_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::HPA),
+        )
+        .await?;
 
         let Some(xml) =
-            Self::decode_protein_data_xml(status, content_type.as_ref(), bytes.to_vec())?
+            Self::decode_protein_data_xml(status, content_type.as_ref(), bytes.to_vec()).map_err(
+                |error| {
+                    error.with_source_context(crate::error::SourceContext::retry(
+                        crate::error::SourceProvider::HPA,
+                    ))
+                },
+            )?
         else {
             return Ok(GeneHpa::default());
         };
 
         tokio::task::spawn_blocking(move || parse_gene_hpa(&xml))
             .await
-            .map_err(|err| BioMcpError::Api {
-                api: HPA_API.to_string(),
-                message: format!("XML parse task failed: {err}"),
+            .map_err(|err| {
+                BioMcpError::Api {
+                    api: HPA_API.to_string(),
+                    message: format!("XML parse task failed: {err}"),
+                }
+                .with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::HPA,
+                ))
             })?
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::HPA,
+                ))
+            })
     }
 }
 

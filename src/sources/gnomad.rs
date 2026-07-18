@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use reqwest::StatusCode;
@@ -103,18 +104,36 @@ impl GnomadClient {
         content_type: Option<&HeaderValue>,
         bytes: &[u8],
     ) -> Result<T, BioMcpError> {
-        crate::sources::decode_json(GNOMAD_API, status, content_type, bytes, true)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::GNOMAD),
+            status,
+            content_type,
+            bytes,
+            true,
+        )
     }
 
     async fn send_json<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GNOMAD,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, GNOMAD_API).await?;
-        Self::decode_json_response(status, content_type.as_ref(), &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::GNOMAD),
+        )
+        .await?;
+        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GNOMAD,
+            ))
+        })
     }
 
     fn parse_gene_constraint_response(
@@ -189,7 +208,11 @@ impl GnomadClient {
         let plan = Self::gene_constraint_plan(symbol)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let resp: GraphQlResponse<GeneConstraintResponse> = self.send_json(req).await?;
-        Self::parse_gene_constraint_response(resp)
+        Self::parse_gene_constraint_response(resp).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GNOMAD,
+            ))
+        })
     }
 }
 

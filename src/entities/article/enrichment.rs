@@ -111,7 +111,7 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar(
     let client = match SemanticScholarClient::new() {
         Ok(client) => client,
         Err(err) => {
-            warn!(?err, "Semantic Scholar search-row enrichment unavailable");
+            warn!(%err, "Semantic Scholar search-row enrichment unavailable");
             return Some(ArticleSourceStatus {
                 source: ArticleSource::SemanticScholar,
                 enabled: true,
@@ -152,7 +152,7 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar(
             }
             Err(err) => {
                 warn!(
-                    ?err,
+                    %err,
                     chunk_start,
                     chunk_end,
                     "Semantic Scholar article-search batch enrichment failed",
@@ -202,14 +202,14 @@ async fn enrich_visible_article_search_rows_with_article_base(rows: &mut [Articl
     let pubtator = match PubTatorClient::new() {
         Ok(client) => client,
         Err(err) => {
-            warn!(?err, "PubTator visible-row metadata fallback unavailable");
+            warn!(%err, "PubTator visible-row metadata fallback unavailable");
             return;
         }
     };
     let europe = match EuropePmcClient::new() {
         Ok(client) => client,
         Err(err) => {
-            warn!(?err, "Europe PMC visible-row metadata fallback unavailable");
+            warn!(%err, "Europe PMC visible-row metadata fallback unavailable");
             return;
         }
     };
@@ -221,7 +221,7 @@ async fn enrich_visible_article_search_rows_with_article_base(rows: &mut [Articl
         {
             Ok(article) => merge_article_search_row_with_article_base(&mut rows[row_idx], &article),
             Err(err) => warn!(
-                ?err,
+                %err,
                 pmid = lookup_id,
                 "Visible article-search metadata fallback failed",
             ),

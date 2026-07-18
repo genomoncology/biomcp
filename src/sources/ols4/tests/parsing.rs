@@ -46,7 +46,7 @@ fn decode_search_response_maps_http_and_content_type_errors() {
         br#"{"error":"upstream"}"#,
     )
     .unwrap_err();
-    assert!(err.to_string().contains("HTTP 502 Bad Gateway"));
+    assert!(format!("{err:?}").contains("HTTP 502 Bad Gateway"));
 
     let content_type = HeaderValue::from_static("text/html");
     let err = OlsClient::decode_search_response(
@@ -55,5 +55,5 @@ fn decode_search_response_maps_http_and_content_type_errors() {
         b"<html>not json</html>",
     )
     .unwrap_err();
-    assert!(err.to_string().contains("Unexpected HTML response"));
+    assert!(format!("{err:?}").contains("Unexpected HTML response"));
 }

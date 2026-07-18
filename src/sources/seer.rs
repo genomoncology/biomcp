@@ -10,10 +10,12 @@ use serde_json::Value;
 
 use crate::entities::disease::Disease;
 use crate::error::BioMcpError;
+use crate::sources::RequestBuilderSourceContextExt;
 use crate::sources::{RequestPlan, request_from_plan};
 
 const SEER_BASE: &str =
     "https://seer.cancer.gov/statistics-network/explorer/source/content_writers";
+#[cfg(test)]
 const SEER_API: &str = "seer";
 const SEER_BASE_ENV: &str = "BIOMCP_SEER_BASE";
 const SEER_SOURCE_NAME: &str = "SEER Explorer";
@@ -92,8 +94,12 @@ impl SeerClient {
             )));
         }
 
-        crate::sources::ensure_json_content_type(SEER_API, content_type, bytes)
-            .map_err(|_| seer_unavailable("SEER Explorer returned an unexpected content type."))?;
+        crate::sources::ensure_json_content_type(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::SEER),
+            content_type,
+            bytes,
+        )
+        .map_err(|_| seer_unavailable("SEER Explorer returned an unexpected content type."))?;
 
         serde_json::from_slice(bytes)
             .map_err(|_| seer_unavailable("SEER Explorer returned data BioMCP could not decode."))
@@ -114,15 +120,24 @@ impl SeerClient {
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
         let resp = crate::sources::apply_cache_mode(req)
-            .send()
-            .await
-            .map_err(|err| remap_seer_error(err.into()))?;
-        let status = resp.status();
-        let content_type = resp.headers().get(CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, SEER_API)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::SEER,
+            ))
             .await
             .map_err(remap_seer_error)?;
-        Self::decode_json_response(status, content_type.as_ref(), &bytes)
+        let status = resp.status();
+        let content_type = resp.headers().get(CONTENT_TYPE).cloned();
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::SEER),
+        )
+        .await
+        .map_err(remap_seer_error)?;
+        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::SEER,
+            ))
+        })
     }
 
     pub async fn site_catalog(&self) -> Result<SeerSiteCatalog, BioMcpError> {
@@ -146,7 +161,11 @@ impl SeerClient {
         let plan = Self::survival_plan(site_code);
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let outer_json: String = self.send_json(req).await?;
-        Self::decode_survival_payload(site_code, catalog, &outer_json)
+        Self::decode_survival_payload(site_code, catalog, &outer_json).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::SEER,
+            ))
+        })
     }
 
     pub(crate) fn decode_survival_payload(
@@ -613,6 +632,9 @@ fn seer_unavailable(reason: impl Into<String>) -> BioMcpError {
 
 fn remap_seer_error(err: BioMcpError) -> BioMcpError {
     match err {
+        BioMcpError::WithSourceContext { context, source } => {
+            remap_seer_error(*source).with_source_context(context)
+        }
         BioMcpError::SourceUnavailable { .. } => err,
         BioMcpError::Http(source) if source.is_timeout() || source.is_connect() => {
             seer_unavailable("SEER Explorer is temporarily unavailable.")

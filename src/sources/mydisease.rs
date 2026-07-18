@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::de::DeserializeOwned;
@@ -7,7 +8,6 @@ use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
 const MYDISEASE_BASE: &str = "https://mydisease.info/v1";
-const MYDISEASE_API: &str = "mydisease.info";
 const MYDISEASE_BASE_ENV: &str = "BIOMCP_MYDISEASE_BASE";
 
 pub(crate) const MYDISEASE_SEARCH_FIELDS: &str = "_id,mondo.name,mondo.synonym,disease_ontology.name,disease_ontology.synonyms,hpo.inheritance.hpo_id,hpo.inheritance.hpo_name,hpo.phenotype_related_to_disease.hpo_id,hpo.clinical_course.hpo_name";
@@ -89,11 +89,25 @@ impl MyDiseaseClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::MYDISEASE,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, MYDISEASE_API).await?;
-        crate::sources::decode_json(MYDISEASE_API, status, content_type.as_ref(), &bytes, false)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::MYDISEASE),
+        )
+        .await?;
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::MYDISEASE),
+            status,
+            content_type.as_ref(),
+            &bytes,
+            false,
+        )
     }
 
     // dead-code reason: mydisease::legacy_plan preserves the provider shape used by source contract fixtures
@@ -380,17 +394,35 @@ impl MyDiseaseClient {
                 suggestion: format!("Try searching: biomcp search disease -q \"{}\"", id.trim()),
             });
         }
-        crate::sources::decode_json(MYDISEASE_API, status, content_type, bytes, false)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::MYDISEASE),
+            status,
+            content_type,
+            bytes,
+            false,
+        )
     }
 
     pub async fn get(&self, id: &str) -> Result<MyDiseaseHit, BioMcpError> {
         let plan = Self::get_plan(id)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::MYDISEASE,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, MYDISEASE_API).await?;
-        Self::decode_get_hit(status, content_type.as_ref(), &bytes, id)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::MYDISEASE),
+        )
+        .await?;
+        Self::decode_get_hit(status, content_type.as_ref(), &bytes, id).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::MYDISEASE,
+            ))
+        })
     }
 }
 

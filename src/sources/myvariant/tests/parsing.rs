@@ -11,8 +11,6 @@ use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 use serde_json::json;
 
-const MYVARIANT_API: &str = "myvariant.info";
-
 macro_rules! fixture {
     ($name:expr) => {
         include_bytes!(concat!(
@@ -30,7 +28,7 @@ fn json_ct() -> HeaderValue {
 #[test]
 fn parses_search_response_total_and_hits_from_real_fixture() {
     let resp: MyVariantSearchResponse = decode_json(
-        MYVARIANT_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("search_braf.json"),
@@ -52,7 +50,7 @@ fn parses_search_response_total_and_hits_from_real_fixture() {
 #[test]
 fn parses_get_hit_nested_fields_from_real_fixture() {
     let hit: MyVariantHit = decode_json(
-        MYVARIANT_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
         StatusCode::OK,
         Some(&json_ct()),
         fixture!("get_braf_v600e.json"),
@@ -143,7 +141,7 @@ fn select_get_hit_value_empty_array_is_not_found() {
 fn select_get_hit_value_scalar_is_api_error() {
     let err = MyVariantClient::select_get_hit_value(json!("nope"), "x").unwrap_err();
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("Unexpected response type"));
+    assert!(format!("{err:?}").contains("Unexpected response type"));
 }
 
 #[test]
@@ -229,16 +227,16 @@ fn gnomad_nested_fields_deserialize() {
 #[test]
 fn decode_json_maps_http_error_status_with_excerpt() {
     let err = decode_json::<MyVariantSearchResponse>(
-        MYVARIANT_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
         StatusCode::INTERNAL_SERVER_ERROR,
         None,
         b"upstream failure",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("myvariant.info"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert_eq!(err.code(), "api");
+    assert!(msg.contains("MyVariant.info"), "got: {msg}");
     assert!(msg.contains("500"), "got: {msg}");
 }
 
@@ -246,14 +244,14 @@ fn decode_json_maps_http_error_status_with_excerpt() {
 fn decode_json_rejects_html_content_type() {
     let html = HeaderValue::from_static("text/html");
     let err = decode_json::<MyVariantSearchResponse>(
-        MYVARIANT_API,
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
         StatusCode::OK,
         Some(&html),
         b"<html><body>error</body></html>",
         true,
     )
     .unwrap_err();
-    let msg = err.to_string();
-    assert!(msg.contains("myvariant.info"), "got: {msg}");
+    let msg = format!("{err:?}");
+    assert!(msg.contains("MyVariant.info"), "got: {msg}");
     assert!(msg.contains("HTML"), "got: {msg}");
 }

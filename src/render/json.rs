@@ -307,6 +307,10 @@ pub fn to_discover_json(result: &DiscoverResult) -> Result<String, BioMcpError> 
 struct AliasError {
     code: &'static str,
     message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    source: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    recovery: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -320,60 +324,17 @@ struct ErrorMeta {
     not_found: bool,
 }
 
-fn safe_error_message(error: &BioMcpError) -> String {
-    match error {
-        BioMcpError::HttpClientInit(_) => "HTTP client initialization failed.".to_string(),
-        BioMcpError::Http(_) | BioMcpError::HttpMiddleware(_) => "HTTP request failed.".to_string(),
-        BioMcpError::Api { api, .. } => format!("API request to {api} failed."),
-        BioMcpError::ApiJson { api, .. } => {
-            format!("API response from {api} could not be decoded.")
-        }
-        BioMcpError::BodyLimit {
-            source_name,
-            max_bytes,
-        } => format!("API error from {source_name}: Response body exceeded {max_bytes} bytes"),
-        BioMcpError::CtGovInterventionQueryRejected { .. } => {
-            "ClinicalTrials.gov rejected the intervention query.".to_string()
-        }
-        BioMcpError::NotFound { .. }
-        | BioMcpError::InvalidArgument(_)
-        | BioMcpError::ApiKeyRequired { .. }
-        | BioMcpError::ApiKeyRejected { .. } => error.to_string(),
-        BioMcpError::SourceUnavailable { source_name, .. } => format!(
-            "Source unavailable: {source_name} is not available.\n\nCheck source setup and retry."
-        ),
-        BioMcpError::Template(_) => "Template rendering failed.".to_string(),
-        BioMcpError::Json(_) => "JSON processing failed.".to_string(),
-        BioMcpError::Io(_) => "I/O operation failed.".to_string(),
-    }
-}
-
 pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> {
-    let code = match error {
-        BioMcpError::HttpClientInit(_) => "http_client_init",
-        BioMcpError::Http(_) => "http",
-        BioMcpError::HttpMiddleware(_) => "http_middleware",
-        BioMcpError::Api { .. } => "api",
-        BioMcpError::ApiJson { .. } => "api_json",
-        BioMcpError::BodyLimit { .. } => "api",
-        BioMcpError::CtGovInterventionQueryRejected { .. } => "api",
-        BioMcpError::NotFound { .. } => "not_found",
-        BioMcpError::InvalidArgument(_) => "invalid_argument",
-        BioMcpError::ApiKeyRequired { .. } => "api_key_required",
-        BioMcpError::ApiKeyRejected { .. } => "api_key_rejected",
-        BioMcpError::SourceUnavailable { .. } => "source_unavailable",
-        BioMcpError::Template(_) => "template",
-        BioMcpError::Json(_) => "json",
-        BioMcpError::Io(_) => "io",
-    };
-
+    let projection = error.public_projection();
     to_pretty(&ErrorJsonResponse {
         error: AliasError {
-            code,
-            message: safe_error_message(error),
+            code: error.code(),
+            message: projection.message,
+            source: projection.source,
+            recovery: projection.recovery,
         },
         _meta: ErrorMeta {
-            not_found: matches!(error, BioMcpError::NotFound { .. }),
+            not_found: error.is_not_found(),
         },
     })
 }
@@ -465,6 +426,8 @@ pub(crate) fn to_alias_suggestion_json(
                     alias.requested_entity.cli_name(),
                     alias.query
                 ),
+                source: None,
+                recovery: None,
             },
             _meta: AliasMeta {
                 not_found: true,
@@ -488,6 +451,8 @@ pub(crate) fn to_alias_suggestion_json(
                     alias.requested_entity.cli_name(),
                     alias.query
                 ),
+                source: None,
+                recovery: None,
             },
             _meta: AliasMeta {
                 not_found: true,
@@ -553,6 +518,8 @@ pub(crate) fn to_variant_guidance_json(guidance: &VariantGuidance) -> Result<Str
         error: AliasError {
             code: "not_found",
             message: variant_guidance_message(guidance),
+            source: None,
+            recovery: None,
         },
         _meta: VariantGuidanceMeta {
             not_found: true,
@@ -649,8 +616,91 @@ mod tests {
         let json = to_error_json(&error).unwrap();
 
         assert!(json.contains("\"code\": \"api\""));
-        assert!(json.contains("API error from example: Response body exceeded 42 bytes"));
+        assert!(json.contains("API error from BioMCP source: Response body exceeded 42 bytes"));
+        assert!(json.contains("\"source\": \"BioMCP source\""));
         assert!(!json.contains("body_limit"));
+    }
+
+    #[test]
+    fn source_errors_include_normalized_source_and_safe_recovery() {
+        let sentinels = [
+            "credential=fixture-secret",
+            "https://signed.example/private?token=fixture-secret",
+            "raw provider payload",
+            "parser detail at byte 42",
+            "/home/operator/private.json",
+            "hostile-provider-label",
+            "\u{1b}[31mterminal-red",
+            "\u{202e}bidi-override",
+        ];
+        let errors = [
+            (
+                BioMcpError::BodyLimit {
+                    source_name: "Europe PMC".to_string(),
+                    max_bytes: 42,
+                },
+                "api",
+                "Europe PMC",
+            ),
+            (
+                BioMcpError::SourceUnavailable {
+                    source_name: "ClinicalTrials.gov".to_string(),
+                    reason: format!("{}: {}", sentinels[0], sentinels[2]),
+                    suggestion: format!("Read {} then retry {}", sentinels[4], sentinels[1]),
+                },
+                "source_unavailable",
+                "ClinicalTrials.gov",
+            ),
+            (
+                BioMcpError::Api {
+                    api: format!(
+                        "{} {} {} {}",
+                        sentinels[5], sentinels[0], sentinels[6], sentinels[7]
+                    ),
+                    message: format!("{} {} {}", sentinels[1], sentinels[3], sentinels[4]),
+                },
+                "api",
+                "BioMCP source",
+            ),
+        ];
+
+        for (error, expected_code, expected_source) in &errors {
+            let json = to_error_json(error).expect("structured source error JSON");
+            let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
+            assert_eq!(value["error"]["code"], *expected_code, "json={value}");
+            assert_eq!(
+                value["error"]["source"], *expected_source,
+                "source labels must be normalized through the allowlist: {value}"
+            );
+            let recovery = value["error"]["recovery"]
+                .as_str()
+                .expect("source error needs a recovery action");
+            assert!(
+                recovery.to_ascii_lowercase().contains("retry"),
+                "recovery must be actionable: {value}"
+            );
+            assert!(recovery.len() <= 160, "recovery must be bounded: {value}");
+            assert!(
+                value["error"]["source"]
+                    .as_str()
+                    .is_some_and(|source| source.len() <= 80),
+                "normalized source labels must be bounded: {value}"
+            );
+            assert_eq!(value["_meta"]["not_found"], false, "json={value}");
+            let projected_strings = value["error"]
+                .as_object()
+                .expect("structured error object")
+                .values()
+                .filter_map(serde_json::Value::as_str)
+                .collect::<Vec<_>>()
+                .join("\n");
+            for sentinel in sentinels {
+                assert!(
+                    !projected_strings.contains(sentinel),
+                    "JSON error fields leaked {sentinel}: {value}"
+                );
+            }
+        }
     }
 
     #[test]

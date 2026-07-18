@@ -15,7 +15,45 @@ use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
 use serde::de::DeserializeOwned;
 use tracing::warn;
 
-use crate::error::BioMcpError;
+use crate::error::{BioMcpError, SourceContext};
+
+pub(crate) trait RequestBuilderSourceContextExt {
+    fn send_with_source_context(
+        self,
+        context: SourceContext,
+    ) -> impl Future<Output = Result<reqwest::Response, BioMcpError>> + Send;
+}
+
+impl RequestBuilderSourceContextExt for RequestBuilder {
+    async fn send_with_source_context(
+        self,
+        context: SourceContext,
+    ) -> Result<reqwest::Response, BioMcpError> {
+        self.send()
+            .await
+            .map_err(BioMcpError::from)
+            .map_err(|error| {
+                let context = if matches!(error, BioMcpError::BodyLimit { .. }) {
+                    SourceContext::narrow(context.provider())
+                } else {
+                    context
+                };
+                error.with_source_context(context)
+            })
+    }
+}
+
+impl RequestBuilderSourceContextExt for reqwest::RequestBuilder {
+    async fn send_with_source_context(
+        self,
+        context: SourceContext,
+    ) -> Result<reqwest::Response, BioMcpError> {
+        self.send()
+            .await
+            .map_err(BioMcpError::from)
+            .map_err(|error| error.with_source_context(context))
+    }
+}
 
 mod archive_budget;
 
@@ -331,7 +369,7 @@ pub(crate) fn request_from_plan(
 /// exercise success, HTTP-error, and bad-content-type paths against committed fixture
 /// bytes — no server, no client.
 pub(crate) fn decode_json<T: DeserializeOwned>(
-    api: &str,
+    context: SourceContext,
     status: StatusCode,
     content_type: Option<&HeaderValue>,
     bytes: &[u8],
@@ -340,17 +378,20 @@ pub(crate) fn decode_json<T: DeserializeOwned>(
     if !status.is_success() {
         let excerpt = body_excerpt(bytes);
         return Err(BioMcpError::Api {
-            api: api.to_string(),
+            api: context.provider().label().to_string(),
             message: format!("HTTP {status}: {excerpt}"),
-        });
+        }
+        .with_source_context(context));
     }
     if require_json_content_type {
-        ensure_json_content_type(api, content_type, bytes)?;
+        ensure_json_content_type(context, content_type, bytes)?;
     }
-    serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
-        api: api.to_string(),
-        source,
-    })
+    serde_json::from_slice(bytes)
+        .map_err(|source| BioMcpError::ApiJson {
+            api: context.provider().label().to_string(),
+            source,
+        })
+        .map_err(|error| error.with_source_context(context))
 }
 
 fn parse_retry_after_header(headers: &HeaderMap) -> Option<Duration> {
@@ -765,7 +806,7 @@ pub(crate) fn streaming_http_client() -> Result<reqwest::Client, BioMcpError> {
 /// `build_request` is invoked on each attempt so non-cloneable request bodies
 /// can be reconstructed safely.
 pub(crate) async fn retry_send<F, Fut>(
-    api: &str,
+    context: SourceContext,
     max_retries: u32,
     build_request: F,
 ) -> Result<reqwest::Response, BioMcpError>
@@ -773,11 +814,11 @@ where
     F: Fn() -> Fut,
     Fut: Future<Output = Result<reqwest::Response, reqwest::Error>>,
 {
-    retry_send_with_sleep(api, max_retries, build_request, tokio::time::sleep).await
+    retry_send_with_sleep(context, max_retries, build_request, tokio::time::sleep).await
 }
 
 async fn retry_send_with_sleep<F, Fut, S, SleepFut>(
-    api: &str,
+    context: SourceContext,
     max_retries: u32,
     build_request: F,
     mut sleep_fn: S,
@@ -811,7 +852,7 @@ where
                 if err.is_timeout() || err.is_connect() {
                     last_http_err = Some(err);
                 } else {
-                    return Err(BioMcpError::Http(err));
+                    return Err(BioMcpError::Http(err).with_source_context(context));
                 }
             }
         }
@@ -825,19 +866,21 @@ where
 
     if let Some(status) = last_server_status {
         return Err(BioMcpError::Api {
-            api: api.to_string(),
+            api: context.provider().label().to_string(),
             message: format!("HTTP {status} after {total_attempts} attempts"),
-        });
+        }
+        .with_source_context(context));
     }
 
     if let Some(err) = last_http_err {
-        return Err(BioMcpError::Http(err));
+        return Err(BioMcpError::Http(err).with_source_context(context));
     }
 
     Err(BioMcpError::Api {
-        api: api.to_string(),
+        api: context.provider().label().to_string(),
         message: format!("All retry attempts exhausted after {total_attempts} attempts"),
-    })
+    }
+    .with_source_context(context))
 }
 
 pub(crate) fn body_excerpt(bytes: &[u8]) -> String {
@@ -896,7 +939,7 @@ pub(crate) fn summarize_http_error_body(content_type: Option<&HeaderValue>, body
 }
 
 pub(crate) fn ensure_json_content_type(
-    api: &str,
+    context: SourceContext,
     content_type: Option<&HeaderValue>,
     body: &[u8],
 ) -> Result<(), BioMcpError> {
@@ -924,14 +967,15 @@ pub(crate) fn ensure_json_content_type(
             ),
         };
         return Err(BioMcpError::Api {
-            api: api.to_string(),
+            api: context.provider().label().to_string(),
             message,
-        });
+        }
+        .with_source_context(context));
     }
 
     if invalid_content_type {
         warn!(
-            source = api,
+            source = context.provider().label(),
             "Response content-type header was not valid UTF-8; attempting JSON parse"
         );
         return Ok(());
@@ -952,7 +996,7 @@ pub(crate) fn ensure_json_content_type(
         || media_type.ends_with("+json");
     if !is_json {
         warn!(
-            source = api,
+            source = context.provider().label(),
             content_type = raw,
             "Unexpected non-JSON content type; attempting JSON parse for compatibility"
         );
@@ -986,8 +1030,7 @@ pub(crate) async fn read_limited_body_with_limit(
     api: &str,
     max_bytes: usize,
 ) -> Result<Vec<u8>, BioMcpError> {
-    let mut body: Vec<u8> = Vec::new();
-
+    let mut body = Vec::new();
     while let Some(chunk) = resp.chunk().await? {
         let next_len =
             body.len()
@@ -1004,7 +1047,6 @@ pub(crate) async fn read_limited_body_with_limit(
         }
         body.extend_from_slice(&chunk);
     }
-
     Ok(body)
 }
 
@@ -1013,6 +1055,46 @@ pub(crate) async fn read_limited_body(
     api: &str,
 ) -> Result<Vec<u8>, BioMcpError> {
     read_limited_body_with_limit(resp, api, DEFAULT_MAX_BODY_BYTES).await
+}
+
+pub(crate) async fn read_limited_source_body_with_limit(
+    mut resp: reqwest::Response,
+    context: SourceContext,
+    max_bytes: usize,
+) -> Result<Vec<u8>, BioMcpError> {
+    let mut body: Vec<u8> = Vec::new();
+
+    while let Some(chunk) = resp
+        .chunk()
+        .await
+        .map_err(BioMcpError::from)
+        .map_err(|error| error.with_source_context(SourceContext::retry(context.provider())))?
+    {
+        let next_len = body.len().checked_add(chunk.len()).ok_or_else(|| {
+            BioMcpError::BodyLimit {
+                source_name: context.provider().label().to_string(),
+                max_bytes,
+            }
+            .with_source_context(SourceContext::narrow(context.provider()))
+        })?;
+        if next_len > max_bytes {
+            return Err(BioMcpError::BodyLimit {
+                source_name: context.provider().label().to_string(),
+                max_bytes,
+            }
+            .with_source_context(SourceContext::narrow(context.provider())));
+        }
+        body.extend_from_slice(&chunk);
+    }
+
+    Ok(body)
+}
+
+pub(crate) async fn read_limited_source_body(
+    resp: reqwest::Response,
+    context: SourceContext,
+) -> Result<Vec<u8>, BioMcpError> {
+    read_limited_source_body_with_limit(resp, context, DEFAULT_MAX_BODY_BYTES).await
 }
 
 #[cfg(test)]
@@ -1025,6 +1107,7 @@ mod tests {
         Arc, Mutex,
         atomic::{AtomicUsize, Ordering},
     };
+    use tokio::io::AsyncWriteExt;
 
     fn test_response(
         status: StatusCode,
@@ -1153,20 +1236,20 @@ mod tests {
     #[test]
     fn ensure_json_content_type_rejects_html() {
         let err = ensure_json_content_type(
-            "mygene.info",
+            SourceContext::retry(crate::error::SourceProvider::MYGENE),
             Some(&HeaderValue::from_static("text/html; charset=utf-8")),
             b"<html><body>upstream error</body></html>",
         )
         .expect_err("html should be rejected");
-        let msg = err.to_string();
-        assert!(msg.contains("mygene.info"));
+        let msg = format!("{err:?}");
+        assert!(msg.contains("MyGene.info"));
         assert!(msg.contains("HTML"));
     }
 
     #[test]
     fn ensure_json_content_type_accepts_json() {
         let ok = ensure_json_content_type(
-            "mygene.info",
+            SourceContext::retry(crate::error::SourceProvider::MYGENE),
             Some(&HeaderValue::from_static("application/json; charset=utf-8")),
             b"{\"ok\":true}",
         );
@@ -1176,7 +1259,7 @@ mod tests {
     #[test]
     fn ensure_json_content_type_allows_non_json_compat_mode() {
         let ok = ensure_json_content_type(
-            "mygene.info",
+            SourceContext::retry(crate::error::SourceProvider::MYGENE),
             Some(&HeaderValue::from_static("text/plain")),
             b"{\"ok\":true}",
         );
@@ -1317,22 +1400,22 @@ mod tests {
         for _ in 0..2 {
             let send_result = tokio::time::timeout(
                 Duration::from_secs(2),
-                client.get(format!("http://{address}/oversized")).send(),
+                client
+                    .get(format!("http://{address}/oversized"))
+                    .send_with_source_context(SourceContext::retry(
+                        crate::error::SourceProvider::OLS4,
+                    )),
             )
             .await
             .expect("limiter should reject at max+1 without waiting for EOF");
-            let err = BioMcpError::from(
-                send_result.expect_err("oversized response should fail before caching"),
-            );
-            assert!(
-                matches!(
-                    err,
-                    BioMcpError::BodyLimit {
-                        max_bytes: DEFAULT_MAX_BODY_BYTES,
-                        ..
-                    }
-                ),
-                "expected typed body limit, got {err:?}"
+            let err = send_result.expect_err("oversized response should fail before caching");
+            assert_eq!(err.code(), "api", "expected typed body limit: {err:?}");
+            assert!(format!("{err:?}").contains("BodyLimit"));
+            let projection = err.public_projection();
+            assert_eq!(projection.source, Some("OLS4"));
+            assert_eq!(
+                projection.recovery,
+                Some(crate::error::RecoveryAction::NarrowRequest.message())
             );
         }
         let handlers = tokio::time::timeout(Duration::from_secs(2), server)
@@ -1346,25 +1429,65 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn read_limited_body_with_limit_rejects_oversized_body() {
-        let err = read_limited_body_with_limit(
+    async fn read_limited_source_body_with_limit_rejects_oversized_body() {
+        let err = read_limited_source_body_with_limit(
             test_response(StatusCode::OK, &[], "abcdef"),
-            "test-api",
+            SourceContext::retry(crate::error::SourceProvider::OLS4),
             5,
         )
         .await
         .expect_err("body over limit should fail");
 
-        assert!(matches!(err, BioMcpError::BodyLimit { .. }));
-        assert!(err.to_string().contains("test-api"));
+        assert_eq!(err.code(), "api");
+        assert!(err.to_string().contains("OLS4"));
         assert!(err.to_string().contains("Response body exceeded 5 bytes"));
+        assert_eq!(
+            err.public_projection().recovery,
+            Some(crate::error::RecoveryAction::NarrowRequest.message())
+        );
     }
 
     #[tokio::test]
-    async fn read_limited_body_with_limit_accepts_body_within_limit() {
-        let body = read_limited_body_with_limit(
+    async fn read_limited_source_body_classifies_chunk_failures_as_retryable() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind fixture");
+        let address = listener.local_addr().expect("fixture address");
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.expect("accept request");
+            stream
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\nshort",
+                )
+                .await
+                .expect("write truncated response");
+        });
+        let response = reqwest::Client::new()
+            .get(format!("http://{address}"))
+            .send()
+            .await
+            .expect("receive response headers");
+        let error = read_limited_source_body_with_limit(
+            response,
+            SourceContext::narrow(crate::error::SourceProvider::OLS4),
+            1_000,
+        )
+        .await
+        .expect_err("truncated response body should fail");
+
+        assert_eq!(error.code(), "http");
+        assert_eq!(
+            error.public_projection().recovery,
+            Some(crate::error::RecoveryAction::RetryRemoteSource.message())
+        );
+        server.await.expect("fixture server");
+    }
+
+    #[tokio::test]
+    async fn read_limited_source_body_with_limit_accepts_body_within_limit() {
+        let body = read_limited_source_body_with_limit(
             test_response(StatusCode::OK, &[], "abcde"),
-            "test-api",
+            SourceContext::narrow(crate::error::SourceProvider::OLS4),
             5,
         )
         .await
@@ -1423,7 +1546,7 @@ mod tests {
         let attempts = Arc::new(AtomicUsize::new(0));
         let sleeps = Arc::new(Mutex::new(Vec::new()));
         let err = retry_send_with_sleep(
-            "test-api",
+            SourceContext::retry(crate::error::SourceProvider::OLS4),
             4,
             {
                 let attempts = attempts.clone();
@@ -1452,10 +1575,11 @@ mod tests {
         .await
         .expect_err("retry_send should exhaust repeated 429 responses");
 
+        assert_eq!(err.code(), "api");
+        assert!(err.to_string().contains("OLS4"));
         assert!(
-            err.to_string()
-                .contains("HTTP 429 Too Many Requests after 5 attempts"),
-            "unexpected retry_send error: {err}"
+            format!("{err:?}").contains("HTTP 429 Too Many Requests after 5 attempts"),
+            "unexpected retry_send error: {err:?}"
         );
         assert_eq!(attempts.load(Ordering::SeqCst), 5);
         assert_eq!(
@@ -1472,7 +1596,7 @@ mod tests {
     async fn retry_send_with_sleep_retries_on_too_many_requests() {
         let attempts = Arc::new(AtomicUsize::new(0));
         let resp = retry_send_with_sleep(
-            "test-api",
+            SourceContext::retry(crate::error::SourceProvider::OLS4),
             2,
             {
                 let attempts = attempts.clone();

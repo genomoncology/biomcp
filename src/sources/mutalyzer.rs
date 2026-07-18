@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use crate::entities::variant::{
@@ -86,11 +87,17 @@ impl MutalyzerClient {
         let plan = self.normalize_request_plan(description)?;
         let url = self.endpoint_url(&plan.path)?;
         let resp = crate::sources::apply_cache_mode(self.client.get(url))
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::MUTALYZER,
+            ))
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, MUTALYZER_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::MUTALYZER),
+        )
+        .await?;
 
         Ok(decode_normalize_response(
             status,
@@ -109,7 +116,11 @@ fn decode_normalize_response(
         return provider_error(status, bytes);
     }
 
-    if let Err(err) = crate::sources::ensure_json_content_type(MUTALYZER_API, content_type, bytes) {
+    if let Err(err) = crate::sources::ensure_json_content_type(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MUTALYZER),
+        content_type,
+        bytes,
+    ) {
         return message_result(VariantNormalizationStatus::ServiceError, err.to_string());
     }
     let value: serde_json::Value = match serde_json::from_slice(bytes) {

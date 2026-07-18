@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use serde::Deserialize;
@@ -176,13 +177,23 @@ impl OpenTargetsClient {
             self.base.as_ref(),
             plan,
         ))
-        .send()
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::OPEN_TARGETS,
+        ))
         .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, OPENTARGETS_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::OPEN_TARGETS),
+        )
+        .await?;
 
-        decode_graphql_json(status, content_type.as_ref(), &bytes)
+        decode_graphql_json(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OPEN_TARGETS,
+            ))
+        })
     }
 
     pub async fn drug_sections(
@@ -194,7 +205,11 @@ impl OpenTargetsClient {
         let plan = Self::drug_sections_plan(chembl_id)?;
         let resp: GraphQlResponse<DrugSectionsData> = self.post_plan_json(&plan).await?;
 
-        drug_sections_from_response(resp, size)
+        drug_sections_from_response(resp, size).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OPEN_TARGETS,
+            ))
+        })
     }
 
     fn drug_sections_plan(chembl_id: &str) -> Result<RequestPlan, BioMcpError> {
@@ -233,7 +248,11 @@ impl OpenTargetsClient {
         let plan = Self::disease_genes_plan(&efo_id, size)?;
         let resp: GraphQlResponse<DiseaseGenesData> = self.post_plan_json(&plan).await?;
 
-        disease_associated_targets_from_response(resp, size)
+        disease_associated_targets_from_response(resp, size).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OPEN_TARGETS,
+            ))
+        })
     }
 
     fn disease_genes_plan(efo_id: &str, size: usize) -> Result<RequestPlan, BioMcpError> {
@@ -283,7 +302,11 @@ impl OpenTargetsClient {
         let plan = Self::target_druggability_context_plan(target_id)?;
         let resp: GraphQlResponse<TargetDruggabilityData> = self.post_plan_json(&plan).await?;
 
-        target_druggability_context_from_response(resp)
+        target_druggability_context_from_response(resp).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OPEN_TARGETS,
+            ))
+        })
     }
 
     fn target_druggability_context_plan(target_id: &str) -> Result<RequestPlan, BioMcpError> {
@@ -335,7 +358,11 @@ impl OpenTargetsClient {
         let plan = Self::target_clinical_context_plan(target_id, size)?;
         let resp: GraphQlResponse<TargetClinicalData> = self.post_plan_json(&plan).await?;
 
-        target_clinical_context_from_response(resp, size)
+        target_clinical_context_from_response(resp, size).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OPEN_TARGETS,
+            ))
+        })
     }
 
     fn target_clinical_context_plan(
@@ -376,7 +403,11 @@ impl OpenTargetsClient {
         let plan = Self::disease_prevalence_plan(&efo_id, size)?;
         let resp: GraphQlResponse<DiseasePrevalenceData> = self.post_plan_json(&plan).await?;
 
-        disease_prevalence_from_response(resp, size)
+        disease_prevalence_from_response(resp, size).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::OPEN_TARGETS,
+            ))
+        })
     }
 
     fn disease_prevalence_plan(efo_id: &str, size: usize) -> Result<RequestPlan, BioMcpError> {
@@ -464,7 +495,11 @@ fn decode_graphql_json<T: DeserializeOwned>(
         });
     }
 
-    crate::sources::ensure_json_content_type(OPENTARGETS_API, content_type, bytes)?;
+    crate::sources::ensure_json_content_type(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::OPEN_TARGETS),
+        content_type,
+        bytes,
+    )?;
     serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
         api: OPENTARGETS_API.to_string(),
         source,
@@ -1980,7 +2015,7 @@ pub(crate) mod tests {
         }));
 
         let err = drug_sections_from_response(resp, 5).unwrap_err();
-        let msg = err.to_string();
+        let msg = format!("{err:?}");
         assert!(msg.contains("linkedTargets"));
         assert!(msg.contains("opentargets"));
     }

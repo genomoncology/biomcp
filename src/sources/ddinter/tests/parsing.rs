@@ -36,7 +36,7 @@ fn parse_csv_rows_reads_expected_shape() {
 fn parse_csv_rows_rejects_missing_required_columns() {
     let err = parse_csv_rows("fixture.csv", b"garbage\n").unwrap_err();
 
-    assert!(err.to_string().contains("missing required column"));
+    assert!(format!("{err:?}").contains("missing required column"));
 }
 
 #[test]
@@ -47,7 +47,7 @@ fn parse_csv_rows_rejects_incomplete_rows() {
     )
     .unwrap_err();
 
-    assert!(err.to_string().contains("incomplete interaction row"));
+    assert!(format!("{err:?}").contains("incomplete interaction row"));
 }
 
 #[test]

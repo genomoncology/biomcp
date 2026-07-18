@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use crate::entities::variant::{
@@ -94,11 +95,17 @@ impl VariantValidatorClient {
                 .map(|(name, value)| (*name, value.as_str())),
         );
         let resp = crate::sources::apply_cache_mode(self.client.get(url))
-            .send()
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::VARIANT_VALIDATOR,
+            ))
             .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, VARIANTVALIDATOR_API).await?;
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::VARIANT_VALIDATOR),
+        )
+        .await?;
 
         Ok(decode_normalize_response(
             status,
@@ -117,9 +124,11 @@ fn decode_normalize_response(
         return http_error(status, bytes);
     }
 
-    if let Err(err) =
-        crate::sources::ensure_json_content_type(VARIANTVALIDATOR_API, content_type, bytes)
-    {
+    if let Err(err) = crate::sources::ensure_json_content_type(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::VARIANT_VALIDATOR),
+        content_type,
+        bytes,
+    ) {
         return message_result(VariantNormalizationStatus::ServiceError, err.to_string());
     }
     let value: serde_json::Value = match serde_json::from_slice(bytes) {

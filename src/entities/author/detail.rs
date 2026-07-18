@@ -92,10 +92,15 @@ fn contract_error() -> crate::error::BioMcpError {
     }
 }
 
-fn sanitized_detail_error(_: crate::error::BioMcpError) -> crate::error::BioMcpError {
-    crate::error::BioMcpError::Api {
-        api: "semantic_scholar".into(),
-        message: "author detail is unavailable; retry later".into(),
+fn sanitized_detail_error(err: crate::error::BioMcpError) -> crate::error::BioMcpError {
+    match err {
+        crate::error::BioMcpError::WithSourceContext { context, source } => {
+            sanitized_detail_error(*source).with_source_context(context)
+        }
+        _ => crate::error::BioMcpError::Api {
+            api: "semantic_scholar".into(),
+            message: "author detail is unavailable; retry later".into(),
+        },
     }
 }
 
@@ -133,13 +138,20 @@ mod tests {
 
     #[test]
     fn provider_failure_does_not_expose_response_body() {
-        let error = sanitized_detail_error(crate::error::BioMcpError::Api {
-            api: "semantic_scholar".into(),
-            message: "HTTP 500: private-author@example.invalid fixture-private-profile".into(),
-        });
+        let error = sanitized_detail_error(
+            crate::error::BioMcpError::Api {
+                api: "semantic_scholar".into(),
+                message: "HTTP 500: private-author@example.invalid fixture-private-profile".into(),
+            }
+            .with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+            )),
+        );
         let rendered = error.to_string();
-        assert!(rendered.contains("retry later"));
-        assert!(!rendered.contains("private-author@example.invalid"));
+        assert_eq!(error.code(), "api");
+        assert_eq!(error.public_projection().source, Some("Semantic Scholar"));
+        assert!(rendered.to_ascii_lowercase().contains("retry"));
+        assert!(!format!("{error:?}").contains("private-author@example.invalid"));
         assert!(!rendered.contains("fixture-private-profile"));
     }
 

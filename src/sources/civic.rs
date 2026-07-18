@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::HashSet;
 
@@ -135,18 +136,36 @@ impl CivicClient {
         content_type: Option<&HeaderValue>,
         bytes: &[u8],
     ) -> Result<T, BioMcpError> {
-        crate::sources::decode_json(CIVIC_API, status, content_type, bytes, true)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::CIVIC),
+            status,
+            content_type,
+            bytes,
+            true,
+        )
     }
 
     async fn post_json<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CIVIC,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_body(resp, CIVIC_API).await?;
-        Self::decode_json_response(status, content_type.as_ref(), &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CIVIC),
+        )
+        .await?;
+        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CIVIC,
+            ))
+        })
     }
 
     pub async fn by_molecular_profile(

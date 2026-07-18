@@ -40,7 +40,7 @@ fn decode_response_body_rejects_html_content_type() {
     .unwrap_err();
 
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("Unexpected HTML response"));
+    assert!(format!("{err:?}").contains("Unexpected HTML response"));
 }
 
 #[test]
@@ -53,7 +53,7 @@ fn decode_response_body_reports_http_errors() {
     .unwrap_err();
 
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("500"));
+    assert!(format!("{err:?}").contains("500"));
 }
 
 #[test]
@@ -66,5 +66,5 @@ fn decode_response_body_rejects_invalid_utf8() {
     .unwrap_err();
 
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(err.to_string().contains("valid UTF-8 XML"));
+    assert!(format!("{err:?}").contains("valid UTF-8 XML"));
 }

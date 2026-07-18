@@ -158,6 +158,18 @@ fn source_kind_for_pathway_id(st_id: &str) -> PathwaySourceKind {
 }
 
 fn pathway_lookup_error(st_id: &str, err: BioMcpError) -> BioMcpError {
+    let err = match err {
+        BioMcpError::WithSourceContext { context, source } => {
+            let source_code = source.code();
+            let remapped = pathway_lookup_error(st_id, *source);
+            return if remapped.code() == source_code {
+                remapped.with_source_context(context)
+            } else {
+                remapped
+            };
+        }
+        other => other,
+    };
     let trimmed = st_id.trim();
     let redirect = if crate::entities::protein::is_uniprot_accession(trimmed) {
         Some(format!(
@@ -961,6 +973,28 @@ mod tests {
     }
 
     #[test]
+    fn pathway_lookup_error_preserves_redirect_without_duplicate_source_recovery() {
+        let error = pathway_lookup_error(
+            "BRAF",
+            BioMcpError::NotFound {
+                entity: "pathway".to_string(),
+                id: "BRAF".to_string(),
+                suggestion: "search pathway".to_string(),
+            }
+            .with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::REACTOME,
+            )),
+        );
+
+        assert_eq!(error.code(), "invalid_argument");
+        assert_eq!(error.exit_code(), 2);
+        assert_eq!(error.public_projection().source, None);
+        let message = error.to_string();
+        assert!(message.contains("biomcp get gene BRAF"));
+        assert!(!message.contains("Retry the remote source"));
+    }
+
+    #[test]
     fn kegg_explicit_events_section_is_rejected() {
         let err = resolve_sections_for_pathway_id("hsa05200", &["events".to_string()])
             .expect_err("KEGG events should fail fast");
@@ -1271,7 +1305,9 @@ mod tests {
     fn kegg_disabled_error_is_actionable() {
         let err = kegg_disabled_error("hsa05200");
         let msg = err.to_string();
-        assert!(msg.contains("BIOMCP_DISABLE_KEGG=1"));
-        assert!(msg.contains("R-HSA-5673001"));
+        assert!(msg.contains("KEGG"));
+        assert!(msg.to_ascii_lowercase().contains("retry"));
+        assert!(!msg.contains("BIOMCP_DISABLE_KEGG=1"));
+        assert!(!msg.contains("R-HSA-5673001"));
     }
 }

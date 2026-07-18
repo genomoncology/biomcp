@@ -2466,7 +2466,7 @@ S2\tNTRK3\tETV6\tin-frame\t\t\tETV6-NTRK3 Fusion\n",
 
         let err = structural_variants(&study_dir, "RET").expect_err("missing Site2 column");
         assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
-        assert!(err.to_string().contains("Site2_Hugo_Symbol"));
+        assert!(format!("{err:?}").contains("Site2_Hugo_Symbol"));
     }
 
     #[test]
@@ -3207,6 +3207,6 @@ ERBB2\t2064\t30.0\t10.0\t20.0\tNA\n",
 
         let err = cohort_by_mutation(&study_dir, "TP53").expect_err("missing clinical file");
         assert!(matches!(err, BioMcpError::SourceUnavailable { .. }));
-        assert!(err.to_string().contains("data_clinical_sample.txt"));
+        assert!(format!("{err:?}").contains("data_clinical_sample.txt"));
     }
 }

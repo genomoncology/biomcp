@@ -143,7 +143,7 @@ async fn enrich_article_batch_with_semantic_scholar(
 
     match client.paper_batch_compact(&lookup_ids).await {
         Ok(rows) => merge_semantic_scholar_compact_rows(items, &item_positions, rows),
-        Err(err) => warn!(?err, "Semantic Scholar batch enrichment failed"),
+        Err(err) => warn!(%err, "Semantic Scholar batch enrichment failed"),
     }
 
     Ok(())

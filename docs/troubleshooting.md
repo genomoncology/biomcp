@@ -12,6 +12,17 @@ partial evidence. `_meta.section_sources` is the matching provenance projection
 and credits only successful providers. Enable `RUST_LOG=warn` only after checking
 these in-band fields.
 
+For a hard remote-source failure, JSON may include `error.source` and
+`error.recovery`; human errors name the same canonical source and action. Retry
+a transient source, review source configuration when instructed, or narrow the
+request when the response exceeded BioMCP's body limit. Source fields are
+omitted for unwrapped transport errors when provider identity is unavailable;
+legacy source-shaped errors with an unknown name use `BioMCP source`. Public
+diagnostics intentionally do not echo request URLs, credentials, provider
+response bodies, parser detail,
+or local paths, so use the canonical source label rather than expecting raw
+transport detail.
+
 ## 1) Validate connectivity first
 
 Run API-level checks before debugging entity-specific commands:

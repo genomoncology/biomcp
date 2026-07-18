@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::fs::{self, File};
 use std::path::{Component, Path, PathBuf};
@@ -61,7 +62,13 @@ impl CBioPortalDownloadClient {
         content_type: Option<&HeaderValue>,
         body: &[u8],
     ) -> Result<Vec<String>, BioMcpError> {
-        crate::sources::decode_json(DATAHUB_API, status, content_type, body, true)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::CBIOPORTAL_DATAHUB),
+            status,
+            content_type,
+            body,
+            true,
+        )
     }
 
     pub(crate) fn decode_archive_status(
@@ -93,11 +100,25 @@ impl CBioPortalDownloadClient {
     ) -> Result<(), BioMcpError> {
         let plan = Self::study_archive_plan(study_id)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let mut resp = crate::sources::apply_cache_mode(req).send().await?;
+        let mut resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+            ))
+            .await?;
         let status = resp.status();
         if !status.is_success() {
-            let body = crate::sources::read_limited_body(resp, DATAHUB_API).await?;
-            return Self::decode_archive_status(study_id, status, &body);
+            let body = crate::sources::read_limited_source_body(
+                resp,
+                crate::error::SourceContext::narrow(
+                    crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+                ),
+            )
+            .await?;
+            return Self::decode_archive_status(study_id, status, &body).map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+                ))
+            });
         }
         if resp
             .content_length()
@@ -107,7 +128,10 @@ impl CBioPortalDownloadClient {
                 source_name: "cBioPortal DataHub".to_string(),
                 reason: "Archive download exceeded its resource limit.".to_string(),
                 suggestion: "Retry the study download later.".to_string(),
-            });
+            }
+            .with_source_context(crate::error::SourceContext::narrow(
+                crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+            )));
         }
         let mut file = tokio::fs::File::create(dest).await?;
         let mut downloaded = 0;
@@ -118,11 +142,22 @@ impl CBioPortalDownloadClient {
                         downloaded,
                         chunk.len(),
                         self.max_archive_download_bytes,
-                    )?;
+                    )
+                    .map_err(|error| {
+                        error.with_source_context(crate::error::SourceContext::narrow(
+                            crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+                        ))
+                    })?;
                     file.write_all(&chunk).await?;
                 }
                 Ok(Ok(None)) => break,
-                Ok(Err(err)) => return Err(err.into()),
+                Ok(Err(err)) => {
+                    return Err(BioMcpError::from(err).with_source_context(
+                        crate::error::SourceContext::retry(
+                            crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+                        ),
+                    ));
+                }
                 Err(_) => {
                     return Err(BioMcpError::SourceUnavailable {
                         source_name: "cBioPortal DataHub".to_string(),
@@ -131,7 +166,10 @@ impl CBioPortalDownloadClient {
                             self.download_idle_timeout
                         ),
                         suggestion: "Retry the study download later.".to_string(),
-                    });
+                    }
+                    .with_source_context(crate::error::SourceContext::retry(
+                        crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+                    )));
                 }
             }
         }
@@ -142,11 +180,23 @@ impl CBioPortalDownloadClient {
     pub async fn list_study_ids(&self) -> Result<Vec<String>, BioMcpError> {
         let plan = Self::study_list_plan();
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+            ))
+            .await?;
         let status = resp.status();
         let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let body = crate::sources::read_limited_body(resp, DATAHUB_API).await?;
-        Self::decode_study_list_response(status, content_type.as_ref(), &body)
+        let body = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CBIOPORTAL_DATAHUB),
+        )
+        .await?;
+        Self::decode_study_list_response(status, content_type.as_ref(), &body).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CBIOPORTAL_DATAHUB,
+            ))
+        })
     }
 
     pub async fn download_study(

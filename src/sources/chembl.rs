@@ -1,3 +1,4 @@
+use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use reqwest::StatusCode;
@@ -8,7 +9,6 @@ use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
 const CHEMBL_BASE: &str = "https://www.ebi.ac.uk/chembl/api/data";
-const CHEMBL_API: &str = "chembl";
 const CHEMBL_BASE_ENV: &str = "BIOMCP_CHEMBL_BASE";
 
 pub struct ChemblClient {
@@ -51,17 +51,35 @@ impl ChemblClient {
         status: StatusCode,
         bytes: &[u8],
     ) -> Result<T, BioMcpError> {
-        crate::sources::decode_json(CHEMBL_API, status, None, bytes, false)
+        crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::CHEMBL),
+            status,
+            None,
+            bytes,
+            false,
+        )
     }
 
     async fn get_json<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req).send().await?;
+        let resp = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CHEMBL,
+            ))
+            .await?;
         let status = resp.status();
-        let bytes = crate::sources::read_limited_body(resp, CHEMBL_API).await?;
-        Self::decode_json_response(status, &bytes)
+        let bytes = crate::sources::read_limited_source_body(
+            resp,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CHEMBL),
+        )
+        .await?;
+        Self::decode_json_response(status, &bytes).map_err(|error| {
+            error.with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::CHEMBL,
+            ))
+        })
     }
 
     pub async fn drug_targets(

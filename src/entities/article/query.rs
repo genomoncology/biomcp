@@ -412,7 +412,7 @@ pub(crate) async fn resolve_variant_entity_token(
             .filter(|value| !value.is_empty())
             .map(|value| value.to_string()),
         Err(err) => {
-            warn!(?err, token = query, "pubtator variant autocomplete failed");
+            warn!(%err, token = query, "pubtator variant autocomplete failed");
             None
         }
     }
@@ -435,7 +435,7 @@ async fn normalize_entity_token(
             .or_else(|| Some(token.to_string())),
         Err(err) => {
             warn!(
-                ?err,
+                %err,
                 token, "pubtator autocomplete failed; falling back to raw token"
             );
             Some(token.to_string())
