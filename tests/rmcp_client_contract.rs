@@ -21,6 +21,7 @@ async fn rmcp_child_process_client_verifies_stdio_core_contract() -> anyhow::Res
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "live external-service full contract; run through make verify"]
 async fn rmcp_child_process_client_verifies_stdio_full_contract() -> anyhow::Result<()> {
     let harness = harness();
     let (_ols_thread, ols_url) = start_ols4_stub()?;
@@ -108,6 +109,7 @@ async fn rmcp_streamable_http_client_verifies_core_contract() -> anyhow::Result<
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore = "live external-service full contract; run through make verify"]
 async fn rmcp_streamable_http_client_verifies_full_contract() -> anyhow::Result<()> {
     let harness = harness();
     let (_ols_thread, ols_url) = start_ols4_stub()?;
