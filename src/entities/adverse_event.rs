@@ -968,6 +968,17 @@ async fn fetch_vaers_payload(
     }
 }
 
+fn vaers_payload_from_result(
+    result: Result<VaersSearchPayload, BioMcpError>,
+) -> VaersSearchPayload {
+    result.unwrap_or_else(|_| {
+        VaersSearchPayload::status_only(
+            VaersSearchStatus::Unavailable,
+            "CDC CVX/VAERS adverse events are unavailable.".to_string(),
+        )
+    })
+}
+
 fn explicit_vaers_filter_error(unsupported: &[&str]) -> BioMcpError {
     BioMcpError::InvalidArgument(format!(
         "--source vaers only supports the vaccine query text in this ticket; unsupported flags: {}",
@@ -1106,14 +1117,9 @@ pub async fn search_with_source(
         AdverseEventSourceFilter::Vaers => {
             validate_explicit_vaers_source(filters, offset)?;
 
-            let vaers = fetch_vaers_payload(query, CvxLookupMode::AutoSync)
-                .await
-                .unwrap_or_else(|_| {
-                    VaersSearchPayload::status_only(
-                        VaersSearchStatus::Unavailable,
-                        "CDC CVX/VAERS adverse events are unavailable.".to_string(),
-                    )
-                });
+            let vaers = vaers_payload_from_result(
+                fetch_vaers_payload(query, CvxLookupMode::AutoSync).await,
+            );
             Ok(source_search(source, None, Some(vaers)))
         }
         AdverseEventSourceFilter::All => {
@@ -1122,13 +1128,7 @@ pub async fn search_with_source(
                     search_with_status(filters, limit, offset),
                     fetch_vaers_payload(query, CvxLookupMode::LocalOnly)
                 );
-                let vaers = match vaers_result {
-                    Ok(payload) => payload,
-                    Err(_) => VaersSearchPayload::status_only(
-                        VaersSearchStatus::Unavailable,
-                        "CDC CVX/VAERS adverse events are unavailable.".to_string(),
-                    ),
-                };
+                let vaers = vaers_payload_from_result(vaers_result);
                 Ok(all_source_search_with_vaers_payload(
                     optional_faers_status(faers_result)?,
                     vaers,

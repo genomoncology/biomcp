@@ -394,6 +394,55 @@ pub async fn search_page(
     Ok(SearchPage::cursor(rows, resolved_total, next))
 }
 
+fn apply_domains_result(protein: &mut Protein, result: Result<Vec<ProteinDomain>, BioMcpError>) {
+    match result {
+        Ok(rows) => {
+            let outcome = if rows.is_empty() {
+                SectionOutcome::empty("InterPro")
+            } else {
+                SectionOutcome::data("InterPro")
+            };
+            protein.domains = rows;
+            protein
+                .section_outcomes
+                .complete(PROTEIN_SECTION_DOMAINS, outcome);
+        }
+        Err(_) => {
+            protein.domains = Vec::new();
+            protein.section_outcomes.complete(
+                PROTEIN_SECTION_DOMAINS,
+                SectionOutcome::unavailable("InterPro protein domains are unavailable."),
+            );
+        }
+    }
+}
+
+fn apply_protein_interactions_result(
+    protein: &mut Protein,
+    result: Result<Vec<ProteinInteraction>, BioMcpError>,
+) {
+    match result {
+        Ok(rows) => {
+            let outcome = if rows.is_empty() {
+                SectionOutcome::empty("STRING")
+            } else {
+                SectionOutcome::data("STRING")
+            };
+            protein.interactions = rows;
+            protein
+                .section_outcomes
+                .complete(PROTEIN_SECTION_INTERACTIONS, outcome);
+        }
+        Err(_) => {
+            protein.interactions = Vec::new();
+            protein.section_outcomes.complete(
+                PROTEIN_SECTION_INTERACTIONS,
+                SectionOutcome::unavailable("STRING protein interactions are unavailable."),
+            );
+        }
+    }
+}
+
 pub async fn get(accession: &str, sections: &[String]) -> Result<Protein, BioMcpError> {
     get_with_structure_limit(accession, sections, None, None).await
 }
@@ -529,47 +578,11 @@ pub async fn get_with_structure_limit(
         tokio::join!(domains_fut, interactions_fut, complexes_fut);
 
     if parsed_sections.include_domains {
-        match domains_res {
-            Ok(domains) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_DOMAINS,
-                    if domains.is_empty() {
-                        SectionOutcome::empty("InterPro")
-                    } else {
-                        SectionOutcome::data("InterPro")
-                    },
-                );
-                protein.domains = domains;
-            }
-            Err(_) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_DOMAINS,
-                    SectionOutcome::unavailable("InterPro protein domains are unavailable."),
-                );
-            }
-        }
+        apply_domains_result(&mut protein, domains_res);
     }
 
     if parsed_sections.include_interactions {
-        match interactions_res {
-            Ok(rows) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_INTERACTIONS,
-                    if rows.is_empty() {
-                        SectionOutcome::empty("STRING")
-                    } else {
-                        SectionOutcome::data("STRING")
-                    },
-                );
-                protein.interactions = rows;
-            }
-            Err(_) => {
-                protein.section_outcomes.complete(
-                    PROTEIN_SECTION_INTERACTIONS,
-                    SectionOutcome::unavailable("STRING protein interactions are unavailable."),
-                );
-            }
-        }
+        apply_protein_interactions_result(&mut protein, interactions_res);
     }
 
     if parsed_sections.include_complexes {

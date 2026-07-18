@@ -1275,6 +1275,27 @@ async fn fetch_go_section(
     Ok(out)
 }
 
+fn apply_go_section_result(gene: &mut Gene, result: Result<Vec<GeneGoTerm>, BioMcpError>) {
+    match result {
+        Ok(rows) => {
+            let outcome = if rows.is_empty() {
+                SectionOutcome::empty("QuickGO")
+            } else {
+                SectionOutcome::data("QuickGO")
+            };
+            gene.go = Some(rows);
+            gene.section_outcomes.complete(GENE_SECTION_GO, outcome);
+        }
+        Err(_) => {
+            gene.go = Some(Vec::new());
+            gene.section_outcomes.complete(
+                GENE_SECTION_GO,
+                SectionOutcome::unavailable("QuickGO gene ontology is unavailable."),
+            );
+        }
+    }
+}
+
 async fn fetch_interactions_section(symbol: &str) -> Result<Vec<GeneInteraction>, BioMcpError> {
     let rows = StringClient::new()?.interactions(symbol, 9606, 15).await?;
     let mut out = Vec::new();
@@ -1304,6 +1325,31 @@ async fn fetch_interactions_section(symbol: &str) -> Result<Vec<GeneInteraction>
             .then_with(|| a.partner.cmp(&b.partner))
     });
     Ok(out)
+}
+
+fn apply_gene_interactions_result(
+    gene: &mut Gene,
+    result: Result<Vec<GeneInteraction>, BioMcpError>,
+) {
+    match result {
+        Ok(rows) => {
+            let outcome = if rows.is_empty() {
+                SectionOutcome::empty("STRING")
+            } else {
+                SectionOutcome::data("STRING")
+            };
+            gene.interactions = Some(rows);
+            gene.section_outcomes
+                .complete(GENE_SECTION_INTERACTIONS, outcome);
+        }
+        Err(_) => {
+            gene.interactions = Some(Vec::new());
+            gene.section_outcomes.complete(
+                GENE_SECTION_INTERACTIONS,
+                SectionOutcome::unavailable("STRING gene interactions are unavailable."),
+            );
+        }
+    }
 }
 
 async fn fetch_pathways_section(symbol: &str) -> Result<Option<Vec<GenePathway>>, BioMcpError> {
@@ -2383,30 +2429,12 @@ async fn populate_sections_parallel_top(
 
     if let Some((result, entry)) = go_result {
         timing.push(entry);
-        gene.go = match result {
-            Ok(value) => Some(value),
-            Err(_) => {
-                gene.section_outcomes.complete(
-                    GENE_SECTION_GO,
-                    SectionOutcome::unavailable("QuickGO gene ontology is unavailable."),
-                );
-                Some(Vec::new())
-            }
-        };
+        apply_go_section_result(gene, result);
     }
 
     if let Some((result, entry)) = interactions_result {
         timing.push(entry);
-        gene.interactions = match result {
-            Ok(value) => Some(value),
-            Err(_) => {
-                gene.section_outcomes.complete(
-                    GENE_SECTION_INTERACTIONS,
-                    SectionOutcome::unavailable("STRING gene interactions are unavailable."),
-                );
-                Some(Vec::new())
-            }
-        };
+        apply_gene_interactions_result(gene, result);
     }
 
     if let Some(((civic, outcome), entry)) = civic_result {
@@ -2689,16 +2717,8 @@ pub async fn get_with_report(
 
     if include.contains(&GeneIncludeType::Go) {
         let started = Instant::now();
-        gene.go = match fetch_go_section(gene.uniprot_id.as_deref(), &gene.symbol).await {
-            Ok(v) => Some(v),
-            Err(_) => {
-                gene.section_outcomes.complete(
-                    GENE_SECTION_GO,
-                    SectionOutcome::unavailable("QuickGO gene ontology is unavailable."),
-                );
-                Some(Vec::new())
-            }
-        };
+        let result = fetch_go_section(gene.uniprot_id.as_deref(), &gene.symbol).await;
+        apply_go_section_result(&mut gene, result);
         timing.record(
             "go",
             started,
@@ -2712,16 +2732,8 @@ pub async fn get_with_report(
 
     if include.contains(&GeneIncludeType::Interactions) {
         let started = Instant::now();
-        gene.interactions = match fetch_interactions_section(&gene.symbol).await {
-            Ok(v) => Some(v),
-            Err(_) => {
-                gene.section_outcomes.complete(
-                    GENE_SECTION_INTERACTIONS,
-                    SectionOutcome::unavailable("STRING gene interactions are unavailable."),
-                );
-                Some(Vec::new())
-            }
-        };
+        let result = fetch_interactions_section(&gene.symbol).await;
+        apply_gene_interactions_result(&mut gene, result);
         timing.record(
             "interactions",
             started,
