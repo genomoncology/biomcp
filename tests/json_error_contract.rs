@@ -303,7 +303,7 @@ fn parsed_json_errors_keep_command_collection_paths_iterable() {
 }
 
 #[test]
-fn runtime_json_errors_keep_discover_concepts_iterable() {
+fn runtime_json_errors_keep_provider_context_and_contract() {
     let result = run_biomcp_with_env(
         &["--no-cache", "--json", "discover", "melanoma"],
         &[
@@ -316,6 +316,47 @@ fn runtime_json_errors_keep_discover_concepts_iterable() {
     assert_json_error(&result, 1, "http_middleware");
     let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
     assert_eq!(value["concepts"], serde_json::json!([]), "json={value}");
+    assert_eq!(value["error"]["source"], "OLS4", "json={value}");
+    let recovery = value["error"]["recovery"]
+        .as_str()
+        .expect("source error needs a recovery action");
+    assert!(recovery.contains("Retry"), "json={value}");
+    assert!(recovery.len() <= 160, "recovery must be bounded: {value}");
+    assert!(!result.stdout.contains("127.0.0.1:9"));
+    assert!(!result.stdout.contains("error sending request"));
+}
+
+#[test]
+fn human_runtime_source_error_is_safe_and_actionable() {
+    let result = run_biomcp_with_env(
+        &["--no-cache", "discover", "melanoma"],
+        &[
+            ("BIOMCP_OLS4_BASE", "http://127.0.0.1:9"),
+            ("BIOMCP_MEDLINEPLUS_BASE", "http://127.0.0.1:9"),
+            ("UMLS_API_KEY", ""),
+        ],
+    );
+
+    assert_eq!(result.code, Some(1));
+    assert!(result.stdout.trim().is_empty(), "stdout={}", result.stdout);
+    assert!(
+        result.stderr.starts_with("Error: "),
+        "stderr={}",
+        result.stderr
+    );
+    assert!(result.stderr.contains("OLS4"), "stderr={}", result.stderr);
+    assert!(
+        result.stderr.to_ascii_lowercase().contains("retry"),
+        "stderr={}",
+        result.stderr
+    );
+    for leaked_detail in ["127.0.0.1:9", "error sending request", "middleware error"] {
+        assert!(
+            !result.stderr.to_ascii_lowercase().contains(leaked_detail),
+            "human source error leaked {leaked_detail}: {}",
+            result.stderr
+        );
+    }
 }
 
 #[test]

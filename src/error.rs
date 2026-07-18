@@ -162,28 +162,56 @@ mod tests {
     }
 
     #[test]
-    fn source_unavailable_display_includes_reason() {
-        let err = BioMcpError::SourceUnavailable {
-            source_name: "nci".to_string(),
-            reason: "Service is under maintenance".to_string(),
-            suggestion: "Try --source ctgov".to_string(),
-        };
+    fn human_source_errors_share_safe_projection() {
+        let sentinels = [
+            "credential=fixture-secret",
+            "https://signed.example/private?token=fixture-secret",
+            "raw provider payload",
+            "parser detail at byte 42",
+            "/home/operator/private.json",
+            "hostile-provider-label",
+        ];
+        let errors = [
+            (
+                BioMcpError::SourceUnavailable {
+                    source_name: "ClinicalTrials.gov".to_string(),
+                    reason: format!("{}: {}", sentinels[0], sentinels[2]),
+                    suggestion: format!("Read {} then retry {}", sentinels[4], sentinels[1]),
+                },
+                "ClinicalTrials.gov",
+            ),
+            (
+                BioMcpError::Api {
+                    api: "OLS4".to_string(),
+                    message: format!("{} {}", sentinels[1], sentinels[3]),
+                },
+                "OLS4",
+            ),
+            (
+                BioMcpError::Api {
+                    api: format!("{} {}", sentinels[5], sentinels[0]),
+                    message: format!("{} {}", sentinels[2], sentinels[4]),
+                },
+                "BioMCP source",
+            ),
+        ];
 
-        let msg = err.to_string();
-        assert!(msg.contains("Source unavailable: nci"));
-        assert!(msg.contains("Service is under maintenance"));
-        assert!(msg.contains("Try --source ctgov"));
-    }
-
-    #[test]
-    fn api_error_display_includes_api_name() {
-        let err = BioMcpError::Api {
-            api: "opentargets".to_string(),
-            message: "HTTP 500".to_string(),
-        };
-
-        let msg = err.to_string();
-        assert!(msg.contains("opentargets"));
-        assert!(msg.contains("HTTP 500"));
+        for (error, expected_source) in &errors {
+            let diagnostic = crate::cli::sanitize_human_diagnostic(&error.to_string());
+            assert!(
+                diagnostic.contains(expected_source),
+                "human error must name its normalized source: {diagnostic}"
+            );
+            assert!(
+                diagnostic.to_ascii_lowercase().contains("retry"),
+                "human error must include a recovery action: {diagnostic}"
+            );
+            for sentinel in sentinels {
+                assert!(
+                    !diagnostic.contains(sentinel),
+                    "human error leaked {sentinel}: {diagnostic}"
+                );
+            }
+        }
     }
 }

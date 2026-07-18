@@ -654,6 +654,71 @@ mod tests {
     }
 
     #[test]
+    fn source_errors_include_normalized_source_and_safe_recovery() {
+        let sentinels = [
+            "credential=fixture-secret",
+            "https://signed.example/private?token=fixture-secret",
+            "raw provider payload",
+            "parser detail at byte 42",
+            "/home/operator/private.json",
+            "hostile-provider-label",
+        ];
+        let errors = [
+            (
+                BioMcpError::BodyLimit {
+                    source_name: "Europe PMC".to_string(),
+                    max_bytes: 42,
+                },
+                "api",
+                "Europe PMC",
+            ),
+            (
+                BioMcpError::SourceUnavailable {
+                    source_name: "ClinicalTrials.gov".to_string(),
+                    reason: format!("{}: {}", sentinels[0], sentinels[2]),
+                    suggestion: format!("Read {} then retry {}", sentinels[4], sentinels[1]),
+                },
+                "source_unavailable",
+                "ClinicalTrials.gov",
+            ),
+            (
+                BioMcpError::Api {
+                    api: format!("{} {}", sentinels[5], sentinels[0]),
+                    message: format!("{} {} {}", sentinels[1], sentinels[3], sentinels[4]),
+                },
+                "api",
+                "BioMCP source",
+            ),
+        ];
+
+        for (error, expected_code, expected_source) in &errors {
+            let json = to_error_json(error).expect("structured source error JSON");
+            let value: serde_json::Value = serde_json::from_str(&json).expect("valid JSON");
+            assert_eq!(value["error"]["code"], *expected_code, "json={value}");
+            assert_eq!(
+                value["error"]["source"], *expected_source,
+                "source labels must be normalized through the allowlist: {value}"
+            );
+            let recovery = value["error"]["recovery"]
+                .as_str()
+                .expect("source error needs a recovery action");
+            assert!(
+                recovery.contains("Retry"),
+                "recovery must be actionable: {value}"
+            );
+            assert!(recovery.len() <= 160, "recovery must be bounded: {value}");
+            assert!(
+                expected_source.len() <= 80,
+                "normalized source labels must be bounded"
+            );
+            assert_eq!(value["_meta"]["not_found"], false, "json={value}");
+            for sentinel in sentinels {
+                assert!(!json.contains(sentinel), "JSON leaked {sentinel}: {json}");
+            }
+        }
+    }
+
+    #[test]
     fn disease_unavailable_outcome_and_provenance_agree_without_source_credit() {
         let disease: Disease = serde_json::from_value(serde_json::json!({
             "id": "MONDO:0011996",
