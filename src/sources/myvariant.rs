@@ -45,7 +45,7 @@ pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "cosmic.cosmic_id,cosmic.mut_freq,cosmic.tumor_site,cosmic.mut_nt,",
     "cgi,civic"
 );
-pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.revel.score,dbnsfp.gerp++.rs,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
+pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -460,6 +460,11 @@ impl MyVariantClient {
         }
 
         if let Some(min) = params.min_cadd {
+            if !min.is_finite() {
+                return Err(BioMcpError::InvalidArgument(
+                    "--min-cadd must be finite".to_string(),
+                ));
+            }
             if min < 0.0 {
                 return Err(BioMcpError::InvalidArgument(format!(
                     "--min-cadd must be >= 0 (got {min})"
@@ -513,6 +518,11 @@ impl MyVariantClient {
         }
 
         if let Some(gerp_min) = params.gerp_min {
+            if !gerp_min.is_finite() {
+                return Err(BioMcpError::InvalidArgument(
+                    "--gerp-min must be finite".to_string(),
+                ));
+            }
             terms.push(format!("dbnsfp.gerp++.rs:[{gerp_min} TO *]"));
         }
 
