@@ -79,7 +79,7 @@ def test_combined_geo_and_eligibility_filters_fetch_one_detail_projection() -> N
 
 def _run_alias_search_with_detail_log(
     extra_args: list[str],
-) -> tuple[dict[str, object], list[str]]:
+) -> tuple[dict[str, object], list[str], bool]:
     subprocess.run(["bash", str(FIXTURE_SETUP), str(REPO_ROOT)], check=True)
     try:
         fixture_env = _read_exports(FIXTURE_ENV)
@@ -109,18 +109,24 @@ def _run_alias_search_with_detail_log(
         )
 
         request_log = Path(fixture_env["BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"])
+        request_urls = request_log.read_text(encoding="utf-8").splitlines()
         detail_paths = [
-            urlparse(line).path
-            for line in request_log.read_text(encoding="utf-8").splitlines()
-            if urlparse(line).path.startswith("/api/v2/studies/NCT")
+            urlparse(url).path
+            for url in request_urls
+            if urlparse(url).path.startswith("/api/v2/studies/NCT")
         ]
-        return json.loads(completed.stdout), detail_paths
+        traversed_later_page = any(
+            "pageToken" in parse_qs(urlparse(url).query) for url in request_urls
+        )
+        return json.loads(completed.stdout), detail_paths, traversed_later_page
     finally:
         subprocess.run(["bash", str(FIXTURE_CLEANUP), str(REPO_ROOT)], check=False)
 
 
 def test_alias_fanout_deduplicates_candidates_before_detail_verification() -> None:
-    payload, detail_paths = _run_alias_search_with_detail_log(["--limit", "5"])
+    payload, detail_paths, traversed_later_page = _run_alias_search_with_detail_log(
+        ["--limit", "5"]
+    )
 
     assert [
         (row["nct_id"], row["matched_intervention_label"]) for row in payload["results"]
@@ -128,11 +134,15 @@ def test_alias_fanout_deduplicates_candidates_before_detail_verification() -> No
         ("NCT51000001", "venetoclax"),
         ("NCT51000002", "Venclexta"),
     ]
+    assert traversed_later_page
     assert detail_paths.count("/api/v2/studies/NCT51000001") == 1, detail_paths
 
 
 def test_alias_fanout_count_deduplicates_before_detail_verification() -> None:
-    payload, detail_paths = _run_alias_search_with_detail_log(["--count-only"])
+    payload, detail_paths, traversed_later_page = _run_alias_search_with_detail_log(
+        ["--count-only"]
+    )
 
     assert payload["total"] is None
+    assert traversed_later_page
     assert detail_paths.count("/api/v2/studies/NCT51000001") == 1, detail_paths

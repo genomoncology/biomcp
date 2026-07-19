@@ -588,6 +588,13 @@ fn ctgov_workers(
         .collect()
 }
 
+fn claim_ctgov_candidate(seen_nct_ids: &mut HashSet<String>, study: &CtGovStudy) -> Option<String> {
+    match ctgov_nct_id(study) {
+        Some(nct_id) => seen_nct_ids.insert(nct_id.clone()).then_some(nct_id),
+        None => Some(String::new()),
+    }
+}
+
 fn push_ctgov_union_rows(
     merged_rows: &mut Vec<TrialSearchResult>,
     merged_index: &mut HashMap<String, usize>,
@@ -715,11 +722,20 @@ async fn search_page_with_ctgov_union(
             }
 
             for study in page.studies {
-                let nct_id = ctgov_nct_id(&study).unwrap_or_default();
-                if seen_nct_ids.insert(nct_id.clone()) {
-                    matched_labels.insert(nct_id, worker.matched_intervention_label.clone());
-                    round_studies.push(study);
+                let Some(nct_id) = claim_ctgov_candidate(&mut seen_nct_ids, &study) else {
+                    continue;
+                };
+                if nct_id.is_empty()
+                    && filters.age.is_some_and(|age| {
+                        verify_age_eligibility(vec![study.clone()], age).is_empty()
+                    })
+                {
+                    continue;
                 }
+                matched_labels
+                    .entry(nct_id)
+                    .or_insert_with(|| worker.matched_intervention_label.clone());
+                round_studies.push(study);
             }
 
             worker.next_page_token = page.next_page_token;
@@ -880,8 +896,7 @@ async fn count_all_with_ctgov_union(
             }
 
             for study in page.studies {
-                let nct_id = ctgov_nct_id(&study).unwrap_or_default();
-                if seen_nct_ids.insert(nct_id) {
+                if claim_ctgov_candidate(&mut seen_nct_ids, &study).is_some() {
                     round_studies.push(study);
                 }
             }

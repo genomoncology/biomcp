@@ -685,6 +685,17 @@ fn search_path_rejects_next_page_when_alias_expansion_uses_multiple_queries() {
 }
 
 #[test]
+fn alias_union_does_not_claim_missing_nct_ids_before_filtering() {
+    let study = serde_json::from_value(ctgov_search_study_fixture("   ", "18 Years", "75 Years"))
+        .expect("study");
+    let mut seen_nct_ids = HashSet::new();
+
+    assert!(claim_ctgov_candidate(&mut seen_nct_ids, &study).is_some());
+    assert!(claim_ctgov_candidate(&mut seen_nct_ids, &study).is_some());
+    assert!(seen_nct_ids.is_empty());
+}
+
+#[test]
 fn alias_union_provenance_uses_the_claimed_normalized_nct_id() {
     let study = serde_json::from_value(ctgov_search_study_fixture(
         " NCT00000001 ",
