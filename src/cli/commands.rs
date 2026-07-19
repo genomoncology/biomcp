@@ -215,6 +215,7 @@ See also: biomcp list batch")]
     #[command(after_help = "\
 When to use: use discover when you only have a free-text biomedical phrase and need BioMCP to resolve the first entity or alias before choosing a typed command.
 Discover is primarily a single-entity resolver. Existing routed exceptions still cover symptom-of-disease prompts, HPO symptom bridging, treatment prompts, gene+disease orientation, and unambiguous gene-plus-topic follow-ups.
+The trimmed query may contain at most 4,096 UTF-8 bytes.
 Relational or multi-entity questions may redirect to `biomcp search all --keyword \"<query>\"` instead of surfacing weak collocation matches.
 When discover cannot resolve a canonical biomedical concept, it suggests article search instead of leaving an empty dead end.
 

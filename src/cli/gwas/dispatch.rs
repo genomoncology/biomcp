@@ -7,7 +7,7 @@ pub(super) fn validate_search_args(args: &GwasSearchArgs) -> Result<(), crate::e
             "--limit must be between 1 and 50".into(),
         ));
     }
-    Ok(())
+    crate::entities::variant::validate_gwas_p_value(args.p_value)
 }
 
 pub(in crate::cli) async fn handle_search(

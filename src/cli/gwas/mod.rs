@@ -16,7 +16,7 @@ pub struct GwasSearchArgs {
     /// Filter by genomic region (chr:start-end)
     #[arg(long)]
     pub region: Option<String>,
-    /// Filter by p-value threshold
+    /// Filter by a finite p-value threshold greater than 0 and at most 1
     #[arg(long = "p-value")]
     pub p_value: Option<f64>,
     /// Maximum results, 1-50 (default: 10)

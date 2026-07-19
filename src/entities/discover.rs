@@ -138,6 +138,8 @@ pub(crate) enum DiscoverMode {
     AliasFallback,
 }
 
+const DISCOVER_COMMAND_QUERY_MAX_BYTES: usize = 4_096;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct DiscoverRequest {
     pub(crate) query: String,
@@ -153,6 +155,11 @@ impl DiscoverRequest {
         if query.is_empty() {
             return Err(BioMcpError::InvalidArgument(
                 "Free-text query is required. Example: biomcp discover BRCA1".into(),
+            ));
+        }
+        if mode == DiscoverMode::Command && query.len() > DISCOVER_COMMAND_QUERY_MAX_BYTES {
+            return Err(BioMcpError::InvalidArgument(
+                "Discover query must be at most 4,096 UTF-8 bytes".into(),
             ));
         }
         Ok(Self {

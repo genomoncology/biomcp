@@ -17,6 +17,10 @@ pub use self::documents::{
 pub use self::get::get;
 pub use self::search::{count_all, search, search_page};
 
+pub(crate) fn validate_search_filters(filters: &TrialSearchFilters) -> Result<(), BioMcpError> {
+    search::validate_trial_search(filters).map(|_| ())
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trial {
     pub nct_id: String,

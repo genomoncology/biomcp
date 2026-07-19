@@ -70,6 +70,7 @@ declines to answer a multi-entity question directly.
 
 ## Notes
 
+- The trimmed top-level query may contain at most 4,096 UTF-8 bytes.
 - OLS4 is required; if it fails, `discover` fails.
 - UMLS is optional. Without `UMLS_API_KEY`, discover still works and reports
   that clinical crosswalk enrichment is unavailable.

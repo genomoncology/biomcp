@@ -24,7 +24,7 @@ pub(super) fn list_trial() -> String {
 - `--status <status>` (or `-s`)
 - `--phase <NA|1|1/2|2|3|4>` (or `-p`)
 - `--facility <name>`
-- `--age <years>` (decimals accepted, e.g. `0.5`)
+- `--age <years>` (finite 0-150; decimals accepted, e.g. `0.5`)
 - `--sex <female|male|all>`
 - `--mutation <text>` - broadly searches CTGov title, summary, eligibility, and keywords. After broad discovery, simple mutation text is checked against registry eligibility to remove exclusion-only matches; trials where the term is absent remain discoverable, while boolean expressions are discovery-only.
 - `--criteria <text>`
@@ -33,7 +33,7 @@ pub(super) fn list_trial() -> String {
 - `--prior-therapies <text>`
 - `--progression-on <drug>`
 - `--line-of-therapy <1L|2L|3L+>`
-- `--lat <N>` + `--lon <N>` + `--distance <miles>`
+- `--lat <N>` (finite -90 to 90) + `--lon <N>` (finite -180 to 180) + `--distance <miles>`
 - `--results-available`
 - `--has-results` (alias)
 - `--study-type <interventional|observational|...>`
