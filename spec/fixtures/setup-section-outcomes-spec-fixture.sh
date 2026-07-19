@@ -33,7 +33,7 @@ trap cleanup_on_error EXIT
 python3 - "$ready_file" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 import json
 import sys
 
@@ -49,7 +49,7 @@ def send_json(handler, status, payload):
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        path = urlparse(self.path).path
+        path = unquote(urlparse(self.path).path)
         if path == "/v1/query":
             query = parse_qs(urlparse(self.path).query).get("q", [""])[0]
             if "dbsnp.rsid:rs589000" in query:
@@ -72,6 +72,22 @@ class Handler(BaseHTTPRequestHandler):
                     },
                 )
                 return
+            if "dbsnp.rsid:rs589001" in query:
+                send_json(
+                    self,
+                    200,
+                    {
+                        "total": 1,
+                        "hits": [
+                            {
+                                "_id": "rs589001",
+                                "_score": 10.0,
+                                "dbsnp": {"rsid": "rs589001"},
+                            }
+                        ],
+                    },
+                )
+                return
             send_json(
                 self,
                 200,
@@ -89,6 +105,17 @@ class Handler(BaseHTTPRequestHandler):
                             },
                         }
                     ],
+                },
+            )
+            return
+        if path == "/v1/variant/chr7:g.140453136A>T":
+            send_json(
+                self,
+                200,
+                {
+                    "_id": "chr7:g.140453136A>T",
+                    "_score": 10.0,
+                    "dbnsfp": {"genename": "BRAF", "hgvsp": "p.V600E"},
                 },
             )
             return

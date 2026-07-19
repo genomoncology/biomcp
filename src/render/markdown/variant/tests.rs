@@ -304,7 +304,7 @@ fn ticket_406_coordinate_outputs_carry_genome_build_context() {
 #[test]
 fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_source_credit() {
     let fixture = |failed_key: &str| {
-        let (domains_outcome, hotspots_outcome) = if failed_key == "domains" {
+        let (domains_outcome, hotspots_outcome, recurrence) = if failed_key == "domains" {
             (
                 serde_json::json!({
                     "outcome": "unavailable",
@@ -312,6 +312,12 @@ fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_sou
                     "message": "InterPro domain data is temporarily unavailable."
                 }),
                 serde_json::json!({"outcome": "empty", "sources": ["cancerhotspots.org"]}),
+                serde_json::json!({
+                    "source": "cancerhotspots.org",
+                    "position_count": null,
+                    "same_aa_count": null,
+                    "matched_transcript": null
+                }),
             )
         } else {
             (
@@ -321,6 +327,7 @@ fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_sou
                     "sources": [],
                     "message": "Cancer Hotspots recurrence is temporarily unavailable."
                 }),
+                serde_json::Value::Null,
             )
         };
         serde_json::from_value::<VariantStructureResult>(serde_json::json!({
@@ -345,12 +352,7 @@ fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_sou
             },
             "domains": [],
             "structures": {"pdb": [], "alphafold": null},
-            "cancerhotspots": {
-                "source": "cancerhotspots.org",
-                "position_count": null,
-                "same_aa_count": null,
-                "matched_transcript": null
-            },
+            "cancerhotspots": recurrence,
             "lookup_outcomes": {
                 "domains": domains_outcome,
                 "cancerhotspots": hotspots_outcome
@@ -389,6 +391,8 @@ fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_sou
         hotspots_json["lookup_outcomes"]["cancerhotspots"]["sources"],
         serde_json::json!([])
     );
+    assert!(hotspots_json["cancerhotspots"].is_null());
+    assert!(!hotspots_json.to_string().contains("cancerhotspots.org"));
     let hotspots_markdown = variant_structure_markdown(&hotspots);
     assert!(
         hotspots_markdown
