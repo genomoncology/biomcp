@@ -94,7 +94,7 @@ pub(super) fn list_variant() -> String {
 - `--max-frequency <0-1>`
 - `--min-cadd <score>`
 - `--consequence <missense_variant|synonymous_variant|frameshift_variant|nonsense_variant|stop_gained|stop_lost|start_lost|splice_acceptor_variant|splice_donor_variant|inframe_insertion|inframe_deletion|intron_variant|upstream_gene_variant|downstream_gene_variant|non_coding_transcript_variant>`
-- `--review-status <0|1|2|3|4|none|expert_panel|criteria_provided>`
+- `--review-status <0-4|N_star|N_stars|none|expert_panel|criteria_provided>`
 - `--population <afr|amr|eas|fin|nfe|sas>`
 - `--revel-min <score>`
 - `--gerp-min <score>`

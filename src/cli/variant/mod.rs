@@ -25,7 +25,7 @@ pub struct VariantSearchArgs {
     /// Functional consequence filter (e.g., missense_variant)
     #[arg(long)]
     pub consequence: Option<String>,
-    /// ClinVar review status (0-4, expert_panel, criteria_provided)
+    /// ClinVar review status (0-4, N_star/N_stars, none, expert_panel, criteria_provided)
     #[arg(long = "review-status")]
     pub review_status: Option<String>,
     /// Population AF scope (afr, amr, eas, fin, nfe, sas)

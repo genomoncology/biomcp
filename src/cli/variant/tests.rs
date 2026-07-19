@@ -209,6 +209,22 @@ fn resolve_variant_query_maps_single_token_to_gene() {
 }
 
 #[test]
+fn resolve_variant_query_preserves_empty_consequence_for_source_validation() {
+    let resolved = resolve_variant_query(
+        Some("BRAF".into()),
+        None,
+        Some("  ".into()),
+        None,
+        Vec::new(),
+    )
+    .unwrap();
+    let VariantSearchPlan::Standard(resolved) = resolved else {
+        panic!("expected standard search plan");
+    };
+    assert_eq!(resolved.consequence.as_deref(), Some(""));
+}
+
+#[test]
 fn resolve_variant_query_maps_simple_gene_change_to_gene_and_hgvsp() {
     let resolved =
         resolve_variant_query(None, None, None, None, vec!["BRAF".into(), "V600E".into()]).unwrap();

@@ -171,6 +171,9 @@ fn normalize_filter_key(value: &str) -> String {
         if matches!(ch, ' ' | ',' | '-' | '_') && !prev_sep {
             out.push('_');
             prev_sep = true;
+        } else if !matches!(ch, ' ' | ',' | '-' | '_') {
+            out.push(ch);
+            prev_sep = false;
         }
     }
     out.trim_matches('_').to_string()
@@ -528,22 +531,12 @@ impl MyVariantClient {
             }
             terms.push(format!("cadd.phred:[{min} TO *]"));
         }
-        if let Some(consequence) = params
-            .consequence
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
+        if let Some(consequence) = params.consequence.as_deref() {
             let provider_term = normalize_consequence_filter(consequence)?;
             terms.push(format!("snpeff.ann.effect:*{provider_term}*"));
         }
 
-        if let Some(review_status) = params
-            .review_status
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
+        if let Some(review_status) = params.review_status.as_deref() {
             let provider_phrase = normalize_review_status_filter(review_status)?;
             terms.push(format!(
                 "clinvar.rcv.review_status:\"{}\"",
