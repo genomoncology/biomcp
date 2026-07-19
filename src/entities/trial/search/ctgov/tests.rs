@@ -50,6 +50,62 @@ fn single_ctgov_context_and_worker(
 }
 
 #[test]
+fn trial_numeric_filters_are_validated_before_request_construction() {
+    for age in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, 151.0] {
+        let filters = TrialSearchFilters {
+            age: Some(age),
+            ..Default::default()
+        };
+        let err = validate_trial_search(&filters)
+            .err()
+            .expect("invalid age should fail before request construction");
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    }
+
+    for age in [0.0, 0.5, 150.0] {
+        validate_trial_search(&TrialSearchFilters {
+            age: Some(age),
+            ..Default::default()
+        })
+        .expect("valid age boundary should pass");
+    }
+
+    for (lat, lon) in [
+        (f64::NAN, 0.0),
+        (f64::INFINITY, 0.0),
+        (f64::NEG_INFINITY, 0.0),
+        (-91.0, 0.0),
+        (91.0, 0.0),
+        (0.0, f64::NAN),
+        (0.0, f64::INFINITY),
+        (0.0, f64::NEG_INFINITY),
+        (0.0, -181.0),
+        (0.0, 181.0),
+    ] {
+        let filters = TrialSearchFilters {
+            lat: Some(lat),
+            lon: Some(lon),
+            distance: Some(1),
+            ..Default::default()
+        };
+        let err = validate_trial_search(&filters)
+            .err()
+            .expect("invalid coordinates should fail before request construction");
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    }
+
+    for (lat, lon) in [(-90.0, -180.0), (90.0, 180.0)] {
+        validate_trial_search(&TrialSearchFilters {
+            lat: Some(lat),
+            lon: Some(lon),
+            distance: Some(1),
+            ..Default::default()
+        })
+        .expect("valid coordinate boundaries should pass");
+    }
+}
+
+#[test]
 fn ctgov_query_term_broadens_mutation_across_discovery_fields() {
     let filters = TrialSearchFilters {
         mutation: Some("dMMR OR MSI-H".into()),

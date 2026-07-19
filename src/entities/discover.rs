@@ -2163,6 +2163,24 @@ mod tests {
     }
 
     #[test]
+    fn discover_request_rejects_oversized_query_before_clients() {
+        let accepted = "x".repeat(4096);
+        DiscoverRequest::new(&accepted, DiscoverMode::Command)
+            .expect("query at the byte limit should pass");
+
+        let oversized = "x".repeat(4097);
+        let err = DiscoverRequest::new(&oversized, DiscoverMode::Command)
+            .expect_err("oversized query should fail before clients");
+        assert!(matches!(
+            &err,
+            crate::error::BioMcpError::InvalidArgument(_)
+        ));
+        let message = err.to_string();
+        assert!(message.contains("4,096"));
+        assert!(!message.to_ascii_lowercase().contains("ols4"));
+    }
+
+    #[test]
     fn ticket_400_request_command_discover_fields_drive_resolve_boundaries() {
         let request = DiscoverRequest::new(" symptoms of Marfan syndrome ", DiscoverMode::Command)
             .expect("request");

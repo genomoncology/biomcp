@@ -56,6 +56,121 @@ biomcp --json get variant
 "message":
 ```
 
+## GWAS p-values are probabilities
+
+<!-- mustmatch-lint: skip -->
+
+A GWAS p-value threshold narrows associations only when it is a finite
+probability greater than zero and at most one. Invalid thresholds fail locally
+instead of returning confident emptiness or silently disabling the filter.
+
+| str:value | str:label |
+|---|---|
+| NaN | not a number |
+| +inf | positive infinity |
+| -inf | negative infinity |
+| 1e309 | overflow |
+| 0 | zero |
+| -0.01 | negative |
+| 1.01 | greater than one |
+
+```bash run id=invalid-gwas-p-value exit=2 each_row="GWAS p-values are probabilities"
+biomcp --json search gwas BRAF --p-value={{value}} --limit 1
+```
+
+```json expect=invalid-gwas-p-value contains each_row="GWAS p-values are probabilities"
+{
+  "error": {
+    "code": "invalid_argument"
+  }
+}
+```
+
+## Trial ages stay within a human range
+
+<!-- mustmatch-lint: skip -->
+
+Trial eligibility accepts fractional patient ages from zero through 150 years.
+Non-finite or out-of-range ages fail before count or search work, so they cannot
+silently change a result page.
+
+| str:value | str:label |
+|---|---|
+| NaN | not a number |
+| +inf | positive infinity |
+| -inf | negative infinity |
+| 1e309 | overflow |
+| -1 | below zero |
+| 151 | above 150 |
+
+```bash run id=invalid-trial-age exit=2 each_row="Trial ages stay within a human range"
+biomcp --json search trial --age={{value}} --count-only
+```
+
+```json expect=invalid-trial-age contains each_row="Trial ages stay within a human range"
+{
+  "error": {
+    "code": "invalid_argument"
+  }
+}
+```
+
+## Trial coordinates stay on Earth
+
+<!-- mustmatch-lint: skip -->
+
+Geographic trial search uses finite latitude from -90 through 90 and longitude
+from -180 through 180. Values outside those bounds are client errors, not
+ClinicalTrials.gov or NCI outages.
+
+| str:coordinates | str:label |
+|---|---|
+| --lat=NaN --lon=0 | latitude not a number |
+| --lat=+inf --lon=0 | latitude infinity |
+| --lat=-91 --lon=0 | latitude below -90 |
+| --lat=91 --lon=0 | latitude above 90 |
+| --lat=0 --lon=NaN | longitude not a number |
+| --lat=0 --lon=+inf | longitude infinity |
+| --lat=0 --lon=-181 | longitude below -180 |
+| --lat=0 --lon=181 | longitude above 180 |
+
+```bash run id=invalid-trial-coordinate exit=2 each_row="Trial coordinates stay on Earth"
+biomcp --json search trial -c melanoma {{coordinates}} --distance=1 --limit=1
+```
+
+```json expect=invalid-trial-coordinate contains each_row="Trial coordinates stay on Earth"
+{
+  "error": {
+    "code": "invalid_argument"
+  }
+}
+```
+
+## Discover rejects oversized input locally
+
+<!-- mustmatch-lint: skip -->
+
+Discover accepts a trimmed free-text query up to 4,096 UTF-8 bytes. Longer text
+fails as an invalid argument before ontology clients are constructed, without
+exposing an internal backend name.
+
+```bash run id=oversized-discover exit=2
+bash ../fixtures/run-oversized-discover-query.sh
+```
+
+```json expect=oversized-discover contains
+{
+  "error": {
+    "code": "invalid_argument"
+  }
+}
+```
+
+```text expect=oversized-discover not-contains
+OLS4
+ols4
+```
+
 ## Skill Help Documents Worked-Example Selectors
 
 The skill selector is intentionally positional: agents and humans can open a
