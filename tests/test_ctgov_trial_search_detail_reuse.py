@@ -75,3 +75,44 @@ def test_combined_geo_and_eligibility_filters_fetch_one_detail_projection() -> N
         assert "LocationGeoPoint" in fields
     finally:
         subprocess.run(["bash", str(FIXTURE_CLEANUP), str(REPO_ROOT)], check=False)
+
+
+def test_alias_fanout_deduplicates_candidates_before_detail_verification() -> None:
+    subprocess.run(["bash", str(FIXTURE_SETUP), str(REPO_ROOT)], check=True)
+    try:
+        fixture_env = _read_exports(FIXTURE_ENV)
+        env = os.environ | fixture_env
+        env["BIOMCP_MYCHEM_BASE"] = fixture_env[
+            "BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE"
+        ]
+        biomcp_bin = env.get("BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp"))
+        subprocess.run(
+            [
+                biomcp_bin,
+                "--json",
+                "search",
+                "trial",
+                "--intervention",
+                "venetoclax",
+                "--criteria",
+                "eligible adults",
+                "--source",
+                "ctgov",
+                "--limit",
+                "5",
+            ],
+            check=True,
+            capture_output=True,
+            env=env,
+            text=True,
+        )
+
+        request_log = Path(fixture_env["BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"])
+        detail_paths = [
+            urlparse(line).path
+            for line in request_log.read_text(encoding="utf-8").splitlines()
+            if urlparse(line).path.startswith("/api/v2/studies/NCT")
+        ]
+        assert detail_paths.count("/api/v2/studies/NCT51000001") == 1, detail_paths
+    finally:
+        subprocess.run(["bash", str(FIXTURE_CLEANUP), str(REPO_ROOT)], check=False)
