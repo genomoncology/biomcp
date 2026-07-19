@@ -298,20 +298,38 @@ fn search_plan_rejects_non_finite_min_cadd() {
 }
 
 #[test]
-fn search_plan_consequence_clause_uses_snpeff_effect() {
-    let plan = MyVariantClient::search_plan(&VariantSearchParams {
-        consequence: Some("missense".into()),
-        ..params()
-    })
-    .unwrap();
-    assert_eq!(q(&plan), "snpeff.ann.effect:*missense_variant*");
-
-    let splice_plan = MyVariantClient::search_plan(&VariantSearchParams {
-        consequence: Some("splice donor".into()),
-        ..params()
-    })
-    .unwrap();
-    assert_eq!(q(&splice_plan), "snpeff.ann.effect:*splice_donor_variant*");
+fn search_plan_consequence_clause_uses_snpeff_effect_for_every_supported_term() {
+    for (input, provider_term) in [
+        ("missense_variant", "missense_variant"),
+        ("synonymous_variant", "synonymous_variant"),
+        ("frameshift_variant", "frameshift_variant"),
+        ("nonsense_variant", "stop_gained"),
+        ("stop_gained", "stop_gained"),
+        ("stop_lost", "stop_lost"),
+        ("start_lost", "start_lost"),
+        ("splice_acceptor_variant", "splice_acceptor_variant"),
+        ("splice_donor_variant", "splice_donor_variant"),
+        ("inframe_insertion", "inframe_insertion"),
+        ("inframe_deletion", "inframe_deletion"),
+        ("intron_variant", "intron_variant"),
+        ("upstream_gene_variant", "upstream_gene_variant"),
+        ("downstream_gene_variant", "downstream_gene_variant"),
+        (
+            "non_coding_transcript_variant",
+            "non_coding_transcript_variant",
+        ),
+    ] {
+        let plan = MyVariantClient::search_plan(&VariantSearchParams {
+            consequence: Some(input.into()),
+            ..params()
+        })
+        .unwrap();
+        assert_eq!(
+            q(&plan),
+            format!("snpeff.ann.effect:*{provider_term}*"),
+            "input {input}"
+        );
+    }
 }
 
 #[test]
@@ -345,6 +363,16 @@ fn search_plan_review_status_clause_quotes_provider_phrase() {
     assert_eq!(
         q(&expert_plan),
         "clinvar.rcv.review_status:\"reviewed by expert panel\""
+    );
+
+    let criteria_plan = MyVariantClient::search_plan(&VariantSearchParams {
+        review_status: Some("criteria_provided".into()),
+        ..params()
+    })
+    .unwrap();
+    assert_eq!(
+        q(&criteria_plan),
+        "clinvar.rcv.review_status:\"criteria provided\""
     );
 }
 
@@ -430,7 +458,7 @@ fn search_plan_impact_clause_uppercases() {
 }
 
 #[test]
-fn search_plan_maps_field_aliases_for_presence_and_absence() {
+fn search_plan_lof_has_missing_and_therapy_clauses_compose() {
     let plan = MyVariantClient::search_plan(&VariantSearchParams {
         lof: true,
         has: Some("clinvar".into()),
@@ -447,13 +475,43 @@ fn search_plan_maps_field_aliases_for_presence_and_absence() {
 }
 
 #[test]
-fn search_plan_has_revel_uses_provider_field_path() {
-    let plan = MyVariantClient::search_plan(&VariantSearchParams {
-        has: Some("revel".into()),
-        ..params()
-    })
-    .unwrap();
-    assert_eq!(q(&plan), "_exists_:dbnsfp.revel.score");
+fn search_plan_maps_field_aliases_for_presence_and_absence() {
+    for (alias, expected) in [
+        ("cadd", "_exists_:cadd"),
+        ("revel", "_exists_:dbnsfp.revel.score"),
+        ("gerp", "_exists_:dbnsfp.gerp++.rs"),
+        ("clinvar", "_exists_:clinvar"),
+        (
+            "gnomad",
+            "(_exists_:gnomad_exome OR _exists_:gnomad.exomes OR _exists_:gnomad.genomes)",
+        ),
+        ("dbsnp", "_exists_:dbsnp.rsid"),
+        ("snpeff", "_exists_:snpeff.ann.effect"),
+        ("civic", "_exists_:civic"),
+        ("cosmic", "_exists_:cosmic"),
+    ] {
+        let plan = MyVariantClient::search_plan(&VariantSearchParams {
+            has: Some(alias.into()),
+            ..params()
+        })
+        .unwrap();
+        assert_eq!(q(&plan), expected, "presence alias {alias}");
+    }
+
+    for (alias, expected) in [
+        ("revel", "NOT _exists_:dbnsfp.revel.score"),
+        (
+            "gnomad",
+            "NOT (_exists_:gnomad_exome OR _exists_:gnomad.exomes OR _exists_:gnomad.genomes)",
+        ),
+    ] {
+        let plan = MyVariantClient::search_plan(&VariantSearchParams {
+            missing: Some(alias.into()),
+            ..params()
+        })
+        .unwrap();
+        assert_eq!(q(&plan), expected, "absence alias {alias}");
+    }
 }
 
 #[test]
@@ -633,6 +691,10 @@ fn review_status_filter_maps_stars_and_aliases_and_rejects_unknown_and_empty() {
     assert_eq!(
         normalize_review_status_filter("expert_panel").unwrap(),
         "reviewed by expert panel"
+    );
+    assert_eq!(
+        normalize_review_status_filter("criteria_provided").unwrap(),
+        "criteria provided"
     );
     let unknown = normalize_review_status_filter("Some Custom Status").unwrap_err();
     assert!(unknown.to_string().contains("--review-status"));

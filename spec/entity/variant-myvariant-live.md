@@ -52,6 +52,8 @@ biomcp --json --no-cache search variant -g BRAF --hgvsp V600E \
 
 ## Supported consequence matrix
 
+<!-- mustmatch-lint: skip -->
+
 Less common coding and splice consequences use the same public vocabulary. Each
 supported term must select real records rather than disappearing or returning a
 confident empty result.
@@ -69,6 +71,20 @@ biomcp --json --no-cache search variant --consequence {{term}} --limit 3 | jq '(
 
 ```text expect=live-consequence each_row="Supported consequence matrix"
 true
+```
+
+## Explicit consequence narrowing
+
+An explicit consequence must remain active even when a gene has no matching
+annotation. BRAF has thousands of indexed variants but no current in-frame
+deletion annotation, so a filtered search must stay well below the unfiltered
+total rather than retrying as a gene-only search.
+
+```bash
+biomcp --json --no-cache search variant -g BRAF \
+  --consequence inframe_deletion --limit 5 \
+  | jq '.pagination.total < 1000' \
+  | mustmatch 'true'
 ```
 
 ## ClinVar review-status filtering

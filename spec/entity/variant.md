@@ -70,12 +70,15 @@ biomcp --json search variant --gene BRAF {{flag}}={{value}} --limit 1
 
 ## Variant filter vocabularies
 
-Review status and field-presence filters use documented vocabularies. Unknown
+<!-- mustmatch-lint: skip -->
+
+Consequence, review-status, and field-presence filters use documented vocabularies. Unknown
 values are rejected locally instead of being sent upstream and reported as a
 successful empty search.
 
 | str:flag | str:value | str:label |
 |---|---|---|
+| --consequence | protein_altering_variant | unsupported consequence |
 | --review-status | bogus | unknown review status |
 | --has | not_a_real_field_zzz | unknown required field |
 | --missing | not_a_real_field_zzz | unknown missing field |
