@@ -337,9 +337,19 @@ fn is_forbidden_address(address: IpAddr) -> bool {
     match address {
         IpAddr::V4(address) => forbidden_ipv4(address),
         IpAddr::V6(address) => {
-            address.to_ipv4_mapped().is_some_and(forbidden_ipv4) || forbidden_ipv6(address)
+            address
+                .to_ipv4()
+                .or_else(|| nat64_embedded_ipv4(address))
+                .is_some_and(forbidden_ipv4)
+                || forbidden_ipv6(address)
         }
     }
+}
+
+fn nat64_embedded_ipv4(address: Ipv6Addr) -> Option<Ipv4Addr> {
+    let octets = address.octets();
+    (octets[..12] == [0x00, 0x64, 0xff, 0x9b, 0, 0, 0, 0, 0, 0, 0, 0])
+        .then(|| Ipv4Addr::new(octets[12], octets[13], octets[14], octets[15]))
 }
 
 fn forbidden_ipv4(address: Ipv4Addr) -> bool {
@@ -350,6 +360,7 @@ fn forbidden_ipv4(address: Ipv4Addr) -> bool {
         || address.is_unspecified()
         || address.is_multicast()
         || octets[0] == 0
+        || (octets[0] == 100 && octets[1] & 0xc0 == 0x40)
         || octets == [100, 100, 100, 200]
 }
 
