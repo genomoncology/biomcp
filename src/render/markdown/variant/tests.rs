@@ -400,6 +400,7 @@ fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_sou
             .contains("unavailable")
     );
     assert!(!hotspots_markdown.contains("Source: cancerhotspots.org"));
+    assert!(!hotspots_markdown.contains("No Cancer Hotspots recurrence match was found"));
 }
 
 #[test]
