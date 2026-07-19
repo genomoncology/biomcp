@@ -173,6 +173,7 @@ pub(super) fn validate_trial_search(
             "--age must be finite and between 0 and 150".into(),
         ));
     }
+    validate_location(filters)?;
     if !has_any_query(filters) {
         return Err(BioMcpError::InvalidArgument(
             "At least one filter is required. Example: biomcp search trial -c melanoma".into(),
@@ -193,7 +194,6 @@ pub(super) fn validate_trial_search(
 
     let normalized_status = normalized_status_filter(filters)?;
     let normalized_phase = normalized_phase_filter(filters)?;
-    validate_location(filters)?;
 
     if matches!(filters.source, TrialSource::NciCts)
         && normalized_status

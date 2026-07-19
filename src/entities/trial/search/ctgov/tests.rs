@@ -94,6 +94,22 @@ fn trial_numeric_filters_are_validated_before_request_construction() {
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
     }
 
+    for (lat, lon, flag) in [
+        (Some(f64::NAN), None, "--lat"),
+        (Some(91.0), None, "--lat"),
+        (None, Some(f64::NAN), "--lon"),
+        (None, Some(181.0), "--lon"),
+    ] {
+        let err = validate_trial_search(&TrialSearchFilters {
+            lat,
+            lon,
+            ..Default::default()
+        })
+        .err()
+        .expect("standalone invalid coordinate should report its numeric domain");
+        assert!(err.to_string().contains(flag));
+    }
+
     let nci_invalid_coordinates = TrialSearchFilters {
         lat: Some(91.0),
         lon: Some(0.0),
