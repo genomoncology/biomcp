@@ -75,16 +75,31 @@ true
 
 ## Explicit consequence narrowing
 
-An explicit consequence must remain active even when a gene has no matching
-annotation. BRAF has thousands of indexed variants but no current in-frame
-deletion annotation, so a filtered search must stay well below the unfiltered
-total rather than retrying as a gene-only search.
+<!-- mustmatch-lint: skip -->
 
-```bash
+An explicit consequence must remain active even when a gene has no matching
+annotation. The filtered BRAF total must remain below the unfiltered total
+rather than retrying as a gene-only search.
+
+```bash run id=braf-baseline
+biomcp --json --no-cache search variant -g BRAF --limit 1
+```
+
+```json expect=braf-baseline contains
+{
+  "results": [{}]
+}
+```
+
+```bash run id=braf-inframe uses=braf-baseline
 biomcp --json --no-cache search variant -g BRAF \
-  --consequence inframe_deletion --limit 5 \
-  | jq '.pagination.total < 1000' \
-  | mustmatch 'true'
+  --consequence inframe_deletion --limit 1 \
+  | jq --argjson baseline '{{braf-baseline.pagination.total}}' \
+      '.pagination.total < $baseline'
+```
+
+```text expect=braf-inframe
+true
 ```
 
 ## ClinVar review-status filtering

@@ -378,6 +378,24 @@ def test_article_indexing_command_is_aligned_across_user_and_ux_references() -> 
     assert command in _read_repo("architecture/ux/cli-reference.md")
 
 
+def test_variant_filter_validation_is_aligned_across_user_and_ux_references() -> None:
+    user_variant = _markdown_section(
+        _read_repo("docs/user-guide/cli-reference.md"), "Variant", level=3
+    )
+    ux_variant = _markdown_section(
+        _read_repo("architecture/ux/cli-reference.md"), "Variant Search Filters"
+    )
+    for contract_landmark in (
+        "--consequence",
+        "--review-status",
+        "--has",
+        "--missing",
+        "invalid_argument",
+    ):
+        assert contract_landmark in user_variant
+        assert contract_landmark in ux_variant
+
+
 def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> None:
     technical = _read_repo("architecture/technical/overview.md")
     ux = _read_repo("architecture/ux/cli-reference.md")

@@ -79,9 +79,17 @@ successful empty search.
 | str:flag | str:value | str:label |
 |---|---|---|
 | --consequence | protein_altering_variant | unsupported consequence |
+| --consequence | missense_variant* | malformed consequence |
+| --consequence | '' | empty consequence |
 | --review-status | bogus | unknown review status |
+| --review-status | 2* | malformed review status |
+| --review-status | '' | empty review status |
 | --has | not_a_real_field_zzz | unknown required field |
+| --has | revel:* | malformed required field |
+| --has | '' | empty required field |
 | --missing | not_a_real_field_zzz | unknown missing field |
+| --missing | revel:* | malformed missing field |
+| --missing | '' | empty missing field |
 
 ```bash run id=invalid-variant-filter exit=2 each_row="Variant filter vocabularies"
 biomcp --json search variant --gene BRAF {{flag}} {{value}} --limit 1
