@@ -33,6 +33,13 @@ const MODELS_UNAVAILABLE_NOTE: &str = "Monarch model data is temporarily unavail
 const PREVALENCE_UNAVAILABLE_NOTE: &str =
     "Open Targets prevalence data is temporarily unavailable.";
 const CIVIC_UNAVAILABLE_NOTE: &str = "CIViC disease context is temporarily unavailable.";
+const TREATMENTS_INAPPLICABLE_NOTE: &str =
+    "A disease name or synonym is required for treatment lookup.";
+const TREATMENTS_UNAVAILABLE_NOTE: &str = "Disease treatment data is temporarily unavailable.";
+const RECRUITING_TRIALS_INAPPLICABLE_NOTE: &str =
+    "A disease name or synonym is required for recruiting trial lookup.";
+const RECRUITING_TRIALS_UNAVAILABLE_NOTE: &str =
+    "Disease recruiting trial data is temporarily unavailable.";
 
 fn normalize_ols_disease_id(value: &str) -> Option<String> {
     normalize_disease_id(value).or_else(|| normalize_disease_id(&value.replace('_', ":")))
@@ -132,6 +139,11 @@ fn disease_funding_query_value(
 
 async fn add_treatment_landscape(disease: &mut Disease) -> Result<(), BioMcpError> {
     let Some(query) = disease_query_value(disease) else {
+        disease.treatment_landscape.clear();
+        disease.section_outcomes.complete(
+            DISEASE_SECTION_TREATMENTS,
+            SectionOutcome::inapplicable(TREATMENTS_INAPPLICABLE_NOTE),
+        );
         return Ok(());
     };
 
@@ -139,7 +151,17 @@ async fn add_treatment_landscape(disease: &mut Disease) -> Result<(), BioMcpErro
         indication: Some(query),
         ..Default::default()
     };
-    let rows = drug::search(&filters, 5).await?;
+    let rows = match drug::search(&filters, 5).await {
+        Ok(rows) => rows,
+        Err(err) => {
+            disease.treatment_landscape.clear();
+            disease.section_outcomes.complete(
+                DISEASE_SECTION_TREATMENTS,
+                SectionOutcome::unavailable(TREATMENTS_UNAVAILABLE_NOTE),
+            );
+            return Err(err);
+        }
+    };
 
     let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut out: Vec<String> = Vec::new();
@@ -158,12 +180,25 @@ async fn add_treatment_landscape(disease: &mut Disease) -> Result<(), BioMcpErro
         }
     }
 
+    let outcome = if out.is_empty() {
+        SectionOutcome::empty("MyChem.info indication search")
+    } else {
+        SectionOutcome::data("MyChem.info indication search")
+    };
     disease.treatment_landscape = out;
+    disease
+        .section_outcomes
+        .complete(DISEASE_SECTION_TREATMENTS, outcome);
     Ok(())
 }
 
 async fn add_recruiting_trial_count(disease: &mut Disease) -> Result<(), BioMcpError> {
     let Some(query) = disease_query_value(disease) else {
+        disease.recruiting_trial_count = None;
+        disease.section_outcomes.complete(
+            DISEASE_SECTION_RECRUITING_TRIALS,
+            SectionOutcome::inapplicable(RECRUITING_TRIALS_INAPPLICABLE_NOTE),
+        );
         return Ok(());
     };
 
@@ -174,8 +209,22 @@ async fn add_recruiting_trial_count(disease: &mut Disease) -> Result<(), BioMcpE
         ..Default::default()
     };
 
-    let (rows, total) = trial::search(&filters, 5, 0).await?;
+    let (rows, total) = match trial::search(&filters, 5, 0).await {
+        Ok(result) => result,
+        Err(err) => {
+            disease.recruiting_trial_count = None;
+            disease.section_outcomes.complete(
+                DISEASE_SECTION_RECRUITING_TRIALS,
+                SectionOutcome::unavailable(RECRUITING_TRIALS_UNAVAILABLE_NOTE),
+            );
+            return Err(err);
+        }
+    };
     disease.recruiting_trial_count = total.or(Some(rows.len() as u32));
+    disease.section_outcomes.complete(
+        DISEASE_SECTION_RECRUITING_TRIALS,
+        SectionOutcome::data("ClinicalTrials.gov"),
+    );
     Ok(())
 }
 

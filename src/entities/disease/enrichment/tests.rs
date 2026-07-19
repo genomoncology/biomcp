@@ -294,6 +294,7 @@ async fn ticket_589_disease_base_enrichment_failures_are_unavailable_without_cre
     let mut env = TestEnv::new();
     env.set("BIOMCP_MYCHEM_BASE", "://invalid-mychem-fixture");
     env.set("BIOMCP_CTGOV_BASE", "://invalid-ctgov-fixture");
+    env.set("BIOMCP_OPENTARGETS_BASE", "://invalid-opentargets-fixture");
 
     let mut treatments = test_disease("MONDO:0005105", "melanoma");
     let treatment_error = add_treatment_landscape(&mut treatments).await;
@@ -335,6 +336,35 @@ async fn ticket_589_disease_base_enrichment_failures_are_unavailable_without_cre
     }
     assert!(treatments.treatment_landscape.is_empty());
     assert!(trials.recruiting_trial_count.is_none());
+
+    let mut base_card = test_disease("MONDO:0005105", "melanoma");
+    enrich_base_context(&mut base_card).await;
+    let provenance = crate::render::provenance::disease_section_sources(&base_card);
+    for (key, provider) in [
+        ("treatments", "MyChem.info indication search"),
+        ("recruiting_trials", "ClinicalTrials.gov"),
+    ] {
+        let section = provenance
+            .iter()
+            .find(|section| section.key == key)
+            .unwrap_or_else(|| panic!("missing failed enrichment provenance: {key}"));
+        assert_eq!(
+            section.outcome,
+            crate::entities::section_outcome::SectionOutcomeState::Unavailable
+        );
+        assert!(section.sources.is_empty());
+        assert!(
+            provenance
+                .iter()
+                .all(|section| section.sources.iter().all(|source| source != provider))
+        );
+    }
+    let markdown = crate::render::markdown::disease_markdown(&base_card, &[])
+        .expect("failed optional enrichments should still render");
+    assert!(markdown.contains(TREATMENTS_UNAVAILABLE_NOTE));
+    assert!(markdown.contains(RECRUITING_TRIALS_UNAVAILABLE_NOTE));
+    assert!(!markdown.contains("Source: MyChem.info indication search"));
+    assert!(!markdown.contains("Source: ClinicalTrials.gov"));
 }
 
 pub(crate) async fn proof_enrich_sparse_disease_identity_prefers_exact_ols4_match() {

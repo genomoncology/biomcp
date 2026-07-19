@@ -33,6 +33,9 @@
 - Standardized optional source-state inventory and provenance reporting, including
   disease survival `data`/`empty`/`unavailable` outcomes and in-band Markdown
   unavailability without failed-provider credit.
+- Added an `inapplicable` lookup state so variant prerequisite checks no longer
+  credit uncontacted providers, and exposed honest treatment/trial and variant
+  structure helper outcomes without turning optional failures into command errors.
 - Sanitized terminal-active controls and invisible bidi markers at human CLI,
   MCP, Markdown, diagnostic, and chart-scalar boundaries while preserving typed
   JSON values and trusted chart-backend ANSI styling.

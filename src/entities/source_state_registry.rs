@@ -288,6 +288,20 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
     ),
     state(
         "disease",
+        "treatments",
+        "Treatments",
+        &["MyChem.info indication search"],
+        Aggregation::Fallback,
+    ),
+    state(
+        "disease",
+        "recruiting_trials",
+        "Recruiting Trials",
+        &["ClinicalTrials.gov"],
+        Aggregation::Fallback,
+    ),
+    state(
+        "disease",
         "genes",
         "Genes",
         &["Monarch Initiative", "CIViC", "Open Targets"],
@@ -354,6 +368,20 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         "civic",
         "CIViC",
         &["CIViC"],
+        Aggregation::Fallback,
+    ),
+    state(
+        "variant_structure",
+        "domains",
+        "Domains",
+        &["InterPro"],
+        Aggregation::Fallback,
+    ),
+    state(
+        "variant_structure",
+        "cancerhotspots",
+        "Cancer Hotspots",
+        &["cancerhotspots.org"],
         Aggregation::Fallback,
     ),
     state(

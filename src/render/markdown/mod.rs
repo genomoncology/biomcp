@@ -110,7 +110,9 @@ fn append_source_state_messages(
         };
         if !matches!(
             outcome.outcome(),
-            SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+            SectionOutcomeState::Inapplicable
+                | SectionOutcomeState::Degraded
+                | SectionOutcomeState::Unavailable
         ) {
             continue;
         }

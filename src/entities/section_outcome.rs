@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub enum SectionOutcomeState {
     #[default]
     NotRequested,
+    Inapplicable,
     Data,
     Empty,
     Degraded,
@@ -17,6 +18,7 @@ impl SectionOutcomeState {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::NotRequested => "not_requested",
+            Self::Inapplicable => "inapplicable",
             Self::Data => "data",
             Self::Empty => "empty",
             Self::Degraded => "degraded",
@@ -66,6 +68,14 @@ impl SectionOutcome {
         Self {
             outcome: SectionOutcomeState::Degraded,
             sources: successful_sources(sources),
+            message: Some(bounded_message(message)),
+        }
+    }
+
+    pub fn inapplicable(message: &'static str) -> Self {
+        Self {
+            outcome: SectionOutcomeState::Inapplicable,
+            sources: Vec::new(),
             message: Some(bounded_message(message)),
         }
     }
@@ -171,7 +181,9 @@ impl<'de> Deserialize<'de> for SectionOutcome {
                 !value.sources.is_empty() && value.message.is_none()
             }
             SectionOutcomeState::Degraded => !value.sources.is_empty() && value.message.is_some(),
-            SectionOutcomeState::Unavailable => value.sources.is_empty() && value.message.is_some(),
+            SectionOutcomeState::Inapplicable | SectionOutcomeState::Unavailable => {
+                value.sources.is_empty() && value.message.is_some()
+            }
         };
         if !sources_are_valid || !message_is_valid || !shape_is_valid {
             return Err(D::Error::custom(
@@ -243,8 +255,12 @@ mod tests {
 
     #[test]
     fn registry_serializes_all_states_and_safe_messages() {
-        let mut outcomes = SectionOutcomes::with_keys(&["empty", "unavailable"]);
+        let mut outcomes = SectionOutcomes::with_keys(&["empty", "inapplicable", "unavailable"]);
         outcomes.complete("empty", SectionOutcome::empty("Source"));
+        outcomes.complete(
+            "inapplicable",
+            SectionOutcome::inapplicable("A required input is missing."),
+        );
         outcomes.complete(
             "unavailable",
             SectionOutcome::unavailable("Source data is unavailable.\n"),
@@ -252,6 +268,13 @@ mod tests {
         let value = serde_json::to_value(outcomes).unwrap();
         assert_eq!(value["empty"]["outcome"], "empty");
         assert_eq!(value["empty"]["sources"][0], "Source");
+        assert_eq!(value["inapplicable"]["outcome"], "inapplicable");
+        assert_eq!(value["inapplicable"]["sources"], serde_json::json!([]));
+        let round_trip = serde_json::from_value::<SectionOutcomes>(value.clone()).unwrap();
+        assert_eq!(
+            round_trip.get("inapplicable").unwrap().message(),
+            Some("A required input is missing.")
+        );
         assert_eq!(value["unavailable"]["outcome"], "unavailable");
         assert_eq!(
             value["unavailable"]["message"],
@@ -296,6 +319,8 @@ mod tests {
     fn deserialization_rejects_illegal_shapes_and_unsafe_messages() {
         for json in [
             r#"{"outcome":"data","sources":[]}"#,
+            r#"{"outcome":"inapplicable","sources":[]}"#,
+            r#"{"outcome":"inapplicable","sources":["Provider"],"message":"Not applicable."}"#,
             r#"{"outcome":"unavailable","sources":["Provider"],"message":"Unavailable."}"#,
             r#"{"outcome":"degraded","sources":[],"message":"Incomplete."}"#,
             r#"{"outcome":"unavailable","sources":[],"message":"See https://example.test/raw"}"#,

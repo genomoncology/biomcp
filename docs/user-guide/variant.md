@@ -237,8 +237,13 @@ biomcp variant oncokb "BRAF V600E"     # OncoKB lookup (requires ONCOKB_TOKEN)
 `variant structure` is an opt-in, network-backed helper. JSON includes the selected
 residue, matched HGVSp aliases, other MyVariant/dbNSFP positions, overlapping
 InterPro domain ranges, typed UniProt PDB rows, an AlphaFold URL,
-Cancerhotspots recurrence, warnings, and `_meta.next_commands`. It does not add
-structure data to default `get variant` output.
+Cancerhotspots recurrence, top-level `lookup_outcomes`, warnings, and
+`_meta.next_commands`. `lookup_outcomes.domains` and
+`lookup_outcomes.cancerhotspots` distinguish `data`, healthy `empty`, local
+`inapplicable`, and temporary `unavailable` results. Cancer Hotspots recurrence
+is `null` when that lookup is inapplicable or unavailable; its successful data
+and empty object shape is unchanged. This helper does not add structure data to
+default `get variant` output.
 
 `variant articles` uses PubTator variant annotations when BioMCP can resolve a
 confident variant entity. If annotation recall is unavailable, the output labels
@@ -269,7 +274,9 @@ OncoKB is accessed explicitly via `biomcp variant oncokb "<gene> <variant>"` and
 ## Prediction requirements
 
 Prediction sections may require `ALPHAGENOME_API_KEY` depending on source path.
-Unsupported inputs are surfaced with explicit validation messages.
+Unsupported command inputs still use explicit validation messages. A valid
+variant card whose requested lookup lacks a prerequisite remains successful and
+reports that lookup as `inapplicable`.
 
 ## JSON mode
 
@@ -281,9 +288,11 @@ biomcp --json search gwas --trait "type 2 diabetes"
 
 JSON records requested `predict`, `cancerhotspots`, `civic`, `cbioportal`, and
 `gwas` source states in `section_outcomes`; `_meta.section_sources` projects the
-same state and successful providers. A checked Cancer Hotspots no-match is
-`empty`, while a source failure is `unavailable` and receives no provider
-credit.
+same state and successful providers. If genomic coordinates, a gene/protein
+change, a gene, or an rsID required by one of these lookups is absent, the result
+is `inapplicable`: no provider was contacted or credited, and the message names
+the missing prerequisite. A contacted Cancer Hotspots no-match is `empty`, while
+a source failure is `unavailable` and receives no provider credit.
 
 ## Practical tips
 

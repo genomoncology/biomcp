@@ -318,17 +318,32 @@ pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
     out.push('\n');
 
     out.push_str("## Domains (InterPro)\n\n");
-    if result.domains.is_empty() {
-        out.push_str("No overlapping InterPro domains found for the selected residue.\n\n");
-    } else {
-        for domain in &result.domains {
-            let name = domain.name.as_deref().unwrap_or("InterPro domain");
-            out.push_str(&format!(
-                "- {} ({}) {}-{}\n",
-                name, domain.accession, domain.start, domain.end
-            ));
+    let domains_outcome = result.lookup_outcomes.get("domains");
+    match domains_outcome.map(|outcome| outcome.outcome()) {
+        Some(SectionOutcomeState::Data) => {
+            for domain in &result.domains {
+                let name = domain.name.as_deref().unwrap_or("InterPro domain");
+                out.push_str(&format!(
+                    "- {} ({}) {}-{}\n",
+                    name, domain.accession, domain.start, domain.end
+                ));
+            }
+            out.push('\n');
         }
-        out.push('\n');
+        Some(SectionOutcomeState::Empty) => {
+            out.push_str("No overlapping InterPro domains found for the selected residue.\n\n");
+        }
+        Some(
+            SectionOutcomeState::Inapplicable
+            | SectionOutcomeState::Degraded
+            | SectionOutcomeState::Unavailable,
+        ) => {
+            if let Some(message) = domains_outcome.and_then(|outcome| outcome.message()) {
+                out.push_str(message);
+                out.push_str("\n\n");
+            }
+        }
+        Some(SectionOutcomeState::NotRequested) | None => {}
     }
 
     out.push_str("## Structures (PDB / AlphaFold)\n\n");
@@ -355,14 +370,37 @@ pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
     out.push('\n');
 
     out.push_str("## Cancerhotspots\n\n");
-    out.push_str(&format!("Source: {}\n", result.cancerhotspots.source));
-    if let Some(count) = result.cancerhotspots.position_count {
-        out.push_str(&format!("Position count: {count}\n"));
+    let hotspots_outcome = result.lookup_outcomes.get("cancerhotspots");
+    match hotspots_outcome.map(|outcome| outcome.outcome()) {
+        Some(SectionOutcomeState::Data | SectionOutcomeState::Empty) => {
+            if let Some(recurrence) = result.cancerhotspots.as_ref() {
+                out.push_str(&format!("Source: {}\n", recurrence.source));
+                if let Some(count) = recurrence.position_count {
+                    out.push_str(&format!("Position count: {count}\n"));
+                }
+                if let Some(count) = recurrence.same_aa_count {
+                    out.push_str(&format!("Same amino-acid count: {count}\n"));
+                }
+                if hotspots_outcome
+                    .is_some_and(|outcome| outcome.outcome() == SectionOutcomeState::Empty)
+                {
+                    out.push_str("No Cancer Hotspots recurrence match was found.\n");
+                }
+            }
+            out.push('\n');
+        }
+        Some(
+            SectionOutcomeState::Inapplicable
+            | SectionOutcomeState::Degraded
+            | SectionOutcomeState::Unavailable,
+        ) => {
+            if let Some(message) = hotspots_outcome.and_then(|outcome| outcome.message()) {
+                out.push_str(message);
+                out.push_str("\n\n");
+            }
+        }
+        Some(SectionOutcomeState::NotRequested) | None => {}
     }
-    if let Some(count) = result.cancerhotspots.same_aa_count {
-        out.push_str(&format!("Same amino-acid count: {count}\n"));
-    }
-    out.push('\n');
 
     if !result.warnings.is_empty() {
         out.push_str("## Warnings\n\n");

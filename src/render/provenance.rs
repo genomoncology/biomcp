@@ -37,7 +37,9 @@ impl SectionSource {
             || (sources.is_empty()
                 && !matches!(
                     self.outcome,
-                    SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+                    SectionOutcomeState::Inapplicable
+                        | SectionOutcomeState::Degraded
+                        | SectionOutcomeState::Unavailable
                 ))
         {
             return None;
@@ -501,20 +503,6 @@ pub(crate) fn disease_section_sources(disease: &Disease) -> Vec<SectionSource> {
     );
     push_section(
         &mut out,
-        !disease.treatment_landscape.is_empty(),
-        "treatments",
-        "Treatments",
-        ["MyChem.info indication search"],
-    );
-    push_section(
-        &mut out,
-        disease.recruiting_trial_count.is_some(),
-        "recruiting_trials",
-        "Recruiting Trials",
-        ["ClinicalTrials.gov"],
-    );
-    push_section(
-        &mut out,
         !disease.associated_genes.is_empty() || !disease.gene_associations.is_empty(),
         "associated_genes",
         "Associated Genes",
@@ -524,6 +512,8 @@ pub(crate) fn disease_section_sources(disease: &Disease) -> Vec<SectionSource> {
         "disease",
         &disease.section_outcomes,
         &[
+            ("treatments", "Treatments"),
+            ("recruiting_trials", "Recruiting Trials"),
             ("genes", "Genes"),
             ("pathways", "Pathways"),
             ("phenotypes", "Phenotypes"),
