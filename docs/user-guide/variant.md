@@ -51,6 +51,20 @@ With population and score filters:
 biomcp search variant -g BRCA1 --max-frequency 0.01 --min-cadd 20 --limit 5
 ```
 
+Consequence, ClinVar review-status, and field-presence filters can be combined:
+
+```bash
+biomcp search variant -g BRAF --consequence missense_variant --limit 5
+biomcp search variant -g BRCA1 --review-status 2 --limit 5
+biomcp search variant -g BRAF --has revel --limit 5
+biomcp search variant -g BRAF --missing revel --limit 5
+```
+
+`--has` and `--missing` accept `cadd`, `revel`, `gerp`, `clinvar`, `gnomad`,
+`dbsnp`, `snpeff`, `civic`, and `cosmic`. Unsupported consequence,
+review-status, or field values exit with a typed `invalid_argument` error rather
+than reporting an empty successful search.
+
 CADD and GERP thresholds must be finite. Results filtered with `--gerp-min`
 include the qualifying `gerp` score in each row.
 

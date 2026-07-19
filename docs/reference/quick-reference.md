@@ -283,15 +283,34 @@ Use these with `biomcp search variant --consequence <value>`.
 | Consequence value | Description |
 |-------------------|-------------|
 | missense_variant | Amino acid substitution |
-| nonsense_variant | Introduces stop codon |
 | synonymous_variant | No amino acid change |
 | frameshift_variant | Reading-frame disruption |
-| splice_acceptor_variant | Splice acceptor disruption |
-| splice_donor_variant | Splice donor disruption |
-| inframe_deletion | In-frame codon deletion |
-| inframe_insertion | In-frame codon insertion |
+| nonsense_variant | Public alias for `stop_gained` |
+| stop_gained | Introduces a stop codon |
 | stop_lost | Stop codon removed |
 | start_lost | Start codon removed |
+| splice_acceptor_variant | Splice acceptor disruption |
+| splice_donor_variant | Splice donor disruption |
+| inframe_insertion | In-frame codon insertion |
+| inframe_deletion | In-frame codon deletion |
+| intron_variant | Intronic change |
+| upstream_gene_variant | Change upstream of a gene |
+| downstream_gene_variant | Change downstream of a gene |
+| non_coding_transcript_variant | Change in a non-coding transcript |
+
+## Variant review-status values
+
+Use `0` through `4` (also accepted as `<N>_star` or `<N>_stars`) with
+`biomcp search variant --review-status <value>`. Named aliases are `none` for
+zero stars, `expert_panel` for three stars, and `criteria_provided` for the
+broader criteria-provided match.
+
+## Variant field-presence values
+
+Both `--has` and `--missing` accept the same stable aliases:
+`cadd`, `revel`, `gerp`, `clinvar`, `gnomad`, `dbsnp`, `snpeff`, `civic`, and
+`cosmic`. Unknown consequence, review-status, or field aliases return a typed
+`invalid_argument` error.
 
 ## Related references
 

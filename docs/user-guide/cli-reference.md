@@ -284,7 +284,15 @@ callers.
 
 ```bash
 biomcp search variant -g BRAF --hgvsp V600E --limit 5 --offset 0
+biomcp search variant -g BRAF --consequence missense_variant --limit 5
+biomcp search variant -g BRCA1 --review-status 2 --limit 5
+biomcp search variant -g BRAF --has revel --limit 5
+biomcp search variant -g BRAF --missing revel --limit 5
 ```
+
+Consequence, review-status, and `--has`/`--missing` values use the stable
+vocabularies printed by `biomcp list variant`. Unknown values fail with a typed
+`invalid_argument` error instead of returning a successful empty search.
 
 ### Drug
 

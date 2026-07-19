@@ -116,6 +116,7 @@ const CONSEQUENCE_VALUES: &[&str] = &[
     "missense_variant",
     "synonymous_variant",
     "frameshift_variant",
+    "nonsense_variant",
     "stop_gained",
     "stop_lost",
     "start_lost",
@@ -127,7 +128,31 @@ const CONSEQUENCE_VALUES: &[&str] = &[
     "upstream_gene_variant",
     "downstream_gene_variant",
     "non_coding_transcript_variant",
-    "protein_altering_variant",
+];
+
+const REVIEW_STATUS_VALUES: &[&str] = &[
+    "0",
+    "0_star",
+    "0_stars",
+    "none",
+    "1",
+    "1_star",
+    "1_stars",
+    "2",
+    "2_star",
+    "2_stars",
+    "3",
+    "3_star",
+    "3_stars",
+    "expert_panel",
+    "4",
+    "4_star",
+    "4_stars",
+    "criteria_provided",
+];
+
+const FIELD_VALUES: &[&str] = &[
+    "cadd", "revel", "gerp", "clinvar", "gnomad", "dbsnp", "snpeff", "civic", "cosmic",
 ];
 
 const POPULATION_VALUES: &[&str] = &["afr", "amr", "eas", "fin", "nfe", "sas", "asj", "oth"];
@@ -205,6 +230,7 @@ pub(crate) fn normalize_consequence_filter(value: &str) -> Result<String, BioMcp
         "nonsynonymous" | "non_synonymous" | "non_synonymous_variant" => {
             "missense_variant".to_string()
         }
+        "nonsense_variant" => "stop_gained".to_string(),
         "splice_acceptor" => "splice_acceptor_variant".to_string(),
         "splice_donor" => "splice_donor_variant".to_string(),
         "noncoding" | "non_coding" => "non_coding_transcript_variant".to_string(),
@@ -261,16 +287,46 @@ pub(crate) fn normalize_review_status_filter(value: &str) -> Result<String, BioM
             "--review-status must not be empty".into(),
         ));
     }
-    let lowered = raw.to_ascii_lowercase();
-    let normalized = match lowered.as_str() {
-        "0" | "0_star" | "0_stars" | "none" => "no_assertion_criteria_provided",
-        "1" | "1_star" | "1_stars" => "criteria_provided_single_submitter",
-        "2" | "2_star" | "2_stars" => "criteria_provided_multiple_submitters_no_conflicts",
-        "3" | "3_star" | "3_stars" => "reviewed_by_expert_panel",
-        "4" | "4_star" | "4_stars" => "practice_guideline",
-        other => other,
+    let key = normalize_filter_key(raw);
+    let normalized = match key.as_str() {
+        "0" | "0_star" | "0_stars" | "none" => "no assertion criteria provided",
+        "1" | "1_star" | "1_stars" => "criteria provided, single submitter",
+        "2" | "2_star" | "2_stars" => "criteria provided, multiple submitters, no conflicts",
+        "3" | "3_star" | "3_stars" | "expert_panel" => "reviewed by expert panel",
+        "4" | "4_star" | "4_stars" => "practice guideline",
+        "criteria_provided" => "criteria provided",
+        _ => {
+            return Err(invalid_filter_error(
+                "--review-status",
+                raw,
+                REVIEW_STATUS_VALUES,
+            ));
+        }
     };
     Ok(normalized.to_string())
+}
+
+fn field_presence_expression(flag: &str, value: &str) -> Result<&'static str, BioMcpError> {
+    let raw = value.trim();
+    if raw.is_empty() {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "{flag} must not be empty"
+        )));
+    }
+    match normalize_filter_key(raw).as_str() {
+        "cadd" => Ok("_exists_:cadd"),
+        "revel" => Ok("_exists_:dbnsfp.revel.score"),
+        "gerp" => Ok("_exists_:dbnsfp.gerp++.rs"),
+        "clinvar" => Ok("_exists_:clinvar"),
+        "gnomad" => {
+            Ok("(_exists_:gnomad_exome OR _exists_:gnomad.exomes OR _exists_:gnomad.genomes)")
+        }
+        "dbsnp" => Ok("_exists_:dbsnp.rsid"),
+        "snpeff" => Ok("_exists_:snpeff.ann.effect"),
+        "civic" => Ok("_exists_:civic"),
+        "cosmic" => Ok("_exists_:cosmic"),
+        _ => Err(invalid_filter_error(flag, raw, FIELD_VALUES)),
+    }
 }
 
 impl MyVariantClient {
@@ -478,11 +534,8 @@ impl MyVariantClient {
             .map(str::trim)
             .filter(|v| !v.is_empty())
         {
-            let normalized = normalize_consequence_filter(consequence)?;
-            terms.push(format!(
-                "cadd.consequence:{}",
-                Self::escape_query_value(&normalized)
-            ));
+            let provider_term = normalize_consequence_filter(consequence)?;
+            terms.push(format!("snpeff.ann.effect:*{provider_term}*"));
         }
 
         if let Some(review_status) = params
@@ -491,10 +544,10 @@ impl MyVariantClient {
             .map(str::trim)
             .filter(|v| !v.is_empty())
         {
-            let normalized = normalize_review_status_filter(review_status)?;
+            let provider_phrase = normalize_review_status_filter(review_status)?;
             terms.push(format!(
-                "clinvar.rcv.review_status:{}",
-                Self::escape_query_value(&normalized)
+                "clinvar.rcv.review_status:\"{}\"",
+                Self::escape_query_value(&provider_phrase)
             ));
         }
 
@@ -564,22 +617,13 @@ impl MyVariantClient {
             terms.push("snpeff.lof.genename:*".to_string());
         }
 
-        if let Some(has) = params
-            .has
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
-            terms.push(format!("_exists_:{}", Self::escape_query_value(has)));
+        if let Some(has) = params.has.as_deref() {
+            terms.push(field_presence_expression("--has", has)?.to_string());
         }
 
-        if let Some(missing) = params
-            .missing
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
-            terms.push(format!("_missing_:{}", Self::escape_query_value(missing)));
+        if let Some(missing) = params.missing.as_deref() {
+            let expression = field_presence_expression("--missing", missing)?;
+            terms.push(format!("NOT {expression}"));
         }
 
         if let Some(therapy) = params
