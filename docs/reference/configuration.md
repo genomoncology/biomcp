@@ -104,9 +104,12 @@ Internal cBioPortal fixture/source-selection seams include
 - `biomcp health --apis-only` reports API/source connectivity and excluded
   key-gated rows; full `biomcp health` also reports local runtime data and cache
   readiness.
-- Optional entity sections expose `section_outcomes` in JSON/MCP. `empty` is a
+- Optional entity lookups expose typed outcomes in JSON/MCP. `inapplicable`
+  means a required input was absent and no provider was contacted; `empty` is a
   successful zero-result query; `unavailable` means retrieval produced no usable
-  result; `degraded` preserves partial evidence. `_meta.section_sources` repeats
-  requested outcomes and credits only providers that returned usable evidence.
+  result; and `degraded` preserves partial evidence. `_meta.section_sources`
+  repeats requested section outcomes and credits only providers that returned
+  usable evidence. Outcome-only helpers such as `variant structure` may expose
+  the same state model on their documented status surface.
 - `SourceUnavailable` means the source is supported but temporarily unavailable.
   It is distinct from unsupported sections or invalid command grammar.

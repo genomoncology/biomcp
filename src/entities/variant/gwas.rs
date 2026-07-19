@@ -432,9 +432,10 @@ pub(in crate::entities::variant) async fn add_gwas_section(
         .or(fallback_rsid);
 
     let Some(rsid) = rsid else {
-        variant
-            .section_outcomes
-            .complete("gwas", SectionOutcome::empty("GWAS Catalog"));
+        variant.section_outcomes.complete(
+            "gwas",
+            SectionOutcome::inapplicable("An rsID is required for GWAS associations."),
+        );
         return Ok(());
     };
 

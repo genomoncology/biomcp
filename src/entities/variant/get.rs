@@ -446,9 +446,10 @@ const VARIANT_SOURCE_UNAVAILABLE: &str =
 
 async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
     let Some(caps) = hgvs_coords_re().captures(&variant.id) else {
-        variant
-            .section_outcomes
-            .complete("predict", SectionOutcome::empty("AlphaGenome"));
+        variant.section_outcomes.complete(
+            "predict",
+            SectionOutcome::inapplicable("Genomic coordinates are required for prediction."),
+        );
         return Ok(());
     };
 
@@ -508,26 +509,28 @@ async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
 }
 
 async fn add_cancerhotspots(variant: &mut Variant, id_format: &VariantIdFormat) {
+    let inapplicable = || {
+        SectionOutcome::inapplicable(
+            "A gene and normalizable protein change are required for Cancer Hotspots.",
+        )
+    };
     let VariantIdFormat::GeneProteinChange { gene, change } = id_format else {
-        variant.section_outcomes.complete(
-            "cancerhotspots",
-            SectionOutcome::empty("cancerhotspots.org"),
-        );
+        variant
+            .section_outcomes
+            .complete("cancerhotspots", inapplicable());
         return;
     };
     let Some(normalized_change) = super::normalize_protein_change(change) else {
-        variant.section_outcomes.complete(
-            "cancerhotspots",
-            SectionOutcome::empty("cancerhotspots.org"),
-        );
+        variant
+            .section_outcomes
+            .complete("cancerhotspots", inapplicable());
         return;
     };
     let gene = gene.trim();
     if gene.is_empty() {
-        variant.section_outcomes.complete(
-            "cancerhotspots",
-            SectionOutcome::empty("cancerhotspots.org"),
-        );
+        variant
+            .section_outcomes
+            .complete("cancerhotspots", inapplicable());
         return;
     }
 
@@ -583,9 +586,10 @@ fn apply_cancerhotspots_result(
 async fn add_cbioportal(variant: &mut Variant) {
     let gene = variant.gene.trim();
     if gene.is_empty() {
-        variant
-            .section_outcomes
-            .complete("cbioportal", SectionOutcome::empty("cBioPortal"));
+        variant.section_outcomes.complete(
+            "cbioportal",
+            SectionOutcome::inapplicable("A gene is required for cancer frequency lookup."),
+        );
         return;
     }
 
@@ -635,9 +639,12 @@ fn civic_molecular_profile_name(variant: &Variant) -> Option<String> {
 
 async fn add_civic(variant: &mut Variant) {
     let Some(molecular_profile_name) = civic_molecular_profile_name(variant) else {
-        variant
-            .section_outcomes
-            .complete("civic", SectionOutcome::empty("CIViC"));
+        variant.section_outcomes.complete(
+            "civic",
+            SectionOutcome::inapplicable(
+                "A gene and protein change are required for clinical evidence lookup.",
+            ),
+        );
         return;
     };
 

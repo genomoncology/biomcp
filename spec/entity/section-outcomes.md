@@ -51,3 +51,22 @@ A base drug card does not call Drugs@FDA. Its registry records that omission as
   | jq '(.section_outcomes.approvals == {"outcome":"not_requested","sources":[]}) and (._meta.section_sources | any(.key == "approvals") | not)' \
   | mustmatch 'true'
 ```
+
+## Inapplicable lookups do not credit providers
+
+A requested enrichment cannot run when the resolved variant lacks that source's
+required identifier. BioMCP reports the local applicability decision without
+claiming that the uncontacted provider returned an empty result.
+
+| input | section | uncontacted provider | str:label |
+|---|---|---|---|
+| rs589000 | predict | AlphaGenome | prediction needs genomic coordinates |
+| rs589001 | cbioportal | cBioPortal | cBioPortal needs a gene |
+| rs589001 | civic | CIViC | CIViC needs a molecular profile |
+| chr7:g.140453136A>T | gwas | GWAS Catalog | GWAS needs an rsID |
+
+```bash each_row="Inapplicable lookups do not credit providers"
+biomcp --json --no-cache get variant '{{input}}' {{section}} \
+  | jq '(.section_outcomes["{{section}}"].outcome == "inapplicable") and (.section_outcomes["{{section}}"].sources == []) and (((.section_outcomes["{{section}}"].message // "") | length) > 0) and (._meta.section_sources | any(.key == "{{section}}" and .outcome == "inapplicable" and .sources == [])) and (._meta.section_sources | all(.sources | index("{{uncontacted_provider}}") | not))' \
+  | mustmatch 'true'
+```

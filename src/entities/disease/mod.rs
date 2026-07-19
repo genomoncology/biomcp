@@ -290,6 +290,8 @@ pub struct DiseaseSearchFilters {
     pub onset: Option<String>,
 }
 
+const DISEASE_SECTION_TREATMENTS: &str = "treatments";
+const DISEASE_SECTION_RECRUITING_TRIALS: &str = "recruiting_trials";
 const DISEASE_SECTION_GENES: &str = "genes";
 const DISEASE_SECTION_PATHWAYS: &str = "pathways";
 const DISEASE_SECTION_PHENOTYPES: &str = "phenotypes";

@@ -418,12 +418,21 @@ source-specific notes and identifiers.
 
 Optional source-backed sections across gene, article, pathway, protein, drug,
 adverse-event search, disease, variant, PGx, and diagnostic entities use an
-entity-owned `section_outcomes` registry. Its states are
-`not_requested`, `data`, `empty`, `degraded`, and `unavailable`. `empty` means a
-healthy source confirmed zero rows; `unavailable` means no usable result was
-obtained. `sources` credits only providers that returned usable evidence, so an
-unavailable section has no successful source credit. `_meta.section_sources`
-copies requested outcomes from this registry and omits `not_requested` entries.
+entity-owned `section_outcomes` registry. Its six states are `not_requested`,
+`inapplicable`, `data`, `empty`, `degraded`, and `unavailable`. `inapplicable`
+means BioMCP determined locally that a required input was absent and did not
+contact the provider; it has empty `sources` and a safe explanatory message.
+`empty` means a healthy source confirmed zero rows; `unavailable` means no usable
+result was obtained. `sources` credits only providers that returned usable
+evidence, so inapplicable and unavailable outcomes have no successful source
+credit. `_meta.section_sources` omits `not_requested` but preserves source-less
+`inapplicable` entries.
+
+Automatic disease treatment/trial enrichments and the optional lookups in
+`variant structure` use the same algebra through outcome-only registry rows.
+Their owning enrichment/helper completes each outcome after deciding whether a
+provider was applicable and contacted. `variant structure` exposes those rows in
+top-level `lookup_outcomes` rather than `_meta.section_sources`.
 
 <!-- source-state-registry:start -->
 | entity | section | selector class | aggregation | allowed successful providers | rendering |
@@ -460,6 +469,8 @@ copies requested outcomes from this registry and omits `not_requested` entries.
 | drug | civic | canonical | fallback | CIViC | `civic` outcome and provenance projection |
 | adverse_event | faers | outcome-only | additive | OpenFDA FAERS | `faers` outcome and provenance projection |
 | adverse_event | vaers | outcome-only | additive | CDC CVX / CDC VAERS | `vaers` outcome and provenance projection |
+| disease | treatments | outcome-only | fallback | MyChem.info indication search | `treatments` outcome and provenance projection |
+| disease | recruiting_trials | outcome-only | fallback | ClinicalTrials.gov | `recruiting_trials` outcome and provenance projection |
 | disease | genes | canonical | additive | Monarch Initiative / CIViC / Open Targets | `genes` outcome and provenance projection |
 | disease | pathways | canonical | additive | Reactome | `pathways` outcome and provenance projection |
 | disease | phenotypes | canonical | additive | MyDisease.info / Monarch Initiative / HPO | `phenotypes` outcome and provenance projection |
@@ -470,6 +481,8 @@ copies requested outcomes from this registry and omits `not_requested` entries.
 | disease | survival | canonical | fallback | SEER Explorer | `survival` outcome and provenance projection |
 | disease | funding | canonical | additive | NIH Reporter | `funding` outcome and provenance projection |
 | disease | civic | canonical | fallback | CIViC | `civic` outcome and provenance projection |
+| variant_structure | domains | outcome-only | fallback | InterPro | `domains` outcome and provenance projection |
+| variant_structure | cancerhotspots | outcome-only | fallback | cancerhotspots.org | `cancerhotspots` outcome and provenance projection |
 | variant | predict | canonical | fallback | AlphaGenome | `predict` outcome and provenance projection |
 | variant | cancerhotspots | outcome-only | fallback | cancerhotspots.org | `cancerhotspots` outcome and provenance projection |
 | variant | civic | canonical | fallback | CIViC | `civic` outcome and provenance projection |
@@ -519,8 +532,9 @@ shape is entity-specific.
 - Follow the owning entity's established timeout constant and section pattern.
   Current entities use values such as 8 seconds for gene, disease, and variant
   enrichments, and 10 seconds for PGx enrichment.
-- If a prerequisite identifier is missing, prefer an empty/default/note result
-  for optional sections over a hard failure.
+- If a prerequisite identifier is missing, return the compatible empty/default
+  field with an `inapplicable` outcome and no provider credit rather than a hard
+  failure or a source-credited `empty` outcome.
 - On upstream failure or timeout, treat supported sections as unavailable, not
   unsupported, and warn and degrade gracefully in the shape that matches the
   entity: default section structs, empty collections, omitted optional fields,

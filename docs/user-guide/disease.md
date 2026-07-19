@@ -38,6 +38,14 @@ The default disease card's `More:` block keeps `genes`, `pathways`, and
 `phenotypes` visible while also surfacing `survival` and `funding` so those
 opt-in sections stay discoverable from the base card.
 
+Treatment suggestions and recruiting-trial counts are automatic base-card
+enrichments. JSON records their status as `section_outcomes.treatments` and
+`section_outcomes.recruiting_trials`. A missing usable disease name is
+`inapplicable`; a healthy treatment miss is `empty`; returned treatments or any
+returned trial count (including zero) are `data`; and provider failure is
+`unavailable` with no source credit. These optional failures remain visible in
+JSON provenance and Markdown but do not make the base disease command fail.
+
 ## Disease sections
 
 Genes (Monarch-backed rows plus additive CIViC and OpenTargets disease-gene associations; OpenTargets scores attach to any rendered row with a matching target score):
