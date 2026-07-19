@@ -13,6 +13,7 @@ use crate::transform;
 use crate::utils::date::validate_since;
 
 use super::super::{TrialCount, TrialSearchFilters, TrialSearchResult, TrialSource};
+use super::eligibility::ctgov_nct_id;
 use super::{
     CtGovSearchContext, build_essie_fragments, essie_escape, essie_escape_boolean_expression,
     normalize_sex, normalize_sponsor_type, prepare_ctgov_search_context, quote_essie_literal,
@@ -257,7 +258,7 @@ async fn apply_ctgov_post_filters(
 }
 
 #[derive(Debug)]
-struct CtGovFilteredPage {
+struct CtGovRawPage {
     total_count: Option<usize>,
     studies: Vec<CtGovStudy>,
     next_page_token: Option<String>,
@@ -346,7 +347,7 @@ fn fanout_next_page_error() -> BioMcpError {
     )
 }
 
-async fn fetch_ctgov_filtered_page(
+async fn fetch_ctgov_raw_page(
     client: &ClinicalTrialsClient,
     filters: &TrialSearchFilters,
     context: &CtGovSearchContext,
@@ -354,7 +355,7 @@ async fn fetch_ctgov_filtered_page(
     intervention_query: Option<&str>,
     page_token: Option<String>,
     page_size: usize,
-) -> Result<CtGovFilteredPage, BioMcpError> {
+) -> Result<CtGovRawPage, BioMcpError> {
     let count_total = !filters.no_count_total;
     let resp = client
         .search(&build_ctgov_search_params(
@@ -368,26 +369,44 @@ async fn fetch_ctgov_filtered_page(
         ))
         .await?;
 
-    let raw_study_count = resp.studies.len();
-    let studies = if raw_study_count == 0 {
-        Vec::new()
-    } else {
-        apply_ctgov_post_filters(client, filters, context, resp.studies).await
-    };
-
-    Ok(CtGovFilteredPage {
+    Ok(CtGovRawPage {
         total_count: resp.total_count.map(|value| value as usize),
-        studies,
+        raw_study_count: resp.studies.len(),
+        studies: resp.studies,
         next_page_token: resp.next_page_token,
-        raw_study_count,
     })
+}
+
+async fn fetch_ctgov_filtered_page(
+    client: &ClinicalTrialsClient,
+    filters: &TrialSearchFilters,
+    context: &CtGovSearchContext,
+    condition_query: Option<&str>,
+    intervention_query: Option<&str>,
+    page_token: Option<String>,
+    page_size: usize,
+) -> Result<CtGovRawPage, BioMcpError> {
+    let mut page = fetch_ctgov_raw_page(
+        client,
+        filters,
+        context,
+        condition_query,
+        intervention_query,
+        page_token,
+        page_size,
+    )
+    .await?;
+    if page.raw_study_count > 0 {
+        page.studies = apply_ctgov_post_filters(client, filters, context, page.studies).await;
+    }
+    Ok(page)
 }
 
 fn handle_ctgov_worker_outcome(
     worker_index: usize,
     worker: &CtGovWorkerState,
-    result: Result<CtGovFilteredPage, BioMcpError>,
-) -> Result<Option<CtGovFilteredPage>, BioMcpError> {
+    result: Result<CtGovRawPage, BioMcpError>,
+) -> Result<Option<CtGovRawPage>, BioMcpError> {
     match result {
         Ok(page) => Ok(Some(page)),
         Err(BioMcpError::WithSourceContext { context, source }) => {
@@ -413,7 +432,7 @@ fn apply_ctgov_single_page(
     context: &CtGovSearchContext,
     worker: &CtGovWorkerState,
     limit: usize,
-    page: CtGovFilteredPage,
+    page: CtGovRawPage,
 ) {
     if state.total.is_none() {
         state.total = page.total_count;
@@ -572,7 +591,7 @@ fn ctgov_workers(
 fn push_ctgov_union_rows(
     merged_rows: &mut Vec<TrialSearchResult>,
     merged_index: &mut HashMap<String, usize>,
-    worker: &CtGovWorkerState,
+    matched_labels: &HashMap<String, Option<String>>,
     studies: Vec<CtGovStudy>,
 ) {
     for study in studies {
@@ -580,7 +599,7 @@ fn push_ctgov_union_rows(
         if merged_index.contains_key(&row.nct_id) {
             continue;
         }
-        row.matched_intervention_label = worker.matched_intervention_label.clone();
+        row.matched_intervention_label = matched_labels.get(&row.nct_id).cloned().flatten();
         merged_index.insert(row.nct_id.clone(), merged_rows.len());
         merged_rows.push(row);
     }
@@ -648,6 +667,8 @@ async fn search_page_with_ctgov_union(
     let mut workers = ctgov_workers(condition_query, intervention_aliases);
     let mut merged_rows: Vec<TrialSearchResult> = Vec::new();
     let mut merged_index: HashMap<String, usize> = HashMap::new();
+    let mut seen_nct_ids: HashSet<String> = HashSet::new();
+    let mut matched_labels: HashMap<String, Option<String>> = HashMap::new();
     let mut traversal_capped = false;
     let mut degraded_coverage = false;
 
@@ -663,7 +684,7 @@ async fn search_page_with_ctgov_union(
 
         let pages = join_all(active_indices.iter().map(|index| {
             let worker = &workers[*index];
-            fetch_ctgov_filtered_page(
+            fetch_ctgov_raw_page(
                 client,
                 filters,
                 context,
@@ -674,6 +695,7 @@ async fn search_page_with_ctgov_union(
             )
         }))
         .await;
+        let mut round_studies = Vec::new();
 
         for (index, page_result) in active_indices.into_iter().zip(pages) {
             let Some(page) = handle_ctgov_worker_outcome(index, &workers[index], page_result)?
@@ -691,7 +713,13 @@ async fn search_page_with_ctgov_union(
                 continue;
             }
 
-            push_ctgov_union_rows(&mut merged_rows, &mut merged_index, worker, page.studies);
+            for study in page.studies {
+                let nct_id = ctgov_nct_id(&study).unwrap_or_default();
+                if seen_nct_ids.insert(nct_id.clone()) {
+                    matched_labels.insert(nct_id, worker.matched_intervention_label.clone());
+                    round_studies.push(study);
+                }
+            }
 
             worker.next_page_token = page.next_page_token;
             if worker.next_page_token.is_none() {
@@ -703,6 +731,15 @@ async fn search_page_with_ctgov_union(
                 traversal_capped = true;
             }
         }
+
+        let verified_studies =
+            apply_ctgov_post_filters(client, filters, context, round_studies).await;
+        push_ctgov_union_rows(
+            &mut merged_rows,
+            &mut merged_index,
+            &matched_labels,
+            verified_studies,
+        );
 
         if merged_rows.len() >= offset.saturating_add(limit) {
             break;
@@ -787,6 +824,7 @@ async fn count_all_with_ctgov_union(
     intervention_aliases: &[TrialAlias],
 ) -> Result<TrialCount, BioMcpError> {
     let mut workers = ctgov_workers(condition_query, intervention_aliases);
+    let mut seen_nct_ids: HashSet<String> = HashSet::new();
     let mut unique_nct_ids: HashSet<String> = HashSet::new();
     let mut fetched_pages = 0usize;
     let mut degraded_coverage = false;
@@ -810,7 +848,7 @@ async fn count_all_with_ctgov_union(
 
         let pages = join_all(active_indices.iter().map(|index| {
             let worker = &workers[*index];
-            fetch_ctgov_filtered_page(
+            fetch_ctgov_raw_page(
                 client,
                 filters,
                 context,
@@ -822,6 +860,7 @@ async fn count_all_with_ctgov_union(
         }))
         .await;
         fetched_pages = fetched_pages.saturating_add(active_indices.len());
+        let mut round_studies = Vec::new();
 
         for (index, page_result) in active_indices.into_iter().zip(pages) {
             let Some(page) = handle_ctgov_worker_outcome(index, &workers[index], page_result)?
@@ -839,13 +878,22 @@ async fn count_all_with_ctgov_union(
                 continue;
             }
 
-            add_unique_ctgov_nct_ids(&mut unique_nct_ids, page.studies);
+            for study in page.studies {
+                let nct_id = ctgov_nct_id(&study).unwrap_or_default();
+                if seen_nct_ids.insert(nct_id) {
+                    round_studies.push(study);
+                }
+            }
 
             worker.next_page_token = page.next_page_token;
             if worker.next_page_token.is_none() {
                 worker.exhausted = true;
             }
         }
+
+        let verified_studies =
+            apply_ctgov_post_filters(client, filters, context, round_studies).await;
+        add_unique_ctgov_nct_ids(&mut unique_nct_ids, verified_studies);
     }
 }
 

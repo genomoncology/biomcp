@@ -22,9 +22,9 @@ fn filtered_page(
     studies: Vec<serde_json::Value>,
     next_page_token: Option<&str>,
     total_count: Option<usize>,
-) -> CtGovFilteredPage {
+) -> CtGovRawPage {
     let raw_study_count = studies.len();
-    CtGovFilteredPage {
+    CtGovRawPage {
         total_count,
         studies: ctgov_studies(studies),
         next_page_token: next_page_token.map(str::to_string),
