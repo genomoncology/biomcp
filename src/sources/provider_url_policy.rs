@@ -449,6 +449,11 @@ mod tests {
                 .validate_addresses(["::127.0.0.1".parse().unwrap()])
                 .is_err()
         );
+        assert!(
+            policy
+                .validate_addresses(["::93.184.216.34".parse().unwrap()])
+                .is_ok()
+        );
     }
 
     #[test]
