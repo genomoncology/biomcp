@@ -12,9 +12,9 @@ must not turn one valid drug search into invalid CTGov query grammar.
 
 ```bash
 ../../spec/fixtures/ctgov-request-log run-with-mychem ../../tools/biomcp-ci --json search trial --intervention venetoclax --source ctgov --limit 5 \
-  | jq -r '.results[] | .matched_intervention_label' \
-  | mustmatch like 'venetoclax
-Venclexta'
+  | jq -r '.results[] | "\(.nct_id): \(.matched_intervention_label)"' \
+  | mustmatch 'NCT51000001: venetoclax
+NCT51000002: Venclexta'
 ```
 
 The requested name and useful trade alias are sent as quoted literal queries.

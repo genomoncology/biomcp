@@ -63,7 +63,7 @@ fn location_matches_facility_geo(
     haversine_miles(origin_lat, origin_lon, lat, lon) <= max_distance_miles as f64
 }
 
-fn ctgov_nct_id(study: &CtGovStudy) -> Option<String> {
+pub(super) fn ctgov_nct_id(study: &CtGovStudy) -> Option<String> {
     study
         .protocol_section
         .as_ref()

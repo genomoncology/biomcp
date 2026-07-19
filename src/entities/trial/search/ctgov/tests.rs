@@ -22,9 +22,9 @@ fn filtered_page(
     studies: Vec<serde_json::Value>,
     next_page_token: Option<&str>,
     total_count: Option<usize>,
-) -> CtGovFilteredPage {
+) -> CtGovRawPage {
     let raw_study_count = studies.len();
-    CtGovFilteredPage {
+    CtGovRawPage {
         total_count,
         studies: ctgov_studies(studies),
         next_page_token: next_page_token.map(str::to_string),
@@ -682,6 +682,43 @@ fn search_path_rejects_next_page_when_alias_expansion_uses_multiple_queries() {
     let err = fanout_next_page_error();
     assert!(err.to_string().contains("--next-page is not supported"));
     assert!(err.to_string().contains("--no-alias-expand"));
+}
+
+#[test]
+fn alias_union_does_not_claim_missing_nct_ids_before_filtering() {
+    let study = serde_json::from_value(ctgov_search_study_fixture("   ", "18 Years", "75 Years"))
+        .expect("study");
+    let mut seen_nct_ids = HashSet::new();
+
+    assert!(claim_ctgov_candidate(&mut seen_nct_ids, &study).is_some());
+    assert!(claim_ctgov_candidate(&mut seen_nct_ids, &study).is_some());
+    assert!(seen_nct_ids.is_empty());
+}
+
+#[test]
+fn alias_union_provenance_uses_the_claimed_normalized_nct_id() {
+    let study = serde_json::from_value(ctgov_search_study_fixture(
+        " NCT00000001 ",
+        "18 Years",
+        "75 Years",
+    ))
+    .expect("study");
+    let mut matched_labels = HashMap::new();
+    matched_labels.insert("NCT00000001".to_string(), Some("requested".to_string()));
+    let mut merged_rows = Vec::new();
+    let mut merged_index = HashMap::new();
+
+    push_ctgov_union_rows(
+        &mut merged_rows,
+        &mut merged_index,
+        &matched_labels,
+        vec![study],
+    );
+
+    assert_eq!(
+        merged_rows[0].matched_intervention_label.as_deref(),
+        Some("requested")
+    );
 }
 
 #[test]
