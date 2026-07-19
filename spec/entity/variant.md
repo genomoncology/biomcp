@@ -68,6 +68,30 @@ biomcp --json search variant --gene BRAF {{flag}}={{value}} --limit 1
 }
 ```
 
+## Variant filter vocabularies
+
+Review status and field-presence filters use documented vocabularies. Unknown
+values are rejected locally instead of being sent upstream and reported as a
+successful empty search.
+
+| str:flag | str:value | str:label |
+|---|---|---|
+| --review-status | bogus | unknown review status |
+| --has | not_a_real_field_zzz | unknown required field |
+| --missing | not_a_real_field_zzz | unknown missing field |
+
+```bash run id=invalid-variant-filter exit=2 each_row="Variant filter vocabularies"
+biomcp --json search variant --gene BRAF {{flag}} {{value}} --limit 1
+```
+
+```json expect=invalid-variant-filter contains each_row="Variant filter vocabularies"
+{
+  "error": {
+    "code": "invalid_argument"
+  }
+}
+```
+
 ## Coordinate Genome-Build Context
 
 <!-- mustmatch-lint: skip -->

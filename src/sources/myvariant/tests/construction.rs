@@ -298,26 +298,65 @@ fn search_plan_rejects_non_finite_min_cadd() {
 }
 
 #[test]
-fn search_plan_consequence_clause_uses_canonical_value() {
+fn search_plan_consequence_clause_uses_snpeff_effect() {
     let plan = MyVariantClient::search_plan(&VariantSearchParams {
         consequence: Some("missense".into()),
         ..params()
     })
     .unwrap();
-    assert_eq!(q(&plan), "cadd.consequence:missense_variant");
+    assert_eq!(q(&plan), "snpeff.ann.effect:*missense_variant*");
+
+    let splice_plan = MyVariantClient::search_plan(&VariantSearchParams {
+        consequence: Some("splice donor".into()),
+        ..params()
+    })
+    .unwrap();
+    assert_eq!(q(&splice_plan), "snpeff.ann.effect:*splice_donor_variant*");
 }
 
 #[test]
-fn search_plan_review_status_clause_maps_star_rating() {
+fn search_plan_rejects_unsupported_consequence() {
+    let err = MyVariantClient::search_plan(&VariantSearchParams {
+        consequence: Some("protein_altering_variant".into()),
+        ..params()
+    })
+    .unwrap_err();
+    assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    assert!(err.to_string().contains("--consequence"));
+}
+
+#[test]
+fn search_plan_review_status_clause_quotes_provider_phrase() {
     let plan = MyVariantClient::search_plan(&VariantSearchParams {
-        review_status: Some("3".into()),
+        review_status: Some("2".into()),
         ..params()
     })
     .unwrap();
     assert_eq!(
         q(&plan),
-        "clinvar.rcv.review_status:reviewed_by_expert_panel"
+        "clinvar.rcv.review_status:\"criteria provided, multiple submitters, no conflicts\""
     );
+
+    let expert_plan = MyVariantClient::search_plan(&VariantSearchParams {
+        review_status: Some("expert_panel".into()),
+        ..params()
+    })
+    .unwrap();
+    assert_eq!(
+        q(&expert_plan),
+        "clinvar.rcv.review_status:\"reviewed by expert panel\""
+    );
+}
+
+#[test]
+fn search_plan_rejects_unknown_review_status() {
+    let err = MyVariantClient::search_plan(&VariantSearchParams {
+        review_status: Some("bogus".into()),
+        ..params()
+    })
+    .unwrap_err();
+    assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    assert!(err.to_string().contains("--review-status"));
 }
 
 #[test]
@@ -391,11 +430,11 @@ fn search_plan_impact_clause_uppercases() {
 }
 
 #[test]
-fn search_plan_lof_has_missing_and_therapy_clauses() {
+fn search_plan_maps_field_aliases_for_presence_and_absence() {
     let plan = MyVariantClient::search_plan(&VariantSearchParams {
         lof: true,
         has: Some("clinvar".into()),
-        missing: Some("dbnsfp".into()),
+        missing: Some("revel".into()),
         therapy: Some("vemurafenib".into()),
         ..params()
     })
@@ -403,8 +442,35 @@ fn search_plan_lof_has_missing_and_therapy_clauses() {
     let query = q(&plan);
     assert!(query.contains("snpeff.lof.genename:*"));
     assert!(query.contains("_exists_:clinvar"));
-    assert!(query.contains("_missing_:dbnsfp"));
+    assert!(query.contains("NOT _exists_:dbnsfp.revel.score"));
     assert!(query.contains("civic.molecularProfiles.evidenceItems.therapies.name:\"vemurafenib\""));
+}
+
+#[test]
+fn search_plan_has_revel_uses_provider_field_path() {
+    let plan = MyVariantClient::search_plan(&VariantSearchParams {
+        has: Some("revel".into()),
+        ..params()
+    })
+    .unwrap();
+    assert_eq!(q(&plan), "_exists_:dbnsfp.revel.score");
+}
+
+#[test]
+fn search_plan_rejects_unknown_presence_and_absence_fields() {
+    for (has, missing) in [
+        (Some("not_a_real_field_zzz".into()), None),
+        (None, Some("not_a_real_field_zzz".into())),
+    ] {
+        let err = MyVariantClient::search_plan(&VariantSearchParams {
+            has,
+            missing,
+            ..params()
+        })
+        .unwrap_err();
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains("Expected one of"));
+    }
 }
 
 #[test]
@@ -551,24 +617,26 @@ fn impact_filter_uppercases_and_rejects_unknown_and_empty() {
 }
 
 #[test]
-fn review_status_filter_maps_stars_and_passes_through_other_and_rejects_empty() {
+fn review_status_filter_maps_stars_and_aliases_and_rejects_unknown_and_empty() {
     assert_eq!(
         normalize_review_status_filter("0").unwrap(),
-        "no_assertion_criteria_provided"
+        "no assertion criteria provided"
     );
     assert_eq!(
         normalize_review_status_filter("1_star").unwrap(),
-        "criteria_provided_single_submitter"
+        "criteria provided, single submitter"
     );
     assert_eq!(
         normalize_review_status_filter("4").unwrap(),
-        "practice_guideline"
+        "practice guideline"
     );
-    // unmapped values pass through verbatim (lowercased)
     assert_eq!(
-        normalize_review_status_filter("Some Custom Status").unwrap(),
-        "some custom status"
+        normalize_review_status_filter("expert_panel").unwrap(),
+        "reviewed by expert panel"
     );
+    let unknown = normalize_review_status_filter("Some Custom Status").unwrap_err();
+    assert!(unknown.to_string().contains("--review-status"));
+    assert!(unknown.to_string().contains("Expected one of"));
     let empty = normalize_review_status_filter("  ").unwrap_err();
     assert!(
         empty
