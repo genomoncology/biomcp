@@ -421,6 +421,73 @@ mod tests {
     }
 
     #[test]
+    fn rejects_cgnat_range_without_blocking_adjacent_public_addresses() {
+        let policy = pdf_policy();
+        for address in ["100.64.0.0", "100.127.255.255"] {
+            assert!(
+                policy
+                    .validate_addresses([address.parse().unwrap()])
+                    .is_err(),
+                "accepted CGNAT address {address}"
+            );
+        }
+        for address in ["100.63.255.255", "100.128.0.0"] {
+            assert!(
+                policy
+                    .validate_addresses([address.parse().unwrap()])
+                    .is_ok(),
+                "rejected public address adjacent to CGNAT {address}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_ipv4_compatible_ipv6_with_forbidden_embedded_address() {
+        let policy = pdf_policy();
+        assert!(
+            policy
+                .validate_addresses(["::127.0.0.1".parse().unwrap()])
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_nat64_with_forbidden_embedded_address() {
+        let policy = pdf_policy();
+        assert!(
+            policy
+                .validate_addresses(["64:ff9b::127.0.0.1".parse().unwrap()])
+                .is_err()
+        );
+        assert!(
+            policy
+                .validate_addresses(["64:ff9b::93.184.216.34".parse().unwrap()])
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn rejects_encoded_ipv4_literal_hosts_after_url_canonicalization() {
+        for raw in [
+            "https://2130706433/",
+            "https://0177.0.0.1/",
+            "https://0x7f000001/",
+            "https://0x7f.0.0.1/",
+        ] {
+            let url = Url::parse(raw).unwrap();
+            assert_eq!(url.host_str(), Some("127.0.0.1"));
+            let policy = ProviderUrlPolicy {
+                source: "test provider",
+                provider: SourceProvider::SEMANTIC_SCHOLAR,
+                allowed_origins: vec![AllowedOrigin::from_url(&url).unwrap()],
+                credential_origins: Vec::new(),
+                unsafe_test_origin: None,
+            };
+            assert!(policy.validate_url(&url).is_err(), "accepted {raw}");
+        }
+    }
+
+    #[test]
     fn consumer_matrix_enumerates_valid_origins_and_shared_rejections() {
         for consumer in ProviderUrlConsumer::ALL.iter().copied() {
             let (valid_url, expected_source) = match consumer {
