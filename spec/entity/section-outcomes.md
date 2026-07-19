@@ -61,7 +61,6 @@ claiming that the uncontacted provider returned an empty result.
 | input | section | uncontacted provider | str:label |
 |---|---|---|---|
 | rs589000 | predict | AlphaGenome | prediction needs genomic coordinates |
-| rs589000 | cancerhotspots | cancerhotspots.org | hotspots need a gene and protein change input |
 | rs589001 | cbioportal | cBioPortal | cBioPortal needs a gene |
 | rs589001 | civic | CIViC | CIViC needs a molecular profile |
 | chr7:g.140453136A>T | gwas | GWAS Catalog | GWAS needs an rsID |
