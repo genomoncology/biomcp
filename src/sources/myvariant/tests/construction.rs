@@ -298,26 +298,107 @@ fn search_plan_rejects_non_finite_min_cadd() {
 }
 
 #[test]
-fn search_plan_consequence_clause_uses_canonical_value() {
-    let plan = MyVariantClient::search_plan(&VariantSearchParams {
-        consequence: Some("missense".into()),
-        ..params()
-    })
-    .unwrap();
-    assert_eq!(q(&plan), "cadd.consequence:missense_variant");
+fn search_plan_consequence_clause_uses_snpeff_effect_for_every_supported_term() {
+    for (input, provider_term) in [
+        ("missense_variant", "missense_variant"),
+        ("synonymous_variant", "synonymous_variant"),
+        ("frameshift_variant", "frameshift_variant"),
+        ("nonsense_variant", "stop_gained"),
+        ("stop_gained", "stop_gained"),
+        ("stop_lost", "stop_lost"),
+        ("start_lost", "start_lost"),
+        ("splice_acceptor_variant", "splice_acceptor_variant"),
+        ("splice_donor_variant", "splice_donor_variant"),
+        ("inframe_insertion", "inframe_insertion"),
+        ("inframe_deletion", "inframe_deletion"),
+        ("intron_variant", "intron_variant"),
+        ("upstream_gene_variant", "upstream_gene_variant"),
+        ("downstream_gene_variant", "downstream_gene_variant"),
+        (
+            "non_coding_transcript_variant",
+            "non_coding_transcript_variant",
+        ),
+    ] {
+        let plan = MyVariantClient::search_plan(&VariantSearchParams {
+            consequence: Some(input.into()),
+            ..params()
+        })
+        .unwrap();
+        assert_eq!(
+            q(&plan),
+            format!("snpeff.ann.effect:*{provider_term}*"),
+            "input {input}"
+        );
+    }
 }
 
 #[test]
-fn search_plan_review_status_clause_maps_star_rating() {
-    let plan = MyVariantClient::search_plan(&VariantSearchParams {
-        review_status: Some("3".into()),
-        ..params()
-    })
-    .unwrap();
-    assert_eq!(
-        q(&plan),
-        "clinvar.rcv.review_status:reviewed_by_expert_panel"
-    );
+fn search_plan_rejects_invalid_consequence() {
+    for input in ["protein_altering_variant", "missense_variant*", ""] {
+        let err = MyVariantClient::search_plan(&VariantSearchParams {
+            gene: Some("BRAF".into()),
+            consequence: Some(input.into()),
+            ..params()
+        })
+        .unwrap_err();
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains("--consequence"), "input {input}");
+    }
+}
+
+#[test]
+fn search_plan_review_status_clause_quotes_provider_phrase_for_every_alias() {
+    for (input, provider_phrase) in [
+        ("0", "no assertion criteria provided"),
+        ("0_star", "no assertion criteria provided"),
+        ("0_stars", "no assertion criteria provided"),
+        ("none", "no assertion criteria provided"),
+        ("1", "criteria provided, single submitter"),
+        ("1_star", "criteria provided, single submitter"),
+        ("1_stars", "criteria provided, single submitter"),
+        ("2", "criteria provided, multiple submitters, no conflicts"),
+        (
+            "2_star",
+            "criteria provided, multiple submitters, no conflicts",
+        ),
+        (
+            "2_stars",
+            "criteria provided, multiple submitters, no conflicts",
+        ),
+        ("3", "reviewed by expert panel"),
+        ("3_star", "reviewed by expert panel"),
+        ("3_stars", "reviewed by expert panel"),
+        ("expert_panel", "reviewed by expert panel"),
+        ("4", "practice guideline"),
+        ("4_star", "practice guideline"),
+        ("4_stars", "practice guideline"),
+        ("criteria_provided", "criteria provided"),
+    ] {
+        let plan = MyVariantClient::search_plan(&VariantSearchParams {
+            review_status: Some(input.into()),
+            ..params()
+        })
+        .unwrap();
+        assert_eq!(
+            q(&plan),
+            format!("clinvar.rcv.review_status:\"{provider_phrase}\""),
+            "input {input}"
+        );
+    }
+}
+
+#[test]
+fn search_plan_rejects_invalid_review_status() {
+    for input in ["bogus", "2*", ""] {
+        let err = MyVariantClient::search_plan(&VariantSearchParams {
+            gene: Some("BRAF".into()),
+            review_status: Some(input.into()),
+            ..params()
+        })
+        .unwrap_err();
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains("--review-status"), "input {input}");
+    }
 }
 
 #[test]
@@ -391,11 +472,11 @@ fn search_plan_impact_clause_uppercases() {
 }
 
 #[test]
-fn search_plan_lof_has_missing_and_therapy_clauses() {
+fn search_plan_lof_has_missing_and_therapy_clauses_compose() {
     let plan = MyVariantClient::search_plan(&VariantSearchParams {
         lof: true,
         has: Some("clinvar".into()),
-        missing: Some("dbnsfp".into()),
+        missing: Some("revel".into()),
         therapy: Some("vemurafenib".into()),
         ..params()
     })
@@ -403,8 +484,67 @@ fn search_plan_lof_has_missing_and_therapy_clauses() {
     let query = q(&plan);
     assert!(query.contains("snpeff.lof.genename:*"));
     assert!(query.contains("_exists_:clinvar"));
-    assert!(query.contains("_missing_:dbnsfp"));
+    assert!(query.contains("NOT _exists_:dbnsfp.revel.score"));
     assert!(query.contains("civic.molecularProfiles.evidenceItems.therapies.name:\"vemurafenib\""));
+}
+
+#[test]
+fn search_plan_maps_field_aliases_for_presence_and_absence() {
+    let aliases = [
+        ("cadd", "_exists_:cadd"),
+        ("revel", "_exists_:dbnsfp.revel.score"),
+        ("gerp", "_exists_:dbnsfp.gerp++.rs"),
+        ("clinvar", "_exists_:clinvar"),
+        (
+            "gnomad",
+            "(_exists_:gnomad_exome OR _exists_:gnomad.exomes OR _exists_:gnomad.genomes)",
+        ),
+        ("dbsnp", "_exists_:dbsnp.rsid"),
+        ("snpeff", "_exists_:snpeff.ann.effect"),
+        ("civic", "_exists_:civic"),
+        ("cosmic", "_exists_:cosmic"),
+    ];
+    for &(alias, expression) in &aliases {
+        let plan = MyVariantClient::search_plan(&VariantSearchParams {
+            has: Some(alias.into()),
+            ..params()
+        })
+        .unwrap();
+        assert_eq!(q(&plan), expression, "presence alias {alias}");
+
+        let plan = MyVariantClient::search_plan(&VariantSearchParams {
+            missing: Some(alias.into()),
+            ..params()
+        })
+        .unwrap();
+        assert_eq!(
+            q(&plan),
+            format!("NOT {expression}"),
+            "absence alias {alias}"
+        );
+    }
+}
+
+#[test]
+fn search_plan_rejects_invalid_presence_and_absence_fields() {
+    for (has, missing) in [
+        (Some("not_a_real_field_zzz".into()), None),
+        (None, Some("not_a_real_field_zzz".into())),
+        (Some("revel:*".into()), None),
+        (None, Some("revel:*".into())),
+        (Some(String::new()), None),
+        (None, Some(String::new())),
+    ] {
+        let expected_flag = if has.is_some() { "--has" } else { "--missing" };
+        let err = MyVariantClient::search_plan(&VariantSearchParams {
+            has,
+            missing,
+            ..params()
+        })
+        .unwrap_err();
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains(expected_flag));
+    }
 }
 
 #[test]
@@ -551,24 +691,30 @@ fn impact_filter_uppercases_and_rejects_unknown_and_empty() {
 }
 
 #[test]
-fn review_status_filter_maps_stars_and_passes_through_other_and_rejects_empty() {
+fn review_status_filter_maps_stars_and_aliases_and_rejects_unknown_and_empty() {
     assert_eq!(
         normalize_review_status_filter("0").unwrap(),
-        "no_assertion_criteria_provided"
+        "no assertion criteria provided"
     );
     assert_eq!(
         normalize_review_status_filter("1_star").unwrap(),
-        "criteria_provided_single_submitter"
+        "criteria provided, single submitter"
     );
     assert_eq!(
         normalize_review_status_filter("4").unwrap(),
-        "practice_guideline"
+        "practice guideline"
     );
-    // unmapped values pass through verbatim (lowercased)
     assert_eq!(
-        normalize_review_status_filter("Some Custom Status").unwrap(),
-        "some custom status"
+        normalize_review_status_filter("expert_panel").unwrap(),
+        "reviewed by expert panel"
     );
+    assert_eq!(
+        normalize_review_status_filter("criteria_provided").unwrap(),
+        "criteria provided"
+    );
+    let unknown = normalize_review_status_filter("Some Custom Status").unwrap_err();
+    assert!(unknown.to_string().contains("--review-status"));
+    assert!(unknown.to_string().contains("Expected one of"));
     let empty = normalize_review_status_filter("  ").unwrap_err();
     assert!(
         empty

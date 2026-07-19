@@ -323,7 +323,7 @@ pub(super) fn resolve_variant_query(
 ) -> Result<VariantSearchPlan, crate::error::BioMcpError> {
     let gene_flag = normalize_cli_query(gene_flag);
     let hgvsp_flag = normalize_cli_query(hgvsp_flag).map(|value| normalize_search_hgvsp(&value));
-    let consequence_flag = normalize_cli_query(consequence_flag);
+    let consequence_flag = consequence_flag.map(|value| value.trim().to_string());
     let condition_flag = normalize_cli_query(condition_flag);
 
     let positional = positional_tokens

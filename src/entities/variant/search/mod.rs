@@ -43,64 +43,6 @@ fn search_result_quality_score(row: &VariantSearchResult) -> i32 {
     score
 }
 
-fn should_retry_exon_deletion_with_gene_only(filters: &VariantSearchFilters) -> bool {
-    filters
-        .gene
-        .as_deref()
-        .map(str::trim)
-        .is_some_and(|v| !v.is_empty())
-        && filters
-            .consequence
-            .as_deref()
-            .is_some_and(|v| v.eq_ignore_ascii_case("inframe_deletion"))
-        && filters
-            .hgvsp
-            .as_deref()
-            .map(str::trim)
-            .is_none_or(|v| v.is_empty())
-        && filters
-            .hgvsc
-            .as_deref()
-            .map(str::trim)
-            .is_none_or(|v| v.is_empty())
-        && filters
-            .rsid
-            .as_deref()
-            .map(str::trim)
-            .is_none_or(|v| v.is_empty())
-}
-
-fn exon_deletion_fallback_params(
-    filters: &VariantSearchFilters,
-    limit: usize,
-    offset: usize,
-) -> VariantSearchParams {
-    VariantSearchParams {
-        gene: filters.gene.clone(),
-        hgvsp: None,
-        hgvsc: None,
-        rsid: None,
-        protein_alias: None,
-        significance: filters.significance.clone(),
-        max_frequency: filters.max_frequency,
-        min_cadd: filters.min_cadd,
-        consequence: None,
-        review_status: filters.review_status.clone(),
-        population: filters.population.clone(),
-        revel_min: filters.revel_min,
-        gerp_min: filters.gerp_min,
-        tumor_site: filters.tumor_site.clone(),
-        condition: filters.condition.clone(),
-        impact: filters.impact.clone(),
-        lof: filters.lof,
-        has: filters.has.clone(),
-        missing: filters.missing.clone(),
-        therapy: filters.therapy.clone(),
-        limit,
-        offset,
-    }
-}
-
 pub fn search_query_summary(filters: &VariantSearchFilters) -> String {
     let mut parts: Vec<String> = Vec::new();
     if let Some(v) = filters
@@ -367,26 +309,13 @@ pub async fn search_page(
         .iter()
         .map(transform::variant::from_myvariant_search_hit)
         .collect::<Vec<_>>();
-    let total = if out.is_empty() && should_retry_exon_deletion_with_gene_only(filters) {
-        let fallback_resp = client
-            .search(&exon_deletion_fallback_params(filters, fetch_limit, offset))
-            .await?;
-        out = fallback_resp
-            .hits
-            .iter()
-            .map(transform::variant::from_myvariant_search_hit)
-            .collect::<Vec<_>>();
-        fallback_resp.total
-    } else {
-        resp.total
-    };
     out.sort_by(|a, b| {
         search_result_quality_score(b)
             .cmp(&search_result_quality_score(a))
             .then_with(|| a.id.cmp(&b.id))
     });
     out.truncate(limit);
-    Ok(SearchPage::offset(out, total))
+    Ok(SearchPage::offset(out, resp.total))
 }
 
 #[cfg(test)]

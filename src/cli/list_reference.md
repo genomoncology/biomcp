@@ -93,7 +93,15 @@ New to BioMCP? Try:
 
 ## Filter Highlights
 
-- `search variant ... --review-status --population --revel-min --gerp-min --tumor-site --condition --impact --lof --has --missing --therapy`
+- `search variant` filter highlights:
+  - `--review-status <0-4|N_star|N_stars|none|expert_panel|criteria_provided>`
+  - `--has` / `--missing`: `cadd|revel|gerp|clinvar|gnomad|dbsnp|snpeff|civic|cosmic`
+  - `--population --revel-min --gerp-min --tumor-site --condition --impact --lof --therapy`
+- Variant consequences:
+  - `missense_variant|synonymous_variant|frameshift_variant|nonsense_variant|stop_gained`
+  - `stop_lost|start_lost|splice_acceptor_variant|splice_donor_variant`
+  - `inframe_insertion|inframe_deletion|intron_variant`
+  - `upstream_gene_variant|downstream_gene_variant|non_coding_transcript_variant`
 - `search adverse-event ... --source <faers, vaers, all> --date-from --date-to --suspect-only --sex --age-min --age-max --reporter --count`
 - `search diagnostic ... --source <gtr|who-ivd|all>`
   - filters: `--gene`, `--disease`, `--type`, `--manufacturer`

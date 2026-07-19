@@ -25,7 +25,7 @@ pub struct VariantSearchArgs {
     /// Functional consequence filter (e.g., missense_variant)
     #[arg(long)]
     pub consequence: Option<String>,
-    /// ClinVar review status filter (e.g., 2, expert_panel)
+    /// ClinVar review status (0-4, N_star/N_stars, none, expert_panel, criteria_provided)
     #[arg(long = "review-status")]
     pub review_status: Option<String>,
     /// Population AF scope (afr, amr, eas, fin, nfe, sas)
@@ -49,10 +49,10 @@ pub struct VariantSearchArgs {
     /// Restrict to loss-of-function variants
     #[arg(long)]
     pub lof: bool,
-    /// Require presence of a field
+    /// Require a field (cadd, revel, gerp, clinvar, gnomad, dbsnp, snpeff, civic, cosmic)
     #[arg(long)]
     pub has: Option<String>,
-    /// Require missing field
+    /// Require a missing field (same values as --has)
     #[arg(long)]
     pub missing: Option<String>,
     /// Filter CIViC therapy name

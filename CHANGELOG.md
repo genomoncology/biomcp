@@ -29,6 +29,7 @@
 
 ### Fixes
 
+- Repaired MyVariant consequence, ClinVar review-status, and field-presence search filters, including typed rejection of unsupported values and removal of the consequence-dropping fallback.
 - Standardized optional source-state inventory and provenance reporting, including
   disease survival `data`/`empty`/`unavailable` outcomes and in-band Markdown
   unavailability without failed-provider credit.

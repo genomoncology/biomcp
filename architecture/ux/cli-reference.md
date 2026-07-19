@@ -185,6 +185,14 @@ specific; zero-result filtered trial searches do not auto-broaden; markdown and 
 `_meta.next_commands` suggest which filters to relax. Trial details such as contacts,
 locations, and eligibility remain opt-in through `get trial` sections.
 
+## Variant Search Filters
+
+Variant consequence, ClinVar review-status, and field-presence filters use stable
+public vocabularies discoverable through `biomcp list variant`. `--consequence`,
+`--review-status`, `--has`, and `--missing` reject unsupported values with a typed
+`invalid_argument` response rather than treating a typo as a successful empty search.
+Provider-specific field paths and review phrases remain behind that public vocabulary.
+
 ## Cross-Entity Pivot Pattern
 
 Pivot helpers allow moving between related entities without rebuilding filters:

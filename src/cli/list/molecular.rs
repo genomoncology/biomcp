@@ -93,8 +93,8 @@ pub(super) fn list_variant() -> String {
 - `--significance <value>`
 - `--max-frequency <0-1>`
 - `--min-cadd <score>`
-- `--consequence <term>`
-- `--review-status <stars>`
+- `--consequence <missense_variant|synonymous_variant|frameshift_variant|nonsense_variant|stop_gained|stop_lost|start_lost|splice_acceptor_variant|splice_donor_variant|inframe_insertion|inframe_deletion|intron_variant|upstream_gene_variant|downstream_gene_variant|non_coding_transcript_variant>`
+- `--review-status <0-4|N_star|N_stars|none|expert_panel|criteria_provided>`
 - `--population <afr|amr|eas|fin|nfe|sas>`
 - `--revel-min <score>`
 - `--gerp-min <score>`
@@ -102,8 +102,8 @@ pub(super) fn list_variant() -> String {
 - `--condition <name>`
 - `--impact <HIGH|MODERATE|LOW|MODIFIER>`
 - `--lof`
-- `--has <field>`
-- `--missing <field>`
+- `--has <cadd|revel|gerp|clinvar|gnomad|dbsnp|snpeff|civic|cosmic>`
+- `--missing <cadd|revel|gerp|clinvar|gnomad|dbsnp|snpeff|civic|cosmic>`
 - `--therapy <name>`
 
 ## Search output
