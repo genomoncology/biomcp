@@ -685,6 +685,32 @@ fn search_path_rejects_next_page_when_alias_expansion_uses_multiple_queries() {
 }
 
 #[test]
+fn alias_union_provenance_uses_the_claimed_normalized_nct_id() {
+    let study = serde_json::from_value(ctgov_search_study_fixture(
+        " NCT00000001 ",
+        "18 Years",
+        "75 Years",
+    ))
+    .expect("study");
+    let mut matched_labels = HashMap::new();
+    matched_labels.insert("NCT00000001".to_string(), Some("requested".to_string()));
+    let mut merged_rows = Vec::new();
+    let mut merged_index = HashMap::new();
+
+    push_ctgov_union_rows(
+        &mut merged_rows,
+        &mut merged_index,
+        &matched_labels,
+        vec![study],
+    );
+
+    assert_eq!(
+        merged_rows[0].matched_intervention_label.as_deref(),
+        Some("requested")
+    );
+}
+
+#[test]
 fn alias_union_count_returns_exact_unique_total_when_exhausted() {
     let mut unique_nct_ids = std::collections::HashSet::new();
 

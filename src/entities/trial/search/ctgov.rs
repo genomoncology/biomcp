@@ -595,11 +595,12 @@ fn push_ctgov_union_rows(
     studies: Vec<CtGovStudy>,
 ) {
     for study in studies {
+        let matched_nct_id = ctgov_nct_id(&study).unwrap_or_default();
         let mut row = transform::trial::from_ctgov_hit(&study);
         if merged_index.contains_key(&row.nct_id) {
             continue;
         }
-        row.matched_intervention_label = matched_labels.get(&row.nct_id).cloned().flatten();
+        row.matched_intervention_label = matched_labels.get(&matched_nct_id).cloned().flatten();
         merged_index.insert(row.nct_id.clone(), merged_rows.len());
         merged_rows.push(row);
     }
