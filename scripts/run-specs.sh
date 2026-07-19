@@ -9,12 +9,15 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/author.md
   spec/entity/disease-survival-fixture.md
   spec/entity/drug-interactions.md
+  spec/entity/gwas-numeric-filters.md
   spec/entity/section-outcomes.md
   spec/entity/study.md
   spec/entity/trial-intervention-aliases.md
+  spec/entity/trial-numeric-filters.md
   spec/entity/trial-documents.md
   spec/entity/variant.md
   spec/surface/mcp.md
+  spec/surface/discover-input.md
   spec/surface/docker-image.md
   spec/surface/homebrew.md
   spec/surface/skills.md

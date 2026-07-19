@@ -60,7 +60,11 @@ fn search_args_validate_probability_threshold_before_backend_lookup() {
 
         let err = super::dispatch::validate_search_args(&args)
             .expect_err("invalid p-value should fail before backend lookup");
-        assert!(matches!(err, crate::error::BioMcpError::InvalidArgument(_)));
+        assert!(matches!(
+            &err,
+            crate::error::BioMcpError::InvalidArgument(_)
+        ));
+        assert!(err.to_string().contains("--p-value"));
     }
 
     for value in ["5e-8", "1"] {

@@ -94,6 +94,18 @@ fn trial_numeric_filters_are_validated_before_request_construction() {
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
     }
 
+    let nci_invalid_coordinates = TrialSearchFilters {
+        lat: Some(91.0),
+        lon: Some(0.0),
+        distance: Some(1),
+        source: TrialSource::NciCts,
+        ..Default::default()
+    };
+    let err = validate_trial_search(&nci_invalid_coordinates)
+        .err()
+        .expect("the shared coordinate guard should run for NCI");
+    assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+
     for (lat, lon) in [(-90.0, -180.0), (90.0, 180.0)] {
         validate_trial_search(&TrialSearchFilters {
             lat: Some(lat),

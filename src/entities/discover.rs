@@ -2168,16 +2168,26 @@ mod tests {
         DiscoverRequest::new(&accepted, DiscoverMode::Command)
             .expect("query at the byte limit should pass");
 
+        let padded_multibyte = format!("  {}  ", "é".repeat(2048));
+        DiscoverRequest::new(&padded_multibyte, DiscoverMode::Command)
+            .expect("post-trim query at the UTF-8 byte limit should pass");
+
         let oversized = "x".repeat(4097);
-        let err = DiscoverRequest::new(&oversized, DiscoverMode::Command)
-            .expect_err("oversized query should fail before clients");
-        assert!(matches!(
-            &err,
-            crate::error::BioMcpError::InvalidArgument(_)
-        ));
-        let message = err.to_string();
-        assert!(message.contains("4,096"));
-        assert!(!message.to_ascii_lowercase().contains("ols4"));
+        DiscoverRequest::new(&oversized, DiscoverMode::AliasFallback)
+            .expect("the top-level discover cap should not widen to alias fallback");
+
+        for invalid in [&oversized, &"é".repeat(2049)] {
+            let err = DiscoverRequest::new(invalid, DiscoverMode::Command)
+                .expect_err("oversized query should fail before clients");
+            assert!(matches!(
+                &err,
+                crate::error::BioMcpError::InvalidArgument(_)
+            ));
+            let message = err.to_string();
+            assert!(message.contains("4,096"));
+            assert!(!message.contains(invalid));
+            assert!(!message.to_ascii_lowercase().contains("ols4"));
+        }
     }
 
     #[test]
