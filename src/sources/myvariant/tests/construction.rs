@@ -100,6 +100,19 @@ fn search_plan_sets_path_size_from_and_fields() {
 }
 
 #[test]
+fn search_plan_uses_bounded_gerp_projection() {
+    let plan = MyVariantClient::search_plan(&VariantSearchParams {
+        gene: Some("BRAF".into()),
+        ..params()
+    })
+    .unwrap();
+    let fields = plan.query_value("fields").expect("fields present");
+    assert!(fields.contains("dbnsfp.gerp*.rs"));
+    assert!(!fields.contains("dbnsfp.gerp++.rs"));
+    assert!(!fields.contains("dbnsfp.*"));
+}
+
+#[test]
 fn search_plan_builds_gene_and_hgvsp_clauses_joined_with_and() {
     let plan = MyVariantClient::search_plan(&VariantSearchParams {
         gene: Some("BRAF".into()),
@@ -272,6 +285,19 @@ fn search_plan_rejects_negative_min_cadd() {
 }
 
 #[test]
+fn search_plan_rejects_non_finite_min_cadd() {
+    for min_cadd in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        let err = MyVariantClient::search_plan(&VariantSearchParams {
+            min_cadd: Some(min_cadd),
+            ..params()
+        })
+        .unwrap_err();
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains("--min-cadd must be finite"));
+    }
+}
+
+#[test]
 fn search_plan_consequence_clause_uses_canonical_value() {
     let plan = MyVariantClient::search_plan(&VariantSearchParams {
         consequence: Some("missense".into()),
@@ -326,6 +352,19 @@ fn search_plan_gerp_min_clause() {
     })
     .unwrap();
     assert_eq!(q(&plan), "dbnsfp.gerp++.rs:[4 TO *]");
+}
+
+#[test]
+fn search_plan_rejects_non_finite_gerp_min() {
+    for gerp_min in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        let err = MyVariantClient::search_plan(&VariantSearchParams {
+            gerp_min: Some(gerp_min),
+            ..params()
+        })
+        .unwrap_err();
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains("--gerp-min must be finite"));
+    }
 }
 
 #[test]

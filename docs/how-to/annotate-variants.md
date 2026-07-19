@@ -55,6 +55,9 @@ Add frequency and score filters:
 biomcp search variant -g BRCA1 --max-frequency 0.01 --min-cadd 20 --limit 10
 ```
 
+CADD and GERP thresholds must be finite. Results filtered with `--gerp-min`
+include the qualifying `gerp` score in each row.
+
 ## Optional enrichments
 
 - OncoKB (set `ONCOKB_TOKEN` for the production endpoint)

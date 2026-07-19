@@ -51,6 +51,9 @@ With population and score filters:
 biomcp search variant -g BRCA1 --max-frequency 0.01 --min-cadd 20 --limit 5
 ```
 
+CADD and GERP thresholds must be finite. Results filtered with `--gerp-min`
+include the qualifying `gerp` score in each row.
+
 ## Get a variant record
 
 ```bash

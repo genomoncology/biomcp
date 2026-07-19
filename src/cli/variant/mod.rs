@@ -19,7 +19,7 @@ pub struct VariantSearchArgs {
     /// Max gnomAD allele frequency (0-1)
     #[arg(long)]
     pub max_frequency: Option<f64>,
-    /// Min CADD score (>=0)
+    /// Minimum finite CADD score (>=0)
     #[arg(long)]
     pub min_cadd: Option<f64>,
     /// Functional consequence filter (e.g., missense_variant)
@@ -34,7 +34,7 @@ pub struct VariantSearchArgs {
     /// Minimum REVEL score
     #[arg(long = "revel-min")]
     pub revel_min: Option<f64>,
-    /// Minimum GERP score
+    /// Minimum finite GERP score
     #[arg(long = "gerp-min")]
     pub gerp_min: Option<f64>,
     /// Filter by COSMIC tumor site

@@ -37,6 +37,37 @@ Therapeutic evidence: see `get variant \"chr1:g.101A>T\" civic`
 Caveat: CIViC evidence may lag current standard of care'
 ```
 
+## Finite score thresholds
+
+<!-- mustmatch-lint: skip -->
+
+GERP and CADD thresholds must be finite numbers. Non-finite values are rejected
+as invalid arguments instead of being sent upstream and misreported as a
+confident empty result.
+
+| str:flag | str:value | str:label |
+|---|---|---|
+| --gerp-min | NaN | GERP NaN |
+| --gerp-min | +inf | GERP positive infinity |
+| --gerp-min | -inf | GERP negative infinity |
+| --gerp-min | 1e309 | GERP overflow |
+| --min-cadd | NaN | CADD NaN |
+| --min-cadd | +inf | CADD positive infinity |
+| --min-cadd | -inf | CADD negative infinity |
+| --min-cadd | 1e309 | CADD overflow |
+
+```bash run id=non-finite-threshold exit=2 each_row="Finite score thresholds"
+biomcp --json search variant --gene BRAF {{flag}}={{value}} --limit 1
+```
+
+```json expect=non-finite-threshold contains each_row="Finite score thresholds"
+{
+  "error": {
+    "code": "invalid_argument"
+  }
+}
+```
+
 ## Coordinate Genome-Build Context
 
 <!-- mustmatch-lint: skip -->
