@@ -361,14 +361,22 @@ class Handler(BaseHTTPRequestHandler):
                 send_json(self, 200, {"studies": [VENETOCLAX_STUDY], "totalCount": 1})
                 return
             if is_quoted_literal and literal_intervention == "Venclexta":
-                send_json(
-                    self,
-                    200,
-                    {
-                        "studies": [VENETOCLAX_STUDY, VENCLEXTA_STUDY],
-                        "totalCount": 2,
-                    },
-                )
+                if "venclexta-page-2" in query.get("pageToken", []):
+                    send_json(
+                        self,
+                        200,
+                        {"studies": [VENETOCLAX_STUDY], "totalCount": 2},
+                    )
+                else:
+                    send_json(
+                        self,
+                        200,
+                        {
+                            "studies": [VENETOCLAX_STUDY, VENCLEXTA_STUDY],
+                            "totalCount": 2,
+                            "nextPageToken": "venclexta-page-2",
+                        },
+                    )
                 return
             if intervention:
                 send_text(

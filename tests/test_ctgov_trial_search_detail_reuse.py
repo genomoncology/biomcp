@@ -77,7 +77,9 @@ def test_combined_geo_and_eligibility_filters_fetch_one_detail_projection() -> N
         subprocess.run(["bash", str(FIXTURE_CLEANUP), str(REPO_ROOT)], check=False)
 
 
-def test_alias_fanout_deduplicates_candidates_before_detail_verification() -> None:
+def _run_alias_search_with_detail_log(
+    extra_args: list[str],
+) -> tuple[dict[str, object], list[str]]:
     subprocess.run(["bash", str(FIXTURE_SETUP), str(REPO_ROOT)], check=True)
     try:
         fixture_env = _read_exports(FIXTURE_ENV)
@@ -86,7 +88,7 @@ def test_alias_fanout_deduplicates_candidates_before_detail_verification() -> No
             "BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE"
         ]
         biomcp_bin = env.get("BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp"))
-        subprocess.run(
+        completed = subprocess.run(
             [
                 biomcp_bin,
                 "--json",
@@ -98,8 +100,7 @@ def test_alias_fanout_deduplicates_candidates_before_detail_verification() -> No
                 "eligible adults",
                 "--source",
                 "ctgov",
-                "--limit",
-                "5",
+                *extra_args,
             ],
             check=True,
             capture_output=True,
@@ -113,6 +114,25 @@ def test_alias_fanout_deduplicates_candidates_before_detail_verification() -> No
             for line in request_log.read_text(encoding="utf-8").splitlines()
             if urlparse(line).path.startswith("/api/v2/studies/NCT")
         ]
-        assert detail_paths.count("/api/v2/studies/NCT51000001") == 1, detail_paths
+        return json.loads(completed.stdout), detail_paths
     finally:
         subprocess.run(["bash", str(FIXTURE_CLEANUP), str(REPO_ROOT)], check=False)
+
+
+def test_alias_fanout_deduplicates_candidates_before_detail_verification() -> None:
+    payload, detail_paths = _run_alias_search_with_detail_log(["--limit", "5"])
+
+    assert [
+        (row["nct_id"], row["matched_intervention_label"]) for row in payload["results"]
+    ] == [
+        ("NCT51000001", "venetoclax"),
+        ("NCT51000002", "Venclexta"),
+    ]
+    assert detail_paths.count("/api/v2/studies/NCT51000001") == 1, detail_paths
+
+
+def test_alias_fanout_count_deduplicates_before_detail_verification() -> None:
+    payload, detail_paths = _run_alias_search_with_detail_log(["--count-only"])
+
+    assert payload["total"] is None
+    assert detail_paths.count("/api/v2/studies/NCT51000001") == 1, detail_paths
