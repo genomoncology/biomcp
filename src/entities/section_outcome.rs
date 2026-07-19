@@ -73,10 +73,15 @@ impl SectionOutcome {
     }
 
     pub fn inapplicable(message: &'static str) -> Self {
+        let message = bounded_message(message);
+        assert!(
+            !message.trim().is_empty(),
+            "inapplicable section outcomes require a non-blank message"
+        );
         Self {
             outcome: SectionOutcomeState::Inapplicable,
             sources: Vec::new(),
-            message: Some(bounded_message(message)),
+            message: Some(message),
         }
     }
 
@@ -181,9 +186,14 @@ impl<'de> Deserialize<'de> for SectionOutcome {
                 !value.sources.is_empty() && value.message.is_none()
             }
             SectionOutcomeState::Degraded => !value.sources.is_empty() && value.message.is_some(),
-            SectionOutcomeState::Inapplicable | SectionOutcomeState::Unavailable => {
-                value.sources.is_empty() && value.message.is_some()
+            SectionOutcomeState::Inapplicable => {
+                value.sources.is_empty()
+                    && value
+                        .message
+                        .as_deref()
+                        .is_some_and(|message| !message.trim().is_empty())
             }
+            SectionOutcomeState::Unavailable => value.sources.is_empty() && value.message.is_some(),
         };
         if !sources_are_valid || !message_is_valid || !shape_is_valid {
             return Err(D::Error::custom(
@@ -320,6 +330,7 @@ mod tests {
         for json in [
             r#"{"outcome":"data","sources":[]}"#,
             r#"{"outcome":"inapplicable","sources":[]}"#,
+            r#"{"outcome":"inapplicable","sources":[],"message":"  "}"#,
             r#"{"outcome":"inapplicable","sources":["Provider"],"message":"Not applicable."}"#,
             r#"{"outcome":"unavailable","sources":["Provider"],"message":"Unavailable."}"#,
             r#"{"outcome":"degraded","sources":[],"message":"Incomplete."}"#,
