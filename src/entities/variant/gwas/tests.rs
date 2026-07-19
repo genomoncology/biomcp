@@ -3,6 +3,21 @@
 use super::super::VariantGwasAssociation;
 use super::*;
 
+#[tokio::test]
+async fn search_gwas_page_rejects_invalid_probability_before_client_construction() {
+    for p_value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0, -0.01, 1.01] {
+        let filters = super::super::GwasSearchFilters {
+            p_value: Some(p_value),
+            ..Default::default()
+        };
+        let err = search_gwas_page(&filters, 1, 0)
+            .await
+            .expect_err("invalid p-value should fail at the entity boundary");
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(err.to_string().contains("--p-value"));
+    }
+}
+
 #[test]
 fn collect_supporting_pmids_dedupes_case_insensitively() {
     let rows = vec![

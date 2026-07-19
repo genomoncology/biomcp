@@ -41,13 +41,13 @@ pub struct TrialSearchArgs {
     /// Study type (e.g., interventional, observational)
     #[arg(long = "study-type")]
     pub study_type: Option<String>,
-    /// Patient age in years for eligibility matching (decimals accepted, e.g. 0.5 for 6 months).
+    /// Finite patient age from 0 through 150 years (decimals accepted, e.g. 0.5 for 6 months).
     ///
     /// With `--count-only`, age-only CTGov searches report an approximate
     /// upstream total because BioMCP applies the age filter during full
     /// search, not the fast count path.
     #[arg(long)]
-    pub age: Option<f32>,
+    pub age: Option<f64>,
     /// Eligible sex filter [values: female, male, all].
     ///
     /// `all` (also `any`/`both`) resolves to no sex restriction, so no sex
@@ -92,10 +92,10 @@ pub struct TrialSearchArgs {
     /// Trials updated before date (YYYY-MM-DD)
     #[arg(long = "date-to", alias = "until")]
     pub date_to: Option<String>,
-    /// Latitude for geographic search
+    /// Finite latitude from -90 through 90 for geographic search
     #[arg(long, allow_hyphen_values = true)]
     pub lat: Option<f64>,
-    /// Longitude for geographic search
+    /// Finite longitude from -180 through 180 for geographic search
     #[arg(long, allow_hyphen_values = true)]
     pub lon: Option<f64>,
     /// Distance (miles) for geographic search

@@ -8,6 +8,15 @@ use crate::sources::gwas::{GwasAssociation, GwasClient, GwasSnp};
 use super::resolution::parse_variant_id;
 use super::{GwasSearchFilters, Variant, VariantGwasAssociation, VariantIdFormat};
 
+pub(crate) fn validate_p_value(p_value: Option<f64>) -> Result<(), BioMcpError> {
+    if p_value.is_some_and(|value| !value.is_finite() || value <= 0.0 || value > 1.0) {
+        return Err(BioMcpError::InvalidArgument(
+            "--p-value must be finite and greater than 0 and at most 1".into(),
+        ));
+    }
+    Ok(())
+}
+
 // dead-code reason: gwas::search_gwas is exercised by native tests or binary dispatch
 #[allow(dead_code)]
 pub async fn search_gwas(
@@ -28,6 +37,7 @@ pub async fn search_gwas_page(
             "--limit must be between 1 and {MAX_SEARCH_LIMIT}"
         )));
     }
+    validate_p_value(filters.p_value)?;
 
     let needed = limit.saturating_add(offset).max(limit);
 

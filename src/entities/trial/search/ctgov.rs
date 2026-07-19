@@ -63,6 +63,22 @@ pub(super) fn validate_location(filters: &TrialSearchFilters) -> Result<(), BioM
     let has_lon = filters.lon.is_some();
     let has_distance = filters.distance.is_some();
 
+    if filters
+        .lat
+        .is_some_and(|lat| !lat.is_finite() || !(-90.0..=90.0).contains(&lat))
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "--lat must be finite and between -90 and 90".into(),
+        ));
+    }
+    if filters
+        .lon
+        .is_some_and(|lon| !lon.is_finite() || !(-180.0..=180.0).contains(&lon))
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "--lon must be finite and between -180 and 180".into(),
+        ));
+    }
     if has_distance && (!has_lat || !has_lon) {
         return Err(BioMcpError::InvalidArgument(
             "--distance requires both --lat and --lon".into(),

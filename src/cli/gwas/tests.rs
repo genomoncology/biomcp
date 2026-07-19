@@ -37,6 +37,60 @@ fn search_gwas_parses_positional_query() {
 }
 
 #[test]
+fn search_args_validate_probability_threshold_before_backend_lookup() {
+    for value in ["NaN", "+inf", "-inf", "1e309", "0", "-0.01", "1.01"] {
+        let cli = Cli::try_parse_from([
+            "biomcp",
+            "search",
+            "gwas",
+            "BRAF",
+            &format!("--p-value={value}"),
+        ])
+        .expect("floating-point threshold should parse");
+        let Cli {
+            command:
+                Commands::Search {
+                    entity: SearchEntity::Gwas(args),
+                },
+            ..
+        } = cli
+        else {
+            panic!("expected search gwas command");
+        };
+
+        let err = super::dispatch::validate_search_args(&args)
+            .expect_err("invalid p-value should fail before backend lookup");
+        assert!(matches!(
+            &err,
+            crate::error::BioMcpError::InvalidArgument(_)
+        ));
+        assert!(err.to_string().contains("--p-value"));
+    }
+
+    for value in ["5e-8", "1"] {
+        let cli = Cli::try_parse_from([
+            "biomcp",
+            "search",
+            "gwas",
+            "BRAF",
+            &format!("--p-value={value}"),
+        ])
+        .expect("valid p-value should parse");
+        let Cli {
+            command:
+                Commands::Search {
+                    entity: SearchEntity::Gwas(args),
+                },
+            ..
+        } = cli
+        else {
+            panic!("expected search gwas command");
+        };
+        super::dispatch::validate_search_args(&args).expect("valid p-value should pass");
+    }
+}
+
+#[test]
 fn search_args_reject_zero_limit_before_backend_lookup() {
     let cli = Cli::try_parse_from(["biomcp", "search", "gwas", "BRAF", "--limit", "0"])
         .expect("search gwas should parse");

@@ -29,6 +29,7 @@ pub use self::resolution::{
 pub use self::search::{search, search_page, search_query_summary};
 pub use self::structure::{VariantStructureResult, structure};
 
+pub(crate) use self::gwas::validate_p_value as validate_gwas_p_value;
 pub(crate) use self::normalization::transcript_coding_hgvs_re;
 pub(crate) use self::resolution::{gnomad_variant_slug, is_rsid, normalize_protein_change};
 

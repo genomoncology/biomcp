@@ -188,7 +188,7 @@ pub(super) fn list_gwas() -> String {
 - `search gwas -g <gene>` - GWAS-linked variants by gene
 - `search gwas --trait <text>` - GWAS-linked variants by disease trait
 - `search gwas --region <chr:start-end>`
-- `search gwas --p-value <threshold>`
+- `search gwas --p-value <threshold>` - finite probability greater than 0 and at most 1
 - `search gwas ... --limit <N> --offset <N>`
 
 ## Examples

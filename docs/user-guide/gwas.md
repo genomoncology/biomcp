@@ -30,7 +30,8 @@ biomcp search gwas -g TCF7L2 --p-value 5e-8 --limit 10
 
 Key flags: `-g/--gene` for a gene symbol, `--trait` for phenotype text,
 `--region` for genomic intervals like `chr:start-end`, and `--p-value` for a
-significance threshold. Use `--limit` and `--offset` for bounded paging.
+finite significance threshold greater than 0 and at most 1. Use `--limit` and
+`--offset` for bounded paging.
 
 ## Get records
 

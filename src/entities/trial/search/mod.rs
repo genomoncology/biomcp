@@ -165,6 +165,15 @@ pub(super) fn validate_search_page_args(
 pub(super) fn validate_trial_search(
     filters: &TrialSearchFilters,
 ) -> Result<NormalizedTrialSearch, BioMcpError> {
+    if filters
+        .age
+        .is_some_and(|age| !age.is_finite() || !(0.0..=150.0).contains(&age))
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "--age must be finite and between 0 and 150".into(),
+        ));
+    }
+    validate_location(filters)?;
     if !has_any_query(filters) {
         return Err(BioMcpError::InvalidArgument(
             "At least one filter is required. Example: biomcp search trial -c melanoma".into(),
@@ -185,7 +194,6 @@ pub(super) fn validate_trial_search(
 
     let normalized_status = normalized_status_filter(filters)?;
     let normalized_phase = normalized_phase_filter(filters)?;
-    validate_location(filters)?;
 
     if matches!(filters.source, TrialSource::NciCts)
         && normalized_status
@@ -296,6 +304,7 @@ pub async fn search(
 }
 
 pub async fn count_all(filters: &TrialSearchFilters) -> Result<TrialCount, BioMcpError> {
+    validate_trial_search(filters)?;
     match filters.source {
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;
@@ -314,6 +323,7 @@ pub async fn search_page(
     offset: usize,
     next_page: Option<String>,
 ) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
+    validate_trial_search(filters)?;
     match filters.source {
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;

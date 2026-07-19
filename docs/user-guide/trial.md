@@ -57,13 +57,18 @@ fields. After broad discovery, simple mutation text receives a registry eligibil
 check that removes exclusion-only matches. Trials where the term is absent remain
 discoverable, and boolean expressions are discovery-only.
 
+`--age` accepts finite patient ages from 0 through 150 years, including
+fractional ages.
+
 Geographic filtering:
 
 ```bash
 biomcp search trial -c melanoma --lat 42.36 --lon -71.06 --distance 50 --limit 5
 ```
 
-When geo filters are set, the search query summary includes `lat`, `lon`, and `distance`.
+When geo filters are set, the search query summary includes `lat`, `lon`, and
+`distance`. Latitude must be finite from -90 through 90, and longitude must be
+finite from -180 through 180.
 
 Prior-therapy filters:
 

@@ -145,6 +145,7 @@ pub(in crate::cli) async fn handle_search(
         results_available: args.results_available,
         source: trial_source,
     };
+    crate::entities::trial::validate_search_filters(&filters)?;
 
     if args
         .next_page

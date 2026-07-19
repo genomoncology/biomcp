@@ -138,6 +138,8 @@ pub(crate) enum DiscoverMode {
     AliasFallback,
 }
 
+const DISCOVER_COMMAND_QUERY_MAX_BYTES: usize = 4_096;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct DiscoverRequest {
     pub(crate) query: String,
@@ -153,6 +155,11 @@ impl DiscoverRequest {
         if query.is_empty() {
             return Err(BioMcpError::InvalidArgument(
                 "Free-text query is required. Example: biomcp discover BRCA1".into(),
+            ));
+        }
+        if mode == DiscoverMode::Command && query.len() > DISCOVER_COMMAND_QUERY_MAX_BYTES {
+            return Err(BioMcpError::InvalidArgument(
+                "Discover query must be at most 4,096 UTF-8 bytes".into(),
             ));
         }
         Ok(Self {
@@ -2160,6 +2167,34 @@ mod tests {
         assert_eq!(request.ols_query, "Gleevec");
         assert!(!request.medlineplus_enabled);
         assert!(request.no_cache);
+    }
+
+    #[test]
+    fn discover_request_rejects_oversized_query_before_clients() {
+        let accepted = "x".repeat(4096);
+        DiscoverRequest::new(&accepted, DiscoverMode::Command)
+            .expect("query at the byte limit should pass");
+
+        let padded_multibyte = format!("  {}  ", "é".repeat(2048));
+        DiscoverRequest::new(&padded_multibyte, DiscoverMode::Command)
+            .expect("post-trim query at the UTF-8 byte limit should pass");
+
+        let oversized = "x".repeat(4097);
+        DiscoverRequest::new(&oversized, DiscoverMode::AliasFallback)
+            .expect("the top-level discover cap should not widen to alias fallback");
+
+        for invalid in [&oversized, &"é".repeat(2049)] {
+            let err = DiscoverRequest::new(invalid, DiscoverMode::Command)
+                .expect_err("oversized query should fail before clients");
+            assert!(matches!(
+                &err,
+                crate::error::BioMcpError::InvalidArgument(_)
+            ));
+            let message = err.to_string();
+            assert!(message.contains("4,096"));
+            assert!(!message.contains(invalid));
+            assert!(!message.to_ascii_lowercase().contains("ols4"));
+        }
     }
 
     #[test]

@@ -23,7 +23,7 @@ pub(super) fn list_discover() -> String {
 
 ## Commands
 
-- `discover <query>` - resolve a free-text biomedical phrase into a primary concept and suggested BioMCP follow-up commands
+- `discover <query>` - resolve a trimmed free-text biomedical phrase of at most 4,096 UTF-8 bytes into a primary concept and suggested BioMCP follow-up commands
 - `--json discover <query>` - emit structured concepts plus discover-specific `_meta` metadata for agents
 
 ## When to use this surface
