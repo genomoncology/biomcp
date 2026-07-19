@@ -369,9 +369,9 @@ pub(super) async fn verify_detail_filters(
     verified
 }
 
-fn parse_age_years(value: &str) -> Option<f32> {
+fn parse_age_years(value: &str) -> Option<f64> {
     let mut parts = value.split_whitespace();
-    let amount = parts.next()?.parse::<f32>().ok()?;
+    let amount = parts.next()?.parse::<f64>().ok()?;
     let unit = parts.next().map(|token| {
         token
             .trim_matches(|c: char| !c.is_ascii_alphabetic())
@@ -387,7 +387,7 @@ fn parse_age_years(value: &str) -> Option<f32> {
     }
 }
 
-pub(super) fn verify_age_eligibility(studies: Vec<CtGovStudy>, age: f32) -> Vec<CtGovStudy> {
+pub(super) fn verify_age_eligibility(studies: Vec<CtGovStudy>, age: f64) -> Vec<CtGovStudy> {
     studies
         .into_iter()
         .filter(|study| {

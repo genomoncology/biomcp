@@ -47,7 +47,7 @@ pub struct TrialSearchArgs {
     /// upstream total because BioMCP applies the age filter during full
     /// search, not the fast count path.
     #[arg(long)]
-    pub age: Option<f32>,
+    pub age: Option<f64>,
     /// Eligible sex filter [values: female, male, all].
     ///
     /// `all` (also `any`/`both`) resolves to no sex restriction, so no sex

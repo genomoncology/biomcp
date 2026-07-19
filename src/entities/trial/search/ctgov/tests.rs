@@ -51,7 +51,15 @@ fn single_ctgov_context_and_worker(
 
 #[test]
 fn trial_numeric_filters_are_validated_before_request_construction() {
-    for age in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, 151.0] {
+    for age in [
+        f64::NAN,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        -1.0,
+        -1e-50,
+        150.000_001,
+        151.0,
+    ] {
         let filters = TrialSearchFilters {
             age: Some(age),
             ..Default::default()

@@ -194,7 +194,7 @@ pub struct TrialSearchFilters {
     pub status: Option<String>,
     pub phase: Option<String>,
     pub study_type: Option<String>,
-    pub age: Option<f32>,
+    pub age: Option<f64>,
     pub sex: Option<String>,
     pub sponsor: Option<String>,
     pub sponsor_type: Option<String>,

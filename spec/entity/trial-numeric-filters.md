@@ -18,7 +18,9 @@ silently change a result page.
 | -inf | negative infinity |
 | 1e309 | overflow |
 | -1 | below zero |
+| -1e-50 | tiny negative |
 | 151 | above 150 |
+| 150.000001 | just above 150 |
 
 ```bash run id=invalid-trial-age exit=2 each_row="Trial ages stay within a human range"
 biomcp --json search trial --age={{value}} --count-only

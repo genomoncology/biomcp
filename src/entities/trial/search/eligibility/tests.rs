@@ -136,11 +136,11 @@ fn parse_age_years_handles_standard_formats() {
     assert_eq!(parse_age_years("6 Months"), Some(0.5));
     assert!(
         (parse_age_years("2 Weeks").expect("weeks should parse") - (2.0 / 52.0)).abs()
-            < f32::EPSILON
+            < f64::EPSILON
     );
     assert!(
         (parse_age_years("30 Days").expect("days should parse") - (30.0 / 365.0)).abs()
-            < f32::EPSILON
+            < f64::EPSILON
     );
     assert_eq!(parse_age_years("N/A"), None);
     assert_eq!(parse_age_years(""), None);
