@@ -138,7 +138,7 @@ fn disease_funding_query_value(
 }
 
 async fn add_treatment_landscape(disease: &mut Disease) -> Result<(), BioMcpError> {
-    let Some(query) = disease_query_value(disease) else {
+    let Some(query) = disease_funding_query_value(disease, None) else {
         disease.treatment_landscape.clear();
         disease.section_outcomes.complete(
             DISEASE_SECTION_TREATMENTS,
@@ -193,7 +193,7 @@ async fn add_treatment_landscape(disease: &mut Disease) -> Result<(), BioMcpErro
 }
 
 async fn add_recruiting_trial_count(disease: &mut Disease) -> Result<(), BioMcpError> {
-    let Some(query) = disease_query_value(disease) else {
+    let Some(query) = disease_funding_query_value(disease, None) else {
         disease.recruiting_trial_count = None;
         disease.section_outcomes.complete(
             DISEASE_SECTION_RECRUITING_TRIALS,

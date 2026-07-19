@@ -289,6 +289,34 @@ fn survival_catalog_resolution_sets_unavailable_note_when_catalog_fails() {
 }
 
 #[tokio::test]
+async fn ticket_589_id_only_disease_enrichments_are_inapplicable_without_credit() {
+    let mut disease = test_disease("MONDO:0005105", "");
+    disease.synonyms.clear();
+
+    add_treatment_landscape(&mut disease)
+        .await
+        .expect("ID-only treatment lookup should not contact a provider");
+    add_recruiting_trial_count(&mut disease)
+        .await
+        .expect("ID-only trial lookup should not contact a provider");
+
+    for key in ["treatments", "recruiting_trials"] {
+        let outcome = disease
+            .section_outcomes
+            .get(key)
+            .unwrap_or_else(|| panic!("missing outcome-only state for {key}"));
+        assert_eq!(
+            outcome.outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::Inapplicable,
+            "key={key}"
+        );
+        assert!(outcome.sources().is_empty(), "key={key}");
+    }
+    assert!(disease.treatment_landscape.is_empty());
+    assert!(disease.recruiting_trial_count.is_none());
+}
+
+#[tokio::test]
 #[serial_test::serial(source_env)]
 async fn ticket_589_disease_base_enrichment_failures_are_unavailable_without_credit() {
     let mut env = TestEnv::new();
