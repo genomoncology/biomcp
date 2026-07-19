@@ -33,7 +33,7 @@ trap cleanup_on_error EXIT
 python3 - "$ready_file" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 import json
 import sys
 
@@ -51,6 +51,27 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         if path == "/v1/query":
+            query = parse_qs(urlparse(self.path).query).get("q", [""])[0]
+            if "dbsnp.rsid:rs589000" in query:
+                send_json(
+                    self,
+                    200,
+                    {
+                        "total": 1,
+                        "hits": [
+                            {
+                                "_id": "rs589000",
+                                "_score": 10.0,
+                                "dbsnp": {"rsid": "rs589000"},
+                                "dbnsfp": {
+                                    "genename": "BRAF",
+                                    "hgvsp": "p.V600E",
+                                },
+                            }
+                        ],
+                    },
+                )
+                return
             send_json(
                 self,
                 200,
@@ -110,6 +131,7 @@ base_url="$(cat "$ready_file")"
 curl -fsS "$base_url/v1/query?q=fixture-drug" >/dev/null
 
 printf 'export BIOMCP_MYCHEM_BASE=%q\n' "$base_url/v1" >"$env_file"
+printf 'export BIOMCP_MYVARIANT_BASE=%q\n' "$base_url/v1" >>"$env_file"
 printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_PID=%q\n' "$server_pid" >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_ROOT=%q\n' "$fixture_root" >>"$env_file"

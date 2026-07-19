@@ -51,3 +51,15 @@ A base drug card does not call Drugs@FDA. Its registry records that omission as
   | jq '(.section_outcomes.approvals == {"outcome":"not_requested","sources":[]}) and (._meta.section_sources | any(.key == "approvals") | not)' \
   | mustmatch 'true'
 ```
+
+## An inapplicable lookup does not credit a provider
+
+A requested prediction cannot run when the resolved variant lacks genomic HGVS
+coordinates. BioMCP reports that local applicability decision without claiming
+that AlphaGenome returned an empty result.
+
+```bash
+../../tools/biomcp-ci --json get variant rs589000 predict \
+  | jq '(.section_outcomes.predict.outcome == "inapplicable") and (.section_outcomes.predict.sources == []) and (((.section_outcomes.predict.message // "") | length) > 0) and (._meta.section_sources | any(.key == "predict" and .outcome == "inapplicable" and .sources == [])) and (._meta.section_sources | all(.sources | index("AlphaGenome") | not))' \
+  | mustmatch 'true'
+```

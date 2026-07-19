@@ -355,6 +355,61 @@ fn cancerhotspots_upstream_failure_omits_recurrence_and_preserves_cbioportal() {
     assert_eq!(variant.cancer_frequencies.len(), 1);
 }
 
+#[tokio::test]
+async fn ticket_589_variant_preflights_are_inapplicable_without_provider_credit() {
+    let mut prediction = braf_variant_stub();
+    prediction.id = "rs589000".into();
+    add_prediction(&mut prediction)
+        .await
+        .expect("inapplicable prediction should remain a successful card");
+
+    let mut hotspots = braf_variant_stub();
+    add_cancerhotspots(&mut hotspots, &VariantIdFormat::RsId("rs589000".into())).await;
+
+    let mut cbioportal = braf_variant_stub();
+    cbioportal.gene.clear();
+    add_cbioportal(&mut cbioportal).await;
+
+    let mut civic = braf_variant_stub();
+    civic.gene.clear();
+    civic.hgvs_p = None;
+    add_civic(&mut civic).await;
+
+    let mut gwas = braf_variant_stub();
+    gwas.rsid = None;
+    add_gwas_section(&mut gwas, "chr7:g.140453136A>T")
+        .await
+        .expect("inapplicable GWAS should remain a successful card");
+
+    for (variant, key, provider) in [
+        (&prediction, "predict", "AlphaGenome"),
+        (&hotspots, "cancerhotspots", "cancerhotspots.org"),
+        (&cbioportal, "cbioportal", "cBioPortal"),
+        (&civic, "civic", "CIViC"),
+        (&gwas, "gwas", "GWAS Catalog"),
+    ] {
+        let outcome = serde_json::to_value(
+            variant
+                .section_outcomes
+                .get(key)
+                .expect("requested outcome must be completed"),
+        )
+        .expect("outcome should serialize");
+        assert_eq!(outcome["outcome"], "inapplicable", "key={key}");
+        assert_eq!(outcome["sources"], serde_json::json!([]), "key={key}");
+        assert!(
+            outcome["message"]
+                .as_str()
+                .is_some_and(|message| !message.trim().is_empty()),
+            "inapplicable outcome needs a safe explanation: key={key}, outcome={outcome}"
+        );
+        assert!(
+            !outcome.to_string().contains(provider),
+            "uncontacted provider was credited: key={key}, outcome={outcome}"
+        );
+    }
+}
+
 #[test]
 fn therapies_from_oncokb_truncation_shows_count() {
     let annotation: OncoKBAnnotation = serde_json::from_value(serde_json::json!({

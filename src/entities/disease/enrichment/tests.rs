@@ -2,6 +2,39 @@ use super::super::DiseasePhenotype;
 use super::super::test_support::*;
 use super::*;
 
+struct TestEnv {
+    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+}
+
+impl TestEnv {
+    fn new() -> Self {
+        Self {
+            previous: Vec::new(),
+        }
+    }
+
+    fn set(&mut self, key: &'static str, value: &str) {
+        self.previous.push((key, std::env::var_os(key)));
+        // SAFETY: this test is serialized with every peer that mutates provider roots.
+        unsafe { std::env::set_var(key, value) };
+    }
+}
+
+impl Drop for TestEnv {
+    fn drop(&mut self) {
+        for (key, previous) in self.previous.drain(..).rev() {
+            // SAFETY: this test is serialized with every peer that mutates provider roots.
+            unsafe {
+                if let Some(value) = previous {
+                    std::env::set_var(key, value);
+                } else {
+                    std::env::remove_var(key);
+                }
+            }
+        }
+    }
+}
+
 fn clinical_feature_row(hpo_id: &str) -> DiseasePhenotype {
     DiseasePhenotype {
         hpo_id: hpo_id.to_string(),
@@ -253,6 +286,55 @@ fn survival_catalog_resolution_sets_unavailable_note_when_catalog_fails() {
         crate::entities::section_outcome::SectionOutcomeState::Unavailable
     );
     assert!(outcome.sources().is_empty());
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn ticket_589_disease_base_enrichment_failures_are_unavailable_without_credit() {
+    let mut env = TestEnv::new();
+    env.set("BIOMCP_MYCHEM_BASE", "://invalid-mychem-fixture");
+    env.set("BIOMCP_CTGOV_BASE", "://invalid-ctgov-fixture");
+
+    let mut treatments = test_disease("MONDO:0005105", "melanoma");
+    let treatment_error = add_treatment_landscape(&mut treatments).await;
+    assert!(
+        treatment_error.is_err(),
+        "fixture must induce a source error"
+    );
+
+    let mut trials = test_disease("MONDO:0005105", "melanoma");
+    let trial_error = add_recruiting_trial_count(&mut trials).await;
+    assert!(trial_error.is_err(), "fixture must induce a source error");
+
+    for (disease, key, provider) in [
+        (&treatments, "treatments", "MyChem.info indication search"),
+        (&trials, "recruiting_trials", "ClinicalTrials.gov"),
+    ] {
+        let outcome = disease
+            .section_outcomes
+            .get(key)
+            .unwrap_or_else(|| panic!("missing outcome-only state for {key}"));
+        assert_eq!(
+            outcome.outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::Unavailable,
+            "key={key}"
+        );
+        assert!(outcome.sources().is_empty(), "key={key}");
+        assert!(
+            outcome
+                .message()
+                .is_some_and(|message| !message.trim().is_empty()),
+            "key={key}"
+        );
+        assert!(
+            !serde_json::to_string(outcome)
+                .expect("outcome serializes")
+                .contains(provider),
+            "failed provider was credited: key={key}"
+        );
+    }
+    assert!(treatments.treatment_landscape.is_empty());
+    assert!(trials.recruiting_trial_count.is_none());
 }
 
 pub(crate) async fn proof_enrich_sparse_disease_identity_prefers_exact_ols4_match() {
