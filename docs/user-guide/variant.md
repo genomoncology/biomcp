@@ -242,7 +242,7 @@ request `predict` explicitly when you want AlphaGenome output.
 
 ```bash
 biomcp variant trials "BRAF V600E"     # search trials mentioning this mutation
-biomcp variant articles "BRAF V600E"   # search PubMed/PubTator for this variant
+biomcp variant articles "BRAF V600E"   # union exact article routes for this variant
 biomcp variant structure "BRAF V600E"  # residue/domain/PDB/AlphaFold/hotspot context
 biomcp variant oncokb "BRAF V600E"     # OncoKB lookup (requires ONCOKB_TOKEN)
 ```

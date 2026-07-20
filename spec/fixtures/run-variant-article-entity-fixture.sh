@@ -28,6 +28,7 @@ BRAF_SOURCE_CITATION_PMID = "6010004"
 BRAF_CODING_ALIAS_PMID = "6010005"
 BRAF_GENOMIC_ALIAS_PMID = "6010006"
 BRAF_SECOND_ANNOTATION_PMID = "6010007"
+BRAF_PUBMED_ALIAS_PMID = "6010008"
 MYD88_PMID = "24534189"
 
 
@@ -134,6 +135,15 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/search/":
             text = params.get("text", [""])[0]
+            if params.get("page", ["1"])[0] != "1":
+                send_json(self, 200, {
+                    "results": [],
+                    "count": 0,
+                    "total_pages": 1,
+                    "current": int(params["page"][0]),
+                    "page_size": 25,
+                })
+                return
             if text == "@VARIANT_p.V600E_BRAF_human":
                 send_json(self, 200, {
                     "results": [
@@ -203,10 +213,34 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path.endswith("/esearch.fcgi"):
-            send_json(self, 200, {"esearchresult": {"idlist": [], "count": "0"}})
+            term = params.get("term", [""])[0]
+            ids = (
+                [BRAF_PUBMED_ALIAS_PMID]
+                if "BRAF p.Val600Glu" in term and params.get("retstart", ["0"]) == ["0"]
+                else []
+            )
+            send_json(self, 200, {
+                "esearchresult": {"idlist": ids, "count": str(len(ids))}
+            })
             return
 
         if parsed.path.endswith("/esummary.fcgi"):
+            ids = params.get("id", [])
+            if ids == [BRAF_PUBMED_ALIAS_PMID]:
+                send_json(self, 200, {
+                    "result": {
+                        "uids": ids,
+                        BRAF_PUBMED_ALIAS_PMID: {
+                            "uid": BRAF_PUBMED_ALIAS_PMID,
+                            "title": "BRAF PubMed-only alias fixture article",
+                            "sortpubdate": "2024/01/01 00:00",
+                            "pubdate": "2024 Jan 1",
+                            "fulljournalname": "BioMCP fixture journal",
+                            "source": "BioMCP fixture journal",
+                        },
+                    }
+                })
+                return
             send_json(self, 200, {"result": {"uids": []}})
             return
 
@@ -295,12 +329,23 @@ case "$scenario" in
         alias_matches: ([$full.results[] | select(.pmid == "6010002" or .pmid == "6010005" or .pmid == "6010006") | {pmid, matched_aliases}] | sort_by(.pmid)),
         shared_provenance: ([$full.results[] | select(.pmid == "6010003") | .provenance[]? | {route, source, matched_alias}] | sort_by(.route)),
         citation_provenance: ([$full.results[] | select(.pmid == "6010004") | .provenance[]? | {route, source, matched_alias}]),
+        pubmed_provenance: ([$full.results[] | select(.pmid == "6010008") | .provenance[]? | {route, source, matched_alias}]),
         annotation_pmids: ([$full.results[] | select(any(.retrieval_routes[]?; . == "pubtator_variant")) | .pmid] | sort),
         page_matches_full_slice: ([$page.results[].pmid] == [$full.results[2:4][].pmid]),
         page_ranks: [$page.results[].rank],
         pagination: ($page.pagination | {offset, limit, returned, total, has_more}),
         truncated: $page.truncated,
-        source_status: ([($full.source_status // [])[] | select((.route == "pubtator_variant" and .source == "pubtator") or (.route == "source_citation" and .source == "myvariant")) | {route, source, status}] | sort_by(.route))
+        source_status: ([($full.source_status // [])[] | select((.route == "exact_lexical" and .source == "pubmed") or (.route == "pubtator_variant" and .source == "pubtator") or (.route == "source_citation" and .source == "myvariant")) | {route, source, status}] | sort_by(.route))
+      }'
+    ;;
+  page-enrichment-json)
+    page="$("$binary" --json variant articles "BRAF p.V600E" --limit 1)"
+    jq -n \
+      --argjson page "$page" \
+      --argjson hidden_candidate_enriched "$(grep -q 'publications/export/biocjson?pmids=6010004' "$request_log" && printf true || printf false)" \
+      '{
+        visible_pmids: [$page.results[].pmid],
+        hidden_candidate_enriched: $hidden_candidate_enriched
       }'
     ;;
   strategies-json)
@@ -314,7 +359,7 @@ case "$scenario" in
       --argjson annotation "$annotation" \
       --argjson lexical "$lexical" \
       '{
-        omitted_equals_union: (($omitted | del(.retrieval_path)) == ($union | del(.retrieval_path))),
+        omitted_equals_union: ($omitted == $union),
         annotation_pmids: ([$annotation.results[].pmid] | sort),
         lexical_pmids: ([$lexical.results[].pmid] | sort),
         union_pmids: ([$union.results[].pmid] | sort)

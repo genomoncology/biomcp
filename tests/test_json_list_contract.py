@@ -35,12 +35,18 @@ def _read(path: str) -> str:
 def test_json_list_outputs_are_parseable_reference_objects() -> None:
     root = _run_json("list")
     gene = _run_json("list", "gene")
+    variant = _run_json("list", "variant")
 
     assert "gene" in _entries(root.get("entities"))
     root_refs = [*_entries(root.get("patterns")), *_entries(root.get("commands"))]
     assert any("search all" in str(entry) for entry in root_refs)
     assert gene.get("entity") == "gene"
     assert any("get gene <symbol>" in str(command) for command in _entries(gene.get("commands")))
+    assert any(
+        "variant articles <id>" in str(command)
+        and "--strategy <union|annotation|lexical>" in str(command)
+        for command in _entries(variant.get("commands"))
+    )
 
 
 def test_public_docs_document_json_list_shape() -> None:

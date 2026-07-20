@@ -31,7 +31,8 @@ use super::{
     MAX_FEDERATED_FETCH_RESULTS,
 };
 
-const LEXICAL_ALIAS_FETCH_LIMIT: usize = 100;
+const LEXICAL_ALIAS_FETCH_LIMIT: usize = 25;
+const MAX_EXACT_ALIASES: usize = 10;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -114,7 +115,7 @@ fn article_filters() -> ArticleSearchFilters {
         article_type: None,
         journal: None,
         open_access: false,
-        no_preprints: true,
+        no_preprints: false,
         exclude_retracted: true,
         max_per_source: None,
         sort: ArticleSort::Relevance,
@@ -175,7 +176,11 @@ fn record_federated_statuses(
     source_status: &[ArticleSourceStatus],
     semantic_scholar_status: &ArticleSourceStatus,
 ) {
-    for source in [ArticleSource::PubTator, ArticleSource::EuropePmc] {
+    for source in [
+        ArticleSource::PubTator,
+        ArticleSource::EuropePmc,
+        ArticleSource::PubMed,
+    ] {
         let availability = source_status
             .iter()
             .find(|status| status.source == source)
@@ -207,7 +212,7 @@ fn candidate_with_provenance(
     candidate
 }
 
-fn exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
+fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
     let mut aliases = BTreeSet::new();
     let gene = context
         .source_identity
@@ -231,6 +236,9 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
     if let Some(change) = context.requested.coding_change.as_deref() {
         insert_change(change);
     }
+    for change in &context.resolution.normalized_aliases.protein_changes {
+        insert_change(change);
+    }
     if let Some(source) = context.source_identity.as_ref() {
         for change in source.protein_changes.iter().chain(&source.coding_changes) {
             insert_change(change);
@@ -241,7 +249,20 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> Vec<String> {
         aliases.extend(source.rsids.iter().map(|value| value.trim().to_string()));
     }
     aliases.retain(|value| !value.is_empty());
-    aliases.into_iter().collect()
+    let primary = primary_exact_alias(context);
+    let mut ordered = Vec::with_capacity(aliases.len().min(MAX_EXACT_ALIASES));
+    if let Some(primary) = primary
+        && aliases.remove(&primary)
+    {
+        ordered.push(primary);
+    }
+    let truncated = ordered.len().saturating_add(aliases.len()) > MAX_EXACT_ALIASES;
+    ordered.extend(
+        aliases
+            .into_iter()
+            .take(MAX_EXACT_ALIASES.saturating_sub(ordered.len())),
+    );
+    (ordered, truncated)
 }
 
 fn combined_normalized_aliases(
@@ -286,12 +307,13 @@ fn primary_exact_alias(context: &VariantArticleResolutionContext) -> Option<Stri
                 .unwrap_or_else(|| change.to_string()),
         );
     }
-    context
-        .source_identity
-        .as_ref()
-        .map(|source| source.genomic_id.clone())
-        .filter(|value| !value.is_empty())
-        .or_else(|| context.requested.rsid.clone())
+    context.requested.rsid.clone().or_else(|| {
+        context
+            .source_identity
+            .as_ref()
+            .map(|source| source.genomic_id.clone())
+            .filter(|value| !value.is_empty())
+    })
 }
 
 async fn annotation_candidates(
@@ -335,15 +357,18 @@ async fn annotation_candidates(
     Ok((candidates, incomplete, succeeded))
 }
 
-async fn lexical_candidates(
-    context: &VariantArticleResolutionContext,
+async fn federated_alias_candidates(
+    aliases: Vec<String>,
+    alias_budget_stopped: bool,
+    route: &str,
+    expose_matched_alias: bool,
 ) -> (
     Vec<ArticleCandidate>,
     bool,
     bool,
     Vec<VariantArticleSourceStatus>,
 ) {
-    let searches = exact_aliases(context).into_iter().map(|alias| async move {
+    let searches = aliases.into_iter().map(|alias| async move {
         let mut filters = article_filters();
         filters.keyword = Some(alias.clone());
         acquire_federated_article_rows(&filters, LEXICAL_ALIAS_FETCH_LIMIT)
@@ -351,7 +376,7 @@ async fn lexical_candidates(
             .map(|rows| (alias, rows))
     });
     let mut candidates = Vec::new();
-    let mut incomplete = false;
+    let mut incomplete = alias_budget_stopped;
     let mut succeeded = false;
     let mut alias_failed = false;
     let mut provider_statuses = BTreeMap::new();
@@ -398,9 +423,9 @@ async fn lexical_candidates(
             let mut candidate = article_candidate_from_row(row);
             for source in sources {
                 candidate.variant_provenance.push(VariantArticleProvenance {
-                    route: "exact_lexical".to_string(),
+                    route: route.to_string(),
                     source: source_name(source).to_string(),
-                    matched_alias: Some(alias.clone()),
+                    matched_alias: expose_matched_alias.then(|| alias.clone()),
                     native_position: candidate.row.source_local_position.saturating_add(1),
                 });
             }
@@ -412,11 +437,19 @@ async fn lexical_candidates(
     }
     if alias_failed || !succeeded {
         let route_severity = if succeeded { 1 } else { 2 };
-        for source in ["pubtator", "europepmc", "semanticscholar"] {
+        for source in ["pubtator", "europepmc", "pubmed", "semanticscholar"] {
             provider_statuses
                 .entry(source.to_string())
                 .and_modify(|current| *current = (*current).max(route_severity))
                 .or_insert(route_severity);
+        }
+    }
+    if alias_budget_stopped {
+        for source in ["pubtator", "europepmc", "pubmed", "semanticscholar"] {
+            provider_statuses
+                .entry(source.to_string())
+                .and_modify(|current| *current = (*current).max(1))
+                .or_insert(1);
         }
     }
     let statuses = provider_statuses
@@ -428,7 +461,7 @@ async fn lexical_candidates(
                 _ => "unavailable",
             };
             status_with_detail(
-                "exact_lexical",
+                route,
                 &source,
                 state,
                 (severity > 0)
@@ -437,6 +470,18 @@ async fn lexical_candidates(
         })
         .collect();
     (candidates, incomplete, succeeded, statuses)
+}
+
+async fn lexical_candidates(
+    context: &VariantArticleResolutionContext,
+) -> (
+    Vec<ArticleCandidate>,
+    bool,
+    bool,
+    Vec<VariantArticleSourceStatus>,
+) {
+    let (aliases, alias_budget_stopped) = exact_aliases(context);
+    federated_alias_candidates(aliases, alias_budget_stopped, "exact_lexical", true).await
 }
 
 fn pmid_seed(pmid: String) -> ArticleSearchResult {
@@ -486,18 +531,90 @@ async fn citation_candidates(
         .collect())
 }
 
-async fn fallback_candidates(input: &str) -> Result<(Vec<ArticleCandidate>, bool), BioMcpError> {
-    let mut filters = article_filters();
-    filters.keyword = Some(input.to_string());
-    let page = search_pubtator_page(&filters, MAX_FEDERATED_FETCH_RESULTS, 0).await?;
-    let incomplete = page.total.is_some_and(|total| total > page.results.len());
-    Ok((
-        page.results
+fn fallback_aliases(input: &str, context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
+    let mut aliases = BTreeSet::from([input.trim().to_string()]);
+    let gene = context.requested.gene.as_deref();
+    let mut insert_change = |change: &str| {
+        let change = change.trim();
+        if !change.is_empty() {
+            aliases.insert(
+                gene.map(|gene| format!("{gene} {change}"))
+                    .unwrap_or_else(|| change.to_string()),
+            );
+        }
+    };
+    for change in &context.resolution.normalized_aliases.protein_changes {
+        insert_change(change);
+    }
+    for change in &context.resolution.normalized_aliases.coding_changes {
+        insert_change(change);
+    }
+
+    if let Some(first) = context.fallback_source_identities.first() {
+        let requested_proteins = context
+            .requested
+            .normalized_aliases()
+            .protein_changes
             .into_iter()
-            .map(|row| candidate_with_provenance(row, "best_effort_free_text", "pubtator", None))
-            .collect(),
-        incomplete,
-    ))
+            .collect::<BTreeSet<_>>();
+        for change in &first.protein_changes {
+            let Some(normalized) = crate::entities::variant::normalize_protein_change(change)
+            else {
+                continue;
+            };
+            if requested_proteins.contains(&normalized)
+                && context.fallback_source_identities.iter().all(|identity| {
+                    identity.protein_changes.iter().any(|candidate| {
+                        crate::entities::variant::normalize_protein_change(candidate).as_ref()
+                            == Some(&normalized)
+                    })
+                })
+            {
+                insert_change(change);
+            }
+        }
+        for change in &first.coding_changes {
+            if context.fallback_source_identities.iter().all(|identity| {
+                identity
+                    .coding_changes
+                    .iter()
+                    .any(|candidate| candidate.eq_ignore_ascii_case(change))
+            }) {
+                insert_change(change);
+            }
+        }
+    }
+
+    aliases.retain(|value| !value.is_empty());
+    let primary = input.trim().to_string();
+    aliases.remove(&primary);
+    let mut ordered = vec![primary];
+    let truncated = ordered.len().saturating_add(aliases.len()) > MAX_EXACT_ALIASES;
+    ordered.extend(
+        aliases
+            .into_iter()
+            .take(MAX_EXACT_ALIASES.saturating_sub(ordered.len())),
+    );
+    (ordered, truncated)
+}
+
+async fn fallback_candidates(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+) -> (
+    Vec<ArticleCandidate>,
+    bool,
+    bool,
+    Vec<VariantArticleSourceStatus>,
+) {
+    let (aliases, alias_budget_stopped) = fallback_aliases(input, context);
+    federated_alias_candidates(
+        aliases,
+        alias_budget_stopped,
+        "best_effort_free_text",
+        false,
+    )
+    .await
 }
 
 fn route_score(candidate: &ArticleCandidate) -> f64 {
@@ -607,22 +724,14 @@ pub async fn search_variant_articles(
 
     if !resolved {
         match strategy {
-            VariantArticleStrategy::Union => match fallback_candidates(input).await {
-                Ok((rows, incomplete)) => {
-                    candidates.extend(rows);
-                    statuses.push(status(
-                        "best_effort_free_text",
-                        "pubtator",
-                        if incomplete { "degraded" } else { "ok" },
-                    ));
-                    succeeded_routes += 1;
-                    failed_routes += usize::from(incomplete);
-                }
-                Err(_) => {
-                    statuses.push(status("best_effort_free_text", "pubtator", "unavailable"));
-                    failed_routes += 1;
-                }
-            },
+            VariantArticleStrategy::Union => {
+                let (rows, incomplete, succeeded, route_statuses) =
+                    fallback_candidates(input, &context).await;
+                candidates.extend(rows);
+                statuses.extend(route_statuses);
+                succeeded_routes += usize::from(succeeded);
+                failed_routes += usize::from(incomplete || !succeeded);
+            }
             VariantArticleStrategy::Annotation => {
                 statuses.push(status("pubtator_variant", "pubtator", "ok"));
                 succeeded_routes += 1;
@@ -691,17 +800,20 @@ pub async fn search_variant_articles(
 
     let mut candidates = merge_article_candidate_pool(candidates);
     rank_candidates(&mut candidates);
-    enrich_candidates(&mut candidates).await;
     let total_candidates = candidates.len();
     let complete = failed_routes == 0;
     let hard_error = succeeded_routes == 0 && failed_routes > 0;
     let has_more = offset.saturating_add(limit) < total_candidates;
     let truncated = !complete || offset > 0 || has_more;
-    let rows = candidates
+    let mut visible_candidates = candidates
         .into_iter()
-        .enumerate()
         .skip(offset)
         .take(limit)
+        .collect::<Vec<_>>();
+    enrich_candidates(&mut visible_candidates).await;
+    let rows = visible_candidates
+        .into_iter()
+        .enumerate()
         .map(|(index, candidate)| {
             let matched_aliases = candidate
                 .variant_provenance
@@ -730,7 +842,7 @@ pub async fn search_variant_articles(
                 matched_aliases,
                 retrieval_routes,
                 sources,
-                rank: index + 1,
+                rank: offset.saturating_add(index).saturating_add(1),
                 provenance: candidate.variant_provenance,
             }
         })
@@ -792,6 +904,7 @@ mod tests {
                 coding_changes: vec!["c.1799T>A".into()],
                 rsids: vec!["rs113488022".into()],
             }),
+            fallback_source_identities: Vec::new(),
             available: true,
         }
     }
@@ -812,16 +925,78 @@ mod tests {
 
     #[test]
     fn resolved_exact_aliases_include_validated_source_forms_once() {
+        let (aliases, truncated) = exact_aliases(&resolved_context());
+        assert!(!truncated);
         assert_eq!(
-            exact_aliases(&resolved_context()),
+            aliases,
             vec![
-                "BRAF c.1799T>A",
                 "BRAF p.V600E",
+                "BRAF V600E",
+                "BRAF c.1799T>A",
                 "BRAF p.Val600Glu",
                 "chr7:g.140453136A>T",
                 "rs113488022",
             ]
         );
+    }
+
+    #[test]
+    fn lexical_alias_budget_preserves_the_requested_identity_and_reports_truncation() {
+        let mut context = resolved_context();
+        context
+            .source_identity
+            .as_mut()
+            .expect("source identity")
+            .coding_changes
+            .extend((0..20).map(|index| format!("c.{index}A>T")));
+
+        let (aliases, truncated) = exact_aliases(&context);
+
+        assert!(truncated);
+        assert_eq!(aliases.first().map(String::as_str), Some("BRAF p.V600E"));
+    }
+
+    #[test]
+    fn ambiguous_fallback_uses_only_request_compatible_shared_source_aliases() {
+        let requested = RequestedVariantIdentity::from_variant_input("MSH2 p.L341P")
+            .expect("requested identity");
+        let mut context = VariantArticleResolutionContext {
+            resolution: VariantSearchResolution {
+                status: VariantResolutionStatus::Ambiguous,
+                normalized_aliases: requested.normalized_aliases(),
+                exhaustive: true,
+            },
+            requested,
+            source_id: None,
+            source_identity: None,
+            fallback_source_identities: vec![
+                SourceVariantIdentity {
+                    genomic_id: "first".into(),
+                    genes: vec!["MSH2".into()],
+                    protein_changes: vec!["p.L341P".into(), "p.Leu341Pro".into()],
+                    coding_changes: vec!["c.1022T>C".into(), "c.824T>C".into()],
+                    rsids: Vec::new(),
+                },
+                SourceVariantIdentity {
+                    genomic_id: "second".into(),
+                    genes: vec!["MSH2".into()],
+                    protein_changes: vec!["p.Leu341Pro".into(), "p.L341P".into()],
+                    coding_changes: vec!["c.1022T>C".into(), "c.1220T>C".into()],
+                    rsids: Vec::new(),
+                },
+            ],
+            available: true,
+        };
+        context.resolution.normalized_aliases = combined_normalized_aliases(&context);
+
+        let (aliases, truncated) = fallback_aliases("MSH2 p.L341P", &context);
+
+        assert!(!truncated);
+        assert!(aliases.iter().any(|alias| alias == "MSH2 L341P"));
+        assert!(aliases.iter().any(|alias| alias == "MSH2 p.Leu341Pro"));
+        assert!(aliases.iter().any(|alias| alias == "MSH2 c.1022T>C"));
+        assert!(!aliases.iter().any(|alias| alias == "MSH2 c.824T>C"));
+        assert!(!aliases.iter().any(|alias| alias == "MSH2 c.1220T>C"));
     }
 
     #[test]

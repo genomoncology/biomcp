@@ -31,6 +31,7 @@ route_specific = {
 
 found_by_variant = {}
 routes_by_variant = {}
+incomplete_variants = []
 for variant in panel:
     completed = subprocess.run(
         [
@@ -50,7 +51,7 @@ for variant in panel:
     )
     payload = json.loads(completed.stdout)
     if not payload.get("complete", False):
-        raise SystemExit(f"incomplete live result for {variant}")
+        incomplete_variants.append(variant)
     rows = payload.get("results", [])
     found_by_variant[variant] = {
         str(row.get("pmid", "")).strip()
@@ -69,8 +70,15 @@ found_reference = set().union(
 covered_variants = sum(
     bool(found_by_variant[variant] & expected) for variant, expected in panel.items()
 )
+recognized_routes = {
+    "pubtator_variant",
+    "exact_lexical",
+    "source_citation",
+    "best_effort_free_text",
+}
 route_specific_rows_are_provenanced = all(
-    pmid in found_by_variant[variant] and bool(routes_by_variant[variant].get(pmid))
+    pmid in found_by_variant[variant]
+    and bool(routes_by_variant[variant].get(pmid, set()) & recognized_routes)
     for variant, pmids in route_specific.items()
     for pmid in pmids
 )
@@ -84,6 +92,7 @@ print(
                 "19493351",
             }.issubset(found_by_variant["MLH1 p.G67E"]),
             "route_specific_pmids_present_for_expected_variants": route_specific_rows_are_provenanced,
+            "incomplete_variants": incomplete_variants,
         },
         indent=2,
         sort_keys=True,

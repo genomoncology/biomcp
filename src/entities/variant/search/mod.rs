@@ -226,6 +226,11 @@ pub(crate) async fn resolve_article_variant(
                     }
                 };
                 let resolved = matches!(status, VariantResolutionStatus::Resolved);
+                let fallback_source_identities =
+                    (!matches!(status, VariantResolutionStatus::Unresolved))
+                        .then(|| source.clone())
+                        .into_iter()
+                        .collect();
                 VariantArticleResolutionContext {
                     requested: requested.clone(),
                     resolution: VariantSearchResolution {
@@ -235,6 +240,7 @@ pub(crate) async fn resolve_article_variant(
                     },
                     source_id: resolved.then(|| hit.id.clone()),
                     source_identity: resolved.then_some(source),
+                    fallback_source_identities,
                     available: true,
                 }
             }
@@ -247,6 +253,7 @@ pub(crate) async fn resolve_article_variant(
                 },
                 source_id: None,
                 source_identity: None,
+                fallback_source_identities: Vec::new(),
                 available: true,
             },
             Err(_) => VariantArticleResolutionContext {
@@ -258,6 +265,7 @@ pub(crate) async fn resolve_article_variant(
                 },
                 source_id: None,
                 source_identity: None,
+                fallback_source_identities: Vec::new(),
                 available: false,
             },
         });
@@ -282,6 +290,7 @@ pub(crate) async fn resolve_article_variant(
                 },
                 source_id: None,
                 source_identity: None,
+                fallback_source_identities: Vec::new(),
                 available: false,
             });
         }
@@ -291,6 +300,11 @@ pub(crate) async fn resolve_article_variant(
         normalized_aliases: requested.normalized_aliases(),
         exhaustive: false,
     });
+    let fallback_source_identities = page
+        .results
+        .iter()
+        .filter_map(|row| row.source_identity.clone())
+        .collect();
     let resolved = matches!(resolution.status, VariantResolutionStatus::Resolved)
         .then(|| page.results.into_iter().next())
         .flatten();
@@ -299,6 +313,7 @@ pub(crate) async fn resolve_article_variant(
         resolution,
         source_id: resolved.as_ref().map(|row| row.id.clone()),
         source_identity: resolved.and_then(|row| row.source_identity),
+        fallback_source_identities,
         available: true,
     })
 }

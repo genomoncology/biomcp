@@ -258,7 +258,7 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. union-json
   "supplied_protein": "p.V600E",
   "resolution": "resolved",
   "complete": true,
-  "pmids": ["6010001", "6010002", "6010003", "6010004", "6010005", "6010006", "6010007"],
+  "pmids": ["6010001", "6010002", "6010003", "6010004", "6010005", "6010006", "6010007", "6010008"],
   "all_rows_keep_requested_variant": true,
   "alias_matches": [
     {"pmid": "6010002", "matched_aliases": ["BRAF p.Val600Glu"]},
@@ -272,15 +272,38 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. union-json
   "citation_provenance": [
     {"route": "source_citation", "source": "civic", "matched_alias": "BRAF p.V600E"}
   ],
+  "pubmed_provenance": [
+    {"route": "exact_lexical", "source": "pubmed", "matched_alias": "BRAF p.Val600Glu"}
+  ],
   "annotation_pmids": ["6010001", "6010003", "6010007"],
   "page_matches_full_slice": true,
   "page_ranks": [3, 4],
-  "pagination": {"offset": 2, "limit": 2, "returned": 2, "total": 7, "has_more": true},
+  "pagination": {"offset": 2, "limit": 2, "returned": 2, "total": 8, "has_more": true},
   "truncated": true,
   "source_status": [
+    {"route": "exact_lexical", "source": "pubmed", "status": "ok"},
     {"route": "pubtator_variant", "source": "pubtator", "status": "ok"},
     {"route": "source_citation", "source": "myvariant", "status": "ok"}
   ]
+}
+```
+
+## Pagination Limits Metadata Enrichment
+
+<!-- mustmatch-lint: skip -->
+
+Variant-article pagination selects the visible ranked page before optional
+metadata enrichment. A small page does not spend source lookups enriching a
+source-citation candidate that will not be returned.
+
+```bash run id=variant-article-visible-enrichment exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. page-enrichment-json
+```
+
+```json expect=variant-article-visible-enrichment contains
+{
+  "visible_pmids": ["6010003"],
+  "hidden_candidate_enriched": false
 }
 ```
 
@@ -300,8 +323,8 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. strategies-json
 {
   "omitted_equals_union": true,
   "annotation_pmids": ["6010001", "6010003", "6010007"],
-  "lexical_pmids": ["6010002", "6010003", "6010005", "6010006"],
-  "union_pmids": ["6010001", "6010002", "6010003", "6010004", "6010005", "6010006", "6010007"]
+  "lexical_pmids": ["6010002", "6010003", "6010005", "6010006", "6010008"],
+  "union_pmids": ["6010001", "6010002", "6010003", "6010004", "6010005", "6010006", "6010007", "6010008"]
 }
 ```
 

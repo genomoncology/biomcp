@@ -780,6 +780,7 @@ pub(crate) struct VariantArticleResolutionContext {
     pub resolution: VariantSearchResolution,
     pub source_id: Option<String>,
     pub source_identity: Option<SourceVariantIdentity>,
+    pub fallback_source_identities: Vec<SourceVariantIdentity>,
     pub available: bool,
 }
 

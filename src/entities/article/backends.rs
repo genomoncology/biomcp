@@ -150,6 +150,9 @@ pub(super) async fn search_pubmed_page(
         )?;
 
         batch_start = batch_start.saturating_add(batch_len);
+        if total.is_some_and(|value| batch_start >= value) {
+            break;
+        }
     }
 
     Ok(SearchPage::offset(out, total))
@@ -269,6 +272,9 @@ pub(super) async fn search_europepmc_page(
             }
         }
 
+        if total.is_some_and(|value| page.saturating_mul(EUROPE_PMC_PAGE_SIZE) >= value) {
+            break;
+        }
         page += 1;
     }
 
@@ -373,6 +379,9 @@ pub(super) async fn search_pubtator_page(
             if out.len() >= limit {
                 break;
             }
+        }
+        if total.is_some_and(|value| page.saturating_mul(PUBTATOR_PAGE_SIZE) >= value) {
+            break;
         }
         page += 1;
     }
