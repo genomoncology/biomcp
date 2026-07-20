@@ -16,6 +16,15 @@ reader can immediately see which drugs are affected.
 | CYP2D6 | codeine | A | Actionable PGx |'
 ```
 
+The testing-recommendation filter accepts the provider's documented category
+and keeps matching interactions visible.
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci search pgx CYP2D6 --pgx-testing "Actionable PGx" --limit 3 \
+  | mustmatch like '| CYP2D6 | codeine | A | Actionable PGx |'
+```
+
 ## Drug-First Search
 
 Drug lookup is a first-class path too. It should route through the same CPIC

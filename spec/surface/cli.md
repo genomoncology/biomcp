@@ -35,12 +35,36 @@ subpages should keep teaching when to use the command, not just list flags.
 ## Enrichment reports unresolved input symbols
 
 A mixed gene set can still produce useful enrichment when one symbol does not
-resolve. JSON names the unresolved input explicitly so a caller does not mistake
-it for a genuinely empty enrichment.
+resolve. JSON names the unresolved input explicitly while retaining terms for
+the resolved gene, and Markdown gives human readers the same warning.
 
 ```bash
+set -o pipefail
 ../../tools/biomcp-ci --json enrich BRAF,ZZQQXX1 \
-  | mustmatch like '{"unresolved_genes":["ZZQQXX1"]}'
+  | jq '.unresolved_genes == ["ZZQQXX1"] and (.results | length > 0)' \
+  | mustmatch 'true'
+```
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci enrich BRAF,ZZQQXX1 \
+  | mustmatch like 'Unresolved genes: ZZQQXX1'
+```
+
+When every submitted symbol fails resolution, the response lists all of them
+rather than presenting the empty term list as confident evidence. A resolved
+symbol keeps an explicit empty unresolved list for scripts.
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci --json enrich ZZQQXX1,NOTAGENE2 \
+  | mustmatch like '{"unresolved_genes":["ZZQQXX1","NOTAGENE2"]}'
+```
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci --json enrich BRAF \
+  | mustmatch like '{"unresolved_genes":[]}'
 ```
 
 ## List Command Documents Update Checksum Override
