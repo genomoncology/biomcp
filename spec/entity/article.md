@@ -525,7 +525,7 @@ not claim a saved artifact or expose source-body and signed-URL details.
 
 ```bash
 ../../tools/biomcp-ci get article 22663020 fulltext \
-  | mustmatch not '/(?i)(Saved to:|SENSITIVE-ABSTRACT-TITLE-CANARY|SENSITIVE-ABSTRACT-SOURCE-BODY|signed\.example\.invalid|token=secret)/'
+  | mustmatch not '/(?i)(Saved\s+to:|SENSITIVE-ABSTRACT-TITLE-CANARY|SENSITIVE-ABSTRACT-SOURCE-BODY|signed\.example\.invalid|token=secret)/'
 ```
 
 Opting in to PDF continues the same ladder. The later PDF becomes the winner,
