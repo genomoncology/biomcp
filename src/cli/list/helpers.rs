@@ -11,8 +11,8 @@ pub(super) fn list_all() -> String {
 
     if has_oncokb {
         out = out.replace(
-            "- `variant articles <id>`\n",
-            "- `variant articles <id>`\n- `variant oncokb <id>`\n",
+            "- `variant articles <id> [--strategy <union|annotation|lexical>]`\n",
+            "- `variant articles <id> [--strategy <union|annotation|lexical>]`\n- `variant oncokb <id>`\n",
         );
     }
     out

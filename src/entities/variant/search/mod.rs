@@ -7,9 +7,9 @@ use crate::transform;
 use std::collections::HashSet;
 
 use super::{
-    RequestedVariantIdentity, SourceVariantIdentity, VariantIdentityComparison,
-    VariantResolutionStatus, VariantSearchFilters, VariantSearchResolution, VariantSearchResult,
-    compare_variant_identity,
+    RequestedVariantIdentity, SourceVariantIdentity, VariantArticleResolutionContext,
+    VariantIdentityComparison, VariantResolutionStatus, VariantSearchFilters,
+    VariantSearchResolution, VariantSearchResult, compare_variant_identity,
 };
 
 #[derive(Debug, Clone)]
@@ -200,6 +200,122 @@ pub async fn search(
     limit: usize,
 ) -> Result<Vec<VariantSearchResult>, BioMcpError> {
     Ok(search_page(filters, limit, 0).await?.results)
+}
+
+pub(crate) async fn resolve_article_variant(
+    input: &str,
+) -> Result<VariantArticleResolutionContext, BioMcpError> {
+    let requested = RequestedVariantIdentity::from_variant_input(input)?;
+    if requested.genomic_accession.is_some() {
+        let result = match MyVariantClient::new() {
+            Ok(client) => client.get(input).await,
+            Err(err) => Err(err),
+        };
+        return Ok(match result {
+            Ok(hit) => {
+                let source = SourceVariantIdentity::from_myvariant_hit(&hit);
+                let status = match compare_variant_identity(&requested, &source) {
+                    VariantIdentityComparison::Compatible { .. } => {
+                        VariantResolutionStatus::Resolved
+                    }
+                    VariantIdentityComparison::Indeterminate { .. } => {
+                        VariantResolutionStatus::Ambiguous
+                    }
+                    VariantIdentityComparison::Contradictory { .. } => {
+                        VariantResolutionStatus::Unresolved
+                    }
+                };
+                let resolved = matches!(status, VariantResolutionStatus::Resolved);
+                let fallback_source_identities =
+                    (!matches!(status, VariantResolutionStatus::Unresolved))
+                        .then(|| source.clone())
+                        .into_iter()
+                        .collect();
+                VariantArticleResolutionContext {
+                    requested: requested.clone(),
+                    resolution: VariantSearchResolution {
+                        status,
+                        normalized_aliases: requested.normalized_aliases(),
+                        exhaustive: true,
+                    },
+                    source_id: resolved.then(|| hit.id.clone()),
+                    source_identity: resolved.then_some(source),
+                    fallback_source_identities,
+                    available: true,
+                }
+            }
+            Err(BioMcpError::NotFound { .. }) => VariantArticleResolutionContext {
+                requested: requested.clone(),
+                resolution: VariantSearchResolution {
+                    status: VariantResolutionStatus::Unresolved,
+                    normalized_aliases: requested.normalized_aliases(),
+                    exhaustive: true,
+                },
+                source_id: None,
+                source_identity: None,
+                fallback_source_identities: Vec::new(),
+                available: true,
+            },
+            Err(_) => VariantArticleResolutionContext {
+                requested: requested.clone(),
+                resolution: VariantSearchResolution {
+                    status: VariantResolutionStatus::Ambiguous,
+                    normalized_aliases: requested.normalized_aliases(),
+                    exhaustive: false,
+                },
+                source_id: None,
+                source_identity: None,
+                fallback_source_identities: Vec::new(),
+                available: false,
+            },
+        });
+    }
+    let filters = VariantSearchFilters {
+        gene: requested.gene.clone(),
+        hgvsp: requested.protein_change.clone(),
+        hgvsc: requested.coding_change.clone(),
+        rsid: requested.rsid.clone(),
+        requested_identity: Some(requested.clone()),
+        ..Default::default()
+    };
+    let page = match search_page(&filters, 2, 0).await {
+        Ok(page) => page,
+        Err(_) => {
+            return Ok(VariantArticleResolutionContext {
+                requested: requested.clone(),
+                resolution: VariantSearchResolution {
+                    status: VariantResolutionStatus::Ambiguous,
+                    normalized_aliases: requested.normalized_aliases(),
+                    exhaustive: false,
+                },
+                source_id: None,
+                source_identity: None,
+                fallback_source_identities: Vec::new(),
+                available: false,
+            });
+        }
+    };
+    let resolution = page.resolution.unwrap_or(VariantSearchResolution {
+        status: VariantResolutionStatus::Unresolved,
+        normalized_aliases: requested.normalized_aliases(),
+        exhaustive: false,
+    });
+    let fallback_source_identities = page
+        .results
+        .iter()
+        .filter_map(|row| row.source_identity.clone())
+        .collect();
+    let resolved = matches!(resolution.status, VariantResolutionStatus::Resolved)
+        .then(|| page.results.into_iter().next())
+        .flatten();
+    Ok(VariantArticleResolutionContext {
+        requested,
+        resolution,
+        source_id: resolved.as_ref().map(|row| row.id.clone()),
+        source_identity: resolved.and_then(|row| row.source_identity),
+        fallback_source_identities,
+        available: true,
+    })
 }
 
 pub async fn search_page(

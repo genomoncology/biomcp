@@ -72,6 +72,56 @@ pub struct MyVariantClient {
     base: Cow<'static, str>,
 }
 
+pub(crate) fn civic_pubmed_ids(hit: &MyVariantHit) -> Vec<String> {
+    let Some(profiles) = hit
+        .civic
+        .as_ref()
+        .and_then(|value| value.get("molecularProfiles"))
+        .and_then(serde_json::Value::as_array)
+    else {
+        return Vec::new();
+    };
+    let mut pmids = std::collections::BTreeSet::new();
+    for source in profiles
+        .iter()
+        .filter_map(|profile| profile.get("evidenceItems")?.as_array())
+        .flatten()
+        .filter_map(|item| item.get("source"))
+    {
+        let is_pubmed = source
+            .get("sourceType")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|kind| kind.trim().eq_ignore_ascii_case("PUBMED"));
+        if !is_pubmed {
+            continue;
+        }
+        let citation = match source.get("citation") {
+            Some(serde_json::Value::String(value)) => value.trim(),
+            Some(serde_json::Value::Number(value)) => value.as_u64().map_or("", |_| "numeric"),
+            _ => "",
+        };
+        let parsed = if citation == "numeric" {
+            source.get("citation").and_then(serde_json::Value::as_u64)
+        } else {
+            let digits = citation
+                .split_once(':')
+                .filter(|(prefix, _)| prefix.trim().eq_ignore_ascii_case("PMID"))
+                .map(|(_, digits)| digits.trim())
+                .unwrap_or(citation);
+            (!digits.is_empty() && digits.chars().all(|ch| ch.is_ascii_digit()))
+                .then(|| digits.parse::<u64>().ok())
+                .flatten()
+        };
+        if let Some(pmid) = parsed
+            .filter(|pmid| *pmid > 0)
+            .and_then(|pmid| u32::try_from(pmid).ok())
+        {
+            pmids.insert(pmid.to_string());
+        }
+    }
+    pmids.into_iter().collect()
+}
+
 pub struct VariantSearchParams {
     pub gene: Option<String>,
     pub hgvsp: Option<String>,

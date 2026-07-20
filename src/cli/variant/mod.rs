@@ -2,6 +2,8 @@
 
 use clap::{Args, Subcommand};
 
+pub use crate::entities::article::VariantArticleStrategy;
+
 #[derive(Args, Debug)]
 pub struct VariantSearchArgs {
     /// Filter by gene symbol
@@ -99,17 +101,20 @@ See also: biomcp list variant")]
         #[arg(long, default_value = "ctgov")]
         source: String,
     },
-    /// Search articles using variant annotations, with labeled best-effort fallback
+    /// Search articles by unioning exact variant evidence routes
     #[command(after_help = "\
 EXAMPLES:
   biomcp variant articles \"BRAF V600E\" --limit 5
-  biomcp variant articles rs113488022 --limit 5
+  biomcp variant articles rs113488022 --strategy annotation --limit 5
 
-Note: Uses PubTator variant annotations when a confident entity match is available, and labels best-effort free-text fallback when annotation recall is unavailable.
+Note: The default union combines exact PubTator annotations, normalized aliases, and source citations before ranking and pagination. Use annotation or lexical only for route diagnosis. Unresolved input is labeled as best-effort free text.
 See also: biomcp list variant")]
     Articles {
         /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
         id: String,
+        /// Retrieval strategy (union, annotation, or lexical)
+        #[arg(long, value_enum, default_value_t = VariantArticleStrategy::Union)]
+        strategy: VariantArticleStrategy,
         /// Maximum results, 1-50 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,

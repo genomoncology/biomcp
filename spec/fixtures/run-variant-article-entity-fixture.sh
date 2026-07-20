@@ -21,7 +21,14 @@ from urllib.parse import parse_qs, urlparse
 ready = Path(sys.argv[1])
 request_log = Path(sys.argv[2])
 
-BRAF_PMID = "4260001"
+BRAF_ANNOTATION_PMID = "6010001"
+BRAF_PROTEIN_ALIAS_PMID = "6010002"
+BRAF_SHARED_PMID = "6010003"
+BRAF_SOURCE_CITATION_PMID = "6010004"
+BRAF_CODING_ALIAS_PMID = "6010005"
+BRAF_GENOMIC_ALIAS_PMID = "6010006"
+BRAF_SECOND_ANNOTATION_PMID = "6010007"
+BRAF_PUBMED_ALIAS_PMID = "6010008"
 MYD88_PMID = "24534189"
 
 
@@ -55,12 +62,51 @@ class Handler(BaseHTTPRequestHandler):
         with request_log.open("a", encoding="utf-8") as handle:
             handle.write(f"{parsed.path}?{parsed.query}\n")
 
+        if parsed.path == "/v1/query":
+            query = params.get("q", [""])[0]
+            if "BRAF" in query and ("V600E" in query or "p.V600E" in query):
+                send_json(self, 200, {
+                    "total": 1,
+                    "hits": [{
+                        "_id": "chr7:g.140453136A>T",
+                        "dbnsfp": {
+                            "genename": ["BRAF"],
+                            "hgvsp": ["p.V600E", "p.Val600Glu"],
+                            "hgvsc": ["c.1799T>A"],
+                        },
+                    }],
+                })
+                return
+            send_json(self, 200, {"total": 0, "hits": []})
+            return
+
+        if parsed.path.startswith("/v1/variant/"):
+            send_json(self, 200, {
+                "_id": "chr7:g.140453136A>T",
+                "dbnsfp": {
+                    "genename": ["BRAF"],
+                    "hgvsp": ["p.V600E", "p.Val600Glu"],
+                    "hgvsc": ["c.1799T>A"],
+                },
+                "civic": {
+                    "molecularProfiles": [{
+                        "evidenceItems": [{
+                            "source": {
+                                "citation": "PMID:6010004",
+                                "sourceType": "PUBMED",
+                            }
+                        }]
+                    }]
+                },
+            })
+            return
+
         if parsed.path == "/entity/autocomplete/":
             query = params.get("query", [""])[0]
             rows = []
             if query == "BRAF":
                 rows.append({"_id": "@GENE_BRAF", "biotype": "Gene", "name": "BRAF"})
-            if query in {"BRAF V600E", "V600E", "p.V600E"}:
+            if query in {"BRAF V600E", "BRAF p.V600E", "V600E", "p.V600E"}:
                 rows.append({
                     "_id": "@VARIANT_p.V600V_BRAF_human",
                     "biotype": "Variant",
@@ -70,6 +116,11 @@ class Handler(BaseHTTPRequestHandler):
                     "_id": "@VARIANT_p.V600E_BRAF_human",
                     "biotype": "Variant",
                     "name": "BRAF p.V600E",
+                })
+                rows.append({
+                    "_id": "@VARIANT_p.Val600Glu_BRAF_human",
+                    "biotype": "Variant",
+                    "name": "BRAF p.Val600Glu",
                 })
             if query == "MYD88":
                 rows.append({"_id": "@GENE_MYD88", "biotype": "Gene", "name": "MYD88"})
@@ -84,9 +135,32 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/search/":
             text = params.get("text", [""])[0]
+            if params.get("page", ["1"])[0] != "1":
+                send_json(self, 200, {
+                    "results": [],
+                    "count": 0,
+                    "total_pages": 1,
+                    "current": int(params["page"][0]),
+                    "page_size": 25,
+                })
+                return
             if text == "@VARIANT_p.V600E_BRAF_human":
                 send_json(self, 200, {
-                    "results": [pubtator_result(BRAF_PMID, "BRAF V600E entity-annotated fixture article")],
+                    "results": [
+                        pubtator_result(BRAF_ANNOTATION_PMID, "BRAF V600E annotation-only fixture article"),
+                        pubtator_result(BRAF_SHARED_PMID, "BRAF V600E shared-route fixture article"),
+                    ],
+                    "count": 2,
+                    "total_pages": 1,
+                    "current": 1,
+                    "page_size": 25,
+                })
+                return
+            if text == "@VARIANT_p.Val600Glu_BRAF_human":
+                send_json(self, 200, {
+                    "results": [
+                        pubtator_result(BRAF_SECOND_ANNOTATION_PMID, "BRAF V600E second annotation-token fixture article"),
+                    ],
                     "count": 1,
                     "total_pages": 1,
                     "current": 1,
@@ -105,14 +179,68 @@ class Handler(BaseHTTPRequestHandler):
                     "page_size": 25,
                 })
                 return
+            lexical_rows = {
+                "BRAF V600E": [
+                    pubtator_result(BRAF_SHARED_PMID, "BRAF V600E shared-route fixture article"),
+                ],
+                "BRAF p.V600E": [
+                    pubtator_result(BRAF_SHARED_PMID, "BRAF V600E shared-route fixture article"),
+                ],
+                "BRAF p.Val600Glu": [
+                    pubtator_result(BRAF_PROTEIN_ALIAS_PMID, "BRAF long-form protein alias fixture article"),
+                ],
+                "BRAF c.1799T>A": [
+                    pubtator_result(BRAF_CODING_ALIAS_PMID, "BRAF coding alias fixture article"),
+                ],
+                "c.1799T>A": [
+                    pubtator_result(BRAF_CODING_ALIAS_PMID, "BRAF coding alias fixture article"),
+                ],
+                "chr7:g.140453136A>T": [
+                    pubtator_result(BRAF_GENOMIC_ALIAS_PMID, "BRAF genomic alias fixture article"),
+                ],
+            }
+            if text in lexical_rows:
+                rows = lexical_rows[text]
+                send_json(self, 200, {
+                    "results": rows,
+                    "count": len(rows),
+                    "total_pages": 1,
+                    "current": 1,
+                    "page_size": 25,
+                })
+                return
             send_json(self, 200, {"results": [], "count": 0, "total_pages": 0, "current": 1, "page_size": 25})
             return
 
         if parsed.path.endswith("/esearch.fcgi"):
-            send_json(self, 200, {"esearchresult": {"idlist": [], "count": "0"}})
+            term = params.get("term", [""])[0]
+            ids = (
+                [BRAF_PUBMED_ALIAS_PMID]
+                if "BRAF p.Val600Glu" in term and params.get("retstart", ["0"]) == ["0"]
+                else []
+            )
+            send_json(self, 200, {
+                "esearchresult": {"idlist": ids, "count": str(len(ids))}
+            })
             return
 
         if parsed.path.endswith("/esummary.fcgi"):
+            ids = params.get("id", [])
+            if ids == [BRAF_PUBMED_ALIAS_PMID]:
+                send_json(self, 200, {
+                    "result": {
+                        "uids": ids,
+                        BRAF_PUBMED_ALIAS_PMID: {
+                            "uid": BRAF_PUBMED_ALIAS_PMID,
+                            "title": "BRAF PubMed-only alias fixture article",
+                            "sortpubdate": "2024/01/01 00:00",
+                            "pubdate": "2024 Jan 1",
+                            "fulljournalname": "BioMCP fixture journal",
+                            "source": "BioMCP fixture journal",
+                        },
+                    }
+                })
+                return
             send_json(self, 200, {"result": {"uids": []}})
             return
 
@@ -154,6 +282,7 @@ export BIOMCP_CACHE_MODE=off
 export BIOMCP_CACHE_DIR="$fixture_root/cache"
 export BIOMCP_TEST_UNPACED_ORIGIN="$base_url"
 export BIOMCP_PUBTATOR_BASE="$base_url"
+export BIOMCP_MYVARIANT_BASE="$base_url/v1"
 export BIOMCP_EUROPEPMC_BASE="$base_url"
 export BIOMCP_PUBMED_BASE="$base_url/entrez/eutils"
 export BIOMCP_S2_BASE="$base_url"
@@ -182,5 +311,82 @@ case "$scenario" in
     jq -e '.results | any(.pmid == "24534189")' >/dev/null <<<"$json_out"
     printf 'JSON fallback path preserved\n'
     jq -r '.results[] | select(.pmid == "24534189") | .pmid' <<<"$json_out"
+    ;;
+  union-json)
+    full="$("$binary" --json variant articles "BRAF p.V600E" --limit 50)"
+    page="$("$binary" --json variant articles "BRAF p.V600E" --limit 2 --offset 2)"
+    jq -n \
+      --argjson full "$full" \
+      --argjson page "$page" \
+      '{
+        strategy: $full.strategy,
+        requested_gene: $full.requested_variant.gene,
+        supplied_protein: $full.requested_variant.protein_change,
+        resolution: $full.resolution.status,
+        complete: $full.complete,
+        pmids: ([$full.results[].pmid] | sort),
+        all_rows_keep_requested_variant: all($full.results[]; .requested_variant == $full.requested_variant),
+        alias_matches: ([$full.results[] | select(.pmid == "6010002" or .pmid == "6010005" or .pmid == "6010006") | {pmid, matched_aliases}] | sort_by(.pmid)),
+        shared_provenance: ([$full.results[] | select(.pmid == "6010003") | .provenance[]? | {route, source, matched_alias}] | sort_by(.route)),
+        citation_provenance: ([$full.results[] | select(.pmid == "6010004") | .provenance[]? | {route, source, matched_alias}]),
+        pubmed_provenance: ([$full.results[] | select(.pmid == "6010008") | .provenance[]? | {route, source, matched_alias}]),
+        annotation_pmids: ([$full.results[] | select(any(.retrieval_routes[]?; . == "pubtator_variant")) | .pmid] | sort),
+        page_matches_full_slice: ([$page.results[].pmid] == [$full.results[2:4][].pmid]),
+        page_ranks: [$page.results[].rank],
+        pagination: ($page.pagination | {offset, limit, returned, total, has_more}),
+        truncated: $page.truncated,
+        source_status: ([($full.source_status // [])[] | select((.route == "exact_lexical" and .source == "pubmed") or (.route == "pubtator_variant" and .source == "pubtator") or (.route == "source_citation" and .source == "myvariant")) | {route, source, status}] | sort_by(.route))
+      }'
+    ;;
+  page-enrichment-json)
+    page="$("$binary" --json variant articles "BRAF p.V600E" --limit 1)"
+    jq -n \
+      --argjson page "$page" \
+      --argjson hidden_candidate_enriched "$(grep -q 'publications/export/biocjson?pmids=6010004' "$request_log" && printf true || printf false)" \
+      '{
+        visible_pmids: [$page.results[].pmid],
+        hidden_candidate_enriched: $hidden_candidate_enriched
+      }'
+    ;;
+  strategies-json)
+    omitted="$("$binary" --json variant articles "BRAF p.V600E" --limit 10)"
+    union="$("$binary" --json variant articles "BRAF p.V600E" --strategy union --limit 10)"
+    annotation="$("$binary" --json variant articles "BRAF p.V600E" --strategy annotation --limit 10)"
+    lexical="$("$binary" --json variant articles "BRAF p.V600E" --strategy lexical --limit 10)"
+    jq -n \
+      --argjson omitted "$omitted" \
+      --argjson union "$union" \
+      --argjson annotation "$annotation" \
+      --argjson lexical "$lexical" \
+      '{
+        omitted_equals_union: ($omitted == $union),
+        annotation_pmids: ([$annotation.results[].pmid] | sort),
+        lexical_pmids: ([$lexical.results[].pmid] | sort),
+        union_pmids: ([$union.results[].pmid] | sort)
+      }'
+    ;;
+  unresolved-json)
+    "$binary" --json variant articles "MYD88 S219C" --limit 3 \
+      | jq '{
+          resolution: .resolution.status,
+          complete,
+          pmid: .results[0].pmid,
+          row_requested_gene: .results[0].requested_variant.gene,
+          routes: .results[0].retrieval_routes,
+          matched_aliases: .results[0].matched_aliases,
+          has_exact_claim: ([.results[0].retrieval_routes[]?] | any(. == "pubtator_variant" or . == "exact_lexical"))
+        }'
+    ;;
+  healthy-empty-json)
+    "$binary" --json variant articles "MYD88 S219C" --strategy annotation --limit 3 \
+      | jq '{
+          strategy,
+          resolution: .resolution.status,
+          results,
+          complete,
+          truncated,
+          pagination: (.pagination | {offset, limit, returned, total, has_more, next_page_token}),
+          source_status: [(.source_status // [])[] | select(.route == "pubtator_variant" and .source == "pubtator") | {route, source, status}]
+        }'
     ;;
 esac

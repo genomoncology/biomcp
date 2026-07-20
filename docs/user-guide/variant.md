@@ -242,7 +242,7 @@ request `predict` explicitly when you want AlphaGenome output.
 
 ```bash
 biomcp variant trials "BRAF V600E"     # search trials mentioning this mutation
-biomcp variant articles "BRAF V600E"   # search PubMed/PubTator for this variant
+biomcp variant articles "BRAF V600E"   # union exact article routes for this variant
 biomcp variant structure "BRAF V600E"  # residue/domain/PDB/AlphaFold/hotspot context
 biomcp variant oncokb "BRAF V600E"     # OncoKB lookup (requires ONCOKB_TOKEN)
 ```
@@ -258,10 +258,20 @@ is `null` when that lookup is inapplicable or unavailable; its successful data
 and empty object shape is unchanged. This helper does not add structure data to
 default `get variant` output.
 
-`variant articles` uses PubTator variant annotations when BioMCP can resolve a
-confident variant entity. If annotation recall is unavailable, the output labels
-the route as a best-effort free-text fallback so agents know which recall path
-was used.
+`variant articles` first performs one strict variant resolution. Its default
+`--strategy union` combines compatible PubTator variant annotations, normalized
+protein/coding/genomic/rsID aliases across the ordinary article backends, and
+validated source-backed PubMed citations. BioMCP merges duplicate papers with
+all route/source/alias provenance, ranks the union, and applies `--offset` and
+`--limit` once. Use `--strategy annotation` or `--strategy lexical` to diagnose
+one exact route. If resolution is ambiguous or unresolved, exact routes stay
+empty and the default output labels any discovery result as
+`best_effort_free_text` with no exact matched alias.
+
+JSON repeats `requested_variant` on every row and reports `resolution`,
+`complete`, `truncated`, full pagination state, and per-route `source_status`.
+An incomplete provider route keeps available rows but sets `complete: false`,
+`truncated: true`, and `pagination.total: null`.
 
 ## Search GWAS associations
 

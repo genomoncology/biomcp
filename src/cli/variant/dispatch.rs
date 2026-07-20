@@ -99,57 +99,35 @@ pub(crate) async fn handle_command(
                 crate::render::markdown::trial_search_markdown(&query, &results, total)?
             }
         }
-        VariantCommand::Articles { id, limit, offset } => {
-            let id_format = crate::entities::variant::parse_variant_id(&id)?;
-            let (gene, change) = match id_format {
-                crate::entities::variant::VariantIdFormat::RsId(_) => (None, None),
-                crate::entities::variant::VariantIdFormat::HgvsGenomic(_) => (None, None),
-                crate::entities::variant::VariantIdFormat::GeneProteinChange { gene, change } => {
-                    (Some(gene), Some(change))
-                }
-            };
-
-            let filters = crate::entities::article::ArticleSearchFilters {
-                variant: Some(crate::entities::article::ArticleVariantIntent {
-                    original: id.clone(),
-                    gene,
-                    change,
-                    entity_id: None,
-                }),
-                ..super::super::related_article_filters()
-            };
-
-            let query = vec![
-                Some(format!("variant={id}")),
-                (offset > 0).then(|| format!("offset={offset}")),
-            ]
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>()
-            .join(", ");
-
-            let page =
-                crate::entities::article::search_variant_article_page(&filters, limit, offset)
+        VariantCommand::Articles {
+            id,
+            strategy,
+            limit,
+            offset,
+        } => {
+            let outcome =
+                crate::entities::article::search_variant_articles(&id, strategy, limit, offset)
                     .await?;
-            let results = page.page.results;
-            let total = page.page.total.unwrap_or(results.len() + offset);
-            super::super::log_pagination_truncation(total, offset, results.len());
-            if json {
-                #[derive(serde::Serialize)]
-                struct SearchResponse {
-                    total: Option<usize>,
-                    count: usize,
-                    retrieval_path: &'static str,
-                    results: Vec<crate::entities::article::ArticleSearchResult>,
-                }
-
-                crate::render::json::to_pretty(&SearchResponse {
-                    total: Some(total),
-                    count: results.len(),
-                    retrieval_path: page.retrieval_path,
-                    results,
-                })?
+            let text = if json {
+                crate::render::json::to_pretty(&outcome.response)?
             } else {
+                let filters = super::super::related_article_filters();
+                let results = outcome
+                    .response
+                    .results
+                    .iter()
+                    .map(|row| row.article.clone())
+                    .collect::<Vec<_>>();
+                let query = vec![
+                    Some(format!("variant={id}")),
+                    (strategy != crate::entities::article::VariantArticleStrategy::Union)
+                        .then(|| format!("strategy={strategy:?}").to_ascii_lowercase()),
+                    (offset > 0).then(|| format!("offset={offset}")),
+                ]
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>()
+                .join(", ");
                 crate::render::markdown::article_search_markdown_with_footer_and_context(
                     &query,
                     &results,
@@ -157,19 +135,38 @@ pub(crate) async fn handle_command(
                     &filters,
                     crate::render::markdown::ArticleSearchRenderContext {
                         source_filter: crate::entities::article::ArticleSourceFilter::All,
-                        semantic_scholar_enabled:
-                            crate::entities::article::semantic_scholar_search_enabled(
-                                &filters,
-                                crate::entities::article::ArticleSourceFilter::All,
-                            ),
-                        warning: None,
-                        note: Some(page.retrieval_path),
+                        semantic_scholar_enabled: false,
+                        warning: (!outcome.response.complete)
+                            .then_some("One or more variant article routes were incomplete."),
+                        note: Some(outcome.response.retrieval_path),
                         debug_plan: None,
                         exact_entity_commands: &[],
                         source_status: &[],
                     },
                 )?
+            };
+            if outcome.hard_error {
+                if json {
+                    return Ok(CommandOutcome::stdout_with_exit(text, 1));
+                }
+                let sources = outcome
+                    .response
+                    .source_status
+                    .iter()
+                    .filter(|status| status.status == "unavailable")
+                    .map(|status| match status.source.as_str() {
+                        "pubtator" => "PubTator 3",
+                        "myvariant" => "MyVariant.info",
+                        other => other,
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                return Ok(CommandOutcome::stderr_with_exit(
+                    format!("{sources} variant article route unavailable; retry the request."),
+                    1,
+                ));
             }
+            text
         }
         VariantCommand::Structure { id } => {
             let result = crate::entities::variant::structure(&id).await?;

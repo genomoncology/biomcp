@@ -132,7 +132,7 @@ Transcript normalization examples:
 ## Helpers
 
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
-- `variant articles <id>`
+- `variant articles <id> [--strategy <union|annotation|lexical>]` - exact-route union by default; diagnostic route isolation is opt-in
 - `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
 "#
     .to_string();

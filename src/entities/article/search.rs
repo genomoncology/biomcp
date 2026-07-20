@@ -25,7 +25,6 @@ use super::filters::{
 use super::planner::{
     BackendPlan, litsense2_search_enabled, plan_backends, pubmed_filter_compatible,
 };
-use super::query::resolve_variant_entity_token;
 use super::ranking::validate_article_ranking_options;
 use super::{
     ArticleSearchFilters, ArticleSearchPage, ArticleSearchResult, ArticleSort, ArticleSource,
@@ -38,11 +37,6 @@ pub const VARIANT_FALLBACK_RETRIEVAL_PATH: &str = "best-effort free-text fallbac
 
 const FEDERATED_ARTICLE_SOURCE_TIMEOUT: Duration = Duration::from_secs(12);
 
-pub struct VariantArticleSearchPage {
-    pub page: ArticleSearchPage,
-    pub retrieval_path: &'static str,
-}
-
 pub async fn search(
     filters: &ArticleSearchFilters,
     limit: usize,
@@ -50,56 +44,6 @@ pub async fn search(
     Ok(search_page(filters, limit, 0, ArticleSourceFilter::All)
         .await?
         .results)
-}
-
-pub async fn search_variant_article_page(
-    filters: &ArticleSearchFilters,
-    limit: usize,
-    offset: usize,
-) -> Result<VariantArticleSearchPage, BioMcpError> {
-    let Some(intent) = filters.variant.as_ref() else {
-        return Ok(VariantArticleSearchPage {
-            page: search_page(filters, limit, offset, ArticleSourceFilter::All).await?,
-            retrieval_path: VARIANT_FALLBACK_RETRIEVAL_PATH,
-        });
-    };
-
-    let pubtator = crate::sources::pubtator::PubTatorClient::new()?;
-    if let Some(entity_id) = resolve_variant_entity_token(&pubtator, intent).await {
-        let mut entity_filters = filters.clone();
-        if let Some(entity_intent) = entity_filters.variant.as_mut() {
-            entity_intent.entity_id = Some(entity_id);
-        }
-        let page = search_page(
-            &entity_filters,
-            limit,
-            offset,
-            ArticleSourceFilter::PubTator,
-        )
-        .await?;
-        if !page.results.is_empty() {
-            return Ok(VariantArticleSearchPage {
-                page,
-                retrieval_path: VARIANT_ENTITY_RETRIEVAL_PATH,
-            });
-        }
-    }
-
-    let mut fallback_filters = filters.clone();
-    fallback_filters.gene = None;
-    fallback_filters.gene_anchored = false;
-    fallback_filters.keyword = Some(intent.original.clone());
-    fallback_filters.variant = None;
-    Ok(VariantArticleSearchPage {
-        page: search_page(
-            &fallback_filters,
-            limit,
-            offset,
-            ArticleSourceFilter::PubTator,
-        )
-        .await?,
-        retrieval_path: VARIANT_FALLBACK_RETRIEVAL_PATH,
-    })
 }
 
 fn article_search_page(
@@ -162,10 +106,12 @@ impl SemanticScholarStatusTracker {
     }
 }
 
-struct FederatedArticleRows {
-    rows: Vec<ArticleSearchResult>,
-    source_status: Vec<ArticleSourceStatus>,
-    semantic_scholar_status: ArticleSourceStatus,
+pub(super) struct FederatedArticleRows {
+    pub(super) rows: Vec<ArticleSearchResult>,
+    pub(super) source_status: Vec<ArticleSourceStatus>,
+    pub(super) semantic_scholar_status: ArticleSourceStatus,
+    pub(super) truncated_sources: Vec<ArticleSource>,
+    pub(super) primary_error: Option<BioMcpError>,
 }
 
 struct TypeCapableArticleRows {
@@ -253,15 +199,25 @@ fn unavailable_source_error(source: ArticleSource) -> BioMcpError {
     }
 }
 
-async fn search_federated_page(
+fn page_outcome_truncated<T>(
+    outcome: &FederatedSourceOutcome<SearchPage<T>>,
+    fetch_count: usize,
+) -> bool {
+    matches!(
+        outcome,
+        FederatedSourceOutcome::Available(page)
+            if page.total.is_some_and(|total| total > page.results.len())
+                || (page.total.is_none() && page.results.len() >= fetch_count)
+    )
+}
+
+pub(super) async fn acquire_federated_article_rows(
     filters: &ArticleSearchFilters,
-    limit: usize,
-    offset: usize,
-) -> Result<ArticleSearchPage, BioMcpError> {
-    let fetch_count = limit.saturating_add(offset);
-    if fetch_count > MAX_FEDERATED_FETCH_RESULTS {
+    fetch_count: usize,
+) -> Result<FederatedArticleRows, BioMcpError> {
+    if fetch_count == 0 || fetch_count > MAX_FEDERATED_FETCH_RESULTS {
         return Err(BioMcpError::InvalidArgument(format!(
-            "--offset + --limit must be <= {MAX_FEDERATED_FETCH_RESULTS} for federated article search"
+            "federated article acquisition size must be between 1 and {MAX_FEDERATED_FETCH_RESULTS}"
         )));
     }
     let include_pubmed = pubmed_filter_compatible(filters);
@@ -305,13 +261,59 @@ async fn search_federated_page(
         }
     );
 
-    let federated = collect_federated_article_rows(
+    let mut truncated_sources = Vec::new();
+    if page_outcome_truncated(&pubtator_leg, fetch_count) {
+        truncated_sources.push(ArticleSource::PubTator);
+    }
+    if page_outcome_truncated(&europe_leg, fetch_count) {
+        truncated_sources.push(ArticleSource::EuropePmc);
+    }
+    if pubmed_leg
+        .as_ref()
+        .is_some_and(|outcome| page_outcome_truncated(outcome, fetch_count))
+    {
+        truncated_sources.push(ArticleSource::PubMed);
+    }
+    if matches!(
+        &semantic_scholar_leg,
+        FederatedSourceOutcome::Available(outcome) if outcome.rows.len() >= fetch_count
+    ) {
+        truncated_sources.push(ArticleSource::SemanticScholar);
+    }
+    if include_litsense2
+        && matches!(
+            &litsense2_leg,
+            FederatedSourceOutcome::Available(rows) if rows.len() >= fetch_count
+        )
+    {
+        truncated_sources.push(ArticleSource::LitSense2);
+    }
+    let mut federated = collect_federated_article_rows(
         pubtator_leg,
         europe_leg,
         pubmed_leg,
         semantic_scholar_leg,
         litsense2_leg,
     )?;
+    federated.truncated_sources = truncated_sources;
+    Ok(federated)
+}
+
+pub(super) async fn search_federated_page(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+) -> Result<ArticleSearchPage, BioMcpError> {
+    let fetch_count = limit.saturating_add(offset);
+    if fetch_count > MAX_FEDERATED_FETCH_RESULTS {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--offset + --limit must be <= {MAX_FEDERATED_FETCH_RESULTS} for federated article search"
+        )));
+    }
+    let federated = acquire_federated_article_rows(filters, fetch_count).await?;
+    if let Some(error) = federated.primary_error {
+        return Err(error);
+    }
     let mut tracker = SemanticScholarStatusTracker::default();
     tracker.record(federated.semantic_scholar_status);
     let (page, enrichment_status) =
@@ -376,6 +378,8 @@ fn collect_federated_article_rows(
                 rows: merged,
                 source_status,
                 semantic_scholar_status,
+                truncated_sources: Vec::new(),
+                primary_error: None,
             })
         }
         (
@@ -391,6 +395,8 @@ fn collect_federated_article_rows(
                 rows,
                 source_status,
                 semantic_scholar_status,
+                truncated_sources: Vec::new(),
+                primary_error: None,
             })
         }
         (
@@ -406,12 +412,34 @@ fn collect_federated_article_rows(
                 rows,
                 source_status,
                 semantic_scholar_status,
+                truncated_sources: Vec::new(),
+                primary_error: None,
             })
         }
         (
-            FederatedSourceOutcome::Unavailable { error, status: _ },
-            FederatedSourceOutcome::Unavailable { .. },
-        ) => Err(error.unwrap_or_else(|| unavailable_source_error(ArticleSource::PubTator))),
+            FederatedSourceOutcome::Unavailable {
+                error,
+                status: pubtator_status,
+            },
+            FederatedSourceOutcome::Unavailable {
+                status: europe_status,
+                ..
+            },
+        ) => {
+            source_status.extend([pubtator_status, europe_status]);
+            let mut rows = pubmed_rows;
+            rows.extend(semantic_scholar_rows);
+            rows.extend(litsense2_rows);
+            Ok(FederatedArticleRows {
+                rows,
+                source_status,
+                semantic_scholar_status,
+                truncated_sources: Vec::new(),
+                primary_error: Some(
+                    error.unwrap_or_else(|| unavailable_source_error(ArticleSource::PubTator)),
+                ),
+            })
+        }
     }
 }
 

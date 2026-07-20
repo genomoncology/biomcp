@@ -222,20 +222,10 @@ biomcp variant articles "BRAF V600E"
 
 ## Variant Article Entity Recall
 
-Exact variant article pivots should use PubTator's normalized variant entity
-when one can be selected confidently, then stay honest when PubTator has no
-abstract-level variant annotation and BioMCP must fall back to free text. This
-fixture serves the BRAF V600E article only for the `@VARIANT_...` query and
-serves the MYD88 S219C article only for the labeled best-effort fallback path.
-
-```bash
-bash ../fixtures/run-variant-article-entity-fixture.sh ../.. braf | mustmatch like '## BRAF V600E limit 1
-PubTator variant annotation recall
-4260001
-## BRAF V600E limit 3
-PubTator variant annotation recall
-4260001'
-```
+The default union remains honest when strict resolution finds no allele and
+BioMCP uses labeled best-effort text. This healthy fixture serves the MYD88
+paper only for the non-exact fallback path; exact annotation behavior is shown
+with the diagnostic strategy below.
 
 ```bash
 bash ../fixtures/run-variant-article-entity-fixture.sh ../.. myd88 | mustmatch like '## MYD88 S219C fallback
@@ -246,6 +236,153 @@ best-effort free-text fallback
 ```bash
 bash ../fixtures/run-variant-article-entity-fixture.sh ../.. myd88-json | mustmatch like 'JSON fallback path preserved
 24534189'
+```
+
+## Variant Article Routes Are Unioned Before Pagination
+
+<!-- mustmatch-lint: skip -->
+
+The default literature strategy preserves every compatible annotation entity,
+resolved protein/coding/genomic alias, and source-backed citation before it
+deduplicates, ranks, and applies the public limit. A paper reached by two routes
+remains one row with associated provenance, and offset pages retain global rank.
+
+```bash run id=variant-article-union exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. union-json
+```
+
+```json expect=variant-article-union contains
+{
+  "strategy": "union",
+  "requested_gene": "BRAF",
+  "supplied_protein": "p.V600E",
+  "resolution": "resolved",
+  "complete": true,
+  "pmids": ["6010001", "6010002", "6010003", "6010004", "6010005", "6010006", "6010007", "6010008"],
+  "all_rows_keep_requested_variant": true,
+  "alias_matches": [
+    {"pmid": "6010002", "matched_aliases": ["BRAF p.Val600Glu"]},
+    {"pmid": "6010005", "matched_aliases": ["BRAF c.1799T>A"]},
+    {"pmid": "6010006", "matched_aliases": ["chr7:g.140453136A>T"]}
+  ],
+  "shared_provenance": [
+    {"route": "exact_lexical", "source": "pubtator", "matched_alias": "BRAF p.V600E"},
+    {"route": "pubtator_variant", "source": "pubtator", "matched_alias": "BRAF p.V600E"}
+  ],
+  "citation_provenance": [
+    {"route": "source_citation", "source": "civic", "matched_alias": "BRAF p.V600E"}
+  ],
+  "pubmed_provenance": [
+    {"route": "exact_lexical", "source": "pubmed", "matched_alias": "BRAF p.Val600Glu"}
+  ],
+  "annotation_pmids": ["6010001", "6010003", "6010007"],
+  "page_matches_full_slice": true,
+  "page_ranks": [3, 4],
+  "pagination": {"offset": 2, "limit": 2, "returned": 2, "total": 8, "has_more": true},
+  "truncated": true,
+  "source_status": [
+    {"route": "exact_lexical", "source": "pubmed", "status": "ok"},
+    {"route": "pubtator_variant", "source": "pubtator", "status": "ok"},
+    {"route": "source_citation", "source": "myvariant", "status": "ok"}
+  ]
+}
+```
+
+## Pagination Limits Metadata Enrichment
+
+<!-- mustmatch-lint: skip -->
+
+Variant-article pagination selects the visible ranked page before optional
+metadata enrichment. A small page does not spend source lookups enriching a
+source-citation candidate that will not be returned.
+
+```bash run id=variant-article-visible-enrichment exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. page-enrichment-json
+```
+
+```json expect=variant-article-visible-enrichment contains
+{
+  "visible_pmids": ["6010003"],
+  "hidden_candidate_enriched": false
+}
+```
+
+## Strategy Modes Isolate Diagnostic Routes
+
+<!-- mustmatch-lint: skip -->
+
+Omitting `--strategy` is the dependable union behavior. The annotation and
+lexical modes are diagnostic views: each returns only candidates acquired by
+that route, while source-backed citations remain part of union.
+
+```bash run id=variant-article-strategies exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. strategies-json
+```
+
+```json expect=variant-article-strategies contains
+{
+  "omitted_equals_union": true,
+  "annotation_pmids": ["6010001", "6010003", "6010007"],
+  "lexical_pmids": ["6010002", "6010003", "6010005", "6010006", "6010008"],
+  "union_pmids": ["6010001", "6010002", "6010003", "6010004", "6010005", "6010006", "6010007", "6010008"]
+}
+```
+
+## Unresolved Fallback Does Not Claim Exact Provenance
+
+<!-- mustmatch-lint: skip -->
+
+When strict identity resolution is healthy but finds no resolved allele,
+best-effort text can still help discovery. Such a row is explicitly non-exact
+and carries no matched exact alias.
+
+```bash run id=variant-article-unresolved exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. unresolved-json
+```
+
+```json expect=variant-article-unresolved contains
+{
+  "resolution": "unresolved",
+  "complete": true,
+  "pmid": "24534189",
+  "row_requested_gene": "MYD88",
+  "routes": ["best_effort_free_text"],
+  "matched_aliases": [],
+  "has_exact_claim": false
+}
+```
+
+## Healthy Empty Variant Literature Keeps Its Envelope
+
+<!-- mustmatch-lint: skip -->
+
+A healthy annotation miss is different from a provider failure. JSON keeps the
+empty collection, resolution, source status, completeness, and pagination facts
+so callers do not have to infer state from missing keys.
+
+```bash run id=variant-article-empty exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. healthy-empty-json
+```
+
+```json expect=variant-article-empty contains
+{
+  "strategy": "annotation",
+  "resolution": "unresolved",
+  "results": [],
+  "complete": true,
+  "truncated": false,
+  "pagination": {
+    "offset": 0,
+    "limit": 3,
+    "returned": 0,
+    "total": 0,
+    "has_more": false,
+    "next_page_token": null
+  },
+  "source_status": [
+    {"route": "pubtator_variant", "source": "pubtator", "status": "ok"}
+  ]
+}
 ```
 
 ## ID Normalization

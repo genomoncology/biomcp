@@ -66,6 +66,7 @@ pub fn render_json(entity: Option<&str>) -> Result<String, BioMcpError> {
             let page = render(Some(entity))?;
             let mut commands = section_code_items(&page, "## Commands");
             commands.extend(section_code_items(&page, "## Command"));
+            commands.extend(section_code_items(&page, "## Helpers"));
             crate::render::json::to_pretty(&EntityListJson {
                 kind: "list_entity",
                 entity,
