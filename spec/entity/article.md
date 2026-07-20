@@ -469,7 +469,7 @@ healthy empty result, while the readable view stays free of degradation claims.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663014 fulltext \
-  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "empty") and (($outcome.sources | length) > 0) and ($outcome.sources | all(. != "NCBI ID Converter")) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "empty" and .sources == $outcome.sources))' \
+  | jq 'def valid_attempt: ((.provider.label | type == "string" and length > 0) and (.provider.source | type == "string" and length > 0) and (.source_kind == "jats_xml" or .source_kind == "pmc_html" or .source_kind == "pdf") and (.coverage == "full_text" or .coverage == "abstract_only" or .coverage == "metadata_only" or .coverage == "none" or .coverage == "unusable" or .coverage == "unavailable") and (.outcome == "data" or .outcome == "empty" or .outcome == "unavailable") and (.cache_state == "hit" or .cache_state == "miss" or .cache_state == "bypass") and (.reason | type == "string" and length > 0 and length <= 160)); (.section_outcomes.fulltext.outcome == "empty") and ((.section_outcomes.fulltext.sources | length) > 0) and (.section_outcomes.fulltext.sources | all(. != "NCBI ID Converter")) and (.full_text_coverage.coverage == "none") and ((.full_text_coverage.attempts | length) > 0) and (.full_text_coverage.attempts | all(.coverage == "none" and .outcome == "empty" and valid_attempt)) and (.section_outcomes.fulltext.sources == [._meta.section_sources[] | select(.key == "fulltext" and .outcome == "empty") | .sources][0])' \
   | mustmatch 'true'
 ```
 
@@ -489,7 +489,7 @@ unavailable state instead of making the confident all-sources-empty claim.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663019 fulltext \
-  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "unavailable") and ($outcome.sources == []) and (($outcome.message // "") | test("unavailable"; "i")) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|signed\\.example\\.invalid|token=secret"; "i")) | not) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "unavailable" and .sources == $outcome.sources))' \
+  | jq 'def valid_attempt: ((.provider.label | type == "string" and length > 0) and (.provider.source | type == "string" and length > 0) and (.source_kind == "jats_xml" or .source_kind == "pmc_html" or .source_kind == "pdf") and (.coverage == "full_text" or .coverage == "abstract_only" or .coverage == "metadata_only" or .coverage == "none" or .coverage == "unusable" or .coverage == "unavailable") and (.outcome == "data" or .outcome == "empty" or .outcome == "unavailable") and (.cache_state == "hit" or .cache_state == "miss" or .cache_state == "bypass") and (.reason | type == "string" and length > 0 and length <= 160)); (.section_outcomes.fulltext.outcome == "unavailable") and (.section_outcomes.fulltext.sources == []) and ((.section_outcomes.fulltext.message // "") | test("unavailable"; "i")) and (.full_text_coverage.coverage == "unavailable") and ((.full_text_coverage.attempts | length) > 0) and (.full_text_coverage.attempts | any(.provider.label == "Europe PMC XML" and .source_kind == "jats_xml" and .coverage == "unavailable" and .outcome == "unavailable")) and (.full_text_coverage.attempts | all(valid_attempt and (. | tostring | test("SENSITIVE-UPSTREAM-DETAIL|signed\\.example\\.invalid|token=secret"; "i") | not))) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|signed\\.example\\.invalid|token=secret"; "i")) | not) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "unavailable" and .sources == []))' \
   | mustmatch 'true'
 ```
 
@@ -501,6 +501,70 @@ unavailable state instead of making the confident all-sources-empty claim.
 ```bash
 ../../tools/biomcp-ci get article 22663019 fulltext \
   | mustmatch not '/(?i)(sources.*did not return full text|SENSITIVE-UPSTREAM-DETAIL|signed\.example\.invalid|token=secret)/'
+```
+
+## Partial Article Content Continues the Full-Text Ladder
+
+An abstract is useful article metadata, but it is not a downloaded article body.
+Without a later winner, JSON preserves the abstract, reports healthy partial
+coverage, and does not create any compatible full-text winner fields.
+
+```bash
+../../tools/biomcp-ci --json get article 22663020 fulltext \
+  | jq 'def valid_attempt: ((.provider.label | type == "string" and length > 0) and (.provider.source | type == "string" and length > 0) and (.source_kind == "jats_xml" or .source_kind == "pmc_html" or .source_kind == "pdf") and (.coverage == "full_text" or .coverage == "abstract_only" or .coverage == "metadata_only" or .coverage == "none" or .coverage == "unusable" or .coverage == "unavailable") and (.outcome == "data" or .outcome == "empty" or .outcome == "unavailable") and (.cache_state == "hit" or .cache_state == "miss" or .cache_state == "bypass") and (.reason | type == "string" and length > 0 and length <= 160)); (.full_text_path == null) and (.full_text_source == null) and (.full_text_manifest == null) and (.section_outcomes.fulltext.outcome == "empty") and (.abstract_text | contains("Abstract-only fixture evidence")) and (.full_text_coverage.coverage == "abstract_only") and (.full_text_coverage.attempts | any(.provider.label == "Europe PMC XML" and .source_kind == "jats_xml" and .coverage == "abstract_only" and .outcome == "empty")) and (.full_text_coverage.attempts | all(valid_attempt and (. | tostring | test("SENSITIVE-ABSTRACT-TITLE-CANARY|SENSITIVE-ABSTRACT-SOURCE-BODY|signed\\.example\\.invalid|token=secret"; "i") | not)))' \
+  | mustmatch 'true'
+```
+
+The readable response gives bounded guidance about the partial coverage. It does
+not claim a saved artifact or expose source-body and signed-URL details.
+
+```bash
+../../tools/biomcp-ci get article 22663020 fulltext \
+  | mustmatch '/(?im)^## Full Text[^\n]*\n\s*\n[^\n]*abstract[^\n]*(article body|full text)[^\n]*(not found|not available)/'
+```
+
+```bash
+../../tools/biomcp-ci get article 22663020 fulltext \
+  | mustmatch not '/(?i)(Saved\s+to:|SENSITIVE-ABSTRACT-TITLE-CANARY|SENSITIVE-ABSTRACT-SOURCE-BODY|signed\.example\.invalid|token=secret)/'
+```
+
+Opting in to PDF continues the same ladder. The later PDF becomes the winner,
+while ordered structured attempts retain the healthy abstract-only decision and
+explain the final result without leaking provider payloads, URLs, or local paths.
+
+```bash
+../../tools/biomcp-ci --json get article 22663020 fulltext --pdf \
+  | jq 'def valid_attempt: ((.provider.label | type == "string" and length > 0) and (.provider.source | type == "string" and length > 0) and (.source_kind == "jats_xml" or .source_kind == "pmc_html" or .source_kind == "pdf") and (.coverage == "full_text" or .coverage == "abstract_only" or .coverage == "metadata_only" or .coverage == "none" or .coverage == "unusable" or .coverage == "unavailable") and (.outcome == "data" or .outcome == "empty" or .outcome == "unavailable") and (.cache_state == "hit" or .cache_state == "miss" or .cache_state == "bypass") and (.reason | type == "string" and length > 0 and length <= 160)); (.full_text_path | type == "string" and length > 0) and (.full_text_manifest.source_kind == "pdf") and (.full_text_manifest.provider.label == "Semantic Scholar PDF") and (.full_text_manifest.quality.has_fulltext_signal == true) and (.full_text_manifest.provenance.pdf_fallback_used == true) and (.full_text_source.label == "Semantic Scholar PDF") and (.full_text_source.source == "Semantic Scholar") and (.section_outcomes.fulltext.outcome == "data") and (.full_text_coverage.coverage == "full_text") and ((.full_text_coverage.attempts | map(.provider.label) | index("Europe PMC XML")) < (.full_text_coverage.attempts | map(.provider.label) | index("NCBI EFetch PMC XML"))) and ((.full_text_coverage.attempts | map(.provider.label) | index("NCBI EFetch PMC XML")) < (.full_text_coverage.attempts | map(.provider.label) | index("PMC OA Archive XML"))) and ((.full_text_coverage.attempts | map(.provider.label) | index("PMC OA Archive XML")) < (.full_text_coverage.attempts | map(.provider.label) | index("Europe PMC MED XML"))) and ((.full_text_coverage.attempts | map(.provider.label) | index("Europe PMC MED XML")) < (.full_text_coverage.attempts | map(.provider.label) | index("PMC HTML"))) and ((.full_text_coverage.attempts | map(.provider.label) | index("PMC HTML")) < (.full_text_coverage.attempts | map(.provider.label) | index("Semantic Scholar PDF"))) and ((.full_text_coverage.attempts | map(.source_kind + ":" + .coverage) | index("jats_xml:abstract_only")) < (.full_text_coverage.attempts | map(.source_kind + ":" + .coverage) | index("pdf:full_text"))) and (.full_text_coverage.attempts | any(.source_kind == "jats_xml" and .coverage == "abstract_only" and .outcome == "empty")) and (.full_text_coverage.attempts | any(.source_kind == "pdf" and .coverage == "full_text" and .outcome == "data")) and (.full_text_coverage.attempts | all(valid_attempt)) and (.full_text_coverage.attempts | tostring | test("SENSITIVE-ABSTRACT-TITLE-CANARY|SENSITIVE-ABSTRACT-SOURCE-BODY|signed\\.example\\.invalid|token=secret|127\\.0\\.0\\.1|/home/"; "i") | not)' \
+  | mustmatch 'true'
+```
+
+A page containing only title metadata is also a healthy non-winner. It remains
+distinct from an abstract and from source unavailability.
+
+```bash
+../../tools/biomcp-ci --json get article 22663021 fulltext \
+  | jq 'def valid_attempt: ((.provider.label | type == "string" and length > 0) and (.provider.source | type == "string" and length > 0) and (.source_kind == "jats_xml" or .source_kind == "pmc_html" or .source_kind == "pdf") and (.coverage == "full_text" or .coverage == "abstract_only" or .coverage == "metadata_only" or .coverage == "none" or .coverage == "unusable" or .coverage == "unavailable") and (.outcome == "data" or .outcome == "empty" or .outcome == "unavailable") and (.cache_state == "hit" or .cache_state == "miss" or .cache_state == "bypass") and (.reason | type == "string" and length > 0 and length <= 160)); (.full_text_path == null) and (.full_text_source == null) and (.full_text_manifest == null) and (.section_outcomes.fulltext.outcome == "empty") and (.full_text_coverage.coverage == "metadata_only") and (.full_text_coverage.attempts | any(.provider.label == "PMC HTML" and .source_kind == "pmc_html" and .coverage == "metadata_only" and .outcome == "empty")) and (.full_text_coverage.attempts | all(valid_attempt)) and (.full_text_coverage.attempts | tostring | test("SENSITIVE-METADATA-TITLE-CANARY|SENSITIVE-METADATA-SOURCE-BODY|signed\\.example\\.invalid|token=secret"; "i") | not)' \
+  | mustmatch 'true'
+```
+
+An HTML page containing an abstract but no article body follows the same rule as
+JATS. The first cacheable request classifies the fresh response as a healthy
+partial rather than saving it as full text.
+
+```bash
+../../tools/biomcp-ci --json get article 22663022 fulltext \
+  | jq 'def valid_attempt: ((.provider.label | type == "string" and length > 0) and (.provider.source | type == "string" and length > 0) and (.source_kind == "jats_xml" or .source_kind == "pmc_html" or .source_kind == "pdf") and (.coverage == "full_text" or .coverage == "abstract_only" or .coverage == "metadata_only" or .coverage == "none" or .coverage == "unusable" or .coverage == "unavailable") and (.outcome == "data" or .outcome == "empty" or .outcome == "unavailable") and (.cache_state == "hit" or .cache_state == "miss" or .cache_state == "bypass") and (.reason == "body_detected" or .reason == "abstract_without_body" or .reason == "metadata_without_body" or .reason == "no_content" or .reason == "unusable_content" or .reason == "source_unavailable")); (.full_text_path == null) and (.full_text_source == null) and (.full_text_manifest == null) and (.section_outcomes.fulltext.outcome == "empty") and (.abstract_text | contains("HTML abstract fixture evidence")) and (.full_text_coverage.coverage == "abstract_only") and (.full_text_coverage.attempts | any(.provider.label == "PMC HTML" and .source_kind == "pmc_html" and .coverage == "abstract_only" and .outcome == "empty" and .cache_state == "miss")) and (.full_text_coverage.attempts | all(valid_attempt))' \
+  | mustmatch 'true'
+```
+
+A second request reclassifies the cached HTML instead of treating cached bytes
+as a winner. With PDF enabled, the cached partial attempt precedes the
+last-resort PDF winner.
+
+```bash
+../../tools/biomcp-ci --json get article 22663022 fulltext --pdf \
+  | jq 'def valid_attempt: ((.provider.label | type == "string" and length > 0) and (.provider.source | type == "string" and length > 0) and (.source_kind == "jats_xml" or .source_kind == "pmc_html" or .source_kind == "pdf") and (.coverage == "full_text" or .coverage == "abstract_only" or .coverage == "metadata_only" or .coverage == "none" or .coverage == "unusable" or .coverage == "unavailable") and (.outcome == "data" or .outcome == "empty" or .outcome == "unavailable") and (.cache_state == "hit" or .cache_state == "miss" or .cache_state == "bypass") and (.reason | type == "string" and length > 0 and length <= 160)); (.full_text_manifest.source_kind == "pdf") and (.full_text_manifest.provider.label == "Semantic Scholar PDF") and (.full_text_manifest.provenance.pdf_fallback_used == true) and (.full_text_path | type == "string" and length > 0) and (.full_text_source.label == "Semantic Scholar PDF") and (.full_text_source.source == "Semantic Scholar") and (.section_outcomes.fulltext.outcome == "data") and (.full_text_coverage.coverage == "full_text") and ((.full_text_coverage.attempts | map(.provider.label) | index("Europe PMC XML")) < (.full_text_coverage.attempts | map(.provider.label) | index("NCBI EFetch PMC XML"))) and ((.full_text_coverage.attempts | map(.provider.label) | index("NCBI EFetch PMC XML")) < (.full_text_coverage.attempts | map(.provider.label) | index("PMC OA Archive XML"))) and ((.full_text_coverage.attempts | map(.provider.label) | index("PMC OA Archive XML")) < (.full_text_coverage.attempts | map(.provider.label) | index("Europe PMC MED XML"))) and ((.full_text_coverage.attempts | map(.provider.label) | index("Europe PMC MED XML")) < (.full_text_coverage.attempts | map(.provider.label) | index("PMC HTML"))) and ((.full_text_coverage.attempts | map(.provider.label) | index("PMC HTML")) < (.full_text_coverage.attempts | map(.provider.label) | index("Semantic Scholar PDF"))) and ((.full_text_coverage.attempts | map(.source_kind + ":" + .coverage) | index("pmc_html:abstract_only")) < (.full_text_coverage.attempts | map(.source_kind + ":" + .coverage) | index("pdf:full_text"))) and (.full_text_coverage.attempts | any(.provider.label == "PMC HTML" and .source_kind == "pmc_html" and .coverage == "abstract_only" and .outcome == "empty" and .cache_state == "hit")) and (.full_text_coverage.attempts | any(.source_kind == "pdf" and .coverage == "full_text" and .outcome == "data")) and (.full_text_coverage.attempts | all(valid_attempt)) and (.full_text_coverage.attempts | tostring | test("SENSITIVE-HTML-TITLE-CANARY|SENSITIVE-HTML-ABSTRACT-BODY|signed\\.example\\.invalid|token=secret|127\\.0\\.0\\.1|/home/"; "i") | not)' \
+  | mustmatch 'true'
 ```
 
 ## Full-Text HTML Fallback

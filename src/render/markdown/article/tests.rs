@@ -56,6 +56,7 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
         full_text_note: None,
         full_text_source: None,
         full_text_manifest: None,
+        full_text_coverage: None,
         not_included: None,
         europepmc_license: None,
         europepmc_retracted: None,
@@ -162,6 +163,30 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
     ] {
         assert!(!unavailable.contains(sentinel));
     }
+
+    article.full_text_coverage = Some(crate::entities::article::ArticleFulltextCoverage {
+        coverage: crate::entities::article::ArticleFulltextCoverageKind::AbstractOnly,
+        attempts: Vec::new(),
+    });
+    let mut mixed_article = article.clone();
+    article.section_outcomes.complete(
+        "fulltext",
+        crate::entities::section_outcome::SectionOutcome::empty("Europe PMC"),
+    );
+    let partial =
+        article_markdown(&article, &["fulltext".to_string()]).expect("partial fulltext markdown");
+    assert!(partial.contains("Abstract found; article body not available."));
+    assert!(!partial.contains("Saved to:"));
+
+    mixed_article.section_outcomes.complete(
+        "fulltext",
+        crate::entities::section_outcome::SectionOutcome::unavailable(
+            "A later content source failed.",
+        ),
+    );
+    let mixed = article_markdown(&mixed_article, &["fulltext".to_string()])
+        .expect("mixed partial markdown");
+    assert!(mixed.contains("Abstract found, but complete article-body retrieval was unavailable."));
 }
 
 #[test]
@@ -199,6 +224,7 @@ fn article_markdown_renders_resolved_fulltext_source_label() {
             source: "Europe PMC".to_string(),
         }),
         full_text_manifest: None,
+        full_text_coverage: None,
         not_included: None,
         europepmc_license: None,
         europepmc_retracted: None,

@@ -511,7 +511,8 @@ EXAMPLES:
   biomcp get article <id> asset <filename>
   biomcp get article 22663011 tldr
 
-Full text defaults to the XML -> PMC HTML ladder.
+Full text defaults to the XML -> PMC HTML ladder. Abstract-only and metadata-only responses are partial results, so later rungs continue until an article body wins.
+Requested fulltext JSON includes `full_text_coverage` and sanitized per-rung attempts.
 Use `assets` for the JSON-only article asset manifest (PMC OA first, Europe PMC second, then Figshare, including same-paper Figshare siblings discovered by DOI/title).
 Use `asset <name>` to return one provider asset as raw bytes with no conversion; handles stay as BioMCP commands, not provider URLs.
 Asset keywords:

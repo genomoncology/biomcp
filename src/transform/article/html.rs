@@ -1,8 +1,169 @@
-//! Article HTML-to-markdown extraction helpers.
+//! Article HTML-to-markdown extraction and structural classification helpers.
 
 use readability_rust::Readability;
+use scraper::{ElementRef, Html, Selector};
 
 use crate::error::BioMcpError;
+
+use super::{
+    ArticleDocumentCoverage, ArticleDocumentUnusable, ClassifiedArticleDocument,
+    collapse_whitespace,
+};
+
+pub(crate) fn classify_html_document(
+    html: &str,
+    base_url: &str,
+) -> Result<ClassifiedArticleDocument, ArticleDocumentUnusable> {
+    let document = Html::parse_document(html);
+    let root = select_content_root(&document).ok_or(ArticleDocumentUnusable::Unsupported)?;
+    let blocks = Selector::parse("p, li, td, th, caption, figcaption, blockquote, pre")
+        .expect("static body selector");
+    let paragraphs = Selector::parse("p").expect("static paragraph selector");
+
+    let mut has_body = false;
+    let mut abstract_parts = Vec::new();
+    for block in root.select(&blocks) {
+        let text = collapse_whitespace(&block.text().collect::<String>());
+        if text.is_empty() || is_excluded_block(block, root) {
+            continue;
+        }
+        if is_abstract_block(block, root) {
+            if block.value().name() == "p"
+                || (block.value().name() == "li" && block.select(&paragraphs).next().is_none())
+            {
+                abstract_parts.push(text);
+            }
+        } else {
+            has_body = true;
+        }
+    }
+    let abstract_text = (!abstract_parts.is_empty()).then(|| abstract_parts.join(" "));
+
+    let coverage = if has_body {
+        ArticleDocumentCoverage::FullText
+    } else if abstract_text.is_some() {
+        ArticleDocumentCoverage::AbstractOnly
+    } else {
+        ArticleDocumentCoverage::MetadataOnly
+    };
+    let markdown = if coverage == ArticleDocumentCoverage::FullText {
+        let rendered = extract_text_from_html(html, base_url)
+            .map_err(|_| ArticleDocumentUnusable::Conversion)?;
+        if rendered.trim().is_empty() {
+            return Err(ArticleDocumentUnusable::Conversion);
+        }
+        Some(rendered)
+    } else {
+        None
+    };
+
+    Ok(ClassifiedArticleDocument {
+        coverage,
+        markdown,
+        abstract_text,
+        quality: crate::entities::article::ArticleFulltextQuality {
+            has_fulltext_signal: coverage == ArticleDocumentCoverage::FullText,
+            ..crate::entities::article::ArticleFulltextQuality::default()
+        },
+    })
+}
+
+fn select_content_root(document: &Html) -> Option<ElementRef<'_>> {
+    let main_article = Selector::parse("main article").expect("static content-root selector");
+    if let Some(root) = document.select(&main_article).next() {
+        return Some(root);
+    }
+
+    let article = Selector::parse("article").expect("static content-root selector");
+    if let Some(root) = document.select(&article).find(|candidate| {
+        candidate
+            .ancestors()
+            .filter_map(ElementRef::wrap)
+            .all(|ancestor| {
+                !matches!(
+                    ancestor.value().name(),
+                    "article" | "main" | "header" | "nav" | "footer" | "aside"
+                )
+            })
+    }) {
+        return Some(root);
+    }
+
+    let main = Selector::parse("main").expect("static content-root selector");
+    document.select(&main).next()
+}
+
+fn semantic_tokens(element: ElementRef<'_>) -> impl Iterator<Item = &str> {
+    [
+        element.value().attr("id"),
+        element.value().attr("class"),
+        element.value().attr("role"),
+    ]
+    .into_iter()
+    .flatten()
+    .flat_map(|value| value.split(|ch: char| !ch.is_ascii_alphanumeric()))
+    .filter(|token| !token.is_empty())
+}
+
+fn has_semantic_token(element: ElementRef<'_>, expected: &str) -> bool {
+    semantic_tokens(element).any(|token| token.eq_ignore_ascii_case(expected))
+}
+
+fn is_abstract_block(block: ElementRef<'_>, root: ElementRef<'_>) -> bool {
+    if has_semantic_token(block, "abstract") {
+        return true;
+    }
+    for ancestor in block.ancestors().filter_map(ElementRef::wrap) {
+        if has_semantic_token(ancestor, "abstract") {
+            return true;
+        }
+        if ancestor.id() == root.id() {
+            break;
+        }
+    }
+    false
+}
+
+fn is_excluded_block(block: ElementRef<'_>, root: ElementRef<'_>) -> bool {
+    const EXCLUDED_TAGS: &[&str] = &["header", "nav", "footer", "aside", "script", "style"];
+    const EXCLUDED_TOKENS: &[&str] = &[
+        "metadata",
+        "byline",
+        "author",
+        "authors",
+        "affiliation",
+        "affiliations",
+        "keyword",
+        "keywords",
+        "permission",
+        "permissions",
+        "ref",
+        "reference",
+        "references",
+        "bibliography",
+    ];
+
+    if EXCLUDED_TAGS.contains(&block.value().name())
+        || EXCLUDED_TOKENS
+            .iter()
+            .any(|token| has_semantic_token(block, token))
+    {
+        return true;
+    }
+    for ancestor in block.ancestors().filter_map(ElementRef::wrap) {
+        if EXCLUDED_TAGS.contains(&ancestor.value().name())
+            || EXCLUDED_TOKENS
+                .iter()
+                .any(|token| has_semantic_token(ancestor, token))
+        {
+            return true;
+        }
+        if ancestor.id() == root.id() {
+            break;
+        }
+    }
+    false
+}
 
 pub fn extract_text_from_html(html: &str, base_url: &str) -> Result<String, BioMcpError> {
     let extracted_html = extract_readable_html(html, base_url)?;
@@ -74,6 +235,63 @@ mod tests {
                     "missing HTML fixture signal: {needle}"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn html_classification_uses_article_structure_without_size_thresholds() {
+        let fulltext_cases = [
+            "<main><article><p>x</p></article></main>",
+            "<article><ul><li>one item</li></ul></article>",
+            "<main><table><tr><td>one cell</td></tr></table></main>",
+            "<main><figure><figcaption>one caption</figcaption></figure></main>",
+        ];
+        for html in fulltext_cases {
+            let classified = classify_html_document(html, "https://example.test/")
+                .expect("structural body fixture");
+            assert_eq!(classified.coverage, ArticleDocumentCoverage::FullText);
+            assert!(classified.quality.has_fulltext_signal);
+        }
+
+        let partial_cases = [
+            (
+                "<main><h1>Title</h1><section class='abstract'><p>Abstract evidence</p></section></main>",
+                ArticleDocumentCoverage::AbstractOnly,
+            ),
+            (
+                "<article><h1>Title only</h1></article>",
+                ArticleDocumentCoverage::MetadataOnly,
+            ),
+            (
+                "<main><section><h2>Heading only</h2><p> </p></section></main>",
+                ArticleDocumentCoverage::MetadataOnly,
+            ),
+            (
+                "<main><nav><p>Chrome only</p></nav><section class='ref-list'><p>Reference only</p></section></main>",
+                ArticleDocumentCoverage::MetadataOnly,
+            ),
+        ];
+        for (html, expected) in partial_cases {
+            let classified = classify_html_document(html, "https://example.test/")
+                .expect("structural partial fixture");
+            assert_eq!(classified.coverage, expected);
+            assert!(!classified.quality.has_fulltext_signal);
+            if expected == ArticleDocumentCoverage::AbstractOnly {
+                assert_eq!(
+                    classified.abstract_text.as_deref(),
+                    Some("Abstract evidence")
+                );
+            }
+        }
+
+        for html in [
+            "<html><body><p>no provider root</p></body></html>",
+            "<html><body><aside><article><p>aside article</p></article></aside></body></html>",
+        ] {
+            assert!(
+                classify_html_document(html, "https://example.test/").is_err(),
+                "fixture: {html}"
+            );
         }
     }
 }

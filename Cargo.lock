@@ -334,6 +334,7 @@ dependencies = [
  "rmcp",
  "roxmltree",
  "rust-embed",
+ "scraper",
  "semver",
  "serde",
  "serde_json",

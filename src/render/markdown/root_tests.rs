@@ -242,6 +242,7 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         full_text_note: Some("Saved full text unavailable.".to_string()),
         full_text_source: None,
         full_text_manifest: None,
+        full_text_coverage: None,
         not_included: None,
         europepmc_license: None,
         europepmc_retracted: None,

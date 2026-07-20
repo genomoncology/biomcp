@@ -2,6 +2,13 @@
 
 use super::*;
 
+fn extract_text_from_xml(xml: &str) -> String {
+    classify_jats_document(xml)
+        .ok()
+        .and_then(|classified| classified.markdown)
+        .unwrap_or_default()
+}
+
 #[test]
 fn extract_text_from_jats_preserves_structure_and_renders_references() {
     let xml = r#"<?xml version="1.0"?>
@@ -78,7 +85,7 @@ fn extract_text_from_jats_preserves_structure_and_renders_references() {
     assert!(out.contains("Abstract text with [1] and *signal*."));
     assert!(out.contains("Body paragraph with **important** findings at 70 µm"));
     assert!(out.contains("[external evidence](https://example.org/resource)"));
-    let quality = jats_quality_flags(xml);
+    let quality = classify_jats_document(xml).expect("valid JATS").quality;
     assert!(quality.has_sections);
     assert!(quality.has_tables);
     assert!(quality.has_references);
@@ -334,20 +341,69 @@ fn extract_text_from_jats_wraps_unparenthesized_figure_xrefs() {
 }
 
 #[test]
-fn extract_text_from_xml_falls_back_for_non_jats_and_malformed_xml() {
-    let non_jats = "<root><meta>ignored?</meta><p>Alpha</p><p>Beta</p></root>";
-    let malformed = "<article><body><p>Broken";
+fn jats_classification_requires_meaningful_direct_body_content() {
+    let fulltext_cases = [
+        "<article><body><p>x</p></body></article>",
+        "<article><body><sec><title>Results</title><list><list-item><p>item</p></list-item></list></sec></body></article>",
+        "<article><body><table-wrap><table><tr><td>cell</td></tr></table></table-wrap></body></article>",
+        "<article><body><fig><caption><p>caption</p></caption></fig></body></article>",
+        "<article><body><disp-quote>quoted result</disp-quote></body></article>",
+        "<article><body><preformat>result</preformat></body></article>",
+    ];
+    for xml in fulltext_cases {
+        let classified = classify_jats_document(xml).expect("valid body fixture");
+        assert_eq!(
+            classified.coverage,
+            ArticleDocumentCoverage::FullText,
+            "fixture: {xml}"
+        );
+        assert!(classified.quality.has_fulltext_signal);
+        assert!(classified.markdown.is_some());
+    }
 
-    let non_jats_out = extract_text_from_xml(non_jats);
-    let malformed_out = extract_text_from_xml(malformed);
+    let partial_cases = [
+        (
+            "<article><front><article-meta><abstract><p>first abstract shape</p></abstract></article-meta></front></article>",
+            ArticleDocumentCoverage::AbstractOnly,
+        ),
+        (
+            "<article><front><abstract><sec><p>second abstract shape</p></sec></abstract></front><body><sec><title>Heading only</title></sec></body></article>",
+            ArticleDocumentCoverage::AbstractOnly,
+        ),
+        (
+            "<article><front><article-meta><title-group><article-title>Title only</article-title></title-group></article-meta></front></article>",
+            ArticleDocumentCoverage::MetadataOnly,
+        ),
+        (
+            "<article><floats-group><fig><caption><p>float only</p></caption></fig></floats-group><back><ref-list><ref><mixed-citation>reference only</mixed-citation></ref></ref-list></back></article>",
+            ArticleDocumentCoverage::MetadataOnly,
+        ),
+        (
+            "<article><back><abstract><p>back-matter abstract</p></abstract></back></article>",
+            ArticleDocumentCoverage::MetadataOnly,
+        ),
+        (
+            "<article><body><supplementary-material><p>supplement only</p></supplementary-material></body></article>",
+            ArticleDocumentCoverage::MetadataOnly,
+        ),
+        (
+            "<article><body><unsupported><p>unsupported nested paragraph</p></unsupported></body></article>",
+            ArticleDocumentCoverage::MetadataOnly,
+        ),
+    ];
+    for (xml, expected) in partial_cases {
+        let classified = classify_jats_document(xml).expect("valid partial fixture");
+        assert_eq!(classified.coverage, expected);
+        assert!(!classified.quality.has_fulltext_signal);
+    }
 
-    assert_eq!(non_jats_out, "ignored?AlphaBeta");
-    assert_eq!(malformed_out, "Broken");
+    assert!(classify_jats_document("<article>").is_err());
+    assert!(classify_jats_document("<metadata><title>wrong root</title></metadata>").is_err());
 }
 
 #[test]
 fn entity_bearing_jats_is_not_rendered_through_fallback() {
     let xml = r#"<!DOCTYPE article [<!ENTITY unsafe "expanded">]><article><body><p>&unsafe;</p></body></article>"#;
     assert!(extract_text_from_xml(xml).is_empty());
-    assert_eq!(jats_quality_flags(xml), ArticleFulltextQuality::default());
+    assert!(classify_jats_document(xml).is_err());
 }

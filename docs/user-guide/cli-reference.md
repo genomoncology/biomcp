@@ -468,9 +468,19 @@ requests at 1 req/sec for `search article`, `get article`, `get article ... tldr
 helpers. Without it, those same paths use the shared unauthenticated pool at
 1 req/2sec.
 
-For article full text, the default ladder is XML -> PMC HTML. Add `--pdf` only
-to `get article <id> fulltext` when you want Semantic Scholar open-access PDF
-as the final fallback after XML and HTML miss. Use `get article <id> assets`
+For article full text, the default ladder is XML -> PMC HTML. A rung wins only
+when its JATS/HTML structure contains article-body content; abstract-only and
+metadata-only responses remain healthy partials and later rungs continue. Add
+`--pdf` only to `get article <id> fulltext` when you want Semantic Scholar
+open-access PDF as the final fallback after XML and HTML do not provide a body.
+Requested full-text JSON adds `full_text_coverage` with final
+`full_text`/`abstract_only`/`metadata_only`/`none`/`unavailable` coverage and
+ordered sanitized attempts (provider, source kind, coverage, outcome, cache
+state, and bounded reason). Compatible `full_text_path`, `full_text_source`, and
+`full_text_manifest` winner fields remain present only for actual full text;
+ordinary article cards omit coverage.
+
+Use `get article <id> assets`
 for the JSON article-asset manifest (PMC OA first, Europe PMC supplementary ZIP
 second, and Figshare last when Semantic Scholar points at supported metadata).
 Figshare manifests may merge same-paper sibling records discovered by DOI/title;

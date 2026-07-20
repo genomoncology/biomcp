@@ -70,14 +70,22 @@ Runtime eligibility is separate from license and reuse guidance:
 - PMC HTML accepts `text/html` or `application/xhtml+xml`.
 - PDF accepts `application/pdf` or a `%PDF-` body signature.
 
-Each eligible rung is classified before the ladder is folded. A documented
-not-found/no-content response is a healthy absence. Initialization, identity,
-authentication, throttling, transport, timeout, 5xx, body-limit, malformed or
-unsupported content, decode, conversion, worker, and empty-conversion errors are
-failures. XML conversion belongs to each XML rung, so malformed or empty XML can
-fall through to later XML, HTML, or opt-in PDF sources. A later usable result
-always wins; without a winner, a later healthy absence cannot erase an earlier
-failure.
+Each eligible rung is structurally classified before the ladder is folded. JATS
+qualifies only when the direct article `body` contains a nonblank supported body
+block; front/title/abstract-only, back-reference, root-float, and supplement-only
+documents are partial non-winners. PMC HTML selects `main article`, then
+`article`, then `main`; abstract-token containers and labelled chrome, metadata,
+byline, affiliation, keyword, permission, and reference regions cannot establish
+body coverage. Neither format uses byte, line, word, or section-count thresholds.
+
+A documented not-found/no-content response is a healthy absence. Initialization,
+identity, authentication, throttling, transport, timeout, 5xx, body-limit,
+malformed or unsupported content, decode, conversion, worker, and
+empty-conversion errors are failures. Partial content is healthy: its abstract
+fills an absent or blank base abstract, but it does not create a saved path,
+provider credit, a data outcome, or a full-text quality signal. A later body
+winner always wins; without a winner, a later healthy absence cannot erase an
+earlier failure.
 
 BioMCP does not enforce article-level reuse licenses at runtime. Users must
 review provider terms and the returned article license context before reusing or
@@ -98,6 +106,14 @@ The stable output fields are:
   `PMC HTML`, or `Semantic Scholar PDF`.
 - `full_text_source.source`: JSON provenance source, one of `Europe PMC`,
   `NCBI EFetch`, `PMC OA`, `PMC`, or `Semantic Scholar`.
+- `full_text_coverage`: additive JSON emitted only for requested full text. Its
+  `coverage` is `full_text`, `abstract_only`, `metadata_only`, `none`, or
+  `unavailable`, and `attempts` records every eligible content rung in order.
+  Each attempt has a stable provider, `source_kind` (`jats_xml`, `pmc_html`, or
+  `pdf`), structural coverage, `data`/`empty`/`unavailable` outcome,
+  `hit`/`miss`/`bypass` cache state, and a closed bounded reason. Attempts never
+  contain response content, raw errors, identifiers/URLs, parser details,
+  credentials, signed queries, or local paths.
 - `full_text_manifest`: additive JSON-only manifest emitted when a source wins.
   It includes:
   - `source_kind`: normalized artifact family (`jats_xml`, `pmc_html`, `pdf`).
@@ -122,16 +138,23 @@ on the explicit asset surface; they are not parsed into full text or treated as
 the `fulltext --pdf` article-body fallback.
 Every Article owns `section_outcomes.fulltext`. A base card records
 `not_requested`; a requested ladder completes it once as `data`, `empty`, or
-`unavailable`. JSON `_meta.section_sources` projects that entity-owned outcome:
-`data` retains its winning provider and `empty` retains healthy consulted
-content providers; `unavailable` has no successful sources, and `not_requested`
-is omitted. The compatible
-`full_text_path`, `full_text_source`, `full_text_manifest`, and `full_text_note`
-fields agree with the same outcome.
+`unavailable`. Structural coverage and source health are independent: the best
+partial observation survives a later failure, while any failure still makes the
+section outcome unavailable unless a later body wins. With no partial, healthy
+exhaustion is `none`/`empty` and failed exhaustion is
+`unavailable`/`unavailable`. JSON `_meta.section_sources` projects the
+entity-owned outcome: `data` retains its winning provider and `empty` retains
+healthy consulted content providers; `unavailable` has no successful sources,
+and `not_requested` is omitted. The compatible `full_text_path`,
+`full_text_source`, `full_text_manifest`, and `full_text_note` fields agree with
+the same outcome.
 
 ## JATS Markdown Coverage
 
-The JATS converter renders section text, inline body figures, root-level
+JATS parsing, structural classification, abstract extraction, rendering, and
+quality facts share one bounded parsed document. `quality.has_fulltext_signal`
+is true only when the direct body qualifies. The JATS converter renders section
+text, inline body figures, root-level
 `floats-group` figures and tables after the body, regular tables, references,
 and supplementary-material label/caption/filename metadata. Float rendering
 keeps document order and deduplicates root floats by `id` when the same figure
@@ -148,13 +171,22 @@ dropping the grid; full span flattening remains out of scope.
 A winning source is visible through the Markdown heading label,
 `full_text_source`, `full_text_manifest`, and `_meta.section_sources`.
 
-There is no public per-leg trace in Markdown or JSON. With no winner, an
-all-healthy ladder reports confirmed absence (`empty`) while any failed eligible
-consultation reports a bounded, sanitized `unavailable` outcome and in-band
-Markdown note. Opt-in Semantic Scholar discovery is part of that fold: no PDF is
-a healthy absence, discovery failure is a failure, and discovery has no effect
-without `--pdf`. Saved-artifact failure remains a returned BioMCP error after a
-source winner because local delivery, not provider availability, failed.
+There is no public per-leg trace in Markdown: it never renders per-provider
+attempts or errors. JSON exposes only the sanitized typed attempt records above. With no winner, an all-healthy ladder
+reports confirmed absence (`empty`) while any failed eligible consultation
+reports a bounded `unavailable` outcome and in-band Markdown note. Partial states
+instead give one bounded abstract/body or metadata/body statement. Opt-in
+Semantic Scholar discovery is part of the attempt fold: no URL is a healthy
+absence, discovery/fetch failure is unavailable, and discovery has no effect
+without `--pdf`.
+
+Normal PMC HTML reads the cache middleware's trusted `x-cache` HIT/MISS result
+after middleware processing; explicit no-cache and pre-lookup failures are
+`bypass`. Cached and fresh bodies pass through the same structural classifier.
+Saved full-text artifacts use the `v4` namespace, and only a current classified
+body can create or reuse a v4 path, so stale v3 partial artifacts cannot win.
+Saved-artifact failure remains a returned BioMCP error after a source winner
+because local delivery, not provider availability, failed.
 
 ## Module Ownership
 
@@ -178,8 +210,9 @@ source winner because local delivery, not provider availability, failed.
   `openAccessPdf`. Arbitrary PDF byte fetching remains article fulltext
   policy, not a Semantic Scholar source-client method.
 - `src/transform/article/jats.rs`, `src/transform/article/html.rs`,
-  `src/transform/article/pdf.rs`, and `src/transform/article.rs`: source
-  payload conversion to Markdown.
+  `src/transform/article/pdf.rs`, and `src/transform/article.rs`: typed
+  structural classification, abstract extraction, and winner conversion to
+  Markdown.
 - `src/render/markdown/article.rs`, `templates/article.md.j2`, and
   `src/render/provenance.rs`: visible Markdown and JSON provenance.
 - `src/utils/download.rs`: atomic saved-file persistence.

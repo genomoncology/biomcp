@@ -231,9 +231,14 @@ biomcp get article 22663011 fulltext
 
 This uses the default article full-text ladder: XML first, then PMC HTML when
 the XML path misses for a PMCID-backed article. It never falls back to PDF.
+BioMCP accepts a winner only when JATS or PMC HTML structure contains a nonblank
+article-body block; title/front/abstract-only and metadata-only responses remain
+healthy partial results and the ladder continues. A source abstract fills a
+missing or blank article abstract but never replaces a nonblank base abstract.
+
 When full text resolves, BioMCP prints a local `Saved to:` path for cached
 Markdown and surfaces the winning source label (`Europe PMC XML`, `PMC HTML`,
-etc.) in markdown and JSON provenance. For XML/JATS winners, the saved Markdown
+etc.) in Markdown and JSON provenance. For XML/JATS winners, the saved Markdown
 keeps section text, tables, references, figure captions, supplementary-material
 metadata, and explicit markers for complex merged-cell tables that are not yet
 flattened. JSON fulltext responses also include `full_text_manifest`, an
@@ -244,12 +249,21 @@ open-access and explicit PDF fallback status. JSON fulltext also reports
 `not_included` counts and points to the OA package asset manifest when figure
 images, supplementary files, or complex tables are not inlined.
 
+Requested full-text JSON adds `full_text_coverage`. Its final `coverage` is
+`full_text`, `abstract_only`, `metadata_only`, `none`, or `unavailable` and its
+ordered `attempts` list gives each eligible provider's source kind, coverage,
+outcome, cache state, and bounded reason. Attempts are sanitized: they do not
+contain source bodies, errors, URLs, credentials, parser details, or local
+paths. Ordinary article cards omit this object.
+
 JSON always exposes `section_outcomes.fulltext`: base cards are
 `not_requested`, successful retrieval is `data`, an all-healthy ladder with no
 winner is `empty`, and a ladder with any failed eligible source and no winner is
-`unavailable`. `_meta.section_sources` mirrors that same outcome and provider
-list. Markdown uses the same state, so confirmed absence says full text was not
-found while incomplete retrieval says it is unavailable.
+`unavailable`. Structural coverage is independent, so an abstract or metadata
+partial remains visible even when another source failed. `_meta.section_sources`
+mirrors the section outcome and provider list. Markdown uses the same combined
+state: it distinguishes confirmed absence, partial metadata without an article
+body, and incomplete retrieval without listing provider attempts.
 
 Article assets:
 
@@ -276,7 +290,8 @@ successful package remains `not_found`. Figshare supplement PDFs and tables
 remain assets, not full-text article substitutes.
 
 Opt in to the final PDF rung only when you want the last-resort open-access PDF
-path after XML and PMC HTML both miss:
+path after XML and PMC HTML fail to provide an article body (including when they
+provide only an abstract or metadata):
 
 ```bash
 biomcp get article 22663011 fulltext --pdf

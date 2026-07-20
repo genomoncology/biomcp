@@ -378,6 +378,21 @@ def test_article_indexing_command_is_aligned_across_user_and_ux_references() -> 
     assert command in _read_repo("architecture/ux/cli-reference.md")
 
 
+def test_article_fulltext_coverage_is_aligned_across_user_and_ux_references() -> None:
+    user_reference = _read_repo("docs/user-guide/cli-reference.md")
+    ux_reference = _read_repo("architecture/ux/cli-reference.md")
+    for landmark in (
+        "abstract-only",
+        "metadata-only",
+        "full_text_coverage",
+        "full_text_path",
+        "full_text_source",
+        "full_text_manifest",
+    ):
+        assert landmark in user_reference
+        assert landmark in ux_reference
+
+
 def test_variant_filter_validation_is_aligned_across_user_and_ux_references() -> None:
     user_variant = _markdown_section(
         _read_repo("docs/user-guide/cli-reference.md"), "Variant", level=3

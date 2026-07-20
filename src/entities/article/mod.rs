@@ -110,6 +110,8 @@ pub struct Article {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub full_text_manifest: Option<ArticleFulltextManifest>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub full_text_coverage: Option<ArticleFulltextCoverage>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub not_included: Option<ArticleNotIncluded>,
     #[serde(skip)]
     pub europepmc_license: Option<String>,
@@ -269,6 +271,78 @@ pub struct ArticleFulltextManifest {
 pub struct ArticleFulltextProvider {
     pub label: String,
     pub source: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleFulltextCoverageKind {
+    FullText,
+    AbstractOnly,
+    MetadataOnly,
+    None,
+    Unavailable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleFulltextCoverage {
+    pub coverage: ArticleFulltextCoverageKind,
+    pub attempts: Vec<ArticleFulltextAttempt>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleFulltextAttempt {
+    pub provider: ArticleFulltextProvider,
+    pub source_kind: ArticleFulltextAttemptSourceKind,
+    pub coverage: ArticleFulltextAttemptCoverage,
+    pub outcome: ArticleFulltextAttemptOutcome,
+    pub cache_state: ArticleFulltextCacheState,
+    pub reason: ArticleFulltextAttemptReason,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleFulltextAttemptSourceKind {
+    JatsXml,
+    PmcHtml,
+    Pdf,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleFulltextAttemptCoverage {
+    FullText,
+    AbstractOnly,
+    MetadataOnly,
+    None,
+    Unusable,
+    Unavailable,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleFulltextAttemptOutcome {
+    Data,
+    Empty,
+    Unavailable,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleFulltextCacheState {
+    Hit,
+    Miss,
+    Bypass,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleFulltextAttemptReason {
+    BodyDetected,
+    AbstractWithoutBody,
+    MetadataWithoutBody,
+    NoContent,
+    UnusableContent,
+    SourceUnavailable,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -940,6 +1014,51 @@ mod tests {
             "Related"
         );
         assert_eq!(recommendations_json["positive_seeds"][0]["title"], "Anchor");
+    }
+
+    #[test]
+    fn requested_fulltext_coverage_is_additive_and_uses_closed_values() {
+        let base = serde_json::json!({
+            "title": "Fixture",
+            "author_count": 0,
+            "author_completeness": "unavailable",
+            "author_source": "pubtator"
+        });
+        let mut article: Article = serde_json::from_value(base).expect("compatible article");
+        assert!(
+            serde_json::to_value(&article)
+                .expect("base JSON")
+                .get("full_text_coverage")
+                .is_none()
+        );
+
+        article.full_text_coverage = Some(ArticleFulltextCoverage {
+            coverage: ArticleFulltextCoverageKind::AbstractOnly,
+            attempts: vec![ArticleFulltextAttempt {
+                provider: ArticleFulltextProvider {
+                    label: "Europe PMC XML".into(),
+                    source: "Europe PMC".into(),
+                },
+                source_kind: ArticleFulltextAttemptSourceKind::JatsXml,
+                coverage: ArticleFulltextAttemptCoverage::AbstractOnly,
+                outcome: ArticleFulltextAttemptOutcome::Empty,
+                cache_state: ArticleFulltextCacheState::Bypass,
+                reason: ArticleFulltextAttemptReason::AbstractWithoutBody,
+            }],
+        });
+        let value = serde_json::to_value(article).expect("requested JSON");
+        assert_eq!(value["full_text_coverage"]["coverage"], "abstract_only");
+        assert_eq!(
+            value["full_text_coverage"]["attempts"][0],
+            serde_json::json!({
+                "provider": {"label": "Europe PMC XML", "source": "Europe PMC"},
+                "source_kind": "jats_xml",
+                "coverage": "abstract_only",
+                "outcome": "empty",
+                "cache_state": "bypass",
+                "reason": "abstract_without_body"
+            })
+        );
     }
 
     #[test]

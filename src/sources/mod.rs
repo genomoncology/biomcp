@@ -177,6 +177,10 @@ pub(crate) fn is_no_cache_enabled() -> bool {
     matches!(NO_CACHE.try_with(|v| *v), Ok(true))
 }
 
+pub(crate) fn cache_is_bypassed() -> bool {
+    is_no_cache_enabled() || env_cache_mode() == Some(CacheMode::NoStore)
+}
+
 pub(crate) fn apply_cache_mode(req: RequestBuilder) -> RequestBuilder {
     let no_cache = is_no_cache_enabled();
     if let Some(mode) = resolve_cache_mode(no_cache, false, env_cache_mode()) {
