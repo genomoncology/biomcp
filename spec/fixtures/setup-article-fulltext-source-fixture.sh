@@ -164,7 +164,7 @@ ABSTRACT_ONLY_XML = """<article>
   <!-- SENSITIVE-ABSTRACT-SOURCE-BODY signed.example.invalid token=secret -->
   <front>
     <article-meta>
-      <title-group><article-title>Abstract-only XML continues to PDF</article-title></title-group>
+      <title-group><article-title>SENSITIVE-ABSTRACT-TITLE-CANARY</article-title></title-group>
       <abstract><p>Abstract-only fixture evidence.</p></abstract>
     </article-meta>
   </front>
@@ -173,23 +173,23 @@ ABSTRACT_ONLY_XML = """<article>
 METADATA_ONLY_HTML = """<!doctype html>
 <html>
   <head>
-    <title>Metadata-only HTML is not full text</title>
+    <title>SENSITIVE-METADATA-TITLE-CANARY</title>
     <!-- SENSITIVE-METADATA-SOURCE-BODY signed.example.invalid token=secret -->
   </head>
   <body>
-    <main><h1>Metadata-only HTML is not full text</h1></main>
+    <main><h1>SENSITIVE-METADATA-TITLE-CANARY</h1></main>
   </body>
 </html>"""
 
 ABSTRACT_ONLY_HTML = """<!doctype html>
 <html>
   <head>
-    <title>Abstract-only HTML continues to PDF</title>
+    <title>SENSITIVE-HTML-TITLE-CANARY</title>
     <!-- SENSITIVE-HTML-ABSTRACT-BODY signed.example.invalid token=secret -->
   </head>
   <body>
     <main>
-      <h1>Abstract-only HTML continues to PDF</h1>
+      <h1>SENSITIVE-HTML-TITLE-CANARY</h1>
       <section class="abstract"><h2>Abstract</h2><p>HTML abstract fixture evidence.</p></section>
     </main>
   </body>
@@ -310,20 +310,20 @@ ARTICLES = {
     },
     "22663020": {
         "pmcid": "PMC123463",
-        "title": "Abstract-only XML continues to PDF",
-        "abstract": "Abstract-only fixture evidence.",
+        "title": "Abstract-only XML fixture",
+        "abstract": "",
         "paper_id": "paper-10",
     },
     "22663021": {
         "pmcid": "PMC123464",
-        "title": "Metadata-only HTML is not full text",
+        "title": "Metadata-only HTML fixture",
         "abstract": "",
         "paper_id": "paper-11",
     },
     "22663022": {
         "pmcid": "PMC123465",
-        "title": "Abstract-only HTML continues to PDF",
-        "abstract": "HTML abstract fixture evidence.",
+        "title": "Abstract-only HTML fixture",
+        "abstract": "",
         "paper_id": "paper-12",
     },
 }
@@ -396,6 +396,16 @@ def send_text(handler, status, body, content_type):
     payload = body.encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Length", str(len(payload)))
+    handler.end_headers()
+    handler.wfile.write(payload)
+
+
+def send_cacheable_text(handler, status, body, content_type):
+    payload = body.encode("utf-8")
+    handler.send_response(status)
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Cache-Control", "public, max-age=3600")
     handler.send_header("Content-Length", str(len(payload)))
     handler.end_headers()
     handler.wfile.write(payload)
@@ -762,7 +772,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if decoded_path == "/articles/PMC123465/":
-            send_text(self, 200, ABSTRACT_ONLY_HTML, "text/html; charset=utf-8")
+            send_cacheable_text(self, 200, ABSTRACT_ONLY_HTML, "text/html; charset=utf-8")
             return
 
         if decoded_path == "/articles/PMC123460/":
