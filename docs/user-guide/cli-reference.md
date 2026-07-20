@@ -439,7 +439,7 @@ biomcp get article 22663011 all
 biomcp get article 22663011 fulltext
 biomcp get article 22663011 fulltext --pdf
 biomcp --json get article <id> assets
-biomcp get article <id> asset <filename>
+biomcp get article <id> asset <asset-key>
 biomcp get article 22663011 tldr
 biomcp article batch 22663011 24200969
 ```
@@ -481,12 +481,14 @@ state, and bounded reason). Compatible `full_text_path`, `full_text_source`, and
 ordinary article cards omit coverage.
 
 Use `get article <id> assets`
-for the JSON article-asset manifest (PMC OA first, Europe PMC supplementary ZIP
-second, and Figshare last when Semantic Scholar points at supported metadata).
+for the JSON article-asset manifest merged from PMC OA, Europe PMC supplementary ZIP,
+recognized JATS/PMC HTML links, and eligible Figshare metadata.
 Figshare manifests may merge same-paper sibling records discovered by DOI/title;
-handles stay as BioMCP commands. Use `get article <id> asset <name>` to stream
-one asset as raw bytes with no conversion. A healthy all-source miss is
-`not_found`; a failed source with no successful fallback is `source_unavailable`.
+handles stay as BioMCP commands and provider URLs remain internal. Named linked files
+carry typed coverage outcomes. Use `get article <id> asset <asset-key>` to stream
+one asset as raw bytes with no conversion. Named-only coverage still returns a
+manifest with `assets: []`; an entirely healthy unnamed miss is `not_found`, and
+a failed source with no successful fallback is `source_unavailable`.
 
 ### Trial
 

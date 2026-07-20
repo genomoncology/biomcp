@@ -508,16 +508,16 @@ EXAMPLES:
   biomcp get article 22663011 fulltext
   biomcp get article 22663011 fulltext --pdf
   biomcp --json get article <id> assets
-  biomcp get article <id> asset <filename>
+  biomcp get article <id> asset <asset-key>
   biomcp get article 22663011 tldr
 
 Full text defaults to the XML -> PMC HTML ladder. Abstract-only and metadata-only responses are partial results, so later rungs continue until an article body wins.
 Requested fulltext JSON includes `full_text_coverage` and sanitized per-rung attempts.
-Use `assets` for the JSON-only article asset manifest (PMC OA first, Europe PMC second, then Figshare, including same-paper Figshare siblings discovered by DOI/title).
-Use `asset <name>` to return one provider asset as raw bytes with no conversion; handles stay as BioMCP commands, not provider URLs.
+Use `assets` for the JSON-only merged article asset manifest (PMC OA, Europe PMC, recognized JATS/PMC HTML links, and eligible Figshare siblings).
+Use `asset <asset-key>` to return one advertised asset as raw bytes with no conversion; handles stay as BioMCP commands, not provider URLs.
 Asset keywords:
 assets
-asset <name>
+asset <asset-key>
 raw bytes
 Add `--pdf` only with `fulltext` to allow Semantic Scholar PDF as the final fallback.
 `--pdf` requires the fulltext section.

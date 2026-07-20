@@ -6,8 +6,8 @@ use scraper::{ElementRef, Html, Selector};
 use crate::error::BioMcpError;
 
 use super::{
-    ArticleDocumentCoverage, ArticleDocumentUnusable, ClassifiedArticleDocument,
-    collapse_whitespace,
+    ArticleDocumentCoverage, ArticleDocumentUnusable, ArticleSupplementLink,
+    ClassifiedArticleDocument, collapse_whitespace,
 };
 
 pub(crate) fn classify_html_document(
@@ -66,6 +66,59 @@ pub(crate) fn classify_html_document(
             ..crate::entities::article::ArticleFulltextQuality::default()
         },
     })
+}
+
+pub(crate) fn extract_pmc_supplement_links(
+    html: &str,
+) -> Result<Vec<ArticleSupplementLink>, ArticleDocumentUnusable> {
+    let document = Html::parse_document(html);
+    let root = select_content_root(&document).ok_or(ArticleDocumentUnusable::Unsupported)?;
+    let anchors = Selector::parse("a[href]").expect("static supplement-link selector");
+    let mut links = Vec::new();
+    for anchor in root.select(&anchors) {
+        if is_excluded_block(anchor, root) {
+            continue;
+        }
+        let provider_marker = anchor
+            .value()
+            .attr("data-ga-action")
+            .is_some_and(|value| value.to_ascii_lowercase().contains("suppl"));
+        let in_supplement = anchor
+            .ancestors()
+            .filter_map(ElementRef::wrap)
+            .any(|ancestor| {
+                ancestor.id() != root.id()
+                    && semantic_tokens(ancestor).any(|token| {
+                        matches!(
+                            token.to_ascii_lowercase().as_str(),
+                            "sm" | "supp" | "supplement" | "supplementary"
+                        )
+                    })
+            });
+        if !provider_marker && !in_supplement {
+            continue;
+        }
+        let href = anchor.value().attr("href").unwrap_or_default().trim();
+        let identity = href.split(['?', '#']).next().unwrap_or_default();
+        let Some(filename) = identity
+            .trim_end_matches('/')
+            .rsplit('/')
+            .next()
+            .filter(|value| !value.is_empty())
+        else {
+            continue;
+        };
+        let label = collapse_whitespace(&anchor.text().collect::<String>());
+        links.push(ArticleSupplementLink {
+            href: href.to_string(),
+            filename: filename.to_string(),
+            label: (!label.is_empty()).then_some(label),
+            media_type: None,
+        });
+    }
+    links.sort_by(|left, right| left.href.cmp(&right.href));
+    links.dedup_by(|left, right| left.href == right.href);
+    Ok(links)
 }
 
 fn select_content_root(document: &Html) -> Option<ElementRef<'_>> {
@@ -236,6 +289,21 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn supplement_links_are_limited_to_the_selected_article_supplement_region() {
+        let html = r#"<main><article>
+          <nav><a href='/articles/instance/1/bin/nav.csv'>nav</a></nav>
+          <section class='sm'><div class='media'><a href='/articles/instance/1/bin/data.xlsx'>Workbook</a></div></section>
+          <section class='references'><a data-ga-action='click_feat_suppl' href='/articles/instance/1/bin/ref.pdf'>reference</a></section>
+          <p><a href='https://doi.org/10.1/example'>ordinary</a></p>
+        </article></main>"#;
+
+        let links = extract_pmc_supplement_links(html).expect("selected article root");
+        assert_eq!(links.len(), 1);
+        assert_eq!(links[0].filename, "data.xlsx");
+        assert_eq!(links[0].label.as_deref(), Some("Workbook"));
     }
 
     #[test]

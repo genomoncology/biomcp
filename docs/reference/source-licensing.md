@@ -522,7 +522,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://pmc.ncbi.nlm.nih.gov/tools/openftlist/>
 - API key / account URL: <https://www.ncbi.nlm.nih.gov/account/settings/>
 - Reviewed on: `2026-03-20`
-- Notes: BioMCP queries PMC OA on demand as one XML full-text rung and as the preferred article-asset provider; it does not ship the article corpus. When an advertised archive fails but Europe PMC supplies the bytes, a parsed PMC OA license fact is retained with PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses.
+- Notes: BioMCP queries PMC OA on demand as one XML full-text rung and article-asset route; it also resolves recognized PMC JATS/HTML supplement links behind stable BioMCP handles without exposing provider URLs. It does not ship the article corpus. When an advertised archive fails but Europe PMC supplies the bytes, a parsed PMC OA license fact is retained with PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses.
 
 ### PubMed
 

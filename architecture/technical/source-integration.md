@@ -99,7 +99,7 @@ the addresses checked are the addresses used for contact, and every redirect
 hop re-enters the scheme/origin/port policy before contact.
 
 The enumerated consumers are Semantic Scholar PDF fallback, PMC OA archive
-links, Figshare file downloads, and ClinicalTrials.gov posted documents. Each
+links, PMC linked article assets, Figshare file downloads, and ClinicalTrials.gov posted documents. Each
 uses a policy-specific HTTP client. The consumer enum, shared rejection matrix,
 and ownership ratchet must change together, so adding a provider-returned URL
 fetch without naming its policy owner fails the Rust test lane. Reviewed CDN
@@ -128,7 +128,7 @@ payload-free: raw response bodies, request URLs/API keys, and parser diagnostics
 must not cross source or article boundaries.
 
 Article asset resolution uses explicit success, healthy-absence, and failure
-outcomes across PMC OA, Europe PMC supplementary ZIP, and Figshare. Later
+outcomes across PMC OA, Europe PMC supplementary ZIP, JATS/PMC HTML linked assets, and Figshare. Later
 success wins, but later healthy absence never erases an earlier failure; with no
 winner, only an all-healthy miss becomes `not_found`. Europe PMC owns its
 validated PMCID request and bounded in-memory ZIP parsing: 64 MiB compressed,

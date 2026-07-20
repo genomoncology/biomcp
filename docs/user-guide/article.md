@@ -269,25 +269,26 @@ Article assets:
 
 ```bash
 biomcp --json get article <id> assets
-biomcp get article <id> asset <filename>
+biomcp get article <id> asset <asset-key>
 ```
 
 `get article <id> assets` returns a JSON-only provider-labelled manifest. BioMCP
-tries the canonical PMC OA package first, a validated Europe PMC supplementary
-ZIP second, and supported Figshare/AACR Figshare metadata last. Figshare
+merges the canonical PMC OA package, a validated Europe PMC supplementary ZIP,
+recognized JATS/PMC HTML supplement links, and eligible Figshare/AACR metadata. Figshare
 manifests can include same-paper sibling records discovered by DOI/title, while
-excluding records that do not match the paper. `get article <id> asset <name>`
+excluding records that do not match the paper. Linked provider URLs stay internal;
+coverage reports named files that are absent, denied, unsupported, or unavailable.
+`get article <id> asset <asset-key>`
 returns the selected member as raw bytes with no conversion; downstream tools
 parse CSV, XLSX, DOC, PDF, or images. Manifest handles remain BioMCP commands,
 not provider download URLs. Europe PMC reuse remains unknown unless article
 metadata or a retained PMC OA manifest supplies a license; retained licenses
-name PMC OA as their source. A healthy provider ladder with no package returns
-`not_found`, while a failed source with no successful fallback returns
-`source_unavailable` rather than claiming that assets are absent. This also
-holds when an earlier archive provider failed and a healthy Figshare collection
-lacks the requested filename. A filename missing from an already selected
-successful package remains `not_found`. Figshare supplement PDFs and tables
-remain assets, not full-text article substitutes.
+name PMC OA as their source. When named coverage exists but no bytes are
+retrievable, the manifest remains available with `assets: []` and a specific
+per-file outcome. If no route names an asset, a healthy all-source miss is
+`not_found`; source failures remain `source_unavailable`. A missing or unknown
+asset key is `not_found`. Figshare supplement PDFs and tables remain assets,
+not full-text article substitutes.
 
 Opt in to the final PDF rung only when you want the last-resort open-access PDF
 path after XML and PMC HTML fail to provide an article body (including when they

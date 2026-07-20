@@ -13,14 +13,14 @@ accepts the same article identifiers as the base article card: PMID, PMCID, and
 DOI.
 
 Article assets are a separate on-demand surface. `get article <id> assets`
-resolves PMC OA first, Europe PMC supplementary files second for a validated
-PMCID, and Figshare last when Semantic Scholar points at a supported
-Figshare/AACR URL. Europe PMC ZIPs are validated under compressed, per-member,
+fans in PMC OA, Europe PMC supplementary files, JATS XML, PMC HTML, and eligible
+Figshare discoveries for a validated PMCID. Provider-relative JATS/HTML links
+become stable BioMCP handles only after bounded, allowlisted retrieval. Europe PMC ZIPs are validated under compressed, per-member,
 expanded-total, count, and normalized-name bounds entirely in memory. Figshare
 uses the same collection resolver as raw-byte retrieval: it starts from the
 linked record, adds same-paper sibling records found by DOI/title, filters out
 wrong-paper candidates, and keeps handles as BioMCP commands. The command
-`get article <id> asset <name>` re-resolves the same provider ladder and returns
+`get article <id> asset <asset-key>` uses the same merged resolver as the manifest and returns
 the selected asset bytes without conversion. A successful manifest makes an unknown filename a
 true asset miss; without a winner, any source failure produces
 `source_unavailable`, while all-healthy absence produces `not_found`.
@@ -161,7 +161,8 @@ keeps document order and deduplicates root floats by `id` when the same figure
 or table was already rendered from the body.
 
 Supplementary-material filenames and links are display-only facts from the XML;
-BioMCP does not fetch or inline supplement bytes in this converter path. Tables
+The converter remains network-free; the separate asset resolver may fetch recognized
+JATS/PMC-HTML supplement links under its URL and byte budgets. Tables
 with `rowspan` or `colspan` keep their caption and render an explicit
 `*[complex table omitted: N×M, merged cells]*` marker instead of silently
 dropping the grid; full span flattening remains out of scope.

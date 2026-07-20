@@ -120,6 +120,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             "rate_limit",
             "cbioportal_download",
             "cbioportal_study",
+            "pmc_article",
             "provider_url_policy",
         }
     ]

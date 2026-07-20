@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use reqwest::Url;
 use reqwest::header::CONTENT_TYPE;
 use tracing::debug;
@@ -17,6 +15,7 @@ use crate::sources::RequestBuilderSourceContextExt;
 use crate::sources::europepmc::EuropePmcClient;
 use crate::sources::ncbi_efetch::NcbiEfetchClient;
 use crate::sources::ncbi_idconv::NcbiIdConverterClient;
+use crate::sources::pmc_article::{PmcHtmlCacheState, PmcHtmlFetchOutcome};
 use crate::sources::pmc_oa::PmcOaClient;
 use crate::transform;
 use crate::transform::article::{ArticleDocumentCoverage, ClassifiedArticleDocument};
@@ -24,8 +23,6 @@ use crate::utils::download;
 
 const FULLTEXT_CACHE_VERSION: &str = "v4";
 const ARTICLE_FULLTEXT_API: &str = "article";
-const PMC_ARTICLE_BASE: &str = "https://pmc.ncbi.nlm.nih.gov";
-const PMC_ARTICLE_BASE_ENV: &str = "BIOMCP_PMC_HTML_BASE";
 const PDF_MAX_BODY_BYTES: usize = 20 * 1024 * 1024;
 const PDF_PAGE_LIMIT: usize = 12;
 
@@ -271,19 +268,6 @@ async fn render_fulltext_pdf(bytes: Vec<u8>, page_limit: usize) -> Result<String
     })?
 }
 
-fn html_content_type_is_supported(content_type: Option<&reqwest::header::HeaderValue>) -> bool {
-    let Some(content_type) = content_type.and_then(|value| value.to_str().ok()) else {
-        return false;
-    };
-    let media_type = content_type
-        .split(';')
-        .next()
-        .map(str::trim)
-        .unwrap_or_default();
-    media_type.eq_ignore_ascii_case("text/html")
-        || media_type.eq_ignore_ascii_case("application/xhtml+xml")
-}
-
 fn pdf_content_type_is_supported(content_type: Option<&reqwest::header::HeaderValue>) -> bool {
     let Some(content_type) = content_type.and_then(|value| value.to_str().ok()) else {
         return false;
@@ -305,28 +289,6 @@ fn documented_fulltext_absence(status: reqwest::StatusCode) -> bool {
         status,
         reqwest::StatusCode::NOT_FOUND | reqwest::StatusCode::NO_CONTENT
     )
-}
-
-fn pmc_article_base() -> Cow<'static, str> {
-    crate::sources::env_base(PMC_ARTICLE_BASE, PMC_ARTICLE_BASE_ENV)
-}
-
-fn pmc_article_url(pmcid: &str) -> Result<Url, BioMcpError> {
-    let base = pmc_article_base();
-    let mut url = Url::parse(base.as_ref()).map_err(|err| BioMcpError::Api {
-        api: ARTICLE_FULLTEXT_API.to_string(),
-        message: format!("invalid PMC HTML base URL: {err}"),
-    })?;
-    {
-        let mut segments = url.path_segments_mut().map_err(|_| BioMcpError::Api {
-            api: ARTICLE_FULLTEXT_API.to_string(),
-            message: "invalid PMC HTML base URL".to_string(),
-        })?;
-        segments.push("articles");
-        segments.push(pmcid);
-        segments.push("");
-    }
-    Ok(url)
 }
 
 fn parse_pdf_url(raw_url: &str) -> Option<Url> {
@@ -370,124 +332,29 @@ pub(super) fn pdf_discovery_attempt(
         .unwrap_or(PdfDiscoveryAttempt::Empty)
 }
 
-fn html_cache_state(
-    response: &reqwest::Response,
-    cache_bypassed: bool,
-) -> ArticleFulltextCacheState {
-    if cache_bypassed {
-        return ArticleFulltextCacheState::Bypass;
-    }
-    match response
-        .headers()
-        .get(http_cache::XCACHE)
-        .and_then(|value| value.to_str().ok())
-    {
-        Some("HIT") => ArticleFulltextCacheState::Hit,
-        Some("MISS") => ArticleFulltextCacheState::Miss,
-        _ => ArticleFulltextCacheState::Bypass,
-    }
-}
-
 async fn try_resolve_html(pmcid: &str, requested_id: &str) -> HtmlResolution {
-    let failed = |err| HtmlResolution {
-        outcome: FulltextStepOutcome::Failed(err),
-        cache_state: ArticleFulltextCacheState::Bypass,
+    let fetched = crate::sources::pmc_article::fetch_html(pmcid, requested_id).await;
+    let cache_state = match fetched.cache_state {
+        PmcHtmlCacheState::Hit => ArticleFulltextCacheState::Hit,
+        PmcHtmlCacheState::Miss => ArticleFulltextCacheState::Miss,
+        PmcHtmlCacheState::Bypass => ArticleFulltextCacheState::Bypass,
     };
-    let url = match pmc_article_url(pmcid) {
-        Ok(url) => url,
-        Err(err) => return failed(err),
-    };
-    let client = match crate::sources::shared_client() {
-        Ok(client) => client,
-        Err(err) => return failed(err),
-    };
-    let cache_bypassed = crate::sources::cache_is_bypassed();
-    let response = match crate::sources::apply_cache_mode(client.get(url.clone()))
-        .send_with_source_context(crate::error::SourceContext::retry(
-            crate::error::SourceProvider::PMC_OPEN_ACCESS,
-        ))
-        .await
-    {
-        Ok(response) => response,
-        Err(err) => return failed(err),
-    };
-    let cache_state = html_cache_state(&response, cache_bypassed);
-    if documented_fulltext_absence(response.status()) {
-        return HtmlResolution {
-            outcome: FulltextStepOutcome::Empty,
-            cache_state,
-        };
-    }
-    if !response.status().is_success() {
-        return HtmlResolution {
-            outcome: FulltextStepOutcome::Failed(
-                BioMcpError::Api {
-                    api: ARTICLE_FULLTEXT_API.to_string(),
-                    message: format!("PMC HTML returned HTTP {}", response.status()),
-                }
-                .with_source_context(crate::error::SourceContext::retry(
-                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
-                )),
-            ),
-            cache_state,
-        };
-    }
-    if !html_content_type_is_supported(response.headers().get(CONTENT_TYPE)) {
-        return HtmlResolution {
-            outcome: FulltextStepOutcome::Unusable(
-                BioMcpError::Api {
-                    api: ARTICLE_FULLTEXT_API.to_string(),
-                    message: "PMC HTML returned unsupported content".to_string(),
-                }
-                .with_source_context(crate::error::SourceContext::retry(
-                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
-                )),
-            ),
-            cache_state,
-        };
-    }
-
-    let bytes = match crate::sources::read_limited_source_body(
-        response,
-        crate::error::SourceContext::narrow(crate::error::SourceProvider::PMC_OPEN_ACCESS),
-    )
-    .await
-    {
-        Ok(bytes) => bytes,
-        Err(err) => {
-            debug!(?err, requested_id, pmcid, "PMC HTML body read failed");
-            return HtmlResolution {
-                outcome: FulltextStepOutcome::Failed(err),
-                cache_state,
-            };
-        }
-    };
-    let html = match String::from_utf8(bytes.to_vec()) {
-        Ok(html) => html,
-        Err(_) => {
-            return HtmlResolution {
-                outcome: FulltextStepOutcome::Unusable(
-                    BioMcpError::Api {
+    let outcome = match fetched.outcome {
+        PmcHtmlFetchOutcome::Data { html, url } => {
+            match transform::article::classify_html_document(&html, url.as_str()) {
+                Ok(classified) => FulltextStepOutcome::Data(classified),
+                Err(err) => {
+                    debug!(?err, requested_id, pmcid, "PMC HTML classification failed");
+                    FulltextStepOutcome::Unusable(BioMcpError::Api {
                         api: ARTICLE_FULLTEXT_API.to_string(),
-                        message: "PMC HTML response was not valid UTF-8".to_string(),
-                    }
-                    .with_source_context(crate::error::SourceContext::retry(
-                        crate::error::SourceProvider::PMC_OPEN_ACCESS,
-                    )),
-                ),
-                cache_state,
-            };
+                        message: "PMC HTML content was unusable".to_string(),
+                    })
+                }
+            }
         }
-    };
-    let outcome = match transform::article::classify_html_document(&html, url.as_str()) {
-        Ok(classified) => FulltextStepOutcome::Data(classified),
-        Err(err) => {
-            debug!(?err, requested_id, pmcid, "PMC HTML classification failed");
-            FulltextStepOutcome::Unusable(BioMcpError::Api {
-                api: ARTICLE_FULLTEXT_API.to_string(),
-                message: "PMC HTML content was unusable".to_string(),
-            })
-        }
+        PmcHtmlFetchOutcome::Empty => FulltextStepOutcome::Empty,
+        PmcHtmlFetchOutcome::Unusable(err) => FulltextStepOutcome::Unusable(err),
+        PmcHtmlFetchOutcome::Failed(err) => FulltextStepOutcome::Failed(err),
     };
     HtmlResolution {
         outcome,
@@ -1125,7 +992,10 @@ mod tests {
 
     fn configure_attempt_env(env: &mut TestEnv, fixture: &TestHttpFixture) {
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
-        env.set(PMC_ARTICLE_BASE_ENV, &fixture.base);
+        env.set(
+            crate::sources::pmc_article::PMC_ARTICLE_BASE_ENV,
+            &fixture.base,
+        );
     }
 
     fn failed<T>(outcome: FulltextStepOutcome<T>) -> BioMcpError {
@@ -1397,7 +1267,7 @@ mod tests {
         let refused = format!("http://{}", listener.local_addr().expect("fixture address"));
         drop(listener);
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &refused);
-        env.set(PMC_ARTICLE_BASE_ENV, &refused);
+        env.set(crate::sources::pmc_article::PMC_ARTICLE_BASE_ENV, &refused);
         failed_html(try_resolve_html("PMC1", "1").await);
         failed(try_resolve_pdf(&format!("{refused}/missing.pdf"), "1").await);
 
@@ -1564,7 +1434,7 @@ mod tests {
             "BIOMCP_EUROPEPMC_BASE",
             "BIOMCP_PUBMED_BASE",
             "BIOMCP_PMC_OA_BASE",
-            PMC_ARTICLE_BASE_ENV,
+            crate::sources::pmc_article::PMC_ARTICLE_BASE_ENV,
         ] {
             env.set(key, &fixture.base);
         }
@@ -1616,7 +1486,7 @@ mod tests {
             "BIOMCP_EUROPEPMC_BASE",
             "BIOMCP_PUBMED_BASE",
             "BIOMCP_PMC_OA_BASE",
-            PMC_ARTICLE_BASE_ENV,
+            crate::sources::pmc_article::PMC_ARTICLE_BASE_ENV,
         ] {
             env.set(key, &fixture.base);
         }

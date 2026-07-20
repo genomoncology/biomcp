@@ -102,6 +102,7 @@ pub(crate) mod oncokb;
 pub(crate) mod openfda;
 pub(crate) mod opentargets;
 pub(crate) mod pharmgkb;
+pub(crate) mod pmc_article;
 pub(crate) mod pmc_oa;
 pub(crate) mod provider_url_policy;
 pub(crate) mod pubmed;
