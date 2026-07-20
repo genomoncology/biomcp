@@ -56,6 +56,33 @@ biomcp --json get variant
 "message":
 ```
 
+## Free-string filters reject unknown values locally
+
+<!-- mustmatch-lint: skip -->
+
+Disease inheritance and onset, adverse-event aggregation fields, and PGx testing
+recommendations each have a supported vocabulary. Unknown values fail as invalid
+arguments instead of returning a successful empty page or bucket list.
+
+| str:command | str:label |
+|---|---|
+| biomcp --json search disease -q melanoma --inheritance zzqqxx_not_a_pattern --limit 1 --no-fallback | unknown inheritance |
+| biomcp --json search disease -q melanoma --onset zzqqxx_not_an_onset --limit 1 --no-fallback | unknown onset |
+| biomcp --json search adverse-event -d aspirin --count bogusfield --limit 1 | unknown count field |
+| biomcp --json search pgx -g CYP2D6 --pgx-testing bogusrec --limit 1 | unknown PGx testing value |
+
+```bash run id=invalid-free-string-filter exit=2 each_row="Free-string filters reject unknown values locally"
+{{command}}
+```
+
+```json expect=invalid-free-string-filter contains each_row="Free-string filters reject unknown values locally"
+{
+  "error": {
+    "code": "invalid_argument"
+  }
+}
+```
+
 ## Skill Help Documents Worked-Example Selectors
 
 The skill selector is intentionally positional: agents and humans can open a

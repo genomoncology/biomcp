@@ -32,6 +32,17 @@ subpages should keep teaching when to use the command, not just list flags.
 ../../tools/biomcp-ci list batch | mustmatch like "up to 10 IDs"
 ```
 
+## Enrichment reports unresolved input symbols
+
+A mixed gene set can still produce useful enrichment when one symbol does not
+resolve. JSON names the unresolved input explicitly so a caller does not mistake
+it for a genuinely empty enrichment.
+
+```bash
+../../tools/biomcp-ci --json enrich BRAF,ZZQQXX1 \
+  | mustmatch like '{"unresolved_genes":["ZZQQXX1"]}'
+```
+
 ## List Command Documents Update Checksum Override
 
 The root command reference is also the operator quick reference. Its update line
