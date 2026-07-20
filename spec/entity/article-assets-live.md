@@ -14,10 +14,13 @@ cannot be retrieved. A generic package miss is not sufficient.
 
 ```bash
 ../../tools/biomcp-ci --json get article 20516115 assets | jq '
+. as $manifest |
 def acceptable:
   (.provider.source | type == "string" and length > 0) and
   (.source_document | type == "string" and length > 0) and
-  ((.outcome == "retrievable" and (.handle | startswith("biomcp get article 20516115 asset "))) or
+  ((.outcome == "retrievable" and
+    (.handle | startswith("biomcp get article 20516115 asset ")) and
+    (.handle as $handle | $manifest.assets | any(.handle == $handle and .size_bytes > 0 and (.sha256 | test("^[0-9a-f]{64}$"))))) or
    (.outcome == "healthy_absent") or
    (.outcome == "access_or_licence_denied") or
    (.outcome == "unsupported_origin") or

@@ -249,6 +249,7 @@ case "$mode" in
   verify)
     timeout_args=(--timeout 180)
     paths=(
+      spec/entity/article-assets-live.md
       spec/entity/article-graph-live.md
       spec/entity/article-indexing-live.md
       spec/entity/diagnostic.md
