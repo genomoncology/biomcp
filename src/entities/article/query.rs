@@ -338,51 +338,85 @@ fn matches_entity_biotype(value: Option<&str>, expected: EntityBiotype) -> bool 
     }
 }
 
-fn normalize_variant_match_token(value: &str) -> String {
-    value
-        .trim()
-        .trim_start_matches("p.")
-        .trim_start_matches("P.")
-        .chars()
-        .filter_map(|ch| match ch {
-            '*' => Some('X'),
-            ch if ch.is_ascii_alphanumeric() => Some(ch.to_ascii_uppercase()),
-            _ => None,
+fn autocomplete_source_identity(
+    row: &PubTatorAutocompleteResult,
+) -> crate::entities::variant::SourceVariantIdentity {
+    let values = [row.name.as_deref(), row.id.as_deref()]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+    let tokens = values
+        .iter()
+        .flat_map(|value| value.split(|ch: char| ch.is_ascii_whitespace() || ",;/()".contains(ch)))
+        .map(|token| {
+            token.trim_matches(|ch: char| {
+                !ch.is_ascii_alphanumeric()
+                    && ch != '*'
+                    && ch != '.'
+                    && ch != ':'
+                    && ch != '>'
+                    && ch != '_'
+            })
         })
-        .collect()
+        .filter(|token| !token.is_empty())
+        .collect::<Vec<_>>();
+    let protein_changes = tokens
+        .iter()
+        .filter(|token| crate::entities::variant::normalize_protein_change(token).is_some())
+        .map(|token| (*token).to_string())
+        .collect::<Vec<_>>();
+    let genes = tokens
+        .iter()
+        .filter(|token| {
+            token.len() > 1
+                && token
+                    .chars()
+                    .all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit())
+                && !crate::entities::variant::is_rsid(token)
+                && crate::entities::variant::normalize_protein_change(token).is_none()
+        })
+        .map(|token| (*token).to_string())
+        .collect::<Vec<_>>();
+    let rsids = tokens
+        .iter()
+        .filter(|token| crate::entities::variant::is_rsid(token))
+        .map(|token| (*token).to_string())
+        .collect::<Vec<_>>();
+    let genomic_id = tokens
+        .iter()
+        .find(|token| token.contains(":g."))
+        .map(|token| (*token).to_string())
+        .unwrap_or_default();
+    crate::entities::variant::SourceVariantIdentity {
+        genomic_id,
+        genes,
+        protein_changes,
+        coding_changes: Vec::new(),
+        rsids,
+    }
 }
 
 fn variant_candidate_matches(
     row: &PubTatorAutocompleteResult,
-    filters: &super::ArticleVariantIntent,
+    intent: &super::ArticleVariantIntent,
 ) -> bool {
     if !matches_entity_biotype(row.biotype.as_deref(), EntityBiotype::Variant) {
         return false;
     }
-
-    let haystack = [row.id.as_deref(), row.name.as_deref()]
-        .into_iter()
-        .flatten()
-        .map(normalize_variant_match_token)
-        .collect::<Vec<_>>()
-        .join(" ");
-
-    if let Some(gene) = filters.gene.as_deref() {
-        let gene = normalize_variant_match_token(gene);
-        if !gene.is_empty() && !haystack.contains(&gene) {
-            return false;
-        }
-    }
-    if let Some(change) = filters.change.as_deref() {
-        let change = crate::entities::variant::normalize_protein_change(change)
-            .unwrap_or_else(|| change.to_string());
-        let change = normalize_variant_match_token(&change);
-        if !change.is_empty() && !haystack.contains(&change) {
-            return false;
-        }
-    }
-
-    true
+    let requested =
+        crate::entities::variant::RequestedVariantIdentity::from_variant_input(&intent.original)
+            .unwrap_or_else(|_| crate::entities::variant::RequestedVariantIdentity {
+                gene: intent.gene.clone(),
+                protein_change: intent.change.clone(),
+                ..Default::default()
+            });
+    matches!(
+        crate::entities::variant::compare_variant_identity(
+            &requested,
+            &autocomplete_source_identity(row)
+        ),
+        crate::entities::variant::VariantIdentityComparison::Compatible { .. }
+    )
 }
 
 pub(crate) async fn resolve_variant_entity_token(

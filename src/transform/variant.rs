@@ -1052,6 +1052,8 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
         gnomad_af,
         revel,
         gerp,
+        source_identity: None,
+        matched_alias: None,
     }
 }
 

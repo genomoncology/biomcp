@@ -31,7 +31,13 @@ pub use self::structure::{VariantStructureResult, structure};
 
 pub(crate) use self::gwas::validate_p_value as validate_gwas_p_value;
 pub(crate) use self::normalization::transcript_coding_hgvs_re;
-pub(crate) use self::resolution::{gnomad_variant_slug, is_rsid, normalize_protein_change};
+#[allow(unused_imports)]
+pub(crate) use self::resolution::{
+    NormalizedVariantAliases, RequestedVariantIdentity, SourceVariantIdentity,
+    VariantIdentityComparison, VariantResolutionStatus, VariantSearchResolution,
+    compare_variant_identity, gnomad_variant_slug, is_rsid, normalize_protein_change,
+    protein_change_segment,
+};
 
 pub(crate) fn default_variant_section_outcomes() -> SectionOutcomes {
     SectionOutcomes::with_keys(&outcome_keys("variant"))
@@ -278,6 +284,10 @@ pub struct VariantSearchResult {
     pub gnomad_af: Option<f64>,
     pub revel: Option<f64>,
     pub gerp: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_identity: Option<SourceVariantIdentity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub matched_alias: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -362,6 +372,7 @@ pub struct VariantSearchFilters {
     pub has: Option<String>,
     pub missing: Option<String>,
     pub therapy: Option<String>,
+    pub(crate) requested_identity: Option<RequestedVariantIdentity>,
 }
 
 #[derive(Debug, Clone, Default)]
