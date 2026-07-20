@@ -377,7 +377,7 @@ fn swallowed_source_failures_do_not_log_credentials() {
             "1",
         ],
         &[
-            ("BIOMCP_PUBTATOR_BASE", "http://127.0.0.1:0"),
+            ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:0"),
             ("NCBI_API_KEY", secret),
         ],
     );
@@ -385,7 +385,7 @@ fn swallowed_source_failures_do_not_log_credentials() {
     assert_eq!(result.code, Some(1));
     assert!(result.stdout.trim().is_empty(), "stdout={}", result.stdout);
     assert!(
-        result.stderr.contains("PubTator 3"),
+        result.stderr.contains("MyVariant.info"),
         "stderr={}",
         result.stderr
     );
@@ -400,6 +400,37 @@ fn swallowed_source_failures_do_not_log_credentials() {
             "swallowed source failure leaked {leaked_detail}: {}",
             result.stderr
         );
+    }
+}
+
+#[test]
+fn variant_article_hard_failure_keeps_the_structured_json_envelope() {
+    let result = run_biomcp_with_env(
+        &[
+            "--no-cache",
+            "--json",
+            "variant",
+            "articles",
+            "BRAF V600E",
+            "--limit",
+            "1",
+        ],
+        &[("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:0")],
+    );
+
+    assert_eq!(result.code, Some(1));
+    assert!(result.stderr.trim().is_empty(), "stderr={}", result.stderr);
+    let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
+    assert_eq!(value["requested_variant"]["gene"], "BRAF");
+    assert_eq!(value["resolution"]["exhaustive"], false);
+    assert_eq!(value["complete"], false);
+    assert_eq!(value["truncated"], true);
+    assert_eq!(value["pagination"]["total"], serde_json::Value::Null);
+    assert_eq!(value["results"], serde_json::json!([]));
+    assert_eq!(value["source_status"][0]["route"], "resolution");
+    assert_eq!(value["source_status"][0]["status"], "unavailable");
+    for leaked_detail in ["127.0.0.1:0", "error sending request", "middleware error"] {
+        assert!(!result.stdout.contains(leaked_detail), "json={value}");
     }
 }
 

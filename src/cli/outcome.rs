@@ -593,6 +593,12 @@ async fn run_outcome_inner(
             })
             .await
         }
+        Commands::Variant { cmd } => {
+            crate::sources::with_no_cache(no_cache, async move {
+                Box::pin(super::variant::handle_command(cmd, json)).await
+            })
+            .await
+        }
         command => Ok(CommandOutcome::stdout(
             run(Cli {
                 command,

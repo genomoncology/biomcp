@@ -23,12 +23,15 @@ use super::enrichment::{
 };
 use super::query::resolve_variant_entity_tokens;
 use super::search::{
-    VARIANT_ENTITY_RETRIEVAL_PATH, VARIANT_FALLBACK_RETRIEVAL_PATH, search_federated_page,
+    VARIANT_ENTITY_RETRIEVAL_PATH, VARIANT_FALLBACK_RETRIEVAL_PATH, acquire_federated_article_rows,
 };
 use super::{
     ArticleRankingOptions, ArticleSearchFilters, ArticleSearchResult, ArticleSort, ArticleSource,
-    ArticleSourceAvailability, ArticleVariantIntent, MAX_FEDERATED_FETCH_RESULTS,
+    ArticleSourceAvailability, ArticleSourceStatus, ArticleVariantIntent,
+    MAX_FEDERATED_FETCH_RESULTS,
 };
+
+const LEXICAL_ALIAS_FETCH_LIMIT: usize = 100;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -130,12 +133,61 @@ fn source_name(source: ArticleSource) -> &'static str {
 }
 
 fn status(route: &str, source: &str, state: &str) -> VariantArticleSourceStatus {
+    status_with_detail(route, source, state, None)
+}
+
+fn status_with_detail(
+    route: &str,
+    source: &str,
+    state: &str,
+    detail: Option<&str>,
+) -> VariantArticleSourceStatus {
     VariantArticleSourceStatus {
         route: route.to_string(),
         source: source.to_string(),
         status: state.to_string(),
-        detail: None,
+        detail: detail.map(str::to_string),
     }
+}
+
+fn availability_severity(status: Option<ArticleSourceAvailability>) -> u8 {
+    match status {
+        Some(ArticleSourceAvailability::Unavailable) => 2,
+        Some(ArticleSourceAvailability::Degraded) => 1,
+        Some(ArticleSourceAvailability::Ok | ArticleSourceAvailability::Skipped) | None => 0,
+    }
+}
+
+fn record_provider_status(
+    statuses: &mut BTreeMap<String, u8>,
+    source: ArticleSource,
+    availability: Option<ArticleSourceAvailability>,
+) {
+    let severity = availability_severity(availability);
+    statuses
+        .entry(source_name(source).to_string())
+        .and_modify(|current| *current = (*current).max(severity))
+        .or_insert(severity);
+}
+
+fn record_federated_statuses(
+    statuses: &mut BTreeMap<String, u8>,
+    source_status: &[ArticleSourceStatus],
+    semantic_scholar_status: &ArticleSourceStatus,
+) {
+    for source in [ArticleSource::PubTator, ArticleSource::EuropePmc] {
+        let availability = source_status
+            .iter()
+            .find(|status| status.source == source)
+            .and_then(|status| status.status)
+            .or(Some(ArticleSourceAvailability::Ok));
+        record_provider_status(statuses, source, availability);
+    }
+    record_provider_status(
+        statuses,
+        ArticleSource::SemanticScholar,
+        semantic_scholar_status.status,
+    );
 }
 
 fn candidate_with_provenance(
@@ -245,11 +297,12 @@ fn primary_exact_alias(context: &VariantArticleResolutionContext) -> Option<Stri
 async fn annotation_candidates(
     input: &str,
     context: &VariantArticleResolutionContext,
-) -> Result<(Vec<ArticleCandidate>, bool), BioMcpError> {
+) -> Result<(Vec<ArticleCandidate>, bool, bool), BioMcpError> {
     let pubtator = crate::sources::pubtator::PubTatorClient::new()?;
     let tokens = resolve_variant_entity_tokens(&pubtator, input, &context.requested).await?;
     let mut candidates = Vec::new();
     let mut incomplete = false;
+    let mut succeeded = tokens.is_empty();
     for token in tokens {
         let mut filters = article_filters();
         filters.variant = Some(ArticleVariantIntent {
@@ -258,11 +311,18 @@ async fn annotation_candidates(
             change: context.requested.protein_change.clone(),
             entity_id: Some(token.entity_id),
         });
-        let page = search_pubtator_page(&filters, MAX_FEDERATED_FETCH_RESULTS, 0).await?;
+        let page = match search_pubtator_page(&filters, MAX_FEDERATED_FETCH_RESULTS, 0).await {
+            Ok(page) => page,
+            Err(_) => {
+                incomplete = true;
+                continue;
+            }
+        };
+        succeeded = true;
         incomplete |= page.total.is_some_and(|total| total > page.results.len());
         for row in page.results {
             if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
-                return Ok((candidates, true));
+                return Ok((candidates, true, succeeded));
             }
             candidates.push(candidate_with_provenance(
                 row,
@@ -272,39 +332,63 @@ async fn annotation_candidates(
             ));
         }
     }
-    Ok((candidates, incomplete))
+    Ok((candidates, incomplete, succeeded))
 }
 
 async fn lexical_candidates(
     context: &VariantArticleResolutionContext,
-) -> Result<(Vec<ArticleCandidate>, bool), BioMcpError> {
+) -> (
+    Vec<ArticleCandidate>,
+    bool,
+    bool,
+    Vec<VariantArticleSourceStatus>,
+) {
     let searches = exact_aliases(context).into_iter().map(|alias| async move {
         let mut filters = article_filters();
         filters.keyword = Some(alias.clone());
-        search_federated_page(&filters, 100, 0)
+        acquire_federated_article_rows(&filters, LEXICAL_ALIAS_FETCH_LIMIT)
             .await
-            .map(|page| (alias, page))
+            .map(|rows| (alias, rows))
     });
     let mut candidates = Vec::new();
     let mut incomplete = false;
+    let mut succeeded = false;
+    let mut alias_failed = false;
+    let mut provider_statuses = BTreeMap::new();
     for result in futures::future::join_all(searches).await {
-        let (alias, page) = result?;
-        incomplete |= page.source_status.iter().any(|status| {
-            !status
-                .message
-                .as_deref()
-                .is_some_and(|message| message.contains("enrichment"))
-                && matches!(
-                    status.status,
-                    Some(
-                        ArticleSourceAvailability::Degraded
-                            | ArticleSourceAvailability::Unavailable
-                    )
-                )
-        });
-        for row in page.results {
+        let (alias, federated) = match result {
+            Ok(result) => result,
+            Err(_) => {
+                incomplete = true;
+                alias_failed = true;
+                continue;
+            }
+        };
+        let alias_succeeded = federated.primary_error.is_none()
+            || matches!(
+                federated.semantic_scholar_status.status,
+                Some(ArticleSourceAvailability::Ok | ArticleSourceAvailability::Degraded)
+            );
+        succeeded |= alias_succeeded;
+        alias_failed |= !alias_succeeded;
+        incomplete |= !alias_succeeded;
+        record_federated_statuses(
+            &mut provider_statuses,
+            &federated.source_status,
+            &federated.semantic_scholar_status,
+        );
+        for source in federated.truncated_sources {
+            record_provider_status(
+                &mut provider_statuses,
+                source,
+                Some(ArticleSourceAvailability::Degraded),
+            );
+        }
+        incomplete |= provider_statuses.values().any(|severity| *severity > 0);
+        for row in federated.rows {
             if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
-                return Ok((candidates, true));
+                incomplete = true;
+                break;
             }
             let sources = if row.matched_sources.is_empty() {
                 vec![row.source]
@@ -323,7 +407,36 @@ async fn lexical_candidates(
             candidates.push(candidate);
         }
     }
-    Ok((candidates, incomplete))
+    if !succeeded {
+        incomplete = true;
+    }
+    if alias_failed || !succeeded {
+        let route_severity = if succeeded { 1 } else { 2 };
+        for source in ["pubtator", "europepmc", "semanticscholar"] {
+            provider_statuses
+                .entry(source.to_string())
+                .and_modify(|current| *current = (*current).max(route_severity))
+                .or_insert(route_severity);
+        }
+    }
+    let statuses = provider_statuses
+        .into_iter()
+        .map(|(source, severity)| {
+            let state = match severity {
+                0 => "ok",
+                1 => "degraded",
+                _ => "unavailable",
+            };
+            status_with_detail(
+                "exact_lexical",
+                &source,
+                state,
+                (severity > 0)
+                    .then_some("one or more providers or aliases stopped before the route bound"),
+            )
+        })
+        .collect();
+    (candidates, incomplete, succeeded, statuses)
 }
 
 fn pmid_seed(pmid: String) -> ArticleSearchResult {
@@ -525,15 +638,25 @@ pub async fn search_variant_articles(
             VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
         ) {
             match annotation_candidates(input, &context).await {
-                Ok((rows, incomplete)) => {
+                Ok((rows, incomplete, succeeded)) => {
                     candidates.extend(rows);
-                    statuses.push(status(
+                    let state = if !succeeded {
+                        "unavailable"
+                    } else if incomplete {
+                        "degraded"
+                    } else {
+                        "ok"
+                    };
+                    statuses.push(status_with_detail(
                         "pubtator_variant",
                         "pubtator",
-                        if incomplete { "degraded" } else { "ok" },
+                        state,
+                        incomplete.then_some(
+                            "one or more annotation tokens stopped before the route bound",
+                        ),
                     ));
-                    succeeded_routes += 1;
-                    failed_routes += usize::from(incomplete);
+                    succeeded_routes += usize::from(succeeded);
+                    failed_routes += usize::from(incomplete || !succeeded);
                 }
                 Err(_) => {
                     statuses.push(status("pubtator_variant", "pubtator", "unavailable"));
@@ -545,22 +668,11 @@ pub async fn search_variant_articles(
             strategy,
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
-            match lexical_candidates(&context).await {
-                Ok((rows, incomplete)) => {
-                    candidates.extend(rows);
-                    statuses.push(status(
-                        "exact_lexical",
-                        "federated",
-                        if incomplete { "degraded" } else { "ok" },
-                    ));
-                    succeeded_routes += 1;
-                    failed_routes += usize::from(incomplete);
-                }
-                Err(_) => {
-                    statuses.push(status("exact_lexical", "federated", "unavailable"));
-                    failed_routes += 1;
-                }
-            }
+            let (rows, incomplete, succeeded, route_statuses) = lexical_candidates(&context).await;
+            candidates.extend(rows);
+            statuses.extend(route_statuses);
+            succeeded_routes += usize::from(succeeded);
+            failed_routes += usize::from(incomplete || !succeeded);
         }
         if strategy == VariantArticleStrategy::Union {
             match citation_candidates(&context).await {
@@ -654,4 +766,99 @@ pub async fn search_variant_articles(
         },
         hard_error,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::entities::article::test_support::row;
+    use crate::entities::variant::SourceVariantIdentity;
+
+    fn resolved_context() -> VariantArticleResolutionContext {
+        let requested = RequestedVariantIdentity::from_variant_input("BRAF p.V600E")
+            .expect("requested identity");
+        VariantArticleResolutionContext {
+            resolution: VariantSearchResolution {
+                status: VariantResolutionStatus::Resolved,
+                normalized_aliases: requested.normalized_aliases(),
+                exhaustive: true,
+            },
+            requested,
+            source_id: Some("chr7:g.140453136A>T".into()),
+            source_identity: Some(SourceVariantIdentity {
+                genomic_id: "chr7:g.140453136A>T".into(),
+                genes: vec!["BRAF".into()],
+                protein_changes: vec!["p.V600E".into(), "p.Val600Glu".into()],
+                coding_changes: vec!["c.1799T>A".into()],
+                rsids: vec!["rs113488022".into()],
+            }),
+            available: true,
+        }
+    }
+
+    fn lexical_candidate(pmid: &str, positions: &[usize]) -> ArticleCandidate {
+        let mut candidate = article_candidate_from_row(row(pmid, ArticleSource::PubTator));
+        candidate.variant_provenance = positions
+            .iter()
+            .map(|position| VariantArticleProvenance {
+                route: "exact_lexical".into(),
+                source: "pubtator".into(),
+                matched_alias: Some(format!("alias-{position}")),
+                native_position: *position,
+            })
+            .collect();
+        candidate
+    }
+
+    #[test]
+    fn resolved_exact_aliases_include_validated_source_forms_once() {
+        assert_eq!(
+            exact_aliases(&resolved_context()),
+            vec![
+                "BRAF c.1799T>A",
+                "BRAF p.V600E",
+                "BRAF p.Val600Glu",
+                "chr7:g.140453136A>T",
+                "rs113488022",
+            ]
+        );
+    }
+
+    #[test]
+    fn ranking_counts_only_the_best_alias_position_per_route_and_provider() {
+        let mut candidates = vec![
+            lexical_candidate("2", &[1, 2, 3]),
+            lexical_candidate("1", &[1]),
+        ];
+
+        rank_candidates(&mut candidates);
+
+        assert_eq!(
+            candidates
+                .iter()
+                .map(|candidate| candidate.row.pmid.as_str())
+                .collect::<Vec<_>>(),
+            vec!["1", "2"]
+        );
+    }
+
+    #[test]
+    fn transitive_merge_retains_associated_variant_provenance() {
+        let mut annotation = lexical_candidate("6010003", &[2]);
+        annotation.variant_provenance[0].route = "pubtator_variant".into();
+        let lexical = lexical_candidate("6010003", &[1]);
+
+        let merged = merge_article_candidate_pool(vec![annotation, lexical]);
+
+        assert_eq!(merged.len(), 1);
+        assert_eq!(merged[0].variant_provenance.len(), 2);
+        assert_eq!(
+            merged[0]
+                .variant_provenance
+                .iter()
+                .map(|fact| fact.route.as_str())
+                .collect::<Vec<_>>(),
+            vec!["exact_lexical", "pubtator_variant"]
+        );
+    }
 }
