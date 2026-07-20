@@ -480,6 +480,11 @@ mod tests {
                 .validate_addresses(["64:ff9b::93.184.216.34".parse().unwrap()])
                 .is_ok()
         );
+        assert!(
+            policy
+                .validate_addresses(["64:ff9b::1:127.0.0.1".parse().unwrap()])
+                .is_ok()
+        );
     }
 
     #[test]
