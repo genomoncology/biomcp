@@ -231,10 +231,10 @@ serves the MYD88 S219C article only for the labeled best-effort fallback path.
 ```bash
 bash ../fixtures/run-variant-article-entity-fixture.sh ../.. braf | mustmatch like '## BRAF V600E limit 1
 PubTator variant annotation recall
-4260001
+6010001
 ## BRAF V600E limit 3
 PubTator variant annotation recall
-4260001'
+6010001'
 ```
 
 ```bash
@@ -246,6 +246,108 @@ best-effort free-text fallback
 ```bash
 bash ../fixtures/run-variant-article-entity-fixture.sh ../.. myd88-json | mustmatch like 'JSON fallback path preserved
 24534189'
+```
+
+## Variant Article Routes Are Unioned Before Pagination
+
+<!-- mustmatch-lint: skip -->
+
+The default literature strategy preserves candidates from annotation, exact
+lexical aliases, and source-backed citations before it deduplicates, ranks, and
+applies the public limit. A paper reached by two routes remains one row while
+keeping both route and alias facts.
+
+```bash run id=variant-article-union exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. union-json
+```
+
+```json expect=variant-article-union contains
+{
+  "strategy": "union",
+  "requested_gene": "BRAF",
+  "supplied_protein": "p.V600E",
+  "resolution": "resolved",
+  "complete": true,
+  "truncated": false,
+  "pmids": ["6010001", "6010002", "6010003", "6010004"],
+  "all_rows_ranked": true,
+  "shared_routes": ["exact_lexical", "pubtator_variant"],
+  "shared_aliases": ["BRAF V600E", "BRAF p.V600E"]
+}
+```
+
+## Strategy Modes Isolate Diagnostic Routes
+
+<!-- mustmatch-lint: skip -->
+
+Omitting `--strategy` is the dependable union behavior. The annotation and
+lexical modes are diagnostic views: each returns only candidates acquired by
+that route, while source-backed citations remain part of union.
+
+```bash run id=variant-article-strategies exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. strategies-json
+```
+
+```json expect=variant-article-strategies contains
+{
+  "omitted_equals_union": true,
+  "annotation_pmids": ["6010001", "6010003"],
+  "lexical_pmids": ["6010002", "6010003"],
+  "union_pmids": ["6010001", "6010002", "6010003", "6010004"]
+}
+```
+
+## Unresolved Fallback Does Not Claim Exact Provenance
+
+<!-- mustmatch-lint: skip -->
+
+When strict identity resolution is healthy but finds no resolved allele,
+best-effort text can still help discovery. Such a row is explicitly non-exact
+and carries no matched exact alias.
+
+```bash run id=variant-article-unresolved exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. unresolved-json
+```
+
+```json expect=variant-article-unresolved contains
+{
+  "resolution": "unresolved",
+  "complete": true,
+  "pmid": "24534189",
+  "routes": ["best_effort_free_text"],
+  "matched_aliases": [],
+  "has_exact_claim": false
+}
+```
+
+## Healthy Empty Variant Literature Keeps Its Envelope
+
+<!-- mustmatch-lint: skip -->
+
+A healthy annotation miss is different from a provider failure. JSON keeps the
+empty collection, resolution, source status, completeness, and pagination facts
+so callers do not have to infer state from missing keys.
+
+```bash run id=variant-article-empty exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. healthy-empty-json
+```
+
+```json expect=variant-article-empty contains
+{
+  "strategy": "annotation",
+  "resolution": "unresolved",
+  "results": [],
+  "complete": true,
+  "truncated": false,
+  "pagination": {
+    "offset": 0,
+    "limit": 3,
+    "returned": 0,
+    "total": 0,
+    "has_more": false
+  },
+  "source_status_present": true
+}
 ```
 
 ## ID Normalization

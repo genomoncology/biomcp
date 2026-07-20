@@ -21,7 +21,10 @@ from urllib.parse import parse_qs, urlparse
 ready = Path(sys.argv[1])
 request_log = Path(sys.argv[2])
 
-BRAF_PMID = "4260001"
+BRAF_ANNOTATION_PMID = "6010001"
+BRAF_LEXICAL_PMID = "6010002"
+BRAF_SHARED_PMID = "6010003"
+BRAF_SOURCE_CITATION_PMID = "6010004"
 MYD88_PMID = "24534189"
 
 
@@ -55,6 +58,34 @@ class Handler(BaseHTTPRequestHandler):
         with request_log.open("a", encoding="utf-8") as handle:
             handle.write(f"{parsed.path}?{parsed.query}\n")
 
+        if parsed.path == "/v1/query":
+            query = params.get("q", [""])[0]
+            if "BRAF" in query and ("V600E" in query or "p.V600E" in query):
+                send_json(self, 200, {
+                    "total": 1,
+                    "hits": [{
+                        "_id": "chr7:g.140453136A>T",
+                        "dbnsfp": {
+                            "genename": ["BRAF"],
+                            "hgvsp": ["p.V600E", "p.Val600Glu"],
+                            "hgvsc": ["c.1799T>A"],
+                        },
+                        "civic": {
+                            "molecularProfiles": [{
+                                "evidenceItems": [{
+                                    "source": {
+                                        "citation": "PMID:6010004",
+                                        "sourceType": "PUBMED",
+                                    }
+                                }]
+                            }]
+                        },
+                    }],
+                })
+                return
+            send_json(self, 200, {"total": 0, "hits": []})
+            return
+
         if parsed.path == "/entity/autocomplete/":
             query = params.get("query", [""])[0]
             rows = []
@@ -86,8 +117,11 @@ class Handler(BaseHTTPRequestHandler):
             text = params.get("text", [""])[0]
             if text == "@VARIANT_p.V600E_BRAF_human":
                 send_json(self, 200, {
-                    "results": [pubtator_result(BRAF_PMID, "BRAF V600E entity-annotated fixture article")],
-                    "count": 1,
+                    "results": [
+                        pubtator_result(BRAF_ANNOTATION_PMID, "BRAF V600E annotation-only fixture article"),
+                        pubtator_result(BRAF_SHARED_PMID, "BRAF V600E shared-route fixture article"),
+                    ],
+                    "count": 2,
                     "total_pages": 1,
                     "current": 1,
                     "page_size": 25,
@@ -100,6 +134,18 @@ class Handler(BaseHTTPRequestHandler):
                 send_json(self, 200, {
                     "results": [pubtator_result(MYD88_PMID, "MYD88 S219C body-only free-text fixture article")],
                     "count": 1,
+                    "total_pages": 1,
+                    "current": 1,
+                    "page_size": 25,
+                })
+                return
+            if text in {"BRAF V600E", "BRAF p.V600E", "BRAF p.Val600Glu", "V600E", "p.V600E", "p.Val600Glu"}:
+                send_json(self, 200, {
+                    "results": [
+                        pubtator_result(BRAF_LEXICAL_PMID, "BRAF V600E lexical-only fixture article"),
+                        pubtator_result(BRAF_SHARED_PMID, "BRAF V600E shared-route fixture article"),
+                    ],
+                    "count": 2,
                     "total_pages": 1,
                     "current": 1,
                     "page_size": 25,
@@ -154,6 +200,7 @@ export BIOMCP_CACHE_MODE=off
 export BIOMCP_CACHE_DIR="$fixture_root/cache"
 export BIOMCP_TEST_UNPACED_ORIGIN="$base_url"
 export BIOMCP_PUBTATOR_BASE="$base_url"
+export BIOMCP_MYVARIANT_BASE="$base_url/v1"
 export BIOMCP_EUROPEPMC_BASE="$base_url"
 export BIOMCP_PUBMED_BASE="$base_url/entrez/eutils"
 export BIOMCP_S2_BASE="$base_url"
@@ -182,5 +229,60 @@ case "$scenario" in
     jq -e '.results | any(.pmid == "24534189")' >/dev/null <<<"$json_out"
     printf 'JSON fallback path preserved\n'
     jq -r '.results[] | select(.pmid == "24534189") | .pmid' <<<"$json_out"
+    ;;
+  union-json)
+    "$binary" --json variant articles "BRAF p.V600E" --limit 10 \
+      | jq '{
+          strategy,
+          requested_gene: .requested_variant.gene,
+          supplied_protein: .requested_variant.protein_change,
+          resolution: .resolution.status,
+          complete,
+          truncated,
+          pmids: ([.results[].pmid] | sort),
+          all_rows_ranked: all(.results[]; (.rank | type) == "number"),
+          shared_routes: ([.results[] | select(.pmid == "6010003") | (.retrieval_routes // [])[]] | sort),
+          shared_aliases: ([.results[] | select(.pmid == "6010003") | (.matched_aliases // [])[]] | sort)
+        }'
+    ;;
+  strategies-json)
+    omitted="$("$binary" --json variant articles "BRAF p.V600E" --limit 10)"
+    union="$("$binary" --json variant articles "BRAF p.V600E" --strategy union --limit 10)"
+    annotation="$("$binary" --json variant articles "BRAF p.V600E" --strategy annotation --limit 10)"
+    lexical="$("$binary" --json variant articles "BRAF p.V600E" --strategy lexical --limit 10)"
+    jq -n \
+      --argjson omitted "$omitted" \
+      --argjson union "$union" \
+      --argjson annotation "$annotation" \
+      --argjson lexical "$lexical" \
+      '{
+        omitted_equals_union: (($omitted | del(.retrieval_path)) == ($union | del(.retrieval_path))),
+        annotation_pmids: ([$annotation.results[].pmid] | sort),
+        lexical_pmids: ([$lexical.results[].pmid] | sort),
+        union_pmids: ([$union.results[].pmid] | sort)
+      }'
+    ;;
+  unresolved-json)
+    "$binary" --json variant articles "MYD88 S219C" --limit 3 \
+      | jq '{
+          resolution: .resolution.status,
+          complete,
+          pmid: .results[0].pmid,
+          routes: .results[0].retrieval_routes,
+          matched_aliases: .results[0].matched_aliases,
+          has_exact_claim: ([.results[0].retrieval_routes[]?] | any(. == "pubtator_variant" or . == "exact_lexical"))
+        }'
+    ;;
+  healthy-empty-json)
+    "$binary" --json variant articles "MYD88 S219C" --strategy annotation --limit 3 \
+      | jq '{
+          strategy,
+          resolution: .resolution.status,
+          results,
+          complete,
+          truncated,
+          pagination: (.pagination | {offset, limit, returned, total, has_more}),
+          source_status_present: (has("source_status") and (.source_status | type == "array"))
+        }'
     ;;
 esac
