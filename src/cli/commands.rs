@@ -409,6 +409,7 @@ EXAMPLES:
   biomcp search variant -g BRCA1 --review-status 2 --revel-min 0.7 --consequence missense_variant --limit 5
   biomcp search variant --hgvsp p.Val600Glu -g BRAF --limit 5
 
+Exact protein, coding-HGVS, and rsID searches reject contradictory source identities and report structured resolution in JSON. Gene-only and discovery-filter searches remain broad.
 For variant mentions in trials: biomcp variant trials \"BRAF V600E\"
 See also: biomcp list variant")]
     Variant(variant::VariantSearchArgs),

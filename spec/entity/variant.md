@@ -147,8 +147,8 @@ dropping every exact result indiscriminately.
 
 ```bash
 biomcp --json search variant -g BRCA1 --hgvsp p.Met16Ile --limit 5 \
-  | jq '{supplied_protein: .requested_variant.protein_change, normalized_proteins: .resolution.normalized_aliases.protein_changes, status: .resolution.status, exhaustive: .resolution.exhaustive, retained: (.results | length), matched_alias: .results[0].matched_alias, source_has_supplied_alias: (.results[0].source_identity.protein_changes | index("p.Met16Ile") != null), filtered_total: .pagination.total, has_more: .pagination.has_more}' \
-  | mustmatch like '{"supplied_protein":"p.Met16Ile","normalized_proteins":["M16I"],"status":"resolved","exhaustive":true,"retained":1,"matched_alias":"p.Met16Ile","source_has_supplied_alias":true,"filtered_total":1,"has_more":false}'
+  | jq '{supplied_protein: .requested_variant.protein_change, normalized_proteins: .resolution.normalized_aliases.protein_changes, status: .resolution.status, exhaustive: .resolution.exhaustive, retained: (.results | length), matched_alias: .results[0].matched_alias, source_has_supplied_alias: (.results[0].source_identity.protein_changes | index("p.Met16Ile") != null), source_has_short_alias: (.results[0].source_identity.protein_changes | index("p.M16I") != null), filtered_total: .pagination.total, has_more: .pagination.has_more}' \
+  | mustmatch like '{"supplied_protein":"p.Met16Ile","normalized_proteins":["M16I"],"status":"resolved","exhaustive":true,"retained":1,"matched_alias":"p.Met16Ile","source_has_supplied_alias":true,"source_has_short_alias":true,"filtered_total":1,"has_more":false}'
 ```
 
 ## Residue-Alias Search

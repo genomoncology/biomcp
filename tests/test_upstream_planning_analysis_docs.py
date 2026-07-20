@@ -391,6 +391,10 @@ def test_variant_filter_validation_is_aligned_across_user_and_ux_references() ->
         "--has",
         "--missing",
         "invalid_argument",
+        "requested_variant",
+        "resolution",
+        "source_identity",
+        "matched_alias",
     ):
         assert contract_landmark in user_variant
         assert contract_landmark in ux_variant

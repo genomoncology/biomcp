@@ -90,6 +90,16 @@ fn search_variant_parses_quoted_gene_change_positional_query() {
 }
 
 #[test]
+fn search_variant_help_distinguishes_exact_identity_from_broad_discovery() {
+    let help = Cli::try_parse_from(["biomcp", "search", "variant", "--help"])
+        .expect_err("help should stop parsing")
+        .to_string();
+    assert!(help.contains("reject contradictory source identities"));
+    assert!(help.contains("structured resolution in JSON"));
+    assert!(help.contains("Gene-only and discovery-filter searches remain broad"));
+}
+
+#[test]
 fn variant_bare_id_parses_as_external_subcommand() {
     let cli = Cli::try_parse_from(["biomcp", "variant", "BRAF V600E"])
         .expect("bare variant id should parse");
@@ -262,6 +272,28 @@ fn resolve_variant_query_maps_long_form_positional_gene_change_to_gene_and_hgvsp
         .expect("exact positional identity");
     assert_eq!(requested.gene.as_deref(), Some("BRAF"));
     assert_eq!(requested.protein_change.as_deref(), Some("p.Val600Glu"));
+}
+
+#[test]
+fn resolve_variant_query_preserves_complex_exact_protein_identity() {
+    let resolved = resolve_variant_query(
+        Some("EGFR".into()),
+        Some("p.Glu746_Ala750del".into()),
+        None,
+        None,
+        Vec::new(),
+    )
+    .unwrap();
+    let VariantSearchPlan::Standard(resolved) = resolved else {
+        panic!("expected standard search plan");
+    };
+    assert_eq!(resolved.hgvsp.as_deref(), Some("Glu746_Ala750del"));
+    assert_eq!(
+        resolved
+            .requested_identity
+            .and_then(|identity| identity.protein_change),
+        Some("p.Glu746_Ala750del".into())
+    );
 }
 
 #[test]

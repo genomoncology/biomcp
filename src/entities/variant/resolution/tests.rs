@@ -185,6 +185,40 @@ fn protein_normalization_preserves_identity_across_supported_spellings() {
 }
 
 #[test]
+fn identity_comparison_accepts_identical_complex_protein_hgvs() {
+    let requested = RequestedVariantIdentity::for_search(
+        Some("EGFR".into()),
+        Some("p.Glu746_Ala750del".into()),
+        None,
+        None,
+    );
+    let source = SourceVariantIdentity {
+        genomic_id: "chr7:g.55242465_55242479del".into(),
+        genes: vec!["EGFR".into()],
+        protein_changes: vec!["NP_005219.2:p.Glu746_Ala750del".into()],
+        ..Default::default()
+    };
+
+    assert_eq!(
+        compare_variant_identity(&requested, &source),
+        VariantIdentityComparison::Compatible {
+            matched_alias: "NP_005219.2:p.Glu746_Ala750del".into(),
+        }
+    );
+
+    let contradictory = RequestedVariantIdentity {
+        protein_change: Some("p.Glu746_Ala751del".into()),
+        ..requested
+    };
+    assert_eq!(
+        compare_variant_identity(&contradictory, &source),
+        VariantIdentityComparison::Contradictory {
+            field: "protein_change"
+        }
+    );
+}
+
+#[test]
 fn identity_comparison_preserves_provider_alias_and_checks_every_known_field() {
     let requested = RequestedVariantIdentity {
         gene: Some("BRAF".into()),

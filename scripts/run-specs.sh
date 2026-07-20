@@ -171,6 +171,12 @@ run_variant_identity_fixture() {
   register_cleanup cleanup_variant_identity_fixture
 }
 
+lock_routine_fixtures() {
+  mkdir -p "$ROOT/.cache"
+  exec 8>"$ROOT/.cache/spec-routine-fixtures.lock"
+  flock 8
+}
+
 run_section_outcome_specs() {
   if ((${#SECTION_OUTCOME_MD_PATHS[@]})); then
     (
@@ -214,6 +220,7 @@ case "$mode" in
     timeout_args=(--timeout 180)
     paths=("${SPEC_ROUTINE_PATHS[@]}")
     mustmatch_path_dir="$(mustmatch_dir)"
+    lock_routine_fixtures
     run_article_fixture
     run_study_fixture
     run_ddinter_fixture
@@ -231,6 +238,7 @@ case "$mode" in
       spec/surface/trial-retirement.md
     )
     mustmatch_path_dir="$(mustmatch_dir)"
+    lock_routine_fixtures
     run_article_fixture
     run_study_fixture
     run_ctgov_fixture

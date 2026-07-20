@@ -162,6 +162,37 @@ fn exact_aggregation_filters_before_pagination_and_keeps_cap_truthful() {
 }
 
 #[test]
+fn exact_aggregation_retains_identical_complex_protein_hgvs() {
+    let requested = RequestedVariantIdentity::for_search(
+        Some("EGFR".into()),
+        Some("p.Glu746_Ala750del".into()),
+        None,
+        None,
+    );
+    let source_hit = serde_json::from_value(serde_json::json!({
+        "_id": "chr7:g.55242465_55242479del",
+        "dbnsfp": {
+            "genename": "EGFR",
+            "hgvsp": "NP_005219.2:p.Glu746_Ala750del"
+        }
+    }))
+    .expect("valid MyVariant hit");
+    let mut seen = HashSet::new();
+    let mut retained = Vec::new();
+
+    assert!(!retain_compatible_hits(
+        &requested,
+        [source_hit],
+        &mut seen,
+        &mut retained,
+    ));
+    assert_eq!(
+        retained[0].matched_alias.as_deref(),
+        Some("NP_005219.2:p.Glu746_Ala750del")
+    );
+}
+
+#[test]
 fn exact_aggregation_marks_missing_identity_evidence_indeterminate() {
     let requested =
         RequestedVariantIdentity::for_search(Some("BRAF".into()), Some("V600E".into()), None, None);

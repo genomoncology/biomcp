@@ -293,11 +293,16 @@ pub(crate) fn protein_change_segment(value: &str) -> &str {
         .unwrap_or(trimmed)
 }
 
-pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
-    let trimmed = protein_change_segment(value)
+fn protein_alias_body(value: &str) -> &str {
+    protein_change_segment(value)
         .trim()
-        .trim_start_matches("p.")
-        .trim_start_matches("P.");
+        .strip_prefix("p.")
+        .or_else(|| protein_change_segment(value).trim().strip_prefix("P."))
+        .unwrap_or_else(|| protein_change_segment(value).trim())
+}
+
+pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
+    let trimmed = protein_alias_body(value);
     if trimmed.is_empty() {
         return None;
     }
@@ -615,24 +620,29 @@ pub(crate) fn compare_variant_identity(
         indeterminate = Some("gene_annotation_tuple");
     }
     if let Some(value) = requested.protein_change.as_deref() {
-        let Some(want) = normalize_protein_change(value) else {
-            return VariantIdentityComparison::Indeterminate {
-                field: "protein_change",
-            };
-        };
-        let usable = source
+        if let Some(alias) = source
             .protein_changes
             .iter()
-            .filter_map(|alias| normalize_protein_change(alias).map(|v| (alias, v)))
-            .collect::<Vec<_>>();
-        if usable.is_empty() {
-            indeterminate = Some("protein_change");
-        } else if let Some((alias, _)) = usable
-            .iter()
-            .find(|(alias, _)| alias.trim() == value.trim())
-            .or_else(|| usable.iter().find(|(_, value)| value == &want))
+            .find(|alias| protein_alias_body(alias).eq_ignore_ascii_case(protein_alias_body(value)))
         {
-            matched_alias = Some((*alias).clone());
+            matched_alias = Some(alias.clone());
+        } else if let Some(want) = normalize_protein_change(value) {
+            let usable = source
+                .protein_changes
+                .iter()
+                .filter_map(|alias| normalize_protein_change(alias).map(|v| (alias, v)))
+                .collect::<Vec<_>>();
+            if usable.is_empty() {
+                indeterminate = Some("protein_change");
+            } else if let Some((alias, _)) = usable.iter().find(|(_, value)| value == &want) {
+                matched_alias = Some((*alias).clone());
+            } else {
+                return VariantIdentityComparison::Contradictory {
+                    field: "protein_change",
+                };
+            }
+        } else if source.protein_changes.is_empty() {
+            indeterminate = Some("protein_change");
         } else {
             return VariantIdentityComparison::Contradictory {
                 field: "protein_change",
