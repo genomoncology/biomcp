@@ -53,7 +53,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/v1/query":
             query = parse_qs(parsed.query).get("q", [""])[0]
-            if "dbnsfp.genename:BRCA1" not in query or 'dbnsfp.hgvsp:"p.M1783I"' not in query:
+            expected_proteins = ('dbnsfp.hgvsp:"p.M1783I"', 'dbnsfp.hgvsp:"p.M16I"')
+            if "dbnsfp.genename:BRCA1" not in query or not any(
+                protein in query for protein in expected_proteins
+            ):
                 send_json(self, 400, {"error": "unexpected fixture query"})
                 return
             send_json(self, 200, SEARCH_RESPONSE)
@@ -70,6 +73,14 @@ READY.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-8")
 server.serve_forever()
 PY
 server_pid=$!
+setup_complete=false
+cleanup_partial_setup() {
+  if [[ "$setup_complete" == false ]]; then
+    kill "$server_pid" 2>/dev/null || true
+    rm -rf "$fixture_root"
+  fi
+}
+trap cleanup_partial_setup EXIT
 
 for _ in $(seq 1 50); do
   if [[ -s "$ready_file" ]]; then
@@ -121,4 +132,6 @@ PY
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"
 
+setup_complete=true
+trap - EXIT
 printf '%s\n' "$fixture_root"

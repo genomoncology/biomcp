@@ -137,12 +137,18 @@ explicitly unresolved instead of being relabeled as a match.
 
 ```bash
 biomcp --json search variant -g BRCA1 --hgvsp p.Met1783Ile --limit 5 \
-  | jq -r '.requested_variant.gene, .requested_variant.protein_change, (.resolution.normalized_aliases // [])[], .resolution.status, (.results | length)' \
-  | mustmatch like 'BRCA1
-p.Met1783Ile
-M1783I
-unresolved
-0'
+  | jq '{requested_gene: .requested_variant.gene, supplied_protein: .requested_variant.protein_change, normalized_proteins: .resolution.normalized_aliases.protein_changes, status: .resolution.status, exhaustive: .resolution.exhaustive, retained: (.results | length), filtered_total: .pagination.total, has_more: .pagination.has_more}' \
+  | mustmatch like '{"requested_gene":"BRCA1","supplied_protein":"p.Met1783Ile","normalized_proteins":["M1783I"],"status":"unresolved","exhaustive":true,"retained":0,"filtered_total":0,"has_more":false}'
+```
+
+The same source response does contain residue 16. Asking for that identity keeps
+its source row and records the source alias that proved the match, rather than
+dropping every exact result indiscriminately.
+
+```bash
+biomcp --json search variant -g BRCA1 --hgvsp p.Met16Ile --limit 5 \
+  | jq '{supplied_protein: .requested_variant.protein_change, normalized_proteins: .resolution.normalized_aliases.protein_changes, status: .resolution.status, exhaustive: .resolution.exhaustive, retained: (.results | length), matched_alias: .results[0].matched_alias, source_has_supplied_alias: (.results[0].source_identity.protein_changes | index("p.Met16Ile") != null), filtered_total: .pagination.total, has_more: .pagination.has_more}' \
+  | mustmatch like '{"supplied_protein":"p.Met16Ile","normalized_proteins":["M16I"],"status":"resolved","exhaustive":true,"retained":1,"matched_alias":"p.Met16Ile","source_has_supplied_alias":true,"filtered_total":1,"has_more":false}'
 ```
 
 ## Residue-Alias Search
