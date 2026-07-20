@@ -337,9 +337,19 @@ fn is_forbidden_address(address: IpAddr) -> bool {
     match address {
         IpAddr::V4(address) => forbidden_ipv4(address),
         IpAddr::V6(address) => {
-            address.to_ipv4_mapped().is_some_and(forbidden_ipv4) || forbidden_ipv6(address)
+            address
+                .to_ipv4()
+                .or_else(|| nat64_embedded_ipv4(address))
+                .is_some_and(forbidden_ipv4)
+                || forbidden_ipv6(address)
         }
     }
+}
+
+fn nat64_embedded_ipv4(address: Ipv6Addr) -> Option<Ipv4Addr> {
+    let octets = address.octets();
+    (octets[..12] == [0x00, 0x64, 0xff, 0x9b, 0, 0, 0, 0, 0, 0, 0, 0])
+        .then(|| Ipv4Addr::new(octets[12], octets[13], octets[14], octets[15]))
 }
 
 fn forbidden_ipv4(address: Ipv4Addr) -> bool {
@@ -350,6 +360,7 @@ fn forbidden_ipv4(address: Ipv4Addr) -> bool {
         || address.is_unspecified()
         || address.is_multicast()
         || octets[0] == 0
+        || (octets[0] == 100 && octets[1] & 0xc0 == 0x40)
         || octets == [100, 100, 100, 200]
 }
 
@@ -417,6 +428,83 @@ mod tests {
                 policy.validate_addresses([parsed]).is_err(),
                 "accepted {address}"
             );
+        }
+    }
+
+    #[test]
+    fn rejects_cgnat_range_without_blocking_adjacent_public_addresses() {
+        let policy = pdf_policy();
+        for address in ["100.64.0.0", "100.127.255.255"] {
+            assert!(
+                policy
+                    .validate_addresses([address.parse().unwrap()])
+                    .is_err(),
+                "accepted CGNAT address {address}"
+            );
+        }
+        for address in ["100.63.255.255", "100.128.0.0"] {
+            assert!(
+                policy
+                    .validate_addresses([address.parse().unwrap()])
+                    .is_ok(),
+                "rejected public address adjacent to CGNAT {address}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_ipv4_compatible_ipv6_with_forbidden_embedded_address() {
+        let policy = pdf_policy();
+        assert!(
+            policy
+                .validate_addresses(["::127.0.0.1".parse().unwrap()])
+                .is_err()
+        );
+        assert!(
+            policy
+                .validate_addresses(["::93.184.216.34".parse().unwrap()])
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn rejects_nat64_with_forbidden_embedded_address() {
+        let policy = pdf_policy();
+        assert!(
+            policy
+                .validate_addresses(["64:ff9b::127.0.0.1".parse().unwrap()])
+                .is_err()
+        );
+        assert!(
+            policy
+                .validate_addresses(["64:ff9b::93.184.216.34".parse().unwrap()])
+                .is_ok()
+        );
+        assert!(
+            policy
+                .validate_addresses(["64:ff9b::1:127.0.0.1".parse().unwrap()])
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn rejects_encoded_ipv4_literal_hosts_after_url_canonicalization() {
+        for raw in [
+            "https://2130706433/",
+            "https://0177.0.0.1/",
+            "https://0x7f000001/",
+            "https://0x7f.0.0.1/",
+        ] {
+            let url = Url::parse(raw).unwrap();
+            assert_eq!(url.host_str(), Some("127.0.0.1"));
+            let policy = ProviderUrlPolicy {
+                source: "test provider",
+                provider: SourceProvider::SEMANTIC_SCHOLAR,
+                allowed_origins: vec![AllowedOrigin::from_url(&url).unwrap()],
+                credential_origins: Vec::new(),
+                unsafe_test_origin: None,
+            };
+            assert!(policy.validate_url(&url).is_err(), "accepted {raw}");
         }
     }
 
