@@ -30,6 +30,23 @@ pub fn to_pretty<T: Serialize>(value: &T) -> Result<String, BioMcpError> {
     Ok(output)
 }
 
+pub(crate) fn with_variant_search_resolution(
+    output: String,
+    requested: Option<crate::entities::variant::RequestedVariantIdentity>,
+    resolution: Option<crate::entities::variant::VariantSearchResolution>,
+) -> Result<String, BioMcpError> {
+    let (Some(requested), Some(resolution)) = (requested, resolution) else {
+        return Ok(output);
+    };
+    let mut value: serde_json::Value = serde_json::from_str(&output)?;
+    let object = value
+        .as_object_mut()
+        .expect("search response serialization produces an object");
+    object.insert("requested_variant".into(), serde_json::to_value(requested)?);
+    object.insert("resolution".into(), serde_json::to_value(resolution)?);
+    to_pretty(&value)
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct EvidenceUrl {
     pub label: String,

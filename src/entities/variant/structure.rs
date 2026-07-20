@@ -338,7 +338,7 @@ fn residue_summary(
             positions.insert(position);
         }
         if let Some(requested) = requested_normalized.as_deref()
-            && normalize_hgvsp_change(alias).as_deref() == Some(requested)
+            && super::normalize_protein_change(alias).as_deref() == Some(requested)
         {
             matched_hgvsp.push(alias.trim().to_string());
         }
@@ -388,20 +388,8 @@ fn requested_change(variant: &Variant, id_format: &VariantIdFormat) -> Option<St
     }
 }
 
-fn normalize_hgvsp_change(value: &str) -> Option<String> {
-    super::normalize_protein_change(protein_change_segment(value))
-}
-
-fn protein_change_segment(value: &str) -> &str {
-    let trimmed = value.trim();
-    trimmed
-        .rsplit_once(":p.")
-        .map(|(_, change)| change)
-        .unwrap_or(trimmed)
-}
-
 fn hgvsp_position(value: &str) -> Option<u32> {
-    let change = protein_change_segment(value);
+    let change = super::protein_change_segment(value);
     let mut digits = String::new();
     for ch in change.chars() {
         if ch.is_ascii_digit() {
@@ -414,7 +402,7 @@ fn hgvsp_position(value: &str) -> Option<u32> {
 }
 
 fn change_aa(value: &str) -> Option<(Option<String>, Option<String>)> {
-    let change = protein_change_segment(value)
+    let change = super::protein_change_segment(value)
         .trim()
         .trim_start_matches("p.");
     let position_start = change.find(|ch: char| ch.is_ascii_digit())?;
@@ -443,7 +431,8 @@ mod tests {
     #[test]
     fn normalize_hgvsp_change_matches_accession_prefixed_aliases() {
         assert_eq!(
-            normalize_hgvsp_change("NP_004324.2:p.Val600Glu").as_deref(),
+            crate::entities::variant::normalize_protein_change("NP_004324.2:p.Val600Glu")
+                .as_deref(),
             Some("V600E")
         );
     }

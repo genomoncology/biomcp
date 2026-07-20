@@ -45,7 +45,7 @@ pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "cosmic.cosmic_id,cosmic.mut_freq,cosmic.tumor_site,cosmic.mut_nt,",
     "cgi,civic"
 );
-pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
+pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]

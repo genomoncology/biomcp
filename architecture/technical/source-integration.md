@@ -55,6 +55,24 @@ epoch clears legacy HTTP entries written before this guarantee. Limit failures
 retain the typed, payload-free body-limit classification without exposing URLs,
 credentials, or response bytes.
 
+### Exact variant identity joins
+
+Exact variant joins compare source facts before any transform collapses provider
+arrays. The variant entity layer owns the requested/source identity types and the
+one-/three-letter, optional/accession-prefixed protein comparator. Search,
+MyVariant-backed helper pivots, structure mapping, and PubTator autocomplete
+reuse that owner rather than implementing residue matching independently.
+
+Requested fields are conjunctive. A non-matching source field is contradictory;
+missing evidence is indeterminate. Gene plus protein or coding membership in
+unlinked multi-gene arrays cannot prove a tuple. Exact MyVariant search examines
+source pages from offset zero, excludes contradictory and indeterminate rows,
+deduplicates compatible source identities, and applies caller pagination only
+after filtering. It examines at most 1,000 raw candidates; reaching that cap
+without exhausting the provider makes the total unknown and the resolution
+ambiguous. Broad variant discovery retains the ordinary provider-pagination
+path and response shape.
+
 Tar consumers that accept remote archives iterate physical headers in raw mode
 and share checked entry/member/aggregate/extension-metadata accounting. They
 bound GNU long-name and local PAX path metadata before buffering it and reject

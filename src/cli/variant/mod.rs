@@ -165,6 +165,42 @@ See also: biomcp list variant")]
     External(Vec<String>),
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(super) struct ResolvedVariantQuery {
+    pub(super) gene: Option<String>,
+    pub(super) hgvsp: Option<String>,
+    pub(super) hgvsc: Option<String>,
+    pub(super) rsid: Option<String>,
+    pub(super) protein_alias: Option<crate::entities::variant::VariantProteinAlias>,
+    pub(super) consequence: Option<String>,
+    pub(super) condition: Option<String>,
+    pub(super) requested_identity: Option<Box<crate::entities::variant::RequestedVariantIdentity>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum VariantSearchPlan {
+    Standard(ResolvedVariantQuery),
+    Guidance(crate::entities::variant::VariantGuidance),
+}
+
+impl VariantSearchPlan {
+    fn standard(mut query: ResolvedVariantQuery) -> Self {
+        let exact = query.hgvsp.is_some() || query.hgvsc.is_some() || query.rsid.is_some();
+        query.requested_identity = exact.then(|| {
+            Box::new(
+                crate::entities::variant::RequestedVariantIdentity::for_search(
+                    query.gene.clone(),
+                    query.hgvsp.clone(),
+                    query.hgvsc.clone(),
+                    query.rsid.clone(),
+                ),
+            )
+        });
+        query.hgvsp = query.hgvsp.as_deref().map(dispatch::normalize_search_hgvsp);
+        Self::Standard(query)
+    }
+}
+
 mod dispatch;
 mod guidance;
 mod normalization_json;

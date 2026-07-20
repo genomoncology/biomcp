@@ -155,6 +155,7 @@ fn pathogenic_variant_catalog_filters(
         has: None,
         missing: None,
         therapy: None,
+        requested_identity: None,
     }
 }
 

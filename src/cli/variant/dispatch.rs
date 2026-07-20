@@ -1,4 +1,5 @@
 use super::guidance::variant_guidance_outcome;
+pub(super) use super::{ResolvedVariantQuery, VariantSearchPlan};
 use super::{VariantCommand, VariantGetArgs, VariantSearchArgs};
 use crate::cli::CommandOutcome;
 use crate::cli::{
@@ -273,17 +274,6 @@ pub(super) fn parse_exon_deletion_phrase(query: &str) -> Option<(String, String)
     Some((gene.to_string(), "inframe_deletion".to_string()))
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub(super) struct ResolvedVariantQuery {
-    pub(super) gene: Option<String>,
-    pub(super) hgvsp: Option<String>,
-    pub(super) hgvsc: Option<String>,
-    pub(super) rsid: Option<String>,
-    pub(super) protein_alias: Option<crate::entities::variant::VariantProteinAlias>,
-    pub(super) consequence: Option<String>,
-    pub(super) condition: Option<String>,
-}
-
 #[derive(Debug, Clone)]
 struct VariantSearchRequest {
     gene: Option<String>,
@@ -308,12 +298,6 @@ struct VariantSearchRequest {
     offset: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) enum VariantSearchPlan {
-    Standard(ResolvedVariantQuery),
-    Guidance(crate::entities::variant::VariantGuidance),
-}
-
 pub(super) fn resolve_variant_query(
     gene_flag: Option<String>,
     hgvsp_flag: Option<String>,
@@ -322,7 +306,7 @@ pub(super) fn resolve_variant_query(
     positional_tokens: Vec<String>,
 ) -> Result<VariantSearchPlan, crate::error::BioMcpError> {
     let gene_flag = normalize_cli_query(gene_flag);
-    let hgvsp_flag = normalize_cli_query(hgvsp_flag).map(|value| normalize_search_hgvsp(&value));
+    let hgvsp_flag = normalize_cli_query(hgvsp_flag);
     let consequence_flag = consequence_flag.map(|value| value.trim().to_string());
     let condition_flag = normalize_cli_query(condition_flag);
 
@@ -335,7 +319,7 @@ pub(super) fn resolve_variant_query(
     let positional = normalize_cli_query(Some(positional));
 
     let Some(query) = positional else {
-        return Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
             gene: gene_flag,
             hgvsp: hgvsp_flag,
             consequence: consequence_flag,
@@ -354,7 +338,7 @@ pub(super) fn resolve_variant_query(
                     "Use either positional QUERY or --gene, not both".into(),
                 ));
             }
-            return Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+            return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
                 rsid: Some(rsid),
                 hgvsp: hgvsp_flag,
                 consequence: consequence_flag,
@@ -372,7 +356,7 @@ pub(super) fn resolve_variant_query(
                         "Positional residue alias conflicts with --hgvsp".into(),
                     ));
                 }
-                return Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+                return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
                     gene: Some(gene),
                     protein_alias: Some(protein_alias),
                     consequence: consequence_flag,
@@ -381,7 +365,7 @@ pub(super) fn resolve_variant_query(
                 }));
             }
             if let crate::entities::variant::VariantInputKind::Shorthand(
-                crate::entities::variant::VariantShorthand::ProteinChangeOnly { change },
+                crate::entities::variant::VariantShorthand::ProteinChangeOnly { .. },
             ) = crate::entities::variant::classify_variant_input(&query)
             {
                 if hgvsp_flag.is_some() {
@@ -389,9 +373,9 @@ pub(super) fn resolve_variant_query(
                         "Positional protein change conflicts with --hgvsp".into(),
                     ));
                 }
-                return Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+                return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
                     gene: Some(gene),
-                    hgvsp: Some(normalize_search_hgvsp(&change)),
+                    hgvsp: Some(query.clone()),
                     consequence: consequence_flag,
                     condition: condition_flag,
                     ..Default::default()
@@ -405,7 +389,7 @@ pub(super) fn resolve_variant_query(
         if let Some(guidance) = crate::entities::variant::variant_guidance(&query) {
             return Ok(VariantSearchPlan::Guidance(guidance));
         }
-        return Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
             gene: Some(query),
             hgvsp: hgvsp_flag,
             consequence: consequence_flag,
@@ -425,9 +409,14 @@ pub(super) fn resolve_variant_query(
                 "Positional \"GENE CHANGE\" conflicts with --hgvsp".into(),
             ));
         }
-        return Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+        let supplied_change = query
+            .split_whitespace()
+            .nth(1)
+            .unwrap_or(&change)
+            .to_string();
+        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
             gene: Some(gene),
-            hgvsp: Some(normalize_search_hgvsp(&change)),
+            hgvsp: Some(supplied_change),
             consequence: consequence_flag,
             condition: condition_flag,
             ..Default::default()
@@ -453,7 +442,7 @@ pub(super) fn resolve_variant_query(
                 "Positional residue alias conflicts with --hgvsp".into(),
             ));
         }
-        return Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
             gene: Some(gene),
             protein_alias: Some(crate::entities::variant::VariantProteinAlias {
                 position,
@@ -471,7 +460,7 @@ pub(super) fn resolve_variant_query(
                 "Positional \"GENE c.HGVS\" conflicts with --gene".into(),
             ));
         }
-        return Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
             gene: Some(gene),
             hgvsp: hgvsp_flag,
             hgvsc: Some(hgvsc),
@@ -492,7 +481,7 @@ pub(super) fn resolve_variant_query(
                 "Positional exon-deletion query conflicts with --consequence".into(),
             ));
         }
-        return Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+        return Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
             gene: Some(gene),
             hgvsp: hgvsp_flag,
             consequence: Some(consequence),
@@ -506,7 +495,7 @@ pub(super) fn resolve_variant_query(
             "Use either positional QUERY or --condition, not both".into(),
         ));
     }
-    Ok(VariantSearchPlan::Standard(ResolvedVariantQuery {
+    Ok(VariantSearchPlan::standard(ResolvedVariantQuery {
         gene: gene_flag,
         hgvsp: hgvsp_flag,
         consequence: consequence_flag,
@@ -609,6 +598,7 @@ async fn render_variant_search_outcome(
         has,
         missing,
         therapy,
+        requested_identity: resolved.requested_identity.map(|identity| *identity),
     };
 
     let mut query = crate::entities::variant::search_query_summary(&filters);
@@ -622,30 +612,41 @@ async fn render_variant_search_outcome(
 
     let page = crate::entities::variant::search_page(&filters, limit, offset).await?;
     let results = page.results;
-    let pagination = PaginationMeta::offset(offset, limit, results.len(), page.total);
+    let mut pagination = PaginationMeta::offset(offset, limit, results.len(), page.total);
+    pagination.has_more = page.has_more.unwrap_or(pagination.has_more);
     if json_output {
         let next_commands = crate::render::markdown::search_next_commands_variant(
             &results,
             filters.gene.as_deref(),
             filters.condition.as_deref(),
         );
-        return Ok(CommandOutcome::stdout(search_json_with_meta(
-            results,
-            pagination,
-            next_commands,
-        )?));
+        let output = search_json_with_meta(results, pagination, next_commands)?;
+        return Ok(CommandOutcome::stdout(
+            crate::render::json::with_variant_search_resolution(
+                output,
+                page.requested_variant,
+                page.resolution,
+            )?,
+        ));
     }
 
     let footer = pagination_footer_offset(&pagination);
-    Ok(CommandOutcome::stdout(
-        crate::render::markdown::variant_search_markdown_with_context(
-            &query,
-            &results,
-            &footer,
-            filters.gene.as_deref(),
-            filters.condition.as_deref(),
-        )?,
-    ))
+    let body = crate::render::markdown::variant_search_markdown_with_context(
+        &query,
+        &results,
+        &footer,
+        filters.gene.as_deref(),
+        filters.condition.as_deref(),
+    )?;
+    let body = match (page.requested_variant, page.resolution) {
+        (Some(requested), Some(resolution)) => format!(
+            "Requested variant: {}\n\nResolution: {:?}\n\n{body}",
+            serde_json::to_string(&requested)?,
+            resolution.status
+        ),
+        _ => body,
+    };
+    Ok(CommandOutcome::stdout(body))
 }
 
 pub(super) fn trim_protein_change_prefix(value: &str) -> &str {

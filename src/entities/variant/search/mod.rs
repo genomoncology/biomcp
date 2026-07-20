@@ -2,10 +2,24 @@
 
 use crate::entities::SearchPage;
 use crate::error::BioMcpError;
-use crate::sources::myvariant::{MyVariantClient, VariantSearchParams};
+use crate::sources::myvariant::{MyVariantClient, MyVariantHit, VariantSearchParams};
 use crate::transform;
+use std::collections::HashSet;
 
-use super::{VariantSearchFilters, VariantSearchResult};
+use super::{
+    RequestedVariantIdentity, SourceVariantIdentity, VariantIdentityComparison,
+    VariantResolutionStatus, VariantSearchFilters, VariantSearchResolution, VariantSearchResult,
+    compare_variant_identity,
+};
+
+#[derive(Debug, Clone)]
+pub(crate) struct VariantSearchPage {
+    pub results: Vec<VariantSearchResult>,
+    pub total: Option<usize>,
+    pub requested_variant: Option<RequestedVariantIdentity>,
+    pub resolution: Option<VariantSearchResolution>,
+    pub has_more: Option<bool>,
+}
 
 fn search_result_quality_score(row: &VariantSearchResult) -> i32 {
     let mut score = 0;
@@ -192,7 +206,7 @@ pub async fn search_page(
     filters: &VariantSearchFilters,
     limit: usize,
     offset: usize,
-) -> Result<SearchPage<VariantSearchResult>, BioMcpError> {
+) -> Result<VariantSearchPage, BioMcpError> {
     const MAX_SEARCH_LIMIT: usize = 50;
     if limit == 0 || limit > MAX_SEARCH_LIMIT {
         return Err(BioMcpError::InvalidArgument(format!(
@@ -277,7 +291,7 @@ pub async fn search_page(
         (limit.saturating_mul(40)).clamp(limit, 200)
     };
 
-    let params = VariantSearchParams {
+    let params_at = |page_limit, page_offset| VariantSearchParams {
         gene: filters.gene.clone(),
         hgvsp: filters.hgvsp.clone(),
         hgvsc: filters.hgvsc.clone(),
@@ -298,24 +312,146 @@ pub async fn search_page(
         has: filters.has.clone(),
         missing: filters.missing.clone(),
         therapy: filters.therapy.clone(),
-        limit: fetch_limit,
-        offset,
+        limit: page_limit,
+        offset: page_offset,
     };
 
     let client = MyVariantClient::new()?;
-    let resp = client.search(&params).await?;
-    let mut out = resp
-        .hits
-        .iter()
-        .map(transform::variant::from_myvariant_search_hit)
-        .collect::<Vec<_>>();
+    let Some(requested) = filters.requested_identity.as_ref() else {
+        let resp = client.search(&params_at(fetch_limit, offset)).await?;
+        let mut out = resp
+            .hits
+            .iter()
+            .map(transform::variant::from_myvariant_search_hit)
+            .collect::<Vec<_>>();
+        sort_results(&mut out);
+        out.truncate(limit);
+        let page = SearchPage::offset(out, resp.total);
+        return Ok(VariantSearchPage {
+            results: page.results,
+            total: page.total,
+            requested_variant: None,
+            resolution: None,
+            has_more: None,
+        });
+    };
+
+    const SOURCE_PAGE: usize = 50;
+    const MAX_CANDIDATES: usize = 1_000;
+    let mut provider_offset = 0;
+    let mut retained = Vec::new();
+    let mut seen = HashSet::new();
+    let mut saw_indeterminate = false;
+    let mut exhaustive = false;
+    while provider_offset < MAX_CANDIDATES {
+        let resp = client
+            .search(&params_at(SOURCE_PAGE, provider_offset))
+            .await?;
+        let provider_total = resp.total;
+        let hit_count = resp.hits.len();
+        let examined_count = hit_count.min(MAX_CANDIDATES - provider_offset);
+        saw_indeterminate |= retain_compatible_hits(
+            requested,
+            resp.hits.into_iter().take(examined_count),
+            &mut seen,
+            &mut retained,
+        );
+        provider_offset += examined_count;
+        if candidate_scan_exhaustive(provider_total, provider_offset, hit_count) {
+            exhaustive = true;
+            break;
+        }
+    }
+    Ok(finalize_exact_page(
+        requested,
+        retained,
+        offset,
+        limit,
+        saw_indeterminate,
+        exhaustive,
+    ))
+}
+
+fn candidate_scan_exhaustive(
+    provider_total: Option<usize>,
+    examined_offset: usize,
+    returned_count: usize,
+) -> bool {
+    returned_count == 0 || provider_total.is_some_and(|total| examined_offset >= total)
+}
+
+fn retain_compatible_hits(
+    requested: &RequestedVariantIdentity,
+    hits: impl IntoIterator<Item = MyVariantHit>,
+    seen: &mut HashSet<String>,
+    retained: &mut Vec<VariantSearchResult>,
+) -> bool {
+    let mut saw_indeterminate = false;
+    for hit in hits {
+        let source = SourceVariantIdentity::from_myvariant_hit(&hit);
+        match compare_variant_identity(requested, &source) {
+            VariantIdentityComparison::Compatible { matched_alias } => {
+                if seen.insert(source.normalized_key()) {
+                    let mut row = transform::variant::from_myvariant_search_hit(&hit);
+                    row.source_identity = Some(source);
+                    row.matched_alias = Some(matched_alias);
+                    retained.push(row);
+                }
+            }
+            VariantIdentityComparison::Indeterminate { .. } => saw_indeterminate = true,
+            VariantIdentityComparison::Contradictory { .. } => {}
+        }
+    }
+    saw_indeterminate
+}
+
+fn finalize_exact_page(
+    requested: &RequestedVariantIdentity,
+    mut retained: Vec<VariantSearchResult>,
+    offset: usize,
+    limit: usize,
+    saw_indeterminate: bool,
+    exhaustive: bool,
+) -> VariantSearchPage {
+    sort_results(&mut retained);
+    let compatible_count = retained.len();
+    let status = resolution_status(compatible_count, saw_indeterminate, exhaustive);
+    let total = exhaustive.then_some(compatible_count);
+    let has_more = offset.saturating_add(limit) < compatible_count || !exhaustive;
+    let results = retained.into_iter().skip(offset).take(limit).collect();
+    VariantSearchPage {
+        results,
+        total,
+        requested_variant: Some(requested.clone()),
+        resolution: Some(VariantSearchResolution {
+            status,
+            normalized_aliases: requested.normalized_aliases(),
+            exhaustive,
+        }),
+        has_more: Some(has_more),
+    }
+}
+
+fn resolution_status(
+    compatible_identity_count: usize,
+    saw_indeterminate: bool,
+    exhaustive: bool,
+) -> VariantResolutionStatus {
+    if saw_indeterminate || !exhaustive || compatible_identity_count > 1 {
+        VariantResolutionStatus::Ambiguous
+    } else if compatible_identity_count == 1 {
+        VariantResolutionStatus::Resolved
+    } else {
+        VariantResolutionStatus::Unresolved
+    }
+}
+
+fn sort_results(out: &mut [VariantSearchResult]) {
     out.sort_by(|a, b| {
         search_result_quality_score(b)
             .cmp(&search_result_quality_score(a))
             .then_with(|| a.id.cmp(&b.id))
     });
-    out.truncate(limit);
-    Ok(SearchPage::offset(out, resp.total))
 }
 
 #[cfg(test)]

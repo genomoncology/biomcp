@@ -4,6 +4,41 @@ use super::super::test_support::*;
 use super::*;
 use crate::sources::civic::{CivicContext, CivicEvidenceItem};
 
+fn identity_hit(
+    gene: &str,
+    protein_change: Option<&str>,
+) -> crate::sources::myvariant::MyVariantHit {
+    let dbnsfp =
+        protein_change.map(|change| serde_json::json!({"genename": gene, "hgvsp": change}));
+    serde_json::from_value(serde_json::json!({
+        "_id": "chr7:g.140453136A>T",
+        "dbnsfp": dbnsfp
+    }))
+    .expect("valid MyVariant hit")
+}
+
+#[test]
+fn exact_helper_candidate_selection_rejects_conflicts_and_missing_evidence() {
+    let requested = super::super::RequestedVariantIdentity::for_search(
+        Some("BRAF".into()),
+        Some("p.Val600Glu".into()),
+        None,
+        None,
+    );
+    assert!(candidate_matches_requested_identity(
+        &requested,
+        &identity_hit("BRAF", Some("p.V600E")),
+    ));
+    assert!(!candidate_matches_requested_identity(
+        &requested,
+        &identity_hit("BRAF", Some("p.V601E")),
+    ));
+    assert!(!candidate_matches_requested_identity(
+        &requested,
+        &identity_hit("BRAF", None),
+    ));
+}
+
 fn braf_variant_stub() -> Variant {
     Variant {
         section_outcomes: super::super::default_variant_section_outcomes(),

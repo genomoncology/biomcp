@@ -294,6 +294,15 @@ Consequence, review-status, and `--has`/`--missing` values use the stable
 vocabularies printed by `biomcp list variant`. Unknown values fail with a typed
 `invalid_argument` error instead of returning a successful empty search.
 
+Protein searches using `--hgvsp` or positional `GENE CHANGE`, plus coding-HGVS and rsID forms, are strict exact searches. Their JSON keeps
+the usual top-level `pagination`, `count`, `results`, and `_meta` fields and adds
+`requested_variant` plus `resolution`. Each retained row includes its actual
+`source_identity` arrays and source-derived `matched_alias`. Exact pagination is
+applied after identity filtering: `pagination.total` is the compatible count
+when the provider candidate set was examined exhaustively, or `null` when the
+1,000-candidate safety cap leaves candidates unexamined. Broad gene-only and
+discovery-filter searches keep their existing JSON shape.
+
 ### Drug
 
 ```bash

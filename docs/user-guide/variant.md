@@ -39,6 +39,19 @@ biomcp search variant -g PTPN22 R620W --limit 5
 Standalone protein shorthand like `R620W` returns variant-specific recovery
 guidance instead of falling back to gene or condition discovery.
 
+Protein searches using `--hgvsp` or positional `GENE CHANGE`, plus coding-HGVS and rsID searches, are exact identity routes. BioMCP keeps
+the supplied spelling, normalizes aliases only for comparison, and excludes
+MyVariant candidates whose source gene or allele facts contradict the request.
+Exact JSON includes `requested_variant` and a `resolution` status: `resolved`
+for one source-proved identity, `ambiguous` when source evidence is incomplete
+or multiple identities remain, and `unresolved` when exhaustive candidates are
+absent or contradictory. Retained rows expose the provider's complete
+`source_identity` arrays and the source-derived `matched_alias` that proved the
+match.
+
+Gene-only, residue-alias, significance, consequence, score, population, and
+other discovery filters remain broad searches and omit strict identity metadata.
+
 By significance:
 
 ```bash

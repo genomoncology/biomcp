@@ -65,6 +65,8 @@ def _runner_workspace(
         "setup-ctgov-intervention-alias-spec-fixture.sh",
         "setup-disease-survival-spec-fixture.sh",
         "cleanup-disease-survival-spec-fixture.sh",
+        "setup-variant-identity-spec-fixture.sh",
+        "cleanup-variant-identity-spec-fixture.sh",
         "setup-section-outcomes-spec-fixture.sh",
         "cleanup-section-outcomes-spec-fixture.sh",
     ):
@@ -347,6 +349,30 @@ def test_article_indexing_request_is_opt_in_and_all_includes_it(tmp_path: Path) 
             cwd=workspace,
             check=True,
         )
+
+
+def test_concurrent_routine_runners_serialize_shared_fixtures(tmp_path: Path) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    setup = workspace / "spec" / "fixtures" / "setup-variant-identity-spec-fixture.sh"
+    setup.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        'active="$1/.cache/variant-fixture-active"\n'
+        'if ! mkdir "$active" 2>/dev/null; then touch "$1/fixture-collision"; exit 1; fi\n'
+        "sleep 0.2\n"
+        'rmdir "$active"\n'
+    )
+    setup.chmod(0o755)
+
+    runners = [
+        subprocess.Popen(
+            ["bash", "scripts/run-specs.sh", "spec"], cwd=workspace, env=env
+        )
+        for _ in range(2)
+    ]
+
+    assert all(process.wait(timeout=30) == 0 for process in runners)
+    assert not (workspace / "fixture-collision").exists()
 
 
 def test_only_owned_article_fixtures_export_unpaced_origin() -> None:

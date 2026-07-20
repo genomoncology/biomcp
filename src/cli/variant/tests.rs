@@ -90,6 +90,16 @@ fn search_variant_parses_quoted_gene_change_positional_query() {
 }
 
 #[test]
+fn search_variant_help_distinguishes_exact_identity_from_broad_discovery() {
+    let help = Cli::try_parse_from(["biomcp", "search", "variant", "--help"])
+        .expect_err("help should stop parsing")
+        .to_string();
+    assert!(help.contains("reject contradictory source identities"));
+    assert!(help.contains("structured resolution in JSON"));
+    assert!(help.contains("Gene-only and discovery-filter searches remain broad"));
+}
+
+#[test]
 fn variant_bare_id_parses_as_external_subcommand() {
     let cli = Cli::try_parse_from(["biomcp", "variant", "BRAF V600E"])
         .expect("bare variant id should parse");
@@ -206,6 +216,7 @@ fn resolve_variant_query_maps_single_token_to_gene() {
     assert!(resolved.hgvsc.is_none());
     assert!(resolved.rsid.is_none());
     assert!(resolved.condition.is_none());
+    assert!(resolved.requested_identity.is_none());
 }
 
 #[test]
@@ -256,6 +267,33 @@ fn resolve_variant_query_maps_long_form_positional_gene_change_to_gene_and_hgvsp
     assert!(resolved.hgvsc.is_none());
     assert!(resolved.rsid.is_none());
     assert!(resolved.condition.is_none());
+    let requested = resolved
+        .requested_identity
+        .expect("exact positional identity");
+    assert_eq!(requested.gene.as_deref(), Some("BRAF"));
+    assert_eq!(requested.protein_change.as_deref(), Some("p.Val600Glu"));
+}
+
+#[test]
+fn resolve_variant_query_preserves_complex_exact_protein_identity() {
+    let resolved = resolve_variant_query(
+        Some("EGFR".into()),
+        Some("p.Glu746_Ala750del".into()),
+        None,
+        None,
+        Vec::new(),
+    )
+    .unwrap();
+    let VariantSearchPlan::Standard(resolved) = resolved else {
+        panic!("expected standard search plan");
+    };
+    assert_eq!(resolved.hgvsp.as_deref(), Some("Glu746_Ala750del"));
+    assert_eq!(
+        resolved
+            .requested_identity
+            .and_then(|identity| identity.protein_change),
+        Some("p.Glu746_Ala750del".into())
+    );
 }
 
 #[test]
@@ -270,6 +308,31 @@ fn resolve_variant_query_maps_rsid_to_rsid_filter() {
     assert!(resolved.hgvsp.is_none());
     assert!(resolved.hgvsc.is_none());
     assert!(resolved.condition.is_none());
+    assert_eq!(
+        resolved
+            .requested_identity
+            .and_then(|identity| identity.rsid),
+        Some("rs113488022".into())
+    );
+}
+
+#[test]
+fn resolve_variant_query_preserves_conjunctive_rsid_and_protein_identity() {
+    let resolved = resolve_variant_query(
+        None,
+        Some("p.Val600Glu".into()),
+        None,
+        None,
+        vec!["rs113488022".into()],
+    )
+    .unwrap();
+    let VariantSearchPlan::Standard(resolved) = resolved else {
+        panic!("expected standard search plan");
+    };
+    assert_eq!(resolved.hgvsp.as_deref(), Some("V600E"));
+    let requested = resolved.requested_identity.expect("conjunctive identity");
+    assert_eq!(requested.rsid.as_deref(), Some("rs113488022"));
+    assert_eq!(requested.protein_change.as_deref(), Some("p.Val600Glu"));
 }
 
 #[test]
@@ -290,6 +353,9 @@ fn resolve_variant_query_maps_gene_hgvsc_text_to_gene_and_hgvsc() {
     assert!(resolved.hgvsp.is_none());
     assert!(resolved.rsid.is_none());
     assert!(resolved.condition.is_none());
+    let requested = resolved.requested_identity.expect("exact coding identity");
+    assert_eq!(requested.gene.as_deref(), Some("BRAF"));
+    assert_eq!(requested.coding_change.as_deref(), Some("c.1799T>A"));
 }
 
 #[test]
@@ -331,6 +397,7 @@ fn resolve_variant_query_maps_gene_residue_alias_to_residue_alias_search() {
     );
     assert!(resolved.hgvsp.is_none());
     assert!(resolved.condition.is_none());
+    assert!(resolved.requested_identity.is_none());
 }
 
 #[test]
@@ -438,6 +505,12 @@ fn resolve_variant_query_normalizes_long_form_hgvsp_flag() {
     assert!(resolved.hgvsc.is_none());
     assert!(resolved.rsid.is_none());
     assert!(resolved.condition.is_none());
+    assert_eq!(
+        resolved
+            .requested_identity
+            .and_then(|identity| identity.protein_change),
+        Some("p.Val600Glu".into())
+    );
 }
 
 #[test]
@@ -556,6 +629,8 @@ fn ticket_377_variant_renderer_envelope_contracts() {
         gnomad_af: None,
         revel: Some(0.92),
         gerp: Some(5.1),
+        source_identity: None,
+        matched_alias: None,
     }];
     let next_commands = crate::render::markdown::search_next_commands_variant(
         &results,

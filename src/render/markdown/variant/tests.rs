@@ -182,6 +182,8 @@ fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
             gnomad_af: None,
             revel: Some(0.935),
             gerp: Some(5.12),
+            source_identity: None,
+            matched_alias: None,
         },
         VariantSearchResult {
             id: "chr6:g.118880100A>G".to_string(),
@@ -193,6 +195,8 @@ fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
             gnomad_af: None,
             revel: None,
             gerp: None,
+            source_identity: None,
+            matched_alias: None,
         },
     ];
 
@@ -216,6 +220,8 @@ fn variant_search_markdown_renders_related_commands_from_context() {
             gnomad_af: None,
             revel: Some(0.91),
             gerp: Some(5.7),
+            source_identity: None,
+            matched_alias: None,
         },
         VariantSearchResult {
             id: "rs7626962".to_string(),
@@ -227,6 +233,8 @@ fn variant_search_markdown_renders_related_commands_from_context() {
             gnomad_af: None,
             revel: Some(0.88),
             gerp: Some(5.1),
+            source_identity: None,
+            matched_alias: None,
         },
     ];
 

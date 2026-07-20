@@ -128,6 +128,29 @@ default card without scraping markdown helper text.
 Long-form protein filters should normalize to the same compact spelling that the
 short-form query uses, rather than leaking a second variant identifier shape.
 
+## Strict exact variant identity
+
+Exact protein search keeps the supplied identity separate from its normalized
+alias and checks the source's returned identity before including a row. Here the
+healthy fixture offers only BRCA1 residue 16, so a request for residue 1783 is
+explicitly unresolved instead of being relabeled as a match.
+
+```bash
+biomcp --json search variant -g BRCA1 --hgvsp p.Met1783Ile --limit 5 \
+  | jq '{requested_gene: .requested_variant.gene, supplied_protein: .requested_variant.protein_change, normalized_proteins: .resolution.normalized_aliases.protein_changes, status: .resolution.status, exhaustive: .resolution.exhaustive, retained: (.results | length), filtered_total: .pagination.total, has_more: .pagination.has_more}' \
+  | mustmatch like '{"requested_gene":"BRCA1","supplied_protein":"p.Met1783Ile","normalized_proteins":["M1783I"],"status":"unresolved","exhaustive":true,"retained":0,"filtered_total":0,"has_more":false}'
+```
+
+The same source response does contain residue 16. Asking for that identity keeps
+its source row and records the source alias that proved the match, rather than
+dropping every exact result indiscriminately.
+
+```bash
+biomcp --json search variant -g BRCA1 --hgvsp p.Met16Ile --limit 5 \
+  | jq '{supplied_protein: .requested_variant.protein_change, normalized_proteins: .resolution.normalized_aliases.protein_changes, status: .resolution.status, exhaustive: .resolution.exhaustive, retained: (.results | length), matched_alias: .results[0].matched_alias, source_has_supplied_alias: (.results[0].source_identity.protein_changes | index("p.Met16Ile") != null), source_has_short_alias: (.results[0].source_identity.protein_changes | index("p.M16I") != null), filtered_total: .pagination.total, has_more: .pagination.has_more}' \
+  | mustmatch like '{"supplied_protein":"p.Met16Ile","normalized_proteins":["M16I"],"status":"resolved","exhaustive":true,"retained":1,"matched_alias":"p.Met16Ile","source_has_supplied_alias":true,"source_has_short_alias":true,"filtered_total":1,"has_more":false}'
+```
+
 ## Residue-Alias Search
 
 Residue aliases should stay on the typed variant path instead of falling

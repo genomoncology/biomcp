@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
 use super::super::test_support::*;
 use super::*;
+use crate::entities::article::ArticleVariantIntent;
 
 #[test]
 fn pubtator_sort_omits_param_for_relevance() {
@@ -249,6 +250,28 @@ fn build_pubmed_esearch_params_allows_federated_windows_above_user_limit() {
 
     assert_eq!(params.retmax, 75);
     assert_eq!(params.retstart, 0);
+}
+
+#[test]
+fn pubtator_variant_candidate_requires_source_proof_for_gene_and_protein() {
+    let intent = ArticleVariantIntent {
+        original: "BRAF p.Val600Glu".into(),
+        gene: Some("BRAF".into()),
+        change: Some("V600E".into()),
+        entity_id: None,
+    };
+    let row = |name: &str| PubTatorAutocompleteResult {
+        id: Some("variant-fixture".into()),
+        biotype: Some("variant".into()),
+        db_id: None,
+        db: None,
+        name: Some(name.into()),
+    };
+
+    assert!(variant_candidate_matches(&row("BRAF p.V600E"), &intent));
+    assert!(!variant_candidate_matches(&row("BRAF p.V601E"), &intent));
+    assert!(!variant_candidate_matches(&row("ARAF p.V600E"), &intent));
+    assert!(!variant_candidate_matches(&row("BRAF mutation"), &intent));
 }
 
 #[test]

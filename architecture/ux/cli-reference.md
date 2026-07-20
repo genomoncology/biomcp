@@ -193,6 +193,13 @@ public vocabularies discoverable through `biomcp list variant`. `--consequence`,
 `invalid_argument` response rather than treating a typo as a successful empty search.
 Provider-specific field paths and review phrases remain behind that public vocabulary.
 
+Protein, coding-HGVS, and rsID exact searches preserve the supplied identity in
+`requested_variant` and expose a structured `resolution`. Rows survive only when
+their provider facts prove the requested identity; each retained row includes its
+complete `source_identity` arrays and source-derived `matched_alias`. Gene-only,
+residue-alias, and discovery-filter searches remain broad and omit this exact-match
+metadata.
+
 ## Cross-Entity Pivot Pattern
 
 Pivot helpers allow moving between related entities without rebuilding filters:

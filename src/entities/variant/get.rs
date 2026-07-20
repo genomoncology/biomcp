@@ -146,6 +146,19 @@ fn best_hit(
     hits.iter().max_by_key(|h| score_myvariant_hit(h))
 }
 
+fn candidate_matches_requested_identity(
+    requested: &super::RequestedVariantIdentity,
+    hit: &crate::sources::myvariant::MyVariantHit,
+) -> bool {
+    matches!(
+        super::compare_variant_identity(
+            requested,
+            &super::SourceVariantIdentity::from_myvariant_hit(hit)
+        ),
+        super::VariantIdentityComparison::Compatible { .. }
+    )
+}
+
 fn oncokb_alteration_from_variant(
     variant: &Variant,
     id_format: &VariantIdFormat,
@@ -311,11 +324,20 @@ pub(super) async fn resolve_base_with_hit(
     }
 
     let input_kind = classify_variant_input(id);
+    let mut requested = super::RequestedVariantIdentity::from_variant_input(id)?;
     let id_format = match input_kind {
         VariantInputKind::TranscriptCodingHgvs(_) => normalize_transcript_hgvs_for_get(id).await?,
         _ => parse_variant_id(id)?,
     };
+    if let VariantIdFormat::HgvsGenomic(hgvs) = &id_format
+        && requested.genomic_accession.is_none()
+    {
+        requested.populate_genomic(hgvs);
+    }
 
+    let compatible = |hit: &crate::sources::myvariant::MyVariantHit| {
+        candidate_matches_requested_identity(&requested, hit)
+    };
     let myvariant = MyVariantClient::new()?;
     let hit = match &id_format {
         VariantIdFormat::HgvsGenomic(hgvs) => {
@@ -325,7 +347,12 @@ pub(super) async fn resolve_base_with_hit(
                 let resp = myvariant
                     .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
                     .await?;
-                best_hit(&resp.hits)
+                let compatible_hits = resp
+                    .hits
+                    .into_iter()
+                    .filter(&compatible)
+                    .collect::<Vec<_>>();
+                best_hit(&compatible_hits)
                     .cloned()
                     .ok_or_else(|| BioMcpError::NotFound {
                         entity: "variant".into(),
@@ -333,7 +360,15 @@ pub(super) async fn resolve_base_with_hit(
                         suggestion: format!("Try first: biomcp variant normalize all {id}"),
                     })?
             } else {
-                direct?
+                let hit = direct?;
+                if !compatible(&hit) {
+                    return Err(BioMcpError::NotFound {
+                        entity: "variant".into(),
+                        id: id.to_string(),
+                        suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
+                    });
+                }
+                hit
             }
         }
         VariantIdFormat::RsId(rsid) => {
@@ -341,7 +376,12 @@ pub(super) async fn resolve_base_with_hit(
             let resp = myvariant
                 .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
                 .await?;
-            best_hit(&resp.hits)
+            let compatible_hits = resp
+                .hits
+                .into_iter()
+                .filter(&compatible)
+                .collect::<Vec<_>>();
+            best_hit(&compatible_hits)
                 .cloned()
                 .ok_or_else(|| BioMcpError::NotFound {
                     entity: "variant".into(),
@@ -360,7 +400,7 @@ pub(super) async fn resolve_base_with_hit(
                 .await?;
             resp.hits
                 .into_iter()
-                .next()
+                .find(&compatible)
                 .ok_or_else(|| BioMcpError::NotFound {
                     entity: "variant".into(),
                     id: id.to_string(),
