@@ -656,12 +656,21 @@ See also: `docs/reference/mcp-server.md`.
 ```bash
 biomcp variant trials "BRAF V600E"
 biomcp variant articles "BRAF V600E"
+biomcp variant articles "BRAF V600E" --strategy annotation
+biomcp variant articles "BRAF V600E" --strategy lexical
 biomcp variant structure "BRAF V600E"
 biomcp variant oncokb "BRAF V600E"
 biomcp variant normalize <service> <transcript_hgvs>
 biomcp variant normalize all NM_000248.3:c.135del
 biomcp variant normalize all 'NM_004448.2:c.829G>T'
 ```
+
+`variant articles` defaults to a bounded union of exact annotation, normalized
+alias, and source-citation routes. It merges route provenance before ranking and
+applies pagination once. The `annotation` and `lexical` strategies isolate one
+exact route for diagnosis; unresolved default results are explicitly
+best-effort. JSON reports route status and marks incomplete acquisition with an
+unknown total.
 
 `biomcp variant normalize ... --json` always writes parseable JSON on exit 0. If no provider returns a normalized form, the payload uses `status: "no_result"`, an empty `results` list, a clear `message`, per-service details, and `_meta.next_commands`.
 

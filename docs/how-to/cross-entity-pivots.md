@@ -70,9 +70,11 @@ biomcp get disease tuberculosis diagnostics
 
 These helpers keep the disease context intact. Most article pivots are best-effort:
 the mix of article sources can vary, so rely on the heading and table shape
-rather than a specific provider subsection. `variant articles` first tries
-PubTator variant annotation recall and labels the output if it must fall back to
-best-effort free text. The diagnostics pivot is an opt-in
+rather than a specific provider subsection. Resolved `variant articles` calls
+union exact annotation, normalized-alias, and source-citation routes before one
+ranking/pagination pass. Unresolved input labels its discovery route as
+best-effort free text; `--strategy annotation|lexical` isolates exact routes for
+diagnosis. The diagnostics pivot is an opt-in
 `get disease` section that can combine GTR and WHO IVD local rows for the
 resolved condition. It is capped at 10 rows and prints a `See also:` command
 for `biomcp search diagnostic --disease <query> --source all --limit 50`; use

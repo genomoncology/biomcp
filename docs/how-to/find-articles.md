@@ -88,6 +88,23 @@ deduplication. Use `--max-per-source <N>` to override that cap, use
 `--max-per-source 0` for the default cap explicitly, and set it equal to
 `--limit` to disable capping.
 
+## Find papers for one exact variant
+
+When the question starts with a specific allele, use the variant pivot rather
+than manually trying one spelling at a time:
+
+```bash
+biomcp variant articles "BRAF p.V600E" --limit 10
+```
+
+The default union resolves the variant once, searches compatible PubTator
+annotations and normalized exact aliases, adds validated source citations,
+then merges, ranks, and paginates once. JSON preserves each paper's route,
+source, and matched-alias provenance. Use `--strategy annotation` or
+`--strategy lexical` only to diagnose route recall. If a selected provider is
+incomplete, inspect `complete`, `truncated`, `pagination.total`, and
+`source_status` rather than treating an empty page as a complete miss.
+
 ## Search PubMed directly
 
 ```bash

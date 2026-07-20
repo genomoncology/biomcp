@@ -17,6 +17,7 @@ pub(super) struct ArticleCandidate {
     pub(super) row: ArticleSearchResult,
     pub(super) source_positions: Vec<ArticleSourcePosition>,
     pub(super) semantic_signal: Option<f64>,
+    pub(super) variant_provenance: Vec<super::variant_search::VariantArticleProvenance>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -95,6 +96,7 @@ pub(super) fn article_candidate_from_row(mut row: ArticleSearchResult) -> Articl
         }],
         semantic_signal: (row.source == ArticleSource::LitSense2)
             .then(|| row.score.unwrap_or(0.0).clamp(0.0, 1.0)),
+        variant_provenance: Vec::new(),
         row,
     }
 }
@@ -154,6 +156,7 @@ fn merge_article_candidate(target: &mut ArticleCandidate, incoming: ArticleCandi
         row: incoming_row,
         mut source_positions,
         semantic_signal,
+        mut variant_provenance,
     } = incoming;
     let target_row = &mut target.row;
     merge_missing_string(&mut target_row.pmcid, incoming_row.pmcid);
@@ -208,16 +211,20 @@ fn merge_article_candidate(target: &mut ArticleCandidate, incoming: ArticleCandi
     if target.semantic_signal.is_none() {
         target.semantic_signal = semantic_signal;
     }
+    target.variant_provenance.append(&mut variant_provenance);
+    target.variant_provenance.sort();
+    target.variant_provenance.dedup();
     if let Some(local_position) = min_source_local_position(&target.source_positions) {
         target_row.source_local_position = local_position;
     }
 }
 
-pub(super) fn merge_article_candidates(results: Vec<ArticleSearchResult>) -> Vec<ArticleCandidate> {
-    let mut merged: Vec<ArticleCandidate> = Vec::with_capacity(results.len());
+pub(super) fn merge_article_candidate_pool(
+    candidates: Vec<ArticleCandidate>,
+) -> Vec<ArticleCandidate> {
+    let mut merged: Vec<ArticleCandidate> = Vec::with_capacity(candidates.len());
 
-    for row in results {
-        let row = article_candidate_from_row(row);
+    for row in candidates {
         let matches = merged
             .iter()
             .enumerate()
@@ -240,6 +247,15 @@ pub(super) fn merge_article_candidates(results: Vec<ArticleSearchResult>) -> Vec
     }
 
     merged
+}
+
+pub(super) fn merge_article_candidates(results: Vec<ArticleSearchResult>) -> Vec<ArticleCandidate> {
+    merge_article_candidate_pool(
+        results
+            .into_iter()
+            .map(article_candidate_from_row)
+            .collect(),
+    )
 }
 
 fn primary_source_native_position(candidate: &ArticleCandidate) -> usize {

@@ -149,7 +149,9 @@ New to BioMCP? Try:
 ## Helpers
 
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
-- `variant articles <id>`
+- `variant articles <id> [--strategy <union|annotation|lexical>]`
+  - defaults to an exact-route union with provenance before one final pagination pass
+  - unresolved union results are explicitly best-effort; diagnostic exact routes stay empty
 - `drug trials <name>` - uses the same trial-safe CTGov literal and alias policy as `search trial`
 - `drug interactions <name> [--limit <N>] [--offset <N>]` - bounded local DDInter-backed drug-drug interactions
   - defaults to 25 rows, caps pages at 50, and reports fresh/stale bundle state

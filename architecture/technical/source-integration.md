@@ -73,6 +73,15 @@ without exhausting the provider makes the total unknown and the resolution
 ambiguous. Broad variant discovery retains the ordinary provider-pagination
 path and response shape.
 
+The variant-to-article pivot consumes that one strict resolution. Resolved
+unions acquire every compatible PubTator entity token, normalized aliases
+through bounded article backends, and canonical PubMed citations from one exact
+MyVariant lookup. Candidate provenance stays attached through transitive article
+identity merging; ranking counts only the best position per route/backend, and
+caller pagination runs once afterward. Ambiguous or unresolved identities cannot
+enter an exact route. Route failures remain visible in sanitized source status;
+incomplete acquisition has an unknown total rather than a complete empty claim.
+
 Tar consumers that accept remote archives iterate physical headers in raw mode
 and share checked entry/member/aggregate/extension-metadata accounting. They
 bound GNU long-name and local PAX path metadata before buffering it and reject

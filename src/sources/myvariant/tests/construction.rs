@@ -7,8 +7,8 @@ use crate::error::BioMcpError;
 use crate::sources::HttpMethod;
 use crate::sources::myvariant::{
     MYVARIANT_FIELDS_GET, MYVARIANT_FIELDS_SEARCH, MyVariantClient, VariantSearchParams,
-    normalize_consequence_filter, normalize_impact_filter, normalize_population_filter,
-    normalize_review_status_filter, normalize_significance_filter,
+    civic_pubmed_ids, normalize_consequence_filter, normalize_impact_filter,
+    normalize_population_filter, normalize_review_status_filter, normalize_significance_filter,
 };
 
 /// Empty-but-paged search params; tests override the fields they exercise.
@@ -721,4 +721,23 @@ fn review_status_filter_maps_stars_and_aliases_and_rejects_unknown_and_empty() {
             .to_string()
             .contains("--review-status must not be empty")
     );
+}
+
+#[test]
+fn civic_pubmed_ids_accepts_only_complete_canonical_pubmed_citations() {
+    let hit = serde_json::from_value(serde_json::json!({
+        "_id": "chr7:g.140453136A>T",
+        "civic": {"molecularProfiles": [{"evidenceItems": [
+            {"source": {"citation": " PMID:6010004 ", "sourceType": "PUBMED"}},
+            {"source": {"citation": 6010005, "sourceType": "pubmed"}},
+            {"source": {"citation": "PMID:12; PMID:13", "sourceType": "PUBMED"}},
+            {"source": {"citation": "https://pubmed.ncbi.nlm.nih.gov/14", "sourceType": "PUBMED"}},
+            {"source": {"citation": "6010006", "sourceType": "ASCO"}},
+            {"source": {"citation": -1, "sourceType": "PUBMED"}},
+            {"source": {"citation": 18446744073709551615u64, "sourceType": "PUBMED"}}
+        ]}]}
+    }))
+    .expect("fixture hit");
+
+    assert_eq!(civic_pubmed_ids(&hit), vec!["6010004", "6010005"]);
 }

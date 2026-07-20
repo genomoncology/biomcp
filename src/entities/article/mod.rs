@@ -15,6 +15,7 @@ mod ranking;
 mod search;
 #[cfg(test)]
 mod test_support;
+mod variant_search;
 
 pub use self::assets::{article_asset_bytes, article_assets_manifest};
 pub use self::batch::get_batch_compact;
@@ -27,9 +28,8 @@ pub(crate) use self::planner::{
 };
 #[allow(unused_imports)]
 pub(crate) use self::ranking::{article_effective_ranking_mode, article_relevance_ranking_policy};
-pub use self::search::{
-    search, search_page, search_variant_article_page, validate_search_page_request,
-};
+pub use self::search::{search, search_page, validate_search_page_request};
+pub use self::variant_search::{VariantArticleStrategy, search_variant_articles};
 
 use std::path::PathBuf;
 

@@ -774,5 +774,14 @@ pub(crate) struct VariantSearchResolution {
     pub exhaustive: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct VariantArticleResolutionContext {
+    pub requested: RequestedVariantIdentity,
+    pub resolution: VariantSearchResolution,
+    pub source_id: Option<String>,
+    pub source_identity: Option<SourceVariantIdentity>,
+    pub available: bool,
+}
+
 #[cfg(test)]
 mod tests;

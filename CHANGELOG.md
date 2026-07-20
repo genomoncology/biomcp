@@ -4,6 +4,9 @@
 
 ### New features
 
+- Changed `variant articles` to union exact annotation, normalized-alias, and
+  source-citation routes with per-row provenance, deterministic global ranking,
+  one-pass pagination, diagnostic strategies, and explicit incomplete status.
 - Made top-level article-search JSON compact by default, with `--full` restoring
   detailed rows and in-band warnings when date sorting replaces relevance.
 - Added typed PMID/PMCID/DOI/arXiv/Semantic Scholar identifiers to article

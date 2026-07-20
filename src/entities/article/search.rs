@@ -25,7 +25,6 @@ use super::filters::{
 use super::planner::{
     BackendPlan, litsense2_search_enabled, plan_backends, pubmed_filter_compatible,
 };
-use super::query::resolve_variant_entity_token;
 use super::ranking::validate_article_ranking_options;
 use super::{
     ArticleSearchFilters, ArticleSearchPage, ArticleSearchResult, ArticleSort, ArticleSource,
@@ -38,11 +37,6 @@ pub const VARIANT_FALLBACK_RETRIEVAL_PATH: &str = "best-effort free-text fallbac
 
 const FEDERATED_ARTICLE_SOURCE_TIMEOUT: Duration = Duration::from_secs(12);
 
-pub struct VariantArticleSearchPage {
-    pub page: ArticleSearchPage,
-    pub retrieval_path: &'static str,
-}
-
 pub async fn search(
     filters: &ArticleSearchFilters,
     limit: usize,
@@ -50,56 +44,6 @@ pub async fn search(
     Ok(search_page(filters, limit, 0, ArticleSourceFilter::All)
         .await?
         .results)
-}
-
-pub async fn search_variant_article_page(
-    filters: &ArticleSearchFilters,
-    limit: usize,
-    offset: usize,
-) -> Result<VariantArticleSearchPage, BioMcpError> {
-    let Some(intent) = filters.variant.as_ref() else {
-        return Ok(VariantArticleSearchPage {
-            page: search_page(filters, limit, offset, ArticleSourceFilter::All).await?,
-            retrieval_path: VARIANT_FALLBACK_RETRIEVAL_PATH,
-        });
-    };
-
-    let pubtator = crate::sources::pubtator::PubTatorClient::new()?;
-    if let Some(entity_id) = resolve_variant_entity_token(&pubtator, intent).await {
-        let mut entity_filters = filters.clone();
-        if let Some(entity_intent) = entity_filters.variant.as_mut() {
-            entity_intent.entity_id = Some(entity_id);
-        }
-        let page = search_page(
-            &entity_filters,
-            limit,
-            offset,
-            ArticleSourceFilter::PubTator,
-        )
-        .await?;
-        if !page.results.is_empty() {
-            return Ok(VariantArticleSearchPage {
-                page,
-                retrieval_path: VARIANT_ENTITY_RETRIEVAL_PATH,
-            });
-        }
-    }
-
-    let mut fallback_filters = filters.clone();
-    fallback_filters.gene = None;
-    fallback_filters.gene_anchored = false;
-    fallback_filters.keyword = Some(intent.original.clone());
-    fallback_filters.variant = None;
-    Ok(VariantArticleSearchPage {
-        page: search_page(
-            &fallback_filters,
-            limit,
-            offset,
-            ArticleSourceFilter::PubTator,
-        )
-        .await?,
-        retrieval_path: VARIANT_FALLBACK_RETRIEVAL_PATH,
-    })
 }
 
 fn article_search_page(
@@ -253,7 +197,7 @@ fn unavailable_source_error(source: ArticleSource) -> BioMcpError {
     }
 }
 
-async fn search_federated_page(
+pub(super) async fn search_federated_page(
     filters: &ArticleSearchFilters,
     limit: usize,
     offset: usize,

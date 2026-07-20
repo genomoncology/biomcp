@@ -371,6 +371,8 @@ fn swallowed_source_failures_do_not_log_credentials() {
             "variant",
             "articles",
             "BRAF V600E",
+            "--strategy",
+            "annotation",
             "--limit",
             "1",
         ],

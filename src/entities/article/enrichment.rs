@@ -185,7 +185,9 @@ fn merge_article_search_row_with_article_base(row: &mut ArticleSearchResult, art
     }
 }
 
-async fn enrich_visible_article_search_rows_with_article_base(rows: &mut [ArticleSearchResult]) {
+pub(super) async fn enrich_visible_article_search_rows_with_article_base(
+    rows: &mut [ArticleSearchResult],
+) {
     let lookup_positions = rows
         .iter()
         .enumerate()

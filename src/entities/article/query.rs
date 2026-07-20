@@ -396,13 +396,11 @@ fn autocomplete_source_identity(
     }
 }
 
+#[cfg(test)]
 fn variant_candidate_matches(
     row: &PubTatorAutocompleteResult,
     intent: &super::ArticleVariantIntent,
 ) -> bool {
-    if !matches_entity_biotype(row.biotype.as_deref(), EntityBiotype::Variant) {
-        return false;
-    }
     let requested =
         crate::entities::variant::RequestedVariantIdentity::from_variant_input(&intent.original)
             .unwrap_or_else(|_| crate::entities::variant::RequestedVariantIdentity {
@@ -410,13 +408,70 @@ fn variant_candidate_matches(
                 protein_change: intent.change.clone(),
                 ..Default::default()
             });
-    matches!(
-        crate::entities::variant::compare_variant_identity(
-            &requested,
-            &autocomplete_source_identity(row)
-        ),
-        crate::entities::variant::VariantIdentityComparison::Compatible { .. }
-    )
+    matches_entity_biotype(row.biotype.as_deref(), EntityBiotype::Variant)
+        && matches!(
+            crate::entities::variant::compare_variant_identity(
+                &requested,
+                &autocomplete_source_identity(row),
+            ),
+            crate::entities::variant::VariantIdentityComparison::Compatible { .. }
+        )
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct VariantEntityToken {
+    pub entity_id: String,
+    pub matched_alias: String,
+}
+
+pub(crate) async fn resolve_variant_entity_tokens(
+    pubtator: &PubTatorClient,
+    query: &str,
+    requested: &crate::entities::variant::RequestedVariantIdentity,
+) -> Result<Vec<VariantEntityToken>, BioMcpError> {
+    let query = query.trim();
+    if query.is_empty() {
+        return Ok(Vec::new());
+    }
+    let mut tokens = pubtator
+        .entity_autocomplete(query)
+        .await?
+        .into_iter()
+        .filter(|row| matches_entity_biotype(row.biotype.as_deref(), EntityBiotype::Variant))
+        .filter_map(|row| {
+            let entity_id = row
+                .id
+                .as_deref()
+                .map(str::trim)
+                .filter(|id| !id.is_empty())?;
+            let crate::entities::variant::VariantIdentityComparison::Compatible { matched_alias } =
+                crate::entities::variant::compare_variant_identity(
+                    requested,
+                    &autocomplete_source_identity(&row),
+                )
+            else {
+                return None;
+            };
+            let matched_alias = requested
+                .gene
+                .as_deref()
+                .filter(|_| !matched_alias.to_ascii_uppercase().starts_with("RS"))
+                .map(|gene| format!("{gene} {matched_alias}"))
+                .unwrap_or(matched_alias);
+            Some(VariantEntityToken {
+                entity_id: entity_id.to_string(),
+                matched_alias,
+            })
+        })
+        .collect::<Vec<_>>();
+    tokens.sort_by(|left, right| {
+        left.entity_id
+            .to_ascii_lowercase()
+            .cmp(&right.entity_id.to_ascii_lowercase())
+            .then_with(|| left.matched_alias.cmp(&right.matched_alias))
+    });
+    tokens.dedup_by(|left, right| left.entity_id.eq_ignore_ascii_case(&right.entity_id));
+    Ok(tokens)
 }
 
 pub(crate) async fn resolve_variant_entity_token(
@@ -431,22 +486,17 @@ pub(crate) async fn resolve_variant_entity_token(
     {
         return Some(entity_id.to_string());
     }
-
-    let query = intent.original.trim();
-    if query.is_empty() {
-        return None;
-    }
-
-    match pubtator.entity_autocomplete(query).await {
-        Ok(rows) => rows
-            .iter()
-            .find(|row| variant_candidate_matches(row, intent))
-            .and_then(|row| row.id.as_deref())
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(|value| value.to_string()),
+    let requested =
+        crate::entities::variant::RequestedVariantIdentity::from_variant_input(&intent.original)
+            .unwrap_or_else(|_| crate::entities::variant::RequestedVariantIdentity {
+                gene: intent.gene.clone(),
+                protein_change: intent.change.clone(),
+                ..Default::default()
+            });
+    match resolve_variant_entity_tokens(pubtator, &intent.original, &requested).await {
+        Ok(tokens) => tokens.into_iter().next().map(|token| token.entity_id),
         Err(err) => {
-            warn!(%err, token = query, "pubtator variant autocomplete failed");
+            warn!(%err, token = intent.original, "pubtator variant autocomplete failed");
             None
         }
     }
