@@ -898,6 +898,22 @@ def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
     assert "spec/surface/discover.md" not in routine
 
 
+def test_article_cache_transition_fixture_owns_disk_floor_precondition() -> None:
+    fixture = _read_repo("spec/fixtures/setup-article-fulltext-source-fixture.sh")
+    runner = _read_repo("scripts/run-specs.sh")
+    runner_match = re.search(
+        r"(?ms)^run_article_markdown_specs\(\) \{\n(?P<body>.*?)^\}",
+        runner,
+    )
+
+    assert "export BIOMCP_CACHE_MIN_DISK_FREE=1B" in fixture
+    assert runner_match is not None, "missing run_article_markdown_specs function"
+    runner_body = runner_match.group("body")
+    source = 'source_if_present "$ROOT/.cache/spec-article-fulltext-source-env"'
+    assert source in runner_body
+    assert runner_body.index(source) < runner_body.index("mustmatch test")
+
+
 def test_ticket_504_shell_quoting_ratchet_uses_only_focused_rust_test() -> None:
     spec = _read_repo("spec/surface/cli-contract-ratchet.md")
     match = re.search(
