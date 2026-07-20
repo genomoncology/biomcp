@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use futures::StreamExt;
 use roxmltree::Node;
 use sha2::{Digest, Sha256};
 
@@ -72,6 +73,7 @@ struct JatsFacts {
 }
 
 const LINKED_CANDIDATE_LIMIT: usize = 256;
+const LINKED_FETCH_CONCURRENCY: usize = 8;
 const LINKED_AGGREGATE_LIMIT: usize = 64 * 1024 * 1024;
 
 struct ResolvedArticleAssets {
@@ -195,13 +197,18 @@ async fn resolve_article_assets(
                 if let Some(package) = observation.package {
                     let facts = jats_facts(&package.entries);
                     complex_tables = facts.complex_tables;
-                    if let Some(xml) = package
-                        .entries
-                        .iter()
-                        .find(|entry| entry.is_xml)
-                        .and_then(|entry| std::str::from_utf8(&entry.bytes).ok())
-                    {
-                        append_jats_candidates(&mut candidates, xml, jats_route(provider()));
+                    if let Some(xml_entry) = package.entries.iter().find(|entry| entry.is_xml) {
+                        match std::str::from_utf8(&xml_entry.bytes) {
+                            Ok(xml) => {
+                                any_failed |= append_jats_candidates(
+                                    &mut candidates,
+                                    xml,
+                                    jats_route(provider()),
+                                )
+                                .is_err();
+                            }
+                            Err(_) => any_failed = true,
+                        }
                     }
                     let package_root = package
                         .entries
@@ -283,26 +290,32 @@ async fn resolve_article_assets(
         }
 
         match europe_xml {
-            SourceAttempt::Success(xml) => append_jats_candidates(
-                &mut candidates,
-                &xml,
-                jats_route(ArticleFulltextProvider {
-                    label: "Europe PMC XML".to_string(),
-                    source: "Europe PMC".to_string(),
-                }),
-            ),
+            SourceAttempt::Success(xml) => {
+                any_failed |= append_jats_candidates(
+                    &mut candidates,
+                    &xml,
+                    jats_route(ArticleFulltextProvider {
+                        label: "Europe PMC XML".to_string(),
+                        source: "Europe PMC".to_string(),
+                    }),
+                )
+                .is_err();
+            }
             SourceAttempt::Absent => {}
             SourceAttempt::Failed => any_failed = true,
         }
         match ncbi_xml {
-            SourceAttempt::Success(xml) => append_jats_candidates(
-                &mut candidates,
-                &xml,
-                jats_route(ArticleFulltextProvider {
-                    label: "NCBI EFetch PMC XML".to_string(),
-                    source: "NCBI EFetch".to_string(),
-                }),
-            ),
+            SourceAttempt::Success(xml) => {
+                any_failed |= append_jats_candidates(
+                    &mut candidates,
+                    &xml,
+                    jats_route(ArticleFulltextProvider {
+                        label: "NCBI EFetch PMC XML".to_string(),
+                        source: "NCBI EFetch".to_string(),
+                    }),
+                )
+                .is_err();
+            }
             SourceAttempt::Absent => {}
             SourceAttempt::Failed => any_failed = true,
         }
@@ -413,30 +426,51 @@ async fn resolve_linked_candidates(
         }
     };
 
-    let mut canonical = BTreeMap::new();
-    for candidate in candidates {
-        match client.linked_target(&candidate.href, candidate.relative_to_bin) {
-            Ok(target) => match canonical.entry(target.canonical_identity.clone()) {
-                std::collections::btree_map::Entry::Vacant(entry) => {
-                    entry.insert((target, candidate));
-                }
-                std::collections::btree_map::Entry::Occupied(mut entry) => {
-                    merge_candidate(&mut entry.get_mut().1, candidate);
-                }
-            },
-            Err(()) => nonretrievable.push(PendingCoverage {
-                canonical_identity: rejected_identity(&candidate),
-                row: named_coverage(&candidate, ArticleAssetNamedOutcome::UnsupportedOrigin),
-            }),
-        }
-    }
-
-    let overflow = split_budget_overflow(&mut canonical, LINKED_CANDIDATE_LIMIT);
-    for (identity, (_, candidate)) in overflow {
+    let mut classified = candidates
+        .into_iter()
+        .map(|candidate| {
+            let target = client
+                .linked_target(&candidate.href, candidate.relative_to_bin)
+                .ok();
+            let identity = target
+                .as_ref()
+                .map(|target| target.canonical_identity.clone())
+                .unwrap_or_else(|| rejected_identity(&candidate));
+            (identity, target, candidate)
+        })
+        .collect::<Vec<_>>();
+    classified.sort_by(|left, right| {
+        (left.0.as_str(), left.2.href.as_str()).cmp(&(right.0.as_str(), right.2.href.as_str()))
+    });
+    let overflow = split_candidate_overflow(&mut classified, LINKED_CANDIDATE_LIMIT);
+    for (identity, _, candidate) in overflow {
         nonretrievable.push(PendingCoverage {
             canonical_identity: identity,
             row: named_coverage(&candidate, ArticleAssetNamedOutcome::SourceUnavailable),
         });
+    }
+
+    let mut canonical = BTreeMap::<String, (Vec<_>, LinkedCandidate)>::new();
+    for (identity, target, candidate) in classified {
+        let Some(target) = target else {
+            nonretrievable.push(PendingCoverage {
+                canonical_identity: identity,
+                row: named_coverage(&candidate, ArticleAssetNamedOutcome::UnsupportedOrigin),
+            });
+            continue;
+        };
+        match canonical.entry(identity) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                entry.insert((vec![target], candidate));
+            }
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                let (targets, existing) = entry.get_mut();
+                if !targets.iter().any(|current| current.url == target.url) {
+                    targets.push(target);
+                }
+                merge_candidate(existing, candidate);
+            }
+        }
     }
 
     let mut already_resolved = BTreeMap::<String, usize>::new();
@@ -446,20 +480,27 @@ async fn resolve_linked_candidates(
             .or_insert(index);
     }
     let mut to_fetch = Vec::new();
-    for (identity, (target, candidate)) in canonical {
+    for (identity, (targets, candidate)) in canonical {
         if let Some(index) = already_resolved.get(&identity).copied() {
             merge_candidate_into_entry(&mut assets[index].entry, &candidate);
         } else {
-            to_fetch.push((identity, target, candidate));
+            to_fetch.push((identity, targets, candidate));
         }
     }
 
-    // Canonical BTreeMap order makes both contact order and aggregate-budget victims stable.
-    // Sequential acquisition is deliberately within the <=8 concurrency contract and avoids
-    // retaining several near-limit bodies above the aggregate cap.
+    // Buffered preserves canonical order while allowing up to eight independent identities to
+    // make progress. Folding results in that order keeps aggregate-budget victims deterministic.
+    let mut fetches =
+        futures::stream::iter(to_fetch.into_iter().map(|(identity, targets, candidate)| {
+            let client = client.clone();
+            async move {
+                let result = client.fetch_first_available(&targets).await;
+                (identity, candidate, result)
+            }
+        }))
+        .buffered(LINKED_FETCH_CONCURRENCY);
     let mut aggregate = 0usize;
-    for (identity, target, candidate) in to_fetch {
-        let result = client.fetch(&target).await;
+    while let Some((identity, candidate, result)) = fetches.next().await {
         match result {
             PmcLinkedFetch::Bytes { bytes, media_type }
                 if linked_aggregate_accepts(aggregate, bytes.len()) =>
@@ -525,14 +566,8 @@ async fn resolve_linked_candidates(
     }
 }
 
-fn split_budget_overflow<K: Ord + Clone, V>(
-    values: &mut BTreeMap<K, V>,
-    limit: usize,
-) -> BTreeMap<K, V> {
-    let Some(first_overflow) = values.keys().nth(limit).cloned() else {
-        return BTreeMap::new();
-    };
-    values.split_off(&first_overflow)
+fn split_candidate_overflow<T>(values: &mut Vec<T>, limit: usize) -> Vec<T> {
+    values.split_off(values.len().min(limit))
 }
 
 fn linked_aggregate_accepts(current: usize, next: usize) -> bool {
@@ -578,18 +613,18 @@ fn append_jats_candidates(
     candidates: &mut Vec<LinkedCandidate>,
     xml: &str,
     route: ArticleAssetDiscoveryRoute,
-) {
-    if let Ok(links) = crate::transform::article::extract_jats_supplement_links(xml) {
-        candidates.extend(links.into_iter().map(|link| LinkedCandidate {
-            href: link.href,
-            filename: link.filename,
-            label: link.label,
-            media_type: link.media_type,
-            route: route.clone(),
-            additional_routes: Vec::new(),
-            relative_to_bin: true,
-        }));
-    }
+) -> Result<(), ()> {
+    let links = crate::transform::article::extract_jats_supplement_links(xml).map_err(|_| ())?;
+    candidates.extend(links.into_iter().map(|link| LinkedCandidate {
+        href: link.href,
+        filename: link.filename,
+        label: link.label,
+        media_type: link.media_type,
+        route: route.clone(),
+        additional_routes: Vec::new(),
+        relative_to_bin: true,
+    }));
+    Ok(())
 }
 
 fn candidate_routes(candidate: &LinkedCandidate) -> Vec<ArticleAssetDiscoveryRoute> {
@@ -2055,16 +2090,25 @@ mod tests {
     }
 
     #[test]
+    fn malformed_jats_is_a_source_failure_instead_of_silent_absence() {
+        let mut candidates = Vec::new();
+        let route = jats_route(ArticleFulltextProvider {
+            label: "test XML".to_string(),
+            source: "test".to_string(),
+        });
+        assert!(append_jats_candidates(&mut candidates, "<article>", route).is_err());
+        assert!(candidates.is_empty());
+    }
+
+    #[test]
     fn linked_budgets_are_deterministic_at_the_exact_boundaries() {
         assert!(linked_aggregate_accepts(0, LINKED_AGGREGATE_LIMIT));
         assert!(!linked_aggregate_accepts(1, LINKED_AGGREGATE_LIMIT));
 
-        let mut candidates = (0..4)
-            .map(|index| (index, index))
-            .collect::<BTreeMap<_, _>>();
-        let overflow = split_budget_overflow(&mut candidates, 2);
-        assert_eq!(candidates.keys().copied().collect::<Vec<_>>(), vec![0, 1]);
-        assert_eq!(overflow.keys().copied().collect::<Vec<_>>(), vec![2, 3]);
+        let mut candidates = vec![0, 1, 2, 3];
+        let overflow = split_candidate_overflow(&mut candidates, 2);
+        assert_eq!(candidates, vec![0, 1]);
+        assert_eq!(overflow, vec![2, 3]);
     }
 
     #[test]

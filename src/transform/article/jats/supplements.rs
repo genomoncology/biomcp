@@ -1,5 +1,7 @@
 //! Bounded extraction of supplement link facts from JATS documents.
 
+use std::collections::BTreeMap;
+
 use roxmltree::Node;
 
 use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
@@ -53,9 +55,24 @@ pub(crate) fn extract_jats_supplement_links(
             push_supplement_link(&mut links, href, None, media_type(media));
         }
     }
-    links.sort_by(|left, right| left.href.cmp(&right.href));
-    links.dedup_by(|left, right| left.href == right.href);
-    Ok(links)
+    let mut by_href = BTreeMap::<String, ArticleSupplementLink>::new();
+    for link in links {
+        match by_href.entry(link.href.clone()) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                entry.insert(link);
+            }
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                let existing = entry.get_mut();
+                if existing.label.is_none() {
+                    existing.label = link.label;
+                }
+                if existing.media_type.is_none() {
+                    existing.media_type = link.media_type;
+                }
+            }
+        }
+    }
+    Ok(by_href.into_values().collect())
 }
 
 fn xlink_href<'a>(node: Node<'a, '_>) -> Option<&'a str> {
@@ -109,7 +126,7 @@ mod tests {
     #[test]
     fn extracts_nested_and_standalone_supplement_media_with_typed_facts() {
         let xml = r#"<article xmlns:xlink="http://www.w3.org/1999/xlink"><body>
-          <supplementary-material><label>Data S1</label>
+          <supplementary-material xlink:href="folder/data-s1.csv?token=hidden"><label>Data S1</label>
             <media xlink:href="folder/data-s1.csv?token=hidden" mimetype="text" mime-subtype="csv"/>
           </supplementary-material>
           <media content-type="supplement" xlink:href="standalone.xlsx" mime-type="application/xlsx"/>

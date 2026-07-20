@@ -142,34 +142,61 @@ impl PmcArticleClient {
             Ok(response) => response,
             Err(_) => return PmcLinkedFetch::SourceUnavailable,
         };
-        match response.status() {
-            StatusCode::NOT_FOUND | StatusCode::NO_CONTENT => PmcLinkedFetch::HealthyAbsent,
-            StatusCode::UNAUTHORIZED
-            | StatusCode::FORBIDDEN
-            | StatusCode::UNAVAILABLE_FOR_LEGAL_REASONS => PmcLinkedFetch::AccessOrLicenceDenied,
-            status if !status.is_success() => PmcLinkedFetch::SourceUnavailable,
-            _ => {
-                let media_type = response
-                    .headers()
-                    .get(reqwest::header::CONTENT_TYPE)
-                    .and_then(|value| value.to_str().ok())
-                    .map(|value| value.split(';').next().unwrap_or(value).trim().to_string())
-                    .filter(|value| !value.is_empty());
-                match crate::sources::read_limited_source_body_with_limit(
-                    response,
-                    SourceContext::narrow(SourceProvider::PMC_OPEN_ACCESS),
-                    LINKED_ASSET_BODY_LIMIT,
-                )
-                .await
-                {
-                    Ok(bytes) => PmcLinkedFetch::Bytes {
-                        bytes: bytes.to_vec(),
-                        media_type,
-                    },
-                    Err(_) => PmcLinkedFetch::SourceUnavailable,
+        if let Some(outcome) = classify_linked_status(response.status()) {
+            return outcome;
+        }
+        let media_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .map(|value| value.split(';').next().unwrap_or(value).trim().to_string())
+            .filter(|value| !value.is_empty());
+        match crate::sources::read_limited_source_body_with_limit(
+            response,
+            SourceContext::narrow(SourceProvider::PMC_OPEN_ACCESS),
+            LINKED_ASSET_BODY_LIMIT,
+        )
+        .await
+        {
+            Ok(bytes) => PmcLinkedFetch::Bytes {
+                bytes: bytes.to_vec(),
+                media_type,
+            },
+            Err(_) => PmcLinkedFetch::SourceUnavailable,
+        }
+    }
+
+    pub(crate) async fn fetch_first_available(
+        &self,
+        targets: &[PmcLinkedTarget],
+    ) -> PmcLinkedFetch {
+        let mut strongest_failure = PmcLinkedFetch::HealthyAbsent;
+        for target in targets {
+            match self.fetch(target).await {
+                bytes @ PmcLinkedFetch::Bytes { .. } => return bytes,
+                PmcLinkedFetch::SourceUnavailable => {
+                    strongest_failure = PmcLinkedFetch::SourceUnavailable;
                 }
+                PmcLinkedFetch::AccessOrLicenceDenied
+                    if !matches!(strongest_failure, PmcLinkedFetch::SourceUnavailable) =>
+                {
+                    strongest_failure = PmcLinkedFetch::AccessOrLicenceDenied;
+                }
+                PmcLinkedFetch::HealthyAbsent | PmcLinkedFetch::AccessOrLicenceDenied => {}
             }
         }
+        strongest_failure
+    }
+}
+
+fn classify_linked_status(status: StatusCode) -> Option<PmcLinkedFetch> {
+    match status {
+        StatusCode::NOT_FOUND | StatusCode::NO_CONTENT => Some(PmcLinkedFetch::HealthyAbsent),
+        StatusCode::UNAUTHORIZED
+        | StatusCode::FORBIDDEN
+        | StatusCode::UNAVAILABLE_FOR_LEGAL_REASONS => Some(PmcLinkedFetch::AccessOrLicenceDenied),
+        status if !status.is_success() => Some(PmcLinkedFetch::SourceUnavailable),
+        _ => None,
     }
 }
 
@@ -442,6 +469,80 @@ mod tests {
                 assert!(!target.canonical_identity.contains("signed"));
             }
         }
+    }
+
+    #[test]
+    fn linked_http_statuses_fold_to_closed_coverage_outcomes() {
+        assert_eq!(
+            classify_linked_status(StatusCode::NOT_FOUND),
+            Some(PmcLinkedFetch::HealthyAbsent)
+        );
+        assert_eq!(
+            classify_linked_status(StatusCode::NO_CONTENT),
+            Some(PmcLinkedFetch::HealthyAbsent)
+        );
+        for status in [
+            StatusCode::UNAUTHORIZED,
+            StatusCode::FORBIDDEN,
+            StatusCode::UNAVAILABLE_FOR_LEGAL_REASONS,
+        ] {
+            assert_eq!(
+                classify_linked_status(status),
+                Some(PmcLinkedFetch::AccessOrLicenceDenied)
+            );
+        }
+        for status in [StatusCode::TOO_MANY_REQUESTS, StatusCode::BAD_GATEWAY] {
+            assert_eq!(
+                classify_linked_status(status),
+                Some(PmcLinkedFetch::SourceUnavailable)
+            );
+        }
+        assert_eq!(classify_linked_status(StatusCode::OK), None);
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(article_resolver_env)]
+    async fn equal_identity_routes_continue_until_one_returns_bytes() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut request = [0_u8; 2048];
+                let read = stream.read(&mut request).await.unwrap();
+                let request = String::from_utf8_lossy(&request[..read]);
+                let response = if request.contains("attempt=stale") {
+                    "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                        .to_string()
+                } else {
+                    let body = "fallback bytes";
+                    format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        body.len()
+                    )
+                };
+                stream.write_all(response.as_bytes()).await.unwrap();
+            }
+        });
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set(PMC_ARTICLE_BASE_ENV, &base);
+        let client = PmcArticleClient::new("PMC123457").unwrap();
+        let stale = client
+            .linked_target("/articles/instance/123457/bin/s1.xlsx?attempt=stale", false)
+            .unwrap();
+        let fresh = client
+            .linked_target("/articles/instance/123457/bin/s1.xlsx?attempt=fresh", false)
+            .unwrap();
+        assert_eq!(stale.canonical_identity, fresh.canonical_identity);
+        assert_eq!(
+            client.fetch_first_available(&[stale, fresh]).await,
+            PmcLinkedFetch::Bytes {
+                bytes: b"fallback bytes".to_vec(),
+                media_type: Some("application/octet-stream".to_string()),
+            }
+        );
+        server.await.unwrap();
     }
 
     #[tokio::test]

@@ -139,7 +139,7 @@ pub(super) fn parse_sections(sections: &[String]) -> Result<ArticleSections, Bio
                     .filter(|value| !value.is_empty())
                 else {
                     return Err(BioMcpError::InvalidArgument(
-                        "asset requires a package filename (example: biomcp get article 22663011 asset traces-s1.csv)"
+                        "asset requires an asset key (example: biomcp get article 22663011 asset traces-s1.csv)"
                             .into(),
                     ));
                 };

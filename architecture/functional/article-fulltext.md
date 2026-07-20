@@ -21,7 +21,7 @@ uses the same collection resolver as raw-byte retrieval: it starts from the
 linked record, adds same-paper sibling records found by DOI/title, filters out
 wrong-paper candidates, and keeps handles as BioMCP commands. The command
 `get article <id> asset <asset-key>` uses the same merged resolver as the manifest and returns
-the selected asset bytes without conversion. A successful manifest makes an unknown filename a
+the selected asset bytes without conversion. A successful manifest makes an unknown asset key a
 true asset miss; without a winner, any source failure produces
 `source_unavailable`, while all-healthy absence produces `not_found`.
 
