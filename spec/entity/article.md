@@ -821,6 +821,20 @@ belongs downstream.
 0,1"
 ```
 
+## JATS and PMC HTML Supplement Links Resolve Through Stable Handles
+
+An article document can be the only provider surface that names a supplement.
+BioMCP resolves recognized provider-relative JATS and PMC HTML links behind the
+same stable article-asset grammar, even when no package contains the linked file.
+
+```bash
+../../tools/biomcp-ci get article 22663011 asset linked-jats-s2.csv | mustmatch like "linked JATS supplement fixture bytes"
+```
+
+```bash
+../../tools/biomcp-ci get article 22663012 asset linked-html-s1.xlsx | mustmatch like "linked PMC HTML supplement fixture bytes"
+```
+
 ## Europe PMC Recovers Assets After a PMC Archive Failure
 
 An advertised PMC OA archive can disappear without proving that the article has
