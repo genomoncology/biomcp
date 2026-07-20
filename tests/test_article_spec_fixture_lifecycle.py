@@ -65,6 +65,8 @@ def _runner_workspace(
         "setup-ctgov-intervention-alias-spec-fixture.sh",
         "setup-disease-survival-spec-fixture.sh",
         "cleanup-disease-survival-spec-fixture.sh",
+        "setup-variant-identity-spec-fixture.sh",
+        "cleanup-variant-identity-spec-fixture.sh",
         "setup-section-outcomes-spec-fixture.sh",
         "cleanup-section-outcomes-spec-fixture.sh",
     ):
