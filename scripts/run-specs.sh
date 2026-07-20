@@ -191,6 +191,7 @@ run_section_outcome_specs() {
 run_article_markdown_specs() {
   if ((${#ARTICLE_MD_PATHS[@]})); then
     (
+      unset BIOMCP_CACHE_MODE
       source_if_present "$ROOT/.cache/spec-article-fulltext-source-env"
       mustmatch test "${ARTICLE_MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
     )
