@@ -469,7 +469,7 @@ healthy empty result, while the readable view stays free of degradation claims.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663014 fulltext \
-  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "empty") and (($outcome.sources | length) > 0) and ($outcome.sources | all(. != "NCBI ID Converter")) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "empty" and .sources == $outcome.sources))' \
+  | jq '(.section_outcomes.fulltext.outcome == "empty") and ((.section_outcomes.fulltext.sources | length) > 0) and (.section_outcomes.fulltext.sources | all(. != "NCBI ID Converter")) and (.full_text_coverage.coverage == "none") and ((.full_text_coverage.attempts | length) > 0) and (.full_text_coverage.attempts | all(.outcome == "empty" and (.coverage == "none" or .coverage == "metadata_only" or .coverage == "abstract_only") and (.reason | type == "string" and length > 0 and length <= 160))) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "empty" and (.sources | length) > 0))' \
   | mustmatch 'true'
 ```
 
@@ -489,7 +489,7 @@ unavailable state instead of making the confident all-sources-empty claim.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663019 fulltext \
-  | jq '.section_outcomes.fulltext as $outcome | ($outcome.outcome == "unavailable") and ($outcome.sources == []) and (($outcome.message // "") | test("unavailable"; "i")) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|signed\\.example\\.invalid|token=secret"; "i")) | not) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "unavailable" and .sources == $outcome.sources))' \
+  | jq '(.section_outcomes.fulltext.outcome == "unavailable") and (.section_outcomes.fulltext.sources == []) and ((.section_outcomes.fulltext.message // "") | test("unavailable"; "i")) and (.full_text_coverage.coverage == "unavailable") and ((.full_text_coverage.attempts | length) > 0) and (.full_text_coverage.attempts | any(.provider.label == "Europe PMC XML" and .source_kind == "jats_xml" and .coverage == "unavailable" and .outcome == "unavailable")) and (.full_text_coverage.attempts | all((.reason | type == "string" and length > 0 and length <= 160) and (. | tostring | test("SENSITIVE-UPSTREAM-DETAIL|signed\\.example\\.invalid|token=secret"; "i") | not))) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|signed\\.example\\.invalid|token=secret"; "i")) | not) and (._meta.section_sources | any(.key == "fulltext" and .outcome == "unavailable" and .sources == []))' \
   | mustmatch 'true'
 ```
 
@@ -501,6 +501,60 @@ unavailable state instead of making the confident all-sources-empty claim.
 ```bash
 ../../tools/biomcp-ci get article 22663019 fulltext \
   | mustmatch not '/(?i)(sources.*did not return full text|SENSITIVE-UPSTREAM-DETAIL|signed\.example\.invalid|token=secret)/'
+```
+
+## Partial Article Content Continues the Full-Text Ladder
+
+An abstract is useful article metadata, but it is not a downloaded article body.
+Without a later winner, JSON preserves the abstract, reports healthy partial
+coverage, and does not create any compatible full-text winner fields.
+
+```bash
+../../tools/biomcp-ci --json get article 22663020 fulltext \
+  | jq '(.full_text_path == null) and (.full_text_source == null) and (.full_text_manifest == null) and (.section_outcomes.fulltext.outcome == "empty") and (.abstract_text | contains("Abstract-only fixture evidence")) and (.full_text_coverage.coverage == "abstract_only") and (.full_text_coverage.attempts | any(.provider.label == "Europe PMC XML" and .source_kind == "jats_xml" and .coverage == "abstract_only" and .outcome == "empty" and (.cache_state | type == "string" and length > 0) and (.reason | type == "string" and length > 0 and length <= 160)))' \
+  | mustmatch 'true'
+```
+
+The readable response gives bounded guidance about the partial coverage. It does
+not claim a saved artifact or expose source-body and signed-URL details.
+
+```bash
+../../tools/biomcp-ci get article 22663020 fulltext \
+  | mustmatch '/(?is)## Full Text.*abstract.*(article body|full text).*(not found|not available)/'
+```
+
+```bash
+../../tools/biomcp-ci get article 22663020 fulltext \
+  | mustmatch not '/(?i)(Saved to:|SENSITIVE-ABSTRACT-SOURCE-BODY|signed\.example\.invalid|token=secret)/'
+```
+
+Opting in to PDF continues the same ladder. The later PDF becomes the winner,
+while ordered structured attempts retain the healthy abstract-only decision and
+explain the final result without leaking provider payloads, URLs, or local paths.
+
+```bash
+../../tools/biomcp-ci --json get article 22663020 fulltext --pdf \
+  | jq '(.full_text_path | type == "string" and length > 0) and (.full_text_manifest.source_kind == "pdf") and (.full_text_manifest.provider.label == "Semantic Scholar PDF") and (.full_text_manifest.quality.has_fulltext_signal == true) and (.full_text_manifest.provenance.pdf_fallback_used == true) and (.section_outcomes.fulltext.outcome == "data") and (.full_text_coverage.coverage == "full_text") and ((.full_text_coverage.attempts | map(.source_kind + ":" + .coverage) | index("jats_xml:abstract_only")) < (.full_text_coverage.attempts | map(.source_kind + ":" + .coverage) | index("pdf:full_text"))) and (.full_text_coverage.attempts | any(.source_kind == "jats_xml" and .coverage == "abstract_only" and .outcome == "empty")) and (.full_text_coverage.attempts | any(.source_kind == "pdf" and .coverage == "full_text" and .outcome == "data")) and (.full_text_coverage.attempts | all((.provider.label | type == "string" and length > 0) and (.provider.source | type == "string" and length > 0) and (.source_kind | type == "string" and length > 0) and (.coverage | type == "string" and length > 0) and (.outcome | type == "string" and length > 0) and (.cache_state | type == "string" and length > 0) and (.reason | type == "string" and length > 0 and length <= 160))) and (.full_text_coverage.attempts | tostring | test("SENSITIVE-ABSTRACT-SOURCE-BODY|signed\\.example\\.invalid|token=secret|127\\.0\\.0\\.1|/home/"; "i") | not)' \
+  | mustmatch 'true'
+```
+
+A page containing only title metadata is also a healthy non-winner. It remains
+distinct from an abstract and from source unavailability.
+
+```bash
+../../tools/biomcp-ci --json get article 22663021 fulltext \
+  | jq '(.full_text_path == null) and (.full_text_source == null) and (.full_text_manifest == null) and (.section_outcomes.fulltext.outcome == "empty") and (.full_text_coverage.coverage == "metadata_only") and (.full_text_coverage.attempts | any(.provider.label == "PMC HTML" and .source_kind == "pmc_html" and .coverage == "metadata_only" and .outcome == "empty" and (.cache_state | type == "string" and length > 0) and (.reason | type == "string" and length > 0 and length <= 160))) and (.full_text_coverage.attempts | tostring | test("SENSITIVE-METADATA-SOURCE-BODY|signed\\.example\\.invalid|token=secret"; "i") | not)' \
+  | mustmatch 'true'
+```
+
+An HTML page containing an abstract but no article body follows the same rule as
+JATS. With PDF enabled, it records the partial HTML attempt and continues to the
+last-resort PDF winner.
+
+```bash
+../../tools/biomcp-ci --json get article 22663022 fulltext --pdf \
+  | jq '(.full_text_manifest.source_kind == "pdf") and (.full_text_manifest.provider.label == "Semantic Scholar PDF") and (.full_text_manifest.provenance.pdf_fallback_used == true) and (.section_outcomes.fulltext.outcome == "data") and (.full_text_coverage.coverage == "full_text") and ((.full_text_coverage.attempts | map(.source_kind + ":" + .coverage) | index("pmc_html:abstract_only")) < (.full_text_coverage.attempts | map(.source_kind + ":" + .coverage) | index("pdf:full_text"))) and (.full_text_coverage.attempts | any(.provider.label == "PMC HTML" and .source_kind == "pmc_html" and .coverage == "abstract_only" and .outcome == "empty")) and (.full_text_coverage.attempts | any(.source_kind == "pdf" and .coverage == "full_text" and .outcome == "data")) and (.full_text_coverage.attempts | tostring | test("SENSITIVE-HTML-ABSTRACT-BODY|signed\\.example\\.invalid|token=secret|127\\.0\\.0\\.1|/home/"; "i") | not)' \
+  | mustmatch 'true'
 ```
 
 ## Full-Text HTML Fallback

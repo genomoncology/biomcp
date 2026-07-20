@@ -160,6 +160,41 @@ PMC_OA_ONLY_XML = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
   </body>
 </article>"""
 
+ABSTRACT_ONLY_XML = """<article>
+  <!-- SENSITIVE-ABSTRACT-SOURCE-BODY signed.example.invalid token=secret -->
+  <front>
+    <article-meta>
+      <title-group><article-title>Abstract-only XML continues to PDF</article-title></title-group>
+      <abstract><p>Abstract-only fixture evidence.</p></abstract>
+    </article-meta>
+  </front>
+</article>"""
+
+METADATA_ONLY_HTML = """<!doctype html>
+<html>
+  <head>
+    <title>Metadata-only HTML is not full text</title>
+    <!-- SENSITIVE-METADATA-SOURCE-BODY signed.example.invalid token=secret -->
+  </head>
+  <body>
+    <main><h1>Metadata-only HTML is not full text</h1></main>
+  </body>
+</html>"""
+
+ABSTRACT_ONLY_HTML = """<!doctype html>
+<html>
+  <head>
+    <title>Abstract-only HTML continues to PDF</title>
+    <!-- SENSITIVE-HTML-ABSTRACT-BODY signed.example.invalid token=secret -->
+  </head>
+  <body>
+    <main>
+      <h1>Abstract-only HTML continues to PDF</h1>
+      <section class="abstract"><h2>Abstract</h2><p>HTML abstract fixture evidence.</p></section>
+    </main>
+  </body>
+</html>"""
+
 
 def make_oa_assets_tgz():
     entries = {
@@ -272,6 +307,24 @@ ARTICLES = {
         "title": "Resolver failure control",
         "abstract": "Abstract text.",
         "paper_id": "paper-9",
+    },
+    "22663020": {
+        "pmcid": "PMC123463",
+        "title": "Abstract-only XML continues to PDF",
+        "abstract": "Abstract-only fixture evidence.",
+        "paper_id": "paper-10",
+    },
+    "22663021": {
+        "pmcid": "PMC123464",
+        "title": "Metadata-only HTML is not full text",
+        "abstract": "",
+        "paper_id": "paper-11",
+    },
+    "22663022": {
+        "pmcid": "PMC123465",
+        "title": "Abstract-only HTML continues to PDF",
+        "abstract": "HTML abstract fixture evidence.",
+        "paper_id": "paper-12",
     },
 }
 
@@ -645,12 +698,16 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
 
-        if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML"}:
+        if decoded_path == "/PMC123463/fullTextXML":
+            send_text(self, 200, ABSTRACT_ONLY_XML, "application/xml")
+            return
+
+        if decoded_path in {"/22663014/fullTextXML", "/22663019/fullTextXML", "/22663020/fullTextXML", "/22663021/fullTextXML", "/22663022/fullTextXML"}:
             append_request_log("fulltext:xml:europepmc-med")
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path in {"/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML"}:
+        if decoded_path in {"/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/PMC123464/fullTextXML", "/PMC123465/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML"}:
             send_text(self, 404, "not found", "text/plain")
             return
 
@@ -678,7 +735,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/" and query.get("id") in (["PMC123459"], ["PMC123462"]):
+        if decoded_path == "/" and query.get("id") in (["PMC123459"], ["PMC123462"], ["PMC123463"], ["PMC123464"], ["PMC123465"]):
             append_request_log("fulltext:xml:pmc-oa-archive")
             send_text(self, 200, "<records></records>", "application/xml")
             return
@@ -695,9 +752,17 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path in {"/articles/PMC123459/", "/articles/PMC123462/"}:
+        if decoded_path in {"/articles/PMC123459/", "/articles/PMC123462/", "/articles/PMC123463/"}:
             append_request_log("fulltext:html:pmc")
             send_text(self, 404, "not found", "text/plain")
+            return
+
+        if decoded_path == "/articles/PMC123464/":
+            send_text(self, 200, METADATA_ONLY_HTML, "text/html; charset=utf-8")
+            return
+
+        if decoded_path == "/articles/PMC123465/":
+            send_text(self, 200, ABSTRACT_ONLY_HTML, "text/html; charset=utf-8")
             return
 
         if decoded_path == "/articles/PMC123460/":
@@ -737,6 +802,18 @@ class Handler(BaseHTTPRequestHandler):
                     "url": "https://aacr.figshare.com/articles/journal_contribution/Fixture_Figshare_cold_storage/22474830?file=39926330",
                     "status": "GREEN",
                     "license": "CC BY 4.0",
+                }
+            if pmid == "22663020":
+                payload["openAccessPdf"] = {
+                    "url": f"http://127.0.0.1:{self.server.server_port}/pdf/22663020.pdf?token=secret",
+                    "status": "GREEN",
+                    "license": "CC BY",
+                }
+            if pmid == "22663022":
+                payload["openAccessPdf"] = {
+                    "url": f"http://127.0.0.1:{self.server.server_port}/pdf/22663022.pdf?token=secret",
+                    "status": "GREEN",
+                    "license": "CC BY",
                 }
             send_json(self, 200, payload)
             return
@@ -882,6 +959,10 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
+        if decoded_path in {"/pdf/22663020.pdf", "/pdf/22663022.pdf"}:
+            send_bytes(self, 200, PDF_FALLBACK, "application/pdf")
+            return
+
         if decoded_path == "/efetch.fcgi":
             if (
                 query.get("db") == ["pubmed"]
@@ -891,7 +972,7 @@ class Handler(BaseHTTPRequestHandler):
                 append_request_log("indexing:xml:pubmed-efetch")
                 send_text(self, 200, PUBMED_INDEXING_XML, "application/xml")
                 return
-            if query.get("id") in (["123459"], ["123462"]):
+            if query.get("id") in (["123459"], ["123462"], ["123463"], ["123464"], ["123465"]):
                 append_request_log("fulltext:xml:ncbi-efetch-pmc")
                 send_text(self, 200, "", "application/xml")
                 return
