@@ -160,6 +160,28 @@ fn normalize_cpic_level(value: &str) -> Result<String, BioMcpError> {
     }
 }
 
+fn normalize_pgx_testing(value: &str) -> Result<String, BioMcpError> {
+    const VALUES: &[&str] = &[
+        "Actionable PGx",
+        "Informative PGx",
+        "No Clinical PGx",
+        "Testing Recommended",
+        "Testing Required",
+    ];
+
+    let value = value.trim();
+    VALUES
+        .iter()
+        .find(|candidate| value.eq_ignore_ascii_case(candidate))
+        .map(|candidate| (*candidate).to_string())
+        .ok_or_else(|| {
+            BioMcpError::InvalidArgument(format!(
+                "--pgx-testing must be one of: {}",
+                VALUES.join(", ")
+            ))
+        })
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 struct PgxSections {
     include_recommendations: bool,
@@ -439,6 +461,11 @@ pub async fn search_page(
         )));
     }
 
+    let pgx_testing = filters
+        .pgx_testing
+        .as_deref()
+        .map(normalize_pgx_testing)
+        .transpose()?;
     let cpic = CpicClient::new()?;
 
     let gene = filters
@@ -500,12 +527,7 @@ pub async fn search_page(
                 .is_some_and(|v| v.eq_ignore_ascii_case(&expected))
         });
     }
-    if let Some(expected) = filters
-        .pgx_testing
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
+    if let Some(expected) = pgx_testing.as_deref() {
         out.retain(|row| {
             row.pgxtesting
                 .as_deref()
@@ -955,6 +977,31 @@ mod tests {
     fn normalize_cpic_level_rejects_invalid_value() {
         let err = normalize_cpic_level("Z").expect_err("Z should fail");
         assert!(err.to_string().contains("A, B, C, D"));
+    }
+
+    #[test]
+    fn normalize_pgx_testing_accepts_supported_values() {
+        for value in [
+            "Actionable PGx",
+            "Informative PGx",
+            "No Clinical PGx",
+            "Testing Recommended",
+            "Testing Required",
+        ] {
+            assert_eq!(normalize_pgx_testing(value).unwrap(), value);
+        }
+        assert_eq!(
+            normalize_pgx_testing(" actionable pgx ").unwrap(),
+            "Actionable PGx"
+        );
+    }
+
+    #[test]
+    fn normalize_pgx_testing_rejects_blank_and_unknown_values() {
+        for value in ["", "unknown recommendation"] {
+            let err = normalize_pgx_testing(value).expect_err("invalid value should fail");
+            assert!(err.to_string().contains("Actionable PGx"));
+        }
     }
 
     #[test]

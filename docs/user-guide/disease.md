@@ -12,6 +12,11 @@ biomcp search disease -q glioblastoma --source mondo --limit 5
 ```
 
 Search resolves common labels toward canonical ontology-backed identifiers.
+`--inheritance` accepts autosomal dominant/recessive, x-linked variants, y-linked,
+mitochondrial, multifactorial, oligogenic, polygenic, sporadic, somatic mosaicism,
+broad `dominant`/`recessive`, and HPO inheritance IDs. `--onset` accepts antenatal,
+embryonal, fetal, congenital, neonatal, infantile (`infancy` is an alias), childhood,
+juvenile, adolescent, young adult, adult, middle age, and late onset.
 
 ## Get disease records
 

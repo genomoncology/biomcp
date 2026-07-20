@@ -53,21 +53,15 @@ impl DiseaseSearchRequest {
         let inheritance = filters
             .inheritance
             .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-            .map(str::to_string);
+            .map(normalize_inheritance)
+            .transpose()?;
         let phenotype = filters
             .phenotype
             .as_deref()
             .map(str::trim)
             .filter(|v| !v.is_empty())
             .map(str::to_string);
-        let onset = filters
-            .onset
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-            .map(str::to_string);
+        let onset = filters.onset.as_deref().map(normalize_onset).transpose()?;
         let needed = limit.saturating_add(offset).max(limit);
         let fetch_size = if needed >= 50 {
             needed
@@ -92,6 +86,87 @@ impl DiseaseSearchRequest {
             prefer_doid,
         })
     }
+}
+
+fn normalize_inheritance(value: &str) -> Result<String, BioMcpError> {
+    const NAMES: &[&str] = &[
+        "autosomal dominant",
+        "autosomal recessive",
+        "x-linked",
+        "x-linked dominant",
+        "x-linked recessive",
+        "y-linked",
+        "mitochondrial",
+        "multifactorial",
+        "oligogenic",
+        "polygenic",
+        "sporadic",
+        "somatic mosaicism",
+        "dominant",
+        "recessive",
+    ];
+    const HPO_IDS: &[&str] = &[
+        "HP:0000006",
+        "HP:0000007",
+        "HP:0001417",
+        "HP:0001423",
+        "HP:0001419",
+        "HP:0001450",
+        "HP:0001427",
+        "HP:0001426",
+        "HP:0010983",
+        "HP:0010982",
+        "HP:0003745",
+        "HP:0001442",
+    ];
+
+    let value = value.trim();
+    if let Some(name) = NAMES.iter().find(|name| value.eq_ignore_ascii_case(name)) {
+        return Ok((*name).to_string());
+    }
+    if let Some(hpo_id) = HPO_IDS
+        .iter()
+        .find(|hpo_id| value.eq_ignore_ascii_case(hpo_id))
+    {
+        return Ok((*hpo_id).to_string());
+    }
+    Err(BioMcpError::InvalidArgument(format!(
+        "--inheritance must be a supported inheritance name ({}) or HPO inheritance ID",
+        NAMES.join(", ")
+    )))
+}
+
+fn normalize_onset(value: &str) -> Result<String, BioMcpError> {
+    const VALUES: &[&str] = &[
+        "antenatal",
+        "embryonal",
+        "fetal",
+        "congenital",
+        "neonatal",
+        "infantile",
+        "childhood",
+        "juvenile",
+        "adolescent",
+        "young adult",
+        "adult",
+        "middle age",
+        "late onset",
+    ];
+
+    let value = value.trim();
+    if value.eq_ignore_ascii_case("infancy") {
+        return Ok("infantile".to_string());
+    }
+    if let Some(onset) = VALUES
+        .iter()
+        .find(|onset| value.eq_ignore_ascii_case(onset))
+    {
+        return Ok((*onset).to_string());
+    }
+    Err(BioMcpError::InvalidArgument(format!(
+        "--onset must be one of: {}, infancy",
+        VALUES.join(", ")
+    )))
 }
 
 fn inheritance_matches(hit: &crate::sources::mydisease::MyDiseaseHit, expected: &str) -> bool {

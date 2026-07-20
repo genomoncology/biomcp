@@ -108,15 +108,18 @@ impl GProfilerClient {
         Ok((plan, limit))
     }
 
-    fn map_enrich_response(resp: GProfilerResponse, limit: usize) -> Vec<GProfilerTerm> {
-        resp.result.into_iter().take(limit).collect()
+    fn map_enrich_response(resp: GProfilerResponse, limit: usize) -> GProfilerEnrichment {
+        GProfilerEnrichment {
+            terms: resp.result.into_iter().take(limit).collect(),
+            unresolved_genes: resp.meta.genes_metadata.failed,
+        }
     }
 
     pub async fn enrich_genes(
         &self,
         genes: &[String],
         limit: usize,
-    ) -> Result<Vec<GProfilerTerm>, BioMcpError> {
+    ) -> Result<GProfilerEnrichment, BioMcpError> {
         let (plan, limit) = Self::enrich_genes_plan(genes, limit)?;
         let RequestBody::Json(body) = plan.body else {
             unreachable!("g:Profiler enrich uses a JSON body")
@@ -195,6 +198,25 @@ fn gprofiler_source_unavailable(reason: String) -> BioMcpError {
 pub struct GProfilerResponse {
     #[serde(default)]
     pub result: Vec<GProfilerTerm>,
+    #[serde(default)]
+    meta: GProfilerMeta,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+struct GProfilerMeta {
+    #[serde(default)]
+    genes_metadata: GProfilerGenesMetadata,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+struct GProfilerGenesMetadata {
+    #[serde(default)]
+    failed: Vec<String>,
+}
+
+pub(crate) struct GProfilerEnrichment {
+    pub(crate) terms: Vec<GProfilerTerm>,
+    pub(crate) unresolved_genes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

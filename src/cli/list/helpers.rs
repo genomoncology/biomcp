@@ -85,6 +85,8 @@ pub(super) fn list_enrich() -> String {
 
 - `--limit <N>` - max number of returned terms (must be 1-50; default 10)
 
+JSON always includes `unresolved_genes`, including an empty array when every input resolves. Markdown prints `Unresolved genes:` before the result table or empty-result message.
+
 ## Examples
 
 - `enrich BRAF,KRAS,NRAS`

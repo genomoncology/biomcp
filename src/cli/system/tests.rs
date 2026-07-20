@@ -359,6 +359,47 @@ fn enrich_command_parses_limit() {
 }
 
 #[test]
+fn enrich_json_always_serializes_unresolved_genes() {
+    let response = super::dispatch::EnrichResponse {
+        genes: vec!["BRAF".into()],
+        unresolved_genes: Vec::new(),
+        count: 0,
+        results: Vec::new(),
+    };
+
+    let value = serde_json::to_value(response).expect("enrich response should serialize");
+    assert_eq!(value["unresolved_genes"], serde_json::json!([]));
+}
+
+#[test]
+fn enrich_markdown_reports_unresolved_genes_before_results() {
+    let terms = vec![crate::sources::gprofiler::GProfilerTerm {
+        native: Some("R-HSA-1".into()),
+        name: Some("Example".into()),
+        source: Some("REAC".into()),
+        p_value: Some(0.01),
+    }];
+    let output = super::dispatch::enrich_markdown(
+        &["BRAF".into(), "ZZQQXX1".into()],
+        &terms,
+        &["ZZQQXX1".into()],
+    );
+
+    let unresolved = output.find("Unresolved genes: ZZQQXX1").unwrap();
+    let table = output.find("| Source | ID | Name | p-value |").unwrap();
+    assert!(unresolved < table);
+}
+
+#[test]
+fn enrich_markdown_reports_unresolved_genes_before_empty_result() {
+    let output = super::dispatch::enrich_markdown(&["ZZQQXX1".into()], &[], &["ZZQQXX1".into()]);
+
+    let unresolved = output.find("Unresolved genes: ZZQQXX1").unwrap();
+    let empty = output.find("No enriched terms found.").unwrap();
+    assert!(unresolved < empty);
+}
+
+#[test]
 fn version_command_parses_verbose_flag() {
     let cli =
         Cli::try_parse_from(["biomcp", "version", "--verbose"]).expect("version should parse");

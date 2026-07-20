@@ -160,8 +160,8 @@ pub(super) fn list_pgx() -> String {
 - `search pgx -g <gene>` - interactions by gene
 - `search pgx -d <drug>` - interactions by drug
 - `search pgx --cpic-level <A|B|C|D>`
-- `search pgx --pgx-testing <value>`
-- `search pgx --evidence <level>`
+- `search pgx --pgx-testing <value>` - `Actionable PGx`, `Informative PGx`, `No Clinical PGx`, `Testing Recommended`, or `Testing Required`
+- `search pgx --evidence <text>` - best-effort match over guideline names or CPIC levels
 - `search gwas -g <gene>` - GWAS-linked variants by gene
 - `search gwas --trait <text>` - GWAS-linked variants by disease trait
 

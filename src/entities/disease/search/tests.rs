@@ -70,6 +70,80 @@ fn ticket_400_request_command_disease_search_fields_drive_source_query_and_pagin
 }
 
 #[test]
+fn disease_filter_normalizers_accept_supported_values() {
+    let inheritance_names = [
+        "autosomal dominant",
+        "autosomal recessive",
+        "x-linked",
+        "x-linked dominant",
+        "x-linked recessive",
+        "y-linked",
+        "mitochondrial",
+        "multifactorial",
+        "oligogenic",
+        "polygenic",
+        "sporadic",
+        "somatic mosaicism",
+        "dominant",
+        "recessive",
+    ];
+    for value in inheritance_names {
+        assert_eq!(normalize_inheritance(value).unwrap(), value);
+    }
+    for value in [
+        "HP:0000006",
+        "HP:0000007",
+        "HP:0001417",
+        "HP:0001423",
+        "HP:0001419",
+        "HP:0001450",
+        "HP:0001427",
+        "HP:0001426",
+        "HP:0010983",
+        "HP:0010982",
+        "HP:0003745",
+        "HP:0001442",
+    ] {
+        assert_eq!(normalize_inheritance(value).unwrap(), value);
+    }
+
+    for value in [
+        "antenatal",
+        "embryonal",
+        "fetal",
+        "congenital",
+        "neonatal",
+        "infantile",
+        "childhood",
+        "juvenile",
+        "adolescent",
+        "young adult",
+        "adult",
+        "middle age",
+        "late onset",
+    ] {
+        assert_eq!(normalize_onset(value).unwrap(), value);
+    }
+    assert_eq!(normalize_onset("infancy").unwrap(), "infantile");
+}
+
+#[test]
+fn disease_filter_normalizers_handle_case_whitespace_and_unknown_values() {
+    assert_eq!(
+        normalize_inheritance(" Autosomal Dominant ").unwrap(),
+        "autosomal dominant"
+    );
+    assert_eq!(normalize_inheritance(" hp:0000006 ").unwrap(), "HP:0000006");
+    assert_eq!(normalize_onset(" Young Adult ").unwrap(), "young adult");
+    for value in ["", "unknown inheritance"] {
+        assert!(normalize_inheritance(value).is_err());
+    }
+    for value in ["", "unknown onset"] {
+        assert!(normalize_onset(value).is_err());
+    }
+}
+
+#[test]
 fn disease_search_request_preserves_limit_and_query_validation() {
     let filters = DiseaseSearchFilters::default();
     let err = DiseaseSearchRequest::new(&filters, 0, 0).expect_err("limit should fail");

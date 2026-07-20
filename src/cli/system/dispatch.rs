@@ -428,6 +428,14 @@ pub(crate) async fn handle_who_ivd(cmd: WhoIvdCommand) -> anyhow::Result<Command
     Ok(CommandOutcome::stdout(text))
 }
 
+#[derive(serde::Serialize)]
+pub(super) struct EnrichResponse {
+    pub(super) genes: Vec<String>,
+    pub(super) unresolved_genes: Vec<String>,
+    pub(super) count: usize,
+    pub(super) results: Vec<crate::sources::gprofiler::GProfilerTerm>,
+}
+
 pub(crate) async fn handle_enrich(args: EnrichArgs, json: bool) -> anyhow::Result<CommandOutcome> {
     const MAX_ENRICH_LIMIT: usize = 50;
     if args.limit == 0 || args.limit > MAX_ENRICH_LIMIT {
@@ -449,24 +457,18 @@ pub(crate) async fn handle_enrich(args: EnrichArgs, json: bool) -> anyhow::Resul
         )
         .into());
     }
-    let terms = crate::sources::gprofiler::GProfilerClient::new()?
+    let enrichment = crate::sources::gprofiler::GProfilerClient::new()?
         .enrich_genes(&genes, args.limit)
         .await?;
     let text = if json {
-        #[derive(serde::Serialize)]
-        struct EnrichResponse {
-            genes: Vec<String>,
-            count: usize,
-            results: Vec<crate::sources::gprofiler::GProfilerTerm>,
-        }
-
         crate::render::json::to_pretty(&EnrichResponse {
             genes,
-            count: terms.len(),
-            results: terms,
+            unresolved_genes: enrichment.unresolved_genes,
+            count: enrichment.terms.len(),
+            results: enrichment.terms,
         })?
     } else {
-        enrich_markdown(&genes, &terms)
+        enrich_markdown(&genes, &enrichment.terms, &enrichment.unresolved_genes)
     };
     Ok(CommandOutcome::stdout(text))
 }
@@ -613,9 +615,16 @@ pub(super) fn uninstall_self() -> Result<String, crate::error::BioMcpError> {
 pub(super) fn enrich_markdown(
     genes: &[String],
     terms: &[crate::sources::gprofiler::GProfilerTerm],
+    unresolved_genes: &[String],
 ) -> String {
     let mut out = String::new();
     out.push_str(&format!("# Enrichment: {}\n\n", genes.join(", ")));
+    let unresolved = if unresolved_genes.is_empty() {
+        "None".to_string()
+    } else {
+        unresolved_genes.join(", ")
+    };
+    out.push_str(&format!("Unresolved genes: {unresolved}\n\n"));
     if terms.is_empty() {
         out.push_str("No enriched terms found.\n");
         return out;

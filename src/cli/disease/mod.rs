@@ -13,13 +13,13 @@ pub struct DiseaseSearchArgs {
     /// Restrict results by ontology source (mondo, doid, mesh)
     #[arg(long)]
     pub source: Option<String>,
-    /// Filter by inheritance pattern
+    /// Inheritance: autosomal dominant/recessive, x-linked variants, y-linked, mitochondrial, multifactorial, oligogenic, polygenic, sporadic, somatic mosaicism, dominant/recessive, or an HPO inheritance ID
     #[arg(long)]
     pub inheritance: Option<String>,
     /// Filter by phenotype term (e.g., HP:0001250)
     #[arg(long)]
     pub phenotype: Option<String>,
-    /// Filter by clinical onset period
+    /// Onset: antenatal, embryonal, fetal, congenital, neonatal, infantile/infancy, childhood, juvenile, adolescent, young adult, adult, middle age, or late onset
     #[arg(long)]
     pub onset: Option<String>,
     /// Disable automatic discover fallback when zero direct disease rows are found

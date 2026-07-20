@@ -1487,6 +1487,63 @@ pub async fn search_count(
     })
 }
 
+const OPENFDA_COUNT_FIELDS: &[(&str, &str)] = &[
+    ("reaction", "patient.reaction.reactionmeddrapt.exact"),
+    (
+        "reactionmeddrapt",
+        "patient.reaction.reactionmeddrapt.exact",
+    ),
+    (
+        "patient.reaction.reactionmeddrapt",
+        "patient.reaction.reactionmeddrapt.exact",
+    ),
+    (
+        "patient.reaction.reactionmeddrapt.exact",
+        "patient.reaction.reactionmeddrapt.exact",
+    ),
+    (
+        "patient.drug.medicinalproduct",
+        "patient.drug.medicinalproduct",
+    ),
+    (
+        "patient.drug.medicinalproduct.exact",
+        "patient.drug.medicinalproduct.exact",
+    ),
+    (
+        "patient.drug.openfda.generic_name",
+        "patient.drug.openfda.generic_name",
+    ),
+    (
+        "patient.drug.openfda.generic_name.exact",
+        "patient.drug.openfda.generic_name.exact",
+    ),
+    (
+        "patient.drug.openfda.brand_name",
+        "patient.drug.openfda.brand_name",
+    ),
+    (
+        "patient.drug.openfda.brand_name.exact",
+        "patient.drug.openfda.brand_name.exact",
+    ),
+    ("patient.patientsex", "patient.patientsex"),
+    ("patient.patientonsetage", "patient.patientonsetage"),
+    ("serious", "serious"),
+    ("seriousnessdeath", "seriousnessdeath"),
+    ("seriousnesshospitalization", "seriousnesshospitalization"),
+    ("seriousnesslifethreatening", "seriousnesslifethreatening"),
+    ("seriousnessdisabling", "seriousnessdisabling"),
+    (
+        "seriousnesscongenitalanomali",
+        "seriousnesscongenitalanomali",
+    ),
+    ("seriousnessother", "seriousnessother"),
+    (
+        "patient.reaction.reactionoutcome",
+        "patient.reaction.reactionoutcome",
+    ),
+    ("primarysource.qualification", "primarysource.qualification"),
+];
+
 fn validate_count_field_for_openfda(count_field: &str) -> Result<(), BioMcpError> {
     let field = count_field.trim();
     let lower = field.to_ascii_lowercase();
@@ -1502,6 +1559,19 @@ fn validate_count_field_for_openfda(count_field: &str) -> Result<(), BioMcpError
         return Err(BioMcpError::InvalidArgument(
             "--count must be an openFDA field key such as patient.reaction.reactionmeddrapt".into(),
         ));
+    }
+    if !OPENFDA_COUNT_FIELDS
+        .iter()
+        .any(|(accepted, _)| field.eq_ignore_ascii_case(accepted))
+    {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--count must be one of: {}",
+            OPENFDA_COUNT_FIELDS
+                .iter()
+                .map(|(accepted, _)| *accepted)
+                .collect::<Vec<_>>()
+                .join(", ")
+        )));
     }
     Ok(())
 }
@@ -1520,13 +1590,13 @@ fn is_openfda_field_char(ch: char) -> bool {
 
 fn normalize_count_field_for_openfda(count_field: &str) -> String {
     let field = count_field.trim();
-    if field.eq_ignore_ascii_case("reaction")
-        || field.eq_ignore_ascii_case("reactionmeddrapt")
-        || field.eq_ignore_ascii_case("patient.reaction.reactionmeddrapt")
-    {
-        return "patient.reaction.reactionmeddrapt.exact".to_string();
-    }
-    field.to_string()
+    OPENFDA_COUNT_FIELDS
+        .iter()
+        .find(|(accepted, _)| field.eq_ignore_ascii_case(accepted))
+        .map_or_else(
+            || field.to_string(),
+            |(_, canonical)| (*canonical).to_string(),
+        )
 }
 
 fn build_device_query(filters: &DeviceEventSearchFilters) -> Result<String, BioMcpError> {
@@ -2086,19 +2156,15 @@ mod tests {
     }
 
     #[test]
-    fn normalize_count_field_maps_reaction_alias_to_exact_keyword_field() {
-        assert_eq!(
-            normalize_count_field_for_openfda("patient.reaction.reactionmeddrapt"),
-            "patient.reaction.reactionmeddrapt.exact"
-        );
-        assert_eq!(
-            normalize_count_field_for_openfda("reaction"),
-            "patient.reaction.reactionmeddrapt.exact"
-        );
-        assert_eq!(
-            normalize_count_field_for_openfda("patient.drug.medicinalproduct"),
-            "patient.drug.medicinalproduct"
-        );
+    fn count_field_catalog_accepts_and_canonicalizes_every_supported_value() {
+        for (accepted, canonical) in OPENFDA_COUNT_FIELDS {
+            validate_count_field_for_openfda(accepted).expect("field should be accepted");
+            assert_eq!(normalize_count_field_for_openfda(accepted), *canonical);
+            assert_eq!(
+                normalize_count_field_for_openfda(&accepted.to_ascii_uppercase()),
+                *canonical
+            );
+        }
     }
 
     #[test]
@@ -2125,15 +2191,9 @@ mod tests {
     }
 
     #[test]
-    fn validate_count_field_preserves_real_field_paths_and_aliases() {
-        for field in [
-            "reaction",
-            "patient.reaction.reactionmeddrapt",
-            "patient.reaction.reactionmeddrapt.exact",
-            "patient.drug.medicinalproduct",
-        ] {
-            validate_count_field_for_openfda(field).expect("field should remain countable");
-        }
+    fn validate_count_field_rejects_unknown_plausible_field() {
+        let err = validate_count_field_for_openfda("bogusfield").expect_err("unknown field");
+        assert!(err.to_string().contains("--count must be one of"));
     }
 
     #[test]
