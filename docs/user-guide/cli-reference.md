@@ -476,8 +476,9 @@ open-access PDF as the final fallback after XML and HTML do not provide a body.
 Requested full-text JSON adds `full_text_coverage` with final
 `full_text`/`abstract_only`/`metadata_only`/`none`/`unavailable` coverage and
 ordered sanitized attempts (provider, source kind, coverage, outcome, cache
-state, and bounded reason). Compatible winner path/source/manifest fields remain
-present only for actual full text; ordinary article cards omit coverage.
+state, and bounded reason). Compatible `full_text_path`, `full_text_source`, and
+`full_text_manifest` winner fields remain present only for actual full text;
+ordinary article cards omit coverage.
 
 Use `get article <id> assets`
 for the JSON article-asset manifest (PMC OA first, Europe PMC supplementary ZIP

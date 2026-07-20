@@ -192,6 +192,9 @@ fn get_article_help_includes_opt_in_pdf_guidance() {
     assert!(help.contains("Allow Semantic Scholar PDF as a final fulltext fallback"));
     assert!(help.contains("`--pdf` requires the fulltext section."));
     assert!(help.contains("biomcp get article 22663011 fulltext --pdf"));
+    assert!(help.contains("Abstract-only"));
+    assert!(help.contains("metadata-only"));
+    assert!(help.contains("full_text_coverage"));
 }
 
 #[test]

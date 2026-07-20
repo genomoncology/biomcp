@@ -33,8 +33,8 @@ pub(super) fn list_article() -> String {
 - `get article <id> tldr` - Semantic Scholar TLDR/influence section (optional auth; shared pool without `S2_API_KEY`)
 - `get article <id> annotations` - PubTator entity mentions
 - `get article <id> indexing` - opt-in PubMed citation authors, affiliations, ORCID, and MeSH headings
-- `get article <id> fulltext` - download/cache full text via XML -> PMC HTML; JSON distinguishes confirmed empty from unavailable sources
-- `get article <id> fulltext --pdf` - allow Semantic Scholar PDF after XML and PMC HTML miss; failed opt-in discovery remains unavailable
+- `get article <id> fulltext` - download/cache full text via XML -> PMC HTML; abstract-only and metadata-only partials continue, and JSON reports `full_text_coverage`
+- `get article <id> fulltext --pdf` - allow Semantic Scholar PDF after XML and PMC HTML do not provide an article body; failed opt-in discovery remains unavailable
 - `get article <id> assets` - JSON-only article asset manifest (PMC OA, then Europe PMC, then Figshare with same-paper siblings discovered by DOI/title)
 - `get article <id> asset <name>` - return one provider asset as raw bytes with no conversion; handles stay as BioMCP commands
 - Asset quick reference:
@@ -140,7 +140,7 @@ Worked examples:
 - Set `S2_API_KEY` to send authenticated Semantic Scholar requests at 1 req/sec. Without it, BioMCP uses the shared pool at 1 req/2sec.
 - `search article --json` and `--debug-plan` expose article source status,
   including federated degradation and redacted Semantic Scholar auth/availability.
-- `get article <id> fulltext` tries XML first, then PMC HTML, and never falls back to PDF.
+- `get article <id> fulltext` tries XML first, then PMC HTML, and never falls back to PDF. Abstract-only and metadata-only responses remain partials, so the ladder continues; requested JSON reports final `full_text_coverage` and sanitized attempts.
 - `get article <id> assets` resolves PMC OA first, Europe PMC supplementary files second, and supported Figshare/AACR Figshare metadata last; a failed source with no later winner is unavailable, not a confirmed miss.
 - `get article <id> asset <name>` streams provider bytes without conversion; handles stay as BioMCP commands and downstream tools parse CSV, XLSX, DOC, PDF, or images.
 - Add `--pdf` only with `fulltext` to extend that ladder with Semantic Scholar PDF as the last resort.

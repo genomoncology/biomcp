@@ -106,6 +106,15 @@ Semantic Scholar points at supported metadata), while `asset <name>` streams raw
 bytes with no conversion for downstream parsers. A failed source with no later
 winner is unavailable rather than a confirmed miss. Asset handles remain BioMCP
 commands rather than provider download URLs.
+
+Article `fulltext` tries XML and then PMC HTML. A source wins only when its
+JATS/HTML structure contains article-body content; abstract-only and metadata-only
+responses remain partials and later eligible rungs continue. `fulltext --pdf`
+opts in to Semantic Scholar PDF only after XML and HTML do not provide a body.
+Requested JSON adds `full_text_coverage` with final structural coverage and
+ordered sanitized attempts, while actual winners retain the compatible
+`full_text_path`, `full_text_source`, and `full_text_manifest` fields.
+
 Use `--name` when a multi-word drug or disease name would otherwise be confused with section tokens.
 Opt-in sections such as
 `clinical_features`, `diagnostics`, `disgenet`, and `funding` still require

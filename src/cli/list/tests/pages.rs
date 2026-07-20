@@ -394,6 +394,9 @@ fn list_trial_and_article_include_missing_flags() {
     assert!(article.contains(
         "`--pdf` requires the `fulltext` section and is rejected for other article requests."
     ));
+    assert!(article.contains("abstract-only"));
+    assert!(article.contains("metadata-only"));
+    assert!(article.contains("full_text_coverage"));
     assert!(article.contains("LitSense2-derived semantic signal and falls back to lexical ties"));
     assert!(article.contains("0.4*semantic + 0.3*lexical + 0.2*citations + 0.1*position"));
     assert!(article.contains("rows without LitSense2 provenance contribute `semantic=0`"));
