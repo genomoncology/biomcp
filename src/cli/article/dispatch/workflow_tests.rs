@@ -25,6 +25,7 @@ fn article_with_signal() -> crate::entities::article::Article {
         full_text_note: None,
         full_text_source: None,
         full_text_manifest: None,
+        full_text_coverage: None,
         not_included: None,
         europepmc_license: None,
         europepmc_retracted: None,

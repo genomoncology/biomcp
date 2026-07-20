@@ -62,6 +62,14 @@ Saved to: {{ full_text_path }}
 
 Assets not inlined; retrieve the JSON manifest with `{{ not_included.figure_images.retrieve_with }}`.
 {% endif -%}
+{% elif full_text_coverage and full_text_coverage.coverage == "abstract_only" and fulltext_outcome.outcome == "unavailable" -%}
+Abstract found, but complete article-body retrieval was unavailable.
+{% elif full_text_coverage and full_text_coverage.coverage == "abstract_only" -%}
+Abstract found; article body not available.
+{% elif full_text_coverage and full_text_coverage.coverage == "metadata_only" and fulltext_outcome.outcome == "unavailable" -%}
+Article metadata found, but complete article-body retrieval was unavailable.
+{% elif full_text_coverage and full_text_coverage.coverage == "metadata_only" -%}
+Article metadata found; article body not available.
 {% else -%}
 {{ full_text_note }}
 {% endif -%}

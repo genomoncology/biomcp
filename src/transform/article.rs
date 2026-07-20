@@ -18,9 +18,34 @@ pub use self::federation::{
     from_europepmc_result, from_europepmc_search_result, from_pubmed_esummary_entry,
     from_pubtator_document, from_pubtator_search_result, merge_europepmc_metadata,
 };
-pub use self::html::extract_text_from_html;
-pub use self::jats::{extract_text_from_xml, jats_quality_flags};
+pub(crate) use self::html::classify_html_document;
+pub(crate) use self::jats::classify_jats_document;
 pub use self::pdf::extract_text_from_pdf;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ArticleDocumentCoverage {
+    FullText,
+    AbstractOnly,
+    MetadataOnly,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ClassifiedArticleDocument {
+    pub coverage: ArticleDocumentCoverage,
+    pub markdown: Option<String>,
+    pub abstract_text: Option<String>,
+    pub quality: crate::entities::article::ArticleFulltextQuality,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+pub(crate) enum ArticleDocumentUnusable {
+    #[error("article document was malformed")]
+    Malformed,
+    #[error("article document was unsupported")]
+    Unsupported,
+    #[error("article document conversion failed")]
+    Conversion,
+}
 
 fn collapse_whitespace(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
@@ -48,6 +73,7 @@ mod tests {
     use crate::sources::europepmc::EuropePmcResult;
     use crate::sources::pubmed::ESummaryEntry;
     use crate::sources::pubtator::{PubTatorDocument, PubTatorSearchResult};
+    use crate::transform::article::{ArticleDocumentUnusable, ClassifiedArticleDocument};
 
     #[test]
     fn root_module_reexports_stable_article_transform_api() {
@@ -71,11 +97,10 @@ mod tests {
             as fn(&ESummaryEntry) -> Option<ArticleSearchResult>;
         let _ = crate::transform::article::extract_annotations
             as fn(&PubTatorDocument) -> Option<ArticleAnnotations>;
-        let _ = crate::transform::article::extract_text_from_xml as fn(&str) -> String;
-        let _ = crate::transform::article::jats_quality_flags
-            as fn(&str) -> crate::entities::article::ArticleFulltextQuality;
-        let _ = crate::transform::article::extract_text_from_html
-            as fn(&str, &str) -> Result<String, BioMcpError>;
+        let _ = crate::transform::article::classify_jats_document
+            as fn(&str) -> Result<ClassifiedArticleDocument, ArticleDocumentUnusable>;
+        let _ = crate::transform::article::classify_html_document
+            as fn(&str, &str) -> Result<ClassifiedArticleDocument, ArticleDocumentUnusable>;
         let _ = crate::transform::article::extract_text_from_pdf
             as fn(&[u8], usize) -> Result<String, BioMcpError>;
     }

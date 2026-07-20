@@ -4,6 +4,14 @@ use reqwest::Url;
 use reqwest::header::CONTENT_TYPE;
 use tracing::debug;
 
+use super::{
+    Article, ArticleFulltextAttempt, ArticleFulltextAttemptCoverage, ArticleFulltextAttemptOutcome,
+    ArticleFulltextAttemptReason, ArticleFulltextAttemptSourceKind, ArticleFulltextCacheState,
+    ArticleFulltextCoverage, ArticleFulltextCoverageKind, ArticleFulltextKind,
+    ArticleFulltextManifest, ArticleFulltextManifestKind, ArticleFulltextProvenance,
+    ArticleFulltextProvider, ArticleFulltextQuality, ArticleFulltextReuse, ArticleFulltextSource,
+};
+use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::RequestBuilderSourceContextExt;
 use crate::sources::europepmc::EuropePmcClient;
@@ -11,17 +19,10 @@ use crate::sources::ncbi_efetch::NcbiEfetchClient;
 use crate::sources::ncbi_idconv::NcbiIdConverterClient;
 use crate::sources::pmc_oa::PmcOaClient;
 use crate::transform;
+use crate::transform::article::{ArticleDocumentCoverage, ClassifiedArticleDocument};
 use crate::utils::download;
-use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
-use super::{
-    Article, ArticleFulltextKind, ArticleFulltextManifest, ArticleFulltextManifestKind,
-    ArticleFulltextProvenance, ArticleFulltextProvider, ArticleFulltextQuality,
-    ArticleFulltextReuse, ArticleFulltextSource,
-};
-use crate::entities::section_outcome::SectionOutcome;
-
-const FULLTEXT_CACHE_VERSION: &str = "v3";
+const FULLTEXT_CACHE_VERSION: &str = "v4";
 const ARTICLE_FULLTEXT_API: &str = "article";
 const PMC_ARTICLE_BASE: &str = "https://pmc.ncbi.nlm.nih.gov";
 const PMC_ARTICLE_BASE_ENV: &str = "BIOMCP_PMC_HTML_BASE";
@@ -58,6 +59,7 @@ impl XmlFulltextAttempt {
 enum FulltextStepOutcome<T> {
     Data(T),
     Empty,
+    Unusable(BioMcpError),
     Failed(BioMcpError),
 }
 
@@ -72,6 +74,8 @@ pub(super) enum PdfDiscoveryAttempt {
 struct FulltextAttemptState {
     healthy_sources: Vec<String>,
     failure: Option<BioMcpError>,
+    best_partial: Option<ArticleFulltextCoverageKind>,
+    attempts: Vec<ArticleFulltextAttempt>,
 }
 
 impl FulltextAttemptState {
@@ -86,6 +90,51 @@ impl FulltextAttemptState {
             self.failure = Some(err);
         }
     }
+
+    fn record_attempt(
+        &mut self,
+        source: &ArticleFulltextSource,
+        source_kind: ArticleFulltextAttemptSourceKind,
+        coverage: ArticleFulltextAttemptCoverage,
+        outcome: ArticleFulltextAttemptOutcome,
+        cache_state: ArticleFulltextCacheState,
+        reason: ArticleFulltextAttemptReason,
+    ) {
+        self.attempts.push(ArticleFulltextAttempt {
+            provider: manifest_provider(source),
+            source_kind,
+            coverage,
+            outcome,
+            cache_state,
+            reason,
+        });
+    }
+
+    fn observe_partial(&mut self, coverage: ArticleDocumentCoverage) {
+        let observed = match coverage {
+            ArticleDocumentCoverage::AbstractOnly => ArticleFulltextCoverageKind::AbstractOnly,
+            ArticleDocumentCoverage::MetadataOnly => ArticleFulltextCoverageKind::MetadataOnly,
+            ArticleDocumentCoverage::FullText => return,
+        };
+        if self.best_partial != Some(ArticleFulltextCoverageKind::AbstractOnly) {
+            self.best_partial = Some(observed);
+        }
+    }
+
+    fn final_coverage(&self) -> ArticleFulltextCoverageKind {
+        self.best_partial.unwrap_or_else(|| {
+            if self.failure.is_some() {
+                ArticleFulltextCoverageKind::Unavailable
+            } else {
+                ArticleFulltextCoverageKind::None
+            }
+        })
+    }
+}
+
+struct HtmlResolution {
+    outcome: FulltextStepOutcome<ClassifiedArticleDocument>,
+    cache_state: ArticleFulltextCacheState,
 }
 
 fn cache_kind_name(kind: ArticleFulltextKind) -> &'static str {
@@ -198,29 +247,17 @@ fn first_cache_identifier<'a>(article: &'a Article, requested_id: &'a str) -> &'
         .unwrap_or(requested_id)
 }
 
-async fn render_fulltext_xml(xml: String) -> Result<String, BioMcpError> {
-    tokio::task::spawn_blocking(move || {
-        let document =
-            parse_external_xml(&xml, ARTICLE_XML_NODE_LIMIT).map_err(|_| BioMcpError::Api {
-                api: ARTICLE_FULLTEXT_API.to_string(),
-                message: "Full text XML was malformed".to_string(),
-            })?;
-        if !document
-            .descendants()
-            .any(|node| node.is_element() && node.tag_name().name() == "article")
-        {
-            return Err(BioMcpError::Api {
-                api: ARTICLE_FULLTEXT_API.to_string(),
-                message: "Full text XML was unsupported".to_string(),
-            });
-        }
-        Ok(transform::article::extract_text_from_xml(&xml))
-    })
-    .await
-    .map_err(|err| BioMcpError::Api {
-        api: ARTICLE_FULLTEXT_API.to_string(),
-        message: format!("Full text XML render worker failed: {err}"),
-    })?
+async fn classify_fulltext_xml(xml: String) -> Result<ClassifiedArticleDocument, BioMcpError> {
+    tokio::task::spawn_blocking(move || transform::article::classify_jats_document(&xml))
+        .await
+        .map_err(|err| BioMcpError::Api {
+            api: ARTICLE_FULLTEXT_API.to_string(),
+            message: format!("Full text XML classification worker failed: {err}"),
+        })?
+        .map_err(|_| BioMcpError::Api {
+            api: ARTICLE_FULLTEXT_API.to_string(),
+            message: "Full text XML was unusable".to_string(),
+        })
 }
 
 async fn render_fulltext_pdf(bytes: Vec<u8>, page_limit: usize) -> Result<String, BioMcpError> {
@@ -333,15 +370,38 @@ pub(super) fn pdf_discovery_attempt(
         .unwrap_or(PdfDiscoveryAttempt::Empty)
 }
 
-async fn try_resolve_html(pmcid: &str, requested_id: &str) -> FulltextStepOutcome<String> {
+fn html_cache_state(
+    response: &reqwest::Response,
+    cache_bypassed: bool,
+) -> ArticleFulltextCacheState {
+    if cache_bypassed {
+        return ArticleFulltextCacheState::Bypass;
+    }
+    match response
+        .headers()
+        .get(http_cache::XCACHE)
+        .and_then(|value| value.to_str().ok())
+    {
+        Some("HIT") => ArticleFulltextCacheState::Hit,
+        Some("MISS") => ArticleFulltextCacheState::Miss,
+        _ => ArticleFulltextCacheState::Bypass,
+    }
+}
+
+async fn try_resolve_html(pmcid: &str, requested_id: &str) -> HtmlResolution {
+    let failed = |err| HtmlResolution {
+        outcome: FulltextStepOutcome::Failed(err),
+        cache_state: ArticleFulltextCacheState::Bypass,
+    };
     let url = match pmc_article_url(pmcid) {
         Ok(url) => url,
-        Err(err) => return FulltextStepOutcome::Failed(err),
+        Err(err) => return failed(err),
     };
     let client = match crate::sources::shared_client() {
         Ok(client) => client,
-        Err(err) => return FulltextStepOutcome::Failed(err),
+        Err(err) => return failed(err),
     };
+    let cache_bypassed = crate::sources::cache_is_bypassed();
     let response = match crate::sources::apply_cache_mode(client.get(url.clone()))
         .send_with_source_context(crate::error::SourceContext::retry(
             crate::error::SourceProvider::PMC_OPEN_ACCESS,
@@ -349,32 +409,42 @@ async fn try_resolve_html(pmcid: &str, requested_id: &str) -> FulltextStepOutcom
         .await
     {
         Ok(response) => response,
-        Err(err) => return FulltextStepOutcome::Failed(err),
+        Err(err) => return failed(err),
     };
+    let cache_state = html_cache_state(&response, cache_bypassed);
     if documented_fulltext_absence(response.status()) {
-        return FulltextStepOutcome::Empty;
+        return HtmlResolution {
+            outcome: FulltextStepOutcome::Empty,
+            cache_state,
+        };
     }
     if !response.status().is_success() {
-        return FulltextStepOutcome::Failed(
-            BioMcpError::Api {
-                api: ARTICLE_FULLTEXT_API.to_string(),
-                message: format!("PMC HTML returned HTTP {}", response.status()),
-            }
-            .with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::PMC_OPEN_ACCESS,
-            )),
-        );
+        return HtmlResolution {
+            outcome: FulltextStepOutcome::Failed(
+                BioMcpError::Api {
+                    api: ARTICLE_FULLTEXT_API.to_string(),
+                    message: format!("PMC HTML returned HTTP {}", response.status()),
+                }
+                .with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
+                )),
+            ),
+            cache_state,
+        };
     }
     if !html_content_type_is_supported(response.headers().get(CONTENT_TYPE)) {
-        return FulltextStepOutcome::Failed(
-            BioMcpError::Api {
-                api: ARTICLE_FULLTEXT_API.to_string(),
-                message: "PMC HTML returned unsupported content".to_string(),
-            }
-            .with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::PMC_OPEN_ACCESS,
-            )),
-        );
+        return HtmlResolution {
+            outcome: FulltextStepOutcome::Unusable(
+                BioMcpError::Api {
+                    api: ARTICLE_FULLTEXT_API.to_string(),
+                    message: "PMC HTML returned unsupported content".to_string(),
+                }
+                .with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
+                )),
+            ),
+            cache_state,
+        };
     }
 
     let bytes = match crate::sources::read_limited_source_body(
@@ -386,38 +456,43 @@ async fn try_resolve_html(pmcid: &str, requested_id: &str) -> FulltextStepOutcom
         Ok(bytes) => bytes,
         Err(err) => {
             debug!(?err, requested_id, pmcid, "PMC HTML body read failed");
-            return FulltextStepOutcome::Failed(err);
+            return HtmlResolution {
+                outcome: FulltextStepOutcome::Failed(err),
+                cache_state,
+            };
         }
     };
     let html = match String::from_utf8(bytes.to_vec()) {
         Ok(html) => html,
         Err(_) => {
-            return FulltextStepOutcome::Failed(
-                BioMcpError::Api {
-                    api: ARTICLE_FULLTEXT_API.to_string(),
-                    message: "PMC HTML response was not valid UTF-8".to_string(),
-                }
-                .with_source_context(crate::error::SourceContext::retry(
-                    crate::error::SourceProvider::PMC_OPEN_ACCESS,
-                )),
-            );
+            return HtmlResolution {
+                outcome: FulltextStepOutcome::Unusable(
+                    BioMcpError::Api {
+                        api: ARTICLE_FULLTEXT_API.to_string(),
+                        message: "PMC HTML response was not valid UTF-8".to_string(),
+                    }
+                    .with_source_context(crate::error::SourceContext::retry(
+                        crate::error::SourceProvider::PMC_OPEN_ACCESS,
+                    )),
+                ),
+                cache_state,
+            };
         }
     };
-    let markdown = match transform::article::extract_text_from_html(&html, url.as_str()) {
-        Ok(markdown) => markdown,
+    let outcome = match transform::article::classify_html_document(&html, url.as_str()) {
+        Ok(classified) => FulltextStepOutcome::Data(classified),
         Err(err) => {
-            debug!(?err, requested_id, pmcid, "PMC HTML conversion failed");
-            return FulltextStepOutcome::Failed(err);
+            debug!(?err, requested_id, pmcid, "PMC HTML classification failed");
+            FulltextStepOutcome::Unusable(BioMcpError::Api {
+                api: ARTICLE_FULLTEXT_API.to_string(),
+                message: "PMC HTML content was unusable".to_string(),
+            })
         }
     };
-    if markdown.trim().is_empty() {
-        return FulltextStepOutcome::Failed(BioMcpError::Api {
-            api: ARTICLE_FULLTEXT_API.to_string(),
-            message: "PMC HTML conversion returned empty text".to_string(),
-        });
+    HtmlResolution {
+        outcome,
+        cache_state,
     }
-
-    FulltextStepOutcome::Data(markdown)
 }
 
 async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepOutcome<String> {
@@ -486,7 +561,7 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
     };
     if !pdf_content_type_is_supported(content_type.as_ref()) && !pdf_body_signature_matches(&bytes)
     {
-        return FulltextStepOutcome::Failed(
+        return FulltextStepOutcome::Unusable(
             BioMcpError::Api {
                 api: ARTICLE_FULLTEXT_API.to_string(),
                 message: "Semantic Scholar PDF returned unsupported content".to_string(),
@@ -501,11 +576,11 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
         Ok(markdown) => markdown,
         Err(err) => {
             debug!(?err, requested_id, "Semantic Scholar PDF conversion failed");
-            return FulltextStepOutcome::Failed(err);
+            return FulltextStepOutcome::Unusable(err);
         }
     };
     if markdown.trim().is_empty() {
-        return FulltextStepOutcome::Failed(BioMcpError::Api {
+        return FulltextStepOutcome::Unusable(BioMcpError::Api {
             api: ARTICLE_FULLTEXT_API.to_string(),
             message: "Semantic Scholar PDF conversion returned empty text".to_string(),
         });
@@ -538,8 +613,41 @@ async fn save_resolved_fulltext(
     Ok(())
 }
 
+fn merge_source_abstract(article: &mut Article, source_abstract: Option<String>) {
+    if article
+        .abstract_text
+        .as_deref()
+        .is_none_or(|abstract_text| abstract_text.trim().is_empty())
+        && let Some(source_abstract) = source_abstract
+    {
+        article.abstract_text = Some(source_abstract);
+    }
+}
+
 fn unavailable_fulltext_note() -> String {
     "Full text unavailable: one or more consulted sources could not be retrieved.".to_string()
+}
+
+fn partial_fulltext_note(
+    coverage: ArticleFulltextCoverageKind,
+    source_failure: bool,
+) -> Option<String> {
+    match (coverage, source_failure) {
+        (ArticleFulltextCoverageKind::AbstractOnly, false) => {
+            Some("Abstract found; article body not available.".to_string())
+        }
+        (ArticleFulltextCoverageKind::MetadataOnly, false) => {
+            Some("Article metadata found; article body not available.".to_string())
+        }
+        (ArticleFulltextCoverageKind::AbstractOnly, true) => {
+            Some("Abstract found, but complete article-body retrieval was unavailable.".to_string())
+        }
+        (ArticleFulltextCoverageKind::MetadataOnly, true) => Some(
+            "Article metadata found, but complete article-body retrieval was unavailable."
+                .to_string(),
+        ),
+        _ => None,
+    }
 }
 
 fn empty_fulltext_note(sources: &[String]) -> String {
@@ -578,11 +686,13 @@ pub(super) async fn resolve_fulltext(
         }
     };
     let mut resolved_pmcid = article.pmcid.clone();
+    let mut identity_bridge_was_healthy = false;
 
     article.full_text_path = None;
     article.full_text_note = None;
     article.full_text_source = None;
     article.full_text_manifest = None;
+    article.full_text_coverage = None;
 
     if resolved_pmcid.is_none() {
         match NcbiIdConverterClient::new() {
@@ -595,7 +705,10 @@ pub(super) async fn resolve_fulltext(
                     Ok(None)
                 };
                 match result {
-                    Ok(value) => resolved_pmcid = value,
+                    Ok(value) => {
+                        identity_bridge_was_healthy = true;
+                        resolved_pmcid = value;
+                    }
                     Err(err) => state.record_failure(err),
                 }
             }
@@ -615,7 +728,17 @@ pub(super) async fn resolve_fulltext(
                     .get_full_text_xml("PMC", resolved_pmcid.as_deref().expect("PMC attempt"))
                     .await
                     .map(|value| value.map(|xml| (xml, None))),
-                None => continue,
+                None => {
+                    state.record_attempt(
+                        &source,
+                        ArticleFulltextAttemptSourceKind::JatsXml,
+                        ArticleFulltextAttemptCoverage::Unavailable,
+                        ArticleFulltextAttemptOutcome::Unavailable,
+                        ArticleFulltextCacheState::Bypass,
+                        ArticleFulltextAttemptReason::SourceUnavailable,
+                    );
+                    continue;
+                }
             },
             XmlFulltextAttempt::NcbiEfetchPmc => match NcbiEfetchClient::new() {
                 Ok(client) => client
@@ -638,36 +761,94 @@ pub(super) async fn resolve_fulltext(
                     .get_full_text_xml("MED", article.pmid.as_deref().expect("MED attempt"))
                     .await
                     .map(|value| value.map(|xml| (xml, None))),
-                None => continue,
+                None => {
+                    state.record_attempt(
+                        &source,
+                        ArticleFulltextAttemptSourceKind::JatsXml,
+                        ArticleFulltextAttemptCoverage::Unavailable,
+                        ArticleFulltextAttemptOutcome::Unavailable,
+                        ArticleFulltextCacheState::Bypass,
+                        ArticleFulltextAttemptReason::SourceUnavailable,
+                    );
+                    continue;
+                }
             },
         };
 
         let Some((xml, oa_manifest)) = (match fetched {
             Ok(value) => value,
             Err(err) => {
+                state.record_attempt(
+                    &source,
+                    ArticleFulltextAttemptSourceKind::JatsXml,
+                    ArticleFulltextAttemptCoverage::Unavailable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    ArticleFulltextCacheState::Bypass,
+                    ArticleFulltextAttemptReason::SourceUnavailable,
+                );
                 state.record_failure(err);
                 continue;
             }
         }) else {
+            state.record_attempt(
+                &source,
+                ArticleFulltextAttemptSourceKind::JatsXml,
+                ArticleFulltextAttemptCoverage::None,
+                ArticleFulltextAttemptOutcome::Empty,
+                ArticleFulltextCacheState::Bypass,
+                ArticleFulltextAttemptReason::NoContent,
+            );
             state.record_empty(&source.source);
             continue;
         };
-        let text = match render_fulltext_xml(xml.clone()).await {
-            Ok(text) if !text.trim().is_empty() => text,
-            Ok(_) => {
-                state.record_failure(BioMcpError::Api {
-                    api: ARTICLE_FULLTEXT_API.to_string(),
-                    message: "Full text XML conversion returned empty text".to_string(),
-                });
-                continue;
-            }
+        let classified = match classify_fulltext_xml(xml).await {
+            Ok(classified) => classified,
             Err(err) => {
+                state.record_attempt(
+                    &source,
+                    ArticleFulltextAttemptSourceKind::JatsXml,
+                    ArticleFulltextAttemptCoverage::Unusable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    ArticleFulltextCacheState::Bypass,
+                    ArticleFulltextAttemptReason::UnusableContent,
+                );
                 state.record_failure(err);
                 continue;
             }
         };
-        let mut quality = transform::article::jats_quality_flags(&xml);
-        quality.has_fulltext_signal = true;
+        merge_source_abstract(article, classified.abstract_text.clone());
+        match classified.coverage {
+            ArticleDocumentCoverage::AbstractOnly | ArticleDocumentCoverage::MetadataOnly => {
+                state.observe_partial(classified.coverage);
+                state.record_attempt(
+                    &source,
+                    ArticleFulltextAttemptSourceKind::JatsXml,
+                    if classified.coverage == ArticleDocumentCoverage::AbstractOnly {
+                        ArticleFulltextAttemptCoverage::AbstractOnly
+                    } else {
+                        ArticleFulltextAttemptCoverage::MetadataOnly
+                    },
+                    ArticleFulltextAttemptOutcome::Empty,
+                    ArticleFulltextCacheState::Bypass,
+                    if classified.coverage == ArticleDocumentCoverage::AbstractOnly {
+                        ArticleFulltextAttemptReason::AbstractWithoutBody
+                    } else {
+                        ArticleFulltextAttemptReason::MetadataWithoutBody
+                    },
+                );
+                state.record_empty(&source.source);
+                continue;
+            }
+            ArticleDocumentCoverage::FullText => {}
+        }
+        state.record_attempt(
+            &source,
+            ArticleFulltextAttemptSourceKind::JatsXml,
+            ArticleFulltextAttemptCoverage::FullText,
+            ArticleFulltextAttemptOutcome::Data,
+            ArticleFulltextCacheState::Bypass,
+            ArticleFulltextAttemptReason::BodyDetected,
+        );
         let source_identifier = match attempt.winner() {
             XmlWaterfallWinner::EuropePmcMed => article.pmid.as_deref(),
             _ => resolved_pmcid.as_deref(),
@@ -687,15 +868,21 @@ pub(super) async fn resolve_fulltext(
             source_kind: ArticleFulltextManifestKind::JatsXml,
             provider: manifest_provider(&source),
             source_identifier,
-            quality,
+            quality: classified.quality,
             reuse: manifest_reuse(license),
             provenance: manifest_provenance(article, false, package_url, oa_retracted),
         };
+        article.full_text_coverage = Some(ArticleFulltextCoverage {
+            coverage: ArticleFulltextCoverageKind::FullText,
+            attempts: std::mem::take(&mut state.attempts),
+        });
         return save_resolved_fulltext(
             article,
             requested_id,
             ArticleFulltextKind::JatsXml,
-            text,
+            classified
+                .markdown
+                .expect("full-text JATS has rendered body"),
             source,
             manifest,
         )
@@ -703,44 +890,144 @@ pub(super) async fn resolve_fulltext(
     }
 
     if let Some(pmcid) = resolved_pmcid.as_deref() {
-        match try_resolve_html(pmcid, requested_id).await {
-            FulltextStepOutcome::Data(text) => {
-                let source = html_source_metadata();
-                let manifest = ArticleFulltextManifest {
-                    source_kind: ArticleFulltextManifestKind::PmcHtml,
-                    provider: manifest_provider(&source),
-                    source_identifier: clean_manifest_string(pmcid)
-                        .unwrap_or_else(|| requested_id.trim().to_string()),
-                    quality: manifest_quality(true),
-                    reuse: manifest_reuse(article.europepmc_license.clone()),
-                    provenance: manifest_provenance(article, false, None, None),
-                };
-                return save_resolved_fulltext(
-                    article,
-                    requested_id,
-                    ArticleFulltextKind::Html,
-                    text,
-                    source,
-                    manifest,
-                )
-                .await;
+        let source = html_source_metadata();
+        let resolution = try_resolve_html(pmcid, requested_id).await;
+        match resolution.outcome {
+            FulltextStepOutcome::Data(classified) => {
+                merge_source_abstract(article, classified.abstract_text.clone());
+                match classified.coverage {
+                    ArticleDocumentCoverage::FullText => {
+                        state.record_attempt(
+                            &source,
+                            ArticleFulltextAttemptSourceKind::PmcHtml,
+                            ArticleFulltextAttemptCoverage::FullText,
+                            ArticleFulltextAttemptOutcome::Data,
+                            resolution.cache_state,
+                            ArticleFulltextAttemptReason::BodyDetected,
+                        );
+                        let manifest = ArticleFulltextManifest {
+                            source_kind: ArticleFulltextManifestKind::PmcHtml,
+                            provider: manifest_provider(&source),
+                            source_identifier: clean_manifest_string(pmcid)
+                                .unwrap_or_else(|| requested_id.trim().to_string()),
+                            quality: classified.quality,
+                            reuse: manifest_reuse(article.europepmc_license.clone()),
+                            provenance: manifest_provenance(article, false, None, None),
+                        };
+                        article.full_text_coverage = Some(ArticleFulltextCoverage {
+                            coverage: ArticleFulltextCoverageKind::FullText,
+                            attempts: std::mem::take(&mut state.attempts),
+                        });
+                        return save_resolved_fulltext(
+                            article,
+                            requested_id,
+                            ArticleFulltextKind::Html,
+                            classified
+                                .markdown
+                                .expect("full-text HTML has rendered body"),
+                            source,
+                            manifest,
+                        )
+                        .await;
+                    }
+                    ArticleDocumentCoverage::AbstractOnly
+                    | ArticleDocumentCoverage::MetadataOnly => {
+                        state.observe_partial(classified.coverage);
+                        state.record_attempt(
+                            &source,
+                            ArticleFulltextAttemptSourceKind::PmcHtml,
+                            if classified.coverage == ArticleDocumentCoverage::AbstractOnly {
+                                ArticleFulltextAttemptCoverage::AbstractOnly
+                            } else {
+                                ArticleFulltextAttemptCoverage::MetadataOnly
+                            },
+                            ArticleFulltextAttemptOutcome::Empty,
+                            resolution.cache_state,
+                            if classified.coverage == ArticleDocumentCoverage::AbstractOnly {
+                                ArticleFulltextAttemptReason::AbstractWithoutBody
+                            } else {
+                                ArticleFulltextAttemptReason::MetadataWithoutBody
+                            },
+                        );
+                        state.record_empty("PMC");
+                    }
+                }
             }
-            FulltextStepOutcome::Empty => state.record_empty("PMC"),
-            FulltextStepOutcome::Failed(err) => state.record_failure(err),
+            FulltextStepOutcome::Empty => {
+                state.record_attempt(
+                    &source,
+                    ArticleFulltextAttemptSourceKind::PmcHtml,
+                    ArticleFulltextAttemptCoverage::None,
+                    ArticleFulltextAttemptOutcome::Empty,
+                    resolution.cache_state,
+                    ArticleFulltextAttemptReason::NoContent,
+                );
+                state.record_empty("PMC");
+            }
+            FulltextStepOutcome::Unusable(err) => {
+                state.record_attempt(
+                    &source,
+                    ArticleFulltextAttemptSourceKind::PmcHtml,
+                    ArticleFulltextAttemptCoverage::Unusable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    resolution.cache_state,
+                    ArticleFulltextAttemptReason::UnusableContent,
+                );
+                state.record_failure(err);
+            }
+            FulltextStepOutcome::Failed(err) => {
+                state.record_attempt(
+                    &source,
+                    ArticleFulltextAttemptSourceKind::PmcHtml,
+                    ArticleFulltextAttemptCoverage::Unavailable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    resolution.cache_state,
+                    ArticleFulltextAttemptReason::SourceUnavailable,
+                );
+                state.record_failure(err);
+            }
         }
     }
 
+    let pdf_source = pdf_source_metadata();
     match pdf_discovery {
         PdfDiscoveryAttempt::Ineligible => {}
-        PdfDiscoveryAttempt::Empty => state.record_empty("Semantic Scholar"),
-        PdfDiscoveryAttempt::Failed(err) => state.record_failure(err),
+        PdfDiscoveryAttempt::Empty => {
+            state.record_attempt(
+                &pdf_source,
+                ArticleFulltextAttemptSourceKind::Pdf,
+                ArticleFulltextAttemptCoverage::None,
+                ArticleFulltextAttemptOutcome::Empty,
+                ArticleFulltextCacheState::Bypass,
+                ArticleFulltextAttemptReason::NoContent,
+            );
+            state.record_empty("Semantic Scholar");
+        }
+        PdfDiscoveryAttempt::Failed(err) => {
+            state.record_attempt(
+                &pdf_source,
+                ArticleFulltextAttemptSourceKind::Pdf,
+                ArticleFulltextAttemptCoverage::Unavailable,
+                ArticleFulltextAttemptOutcome::Unavailable,
+                ArticleFulltextCacheState::Bypass,
+                ArticleFulltextAttemptReason::SourceUnavailable,
+            );
+            state.record_failure(err);
+        }
         PdfDiscoveryAttempt::Data(pdf_url) => match try_resolve_pdf(&pdf_url, requested_id).await {
             FulltextStepOutcome::Data(text) => {
+                state.record_attempt(
+                    &pdf_source,
+                    ArticleFulltextAttemptSourceKind::Pdf,
+                    ArticleFulltextAttemptCoverage::FullText,
+                    ArticleFulltextAttemptOutcome::Data,
+                    ArticleFulltextCacheState::Bypass,
+                    ArticleFulltextAttemptReason::BodyDetected,
+                );
                 let mut source_identifier =
                     parse_pdf_url(&pdf_url).expect("successful PDF resolution validates the URL");
                 source_identifier.set_query(None);
                 source_identifier.set_fragment(None);
-                let source = pdf_source_metadata();
                 let license = article
                     .semantic_scholar
                     .as_ref()
@@ -749,35 +1036,81 @@ pub(super) async fn resolve_fulltext(
                     .and_then(clean_manifest_string);
                 let manifest = ArticleFulltextManifest {
                     source_kind: ArticleFulltextManifestKind::Pdf,
-                    provider: manifest_provider(&source),
+                    provider: manifest_provider(&pdf_source),
                     source_identifier: source_identifier.to_string(),
                     quality: manifest_quality(true),
                     reuse: manifest_reuse(license),
                     provenance: manifest_provenance(article, true, None, None),
                 };
+                article.full_text_coverage = Some(ArticleFulltextCoverage {
+                    coverage: ArticleFulltextCoverageKind::FullText,
+                    attempts: std::mem::take(&mut state.attempts),
+                });
                 return save_resolved_fulltext(
                     article,
                     requested_id,
                     ArticleFulltextKind::Pdf,
                     text,
-                    source,
+                    pdf_source,
                     manifest,
                 )
                 .await;
             }
-            FulltextStepOutcome::Empty => state.record_empty("Semantic Scholar"),
-            FulltextStepOutcome::Failed(err) => state.record_failure(err),
+            FulltextStepOutcome::Empty => {
+                state.record_attempt(
+                    &pdf_source,
+                    ArticleFulltextAttemptSourceKind::Pdf,
+                    ArticleFulltextAttemptCoverage::None,
+                    ArticleFulltextAttemptOutcome::Empty,
+                    ArticleFulltextCacheState::Bypass,
+                    ArticleFulltextAttemptReason::NoContent,
+                );
+                state.record_empty("Semantic Scholar");
+            }
+            FulltextStepOutcome::Unusable(err) => {
+                state.record_attempt(
+                    &pdf_source,
+                    ArticleFulltextAttemptSourceKind::Pdf,
+                    ArticleFulltextAttemptCoverage::Unusable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    ArticleFulltextCacheState::Bypass,
+                    ArticleFulltextAttemptReason::UnusableContent,
+                );
+                state.record_failure(err);
+            }
+            FulltextStepOutcome::Failed(err) => {
+                state.record_attempt(
+                    &pdf_source,
+                    ArticleFulltextAttemptSourceKind::Pdf,
+                    ArticleFulltextAttemptCoverage::Unavailable,
+                    ArticleFulltextAttemptOutcome::Unavailable,
+                    ArticleFulltextCacheState::Bypass,
+                    ArticleFulltextAttemptReason::SourceUnavailable,
+                );
+                state.record_failure(err);
+            }
         },
     }
 
-    if state.failure.is_some() {
-        article.full_text_note = Some(unavailable_fulltext_note());
-    } else {
-        article.full_text_note = Some(empty_fulltext_note(&state.healthy_sources));
+    if state.failure.is_none() && state.healthy_sources.is_empty() && identity_bridge_was_healthy {
+        state.record_empty("NCBI ID Converter");
     }
+    let final_coverage = state.final_coverage();
+    article.full_text_note = partial_fulltext_note(final_coverage, state.failure.is_some())
+        .or_else(|| {
+            if state.failure.is_some() {
+                Some(unavailable_fulltext_note())
+            } else {
+                Some(empty_fulltext_note(&state.healthy_sources))
+            }
+        });
     article
         .section_outcomes
         .complete("fulltext", final_fulltext_outcome(&state));
+    article.full_text_coverage = Some(ArticleFulltextCoverage {
+        coverage: final_coverage,
+        attempts: state.attempts,
+    });
     Ok(())
 }
 
@@ -795,11 +1128,17 @@ mod tests {
         env.set(PMC_ARTICLE_BASE_ENV, &fixture.base);
     }
 
-    fn failed(outcome: FulltextStepOutcome<String>) -> BioMcpError {
-        let FulltextStepOutcome::Failed(err) = outcome else {
-            panic!("attempt should be classified as failure");
-        };
-        err
+    fn failed<T>(outcome: FulltextStepOutcome<T>) -> BioMcpError {
+        match outcome {
+            FulltextStepOutcome::Failed(err) | FulltextStepOutcome::Unusable(err) => err,
+            FulltextStepOutcome::Data(_) | FulltextStepOutcome::Empty => {
+                panic!("attempt should be classified as failure")
+            }
+        }
+    }
+
+    fn failed_html(resolution: HtmlResolution) -> BioMcpError {
+        failed(resolution.outcome)
     }
 
     fn article_for_fulltext() -> Article {
@@ -825,6 +1164,7 @@ mod tests {
             full_text_note: None,
             full_text_source: None,
             full_text_manifest: None,
+            full_text_coverage: None,
             not_included: None,
             europepmc_license: None,
             europepmc_retracted: None,
@@ -987,17 +1327,21 @@ mod tests {
 
     #[tokio::test]
     async fn xml_conversion_rejects_malformed_unsupported_and_accepts_usable_text() {
-        assert!(render_fulltext_xml("<article>".to_string()).await.is_err());
         assert!(
-            render_fulltext_xml("<metadata><title>not JATS</title></metadata>".to_string())
+            classify_fulltext_xml("<article>".to_string())
                 .await
                 .is_err()
         );
-        let text =
-            render_fulltext_xml("<article><body><p>usable text</p></body></article>".to_string())
+        assert!(
+            classify_fulltext_xml("<metadata><title>not JATS</title></metadata>".to_string())
+                .await
+                .is_err()
+        );
+        let classified =
+            classify_fulltext_xml("<article><body><p>usable text</p></body></article>".to_string())
                 .await
                 .expect("valid article XML");
-        assert!(!text.trim().is_empty());
+        assert_eq!(classified.coverage, ArticleDocumentCoverage::FullText);
     }
 
     #[test]
@@ -1025,7 +1369,7 @@ mod tests {
         .await;
         configure_attempt_env(&mut env, &not_found);
         assert!(matches!(
-            try_resolve_html("PMC1", "1").await,
+            try_resolve_html("PMC1", "1").await.outcome,
             FulltextStepOutcome::Empty
         ));
         assert!(matches!(
@@ -1043,7 +1387,7 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &status_failure);
-        failed(try_resolve_html("PMC1", "1").await);
+        failed_html(try_resolve_html("PMC1", "1").await);
         failed(try_resolve_pdf(&format!("{}/failed.pdf", status_failure.base), "1").await);
         drop(status_failure);
 
@@ -1054,7 +1398,7 @@ mod tests {
         drop(listener);
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &refused);
         env.set(PMC_ARTICLE_BASE_ENV, &refused);
-        failed(try_resolve_html("PMC1", "1").await);
+        failed_html(try_resolve_html("PMC1", "1").await);
         failed(try_resolve_pdf(&format!("{refused}/missing.pdf"), "1").await);
 
         let oversized = TestHttpFixture::spawn(|request| {
@@ -1077,7 +1421,7 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &oversized);
-        let html_error = failed(try_resolve_html("PMC1", "1").await);
+        let html_error = failed_html(try_resolve_html("PMC1", "1").await);
         assert_eq!(html_error.code(), "api");
         assert!(format!("{html_error:?}").contains("BodyLimit"));
         let pdf_error =
@@ -1091,7 +1435,7 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &unsupported);
-        failed(try_resolve_html("PMC1", "1").await);
+        failed_html(try_resolve_html("PMC1", "1").await);
         failed(try_resolve_pdf(&format!("{}/unsupported.pdf", unsupported.base), "1").await);
         drop(unsupported);
 
@@ -1100,7 +1444,7 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &invalid_utf8);
-        failed(try_resolve_html("PMC1", "1").await);
+        failed_html(try_resolve_html("PMC1", "1").await);
         drop(invalid_utf8);
 
         let empty_conversion = TestHttpFixture::spawn(|_| {
@@ -1112,7 +1456,7 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &empty_conversion);
-        failed(try_resolve_html("PMC1", "1").await);
+        failed_html(try_resolve_html("PMC1", "1").await);
         drop(empty_conversion);
 
         let invalid_pdf = TestHttpFixture::spawn(|_| {
@@ -1126,6 +1470,62 @@ mod tests {
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &invalid_pdf.base);
         failed(try_resolve_pdf(&format!("{}/invalid.pdf", invalid_pdf.base), "1").await);
         drop(invalid_pdf);
+    }
+
+    #[test]
+    fn abstract_merge_preserves_nonblank_base_and_fills_missing_or_blank_values() {
+        let mut article = article_for_fulltext();
+        merge_source_abstract(&mut article, Some("source abstract".into()));
+        assert_eq!(article.abstract_text.as_deref(), Some("source abstract"));
+
+        article.abstract_text = Some("   ".into());
+        merge_source_abstract(&mut article, Some("replacement abstract".into()));
+        assert_eq!(
+            article.abstract_text.as_deref(),
+            Some("replacement abstract")
+        );
+
+        article.abstract_text = Some("base abstract".into());
+        merge_source_abstract(&mut article, Some("different source abstract".into()));
+        assert_eq!(article.abstract_text.as_deref(), Some("base abstract"));
+    }
+
+    #[test]
+    fn partial_coverage_and_source_health_fold_independently_in_any_order() {
+        for partial_first in [true, false] {
+            let mut state = FulltextAttemptState::default();
+            if partial_first {
+                state.observe_partial(ArticleDocumentCoverage::MetadataOnly);
+            }
+            state.record_failure(BioMcpError::Api {
+                api: "test".into(),
+                message: "failed".into(),
+            });
+            if !partial_first {
+                state.observe_partial(ArticleDocumentCoverage::MetadataOnly);
+            }
+            assert_eq!(
+                state.final_coverage(),
+                ArticleFulltextCoverageKind::MetadataOnly
+            );
+            assert_eq!(
+                final_fulltext_outcome(&state).outcome(),
+                crate::entities::section_outcome::SectionOutcomeState::Unavailable
+            );
+        }
+
+        let mut healthy = FulltextAttemptState::default();
+        healthy.record_empty("PMC");
+        healthy.observe_partial(ArticleDocumentCoverage::MetadataOnly);
+        healthy.observe_partial(ArticleDocumentCoverage::AbstractOnly);
+        assert_eq!(
+            healthy.final_coverage(),
+            ArticleFulltextCoverageKind::AbstractOnly
+        );
+        assert_eq!(
+            final_fulltext_outcome(&healthy).outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::Empty
+        );
     }
 
     #[test]
@@ -1195,6 +1595,99 @@ mod tests {
 
     #[serial_test::serial(article_resolver_env)]
     #[tokio::test]
+    async fn abstract_only_xml_continues_to_a_later_body_winner() {
+        let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let calls_for_server = calls.clone();
+        let fixture = TestHttpFixture::spawn(move |_| {
+            let call = calls_for_server.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let body = if call == 0 {
+                b"<article><front><abstract><p>source abstract</p></abstract></front></article>"
+                    .as_slice()
+            } else {
+                b"<article><body><p>later body winner</p></body></article>".as_slice()
+            };
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/xml", body))
+        })
+        .await;
+        let mut env = TestEnv::new();
+        let cache = TempDirGuard::new("article-fulltext-partial-continuation");
+        for key in [
+            "BIOMCP_TEST_UNPACED_ORIGIN",
+            "BIOMCP_EUROPEPMC_BASE",
+            "BIOMCP_PUBMED_BASE",
+            "BIOMCP_PMC_OA_BASE",
+            PMC_ARTICLE_BASE_ENV,
+        ] {
+            env.set(key, &fixture.base);
+        }
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+
+        let mut article = article_for_fulltext();
+        resolve_fulltext(&mut article, "22663011", PdfDiscoveryAttempt::Ineligible)
+            .await
+            .expect("later body winner");
+
+        assert_eq!(article.abstract_text.as_deref(), Some("source abstract"));
+        let coverage = article.full_text_coverage.as_ref().expect("coverage");
+        assert_eq!(coverage.coverage, ArticleFulltextCoverageKind::FullText);
+        assert_eq!(
+            coverage.attempts[0].coverage,
+            ArticleFulltextAttemptCoverage::AbstractOnly
+        );
+        assert_eq!(
+            coverage.attempts[1].coverage,
+            ArticleFulltextAttemptCoverage::FullText
+        );
+        assert!(
+            article
+                .full_text_manifest
+                .as_ref()
+                .expect("winner manifest")
+                .quality
+                .has_fulltext_signal
+        );
+    }
+
+    #[serial_test::serial(article_resolver_env)]
+    #[tokio::test]
+    async fn stale_v3_partial_artifact_cannot_become_the_current_winner() {
+        let fixture = TestHttpFixture::spawn(|_| {
+            TestHttpReply::Bytes(test_http_response(
+                "200 OK",
+                "application/xml",
+                b"<article><body><p>current body winner</p></body></article>",
+            ))
+        })
+        .await;
+        let mut env = TestEnv::new();
+        let cache = TempDirGuard::new("article-fulltext-v3-regression");
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        let stale_path = download::save_atomic(
+            "article-fulltext-v3:jats_xml:22663011",
+            "abstract without article body",
+        )
+        .await
+        .expect("plant stale v3 artifact");
+
+        let mut article = article_for_fulltext();
+        resolve_fulltext(&mut article, "22663011", PdfDiscoveryAttempt::Ineligible)
+            .await
+            .expect("current body winner");
+        let current_path = article.full_text_path.as_ref().expect("current path");
+
+        assert_ne!(current_path, &stale_path);
+        assert!(
+            tokio::fs::read_to_string(current_path)
+                .await
+                .expect("current artifact")
+                .contains("current body winner")
+        );
+    }
+
+    #[serial_test::serial(article_resolver_env)]
+    #[tokio::test]
     async fn earlier_fulltext_winner_overrides_failed_pdf_discovery() {
         let fixture = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
@@ -1243,15 +1736,15 @@ mod tests {
     fn fulltext_cache_key_is_kind_aware_and_versioned() {
         assert_eq!(
             fulltext_cache_key(ArticleFulltextKind::JatsXml, "22663011"),
-            "article-fulltext-v3:jats_xml:22663011"
+            "article-fulltext-v4:jats_xml:22663011"
         );
         assert_eq!(
             fulltext_cache_key(ArticleFulltextKind::Html, "10.1000/example"),
-            "article-fulltext-v3:html:10.1000/example"
+            "article-fulltext-v4:html:10.1000/example"
         );
         assert_eq!(
             fulltext_cache_key(ArticleFulltextKind::Pdf, "10.1000/example"),
-            "article-fulltext-v3:pdf:10.1000/example"
+            "article-fulltext-v4:pdf:10.1000/example"
         );
     }
 

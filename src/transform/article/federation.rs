@@ -70,6 +70,7 @@ pub fn from_pubtator_document(doc: &PubTatorDocument) -> Article {
         full_text_note: None,
         full_text_source: None,
         full_text_manifest: None,
+        full_text_coverage: None,
         not_included: None,
         europepmc_license: None,
         europepmc_retracted: None,
@@ -262,6 +263,7 @@ pub fn from_europepmc_result(hit: &EuropePmcResult) -> Article {
         full_text_note: None,
         full_text_source: None,
         full_text_manifest: None,
+        full_text_coverage: None,
         not_included: None,
         europepmc_license: hit
             .license

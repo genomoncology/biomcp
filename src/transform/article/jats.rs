@@ -1,39 +1,62 @@
 //! JATS full-text extraction and markdown rendering helpers.
 
-use std::{collections::HashSet, sync::OnceLock};
+use std::collections::HashSet;
 
-use regex::Regex;
 use roxmltree::{Node, NodeType};
 
 use crate::entities::article::ArticleFulltextQuality;
-use crate::xml::{ARTICLE_XML_NODE_LIMIT, ExternalXmlError, parse_external_xml};
+use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
-use super::collapse_whitespace;
+use super::{
+    ArticleDocumentCoverage, ArticleDocumentUnusable, ClassifiedArticleDocument,
+    collapse_whitespace,
+};
 
 mod refs;
 
 use self::refs::render_references;
 
-pub fn extract_text_from_xml(xml: &str) -> String {
-    match try_extract_jats_markdown(xml) {
-        Ok(Some(rendered)) => rendered,
-        Err(ExternalXmlError::EntityDeclaration) => String::new(),
-        Ok(None) | Err(ExternalXmlError::Parse(_)) => strip_xml_tags_fallback(xml),
-    }
-}
-
-pub fn jats_quality_flags(xml: &str) -> ArticleFulltextQuality {
-    parse_jats_quality_flags(xml).unwrap_or_default()
-}
-
-fn parse_jats_quality_flags(xml: &str) -> Option<ArticleFulltextQuality> {
-    let doc = parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT).ok()?;
+pub(crate) fn classify_jats_document(
+    xml: &str,
+) -> Result<ClassifiedArticleDocument, ArticleDocumentUnusable> {
+    let doc = parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT)
+        .map_err(|_| ArticleDocumentUnusable::Malformed)?;
     let root = doc.root_element();
-    if root.tag_name().name() != "article" || !has_jats_content_anchor(root) {
-        return None;
+    if !root.has_tag_name("article") {
+        return Err(ArticleDocumentUnusable::Unsupported);
     }
 
-    Some(ArticleFulltextQuality {
+    let abstract_text = root
+        .descendants()
+        .find(|node| node.is_element() && node.has_tag_name("abstract"))
+        .map(inline_text)
+        .filter(|text| !text.is_empty());
+    let coverage = if find_child(root, "body").is_some_and(body_has_meaningful_content) {
+        ArticleDocumentCoverage::FullText
+    } else if abstract_text.is_some() {
+        ArticleDocumentCoverage::AbstractOnly
+    } else {
+        ArticleDocumentCoverage::MetadataOnly
+    };
+    let quality = quality_from_root(root, coverage);
+    let markdown = render_jats_root(root);
+    if coverage == ArticleDocumentCoverage::FullText && markdown.is_none() {
+        return Err(ArticleDocumentUnusable::Conversion);
+    }
+
+    Ok(ClassifiedArticleDocument {
+        coverage,
+        markdown,
+        abstract_text,
+        quality,
+    })
+}
+
+fn quality_from_root(
+    root: Node<'_, '_>,
+    coverage: ArticleDocumentCoverage,
+) -> ArticleFulltextQuality {
+    ArticleFulltextQuality {
         has_sections: root
             .descendants()
             .any(|node| node.is_element() && node.has_tag_name("sec")),
@@ -43,22 +66,54 @@ fn parse_jats_quality_flags(xml: &str) -> Option<ArticleFulltextQuality> {
         has_references: root
             .descendants()
             .any(|node| node.is_element() && node.has_tag_name("ref-list")),
-        has_fulltext_signal: false,
+        has_fulltext_signal: coverage == ArticleDocumentCoverage::FullText,
         has_entity_annotations: false,
+    }
+}
+
+fn body_has_meaningful_content(body: Node<'_, '_>) -> bool {
+    body.descendants().any(|node| {
+        if !node.is_element()
+            || !matches!(
+                node.tag_name().name(),
+                "p" | "list-item" | "td" | "th" | "caption" | "disp-quote" | "preformat"
+            )
+            || (node.has_tag_name("caption")
+                && !node.ancestors().any(|ancestor| {
+                    ancestor.has_tag_name("fig") || ancestor.has_tag_name("table-wrap")
+                }))
+            || node
+                .ancestors()
+                .skip(1)
+                .take_while(|ancestor| *ancestor != body)
+                .filter(|ancestor| ancestor.is_element())
+                .any(|ancestor| {
+                    !matches!(
+                        ancestor.tag_name().name(),
+                        "sec"
+                            | "fig"
+                            | "caption"
+                            | "table-wrap"
+                            | "table"
+                            | "thead"
+                            | "tbody"
+                            | "tfoot"
+                            | "tr"
+                            | "td"
+                            | "th"
+                            | "list"
+                            | "list-item"
+                            | "disp-quote"
+                    )
+                })
+        {
+            return false;
+        }
+        !inline_text(node).is_empty()
     })
 }
 
-fn try_extract_jats_markdown(xml: &str) -> Result<Option<String>, ExternalXmlError> {
-    parse_and_render_jats(xml)
-}
-
-fn parse_and_render_jats(xml: &str) -> Result<Option<String>, ExternalXmlError> {
-    let doc = parse_external_xml(xml, ARTICLE_XML_NODE_LIMIT)?;
-    let root = doc.root_element();
-    if root.tag_name().name() != "article" || !has_jats_content_anchor(root) {
-        return Ok(None);
-    }
-
+fn render_jats_root(root: Node<'_, '_>) -> Option<String> {
     let mut blocks = Vec::new();
     let mut state = RenderState::default();
     convert_front(root, &mut blocks);
@@ -69,22 +124,12 @@ fn parse_and_render_jats(xml: &str) -> Result<Option<String>, ExternalXmlError> 
     }
 
     let rendered = join_blocks(blocks);
-    if rendered.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(rendered))
-    }
+    (!rendered.is_empty()).then_some(rendered)
 }
 
 #[derive(Default)]
 struct RenderState {
     rendered_float_ids: HashSet<String>,
-}
-
-fn has_jats_content_anchor(root: Node<'_, '_>) -> bool {
-    root.descendants().any(|node| {
-        node.is_element() && matches!(node.tag_name().name(), "body" | "abstract" | "ref-list")
-    })
 }
 
 fn should_skip_rendered_float(node: Node<'_, '_>, state: &RenderState) -> bool {
@@ -201,6 +246,18 @@ fn append_content_blocks(
             "list" => {
                 if let Some(list) = convert_list(child) {
                     blocks.push(list);
+                }
+            }
+            "disp-quote" => {
+                let text = inline_text(child);
+                if !text.is_empty() {
+                    blocks.push(format!("> {text}"));
+                }
+            }
+            "preformat" => {
+                let text = inline_text(child);
+                if !text.is_empty() {
+                    blocks.push(format!("```text\n{text}\n```"));
                 }
             }
             _ => {}
@@ -636,28 +693,6 @@ fn join_blocks(blocks: Vec<String>) -> String {
         .filter(|block| !block.is_empty())
         .collect::<Vec<_>>()
         .join("\n\n")
-}
-
-fn strip_xml_tags_fallback(xml: &str) -> String {
-    let mut out = String::with_capacity(xml.len().min(32_000));
-    let mut in_tag = false;
-
-    for ch in xml.chars() {
-        match ch {
-            '<' => in_tag = true,
-            '>' => in_tag = false,
-            _ if in_tag => {}
-            _ => out.push(ch),
-        }
-    }
-
-    out = out.replace("\r\n", "\n");
-    out = out.replace('\r', "\n");
-    static EXCESS_NEWLINES_RE: OnceLock<Regex> = OnceLock::new();
-    let re = EXCESS_NEWLINES_RE
-        .get_or_init(|| Regex::new(r"\n{3,}").expect("valid excess-newlines regex"));
-    out = re.replace_all(&out, "\n\n").into_owned();
-    out.trim().to_string()
 }
 
 #[cfg(test)]
