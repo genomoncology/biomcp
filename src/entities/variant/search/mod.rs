@@ -349,18 +349,15 @@ pub async fn search_page(
             .await?;
         let provider_total = resp.total;
         let hit_count = resp.hits.len();
-        if hit_count == 0 {
-            exhaustive = true;
-            break;
-        }
+        let examined_count = hit_count.min(MAX_CANDIDATES - provider_offset);
         saw_indeterminate |= retain_compatible_hits(
             requested,
-            resp.hits.into_iter().take(MAX_CANDIDATES - provider_offset),
+            resp.hits.into_iter().take(examined_count),
             &mut seen,
             &mut retained,
         );
-        provider_offset += hit_count;
-        if provider_total.is_some_and(|total| provider_offset >= total) || hit_count < SOURCE_PAGE {
+        provider_offset += examined_count;
+        if candidate_scan_exhaustive(provider_total, provider_offset, hit_count) {
             exhaustive = true;
             break;
         }
@@ -373,6 +370,14 @@ pub async fn search_page(
         saw_indeterminate,
         exhaustive,
     ))
+}
+
+fn candidate_scan_exhaustive(
+    provider_total: Option<usize>,
+    examined_offset: usize,
+    returned_count: usize,
+) -> bool {
+    returned_count == 0 || provider_total.is_some_and(|total| examined_offset >= total)
 }
 
 fn retain_compatible_hits(

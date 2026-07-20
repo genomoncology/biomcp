@@ -552,7 +552,7 @@ impl SourceVariantIdentity {
         let mut genes = normalized_set(&self.genes, |v| Some(v.trim().to_ascii_uppercase()));
         let mut proteins = normalized_set(&self.protein_changes, normalize_protein_change);
         let mut coding = normalized_set(&self.coding_changes, |v| {
-            Some(v.trim().to_ascii_uppercase())
+            Some(coding_change_segment(v).to_ascii_uppercase())
         });
         let mut rsids = normalized_set(&self.rsids, |v| Some(v.trim().to_ascii_lowercase()));
         genes.sort();

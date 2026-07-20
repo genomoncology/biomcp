@@ -84,16 +84,25 @@ fn resolution_status_follows_compatible_indeterminate_and_exhaustive_truth_table
 }
 
 #[test]
+fn candidate_scan_exhaustion_requires_empty_page_or_reaching_provider_total() {
+    assert!(!candidate_scan_exhaustive(Some(10), 5, 5));
+    assert!(!candidate_scan_exhaustive(None, 5, 5));
+    assert!(candidate_scan_exhaustive(Some(5), 5, 5));
+    assert!(candidate_scan_exhaustive(Some(10), 5, 0));
+}
+
+#[test]
 fn normalized_source_identity_key_deduplicates_alias_order_and_spelling() {
     let first = SourceVariantIdentity {
         genomic_id: "chr7:g.1A>T".into(),
         genes: vec!["BRAF".into()],
         protein_changes: vec!["p.Val600Glu".into(), "p.V600E".into()],
-        coding_changes: Vec::new(),
+        coding_changes: vec!["NM_004333.6:c.1799T>A".into()],
         rsids: Vec::new(),
     };
     let second = SourceVariantIdentity {
         protein_changes: vec!["V600E".into()],
+        coding_changes: vec!["c.1799T>A".into()],
         ..first.clone()
     };
     assert_eq!(first.normalized_key(), second.normalized_key());
