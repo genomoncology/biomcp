@@ -379,6 +379,10 @@ fn jats_classification_requires_meaningful_direct_body_content() {
             ArticleDocumentCoverage::MetadataOnly,
         ),
         (
+            "<article><back><abstract><p>back-matter abstract</p></abstract></back></article>",
+            ArticleDocumentCoverage::MetadataOnly,
+        ),
+        (
             "<article><body><supplementary-material><p>supplement only</p></supplementary-material></body></article>",
             ArticleDocumentCoverage::MetadataOnly,
         ),

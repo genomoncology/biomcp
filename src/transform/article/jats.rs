@@ -13,7 +13,6 @@ use super::{
 };
 
 mod refs;
-
 use self::refs::render_references;
 
 pub(crate) fn classify_jats_document(
@@ -25,10 +24,12 @@ pub(crate) fn classify_jats_document(
     if !root.has_tag_name("article") {
         return Err(ArticleDocumentUnusable::Unsupported);
     }
-
-    let abstract_text = root
-        .descendants()
-        .find(|node| node.is_element() && node.has_tag_name("abstract"))
+    let abstract_text = find_child(root, "front")
+        .and_then(|front| {
+            front
+                .descendants()
+                .find(|node| node.has_tag_name("abstract"))
+        })
         .map(inline_text)
         .filter(|text| !text.is_empty());
     let coverage = if find_child(root, "body").is_some_and(body_has_meaningful_content) {
@@ -43,7 +44,6 @@ pub(crate) fn classify_jats_document(
     if coverage == ArticleDocumentCoverage::FullText && markdown.is_none() {
         return Err(ArticleDocumentUnusable::Conversion);
     }
-
     Ok(ClassifiedArticleDocument {
         coverage,
         markdown,
