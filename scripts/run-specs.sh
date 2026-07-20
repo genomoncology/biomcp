@@ -161,6 +161,16 @@ run_disease_survival_fixture() {
   register_cleanup cleanup_disease_survival_fixture
 }
 
+cleanup_variant_identity_fixture() {
+  bash spec/fixtures/cleanup-variant-identity-spec-fixture.sh "$ROOT"
+}
+
+run_variant_identity_fixture() {
+  bash spec/fixtures/setup-variant-identity-spec-fixture.sh "$ROOT"
+  source_if_present "$ROOT/.cache/spec-variant-identity-env"
+  register_cleanup cleanup_variant_identity_fixture
+}
+
 run_section_outcome_specs() {
   if ((${#SECTION_OUTCOME_MD_PATHS[@]})); then
     (
@@ -209,6 +219,7 @@ case "$mode" in
     run_ddinter_fixture
     run_ctgov_fixture
     run_disease_survival_fixture
+    run_variant_identity_fixture
     ;;
   spec-contracts)
     timeout_args=(--timeout 180)

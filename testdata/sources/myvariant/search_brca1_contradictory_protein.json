@@ -1,0 +1,24 @@
+{
+  "took": 1,
+  "total": 1,
+  "max_score": 20.0,
+  "hits": [
+    {
+      "_id": "chr17:g.43000001A>G",
+      "_score": 20.0,
+      "clinvar": {
+        "variant_id": 598001,
+        "rcv": [
+          {
+            "clinical_significance": "Pathogenic",
+            "review_status": "criteria provided, single submitter"
+          }
+        ]
+      },
+      "dbnsfp": {
+        "genename": ["BRCA1"],
+        "hgvsp": ["p.Met16Ile", "p.M16I"]
+      }
+    }
+  ]
+}

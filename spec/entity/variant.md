@@ -128,6 +128,23 @@ default card without scraping markdown helper text.
 Long-form protein filters should normalize to the same compact spelling that the
 short-form query uses, rather than leaking a second variant identifier shape.
 
+## Strict exact variant identity
+
+Exact protein search keeps the supplied identity separate from its normalized
+alias and checks the source's returned identity before including a row. Here the
+healthy fixture offers only BRCA1 residue 16, so a request for residue 1783 is
+explicitly unresolved instead of being relabeled as a match.
+
+```bash
+biomcp --json search variant -g BRCA1 --hgvsp p.Met1783Ile --limit 5 \
+  | jq -r '.requested_variant.gene, .requested_variant.protein_change, (.resolution.normalized_aliases // [])[], .resolution.status, (.results | length)' \
+  | mustmatch like 'BRCA1
+p.Met1783Ile
+M1783I
+unresolved
+0'
+```
+
 ## Residue-Alias Search
 
 Residue aliases should stay on the typed variant path instead of falling
