@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use futures::StreamExt;
 use roxmltree::Node;
@@ -14,7 +14,7 @@ use crate::sources::figshare::{
 };
 use crate::sources::ncbi_efetch::NcbiEfetchClient;
 use crate::sources::ncbi_idconv::NcbiIdConverterClient;
-use crate::sources::pmc_article::{PmcArticleClient, PmcLinkedFetch};
+use crate::sources::pmc_article::{LINKED_ASSET_BODY_LIMIT, PmcArticleClient, PmcLinkedFetch};
 use crate::sources::pmc_oa::{
     PmcOaArchiveEntry, PmcOaArchiveManifest, PmcOaArchivePackage, PmcOaClient,
 };
@@ -101,6 +101,12 @@ struct ResolvedAsset {
 
 struct PendingCoverage {
     canonical_identity: String,
+    row: ArticleAssetNamedCoverage,
+}
+
+struct RetrievableCoverageObservation {
+    sha256: String,
+    precedence: u8,
     row: ArticleAssetNamedCoverage,
 }
 
@@ -479,89 +485,118 @@ async fn resolve_linked_candidates(
             .entry(asset.canonical_identity.clone())
             .or_insert(index);
     }
-    let mut to_fetch = Vec::new();
+    let mut to_fetch = VecDeque::new();
     for (identity, (targets, candidate)) in canonical {
         if let Some(index) = already_resolved.get(&identity).copied() {
             merge_candidate_into_entry(&mut assets[index].entry, &candidate);
         } else {
-            to_fetch.push((identity, targets, candidate));
+            to_fetch.push_back((identity, targets, candidate));
         }
     }
 
-    // Buffered preserves canonical order while allowing up to eight independent identities to
-    // make progress. Folding results in that order keeps aggregate-budget victims deterministic.
-    let mut fetches =
-        futures::stream::iter(to_fetch.into_iter().map(|(identity, targets, candidate)| {
-            let client = client.clone();
-            async move {
-                let result = client.fetch_first_available(&targets).await;
-                (identity, candidate, result)
-            }
-        }))
-        .buffered(LINKED_FETCH_CONCURRENCY);
+    // Fetch in bounded waves. Each task receives a share of the aggregate budget, so buffered
+    // concurrency cannot start a ninth full body after eight in-flight bodies have already
+    // consumed the 64 MiB article allowance.
     let mut aggregate = 0usize;
-    while let Some((identity, candidate, result)) = fetches.next().await {
-        match result {
-            PmcLinkedFetch::Bytes { bytes, media_type }
-                if linked_aggregate_accepts(aggregate, bytes.len()) =>
-            {
-                aggregate += bytes.len();
-                let routes = candidate_routes(&candidate);
-                let provider = candidate.route.provider.clone();
-                let mut entry = ArticleAssetEntry {
-                    filename: candidate.filename.clone(),
-                    asset_key: sha256_hex(identity.as_bytes()),
-                    kind: filename_kind(&candidate.filename).to_string(),
-                    media_type: candidate.media_type.clone().or(media_type),
-                    size_bytes: bytes.len(),
-                    sha256: sha256_hex(&bytes),
-                    provider: provider.clone(),
-                    reuse: ArticleFulltextReuse {
-                        license_present: false,
-                        license: None,
-                        license_source: None,
-                        reuse_warning: Some(
-                            "License/reuse status is unknown; verify rights before reuse."
-                                .to_string(),
-                        ),
-                    },
-                    provenance: ArticleFulltextProvenance {
-                        open_access: article.open_access,
-                        retracted: article.europepmc_retracted,
-                        package_url: None,
-                        pdf_fallback_used: false,
-                    },
-                    jats: candidate.label.clone().map(|label| ArticleAssetJats {
-                        label: Some(label),
-                        caption: None,
-                        source_id: None,
-                    }),
-                    discovery_routes: routes,
-                    handle: article_asset_command(requested_id, &candidate.filename),
-                };
-                entry.discovery_routes.sort();
-                entry.discovery_routes.dedup();
-                assets.push(ResolvedAsset {
-                    canonical_identity: identity,
-                    precedence: 2,
-                    entry,
-                    bytes,
-                });
-            }
-            PmcLinkedFetch::Bytes { .. } | PmcLinkedFetch::SourceUnavailable => {
+    while !to_fetch.is_empty() {
+        let budgets = linked_fetch_batch_budgets(LINKED_AGGREGATE_LIMIT - aggregate);
+        if budgets.is_empty() {
+            for (identity, _, candidate) in to_fetch.drain(..) {
                 nonretrievable.push(PendingCoverage {
                     canonical_identity: identity,
                     row: named_coverage(&candidate, ArticleAssetNamedOutcome::SourceUnavailable),
                 });
             }
-            PmcLinkedFetch::HealthyAbsent => nonretrievable.push(PendingCoverage {
-                canonical_identity: identity,
-                row: named_coverage(&candidate, ArticleAssetNamedOutcome::HealthyAbsent),
-            }),
-            PmcLinkedFetch::AccessOrLicenceDenied => nonretrievable.push(PendingCoverage {
-                canonical_identity: identity,
-                row: named_coverage(&candidate, ArticleAssetNamedOutcome::AccessOrLicenceDenied),
-            }),
+            break;
+        }
+        let mut batch = Vec::with_capacity(budgets.len());
+        for body_limit in budgets {
+            let Some((identity, targets, candidate)) = to_fetch.pop_front() else {
+                break;
+            };
+            batch.push((identity, targets, candidate, body_limit));
+        }
+        let mut fetches = futures::stream::iter(batch.into_iter().map(
+            |(identity, targets, candidate, body_limit)| {
+                let client = client.clone();
+                async move {
+                    let result = client
+                        .fetch_first_available_with_limit(&targets, body_limit)
+                        .await;
+                    (identity, candidate, result)
+                }
+            },
+        ))
+        .buffered(LINKED_FETCH_CONCURRENCY);
+        while let Some((identity, candidate, result)) = fetches.next().await {
+            match result {
+                PmcLinkedFetch::Bytes { bytes, media_type }
+                    if linked_aggregate_accepts(aggregate, bytes.len()) =>
+                {
+                    aggregate += bytes.len();
+                    let routes = candidate_routes(&candidate);
+                    let provider = candidate.route.provider.clone();
+                    let mut entry = ArticleAssetEntry {
+                        filename: candidate.filename.clone(),
+                        asset_key: sha256_hex(identity.as_bytes()),
+                        kind: filename_kind(&candidate.filename).to_string(),
+                        media_type: candidate.media_type.clone().or(media_type),
+                        size_bytes: bytes.len(),
+                        sha256: sha256_hex(&bytes),
+                        provider: provider.clone(),
+                        reuse: ArticleFulltextReuse {
+                            license_present: false,
+                            license: None,
+                            license_source: None,
+                            reuse_warning: Some(
+                                "License/reuse status is unknown; verify rights before reuse."
+                                    .to_string(),
+                            ),
+                        },
+                        provenance: ArticleFulltextProvenance {
+                            open_access: article.open_access,
+                            retracted: article.europepmc_retracted,
+                            package_url: None,
+                            pdf_fallback_used: false,
+                        },
+                        jats: candidate.label.clone().map(|label| ArticleAssetJats {
+                            label: Some(label),
+                            caption: None,
+                            source_id: None,
+                        }),
+                        discovery_routes: routes,
+                        handle: article_asset_command(requested_id, &candidate.filename),
+                    };
+                    entry.discovery_routes.sort();
+                    entry.discovery_routes.dedup();
+                    assets.push(ResolvedAsset {
+                        canonical_identity: identity,
+                        precedence: 2,
+                        entry,
+                        bytes,
+                    });
+                }
+                PmcLinkedFetch::Bytes { .. } | PmcLinkedFetch::SourceUnavailable => {
+                    nonretrievable.push(PendingCoverage {
+                        canonical_identity: identity,
+                        row: named_coverage(
+                            &candidate,
+                            ArticleAssetNamedOutcome::SourceUnavailable,
+                        ),
+                    });
+                }
+                PmcLinkedFetch::HealthyAbsent => nonretrievable.push(PendingCoverage {
+                    canonical_identity: identity,
+                    row: named_coverage(&candidate, ArticleAssetNamedOutcome::HealthyAbsent),
+                }),
+                PmcLinkedFetch::AccessOrLicenceDenied => nonretrievable.push(PendingCoverage {
+                    canonical_identity: identity,
+                    row: named_coverage(
+                        &candidate,
+                        ArticleAssetNamedOutcome::AccessOrLicenceDenied,
+                    ),
+                }),
+            }
         }
     }
 }
@@ -572,6 +607,17 @@ fn split_candidate_overflow<T>(values: &mut Vec<T>, limit: usize) -> Vec<T> {
 
 fn linked_aggregate_accepts(current: usize, next: usize) -> bool {
     current.saturating_add(next) <= LINKED_AGGREGATE_LIMIT
+}
+
+fn linked_fetch_batch_budgets(remaining: usize) -> Vec<usize> {
+    let mut remaining = remaining;
+    let mut budgets = Vec::new();
+    while remaining > 0 && budgets.len() < LINKED_FETCH_CONCURRENCY {
+        let budget = remaining.min(LINKED_ASSET_BODY_LIMIT);
+        budgets.push(budget);
+        remaining -= budget;
+    }
+    budgets
 }
 
 fn merge_candidate(existing: &mut LinkedCandidate, candidate: LinkedCandidate) {
@@ -661,6 +707,7 @@ fn finish_resolution(
     complex_tables: usize,
     any_failed: bool,
 ) -> Result<ResolvedArticleAssets, BioMcpError> {
+    let retrievable_observations = retrievable_coverage_observations(&assets);
     let mut assets = merge_resolved_assets(assets);
     let successful_identities = assets
         .iter()
@@ -721,7 +768,7 @@ fn finish_resolution(
             pdf_fallback_used: false,
         });
 
-    let mut coverage = assets.iter().map(retrievable_coverage).collect::<Vec<_>>();
+    let mut coverage = finalize_retrievable_coverage(retrievable_observations, &assets);
     coverage.extend(pending.into_values());
     coverage.sort_by(|left, right| {
         (
@@ -875,6 +922,78 @@ fn retrievable_coverage(asset: &ResolvedAsset) -> ArticleAssetNamedCoverage {
         handle: Some(asset.entry.handle.clone()),
         discovery_routes: asset.entry.discovery_routes.clone(),
     }
+}
+
+fn retrievable_coverage_observations(
+    assets: &[ResolvedAsset],
+) -> Vec<RetrievableCoverageObservation> {
+    let mut observations = BTreeMap::<(String, String), RetrievableCoverageObservation>::new();
+    for asset in assets {
+        let key = (asset.entry.filename.clone(), asset.entry.sha256.clone());
+        let mut row = retrievable_coverage(asset);
+        row.asset_key = None;
+        row.handle = None;
+        match observations.entry(key) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                entry.insert(RetrievableCoverageObservation {
+                    sha256: asset.entry.sha256.clone(),
+                    precedence: asset.precedence,
+                    row,
+                });
+            }
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                let existing = entry.get_mut();
+                if asset.precedence < existing.precedence {
+                    let mut replacement = RetrievableCoverageObservation {
+                        sha256: asset.entry.sha256.clone(),
+                        precedence: asset.precedence,
+                        row,
+                    };
+                    merge_coverage_facts(&mut replacement.row, &existing.row);
+                    *existing = replacement;
+                } else {
+                    merge_coverage_facts(&mut existing.row, &row);
+                }
+            }
+        }
+    }
+    observations.into_values().collect()
+}
+
+fn merge_coverage_facts(
+    primary: &mut ArticleAssetNamedCoverage,
+    other: &ArticleAssetNamedCoverage,
+) {
+    primary
+        .discovery_routes
+        .extend(other.discovery_routes.clone());
+    primary.discovery_routes.sort();
+    primary.discovery_routes.dedup();
+    if primary.label.is_none() {
+        primary.label = other.label.clone();
+    }
+    if primary.media_type.is_none() {
+        primary.media_type = other.media_type.clone();
+    }
+}
+
+fn finalize_retrievable_coverage(
+    observations: Vec<RetrievableCoverageObservation>,
+    assets: &[ResolvedAsset],
+) -> Vec<ArticleAssetNamedCoverage> {
+    let by_hash = assets
+        .iter()
+        .map(|asset| (asset.entry.sha256.as_str(), asset))
+        .collect::<BTreeMap<_, _>>();
+    observations
+        .into_iter()
+        .filter_map(|mut observation| {
+            let asset = by_hash.get(observation.sha256.as_str())?;
+            observation.row.asset_key = Some(asset.entry.asset_key.clone());
+            observation.row.handle = Some(asset.entry.handle.clone());
+            Some(observation.row)
+        })
+        .collect()
 }
 
 fn source_document_precedence(source: ArticleAssetSourceDocument) -> u8 {
@@ -2104,6 +2223,17 @@ mod tests {
     fn linked_budgets_are_deterministic_at_the_exact_boundaries() {
         assert!(linked_aggregate_accepts(0, LINKED_AGGREGATE_LIMIT));
         assert!(!linked_aggregate_accepts(1, LINKED_AGGREGATE_LIMIT));
+        let budgets = linked_fetch_batch_budgets(LINKED_AGGREGATE_LIMIT);
+        assert!(budgets.len() <= LINKED_FETCH_CONCURRENCY);
+        assert!(
+            budgets
+                .iter()
+                .all(|budget| *budget <= LINKED_ASSET_BODY_LIMIT)
+        );
+        assert_eq!(budgets.iter().sum::<usize>(), LINKED_AGGREGATE_LIMIT);
+        let partial = linked_fetch_batch_budgets(LINKED_ASSET_BODY_LIMIT + 1);
+        assert!(partial.iter().all(|budget| *budget > 0));
+        assert_eq!(partial.iter().sum::<usize>(), LINKED_ASSET_BODY_LIMIT + 1);
 
         let mut candidates = vec![0, 1, 2, 3];
         let overflow = split_candidate_overflow(&mut candidates, 2);
@@ -2135,6 +2265,42 @@ mod tests {
         assert_eq!(merged[0].precedence, 0);
         assert_eq!(merged[0].bytes, bytes);
         assert_eq!(merged[0].entry.discovery_routes.len(), 2);
+    }
+
+    #[test]
+    fn hash_dedup_preserves_coverage_for_distinct_provider_filenames() {
+        let bytes = b"shared supplement bytes";
+        let assets = vec![
+            resolved_asset(
+                "pmc:PMC1:methods.pdf",
+                "methods.pdf",
+                bytes,
+                0,
+                ArticleAssetSourceDocument::PmcOaArchive,
+            ),
+            resolved_asset(
+                "figshare:2:tables.pdf",
+                "tables.pdf",
+                bytes,
+                3,
+                ArticleAssetSourceDocument::Figshare,
+            ),
+        ];
+        let observations = retrievable_coverage_observations(&assets);
+        let mut merged = merge_resolved_assets(assets);
+        assign_asset_keys("42", &mut merged);
+        let coverage = finalize_retrievable_coverage(observations, &merged);
+        let methods = coverage
+            .iter()
+            .find(|row| row.filename == "methods.pdf")
+            .expect("methods filename must remain covered");
+        let tables = coverage
+            .iter()
+            .find(|row| row.filename == "tables.pdf")
+            .expect("tables filename must remain covered");
+        assert_eq!(methods.outcome, ArticleAssetNamedOutcome::Retrievable);
+        assert_eq!(tables.outcome, ArticleAssetNamedOutcome::Retrievable);
+        assert_eq!(methods.handle, tables.handle);
     }
 
     #[test]

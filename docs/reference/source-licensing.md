@@ -270,7 +270,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 
 ### Europe PMC
 
-- BioMCP surfaces: `search article; get article <pmid>; get article <id> fulltext; get article <id> assets; get article <id> asset <name>`
+- BioMCP surfaces: `search article; get article <pmid>; get article <id> fulltext; get article <id> assets; get article <id> asset <asset-key>`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
@@ -282,7 +282,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 
 ### Figshare
 
-- BioMCP surfaces: `get article <id> assets; get article <id> asset <name>`
+- BioMCP surfaces: `get article <id> assets; get article <id> asset <asset-key>`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: open public API
@@ -513,7 +513,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 
 ### PMC OA
 
-- BioMCP surfaces: `get article <id> fulltext; get article <id> assets; get article <id> asset <name>`
+- BioMCP surfaces: `get article <id> fulltext; get article <id> assets; get article <id> asset <asset-key>`
 - Integration mode: `direct_api`
 - BioMCP auth: `optional_env` via `NCBI_API_KEY`
 - Provider access / registration: open public utility for the PMC Open Access subset

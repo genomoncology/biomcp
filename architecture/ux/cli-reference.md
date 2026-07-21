@@ -65,7 +65,7 @@ biomcp get variant 'NM_004333.6:c.1799T>A'
 biomcp get article 22663011 tldr
 biomcp get article 22663011 indexing
 biomcp --json get article <id> assets
-biomcp get article <id> asset <name>
+biomcp get article <id> asset <asset-key>
 biomcp get diagnostic GTR000006692.3 genes conditions
 biomcp get diagnostic "ITPW02232- TC40" conditions
 biomcp get drug pembrolizumab label targets civic approvals
@@ -100,12 +100,12 @@ ordinary detail request because it adds PubMed citation XML retrieval, but it is
 included by article `all`; its availability status distinguishes an empty
 PubMed record from unavailable metadata. Unavailable indexing preserves the
 base article and exposes only a stable failure code and static message in JSON
-and Markdown, never raw provider or parser details. Article `assets` is JSON-only
-and provider-labelled (PMC OA first, Europe PMC second, then Figshare when
-Semantic Scholar points at supported metadata), while `asset <name>` streams raw
-bytes with no conversion for downstream parsers. A failed source with no later
-winner is unavailable rather than a confirmed miss. Asset handles remain BioMCP
-commands rather than provider download URLs.
+and Markdown, never raw provider or parser details. Article `assets` is JSON-only and provider-labelled. It merges PMC OA, Europe PMC
+supplementary ZIP, recognized JATS/PMC HTML links, and eligible Figshare metadata;
+named linked files retain typed coverage when bytes are unavailable. `asset
+<asset-key>` streams exact raw bytes with no conversion for downstream parsers. A
+failed source with no usable fallback is unavailable rather than a confirmed miss.
+Asset handles remain BioMCP commands rather than provider download URLs.
 
 Article `fulltext` tries XML and then PMC HTML. A source wins only when its
 JATS/HTML structure contains article-body content; abstract-only and metadata-only

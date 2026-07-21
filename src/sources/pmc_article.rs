@@ -10,7 +10,7 @@ use crate::sources::provider_url_policy::{ProviderUrlPolicy, pmc_linked_asset_pa
 const ARTICLE_FULLTEXT_API: &str = "article";
 const PMC_ARTICLE_BASE: &str = "https://pmc.ncbi.nlm.nih.gov";
 pub(crate) const PMC_ARTICLE_BASE_ENV: &str = "BIOMCP_PMC_HTML_BASE";
-const LINKED_ASSET_BODY_LIMIT: usize = 8 * 1024 * 1024;
+pub(crate) const LINKED_ASSET_BODY_LIMIT: usize = 8 * 1024 * 1024;
 const LINKED_PRODUCTION_ORIGINS: &[&str] = &[
     "https://pmc.ncbi.nlm.nih.gov",
     "https://www.ncbi.nlm.nih.gov",
@@ -128,12 +128,21 @@ impl PmcArticleClient {
         })
     }
 
+    #[cfg(test)]
     pub(crate) async fn fetch(&self, target: &PmcLinkedTarget) -> PmcLinkedFetch {
+        self.fetch_with_limit(target, LINKED_ASSET_BODY_LIMIT).await
+    }
+
+    async fn fetch_with_limit(
+        &self,
+        target: &PmcLinkedTarget,
+        body_limit: usize,
+    ) -> PmcLinkedFetch {
         // The client's DNS resolver and redirect policy use this same PMCID-scoped
         // ProviderUrlPolicy, so a redirect cannot broaden the accepted route.
         let response = match crate::sources::with_response_body_limit(
             crate::sources::apply_no_store(self.client.get(target.url.clone())),
-            LINKED_ASSET_BODY_LIMIT,
+            body_limit,
             "pmc-linked-asset",
         )
         .send_with_source_context(SourceContext::retry(SourceProvider::PMC_OPEN_ACCESS))
@@ -154,7 +163,7 @@ impl PmcArticleClient {
         match crate::sources::read_limited_source_body_with_limit(
             response,
             SourceContext::narrow(SourceProvider::PMC_OPEN_ACCESS),
-            LINKED_ASSET_BODY_LIMIT,
+            body_limit,
         )
         .await
         {
@@ -166,13 +175,23 @@ impl PmcArticleClient {
         }
     }
 
+    #[cfg(test)]
     pub(crate) async fn fetch_first_available(
         &self,
         targets: &[PmcLinkedTarget],
     ) -> PmcLinkedFetch {
+        self.fetch_first_available_with_limit(targets, LINKED_ASSET_BODY_LIMIT)
+            .await
+    }
+
+    pub(crate) async fn fetch_first_available_with_limit(
+        &self,
+        targets: &[PmcLinkedTarget],
+        body_limit: usize,
+    ) -> PmcLinkedFetch {
         let mut strongest_failure = PmcLinkedFetch::HealthyAbsent;
         for target in targets {
-            match self.fetch(target).await {
+            match self.fetch_with_limit(target, body_limit).await {
                 bytes @ PmcLinkedFetch::Bytes { .. } => return bytes,
                 PmcLinkedFetch::SourceUnavailable => {
                     strongest_failure = PmcLinkedFetch::SourceUnavailable;
@@ -356,12 +375,52 @@ fn normalized_numeric_pmcid(pmcid: &str) -> Option<&str> {
 }
 
 fn contains_encoded_separator_or_traversal(raw: &str) -> bool {
-    let lower = raw.to_ascii_lowercase();
-    lower.contains("%2f")
-        || lower.contains("%5c")
-        || lower.contains("%2e")
-        || lower.contains("../")
-        || lower.contains("/..")
+    let mut value = raw.to_ascii_lowercase();
+    loop {
+        if value.contains("%2f")
+            || value.contains("%5c")
+            || value.contains("%2e")
+            || value.contains("../")
+            || value.contains("/..")
+        {
+            return true;
+        }
+        let Some(decoded) = decode_percent_once(&value) else {
+            return true;
+        };
+        if decoded == value {
+            break;
+        }
+        value = decoded;
+    }
+    false
+}
+
+fn decode_percent_once(value: &str) -> Option<String> {
+    let bytes = value.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            let high = hex_digit(*bytes.get(index + 1)?)?;
+            let low = hex_digit(*bytes.get(index + 2)?)?;
+            decoded.push((high << 4) | low);
+            index += 3;
+        } else {
+            decoded.push(bytes[index]);
+            index += 1;
+        }
+    }
+    String::from_utf8(decoded).ok()
+}
+
+fn hex_digit(value: u8) -> Option<u8> {
+    match value {
+        b'0'..=b'9' => Some(value - b'0'),
+        b'a'..=b'f' => Some(value - b'a' + 10),
+        b'A'..=b'F' => Some(value - b'A' + 10),
+        _ => None,
+    }
 }
 
 fn validate_selected_linked_origin(base: &Url) -> Result<(), BioMcpError> {
@@ -559,6 +618,8 @@ mod tests {
             "/articles/instance/123457/not-bin/no.xlsx",
             "https://user:secret@pmc.ncbi.nlm.nih.gov/articles/instance/123457/bin/no.xlsx",
             "/articles/instance/123457/bin/%2e%2e%2fno.xlsx",
+            "/articles/instance/123457/bin/%252e%252e/secret.pdf",
+            "/articles/instance/123457/bin/%252fsecret.pdf",
         ] {
             assert!(client.linked_target(raw, false).is_err(), "accepted {raw}");
         }

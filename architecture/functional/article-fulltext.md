@@ -160,9 +160,9 @@ and supplementary-material label/caption/filename metadata. Float rendering
 keeps document order and deduplicates root floats by `id` when the same figure
 or table was already rendered from the body.
 
-Supplementary-material filenames and links are display-only facts from the XML;
-The converter remains network-free; the separate asset resolver may fetch recognized
-JATS/PMC-HTML supplement links under its URL and byte budgets. Tables
+Supplementary-material filenames and links remain display facts for the network-free
+converter. The separate asset resolver may fetch recognized JATS/PMC-HTML supplement
+links under its URL and byte budgets. Tables
 with `rowspan` or `colspan` keep their caption and render an explicit
 `*[complex table omitted: N×M, merged cells]*` marker instead of silently
 dropping the grid; full span flattening remains out of scope.
@@ -196,14 +196,15 @@ because local delivery, not provider availability, failed.
 - `src/entities/article/fulltext.rs`: identity bridge, content ladder,
   eligibility policy, fulltext source labels, cache key, and saved artifact
   assignment.
-- `src/entities/article/assets.rs`: typed PMC OA → Europe PMC → Figshare asset
-  outcomes shared by manifests and raw byte retrieval, final absence/failure
-  classification, retained PMC license provenance, asset classification, hashes,
-  JATS caption matching, omitted coverage, and retrieval handles.
+- `src/entities/article/assets.rs`: merged PMC OA, Europe PMC, recognized linked
+  JATS/PMC HTML, and eligible Figshare outcomes shared by manifests and raw byte
+  retrieval; final absence/failure classification; retained reuse provenance;
+  identity/hash deduplication; typed named coverage; and stable retrieval handles.
 - `src/sources/europepmc.rs`, `src/sources/ncbi_efetch.rs`,
-  `src/sources/pmc_oa.rs`, and `src/sources/ncbi_idconv.rs`: upstream
-  transport for direct source APIs, including bounded in-memory Europe PMC ZIP
-  validation and staged PMC OA manifest/archive acquisition.
+  `src/sources/pmc_oa.rs`, `src/sources/pmc_article.rs`, and
+  `src/sources/ncbi_idconv.rs`: upstream transport for direct source APIs,
+  including bounded Europe PMC ZIP, PMC OA archive, PMC HTML, and linked-asset
+  acquisition behind provider URL policy.
 - `src/sources/figshare.rs`: Figshare/AACR Figshare URL parsing, article search
   and article API metadata normalization, safe file filtering, and bounded
   file-byte downloads including `202 Accepted` cold-storage staging retries.
