@@ -1135,7 +1135,6 @@ def test_ticket_379_disease_discover_specs_prune_redundant_live_blocks() -> None
         "spec/entity/disease.md",
         2,
         (
-            "Disease Normalization & Search",
             "Genes & Diagnostics",
             "JSON Pivots",
         ),

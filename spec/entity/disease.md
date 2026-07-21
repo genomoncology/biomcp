@@ -28,7 +28,23 @@ cargo test --lib ticket_377_disease_renderer_envelope_contracts -- --nocapture \
 ## Disease Normalization & Search
 
 Direct disease search should still surface the canonical melanoma row with its
-MONDO identifier visible in the result table.
+MONDO identifier visible in the result table. Supported inheritance and onset
+filters remain accepted when narrowing that search; a live provider may
+legitimately return an empty filtered page.
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci --json search disease -q melanoma --inheritance "autosomal dominant" --limit 1 --no-fallback \
+  | jq 'has("results") and (.results | type == "array")' \
+  | mustmatch 'true'
+```
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci --json search disease -q melanoma --onset adult --limit 1 --no-fallback \
+  | jq 'has("results") and (.results | type == "array")' \
+  | mustmatch 'true'
+```
 
 ## Synonym Rescue
 

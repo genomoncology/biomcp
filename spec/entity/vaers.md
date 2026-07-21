@@ -75,3 +75,13 @@ a fake field that returns empty buckets.
 ../../tools/biomcp-ci search adverse-event --drug pembrolizumab --count total 2>&1 | mustmatch like '--count total is not a count field
 patient.reaction.reactionmeddrapt'
 ```
+
+A supported reaction alias still reaches the live aggregation path and names the
+requested field without pinning volatile bucket values or counts.
+
+```bash
+set -o pipefail
+../../tools/biomcp-ci --json search adverse-event --drug pembrolizumab --count reaction --limit 1 \
+  | jq '.count_field == "reaction" and (.buckets | length) > 0' \
+  | mustmatch 'true'
+```

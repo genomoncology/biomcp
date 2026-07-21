@@ -18,10 +18,48 @@ fn decode_response_and_map_terms_applies_limit() {
     )
     .unwrap();
 
-    let rows = GProfilerClient::map_enrich_response(response, 1);
+    let enrichment = GProfilerClient::map_enrich_response(response, 1);
 
-    assert_eq!(rows.len(), 1);
-    assert_eq!(rows[0].native.as_deref(), Some("R-HSA-1"));
+    assert_eq!(enrichment.terms.len(), 1);
+    assert_eq!(enrichment.terms[0].native.as_deref(), Some("R-HSA-1"));
+    assert!(enrichment.unresolved_genes.is_empty());
+}
+
+#[test]
+fn map_enrich_response_preserves_failed_genes_and_term_limit() {
+    let response: GProfilerResponse = GProfilerClient::decode_json_response(
+        StatusCode::OK,
+        br#"{
+            "result": [
+                {"native": "R-HSA-1", "name": "A", "source": "REAC", "p_value": 0.01},
+                {"native": "R-HSA-2", "name": "B", "source": "REAC", "p_value": 0.02}
+            ],
+            "meta": {"genes_metadata": {"failed": ["ZZQQXX1", "ZZQQXX2"]}}
+        }"#,
+    )
+    .unwrap();
+
+    let enrichment = GProfilerClient::map_enrich_response(response, 1);
+
+    assert_eq!(enrichment.terms.len(), 1);
+    assert_eq!(enrichment.unresolved_genes, ["ZZQQXX1", "ZZQQXX2"]);
+}
+
+#[test]
+fn map_enrich_response_preserves_all_failed_genes_without_terms() {
+    let response: GProfilerResponse = GProfilerClient::decode_json_response(
+        StatusCode::OK,
+        br#"{
+            "result": [],
+            "meta": {"genes_metadata": {"failed": ["ZZQQXX1", "ZZQQXX2"]}}
+        }"#,
+    )
+    .unwrap();
+
+    let enrichment = GProfilerClient::map_enrich_response(response, 10);
+
+    assert!(enrichment.terms.is_empty());
+    assert_eq!(enrichment.unresolved_genes, ["ZZQQXX1", "ZZQQXX2"]);
 }
 
 #[test]

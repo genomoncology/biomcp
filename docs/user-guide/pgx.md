@@ -16,16 +16,17 @@ By drug:
 biomcp search pgx -d codeine
 ```
 
-With evidence and CPIC level filters:
+With guideline-name and CPIC level filters:
 
 ```bash
-biomcp search pgx -g CYP2D6 --cpic-level A --evidence --limit 10
+biomcp search pgx -g CYP2D6 --cpic-level A --evidence guideline --limit 10
 ```
 
 Key flags: `-g/--gene` for the gene symbol, `-d/--drug` for the therapy,
-`--cpic-level` for CPIC levels `A|B|C|D`, `--pgx-testing` for testing-related
-guidance, and `--evidence` when you want evidence summaries alongside the main
-results. Use `--limit` and `--offset` for bounded paging.
+`--cpic-level` for CPIC levels `A|B|C|D`, and `--pgx-testing` for `Actionable PGx`,
+`Informative PGx`, `No Clinical PGx`, `Testing Recommended`, or `Testing Required`.
+`--evidence` remains a best-effort free-text match over guideline names or CPIC
+levels. Use `--limit` and `--offset` for bounded paging.
 
 ## Get PGX records
 

@@ -49,7 +49,7 @@ pub struct AdverseEventSearchArgs {
     /// Reporter qualification filter
     #[arg(long)]
     pub reporter: Option<String>,
-    /// Server-side count aggregation field
+    /// FAERS aggregation field: reaction/reactionmeddrapt, patient.reaction.reactionmeddrapt[.exact], patient.drug.medicinalproduct[.exact], patient.drug.openfda.generic_name[.exact], patient.drug.openfda.brand_name[.exact], patient.patientsex, patient.patientonsetage, serious, seriousnessdeath/hospitalization/lifethreatening/disabling/congenitalanomali/other, patient.reaction.reactionoutcome, or primarysource.qualification
     #[arg(long)]
     pub count: Option<String>,
     /// Query type: faers (default search path), recall, or device

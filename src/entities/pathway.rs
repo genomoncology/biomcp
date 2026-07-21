@@ -586,8 +586,9 @@ async fn add_pathway_enrichment(
     };
 
     match client.enrich_genes(&genes, 10).await {
-        Ok(rows) => {
-            pathway.enrichment = rows
+        Ok(enrichment) => {
+            pathway.enrichment = enrichment
+                .terms
                 .into_iter()
                 .filter_map(|r| {
                     Some(PathwayEnrichment {

@@ -201,12 +201,22 @@ biomcp search gene BRAF --limit 10 --offset 0
 biomcp search disease -q melanoma --source mondo --limit 10 --offset 0
 ```
 
+Inheritance accepts named patterns (including broad `dominant`/`recessive`) or HPO
+inheritance IDs. Onset accepts antenatal through late onset; `infancy` normalizes
+to `infantile`. Unsupported `--inheritance` and `--onset` values fail locally with
+`invalid_argument`. Run `biomcp list disease` for the complete catalogs.
+
 ### PGx
 
 ```bash
 biomcp search pgx -g CYP2D6 --limit 10
 biomcp search pgx -d warfarin --limit 10
 ```
+
+`--pgx-testing` accepts `Actionable PGx`, `Informative PGx`, `No Clinical PGx`,
+`Testing Recommended`, or `Testing Required`; unsupported values fail locally with
+`invalid_argument`. `--evidence` is a best-effort free-text match over guideline
+names or CPIC levels.
 
 ### Phenotype (Monarch semsim)
 
@@ -384,6 +394,17 @@ biomcp search adverse-event "MMR vaccine" --source vaers --limit 5
 biomcp search adverse-event --type device --manufacturer Medtronic --limit 5
 biomcp search adverse-event --type device --product-code PQP --limit 5
 ```
+
+FAERS `--count` accepts `reaction` and `reactionmeddrapt` as aliases for
+`patient.reaction.reactionmeddrapt.exact`; `patient.reaction.reactionmeddrapt`
+and its `.exact` form; `patient.drug.medicinalproduct[.exact]`;
+`patient.drug.openfda.generic_name[.exact]`;
+`patient.drug.openfda.brand_name[.exact]`; `patient.patientsex`;
+`patient.patientonsetage`; `serious`; `seriousnessdeath`;
+`seriousnesshospitalization`; `seriousnesslifethreatening`;
+`seriousnessdisabling`; `seriousnesscongenitalanomali`; `seriousnessother`;
+`patient.reaction.reactionoutcome`; and `primarysource.qualification`. Unsupported
+`--count` fields fail locally with `invalid_argument`.
 
 ## Get command families
 
@@ -630,6 +651,10 @@ biomcp get adverse-event 10222779 concomitant guidance all
 biomcp enrich BRAF,KRAS,NRAS --limit 10
 biomcp enrich BRAF,KRAS,NRAS --limit 10 --json
 ```
+
+Enrichment JSON always includes `unresolved_genes`; fully resolved input returns
+`[]`. Markdown prints `Unresolved genes:` before the result table or empty-result
+message so failed symbols are not mistaken for confident empty evidence.
 
 ## Batch mode
 

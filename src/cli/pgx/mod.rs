@@ -16,10 +16,10 @@ pub struct PgxSearchArgs {
     /// Filter by CPIC level (A/B/C/D)
     #[arg(long = "cpic-level")]
     pub cpic_level: Option<String>,
-    /// Filter by PGx testing recommendation
+    /// Testing recommendation: Actionable PGx, Informative PGx, No Clinical PGx, Testing Recommended, or Testing Required
     #[arg(long = "pgx-testing")]
     pub pgx_testing: Option<String>,
-    /// Filter by evidence level (best-effort)
+    /// Best-effort match over guideline names or CPIC levels
     #[arg(long)]
     pub evidence: Option<String>,
     /// Maximum results, 1-50 (default: 10)
