@@ -367,12 +367,9 @@ fn remove_managed_path(root: &Path, relative: &str) -> Result<(), BioMcpError> {
         Ok(metadata) if metadata.file_type().is_symlink() || metadata.is_file() => {
             fs::remove_file(&path)?;
         }
-        Ok(metadata) if metadata.is_dir() => {
-            fs::remove_dir_all(&path)?;
-        }
         Ok(_) => {
             return Err(BioMcpError::InvalidArgument(
-                "Unsupported managed filesystem object".into(),
+                "Managed skill path is not a regular file".into(),
             ));
         }
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),

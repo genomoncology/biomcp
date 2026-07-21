@@ -101,6 +101,13 @@ pub(super) fn sha256_hex(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
+fn is_sha256(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
 pub(super) fn validate_managed_path(path: &str) -> Result<PathBuf, BioMcpError> {
     if path.is_empty() || path == MANIFEST_NAME || path.contains('\\') {
         return Err(BioMcpError::InvalidArgument(
@@ -181,13 +188,21 @@ pub(super) fn parse_valid_manifest(target: &Path) -> Result<Option<SkillManifest
     let Ok(manifest) = serde_json::from_slice::<SkillManifest>(&bytes) else {
         return Ok(None);
     };
-    if manifest.schema_version != MANIFEST_SCHEMA_VERSION {
+    if manifest.schema_version != MANIFEST_SCHEMA_VERSION
+        || semver::Version::parse(&manifest.biomcp_version).is_err()
+        || chrono::DateTime::parse_from_rfc3339(&manifest.installed_at).is_err()
+        || !is_sha256(&manifest.render_sha256)
+        || manifest.managed_files.is_empty()
+    {
         return Ok(None);
     }
-    for path in manifest.managed_files.keys() {
-        if validate_managed_path(path).is_err() {
+    for (path, digest) in &manifest.managed_files {
+        if validate_managed_path(path).is_err() || !is_sha256(digest) {
             return Ok(None);
         }
+    }
+    if manifest.managed_files.get("SKILL.md") != Some(&manifest.render_sha256) {
+        return Ok(None);
     }
     Ok(Some(manifest))
 }

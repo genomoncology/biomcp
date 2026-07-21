@@ -86,15 +86,66 @@ fn managed_status_distinguishes_current_unmanaged_stale_and_modified() -> Result
     fs::remove_file(&sidecar)?;
     assert_eq!(status_state(&target), "unmanaged");
 
-    fs::write(&sidecar, &original_manifest)?;
+    fs::write(&sidecar, b"not JSON")?;
+    assert_eq!(status_state(&target), "unmanaged");
+
     let mut manifest: serde_json::Value = serde_json::from_slice(&original_manifest)?;
+    manifest["schema_version"] = serde_json::Value::from(2);
+    fs::write(&sidecar, serde_json::to_vec_pretty(&manifest)?)?;
+    assert_eq!(status_state(&target), "unmanaged");
+
+    manifest = serde_json::from_slice(&original_manifest)?;
     manifest["biomcp_version"] = serde_json::Value::String("0.0.0".into());
     fs::write(&sidecar, serde_json::to_vec_pretty(&manifest)?)?;
     assert_eq!(status_state(&target), "stale");
 
     fs::write(&sidecar, &original_manifest)?;
+    fs::remove_file(target.join("jq-examples.md"))?;
+    assert_eq!(status_state(&target), "locally_modified");
+
+    fs::write(
+        target.join("jq-examples.md"),
+        crate::skill_assets::bytes("jq-examples.md")?,
+    )?;
     fs::write(target.join("SKILL.md"), "locally changed")?;
     assert_eq!(status_state(&target), "locally_modified");
+    Ok(())
+}
+
+#[test]
+fn malformed_manifest_cannot_authorize_removing_unrelated_files() -> Result<(), BioMcpError> {
+    let paths = TestPaths::new("malformed-manifest-removal");
+    let target = paths.cwd.join("skills/biomcp");
+    install_to_dir(&target, true)?;
+    fs::write(target.join("notes.txt"), "keep me")?;
+
+    let sidecar = target.join(MANIFEST_NAME);
+    let mut manifest: serde_json::Value = serde_json::from_slice(&fs::read(&sidecar)?)?;
+    manifest["managed_files"]["notes.txt"] = serde_json::Value::String("not-a-digest".into());
+    fs::write(&sidecar, serde_json::to_vec_pretty(&manifest)?)?;
+
+    assert_eq!(status_state(&target), "unmanaged");
+    install_to_dir(&target, true)?;
+    assert_eq!(fs::read_to_string(target.join("notes.txt"))?, "keep me");
+    assert_eq!(status_state(&target), "current");
+    Ok(())
+}
+
+#[test]
+fn force_rejects_a_directory_at_a_manifest_recorded_file_path() -> Result<(), BioMcpError> {
+    let paths = TestPaths::new("managed-file-became-directory");
+    let target = paths.cwd.join("skills/biomcp");
+    install_to_dir(&target, true)?;
+    fs::remove_file(target.join("SKILL.md"))?;
+    fs::create_dir(target.join("SKILL.md"))?;
+    fs::write(target.join("SKILL.md/keep.txt"), "keep me")?;
+
+    let error = install_to_dir(&target, true).expect_err("directory must not be deleted");
+    assert!(error.to_string().contains("not a regular file"));
+    assert_eq!(
+        fs::read_to_string(target.join("SKILL.md/keep.txt"))?,
+        "keep me"
+    );
     Ok(())
 }
 
