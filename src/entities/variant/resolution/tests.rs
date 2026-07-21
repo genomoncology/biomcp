@@ -156,6 +156,72 @@ fn parse_variant_id_suggests_search_for_complex_alteration_text() {
     assert!(message.contains("biomcp search variant \"EGFR Exon 19 Deletion\""));
 }
 
+#[test]
+fn structured_article_identity_accepts_refseq_forms_and_preserves_chr_compatibility() {
+    let components: VariantArticleRequest = serde_json::from_value(serde_json::json!({
+        "gene": " ATM ",
+        "transcript": " NM_000051.4 ",
+        "coding": " c.1066-6T>G ",
+        "accession": " NC_000011.10 ",
+        "build": " GRCh38 ",
+        "position": 108248927,
+        "ref": " T ",
+        "alt": " G "
+    }))
+    .expect("component request");
+    let genomic: VariantArticleRequest = serde_json::from_value(serde_json::json!({
+        "gene": "ATM",
+        "transcript": "NM_000051.4",
+        "coding": "c.1066-6T>G",
+        "genomic": " NC_000011.10:g.108248927T>G ",
+        "build": "GRCh38"
+    }))
+    .expect("genomic request");
+    let component_identity = components.validate_identity().expect("valid components");
+    assert_eq!(
+        component_identity,
+        genomic.validate_identity().expect("valid HGVS")
+    );
+    assert!(component_identity.is_authoritative_refseq());
+    assert_eq!(component_identity.gene.as_deref(), Some("ATM"));
+
+    let chr_request: VariantArticleRequest = serde_json::from_value(serde_json::json!({
+        "genomic": "chr7:g.140453136A>T",
+        "build": "GRCh38"
+    }))
+    .expect("chr request");
+    assert!(chr_request.validate_identity().is_ok());
+}
+
+#[test]
+fn structured_article_identity_requires_refseq_build_and_rejects_duplicate_components() {
+    let without_build: VariantArticleRequest = serde_json::from_value(serde_json::json!({
+        "genomic": "NC_000011.10:g.108248927T>G"
+    }))
+    .expect("request");
+    assert!(
+        without_build
+            .validate_identity()
+            .unwrap_err()
+            .to_string()
+            .contains("explicit")
+    );
+
+    let duplicate: VariantArticleRequest = serde_json::from_value(serde_json::json!({
+        "genomic": "NC_000011.10:g.108248927T>G",
+        "build": "GRCh38",
+        "position": 108248927
+    }))
+    .expect("request");
+    assert!(
+        duplicate
+            .validate_identity()
+            .unwrap_err()
+            .to_string()
+            .contains("cannot combine")
+    );
+}
+
 fn source_identity() -> SourceVariantIdentity {
     SourceVariantIdentity {
         genomic_id: "GRCh38:chr7:g.140453136A>T".into(),

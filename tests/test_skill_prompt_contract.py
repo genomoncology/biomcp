@@ -133,6 +133,11 @@ EXPECTED_PLAYBOOK_MARKERS = {
         "biomcp --json get article 26951660 assets",
         "biomcp article citations 26951660 --limit 5",
         "biomcp article references 26951660 --limit 5",
+        '"accession":"NC_000011.10"',
+        '"build":"GRCh38"',
+        "caller_supplied",
+        "provider_validation",
+        "no liftover",
     ],
 }
 REMOVED_ACTIVE_SLUGS = [

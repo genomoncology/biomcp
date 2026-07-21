@@ -21,6 +21,7 @@ from urllib.parse import parse_qs, urlparse
 
 ready = Path(sys.argv[1])
 request_log = Path(sys.argv[2])
+scenario = sys.argv[3]
 
 BRAF_ANNOTATION_PMID = "6010001"
 BRAF_PROTEIN_ALIAS_PMID = "6010002"
@@ -31,6 +32,12 @@ BRAF_GENOMIC_ALIAS_PMID = "6010006"
 BRAF_SECOND_ANNOTATION_PMID = "6010007"
 BRAF_PUBMED_ALIAS_PMID = "6010008"
 MYD88_PMID = "24534189"
+ATM_CODING_PMID = "6050001"
+ATM_TRANSCRIPT_PMID = "6050002"
+ATM_GENOMIC_PMID = "6050003"
+PALB2_CODING_PMID = "6050004"
+PALB2_TRANSCRIPT_PMID = "6050005"
+PALB2_GENOMIC_PMID = "6050006"
 
 
 def send_json(handler, status, payload):
@@ -82,6 +89,12 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path.startswith("/v1/variant/"):
+            if scenario == "citation-stale-json":
+                send_json(self, 404, {"error": "No variant found"})
+                return
+            if "NC_000011.10" in parsed.path or "NC_000016.10" in parsed.path:
+                send_json(self, 404, {"error": "No variant found"})
+                return
             send_json(self, 200, {
                 "_id": "chr7:g.140453136A>T",
                 "dbnsfp": {
@@ -125,6 +138,10 @@ class Handler(BaseHTTPRequestHandler):
                 })
             if query == "MYD88":
                 rows.append({"_id": "@GENE_MYD88", "biotype": "Gene", "name": "MYD88"})
+            if query == "ATM":
+                rows.append({"_id": "@GENE_ATM", "biotype": "Gene", "name": "ATM"})
+            if query == "PALB2":
+                rows.append({"_id": "@GENE_PALB2", "biotype": "Gene", "name": "PALB2"})
             if query in {"MYD88 S219C", "S219C", "p.S219C"}:
                 rows.append({
                     "_id": "@VARIANT_p.S219C_MYD88_human",
@@ -199,6 +216,24 @@ class Handler(BaseHTTPRequestHandler):
                 "chr7:g.140453136A>T": [
                     pubtator_result(BRAF_GENOMIC_ALIAS_PMID, "BRAF genomic alias fixture article"),
                 ],
+                "ATM c.1066-6T>G": [
+                    pubtator_result(ATM_CODING_PMID, "ATM coding alias fixture article"),
+                ],
+                "NM_000051.4:c.1066-6T>G": [
+                    pubtator_result(ATM_TRANSCRIPT_PMID, "ATM transcript alias fixture article"),
+                ],
+                "NC_000011.10:g.108248927T>G": [
+                    pubtator_result(ATM_GENOMIC_PMID, "ATM genomic alias fixture article"),
+                ],
+                "PALB2 c.3350+5G>A": [
+                    pubtator_result(PALB2_CODING_PMID, "PALB2 coding alias fixture article"),
+                ],
+                "NM_024675.4:c.3350+5G>A": [
+                    pubtator_result(PALB2_TRANSCRIPT_PMID, "PALB2 transcript alias fixture article"),
+                ],
+                "NC_000016.10:g.23607859C>T": [
+                    pubtator_result(PALB2_GENOMIC_PMID, "PALB2 genomic alias fixture article"),
+                ],
             }
             if text in lexical_rows:
                 rows = lexical_rows[text]
@@ -265,7 +300,7 @@ ready.write_text(f"http://127.0.0.1:{server.server_port}", encoding="utf-8")
 server.serve_forever()
 PY
 
-uv run --no-sync python3 "$server_py" "$ready_file" "$request_log" &
+uv run --no-sync python3 "$server_py" "$ready_file" "$request_log" "$scenario" &
 server_pid=$!
 trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 
@@ -433,6 +468,78 @@ case "$scenario" in
           citations: (any($batch._meta.next_commands[]; startswith("biomcp article citations ")))
         }
       }'
+    ;;
+  citation-stale-json)
+    "$binary" --json variant articles "BRAF p.V600E" --limit 3 \
+      | jq '{
+          resolution: .resolution.status,
+          source_citation: ([.source_status[] | select(.route == "source_citation" and .source == "myvariant") | {status}][0]),
+          complete,
+          truncated
+        }'
+    ;;
+  refseq-not-found-json)
+    refseq_input="${repo_root}/spec/fixtures/variant-article-refseq-input.json"
+    batch="$($binary --json variant articles --input "$refseq_input" --limit 10 --debug-plan)"
+    jq -n \
+      --argjson batch "$batch" \
+      'def expected_aliases:
+         if .requested_variant.gene == "ATM" then
+           ["ATM c.1066-6T>G", "NC_000011.10:g.108248927T>G", "NM_000051.4:c.1066-6T>G"]
+         else
+           ["NC_000016.10:g.23607859C>T", "NM_024675.4:c.3350+5G>A", "PALB2 c.3350+5G>A"]
+         end;
+       def route_queries: [.debug_plan.routes[] | {route, queries}] | sort_by(.route);
+       def source_citation_status:
+         [.source_status[] | select(.route == "source_citation" and .source == "myvariant") | {status, detail}][0];
+       def exact_result_shape:
+         [.results[] | {matched_aliases, routes, sources}] | sort_by(.matched_aliases, .routes, .sources);
+       ($batch.items[] | select(.request_id == "atm-grch38")) as $atm_components
+       | ($batch.items[] | select(.request_id == "atm-grch38-genomic")) as $atm_genomic
+       | {
+           items: [
+             $batch.items[]
+             | select(.request_id == "atm-grch38" or .request_id == "palb2-grch38")
+             | . as $item
+             | ($item | expected_aliases) as $expected
+             | {
+                 request_id,
+                 requested_variant,
+                 resolution,
+                 complete,
+                 truncated,
+                 source_citation: source_citation_status,
+                 literal_exact_aliases: ([.results[].matched_aliases[]] | unique),
+                 only_literal_exact_aliases: (([.results[].matched_aliases[]] | unique) == $expected),
+                 literal_exact_route_queries: ([.debug_plan.routes[] | select(.route == "exact_lexical") | .queries[]] | unique),
+                 only_literal_route_queries: (([.debug_plan.routes[].queries[]] | unique) - $expected | length == 0),
+                 literal_route_source_provenance: all($expected[];
+                   . as $alias
+                   | any($item.results[];
+                     (.matched_aliases == [$alias])
+                     and (.routes == ["exact_lexical"])
+                     and (.sources == ["pubtator"])))
+               }
+           ],
+           encoding_equivalence: {
+             same_requested_variant: ($atm_components.requested_variant == $atm_genomic.requested_variant),
+             expected_normalized_aliases: ($atm_components.resolution.normalized_aliases == {
+               protein_changes: [],
+               coding_changes: ["c.1066-6T>G"],
+               genomic_ids: ["NC_000011.10:g.108248927T>G"],
+               rsids: []
+             }),
+             same_normalized_aliases: ($atm_components.resolution.normalized_aliases == $atm_genomic.resolution.normalized_aliases),
+             same_route_queries: (($atm_components | route_queries) == ($atm_genomic | route_queries)),
+             same_public_behavior: (
+               $atm_components.resolution == $atm_genomic.resolution
+               and $atm_components.complete == $atm_genomic.complete
+               and $atm_components.truncated == $atm_genomic.truncated
+               and ($atm_components | source_citation_status) == ($atm_genomic | source_citation_status)
+               and ($atm_components | exact_result_shape) == ($atm_genomic | exact_result_shape)
+             )
+           }
+         }'
     ;;
   debug-plan-json)
     ordinary_single="$($binary --json variant articles "BRAF p.V600E" --limit 3)"

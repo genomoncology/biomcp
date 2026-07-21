@@ -385,6 +385,120 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. healthy-empty-json
 }
 ```
 
+## Caller-supplied RefSeq identities remain exact when MyVariant has no record
+
+<!-- mustmatch-lint: skip -->
+
+A complete versioned RefSeq chromosome identity and explicit assembly is an exact
+caller assertion even when MyVariant has no matching row. Both decomposed fields
+and genomic HGVS canonicalize to the same public identity shape; exact literature
+routes retain the literal transcript, coding, and genomic aliases without
+inventing chromosome coordinates or provider confirmation.
+
+```bash run id=variant-article-refseq-not-found exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-json
+```
+
+```json expect=variant-article-refseq-not-found contains
+{
+  "items": [
+    {
+      "request_id": "atm-grch38",
+      "requested_variant": {
+        "gene": "ATM",
+        "transcript": "NM_000051.4",
+        "coding_change": "c.1066-6T>G",
+        "genomic_accession": "NC_000011.10",
+        "genome_build": "GRCh38",
+        "position": 108248927,
+        "reference": "T",
+        "alternate": "G"
+      },
+      "resolution": {
+        "status": "resolved",
+        "basis": "caller_supplied",
+        "exhaustive": true,
+        "provider_validation": {
+          "source": "myvariant",
+          "status": "not_found",
+          "matched_alias": null,
+          "contradictory_field": null
+        }
+      },
+      "complete": true,
+      "truncated": false,
+      "source_citation": {
+        "status": "skipped",
+        "detail": "no compatible MyVariant record"
+      },
+      "literal_exact_aliases": [
+        "ATM c.1066-6T>G",
+        "NC_000011.10:g.108248927T>G",
+        "NM_000051.4:c.1066-6T>G"
+      ],
+      "only_literal_exact_aliases": true,
+      "literal_exact_route_queries": [
+        "ATM c.1066-6T>G",
+        "NC_000011.10:g.108248927T>G",
+        "NM_000051.4:c.1066-6T>G"
+      ],
+      "only_literal_route_queries": true,
+      "literal_route_source_provenance": true
+    },
+    {
+      "request_id": "palb2-grch38",
+      "requested_variant": {
+        "gene": "PALB2",
+        "transcript": "NM_024675.4",
+        "coding_change": "c.3350+5G>A",
+        "genomic_accession": "NC_000016.10",
+        "genome_build": "GRCh38",
+        "position": 23607859,
+        "reference": "C",
+        "alternate": "T"
+      },
+      "resolution": {
+        "status": "resolved",
+        "basis": "caller_supplied",
+        "exhaustive": true,
+        "provider_validation": {
+          "source": "myvariant",
+          "status": "not_found",
+          "matched_alias": null,
+          "contradictory_field": null
+        }
+      },
+      "complete": true,
+      "truncated": false,
+      "source_citation": {
+        "status": "skipped",
+        "detail": "no compatible MyVariant record"
+      },
+      "literal_exact_aliases": [
+        "NC_000016.10:g.23607859C>T",
+        "NM_024675.4:c.3350+5G>A",
+        "PALB2 c.3350+5G>A"
+      ],
+      "only_literal_exact_aliases": true,
+      "literal_exact_route_queries": [
+        "NC_000016.10:g.23607859C>T",
+        "NM_024675.4:c.3350+5G>A",
+        "PALB2 c.3350+5G>A"
+      ],
+      "only_literal_route_queries": true,
+      "literal_route_source_provenance": true
+    }
+  ],
+  "encoding_equivalence": {
+    "same_requested_variant": true,
+    "expected_normalized_aliases": true,
+    "same_normalized_aliases": true,
+    "same_route_queries": true,
+    "same_public_behavior": true
+  }
+}
+```
+
 ## Batch Variant Literature Is Ordered and Compact
 
 <!-- mustmatch-lint: skip -->

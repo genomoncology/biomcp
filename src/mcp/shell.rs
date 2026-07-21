@@ -978,6 +978,20 @@ mod tests {
         assert_eq!(schema["properties"]["limit"]["maximum"], 50);
     }
 
+    #[test]
+    fn typed_variant_articles_preserves_article_resolution_fields_and_nullability() {
+        let text = redact_mcp_json_text(
+            r#"{"items":[{"resolution":{"status":"resolved","basis":"caller_supplied","exhaustive":true,"normalized_aliases":{"protein_changes":[],"coding_changes":["c.1066-6T>G"],"genomic_ids":["NC_000011.10:g.108248927T>G"],"rsids":[]},"provider_validation":{"source":"myvariant","status":"not_found","matched_alias":null,"contradictory_field":null}}}]}"#,
+        )
+        .expect("valid MCP JSON");
+        let response: serde_json::Value = serde_json::from_str(&text).expect("response JSON");
+        let resolution = &response["items"][0]["resolution"];
+        assert_eq!(resolution["basis"], "caller_supplied");
+        assert_eq!(resolution["provider_validation"]["status"], "not_found");
+        assert!(resolution["provider_validation"]["matched_alias"].is_null());
+        assert!(resolution["provider_validation"]["contradictory_field"].is_null());
+    }
+
     #[tokio::test]
     async fn typed_variant_articles_executes_in_memory_without_stdin_or_paths() {
         let items = serde_json::from_value(serde_json::json!([

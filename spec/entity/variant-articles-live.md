@@ -25,6 +25,33 @@ invent command grammar.
 }
 ```
 
+## G5 v2 authoritative identity canary
+
+<!-- mustmatch-lint: skip -->
+
+The frozen seven-identity batch checks assembly-aware exact resolution rather
+than literature recall or clinical interpretation. Every item must resolve,
+execute an exact route with a route-tied literal alias, and report source
+coverage plus terminal state against real providers.
+
+```bash run id=g5-v2-identity-live-canary exit=0 timeout=180
+bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
+```
+
+```json expect=g5-v2-identity-live-canary contains
+{
+  "identity_readiness": {
+    "expected_request_ids": true,
+    "total": 7,
+    "resolved": 7,
+    "with_exact_route": 7,
+    "with_route_tied_alias": 7,
+    "with_source_status": 7,
+    "with_terminal_state": 7
+  }
+}
+```
+
 ## Seven-Variant Recall Canary
 
 <!-- mustmatch-lint: skip -->

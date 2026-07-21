@@ -251,6 +251,29 @@ positional ID. `--debug-plan` is JSON-only and reports normalized routes,
 provider work, ranking inputs, and the fixed item/request budgets. MCP callers
 use the typed, in-memory `variant_articles` tool rather than server-local paths.
 
+Assembly-aware items accept either `genomic: "NC_...:g...."` plus `build`, or
+`accession`, `position`, `ref`, and `alt` plus `build`; `GRCh37` or `GRCh38` is
+required for versioned RefSeq, while existing `chrN` input remains valid. Exact
+RefSeq routes use only caller-present transcript/coding, gene/coding, and RefSeq
+genomic aliases. BioMCP performs no liftover, accession-to-`chr` conversion,
+strand flip, transcript selection, or inferred coordinate expansion.
+
+`caller_supplied` means BioMCP accepted the supplied fields as one caller
+assertion; it validated syntax but did not establish cross-coordinate
+equivalence. `resolution.basis` is `caller_supplied`, `provider_confirmed`, or
+`null`. `provider_validation` always names MyVariant and reports `confirmed`,
+`not_found`, `indeterminate`, `contradictory`, or `unavailable`; `matched_alias`
+is non-null only for confirmation and `contradictory_field` only for a
+contradiction. Invalid batch items instead retain `resolution: null`.
+
+| Provider state | Resolution / basis | Exact work and terminal state |
+|---|---|---|
+| `confirmed` | resolved / provider-confirmed | exact routes; source citation runs |
+| `not_found` | RefSeq resolved / caller-supplied | exact routes; citation skipped; not degraded |
+| `indeterminate` | RefSeq resolved / caller-supplied | exact routes; incomplete, unknown total |
+| `contradictory` | unresolved / null | no exact route; optional labelled fallback |
+| `unavailable` | RefSeq resolved / caller-supplied | exact routes; incomplete and truncated |
+
 `biomcp variant normalize ... --json` always writes parseable JSON on exit 0. If no provider returns a normalized form, the payload uses `status: "no_result"`, an empty `results` list, a clear `message`, per-service details, and `_meta.next_commands`.
 
 ```bash

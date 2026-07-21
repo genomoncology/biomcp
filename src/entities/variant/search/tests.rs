@@ -206,3 +206,241 @@ fn exact_aggregation_marks_missing_identity_evidence_indeterminate() {
     ));
     assert!(retained.is_empty());
 }
+
+fn refseq_request() -> RequestedVariantIdentity {
+    RequestedVariantIdentity {
+        gene: Some("ATM".into()),
+        coding_change: Some("c.1066-6T>G".into()),
+        transcript: Some("NM_000051.4".into()),
+        genomic_accession: Some("NC_000011.10".into()),
+        genome_build: Some("GRCh38".into()),
+        position: Some(108248927),
+        reference: Some("T".into()),
+        alternate: Some("G".into()),
+        ..Default::default()
+    }
+}
+
+fn refseq_hit(id: &str, gene: Option<&str>, coding: Option<&str>) -> MyVariantHit {
+    serde_json::from_value(serde_json::json!({
+        "_id": id,
+        "dbnsfp": {
+            "genename": gene,
+            "hgvsc": coding
+        }
+    }))
+    .expect("valid MyVariant hit")
+}
+
+fn scan(
+    requested: &RequestedVariantIdentity,
+    hits: Vec<MyVariantHit>,
+    exhaustive: bool,
+) -> ProviderScan {
+    ProviderScan {
+        candidates: hits
+            .into_iter()
+            .map(|hit| provider_candidate(requested, hit))
+            .collect(),
+        exhaustive,
+        available: true,
+    }
+}
+
+#[test]
+fn article_provider_aggregation_follows_precedence_and_refseq_fallback_states() {
+    let requested = refseq_request();
+    let compatible = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248927T>G",
+        Some("ATM"),
+        Some("NM_000051.4:c.1066-6T>G"),
+    );
+    let contradictory = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248928T>G",
+        Some("ATM"),
+        Some("NM_000051.4:c.1066-6T>G"),
+    );
+
+    let confirmed = article_resolution_context(
+        requested.clone(),
+        scan(
+            &requested,
+            vec![contradictory.clone(), compatible.clone()],
+            true,
+        ),
+    );
+    assert_eq!(
+        confirmed.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Confirmed
+    );
+    assert_eq!(
+        confirmed.resolution.basis,
+        Some(VariantArticleResolutionBasis::ProviderConfirmed)
+    );
+    assert_eq!(
+        confirmed.source_hit.as_ref().map(|hit| hit.id.as_str()),
+        Some("GRCh38:NC_000011.10:g.108248927T>G")
+    );
+
+    let indeterminate = article_resolution_context(
+        requested.clone(),
+        scan(&requested, vec![compatible.clone()], false),
+    );
+    assert_eq!(
+        indeterminate.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Indeterminate
+    );
+    assert_eq!(
+        indeterminate.resolution.status,
+        VariantResolutionStatus::Resolved
+    );
+
+    let contradictory = article_resolution_context(
+        requested.clone(),
+        scan(&requested, vec![contradictory], true),
+    );
+    assert_eq!(
+        contradictory.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Contradictory
+    );
+    assert_eq!(
+        contradictory
+            .resolution
+            .provider_validation
+            .contradictory_field
+            .as_deref(),
+        Some("position")
+    );
+    assert_eq!(
+        contradictory.resolution.status,
+        VariantResolutionStatus::Unresolved
+    );
+
+    let not_found = article_resolution_context(requested.clone(), scan(&requested, vec![], true));
+    assert_eq!(
+        not_found.resolution.provider_validation.status,
+        VariantProviderValidationStatus::NotFound
+    );
+    assert_eq!(
+        not_found.resolution.basis,
+        Some(VariantArticleResolutionBasis::CallerSupplied)
+    );
+
+    let unavailable = article_resolution_context(
+        requested,
+        ProviderScan {
+            candidates: Vec::new(),
+            exhaustive: false,
+            available: false,
+        },
+    );
+    assert_eq!(
+        unavailable.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Unavailable
+    );
+    assert!(unavailable.available);
+}
+
+#[test]
+fn article_provider_aggregation_marks_distinct_compatible_and_indeterminate_sets() {
+    let requested = refseq_request();
+    let compatible = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248927T>G",
+        Some("ATM"),
+        Some("NM_000051.4:c.1066-6T>G"),
+    );
+    let compatible_with_rsid: MyVariantHit = serde_json::from_value(serde_json::json!({
+        "_id": "GRCh38:NC_000011.10:g.108248927T>G",
+        "dbnsfp": {
+            "genename": "ATM",
+            "hgvsc": "NM_000051.4:c.1066-6T>G"
+        },
+        "dbsnp": {"rsid": "rs605"}
+    }))
+    .expect("valid MyVariant hit");
+    let multiple = article_resolution_context(
+        requested.clone(),
+        scan(
+            &requested,
+            vec![compatible.clone(), compatible_with_rsid],
+            true,
+        ),
+    );
+    assert_eq!(
+        multiple.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Indeterminate
+    );
+
+    let missing_facts = refseq_hit("GRCh38:NC_000011.10:g.108248927T>G", None, None);
+    let with_indeterminate = article_resolution_context(
+        requested.clone(),
+        scan(&requested, vec![compatible, missing_facts], true),
+    );
+    assert_eq!(
+        with_indeterminate.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Indeterminate
+    );
+
+    let position_first = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248926T>G",
+        Some("ATM"),
+        Some("NM_000051.4:c.1066-6T>G"),
+    );
+    let gene_second = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248928T>G",
+        Some("OTHER"),
+        Some("NM_000051.4:c.1066-6T>G"),
+    );
+    let left = article_resolution_context(
+        requested.clone(),
+        scan(
+            &requested,
+            vec![gene_second.clone(), position_first.clone()],
+            true,
+        ),
+    );
+    let right = article_resolution_context(
+        requested.clone(),
+        scan(&requested, vec![position_first, gene_second], true),
+    );
+    assert_eq!(left.resolution, right.resolution);
+    assert_eq!(
+        left.resolution
+            .provider_validation
+            .contradictory_field
+            .as_deref(),
+        Some("position")
+    );
+}
+
+#[test]
+fn article_provider_aggregation_is_order_independent_and_selects_stable_alias() {
+    let requested = RequestedVariantIdentity {
+        coding_change: None,
+        transcript: None,
+        ..refseq_request()
+    };
+    let first = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248927T>G",
+        Some("ATM"),
+        Some("c.1066-6T>G"),
+    );
+    let second = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248927T>G",
+        Some("ATM"),
+        Some("NM_000051.4:c.1066-6T>G"),
+    );
+    let left = article_resolution_context(
+        requested.clone(),
+        scan(&requested, vec![first.clone(), second.clone()], true),
+    );
+    let right = article_resolution_context(
+        requested.clone(),
+        scan(&requested, vec![second, first], true),
+    );
+    assert_eq!(left.resolution, right.resolution);
+    assert_eq!(
+        left.resolution.provider_validation.matched_alias.as_deref(),
+        Some("GRCh38:NC_000011.10:g.108248927T>G")
+    );
+}
