@@ -1,4 +1,8 @@
 use std::collections::HashSet;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 
 use super::super::test_support::*;
 use super::*;
@@ -8,6 +12,27 @@ use crate::sources::semantic_scholar::{
     SemanticScholarAuthMode, SemanticScholarExternalIds, SemanticScholarPaper,
     SemanticScholarSearchResponse,
 };
+
+#[tokio::test]
+async fn repeated_backend_requests_stop_before_the_fifty_first_future_runs() {
+    let execution = super::super::variant_search::VariantArticleExecutionContext::single();
+    let calls = Arc::new(AtomicUsize::new(0));
+    let mut completed = 0;
+    for _ in 0..55 {
+        let calls = calls.clone();
+        let result =
+            variant_article_request(Some(&execution), "exact_lexical", "fixture", async move {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok::<_, BioMcpError>(())
+            })
+            .await
+            .expect("fixture request");
+        completed += usize::from(result.is_some());
+    }
+
+    assert_eq!(completed, 50);
+    assert_eq!(calls.load(Ordering::SeqCst), 50);
+}
 
 fn query_value<'a>(query: &'a [(String, String)], key: &str) -> Option<&'a str> {
     query

@@ -10,7 +10,7 @@ use crate::sources::pubtator::PubTatorClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 
 use super::candidates::finalize_article_candidates;
-use super::detail::{parse_pmid, resolve_article_from_pmid};
+use super::detail::{parse_pmid, resolve_article_from_pmid_with_context};
 use super::{
     Article, ArticleSearchFilters, ArticleSearchResult, ArticleSource, ArticleSourceAvailability,
     ArticleSourceStatus, SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS,
@@ -85,6 +85,13 @@ fn merge_article_search_row_with_semantic_scholar(
 pub(super) async fn enrich_article_search_rows_with_semantic_scholar(
     rows: &mut [ArticleSearchResult],
 ) -> Option<ArticleSourceStatus> {
+    enrich_article_search_rows_with_semantic_scholar_context(rows, None).await
+}
+
+pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
+    rows: &mut [ArticleSearchResult],
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+) -> Option<ArticleSourceStatus> {
     let mut lookup_ids = Vec::new();
     let mut lookup_positions: HashMap<String, Vec<usize>> = HashMap::new();
 
@@ -136,7 +143,23 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar(
     {
         let chunk_start = chunk_idx * SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS;
         let chunk_end = chunk_start + chunk.len();
-        match client.paper_batch_search_enrichment(chunk).await {
+        let started = execution.and_then(|execution| execution.reserve("enrichment"));
+        if execution.is_some() && started.is_none() {
+            status.status = Some(ArticleSourceAvailability::Degraded);
+            status.message = Some("Variant article work budget exhausted".into());
+            break;
+        }
+        let result = client.paper_batch_search_enrichment(chunk).await;
+        if let (Some(execution), Some(started)) = (execution, started) {
+            execution.record(
+                "enrichment",
+                "semanticscholar",
+                started,
+                if result.is_ok() { "ok" } else { "unavailable" },
+                usize::from(result.is_ok()),
+            );
+        }
+        match result {
             Ok(papers) => {
                 for (lookup_id, paper) in chunk.iter().zip(papers) {
                     let Some(paper) = paper else {
@@ -188,6 +211,13 @@ fn merge_article_search_row_with_article_base(row: &mut ArticleSearchResult, art
 pub(super) async fn enrich_visible_article_search_rows_with_article_base(
     rows: &mut [ArticleSearchResult],
 ) {
+    enrich_visible_article_search_rows_with_article_base_context(rows, None).await;
+}
+
+pub(super) async fn enrich_visible_article_search_rows_with_article_base_context(
+    rows: &mut [ArticleSearchResult],
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+) {
     let lookup_positions = rows
         .iter()
         .enumerate()
@@ -218,9 +248,11 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base(
 
     for (row_idx, pmid) in lookup_positions {
         let lookup_id = rows[row_idx].pmid.clone();
-        match resolve_article_from_pmid(pmid, &lookup_id, &lookup_id, &pubtator, &europe, None)
-            .await
-        {
+        let result = resolve_article_from_pmid_with_context(
+            pmid, &lookup_id, &lookup_id, &pubtator, &europe, None, execution,
+        )
+        .await;
+        match result {
             Ok(article) => merge_article_search_row_with_article_base(&mut rows[row_idx], &article),
             Err(err) => warn!(
                 %err,

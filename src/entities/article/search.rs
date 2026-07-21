@@ -10,8 +10,9 @@ use crate::entities::SearchPage;
 use crate::error::BioMcpError;
 
 use super::backends::{
-    search_europepmc_page, search_litsense2_candidates, search_pubmed_page, search_pubtator_page,
-    search_semantic_scholar_candidates,
+    search_europepmc_page, search_europepmc_page_with_context, search_litsense2_candidates,
+    search_pubmed_page, search_pubmed_page_with_context, search_pubtator_page,
+    search_pubtator_page_with_context, search_semantic_scholar_candidates,
 };
 use super::candidates::validate_article_source_cap;
 use super::enrichment::{
@@ -185,6 +186,85 @@ where
     }
 }
 
+fn variant_budget_source_name(source: ArticleSource) -> &'static str {
+    match source {
+        ArticleSource::PubTator => "pubtator",
+        ArticleSource::EuropePmc => "europepmc",
+        ArticleSource::SemanticScholar => "semanticscholar",
+        ArticleSource::PubMed => "pubmed",
+        ArticleSource::LitSense2 => "litsense2",
+    }
+}
+
+async fn with_variant_article_budget<T, F>(
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
+    source: ArticleSource,
+    future: F,
+) -> FederatedSourceOutcome<T>
+where
+    F: Future<Output = Result<T, BioMcpError>>,
+{
+    let Some(execution) = execution else {
+        return with_federated_source_timeout(source, future).await;
+    };
+    let Some(started) = execution.reserve(route) else {
+        return FederatedSourceOutcome::Unavailable {
+            error: None,
+            status: source_degraded_status(source, "variant article work budget exhausted".into()),
+        };
+    };
+    let outcome = with_federated_source_timeout(source, future).await;
+    execution.record(
+        route,
+        variant_budget_source_name(source),
+        started,
+        if matches!(&outcome, FederatedSourceOutcome::Available(_)) {
+            "ok"
+        } else {
+            "unavailable"
+        },
+        usize::from(matches!(&outcome, FederatedSourceOutcome::Available(_))),
+    );
+    outcome
+}
+
+async fn with_variant_semantic_budget<F>(
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
+    future: F,
+) -> FederatedSourceOutcome<super::backends::SemanticScholarCandidateOutcome>
+where
+    F: Future<Output = Result<super::backends::SemanticScholarCandidateOutcome, BioMcpError>>,
+{
+    let Some(execution) = execution else {
+        return with_federated_source_timeout(ArticleSource::SemanticScholar, future).await;
+    };
+    let Some(started) = execution.reserve(route) else {
+        return FederatedSourceOutcome::Unavailable {
+            error: None,
+            status: source_degraded_status(
+                ArticleSource::SemanticScholar,
+                "variant article work budget exhausted".into(),
+            ),
+        };
+    };
+    let outcome = with_federated_source_timeout(ArticleSource::SemanticScholar, future).await;
+    let ok = matches!(
+        &outcome,
+        FederatedSourceOutcome::Available(value)
+            if !matches!(value.status.status, Some(ArticleSourceAvailability::Unavailable))
+    );
+    execution.record(
+        route,
+        "semanticscholar",
+        started,
+        if ok { "ok" } else { "unavailable" },
+        usize::from(ok),
+    );
+    outcome
+}
+
 fn unavailable_source_error(source: ArticleSource) -> BioMcpError {
     BioMcpError::SourceUnavailable {
         source_name: source.display_name().to_string(),
@@ -215,6 +295,15 @@ pub(super) async fn acquire_federated_article_rows(
     filters: &ArticleSearchFilters,
     fetch_count: usize,
 ) -> Result<FederatedArticleRows, BioMcpError> {
+    acquire_federated_article_rows_with_context(filters, fetch_count, None, "federated").await
+}
+
+pub(super) async fn acquire_federated_article_rows_with_context(
+    filters: &ArticleSearchFilters,
+    fetch_count: usize,
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
+) -> Result<FederatedArticleRows, BioMcpError> {
     if fetch_count == 0 || fetch_count > MAX_FEDERATED_FETCH_RESULTS {
         return Err(BioMcpError::InvalidArgument(format!(
             "federated article acquisition size must be between 1 and {MAX_FEDERATED_FETCH_RESULTS}"
@@ -225,18 +314,18 @@ pub(super) async fn acquire_federated_article_rows(
     let (pubtator_leg, europe_leg, pubmed_leg, semantic_scholar_leg, litsense2_leg) = tokio::join!(
         with_federated_source_timeout(
             ArticleSource::PubTator,
-            search_pubtator_page(filters, fetch_count, 0),
+            search_pubtator_page_with_context(filters, fetch_count, 0, execution, route),
         ),
         with_federated_source_timeout(
             ArticleSource::EuropePmc,
-            search_europepmc_page(filters, fetch_count, 0),
+            search_europepmc_page_with_context(filters, fetch_count, 0, execution, route),
         ),
         async {
             if include_pubmed {
                 Some(
                     with_federated_source_timeout(
                         ArticleSource::PubMed,
-                        search_pubmed_page(filters, fetch_count, 0),
+                        search_pubmed_page_with_context(filters, fetch_count, 0, execution, route),
                     )
                     .await,
                 )
@@ -244,13 +333,16 @@ pub(super) async fn acquire_federated_article_rows(
                 None
             }
         },
-        with_federated_source_timeout(
-            ArticleSource::SemanticScholar,
+        with_variant_semantic_budget(
+            execution,
+            route,
             search_semantic_scholar_candidates(filters, fetch_count),
         ),
         async {
             if include_litsense2 {
-                with_federated_source_timeout(
+                with_variant_article_budget(
+                    execution,
+                    route,
                     ArticleSource::LitSense2,
                     search_litsense2_candidates(filters, fetch_count),
                 )

@@ -876,6 +876,19 @@ def test_data_sources_reference_covers_new_gene_and_article_sources() -> None:
     assert "1 request / second" in data_sources
 
 
+def test_variant_article_batch_grammar_stays_aligned_in_user_and_ux_references() -> None:
+    references = [
+        _read("docs/user-guide/cli-reference.md"),
+        _read("architecture/ux/cli-reference.md"),
+    ]
+
+    for reference in references:
+        assert re.search(r"biomcp\s+--json\s+variant\s+articles[^\n]*--input[^\n]*--debug-plan", reference)
+        assert re.search(r"variant\s+articles\s+--input\s+-", reference)
+        assert re.search(r"--input\s+<path\|->", reference)
+        assert re.search(r"typed[^.\n]*`variant_articles`", reference)
+
+
 def test_cli_and_quick_reference_cover_search_all_and_gene_sections() -> None:
     cli_reference = _read("docs/user-guide/cli-reference.md")
     quick_reference = _read("docs/reference/quick-reference.md")

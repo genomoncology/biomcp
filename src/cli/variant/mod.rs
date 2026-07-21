@@ -106,12 +106,21 @@ See also: biomcp list variant")]
 EXAMPLES:
   biomcp variant articles \"BRAF V600E\" --limit 5
   biomcp variant articles rs113488022 --strategy annotation --limit 5
+  biomcp --json variant articles --input variants.json --debug-plan
+  cat variants.json | biomcp --json variant articles --input -
 
-Note: The default union combines exact PubTator annotations, normalized aliases, and source citations before ranking and pagination. Use annotation or lexical only for route diagnosis. Unresolved input is labeled as best-effort free text.
+Note: The default union combines exact PubTator annotations, normalized aliases, and source citations before ranking and pagination. Structured JSON input accepts 1-10 items. Use annotation or lexical only for route diagnosis. Unresolved input is labeled as best-effort free text.
 See also: biomcp list variant")]
     Articles {
         /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
-        id: String,
+        #[arg(required_unless_present = "input")]
+        id: Option<String>,
+        /// JSON request file, or - for stdin (1-10 structured variants)
+        #[arg(long, value_name = "PATH")]
+        input: Option<String>,
+        /// Include normalized route, provider, ranking, and work facts (JSON only)
+        #[arg(long)]
+        debug_plan: bool,
         /// Retrieval strategy (union, annotation, or lexical)
         #[arg(long, value_enum, default_value_t = VariantArticleStrategy::Union)]
         strategy: VariantArticleStrategy,
@@ -206,6 +215,7 @@ impl VariantSearchPlan {
     }
 }
 
+mod articles;
 mod dispatch;
 mod guidance;
 mod normalization_json;

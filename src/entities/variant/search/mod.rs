@@ -202,15 +202,43 @@ pub async fn search(
     Ok(search_page(filters, limit, 0).await?.results)
 }
 
-pub(crate) async fn resolve_article_variant(
+fn unavailable_article_resolution(
+    requested: RequestedVariantIdentity,
+) -> VariantArticleResolutionContext {
+    VariantArticleResolutionContext {
+        resolution: VariantSearchResolution {
+            status: VariantResolutionStatus::Ambiguous,
+            normalized_aliases: requested.normalized_aliases(),
+            exhaustive: false,
+        },
+        requested,
+        source_id: None,
+        source_identity: None,
+        fallback_source_identities: Vec::new(),
+        available: false,
+    }
+}
+
+pub(crate) async fn resolve_article_variant_identity(
+    requested: RequestedVariantIdentity,
     input: &str,
+    execution: &crate::entities::article::variant_search::VariantArticleExecutionContext,
 ) -> Result<VariantArticleResolutionContext, BioMcpError> {
-    let requested = RequestedVariantIdentity::from_variant_input(input)?;
     if requested.genomic_accession.is_some() {
+        let Some(started) = execution.reserve("resolution") else {
+            return Ok(unavailable_article_resolution(requested));
+        };
         let result = match MyVariantClient::new() {
             Ok(client) => client.get(input).await,
             Err(err) => Err(err),
         };
+        execution.record(
+            "resolution",
+            "myvariant",
+            started,
+            if result.is_ok() { "ok" } else { "unavailable" },
+            usize::from(result.is_ok()),
+        );
         return Ok(match result {
             Ok(hit) => {
                 let source = SourceVariantIdentity::from_myvariant_hit(&hit);
@@ -278,22 +306,10 @@ pub(crate) async fn resolve_article_variant(
         requested_identity: Some(requested.clone()),
         ..Default::default()
     };
-    let page = match search_page(&filters, 2, 0).await {
+    let page_result = search_page_with_execution(&filters, 2, 0, Some(execution)).await;
+    let page = match page_result {
         Ok(page) => page,
-        Err(_) => {
-            return Ok(VariantArticleResolutionContext {
-                requested: requested.clone(),
-                resolution: VariantSearchResolution {
-                    status: VariantResolutionStatus::Ambiguous,
-                    normalized_aliases: requested.normalized_aliases(),
-                    exhaustive: false,
-                },
-                source_id: None,
-                source_identity: None,
-                fallback_source_identities: Vec::new(),
-                available: false,
-            });
-        }
+        Err(_) => return Ok(unavailable_article_resolution(requested)),
     };
     let resolution = page.resolution.unwrap_or(VariantSearchResolution {
         status: VariantResolutionStatus::Unresolved,
@@ -322,6 +338,15 @@ pub async fn search_page(
     filters: &VariantSearchFilters,
     limit: usize,
     offset: usize,
+) -> Result<VariantSearchPage, BioMcpError> {
+    search_page_with_execution(filters, limit, offset, None).await
+}
+
+async fn search_page_with_execution(
+    filters: &VariantSearchFilters,
+    limit: usize,
+    offset: usize,
+    execution: Option<&crate::entities::article::variant_search::VariantArticleExecutionContext>,
 ) -> Result<VariantSearchPage, BioMcpError> {
     const MAX_SEARCH_LIMIT: usize = 50;
     if limit == 0 || limit > MAX_SEARCH_LIMIT {
@@ -460,9 +485,23 @@ pub async fn search_page(
     let mut saw_indeterminate = false;
     let mut exhaustive = false;
     while provider_offset < MAX_CANDIDATES {
-        let resp = client
+        let started = execution.and_then(|execution| execution.reserve("resolution"));
+        if execution.is_some() && started.is_none() {
+            break;
+        }
+        let result = client
             .search(&params_at(SOURCE_PAGE, provider_offset))
-            .await?;
+            .await;
+        if let (Some(execution), Some(started)) = (execution, started) {
+            execution.record(
+                "resolution",
+                "myvariant",
+                started,
+                if result.is_ok() { "ok" } else { "unavailable" },
+                usize::from(result.is_ok()),
+            );
+        }
+        let resp = result?;
         let provider_total = resp.total;
         let hit_count = resp.hits.len();
         let examined_count = hit_count.min(MAX_CANDIDATES - provider_offset);

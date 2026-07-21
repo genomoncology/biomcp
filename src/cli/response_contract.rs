@@ -5,6 +5,7 @@ use super::{CommandOutcome, Commands, GetEntity, OutputStream, SearchEntity};
 type JsonPath = &'static [&'static str];
 
 const RESULTS_PATH: JsonPath = &["results"];
+const ITEMS_PATH: JsonPath = &["items"];
 const BUCKETS_PATH: JsonPath = &["buckets"];
 const EDGES_PATH: JsonPath = &["edges"];
 const RECOMMENDATIONS_PATH: JsonPath = &["recommendations"];
@@ -81,6 +82,9 @@ impl JsonResponseContract {
             },
             Commands::Get { .. } => Self::NONE,
             Commands::Variant { cmd } => match cmd {
+                super::VariantCommand::Articles { input: Some(_), .. } => Self {
+                    collection_paths: &[ITEMS_PATH],
+                },
                 super::VariantCommand::Trials { .. }
                 | super::VariantCommand::Articles { .. }
                 | super::VariantCommand::Normalize { .. } => Self::RESULTS,
@@ -244,8 +248,17 @@ pub(super) fn finalize_structured_error(
     if !value.is_object() {
         return outcome;
     }
+    let had_batch_items = value.get("items").is_some();
     for path in contract.collection_paths {
         insert_empty_collection(&mut value, path);
+    }
+    if contract.collection_paths == [ITEMS_PATH]
+        && !had_batch_items
+        && let Some(object) = value.as_object_mut()
+    {
+        object.insert("complete".into(), serde_json::Value::Bool(false));
+        object.insert("truncated".into(), serde_json::Value::Bool(false));
+        object.insert("_meta".into(), serde_json::json!({"next_commands": []}));
     }
     if let Ok(text) = crate::render::json::to_pretty(&value) {
         outcome.text = text;
@@ -254,7 +267,7 @@ pub(super) fn finalize_structured_error(
 }
 #[cfg(test)]
 mod tests {
-    use super::{JsonResponseContract, finalize_structured_error};
+    use super::{ITEMS_PATH, JsonResponseContract, finalize_structured_error};
     use crate::cli::{CommandOutcome, OutputStream};
 
     fn contract_paths(args: &[&str]) -> Vec<String> {
@@ -430,6 +443,10 @@ mod tests {
                 &[],
             ),
             (&["biomcp", "article", "batch", "1"], &[]),
+            (
+                &["biomcp", "variant", "articles", "--input", "variants.json"],
+                &["items"],
+            ),
             (&["biomcp", "batch", "gene", "BRAF"], &[]),
             (&["biomcp", "article", "entities", "1"], &[]),
             (&["biomcp", "variant", "structure", "BRAF"], &[]),
@@ -466,6 +483,44 @@ mod tests {
         assert!(value["_meta"].is_object());
         assert_eq!(finalized.exit_code, 1);
         assert_eq!(finalized.stream, OutputStream::Stdout);
+    }
+
+    #[test]
+    fn variant_article_batch_errors_keep_the_stable_envelope() {
+        let outcome = CommandOutcome::stdout_with_exit(
+            r#"{"error":{"code":"invalid_argument","message":"bad input"}}"#.into(),
+            2,
+        );
+        let finalized = finalize_structured_error(
+            outcome,
+            JsonResponseContract {
+                collection_paths: &[ITEMS_PATH],
+            },
+        );
+        let value: serde_json::Value = serde_json::from_str(&finalized.text).expect("valid JSON");
+
+        assert_eq!(value["items"], serde_json::json!([]));
+        assert_eq!(value["complete"], false);
+        assert_eq!(value["truncated"], false);
+        assert_eq!(value["_meta"]["next_commands"], serde_json::json!([]));
+    }
+
+    #[test]
+    fn variant_article_item_failures_preserve_aggregate_state_and_followups() {
+        let text = r#"{"items":[{"error":{"code":"source_unavailable"}}],"complete":false,"truncated":true,"_meta":{"next_commands":["biomcp get article 1"]}}"#;
+        let finalized = finalize_structured_error(
+            CommandOutcome::stdout_with_exit(text.into(), 1),
+            JsonResponseContract {
+                collection_paths: &[ITEMS_PATH],
+            },
+        );
+        let value: serde_json::Value = serde_json::from_str(&finalized.text).expect("valid JSON");
+
+        assert_eq!(value["truncated"], true);
+        assert_eq!(
+            value["_meta"]["next_commands"],
+            serde_json::json!(["biomcp get article 1"])
+        );
     }
 
     #[test]

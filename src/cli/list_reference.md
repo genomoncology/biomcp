@@ -150,8 +150,11 @@ New to BioMCP? Try:
 
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
 - `variant articles <id> [--strategy <union|annotation|lexical>]`
+- `--json variant articles --input <path|-> [--debug-plan]`
+  - structured input accepts 1-10 variants and returns ordered compact item envelopes
   - defaults to an exact-route union with provenance before one final pagination pass
   - unresolved union results are explicitly best-effort; diagnostic exact routes stay empty
+  - debug plans expose normalized routes, providers, ranking inputs, and bounded work only when requested
 - `drug trials <name>` - uses the same trial-safe CTGov literal and alias policy as `search trial`
 - `drug interactions <name> [--limit <N>] [--offset <N>]` - bounded local DDInter-backed drug-drug interactions
   - defaults to 25 rows, caps pages at 50, and reports fresh/stale bundle state

@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="${1:-../..}"
 scenario="${2:-all}"
 repo_root="$(cd "$repo_root" && pwd)"
+batch_input="${3:-${repo_root}/spec/fixtures/variant-article-batch-input.json}"
 fixture_root="${repo_root}/.cache/spec-variant-article-entity-${scenario}"
 ready_file="${fixture_root}/ready"
 server_py="${fixture_root}/server.py"
@@ -388,5 +389,113 @@ case "$scenario" in
           pagination: (.pagination | {offset, limit, returned, total, has_more, next_page_token}),
           source_status: [(.source_status // [])[] | select(.route == "pubtator_variant" and .source == "pubtator") | {route, source, status}]
         }'
+    ;;
+  batch-compact-json)
+    batch="$($binary --json variant articles --input "$batch_input" --limit 3)"
+    followups_parseable="$({ jq -r '._meta.next_commands[]?' <<<"$batch"; } \
+      | uv run --no-sync python3 -c 'import shlex, sys; rows = [line.rstrip("\n") for line in sys.stdin]; print("true" if rows and all(row and shlex.split(row) for row in rows) else "false")')"
+    jq -n \
+      --argjson batch "$batch" \
+      --argjson followups_parseable "$followups_parseable" \
+      '{
+        request_ids: [$batch.items[].request_id],
+        requested_genes: [$batch.items[].requested_variant.gene],
+        sibling_arrays_retained: ([$batch.items[].results | type] == ["array", "array"] and all($batch.items[]; (.results | length) > 0)),
+        resolutions: [$batch.items[] | {request_id, status: .resolution.status}],
+        match_reasons: {
+          braf_all_exact: (all($batch.items[] | select(.request_id == "braf-v600e") | .results[]; .match_reason == "exact_variant")),
+          myd88_all_best_effort: (all($batch.items[] | select(.request_id == "myd88-s219c") | .results[]; .match_reason == "best_effort_free_text"))
+        },
+        route_claims: {
+          braf_has_exact: (any($batch.items[] | select(.request_id == "braf-v600e") | .results[].routes[]; . == "pubtator_variant" or . == "exact_lexical" or . == "source_citation")),
+          myd88_only_fallback: (
+            any($batch.items[] | select(.request_id == "myd88-s219c") | .results[].routes[]; . == "best_effort_free_text")
+            and all($batch.items[] | select(.request_id == "myd88-s219c") | .results[].routes[]; . == "best_effort_free_text"))
+        },
+        aggregate: {complete: $batch.complete, truncated: $batch.truncated},
+        item_state_present: (all($batch.items[]; (.complete | type) == "boolean" and (.truncated | type) == "boolean" and (.pagination | type) == "object" and (.source_status | type) == "array" and has("error"))),
+        compact_rows: (all($batch.items[].results[];
+          ((.pmid // .pmcid // .doi // .arxiv_id // .semantic_scholar_id) | type) == "string"
+          and (.title | type) == "string"
+          and (.date | type) == "string"
+          and (.matched_aliases | type) == "array"
+          and (.routes | type) == "array"
+          and (.sources | type) == "array"
+          and (.rank | type) == "number"
+          and has("is_retracted")
+          and (has("abstract") or has("abstract_snippet") or has("full_text") or has("annotations") or has("provenance") or has("ranking") | not))),
+        followups: {
+          parseable: $followups_parseable,
+          article_batch: (any($batch._meta.next_commands[]; startswith("biomcp article batch "))),
+          article_detail: (any($batch._meta.next_commands[]; startswith("biomcp get article ") and (split(" ") | length) == 4)),
+          fulltext: (any($batch._meta.next_commands[]; startswith("biomcp get article ") and endswith(" fulltext"))),
+          assets: (any($batch._meta.next_commands[]; startswith("biomcp get article ") and endswith(" assets"))),
+          citations: (any($batch._meta.next_commands[]; startswith("biomcp article citations ")))
+        }
+      }'
+    ;;
+  debug-plan-json)
+    ordinary_single="$($binary --json variant articles "BRAF p.V600E" --limit 3)"
+    ordinary_batch="$($binary --json variant articles --input "$batch_input" --limit 3)"
+    single="$($binary --json variant articles "BRAF p.V600E" --limit 3 --debug-plan)"
+    batch="$($binary --json variant articles --input "$batch_input" --limit 3 --debug-plan)"
+    jq -n \
+      --argjson ordinary_single "$ordinary_single" \
+      --argjson ordinary_batch "$ordinary_batch" \
+      --argjson single "$single" \
+      --argjson batch "$batch" \
+      'def provider_facts:
+         length > 0 and all(.[];
+           (.source | type) == "string"
+           and (.status | IN("ok", "degraded", "unavailable", "skipped"))
+           and (.latency_ms | type) == "number" and .latency_ms >= 0
+           and (.calls | type) == "number" and .calls >= 0
+           and (.pages | type) == "number" and .pages >= 0
+           and (.cache | IN("hit", "miss", "bypass", "mixed", "unavailable", "not_applicable")));
+       def budget_consistent:
+         (.limit | type) == "number"
+         and (.consumed | type) == "number"
+         and (.remaining | type) == "number"
+         and (.exhausted | type) == "boolean"
+         and .consumed + .remaining == .limit;
+       def item_plan_shape:
+         (.normalized_aliases | type) == "object"
+         and ([.routes[].queries[]?] | length) > 0
+         and ([.routes[].providers[]] | provider_facts)
+         and (.counts.pre_dedup | type) == "number"
+         and (.counts.post_dedup | type) == "number"
+         and (.counts.returned | type) == "number"
+         and ([.ranking.inputs[]] | index("exactness") != null)
+         and ([.ranking.inputs[]] | index("route_source_position") != null)
+         and ([.ranking.inputs[]] | index("stable_identifier") != null)
+         and (.budgets.item | budget_consistent)
+         and (.budgets.request | budget_consistent)
+         and (.truncated | type) == "boolean"
+         and (.stopped_routes | type) == "array"
+         and (.next.offset | type) == "number"
+         and (.next | has("cursor"));
+       {
+         ordinary_omits_plan: {
+           single: ($ordinary_single | has("debug_plan") | not),
+           batch: ($ordinary_batch | has("debug_plan") | not)
+         },
+         single: {
+           aliases_present: (($single.debug_plan.normalized_aliases | to_entries | map(.value | length) | add) > 0),
+           required_routes: {
+             annotation: ([$single.debug_plan.routes[].route] | index("pubtator_variant") != null),
+             lexical: ([$single.debug_plan.routes[].route] | index("exact_lexical") != null),
+             source_citation: ([$single.debug_plan.routes[].route] | index("source_citation") != null)
+           },
+           shape_complete: ($single.debug_plan | item_plan_shape)
+         },
+         batch: {
+           item_concurrency_limit: $batch.debug_plan.item_concurrency_limit,
+           items_planned: $batch.debug_plan.items_planned,
+           request_budget_consistent: ($batch.debug_plan.work | budget_consistent),
+           every_item_has_plan: (
+             ($batch.items | length) > 0
+             and all($batch.items[]; has("debug_plan") and (.debug_plan | item_plan_shape)))
+         }
+       }'
     ;;
 esac

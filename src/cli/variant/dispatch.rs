@@ -101,72 +101,16 @@ pub(crate) async fn handle_command(
         }
         VariantCommand::Articles {
             id,
+            input,
+            debug_plan,
             strategy,
             limit,
             offset,
         } => {
-            let outcome =
-                crate::entities::article::search_variant_articles(&id, strategy, limit, offset)
-                    .await?;
-            let text = if json {
-                crate::render::json::to_pretty(&outcome.response)?
-            } else {
-                let filters = super::super::related_article_filters();
-                let results = outcome
-                    .response
-                    .results
-                    .iter()
-                    .map(|row| row.article.clone())
-                    .collect::<Vec<_>>();
-                let query = vec![
-                    Some(format!("variant={id}")),
-                    (strategy != crate::entities::article::VariantArticleStrategy::Union)
-                        .then(|| format!("strategy={strategy:?}").to_ascii_lowercase()),
-                    (offset > 0).then(|| format!("offset={offset}")),
-                ]
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>()
-                .join(", ");
-                crate::render::markdown::article_search_markdown_with_footer_and_context(
-                    &query,
-                    &results,
-                    "",
-                    &filters,
-                    crate::render::markdown::ArticleSearchRenderContext {
-                        source_filter: crate::entities::article::ArticleSourceFilter::All,
-                        semantic_scholar_enabled: false,
-                        warning: (!outcome.response.complete)
-                            .then_some("One or more variant article routes were incomplete."),
-                        note: Some(outcome.response.retrieval_path),
-                        debug_plan: None,
-                        exact_entity_commands: &[],
-                        source_status: &[],
-                    },
-                )?
-            };
-            if outcome.hard_error {
-                if json {
-                    return Ok(CommandOutcome::stdout_with_exit(text, 1));
-                }
-                let sources = outcome
-                    .response
-                    .source_status
-                    .iter()
-                    .filter(|status| status.status == "unavailable")
-                    .map(|status| match status.source.as_str() {
-                        "pubtator" => "PubTator 3",
-                        "myvariant" => "MyVariant.info",
-                        other => other,
-                    })
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                return Ok(CommandOutcome::stderr_with_exit(
-                    format!("{sources} variant article route unavailable; retry the request."),
-                    1,
-                ));
-            }
-            text
+            return Box::pin(super::articles::handle(
+                id, input, debug_plan, strategy, limit, offset, json,
+            ))
+            .await;
         }
         VariantCommand::Structure { id } => {
             let result = crate::entities::variant::structure(&id).await?;

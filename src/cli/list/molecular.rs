@@ -133,6 +133,7 @@ Transcript normalization examples:
 
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
 - `variant articles <id> [--strategy <union|annotation|lexical>]` - exact-route union by default; diagnostic route isolation is opt-in
+- `--json variant articles --input <path|-> [--debug-plan]` - ordered compact literature for 1-10 structured variants
 - `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
 "#
     .to_string();

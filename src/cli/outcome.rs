@@ -614,7 +614,7 @@ pub async fn run_outcome(cli: Cli) -> anyhow::Result<CommandOutcome> {
     let json = cli.json || command_requests_json(&cli.command);
     let trusted_terminal_chart = is_charted_mcp_study_command(&cli).unwrap_or(false);
     let contract = JsonResponseContract::for_command(&cli.command);
-    match run_outcome_inner(cli, false).await {
+    match Box::pin(run_outcome_inner(cli, false)).await {
         Ok(mut outcome) => Ok(if json {
             finalize_structured_error(outcome, contract)
         } else {

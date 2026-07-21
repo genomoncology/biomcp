@@ -1,5 +1,7 @@
 use clap::Parser;
 
+mod articles;
+
 use super::dispatch::{VariantSearchPlan, parse_simple_gene_change, resolve_variant_query};
 
 use crate::cli::{
