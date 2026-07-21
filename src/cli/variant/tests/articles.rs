@@ -39,9 +39,9 @@ fn preserves_positional_syntax_and_accepts_structured_input() {
     ));
 }
 
-#[test]
-fn rejects_positional_input_combination() {
-    let error = Cli::try_parse_from([
+#[tokio::test]
+async fn rejects_positional_input_combination_with_the_batch_error_envelope() {
+    let cli = Cli::try_parse_from([
         "biomcp",
         "--json",
         "variant",
@@ -50,7 +50,17 @@ fn rejects_positional_input_combination() {
         "--input",
         "variants.json",
     ])
-    .expect_err("positional ID and --input must conflict");
+    .expect("the handler owns the structured conflict");
+    let outcome = crate::cli::run_outcome(cli)
+        .await
+        .expect("typed invalid argument outcome");
+    let value: serde_json::Value =
+        serde_json::from_str(&outcome.text).expect("structured error JSON");
 
-    assert!(error.to_string().contains("cannot be used with"));
+    assert_eq!(outcome.exit_code, 2);
+    assert_eq!(value["error"]["code"], "invalid_argument");
+    assert_eq!(value["items"], serde_json::json!([]));
+    assert_eq!(value["complete"], false);
+    assert_eq!(value["truncated"], false);
+    assert_eq!(value["_meta"]["next_commands"], serde_json::json!([]));
 }

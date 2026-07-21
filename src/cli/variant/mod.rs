@@ -113,10 +113,10 @@ Note: The default union combines exact PubTator annotations, normalized aliases,
 See also: biomcp list variant")]
     Articles {
         /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
-        #[arg(required_unless_present = "input", conflicts_with = "input")]
+        #[arg(required_unless_present = "input")]
         id: Option<String>,
         /// JSON request file, or - for stdin (1-10 structured variants)
-        #[arg(long, value_name = "PATH", conflicts_with = "id")]
+        #[arg(long, value_name = "PATH")]
         input: Option<String>,
         /// Include normalized route, provider, ranking, and work facts (JSON only)
         #[arg(long)]

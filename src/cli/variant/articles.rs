@@ -44,6 +44,12 @@ pub(super) async fn handle(
     offset: usize,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
+    if id.is_some() && input.is_some() {
+        return Err(BioMcpError::InvalidArgument(
+            "variant articles positional ID cannot be combined with --input".into(),
+        )
+        .into());
+    }
     if (input.is_some() || debug_plan) && !json {
         return Err(BioMcpError::InvalidArgument(
             "variant articles --input and --debug-plan require --json".into(),
