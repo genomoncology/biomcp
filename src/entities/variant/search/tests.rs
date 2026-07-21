@@ -342,6 +342,78 @@ fn article_provider_aggregation_follows_precedence_and_refseq_fallback_states() 
 }
 
 #[test]
+fn article_provider_aggregation_marks_distinct_compatible_and_indeterminate_sets() {
+    let requested = refseq_request();
+    let compatible = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248927T>G",
+        Some("ATM"),
+        Some("NM_000051.4:c.1066-6T>G"),
+    );
+    let compatible_with_rsid: MyVariantHit = serde_json::from_value(serde_json::json!({
+        "_id": "GRCh38:NC_000011.10:g.108248927T>G",
+        "dbnsfp": {
+            "genename": "ATM",
+            "hgvsc": "NM_000051.4:c.1066-6T>G"
+        },
+        "dbsnp": {"rsid": "rs605"}
+    }))
+    .expect("valid MyVariant hit");
+    let multiple = article_resolution_context(
+        requested.clone(),
+        scan(
+            &requested,
+            vec![compatible.clone(), compatible_with_rsid],
+            true,
+        ),
+    );
+    assert_eq!(
+        multiple.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Indeterminate
+    );
+
+    let missing_facts = refseq_hit("GRCh38:NC_000011.10:g.108248927T>G", None, None);
+    let with_indeterminate = article_resolution_context(
+        requested.clone(),
+        scan(&requested, vec![compatible, missing_facts], true),
+    );
+    assert_eq!(
+        with_indeterminate.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Indeterminate
+    );
+
+    let position_first = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248926T>G",
+        Some("ATM"),
+        Some("NM_000051.4:c.1066-6T>G"),
+    );
+    let gene_second = refseq_hit(
+        "GRCh38:NC_000011.10:g.108248928T>G",
+        Some("OTHER"),
+        Some("NM_000051.4:c.1066-6T>G"),
+    );
+    let left = article_resolution_context(
+        requested.clone(),
+        scan(
+            &requested,
+            vec![gene_second.clone(), position_first.clone()],
+            true,
+        ),
+    );
+    let right = article_resolution_context(
+        requested.clone(),
+        scan(&requested, vec![position_first, gene_second], true),
+    );
+    assert_eq!(left.resolution, right.resolution);
+    assert_eq!(
+        left.resolution
+            .provider_validation
+            .contradictory_field
+            .as_deref(),
+        Some("position")
+    );
+}
+
+#[test]
 fn article_provider_aggregation_is_order_independent_and_selects_stable_alias() {
     let requested = RequestedVariantIdentity {
         coding_change: None,
