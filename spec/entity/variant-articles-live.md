@@ -1,9 +1,29 @@
 # Live Variant-Article Recall
 
-This operator canary checks exact-variant literature recall against the factual,
-non-exhaustive seven-variant panel that motivated the union workflow. It uses
-real providers under `make verify`; extra papers are not treated as false
-positives or clinical evidence labels.
+These operator canaries check exact-variant literature discovery and recall
+against real providers. They do not treat extra papers as false positives or
+clinical evidence labels.
+
+## Article searches expose the exact-variant helper
+
+<!-- mustmatch-lint: skip -->
+
+An exact gene-and-protein-change keyword remains an ordinary article search. Its
+JSON follow-ups also point to the exact-route variant literature helper, even
+when the provider currently returns no papers, so an agent does not have to
+invent command grammar.
+
+```bash run id=exact-variant-article-search exit=0 timeout=180
+../../tools/biomcp-ci --no-cache --json search article -k "MSH2 p.L341P" --source pubtator --limit 1
+```
+
+```json expect=exact-variant-article-search contains
+{
+  "_meta": {
+    "next_commands": ["biomcp variant articles \"MSH2 p.L341P\""]
+  }
+}
+```
 
 ## Seven-Variant Recall Canary
 

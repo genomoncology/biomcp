@@ -153,26 +153,6 @@ contracts. The deterministic tests should cover article JSON `_meta.next_command
 anchors without live PubMed, Europe PMC, PubTator, LitSense2, or Semantic Scholar
 calls.
 
-## Exact variant article searches expose the specialized helper
-
-An exact gene-and-protein-change keyword remains an ordinary article search. Its
-JSON follow-ups also point to the exact-route variant literature helper, so an
-agent can move from a broad result page to the bounded union workflow without
-inventing command grammar.
-
-```bash run id=exact-variant-article-search exit=0
-../../tools/biomcp-ci --json search article -k "MSH2 p.L341P" --source pubtator --limit 1
-```
-
-```json expect=exact-variant-article-search contains
-{
-  "results": [{"pmid": "26951660"}],
-  "_meta": {
-    "next_commands": ["biomcp variant articles \"MSH2 p.L341P\""]
-  }
-}
-```
-
 ## Compact Article Search Keeps the Triage Contract
 <!-- mustmatch-lint: skip -->
 
