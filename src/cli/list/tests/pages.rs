@@ -19,6 +19,7 @@ fn list_root_includes_routing_table_and_quickstart() {
     assert!(out.contains("enrich <GENE1,GENE2,...>"));
     assert!(out.contains("Turn a literature question into article filters"));
     assert!(out.contains("`skill install` - install BioMCP skill guidance to your agent"));
+    assert!(out.contains("`skill status` - compare installed guidance with this BioMCP binary"));
     assert!(!out.contains("`suggest <question>`"));
     assert!(out.contains("`discover <query>`"));
     assert!(out.contains("`cache path`"));

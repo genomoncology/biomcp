@@ -32,6 +32,21 @@ const ARTICLE_QUESTION_PREFIXES: &[&str] = &[
     "give ", "tell ",
 ];
 
+pub(super) fn exact_variant_article_follow_up(
+    filters: &crate::entities::article::ArticleSearchFilters,
+) -> Option<String> {
+    let keyword = filters.keyword.as_deref()?.trim();
+    if !matches!(
+        crate::entities::variant::classify_variant_input(keyword),
+        crate::entities::variant::VariantInputKind::Exact(
+            crate::entities::variant::VariantIdFormat::GeneProteinChange { .. }
+        )
+    ) {
+        return None;
+    }
+    Some(format!("biomcp variant articles {}", quote_arg(keyword)))
+}
+
 pub(super) fn article_annotation_command(
     bucket: ArticleAnnotationBucket,
     text: &str,

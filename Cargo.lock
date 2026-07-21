@@ -322,6 +322,7 @@ dependencies = [
  "http-cache-semantics",
  "humantime",
  "kuva",
+ "libc",
  "md5",
  "minijinja",
  "prost",

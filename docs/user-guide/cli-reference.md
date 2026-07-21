@@ -95,7 +95,8 @@ biomcp study compare --study <id> --gene <symbol> --type <expression|mutations> 
 biomcp study co-occurrence --study <id> --genes <g1,g2,...>
 biomcp skill
 biomcp skill render
-biomcp skill install [dir]
+biomcp skill install [--force] [dir]
+biomcp skill status [dir]
 biomcp skill list                 # list embedded worked examples
 biomcp mcp
 biomcp serve

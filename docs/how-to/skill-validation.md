@@ -2,6 +2,25 @@
 
 This guide defines how to evaluate whether a BioMCP skill run is complete and trustworthy. Validation is checklist-driven and attached directly to each skill markdown file.
 
+## Check the installed guidance
+
+Before reviewing a run, compare the installed managed skill with the running
+binary:
+
+```bash
+biomcp --json skill status ~/.claude
+```
+
+`current` means the recorded BioMCP version, canonical rendered `SKILL.md` hash,
+managed path set, and managed file bytes match. `missing`, `unmanaged`, `stale`,
+and `locally_modified` are diagnostic states, not reasons to overwrite files
+implicitly. Follow the returned recovery command only when you intend to replace
+BioMCP-managed files; `biomcp skill install --force <dir>` preserves unrelated
+files.
+
+The canonical prompt hash uses the exact UTF-8 bytes from `biomcp skill render`:
+terminal newlines are normalized to exactly one LF before SHA-256 hashing.
+
 ## Validation Model
 
 Each skill should provide:

@@ -24,8 +24,10 @@ fn expected_skill_submodule_files(root: &Path) -> Vec<PathBuf> {
     let mut files = vec![
         root.join("src/cli/skill/mod.rs"),
         root.join("src/cli/skill/assets.rs"),
+        root.join("src/cli/skill/atomic_swap.rs"),
         root.join("src/cli/skill/catalog.rs"),
         root.join("src/cli/skill/install.rs"),
+        root.join("src/cli/skill/status.rs"),
         root.join("src/cli/skill/tests/catalog.rs"),
         root.join("src/cli/skill/tests/install.rs"),
     ];
@@ -100,8 +102,10 @@ fn skill_split_files_exist_with_doc_headers() {
 
     for path in [
         "src/cli/skill/assets/mod.rs",
+        "src/cli/skill/atomic_swap/mod.rs",
         "src/cli/skill/catalog/mod.rs",
         "src/cli/skill/install/mod.rs",
+        "src/cli/skill/status/mod.rs",
     ] {
         let forbidden = root.join(path);
         assert!(

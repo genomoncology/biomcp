@@ -14,6 +14,7 @@ fn skill_help_examples_match_installed_surface() {
 
     assert!(help.contains("biomcp skill            # show skill overview"));
     assert!(help.contains("biomcp skill render     # print canonical agent prompt"));
+    assert!(help.contains("biomcp skill status     # compare installed guidance with this binary"));
     assert!(help.contains("biomcp skill install    # install skill to your agent config"));
     assert!(help.contains("Commands:\n  list"));
     assert!(help.contains("render"));

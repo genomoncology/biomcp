@@ -26,6 +26,7 @@ fn expected_article_cli_test_files(root: &Path) -> Vec<PathBuf> {
         root.join("src/cli/article/tests/help.rs"),
         root.join("src/cli/article/tests/exact_lookup.rs"),
         root.join("src/cli/article/tests/json.rs"),
+        root.join("src/cli/article/tests/next_commands.rs"),
         root.join("src/cli/article/tests/filters.rs"),
     ];
     files.sort();

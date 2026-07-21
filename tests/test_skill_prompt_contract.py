@@ -37,6 +37,7 @@ EXPECTED_SLUGS = [
     "syndrome-disambiguation",
     "negative-evidence",
     "normalize-to-codes",
+    "exact-variant-literature",
 ]
 NEW_PLAYBOOK_SLUGS = EXPECTED_SLUGS[4:]
 EXPECTED_PLAYBOOK_MARKERS = {
@@ -122,6 +123,16 @@ EXPECTED_PLAYBOOK_MARKERS = {
         'biomcp discover "type 2 diabetes mellitus"',
         'biomcp --json discover "type 2 diabetes mellitus"',
         'biomcp discover "metformin"',
+    ],
+    "exact-variant-literature": [
+        "# Pattern: Exact-variant literature retrieval",
+        "biomcp search variant MSH2 p.L341P --limit 5",
+        'biomcp variant articles "MSH2 p.L341P" --limit 5',
+        "biomcp article batch 26951660 31433521",
+        "biomcp get article 26951660 fulltext",
+        "biomcp --json get article 26951660 assets",
+        "biomcp article citations 26951660 --limit 5",
+        "biomcp article references 26951660 --limit 5",
     ],
 }
 REMOVED_ACTIVE_SLUGS = [
@@ -239,7 +250,10 @@ def test_skill_prompt_render_install_and_slug_surfaces_match(tmp_path: Path) -> 
         assert first_description.startswith("Use this when")
 
         commands = [line.strip() for line in _bash_block(body).splitlines() if line.strip()]
-        assert 3 <= len(commands) <= 4
+        if slug == "exact-variant-literature":
+            assert len(commands) == 7
+        else:
+            assert 3 <= len(commands) <= 4
         for command in commands:
             assert command.startswith("biomcp ")
 

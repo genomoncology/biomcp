@@ -49,6 +49,8 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp skill list" in skills
     assert "biomcp skill article-follow-up" in skills
     assert "biomcp skill variant-pathogenicity" in skills
+    assert "biomcp skill exact-variant-literature" in skills
+    assert "biomcp --json skill status ~/.claude" in skills
     assert "SKILL.md" in skills
     assert "use-cases/" in skills
     assert "jq-examples.md" in skills
@@ -63,7 +65,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "_meta.workflow" in skills
     assert "_meta.ladder[]" in skills
     assert "Current builds ship examples for treatment lookup, symptom lookup" not in skills
-    assert "Current builds ship 16 worked examples" in skills
+    assert "Current builds ship 17 worked examples" in skills
     assert "AUTHORING.md" in skills
     assert "_TEMPLATE.*" in skills
     for slug in (
@@ -73,6 +75,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
         "mutation-catalog",
         "negative-evidence",
         "normalize-to-codes",
+        "exact-variant-literature",
     ):
         assert slug in skills
     assert "Legacy compatibility note" not in skills
@@ -90,7 +93,8 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp get article 22663011 fulltext" in reproduce
 
     assert "biomcp skill [list|install|<name>]" not in cli_reference
-    assert "biomcp skill install [dir]" in cli_reference
+    assert "biomcp skill install [--force] [dir]" in cli_reference
+    assert "biomcp skill status [dir]" in cli_reference
     assert "biomcp skill render" in cli_reference
     assert "biomcp suggest" not in cli_reference
     assert "biomcp cache path" in cli_reference
@@ -153,6 +157,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "`cache clean`" in mcp_server
     assert "`cache clear`" in mcp_server
     assert "reveal workstation-local paths" in mcp_server
+    assert "`skill status`" in mcp_server
     assert "Workflow ladders do not add MCP resources" in mcp_server
     assert "_meta.workflow" in mcp_server
     assert "_meta.ladder[]" in mcp_server

@@ -78,8 +78,15 @@ BioMCP can add a typed `get gene`, `get drug`, or `get disease` follow-up in
 `See also`, `_meta.next_commands`, and JSON `_meta.suggestions[]`. The
 structured suggestion object includes `command`, `reason`, and `sections`.
 Multi-concept phrases such as `BRAF V600E` or `lung cancer immunotherapy` do
-not get direct entity suggestions, and searches that already use `-g`, `-d`,
-or `--drug` suppress the exact suggestion.
+not get direct entity suggestions. A whole exact gene-plus-protein keyword such
+as `MSH2 p.L341P` is handled separately: article search remains unchanged, but
+successful Markdown and JSON output add `biomcp variant articles "MSH2
+p.L341P"` to the follow-ups. Typed gene, disease, or drug context does not
+suppress this exact-variant pivot.
+
+For the complete strict-identity, union-shortlist, batch, selected full-text/assets,
+and conditional citation/reference sequence, run `biomcp skill
+exact-variant-literature`.
 
 For agent loops, `--session <token>` lets JSON article search compare the
 current keyword with the previous successful article keyword search for the
