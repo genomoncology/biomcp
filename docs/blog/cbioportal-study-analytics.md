@@ -116,6 +116,10 @@ The co-occurrence analysis:
 3. **Log odds ratio** — Computed from the 2×2 contingency table. Positive values indicate co-occurrence; negative values indicate mutual exclusivity.
 4. **Fisher's exact test** — P-values are computed using the exact hypergeometric distribution, not an approximation.
 
+A co-occurrence effect and significance are undefined when a required row or column marginal is zero, so BioMCP preserves the four observed counts but reports the log odds ratio and p-value as missing. An individual zero cell remains analyzable when every marginal is non-zero.
+
+Expression comparisons follow the same missing-data rule: an empty group keeps a sample count of zero but has no mean, median, range, or quartiles. JSON renders these undefined statistics as `null`; terminal tables render them as `-`.
+
 All of this runs locally in Rust. A survival analysis across 10,945 samples completes in milliseconds.
 
 ## Charting with Kuva

@@ -210,12 +210,12 @@ pub struct SurvivalByMutationResult {
 pub struct ExpressionGroupStats {
     pub group_name: String,
     pub sample_count: usize,
-    pub mean: f64,
-    pub median: f64,
-    pub min: f64,
-    pub max: f64,
-    pub q1: f64,
-    pub q3: f64,
+    pub mean: Option<f64>,
+    pub median: Option<f64>,
+    pub min: Option<f64>,
+    pub max: Option<f64>,
+    pub q1: Option<f64>,
+    pub q3: Option<f64>,
 }
 
 #[derive(Debug, Clone)]
@@ -879,6 +879,24 @@ pub fn co_occurrence(
                 .filter(|sample| sample_universe.contains(*sample) && !set_a.contains(*sample))
                 .count();
             let neither = total_samples.saturating_sub(both_mutated + a_only + b_only);
+            let has_zero_marginal = both_mutated + a_only == 0
+                || b_only + neither == 0
+                || both_mutated + b_only == 0
+                || a_only + neither == 0;
+            let (log_odds_ratio, p_value) = if has_zero_marginal {
+                (None, None)
+            } else {
+                (
+                    log_odds_ratio(both_mutated, a_only, b_only, neither),
+                    Some(fisher_exact_two_tailed(
+                        both_mutated,
+                        a_only,
+                        b_only,
+                        neither,
+                        &log_fact,
+                    )),
+                )
+            };
 
             pairs.push(CoOccurrencePair {
                 gene_a: gene_a.clone(),
@@ -887,14 +905,8 @@ pub fn co_occurrence(
                 a_only,
                 b_only,
                 neither,
-                log_odds_ratio: log_odds_ratio(both_mutated, a_only, b_only, neither),
-                p_value: Some(fisher_exact_two_tailed(
-                    both_mutated,
-                    a_only,
-                    b_only,
-                    neither,
-                    &log_fact,
-                )),
+                log_odds_ratio,
+                p_value,
             });
         }
     }
@@ -1965,12 +1977,12 @@ fn expression_group_stats(group_name: String, values: &[f64]) -> ExpressionGroup
         return ExpressionGroupStats {
             group_name,
             sample_count: 0,
-            mean: 0.0,
-            median: 0.0,
-            min: 0.0,
-            max: 0.0,
-            q1: 0.0,
-            q3: 0.0,
+            mean: None,
+            median: None,
+            min: None,
+            max: None,
+            q1: None,
+            q3: None,
         };
     }
 
@@ -1979,12 +1991,12 @@ fn expression_group_stats(group_name: String, values: &[f64]) -> ExpressionGroup
     ExpressionGroupStats {
         group_name,
         sample_count,
-        mean: sum / sample_count as f64,
-        median: quantile_inclusive(&values, 0.5),
-        min: *values.first().unwrap_or(&0.0),
-        max: *values.last().unwrap_or(&0.0),
-        q1: quantile_inclusive(&values, 0.25),
-        q3: quantile_inclusive(&values, 0.75),
+        mean: Some(sum / sample_count as f64),
+        median: Some(quantile_inclusive(&values, 0.5)),
+        min: Some(*values.first().unwrap_or(&0.0)),
+        max: Some(*values.last().unwrap_or(&0.0)),
+        q1: Some(quantile_inclusive(&values, 0.25)),
+        q3: Some(quantile_inclusive(&values, 0.75)),
     }
 }
 
@@ -3116,11 +3128,11 @@ BRAF\tS1\tMissense_Mutation\tp.V600E\n",
         assert_eq!(result.groups.len(), 2);
         assert_eq!(result.groups[0].group_name, "TP53-mutant");
         assert_eq!(result.groups[0].sample_count, 2);
-        assert!((result.groups[0].mean - 3.0).abs() < 1e-9);
-        assert!((result.groups[0].median - 3.0).abs() < 1e-9);
+        assert!((result.groups[0].mean.expect("mean") - 3.0).abs() < 1e-9);
+        assert!((result.groups[0].median.expect("median") - 3.0).abs() < 1e-9);
         assert_eq!(result.groups[1].group_name, "TP53-wildtype");
         assert_eq!(result.groups[1].sample_count, 1);
-        assert!((result.groups[1].mean - 1.0).abs() < 1e-9);
+        assert!((result.groups[1].mean.expect("mean") - 1.0).abs() < 1e-9);
         assert_eq!(result.mann_whitney_u, Some(0.0));
         assert!(
             (result.mann_whitney_p.expect("mann-whitney p-value") - 0.5402913746074199).abs()
