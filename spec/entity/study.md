@@ -129,6 +129,25 @@ running local cohort work.
 ../../tools/biomcp-ci study co-occurrence --study msk_impact_2017 --genes TP53 2>&1 | mustmatch like '--genes must contain 2 to 10 comma-separated symbols'
 ```
 
+## Undefined Statistics
+
+Study analytics retain raw cohort counts while representing statistics that cannot
+be computed as JSON `null`. An absent gene has no mutation variation, so its
+co-occurrence effect and significance are undefined rather than evidence of an
+association.
+
+```bash
+../../tools/biomcp-ci --json study co-occurrence --study brca_tcga_pan_can_atlas_2018 --genes ZZQQXX,NOTAGENE | mustmatch like '{"pairs":[{"gene_a":"ZZQQXX","gene_b":"NOTAGENE","both_mutated":0,"a_only":0,"b_only":0,"log_odds_ratio":null,"p_value":null}]}'
+```
+
+Likewise, an empty expression-comparison group has a real sample count of zero
+but has no distribution to summarize. Every distribution statistic stays present
+in structured output with a null value.
+
+```bash
+../../tools/biomcp-ci --json study compare --study brca_tcga_pan_can_atlas_2018 --gene ZZQQXX --type expression --target TP53 | mustmatch like '{"groups":[{"group_name":"ZZQQXX-mutant","sample_count":0,"mean":null,"median":null,"min":null,"max":null,"q1":null,"q3":null}]}'
+```
+
 ## Comparison & Chart Output
 
 Study analytics should remain usable from the terminal: comparison summaries
