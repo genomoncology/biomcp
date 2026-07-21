@@ -457,6 +457,13 @@ impl VariantArticleRequest {
                 "variant article item protein must be a complete protein change".into(),
             ));
         }
+        if identity.transcript.as_deref().is_some_and(|transcript| {
+            !transcript_coding_hgvs_re().is_match(&format!("{transcript}:c.1A>T"))
+        }) {
+            return Err(BioMcpError::InvalidArgument(
+                "variant article item transcript must be a versioned transcript accession".into(),
+            ));
+        }
         if let Some(coding) = identity.coding_change.as_deref() {
             let segment = coding
                 .rsplit_once(':')

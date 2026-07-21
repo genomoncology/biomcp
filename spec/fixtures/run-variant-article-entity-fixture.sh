@@ -408,7 +408,9 @@ case "$scenario" in
         },
         route_claims: {
           braf_has_exact: (any($batch.items[] | select(.request_id == "braf-v600e") | .results[].routes[]; . == "pubtator_variant" or . == "exact_lexical" or . == "source_citation")),
-          myd88_only_fallback: (all($batch.items[] | select(.request_id == "myd88-s219c") | .results[].routes[]; . == "best_effort_free_text"))
+          myd88_only_fallback: (
+            any($batch.items[] | select(.request_id == "myd88-s219c") | .results[].routes[]; . == "best_effort_free_text")
+            and all($batch.items[] | select(.request_id == "myd88-s219c") | .results[].routes[]; . == "best_effort_free_text"))
         },
         aggregate: {complete: $batch.complete, truncated: $batch.truncated},
         item_state_present: (all($batch.items[]; (.complete | type) == "boolean" and (.truncated | type) == "boolean" and (.pagination | type) == "object" and (.source_status | type) == "array" and has("error"))),
@@ -490,7 +492,9 @@ case "$scenario" in
            item_concurrency_limit: $batch.debug_plan.item_concurrency_limit,
            items_planned: $batch.debug_plan.items_planned,
            request_budget_consistent: ($batch.debug_plan.work | budget_consistent),
-           every_item_has_plan: (all($batch.items[]; has("debug_plan") and (.debug_plan | item_plan_shape)))
+           every_item_has_plan: (
+             ($batch.items | length) > 0
+             and all($batch.items[]; has("debug_plan") and (.debug_plan | item_plan_shape)))
          }
        }'
     ;;

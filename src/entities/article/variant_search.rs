@@ -1935,6 +1935,10 @@ mod tests {
                 serde_json::json!({"rsid":"rs113488022","protein":"not-a-change"}),
                 false,
             ),
+            (
+                serde_json::json!({"rsid":"rs113488022","transcript":"not-a-transcript"}),
+                false,
+            ),
             (serde_json::json!({"accession":"chr7","position":1}), false),
             (
                 serde_json::json!({"accession":"not-an-accession","position":0,"ref":"garbage","alt":"also-garbage"}),

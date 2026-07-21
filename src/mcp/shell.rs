@@ -137,6 +137,7 @@ fn variant_article_strategy(
 const RESOURCE_HELP_URI: &str = "biomcp://help";
 const GENERIC_MCP_REJECTION_MESSAGE: &str = "Error: BioMCP allows read-only commands only. Allowed families are search/get/helpers/list/version/health/batch/enrich/discover/skill plus MCP-safe study commands (`study list`, `study download --list`, `study top-mutated`, `study query`, `study filter`, `study cohort`, `study survival`, `study compare`, `study co-occurrence`).";
 const CACHE_FAMILY_MCP_REJECTION_MESSAGE: &str = "Error: biomcp cache commands are CLI-only over MCP because they reveal workstation-local filesystem paths.";
+const VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: variant articles --input is CLI-only over raw MCP because it reads server-local files or stdin; use the typed variant_articles tool instead.";
 
 impl BioMcpServer {
     pub fn new() -> Self {
@@ -209,6 +210,18 @@ impl Default for BioMcpServer {
     }
 }
 
+fn raw_variant_articles_reads_input(args: &[String]) -> bool {
+    args.get(1)
+        .is_some_and(|value| value.eq_ignore_ascii_case("variant"))
+        && args
+            .get(2)
+            .is_some_and(|value| value.eq_ignore_ascii_case("articles"))
+        && args
+            .iter()
+            .skip(3)
+            .any(|value| value == "--input" || value.starts_with("--input="))
+}
+
 fn is_allowed_mcp_command(args: &[String]) -> bool {
     // args[0] is the binary name ("biomcp")
     let Some(cmd) = args.get(1).map(|s| s.trim().to_ascii_lowercase()) else {
@@ -216,8 +229,9 @@ fn is_allowed_mcp_command(args: &[String]) -> bool {
     };
 
     match cmd.as_str() {
-        "search" | "get" | "variant" | "drug" | "disease" | "article" | "gene" | "pathway"
-        | "protein" | "list" | "version" | "health" | "batch" | "enrich" | "discover" => true,
+        "variant" => !raw_variant_articles_reads_input(args),
+        "search" | "get" | "drug" | "disease" | "article" | "gene" | "pathway" | "protein"
+        | "list" | "version" | "health" | "batch" | "enrich" | "discover" => true,
         "study" => {
             let Some(sub) = args.get(2).map(|s| s.trim().to_ascii_lowercase()) else {
                 return false;
@@ -249,6 +263,8 @@ fn mcp_rejection_message(args: &[String]) -> &'static str {
         .is_some_and(|cmd| cmd.trim().eq_ignore_ascii_case("cache"))
     {
         CACHE_FAMILY_MCP_REJECTION_MESSAGE
+    } else if raw_variant_articles_reads_input(args) {
+        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE
     } else {
         GENERIC_MCP_REJECTION_MESSAGE
     }
@@ -865,9 +881,10 @@ mod tests {
 
     use super::{
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet,
-        TypedSearch, TypedVariantArticles, all_get_sections, get_args, get_section_groups,
-        index_handler, is_allowed_mcp_command, mcp_rejection_message, redact_mcp_json_text,
-        redact_mcp_text, search_args, subcommand_names, to_resource_result,
+        TypedSearch, TypedVariantArticles, VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE,
+        all_get_sections, get_args, get_section_groups, index_handler, is_allowed_mcp_command,
+        mcp_rejection_message, redact_mcp_json_text, redact_mcp_text, search_args,
+        subcommand_names, to_resource_result,
     };
     use axum::Json;
 
@@ -1064,6 +1081,25 @@ mod tests {
         ]));
         assert!(is_allowed_mcp_command(&[
             "biomcp".into(),
+            "variant".into(),
+            "articles".into(),
+            "BRAF p.V600E".into()
+        ]));
+        assert!(!is_allowed_mcp_command(&[
+            "biomcp".into(),
+            "variant".into(),
+            "articles".into(),
+            "--input".into(),
+            "/server/private.json".into()
+        ]));
+        assert!(!is_allowed_mcp_command(&[
+            "biomcp".into(),
+            "variant".into(),
+            "articles".into(),
+            "--input=-".into()
+        ]));
+        assert!(is_allowed_mcp_command(&[
+            "biomcp".into(),
             "skill".into(),
             "list".into()
         ]));
@@ -1233,6 +1269,23 @@ mod tests {
             "study".into(),
             "download".into()
         ]));
+    }
+
+    #[test]
+    fn raw_variant_article_input_rejection_directs_callers_to_the_typed_tool() {
+        for input in [["--input", "/server/private.json"], ["--input=-", ""]] {
+            let mut args = vec!["biomcp".into(), "variant".into(), "articles".into()];
+            args.extend(
+                input
+                    .into_iter()
+                    .filter(|value| !value.is_empty())
+                    .map(String::from),
+            );
+            assert_eq!(
+                mcp_rejection_message(&args),
+                VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE
+            );
+        }
     }
 
     #[test]
