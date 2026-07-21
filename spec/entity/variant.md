@@ -445,10 +445,14 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. debug-plan-json
 
 ```json expect=variant-article-plan contains
 {
-  "ordinary_omits_plan": true,
+  "ordinary_omits_plan": {"single": true, "batch": true},
   "single": {
     "aliases_present": true,
-    "routes": ["exact_lexical", "pubtator_variant", "source_citation"],
+    "required_routes": {
+      "annotation": true,
+      "lexical": true,
+      "source_citation": true
+    },
     "shape_complete": true
   },
   "batch": {

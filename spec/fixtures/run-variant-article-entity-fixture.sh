@@ -433,15 +433,17 @@ case "$scenario" in
       }'
     ;;
   debug-plan-json)
-    ordinary="$($binary --json variant articles "BRAF p.V600E" --limit 3)"
+    ordinary_single="$($binary --json variant articles "BRAF p.V600E" --limit 3)"
+    ordinary_batch="$($binary --json variant articles --input "$batch_input" --limit 3)"
     single="$($binary --json variant articles "BRAF p.V600E" --limit 3 --debug-plan)"
     batch="$($binary --json variant articles --input "$batch_input" --limit 3 --debug-plan)"
     jq -n \
-      --argjson ordinary "$ordinary" \
+      --argjson ordinary_single "$ordinary_single" \
+      --argjson ordinary_batch "$ordinary_batch" \
       --argjson single "$single" \
       --argjson batch "$batch" \
       'def provider_facts:
-         all(.[];
+         length > 0 and all(.[];
            (.source | type) == "string"
            and (.status | IN("ok", "degraded", "unavailable", "skipped"))
            and (.latency_ms | type) == "number" and .latency_ms >= 0
@@ -471,10 +473,17 @@ case "$scenario" in
          and (.next.offset | type) == "number"
          and (.next | has("cursor"));
        {
-         ordinary_omits_plan: ($ordinary | has("debug_plan") | not),
+         ordinary_omits_plan: {
+           single: ($ordinary_single | has("debug_plan") | not),
+           batch: ($ordinary_batch | has("debug_plan") | not)
+         },
          single: {
            aliases_present: (($single.debug_plan.normalized_aliases | to_entries | map(.value | length) | add) > 0),
-           routes: ([$single.debug_plan.routes[].route] | sort),
+           required_routes: {
+             annotation: ([$single.debug_plan.routes[].route] | index("pubtator_variant") != null),
+             lexical: ([$single.debug_plan.routes[].route] | index("exact_lexical") != null),
+             source_citation: ([$single.debug_plan.routes[].route] | index("source_citation") != null)
+           },
            shape_complete: ($single.debug_plan | item_plan_shape)
          },
          batch: {
