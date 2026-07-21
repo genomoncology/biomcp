@@ -10,7 +10,8 @@ This Tier 1 benchmark measures the agent-facing output of a fixed BioMCP corpus:
 The runner starts an isolated loopback replay server and reuses committed provider
 payloads from `testdata/sources/`. It does not call live services. Output is measured
 as UTF-8 bytes and with tiktoken's `cl100k_base` tokenizer. The tokenizer package is
-pinned by `uv.lock`.
+pinned by `uv.lock`, and its hash-checked vocabulary is committed in
+`tokenizer-cache/` so a cold machine does not download it.
 
 Run it from the repository root:
 

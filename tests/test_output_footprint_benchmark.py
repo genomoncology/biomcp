@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RUNNER = REPO_ROOT / "benchmarks/output-footprint/run.py"
 
@@ -31,6 +33,20 @@ def test_compact_ratchet_rejects_first_byte_above_each_ceiling() -> None:
         assert ratchet["regressions"] == [
             {"id": case_id, "output_bytes": ceiling + 1, "byte_ceiling": ceiling}
         ]
+
+
+def test_tokenizer_vocabulary_is_available_offline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runner = _load_runner()
+
+    def reject_network(*args: object, **kwargs: object) -> None:
+        raise AssertionError("tokenizer attempted a network request")
+
+    monkeypatch.setattr("requests.get", reject_network)
+    runner.tiktoken.registry.ENCODINGS.pop(runner.TOKENIZER, None)
+
+    assert runner._encoding().name == runner.TOKENIZER
 
 
 def test_offline_corpus_is_deterministic_and_reports_real_token_counts() -> None:

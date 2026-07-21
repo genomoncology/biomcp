@@ -19,6 +19,7 @@ import tiktoken
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TOKENIZER = "cl100k_base"
+TOKENIZER_CACHE = Path(__file__).with_name("tokenizer-cache")
 COMPACT_BYTE_CEILINGS = {
     "article_search_compact": 1_600,
     "variant_search": 700,
@@ -230,9 +231,16 @@ def _compact_ratchet(output_bytes: dict[str, int]) -> dict[str, Any]:
     }
 
 
+def _encoding() -> Any:
+    # tiktoken normally downloads cl100k_base on first use. Force its hash-checked
+    # cache to the committed asset so a cold machine remains genuinely offline.
+    os.environ["TIKTOKEN_CACHE_DIR"] = str(TOKENIZER_CACHE)
+    return tiktoken.get_encoding(TOKENIZER)
+
+
 def collect(binary: Path) -> dict[str, Any]:
     """Run the fixed corpus against an isolated loopback replay server."""
-    encoding = tiktoken.get_encoding(TOKENIZER)
+    encoding = _encoding()
     server = ThreadingHTTPServer(("127.0.0.1", 0), ReplayHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
