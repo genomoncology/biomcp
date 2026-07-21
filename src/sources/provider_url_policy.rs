@@ -22,6 +22,12 @@ const PMC_OA_ORIGINS: &[&str] = &[
     "https://www.ncbi.nlm.nih.gov",
     "https://ftp.ncbi.nlm.nih.gov",
 ];
+const PMC_LINKED_ASSET_ORIGINS: &[&str] = &[
+    "https://pmc.ncbi.nlm.nih.gov",
+    "https://www.ncbi.nlm.nih.gov",
+    "https://www.ebi.ac.uk",
+    "https://europepmc.org",
+];
 const FIGSHARE_ORIGINS: &[&str] = &[
     "https://api.figshare.com",
     "https://figshare.com",
@@ -48,6 +54,7 @@ macro_rules! provider_url_consumers {
 provider_url_consumers!(
     SemanticScholarPdf,
     PmcOaArchive,
+    PmcLinkedArticleAsset,
     FigshareDownload,
     ClinicalTrialsDocument,
 );
@@ -86,6 +93,7 @@ pub(crate) struct ProviderUrlPolicy {
     allowed_origins: Vec<AllowedOrigin>,
     credential_origins: Vec<AllowedOrigin>,
     unsafe_test_origin: Option<AllowedOrigin>,
+    pmc_linked_numeric_id: Option<String>,
 }
 
 impl ProviderUrlPolicy {
@@ -106,6 +114,7 @@ impl ProviderUrlPolicy {
             allowed_origins,
             credential_origins: vec![canonical],
             unsafe_test_origin: unsafe_test_origin(),
+            pmc_linked_numeric_id: None,
         };
         policy.validate_url(base)?;
         Ok(policy)
@@ -133,6 +142,11 @@ impl ProviderUrlPolicy {
                 "PMC OA archive",
                 SourceProvider::PMC_OPEN_ACCESS,
                 PMC_OA_ORIGINS,
+            ),
+            ProviderUrlConsumer::PmcLinkedArticleAsset => (
+                "PMC linked article asset",
+                SourceProvider::PMC_OPEN_ACCESS,
+                PMC_LINKED_ASSET_ORIGINS,
             ),
             ProviderUrlConsumer::FigshareDownload => (
                 "Figshare download",
@@ -163,10 +177,24 @@ impl ProviderUrlPolicy {
             credential_origins: Vec::new(),
             unsafe_test_origin: unsafe_test_origin()
                 .or_else(|| selected_origin.and_then(selected_loopback_test_origin)),
+            pmc_linked_numeric_id: None,
         };
         if let Some(url) = selected_origin {
             policy.validate_url(url)?;
         }
+        Ok(policy)
+    }
+
+    pub(crate) fn pmc_linked_article_asset(
+        selected_origin: Option<&Url>,
+        numeric_pmcid: &str,
+    ) -> Result<Self, BioMcpError> {
+        if numeric_pmcid.is_empty() || !numeric_pmcid.chars().all(|ch| ch.is_ascii_digit()) {
+            return Err(policy_error("invalid PMC article identity"));
+        }
+        let mut policy =
+            Self::for_consumer(ProviderUrlConsumer::PmcLinkedArticleAsset, selected_origin)?;
+        policy.pmc_linked_numeric_id = Some(numeric_pmcid.to_string());
         Ok(policy)
     }
 
@@ -200,6 +228,11 @@ impl ProviderUrlPolicy {
         }
         if !unsafe_fixture && let Some(ip) = url.host_str().and_then(parse_ip_literal) {
             self.validate_addresses(std::iter::once(ip))?;
+        }
+        if let Some(numeric_pmcid) = self.pmc_linked_numeric_id.as_deref()
+            && pmc_linked_asset_path(url, numeric_pmcid).is_none()
+        {
+            return Err(self.error("route or PMC identity is not allowlisted"));
         }
         Ok(())
     }
@@ -282,6 +315,88 @@ impl Resolve for ProviderUrlPolicy {
             Ok(addrs)
         })
     }
+}
+
+pub(crate) fn pmc_linked_asset_path(url: &Url, numeric_pmcid: &str) -> Option<String> {
+    let raw_path = url.path().as_bytes();
+    let mut decoded = Vec::with_capacity(raw_path.len());
+    let mut index = 0;
+    while index < raw_path.len() {
+        if raw_path[index] == b'%' {
+            let high = hex_value(*raw_path.get(index + 1)?)?;
+            let low = hex_value(*raw_path.get(index + 2)?)?;
+            let value = (high << 4) | low;
+            if matches!(value, b'/' | b'\\') {
+                return None;
+            }
+            decoded.push(value);
+            index += 3;
+        } else {
+            decoded.push(raw_path[index]);
+            index += 1;
+        }
+    }
+    let decoded = String::from_utf8(decoded).ok()?;
+    let components = decoded
+        .split('/')
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>();
+    if components.iter().any(|part| {
+        matches!(*part, "." | "..") || part.contains('\\') || part.chars().any(char::is_control)
+    }) {
+        return None;
+    }
+    let article_id = format!("PMC{numeric_pmcid}");
+    let host = url.host_str()?.to_ascii_lowercase();
+    let asset = match host.as_str() {
+        "pmc.ncbi.nlm.nih.gov" => match components.as_slice() {
+            ["articles", "instance", id, "bin", asset @ ..] if *id == numeric_pmcid => asset,
+            ["articles", id, "bin", asset @ ..] if id.eq_ignore_ascii_case(&article_id) => asset,
+            _ => return None,
+        },
+        "www.ncbi.nlm.nih.gov" => match components.as_slice() {
+            ["pmc", "articles", "instance", id, "bin", asset @ ..] if *id == numeric_pmcid => asset,
+            ["pmc", "articles", id, "bin", asset @ ..] if id.eq_ignore_ascii_case(&article_id) => {
+                asset
+            }
+            _ => return None,
+        },
+        "europepmc.org" => match components.as_slice() {
+            ["articles", id, "bin", asset @ ..] if id.eq_ignore_ascii_case(&article_id) => asset,
+            _ => return None,
+        },
+        "www.ebi.ac.uk" => match components.as_slice() {
+            ["europepmc", "articles", id, "bin", asset @ ..]
+                if id.eq_ignore_ascii_case(&article_id) =>
+            {
+                asset
+            }
+            _ => return None,
+        },
+        _ if is_unsafe_fixture_url(url) => match components.as_slice() {
+            ["articles", "instance", id, "bin", asset @ ..] if *id == numeric_pmcid => asset,
+            ["articles", id, "bin", asset @ ..] if id.eq_ignore_ascii_case(&article_id) => asset,
+            _ => return None,
+        },
+        _ => return None,
+    };
+    if asset.is_empty() {
+        return None;
+    }
+    Some(asset.join("/"))
+}
+
+fn hex_value(value: u8) -> Option<u8> {
+    match value {
+        b'0'..=b'9' => Some(value - b'0'),
+        b'a'..=b'f' => Some(value - b'a' + 10),
+        b'A'..=b'F' => Some(value - b'A' + 10),
+        _ => None,
+    }
+}
+
+fn is_unsafe_fixture_url(url: &Url) -> bool {
+    unsafe_test_origin().is_some_and(|origin| origin.matches(url))
 }
 
 fn policy_error(class: &str) -> BioMcpError {
@@ -386,6 +501,7 @@ mod tests {
             ],
             credential_origins: Vec::new(),
             unsafe_test_origin: None,
+            pmc_linked_numeric_id: None,
         }
     }
 
@@ -503,6 +619,7 @@ mod tests {
                 allowed_origins: vec![AllowedOrigin::from_url(&url).unwrap()],
                 credential_origins: Vec::new(),
                 unsafe_test_origin: None,
+                pmc_linked_numeric_id: None,
             };
             assert!(policy.validate_url(&url).is_err(), "accepted {raw}");
         }
@@ -518,6 +635,10 @@ mod tests {
                 ),
                 ProviderUrlConsumer::PmcOaArchive => (
                     "https://ftp.ncbi.nlm.nih.gov/pub/pmc/archive.tgz",
+                    "PMC Open Access",
+                ),
+                ProviderUrlConsumer::PmcLinkedArticleAsset => (
+                    "https://pmc.ncbi.nlm.nih.gov/articles/instance/123/bin/s1.xlsx",
                     "PMC Open Access",
                 ),
                 ProviderUrlConsumer::FigshareDownload => {
@@ -593,6 +714,11 @@ mod tests {
                 ProviderUrlConsumer::PmcOaArchive,
                 include_str!("pmc_oa.rs"),
                 "ProviderUrlConsumer::PmcOaArchive",
+            ),
+            (
+                ProviderUrlConsumer::PmcLinkedArticleAsset,
+                include_str!("pmc_article.rs"),
+                "ProviderUrlPolicy::pmc_linked_article_asset(",
             ),
             (
                 ProviderUrlConsumer::FigshareDownload,

@@ -267,7 +267,7 @@ pub struct ArticleFulltextManifest {
     pub provenance: ArticleFulltextProvenance,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ArticleFulltextProvider {
     pub label: String,
     pub source: String,
@@ -387,6 +387,8 @@ pub struct ArticleAssetsManifest {
     pub provider: ArticleFulltextProvider,
     pub provenance: ArticleFulltextProvenance,
     pub assets: Vec<ArticleAssetEntry>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub coverage: Vec<ArticleAssetNamedCoverage>,
     #[serde(skip)]
     pub not_included: Option<ArticleNotIncluded>,
 }
@@ -394,7 +396,10 @@ pub struct ArticleAssetsManifest {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArticleAssetEntry {
     pub filename: String,
+    pub asset_key: String,
     pub kind: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub media_type: Option<String>,
     pub size_bytes: usize,
     pub sha256: String,
     pub provider: ArticleFulltextProvider,
@@ -402,7 +407,51 @@ pub struct ArticleAssetEntry {
     pub provenance: ArticleFulltextProvenance,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub jats: Option<ArticleAssetJats>,
+    pub discovery_routes: Vec<ArticleAssetDiscoveryRoute>,
     pub handle: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct ArticleAssetDiscoveryRoute {
+    pub provider: ArticleFulltextProvider,
+    pub source_document: ArticleAssetSourceDocument,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleAssetSourceDocument {
+    PmcOaArchive,
+    EuropePmcZip,
+    Figshare,
+    JatsXml,
+    PmcHtml,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleAssetNamedOutcome {
+    Retrievable,
+    HealthyAbsent,
+    AccessOrLicenceDenied,
+    UnsupportedOrigin,
+    SourceUnavailable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleAssetNamedCoverage {
+    pub filename: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub asset_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub media_type: Option<String>,
+    pub provider: ArticleFulltextProvider,
+    pub source_document: ArticleAssetSourceDocument,
+    pub outcome: ArticleAssetNamedOutcome,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub handle: Option<String>,
+    pub discovery_routes: Vec<ArticleAssetDiscoveryRoute>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

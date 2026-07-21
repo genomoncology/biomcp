@@ -11,6 +11,7 @@ HELPER_MODULES = {
     "archive_budget",
     "cbioportal_download",
     "cbioportal_study",
+    "pmc_article",
     "provider_url_policy",
     "rate_limit",
 }

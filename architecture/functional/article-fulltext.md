@@ -13,15 +13,15 @@ accepts the same article identifiers as the base article card: PMID, PMCID, and
 DOI.
 
 Article assets are a separate on-demand surface. `get article <id> assets`
-resolves PMC OA first, Europe PMC supplementary files second for a validated
-PMCID, and Figshare last when Semantic Scholar points at a supported
-Figshare/AACR URL. Europe PMC ZIPs are validated under compressed, per-member,
+fans in PMC OA, Europe PMC supplementary files, JATS XML, PMC HTML, and eligible
+Figshare discoveries for a validated PMCID. Provider-relative JATS/HTML links
+become stable BioMCP handles only after bounded, allowlisted retrieval. Europe PMC ZIPs are validated under compressed, per-member,
 expanded-total, count, and normalized-name bounds entirely in memory. Figshare
 uses the same collection resolver as raw-byte retrieval: it starts from the
 linked record, adds same-paper sibling records found by DOI/title, filters out
 wrong-paper candidates, and keeps handles as BioMCP commands. The command
-`get article <id> asset <name>` re-resolves the same provider ladder and returns
-the selected asset bytes without conversion. A successful manifest makes an unknown filename a
+`get article <id> asset <asset-key>` uses the same merged resolver as the manifest and returns
+the selected asset bytes without conversion. A successful manifest makes an unknown asset key a
 true asset miss; without a winner, any source failure produces
 `source_unavailable`, while all-healthy absence produces `not_found`.
 
@@ -160,8 +160,9 @@ and supplementary-material label/caption/filename metadata. Float rendering
 keeps document order and deduplicates root floats by `id` when the same figure
 or table was already rendered from the body.
 
-Supplementary-material filenames and links are display-only facts from the XML;
-BioMCP does not fetch or inline supplement bytes in this converter path. Tables
+Supplementary-material filenames and links remain display facts for the network-free
+converter. The separate asset resolver may fetch recognized JATS/PMC-HTML supplement
+links under its URL and byte budgets. Tables
 with `rowspan` or `colspan` keep their caption and render an explicit
 `*[complex table omitted: N×M, merged cells]*` marker instead of silently
 dropping the grid; full span flattening remains out of scope.
@@ -195,14 +196,15 @@ because local delivery, not provider availability, failed.
 - `src/entities/article/fulltext.rs`: identity bridge, content ladder,
   eligibility policy, fulltext source labels, cache key, and saved artifact
   assignment.
-- `src/entities/article/assets.rs`: typed PMC OA → Europe PMC → Figshare asset
-  outcomes shared by manifests and raw byte retrieval, final absence/failure
-  classification, retained PMC license provenance, asset classification, hashes,
-  JATS caption matching, omitted coverage, and retrieval handles.
+- `src/entities/article/assets.rs`: merged PMC OA, Europe PMC, recognized linked
+  JATS/PMC HTML, and eligible Figshare outcomes shared by manifests and raw byte
+  retrieval; final absence/failure classification; retained reuse provenance;
+  identity/hash deduplication; typed named coverage; and stable retrieval handles.
 - `src/sources/europepmc.rs`, `src/sources/ncbi_efetch.rs`,
-  `src/sources/pmc_oa.rs`, and `src/sources/ncbi_idconv.rs`: upstream
-  transport for direct source APIs, including bounded in-memory Europe PMC ZIP
-  validation and staged PMC OA manifest/archive acquisition.
+  `src/sources/pmc_oa.rs`, `src/sources/pmc_article.rs`, and
+  `src/sources/ncbi_idconv.rs`: upstream transport for direct source APIs,
+  including bounded Europe PMC ZIP, PMC OA archive, PMC HTML, and linked-asset
+  acquisition behind provider URL policy.
 - `src/sources/figshare.rs`: Figshare/AACR Figshare URL parsing, article search
   and article API metadata normalization, safe file filtering, and bounded
   file-byte downloads including `202 Accepted` cold-storage staging retries.

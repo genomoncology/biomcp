@@ -487,13 +487,13 @@ without guessing PMC OA URLs.
 
 ```bash
 ../../tools/biomcp-ci get article --help | mustmatch like "assets
-asset <name>
+asset <asset-key>
 raw bytes"
 ```
 
 ```bash
 ../../tools/biomcp-ci list article | mustmatch like "get article <id> assets
-get article <id> asset <name>
+get article <id> asset <asset-key>
 raw bytes"
 ```
 
@@ -510,7 +510,7 @@ paths = [
 for rel in paths:
     text = (root / rel).read_text(encoding="utf-8")
     assert "get article <id> assets" in text or "get article 22663011 assets" in text, rel
-    assert "get article <id> asset <name>" in text or "get article 22663011 asset traces-s1.csv" in text, rel
+    assert "get article <id> asset <asset-key>" in text or "get article 22663011 asset traces-s1.csv" in text, rel
     assert "no conversion" in text.lower() or "without conversion" in text.lower() or "raw bytes" in text.lower(), rel
 print("article asset docs aligned")
 ' | mustmatch like "article asset docs aligned"

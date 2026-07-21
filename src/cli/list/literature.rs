@@ -35,11 +35,11 @@ pub(super) fn list_article() -> String {
 - `get article <id> indexing` - opt-in PubMed citation authors, affiliations, ORCID, and MeSH headings
 - `get article <id> fulltext` - download/cache full text via XML -> PMC HTML; abstract-only and metadata-only partials continue, and JSON reports `full_text_coverage`
 - `get article <id> fulltext --pdf` - allow Semantic Scholar PDF after XML and PMC HTML do not provide an article body; failed opt-in discovery remains unavailable
-- `get article <id> assets` - JSON-only article asset manifest (PMC OA, then Europe PMC, then Figshare with same-paper siblings discovered by DOI/title)
-- `get article <id> asset <name>` - return one provider asset as raw bytes with no conversion; handles stay as BioMCP commands
+- `get article <id> assets` - JSON-only merged article asset manifest (PMC OA, Europe PMC, recognized JATS/PMC HTML links, and eligible Figshare siblings)
+- `get article <id> asset <asset-key>` - return one provider asset as raw bytes with no conversion; handles stay as BioMCP commands
 - Asset quick reference:
 get article <id> assets
-get article <id> asset <name>
+get article <id> asset <asset-key>
 raw bytes
 - `get article <id> all` - include all article sections, including PubMed indexing
 - `article entities <pmid> --limit <N>` - annotated entities with next commands
@@ -141,8 +141,8 @@ Worked examples:
 - `search article --json` and `--debug-plan` expose article source status,
   including federated degradation and redacted Semantic Scholar auth/availability.
 - `get article <id> fulltext` tries XML first, then PMC HTML, and never falls back to PDF. Abstract-only and metadata-only responses remain partials, so the ladder continues; requested JSON reports final `full_text_coverage` and sanitized attempts.
-- `get article <id> assets` resolves PMC OA first, Europe PMC supplementary files second, and supported Figshare/AACR Figshare metadata last; a failed source with no later winner is unavailable, not a confirmed miss.
-- `get article <id> asset <name>` streams provider bytes without conversion; handles stay as BioMCP commands and downstream tools parse CSV, XLSX, DOC, PDF, or images.
+- `get article <id> assets` merges PMC OA, Europe PMC supplementary files, recognized JATS/PMC HTML links, and eligible Figshare metadata; named linked misses remain typed coverage rather than disappearing.
+- `get article <id> asset <asset-key>` streams the exact advertised bytes without conversion; handles stay as BioMCP commands and downstream tools parse CSV, XLSX, DOC, PDF, or images.
 - Add `--pdf` only with `fulltext` to extend that ladder with Semantic Scholar PDF as the last resort.
 - `--pdf` requires the `fulltext` section and is rejected for other article requests.
 - On the default `search article --source all` route, `-a/--author` limits candidate search to Europe PMC + compatible PubMed; stricter filters may narrow further, and incapable explicit sources reject `--author` instead of treating it as free text.

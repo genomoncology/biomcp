@@ -1,5 +1,4 @@
 //! JATS full-text extraction and markdown rendering helpers.
-
 use std::collections::HashSet;
 
 use roxmltree::{Node, NodeType};
@@ -13,7 +12,9 @@ use super::{
 };
 
 mod refs;
+mod supplements;
 use self::refs::render_references;
+pub(crate) use self::supplements::extract_jats_supplement_links;
 
 pub(crate) fn classify_jats_document(
     xml: &str,

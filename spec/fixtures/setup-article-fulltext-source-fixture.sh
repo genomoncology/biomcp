@@ -46,6 +46,8 @@ FIGSHARE_TABLE_S1 = b"PK\x03\x04\nS1 workbook fixture bytes\n"
 FIGSHARE_TABLE_S2 = b"PK\x03\x04\nS2 workbook fixture bytes\n"
 FIGSHARE_UNRELATED_TABLE = b"PK\x03\x04\nUnrelated workbook fixture bytes\n"
 FIGSHARE_COLD_STORAGE = b"%PDF-1.4\nFigshare cold-storage fixture bytes\n%%EOF\n"
+LINKED_JATS_SUPPLEMENT = b"linked JATS supplement fixture bytes\n"
+LINKED_HTML_SUPPLEMENT = b"PK\x03\x04\nlinked PMC HTML supplement fixture bytes\n"
 COLD_STORAGE_LOCK = threading.Lock()
 COLD_STORAGE_HITS = {}
 
@@ -128,6 +130,11 @@ ARTICLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
         <label>Supplementary Data S1</label>
         <caption><p>Measurement traces for the treatment cohort.</p></caption>
         <media xlink:href="traces-s1.csv" />
+      </supplementary-material>
+      <supplementary-material id="s2">
+        <label>Supplementary Data S2</label>
+        <caption><p>Linked-only JATS measurements.</p></caption>
+        <media xlink:href="linked-jats-s2.csv" mimetype="text" mime-subtype="csv" />
       </supplementary-material>
     </sec>
   </body>
@@ -727,6 +734,19 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/oa-assets-22663011.tgz":
             send_bytes(self, 200, OA_ASSETS_TGZ, "application/gzip")
+            return
+
+        if decoded_path == "/articles/instance/123456/bin/linked-jats-s2.csv":
+            send_bytes(self, 200, LINKED_JATS_SUPPLEMENT, "text/csv")
+            return
+
+        if decoded_path == "/articles/instance/123457/bin/linked-html-s1.xlsx":
+            send_bytes(
+                self,
+                200,
+                LINKED_HTML_SUPPLEMENT,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
             return
 
         if decoded_path == "/" and query.get("id") == ["PMC123460"]:

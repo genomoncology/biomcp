@@ -1,5 +1,6 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
+use futures::StreamExt;
 use roxmltree::Node;
 use sha2::{Digest, Sha256};
 
@@ -11,16 +12,19 @@ use crate::sources::figshare::{
     FigshareArticle, FigshareArticleRef, FigshareArticleSearchResult, FigshareClient, FigshareFile,
     parse_figshare_article_url,
 };
+use crate::sources::ncbi_efetch::NcbiEfetchClient;
 use crate::sources::ncbi_idconv::NcbiIdConverterClient;
+use crate::sources::pmc_article::{LINKED_ASSET_BODY_LIMIT, PmcArticleClient, PmcLinkedFetch};
 use crate::sources::pmc_oa::{
     PmcOaArchiveEntry, PmcOaArchiveManifest, PmcOaArchivePackage, PmcOaClient,
 };
 use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
 use super::{
-    Article, ArticleAssetCoverage, ArticleAssetEntry, ArticleAssetJats, ArticleAssetsManifest,
-    ArticleFulltextProvenance, ArticleFulltextProvider, ArticleFulltextReuse, ArticleNotIncluded,
-    ArticleOmittedCoverage,
+    Article, ArticleAssetCoverage, ArticleAssetDiscoveryRoute, ArticleAssetEntry, ArticleAssetJats,
+    ArticleAssetNamedCoverage, ArticleAssetNamedOutcome, ArticleAssetSourceDocument,
+    ArticleAssetsManifest, ArticleFulltextProvenance, ArticleFulltextProvider,
+    ArticleFulltextReuse, ArticleNotIncluded, ArticleOmittedCoverage,
 };
 
 const PMC_PROVIDER_LABEL: &str = "PMC OA Archive";
@@ -49,12 +53,6 @@ enum ArchivePackage {
     },
 }
 
-enum AssetBytesAttempt {
-    Found(Vec<u8>),
-    SourceAbsent,
-    AssetMissing,
-}
-
 struct FigshareCollection {
     articles: Vec<FigshareArticle>,
     failed: bool,
@@ -74,83 +72,80 @@ struct JatsFacts {
     complex_tables: usize,
 }
 
+const LINKED_CANDIDATE_LIMIT: usize = 256;
+const LINKED_FETCH_CONCURRENCY: usize = 8;
+const LINKED_AGGREGATE_LIMIT: usize = 64 * 1024 * 1024;
+
+struct ResolvedArticleAssets {
+    manifest: ArticleAssetsManifest,
+    bytes: BTreeMap<String, Vec<u8>>,
+}
+
+#[derive(Clone)]
+struct LinkedCandidate {
+    href: String,
+    filename: String,
+    label: Option<String>,
+    media_type: Option<String>,
+    route: ArticleAssetDiscoveryRoute,
+    additional_routes: Vec<ArticleAssetDiscoveryRoute>,
+    relative_to_bin: bool,
+}
+
+struct ResolvedAsset {
+    canonical_identity: String,
+    precedence: u8,
+    entry: ArticleAssetEntry,
+    bytes: Vec<u8>,
+}
+
+struct PendingCoverage {
+    canonical_identity: String,
+    row: ArticleAssetNamedCoverage,
+}
+
+struct RetrievableCoverageObservation {
+    sha256: String,
+    precedence: u8,
+    row: ArticleAssetNamedCoverage,
+}
+
+struct PmcPackageObservation {
+    manifest: PmcOaArchiveManifest,
+    package: Option<PmcOaArchivePackage>,
+    failed: bool,
+}
+
+struct EuropePackageObservation {
+    package: EuropePmcSupplementaryPackage,
+    pmc_manifest: Option<PmcOaArchiveManifest>,
+}
+
+struct FigshareAssetsObservation {
+    assets: Vec<ResolvedAsset>,
+    nonretrievable: Vec<PendingCoverage>,
+    failed: bool,
+}
+
 pub async fn article_assets_manifest(
     requested_id: &str,
 ) -> Result<ArticleAssetsManifest, BioMcpError> {
-    let mut article = super::detail::get_article_base(requested_id).await?;
-    let archive_attempt = resolve_archive_package(&article).await;
-    let archive_failed = matches!(&archive_attempt, SourceAttempt::Failed);
-    match archive_attempt {
-        SourceAttempt::Success(ArchivePackage::Pmc { pmcid, package }) => {
-            return Ok(build_assets_manifest(
-                requested_id,
-                &article,
-                &pmcid,
-                package,
-            ));
-        }
-        SourceAttempt::Success(ArchivePackage::EuropePmc {
-            pmcid,
-            package,
-            pmc_manifest,
-        }) => {
-            return Ok(build_europe_pmc_manifest(
-                requested_id,
-                &article,
-                &pmcid,
-                package,
-                pmc_manifest.as_ref(),
-            ));
-        }
-        SourceAttempt::Absent | SourceAttempt::Failed => {}
-    }
-    match figshare_assets_manifest(requested_id, &mut article).await {
-        Ok(Some(manifest)) => Ok(manifest),
-        Ok(None) => Err(final_asset_source_error(requested_id, archive_failed)),
-        Err(_) => {
-            tracing::warn!("Figshare request failed for article assets");
-            Err(asset_sources_unavailable())
-        }
-    }
+    let article = super::detail::get_article_base(requested_id).await?;
+    Ok(resolve_article_assets(requested_id, article)
+        .await?
+        .manifest)
 }
 
 pub async fn article_asset_bytes(
     requested_id: &str,
-    filename: &str,
+    asset_key: &str,
 ) -> Result<Vec<u8>, BioMcpError> {
-    let mut article = super::detail::get_article_base(requested_id).await?;
-    let wanted = filename.trim();
-    let archive_attempt = resolve_archive_package(&article).await;
-    let archive_failed = matches!(&archive_attempt, SourceAttempt::Failed);
-    match archive_attempt {
-        SourceAttempt::Success(ArchivePackage::Pmc { package, .. }) => {
-            return package
-                .entries
-                .into_iter()
-                .find(|entry| !entry.is_xml && entry.filename == wanted)
-                .map(|entry| entry.bytes)
-                .ok_or_else(|| article_asset_not_found(requested_id, wanted));
-        }
-        SourceAttempt::Success(ArchivePackage::EuropePmc { package, .. }) => {
-            return package
-                .entries
-                .into_iter()
-                .find(|entry| entry.filename == wanted)
-                .map(|entry| entry.bytes)
-                .ok_or_else(|| article_asset_not_found(requested_id, wanted));
-        }
-        SourceAttempt::Absent | SourceAttempt::Failed => {}
-    }
-    match figshare_asset_bytes(&mut article, wanted).await {
-        Ok(AssetBytesAttempt::Found(bytes)) => Ok(bytes),
-        Ok(AssetBytesAttempt::AssetMissing | AssetBytesAttempt::SourceAbsent) => Err(
-            final_asset_bytes_error(requested_id, wanted, archive_failed),
-        ),
-        Err(_) => {
-            tracing::warn!("Figshare request failed for article asset bytes");
-            Err(asset_sources_unavailable())
-        }
-    }
+    let article = super::detail::get_article_base(requested_id).await?;
+    resolve_article_assets(requested_id, article)
+        .await?
+        .bytes
+        .remove(asset_key.trim())
+        .ok_or_else(|| article_asset_not_found(requested_id, asset_key.trim()))
 }
 
 pub(super) async fn attach_not_included(article: &mut Article, requested_id: &str) {
@@ -172,6 +167,940 @@ pub(super) async fn attach_not_included(article: &mut Article, requested_id: &st
         SourceAttempt::Absent | SourceAttempt::Failed => return,
     };
     article.not_included = manifest.not_included;
+}
+
+async fn resolve_article_assets(
+    requested_id: &str,
+    mut article: Article,
+) -> Result<ResolvedArticleAssets, BioMcpError> {
+    let (pmcid, mut any_failed) = match resolve_article_pmcid(&article).await {
+        Ok(pmcid) => (pmcid, false),
+        Err(_) => {
+            tracing::warn!("Article asset identity resolution failed");
+            (None, true)
+        }
+    };
+
+    let mut assets = Vec::<ResolvedAsset>::new();
+    let mut candidates = Vec::<LinkedCandidate>::new();
+    let mut nonretrievable = Vec::<PendingCoverage>::new();
+    let mut complex_tables = 0usize;
+
+    if let Some(pmcid) = pmcid.as_deref() {
+        let mut figshare_article = article.clone();
+        let (pmc, europe, europe_xml, ncbi_xml, html, figshare) = tokio::join!(
+            observe_pmc_package(pmcid),
+            observe_europe_package(pmcid),
+            observe_europe_xml(pmcid),
+            observe_ncbi_xml(pmcid),
+            observe_pmc_html(pmcid),
+            observe_figshare_assets(requested_id, &mut figshare_article),
+        );
+
+        let retained_pmc_manifest = match pmc {
+            SourceAttempt::Success(observation) => {
+                any_failed |= observation.failed;
+                if let Some(package) = observation.package {
+                    let facts = jats_facts(&package.entries);
+                    complex_tables = facts.complex_tables;
+                    if let Some(xml_entry) = package.entries.iter().find(|entry| entry.is_xml) {
+                        match std::str::from_utf8(&xml_entry.bytes) {
+                            Ok(xml) => {
+                                any_failed |= append_jats_candidates(
+                                    &mut candidates,
+                                    xml,
+                                    jats_route(provider()),
+                                )
+                                .is_err();
+                            }
+                            Err(_) => any_failed = true,
+                        }
+                    }
+                    let package_root = package
+                        .entries
+                        .iter()
+                        .find(|entry| entry.is_xml)
+                        .and_then(|entry| entry.filename.rsplit_once('/').map(|(root, _)| root));
+                    let reuse = reuse(&observation.manifest, &article);
+                    let provenance = provenance(&observation.manifest, &article);
+                    let route = ArticleAssetDiscoveryRoute {
+                        provider: provider(),
+                        source_document: ArticleAssetSourceDocument::PmcOaArchive,
+                    };
+                    for entry in package.entries.iter().filter(|entry| !entry.is_xml) {
+                        let identity = package_identity(
+                            "pmc",
+                            pmcid,
+                            package_relative_path(&entry.filename, package_root),
+                        );
+                        let mut public = asset_entry(
+                            requested_id,
+                            entry,
+                            &facts,
+                            &route.provider,
+                            &reuse,
+                            &provenance,
+                        );
+                        public.asset_key = sha256_hex(identity.as_bytes());
+                        assets.push(ResolvedAsset {
+                            canonical_identity: identity,
+                            precedence: 0,
+                            entry: public,
+                            bytes: entry.bytes.clone(),
+                        });
+                    }
+                }
+                Some(observation.manifest)
+            }
+            SourceAttempt::Absent => None,
+            SourceAttempt::Failed => {
+                any_failed = true;
+                None
+            }
+        };
+
+        match europe {
+            SourceAttempt::Success(observation) => {
+                let provider = ArticleFulltextProvider {
+                    label: EUROPE_PMC_PROVIDER_LABEL.to_string(),
+                    source: EUROPE_PMC_PROVIDER_SOURCE.to_string(),
+                };
+                let pmc_manifest = observation
+                    .pmc_manifest
+                    .as_ref()
+                    .or(retained_pmc_manifest.as_ref());
+                let reuse = europe_pmc_reuse(pmc_manifest, &article);
+                let provenance = ArticleFulltextProvenance {
+                    open_access: article.open_access,
+                    retracted: pmc_manifest
+                        .and_then(|manifest| manifest.retracted)
+                        .or(article.europepmc_retracted),
+                    package_url: None,
+                    pdf_fallback_used: false,
+                };
+                for entry in &observation.package.entries {
+                    let identity = package_identity("europe-pmc", pmcid, &entry.filename);
+                    let mut public =
+                        europe_pmc_asset_entry(requested_id, entry, &provider, &reuse, &provenance);
+                    public.asset_key = sha256_hex(identity.as_bytes());
+                    assets.push(ResolvedAsset {
+                        canonical_identity: identity,
+                        precedence: 1,
+                        entry: public,
+                        bytes: entry.bytes.clone(),
+                    });
+                }
+            }
+            SourceAttempt::Absent => {}
+            SourceAttempt::Failed => any_failed = true,
+        }
+
+        match europe_xml {
+            SourceAttempt::Success(xml) => {
+                any_failed |= append_jats_candidates(
+                    &mut candidates,
+                    &xml,
+                    jats_route(ArticleFulltextProvider {
+                        label: "Europe PMC XML".to_string(),
+                        source: "Europe PMC".to_string(),
+                    }),
+                )
+                .is_err();
+            }
+            SourceAttempt::Absent => {}
+            SourceAttempt::Failed => any_failed = true,
+        }
+        match ncbi_xml {
+            SourceAttempt::Success(xml) => {
+                any_failed |= append_jats_candidates(
+                    &mut candidates,
+                    &xml,
+                    jats_route(ArticleFulltextProvider {
+                        label: "NCBI EFetch PMC XML".to_string(),
+                        source: "NCBI EFetch".to_string(),
+                    }),
+                )
+                .is_err();
+            }
+            SourceAttempt::Absent => {}
+            SourceAttempt::Failed => any_failed = true,
+        }
+        match html {
+            SourceAttempt::Success(html) => {
+                match crate::transform::article::extract_pmc_supplement_links(&html) {
+                    Ok(links) => candidates.extend(links.into_iter().map(|link| LinkedCandidate {
+                        href: link.href,
+                        filename: link.filename,
+                        label: link.label,
+                        media_type: link.media_type,
+                        route: ArticleAssetDiscoveryRoute {
+                            provider: linked_provider(),
+                            source_document: ArticleAssetSourceDocument::PmcHtml,
+                        },
+                        additional_routes: Vec::new(),
+                        relative_to_bin: false,
+                    })),
+                    Err(_) => any_failed = true,
+                }
+            }
+            SourceAttempt::Absent => {}
+            SourceAttempt::Failed => any_failed = true,
+        }
+
+        resolve_linked_candidates(
+            requested_id,
+            &article,
+            pmcid,
+            candidates,
+            &mut assets,
+            &mut nonretrievable,
+        )
+        .await;
+        fold_figshare_observation(figshare, &mut assets, &mut nonretrievable, &mut any_failed);
+    } else {
+        let figshare = observe_figshare_assets(requested_id, &mut article).await;
+        fold_figshare_observation(figshare, &mut assets, &mut nonretrievable, &mut any_failed);
+    }
+
+    finish_resolution(
+        requested_id,
+        &article,
+        pmcid.as_deref(),
+        assets,
+        nonretrievable,
+        complex_tables,
+        any_failed,
+    )
+}
+
+fn fold_figshare_observation(
+    observation: SourceAttempt<FigshareAssetsObservation>,
+    assets: &mut Vec<ResolvedAsset>,
+    nonretrievable: &mut Vec<PendingCoverage>,
+    any_failed: &mut bool,
+) {
+    match observation {
+        SourceAttempt::Success(mut found) => {
+            assets.append(&mut found.assets);
+            nonretrievable.append(&mut found.nonretrievable);
+            *any_failed |= found.failed;
+        }
+        SourceAttempt::Absent => {}
+        SourceAttempt::Failed => *any_failed = true,
+    }
+}
+
+fn linked_provider() -> ArticleFulltextProvider {
+    ArticleFulltextProvider {
+        label: "PMC Linked Article Asset".to_string(),
+        source: "PMC".to_string(),
+    }
+}
+
+fn jats_route(provider: ArticleFulltextProvider) -> ArticleAssetDiscoveryRoute {
+    ArticleAssetDiscoveryRoute {
+        provider,
+        source_document: ArticleAssetSourceDocument::JatsXml,
+    }
+}
+
+fn package_identity(provider: &str, pmcid: &str, filename: &str) -> String {
+    format!("{provider}:{pmcid}:{}", filename.replace('\\', "/"))
+}
+
+fn package_relative_path<'a>(filename: &'a str, root: Option<&str>) -> &'a str {
+    root.and_then(|root| filename.strip_prefix(root)?.strip_prefix('/'))
+        .unwrap_or(filename)
+}
+
+async fn resolve_linked_candidates(
+    requested_id: &str,
+    article: &Article,
+    pmcid: &str,
+    candidates: Vec<LinkedCandidate>,
+    assets: &mut Vec<ResolvedAsset>,
+    nonretrievable: &mut Vec<PendingCoverage>,
+) {
+    let client = match PmcArticleClient::new(pmcid) {
+        Ok(client) => client,
+        Err(_) => {
+            nonretrievable.extend(candidates.into_iter().map(|candidate| PendingCoverage {
+                canonical_identity: rejected_identity(&candidate),
+                row: named_coverage(&candidate, ArticleAssetNamedOutcome::SourceUnavailable),
+            }));
+            return;
+        }
+    };
+
+    let mut classified = candidates
+        .into_iter()
+        .map(|candidate| {
+            let target = client
+                .linked_target(&candidate.href, candidate.relative_to_bin)
+                .ok();
+            let identity = target
+                .as_ref()
+                .map(|target| target.canonical_identity.clone())
+                .unwrap_or_else(|| rejected_identity(&candidate));
+            (identity, target, candidate)
+        })
+        .collect::<Vec<_>>();
+    classified.sort_by(|left, right| {
+        (left.0.as_str(), left.2.href.as_str()).cmp(&(right.0.as_str(), right.2.href.as_str()))
+    });
+    let overflow = split_candidate_overflow(&mut classified, LINKED_CANDIDATE_LIMIT);
+    for (identity, _, candidate) in overflow {
+        nonretrievable.push(PendingCoverage {
+            canonical_identity: identity,
+            row: named_coverage(&candidate, ArticleAssetNamedOutcome::SourceUnavailable),
+        });
+    }
+
+    let mut canonical = BTreeMap::<String, (Vec<_>, LinkedCandidate)>::new();
+    for (identity, target, candidate) in classified {
+        let Some(target) = target else {
+            nonretrievable.push(PendingCoverage {
+                canonical_identity: identity,
+                row: named_coverage(&candidate, ArticleAssetNamedOutcome::UnsupportedOrigin),
+            });
+            continue;
+        };
+        match canonical.entry(identity) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                entry.insert((vec![target], candidate));
+            }
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                let (targets, existing) = entry.get_mut();
+                if !targets.iter().any(|current| current.url == target.url) {
+                    targets.push(target);
+                }
+                merge_candidate(existing, candidate);
+            }
+        }
+    }
+
+    let mut already_resolved = BTreeMap::<String, usize>::new();
+    for (index, asset) in assets.iter().enumerate() {
+        already_resolved
+            .entry(asset.canonical_identity.clone())
+            .or_insert(index);
+    }
+    let mut to_fetch = VecDeque::new();
+    for (identity, (targets, candidate)) in canonical {
+        if let Some(index) = already_resolved.get(&identity).copied() {
+            merge_candidate_into_entry(&mut assets[index].entry, &candidate);
+        } else {
+            to_fetch.push_back((identity, targets, candidate));
+        }
+    }
+
+    // Fetch in bounded waves. Each task receives a share of the aggregate budget, so buffered
+    // concurrency cannot start a ninth full body after eight in-flight bodies have already
+    // consumed the 64 MiB article allowance.
+    let mut aggregate = 0usize;
+    while !to_fetch.is_empty() {
+        let budgets = linked_fetch_batch_budgets(LINKED_AGGREGATE_LIMIT - aggregate);
+        if budgets.is_empty() {
+            for (identity, _, candidate) in to_fetch.drain(..) {
+                nonretrievable.push(PendingCoverage {
+                    canonical_identity: identity,
+                    row: named_coverage(&candidate, ArticleAssetNamedOutcome::SourceUnavailable),
+                });
+            }
+            break;
+        }
+        let mut batch = Vec::with_capacity(budgets.len());
+        for body_limit in budgets {
+            let Some((identity, targets, candidate)) = to_fetch.pop_front() else {
+                break;
+            };
+            batch.push((identity, targets, candidate, body_limit));
+        }
+        let mut fetches = futures::stream::iter(batch.into_iter().map(
+            |(identity, targets, candidate, body_limit)| {
+                let client = client.clone();
+                async move {
+                    let result = client
+                        .fetch_first_available_with_limit(&targets, body_limit)
+                        .await;
+                    (identity, candidate, result)
+                }
+            },
+        ))
+        .buffered(LINKED_FETCH_CONCURRENCY);
+        while let Some((identity, candidate, result)) = fetches.next().await {
+            match result {
+                PmcLinkedFetch::Bytes { bytes, media_type }
+                    if linked_aggregate_accepts(aggregate, bytes.len()) =>
+                {
+                    aggregate += bytes.len();
+                    let routes = candidate_routes(&candidate);
+                    let provider = candidate.route.provider.clone();
+                    let mut entry = ArticleAssetEntry {
+                        filename: candidate.filename.clone(),
+                        asset_key: sha256_hex(identity.as_bytes()),
+                        kind: filename_kind(&candidate.filename).to_string(),
+                        media_type: candidate.media_type.clone().or(media_type),
+                        size_bytes: bytes.len(),
+                        sha256: sha256_hex(&bytes),
+                        provider: provider.clone(),
+                        reuse: ArticleFulltextReuse {
+                            license_present: false,
+                            license: None,
+                            license_source: None,
+                            reuse_warning: Some(
+                                "License/reuse status is unknown; verify rights before reuse."
+                                    .to_string(),
+                            ),
+                        },
+                        provenance: ArticleFulltextProvenance {
+                            open_access: article.open_access,
+                            retracted: article.europepmc_retracted,
+                            package_url: None,
+                            pdf_fallback_used: false,
+                        },
+                        jats: candidate.label.clone().map(|label| ArticleAssetJats {
+                            label: Some(label),
+                            caption: None,
+                            source_id: None,
+                        }),
+                        discovery_routes: routes,
+                        handle: article_asset_command(requested_id, &candidate.filename),
+                    };
+                    entry.discovery_routes.sort();
+                    entry.discovery_routes.dedup();
+                    assets.push(ResolvedAsset {
+                        canonical_identity: identity,
+                        precedence: 2,
+                        entry,
+                        bytes,
+                    });
+                }
+                PmcLinkedFetch::Bytes { .. } | PmcLinkedFetch::SourceUnavailable => {
+                    nonretrievable.push(PendingCoverage {
+                        canonical_identity: identity,
+                        row: named_coverage(
+                            &candidate,
+                            ArticleAssetNamedOutcome::SourceUnavailable,
+                        ),
+                    });
+                }
+                PmcLinkedFetch::HealthyAbsent => nonretrievable.push(PendingCoverage {
+                    canonical_identity: identity,
+                    row: named_coverage(&candidate, ArticleAssetNamedOutcome::HealthyAbsent),
+                }),
+                PmcLinkedFetch::AccessOrLicenceDenied => nonretrievable.push(PendingCoverage {
+                    canonical_identity: identity,
+                    row: named_coverage(
+                        &candidate,
+                        ArticleAssetNamedOutcome::AccessOrLicenceDenied,
+                    ),
+                }),
+            }
+        }
+    }
+}
+
+fn split_candidate_overflow<T>(values: &mut Vec<T>, limit: usize) -> Vec<T> {
+    values.split_off(values.len().min(limit))
+}
+
+fn linked_aggregate_accepts(current: usize, next: usize) -> bool {
+    current.saturating_add(next) <= LINKED_AGGREGATE_LIMIT
+}
+
+fn linked_fetch_batch_budgets(remaining: usize) -> Vec<usize> {
+    let mut remaining = remaining;
+    let mut budgets = Vec::new();
+    while remaining > 0 && budgets.len() < LINKED_FETCH_CONCURRENCY {
+        let budget = remaining.min(LINKED_ASSET_BODY_LIMIT);
+        budgets.push(budget);
+        remaining -= budget;
+    }
+    budgets
+}
+
+fn merge_candidate(existing: &mut LinkedCandidate, candidate: LinkedCandidate) {
+    existing.additional_routes.push(candidate.route);
+    existing
+        .additional_routes
+        .extend(candidate.additional_routes);
+    existing.additional_routes.sort();
+    existing.additional_routes.dedup();
+    if existing.label.is_none() {
+        existing.label = candidate.label;
+    }
+    if existing.media_type.is_none() {
+        existing.media_type = candidate.media_type;
+    }
+}
+
+fn merge_candidate_into_entry(entry: &mut ArticleAssetEntry, candidate: &LinkedCandidate) {
+    entry.discovery_routes.extend(candidate_routes(candidate));
+    entry.discovery_routes.sort();
+    entry.discovery_routes.dedup();
+    if entry.media_type.is_none() {
+        entry.media_type = candidate.media_type.clone();
+    }
+    if entry.jats.is_none() && candidate.label.is_some() {
+        entry.jats = Some(ArticleAssetJats {
+            label: candidate.label.clone(),
+            caption: None,
+            source_id: None,
+        });
+    }
+}
+
+fn rejected_identity(candidate: &LinkedCandidate) -> String {
+    format!("rejected:{}", sha256_hex(candidate.href.trim().as_bytes()))
+}
+
+fn append_jats_candidates(
+    candidates: &mut Vec<LinkedCandidate>,
+    xml: &str,
+    route: ArticleAssetDiscoveryRoute,
+) -> Result<(), ()> {
+    let links = crate::transform::article::extract_jats_supplement_links(xml).map_err(|_| ())?;
+    candidates.extend(links.into_iter().map(|link| LinkedCandidate {
+        href: link.href,
+        filename: link.filename,
+        label: link.label,
+        media_type: link.media_type,
+        route: route.clone(),
+        additional_routes: Vec::new(),
+        relative_to_bin: true,
+    }));
+    Ok(())
+}
+
+fn candidate_routes(candidate: &LinkedCandidate) -> Vec<ArticleAssetDiscoveryRoute> {
+    let mut routes = vec![candidate.route.clone()];
+    routes.extend(candidate.additional_routes.clone());
+    routes.sort();
+    routes.dedup();
+    routes
+}
+
+fn named_coverage(
+    candidate: &LinkedCandidate,
+    outcome: ArticleAssetNamedOutcome,
+) -> ArticleAssetNamedCoverage {
+    ArticleAssetNamedCoverage {
+        filename: candidate.filename.clone(),
+        asset_key: None,
+        label: candidate.label.clone(),
+        media_type: candidate.media_type.clone(),
+        provider: candidate.route.provider.clone(),
+        source_document: candidate.route.source_document,
+        outcome,
+        handle: None,
+        discovery_routes: candidate_routes(candidate),
+    }
+}
+
+fn finish_resolution(
+    requested_id: &str,
+    article: &Article,
+    pmcid: Option<&str>,
+    assets: Vec<ResolvedAsset>,
+    nonretrievable: Vec<PendingCoverage>,
+    complex_tables: usize,
+    any_failed: bool,
+) -> Result<ResolvedArticleAssets, BioMcpError> {
+    let retrievable_observations = retrievable_coverage_observations(&assets);
+    let mut assets = merge_resolved_assets(assets);
+    let successful_identities = assets
+        .iter()
+        .map(|asset| asset.canonical_identity.clone())
+        .collect::<BTreeSet<_>>();
+    let mut pending = BTreeMap::<String, ArticleAssetNamedCoverage>::new();
+    for mut observation in nonretrievable {
+        if successful_identities.contains(&observation.canonical_identity) {
+            continue;
+        }
+        observation.row.discovery_routes.sort();
+        observation.row.discovery_routes.dedup();
+        match pending.entry(observation.canonical_identity) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                entry.insert(observation.row);
+            }
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                let existing = entry.get_mut();
+                existing
+                    .discovery_routes
+                    .extend(observation.row.discovery_routes);
+                existing.discovery_routes.sort();
+                existing.discovery_routes.dedup();
+                if named_outcome_priority(observation.row.outcome)
+                    > named_outcome_priority(existing.outcome)
+                {
+                    existing.outcome = observation.row.outcome;
+                }
+                if existing.label.is_none() {
+                    existing.label = observation.row.label;
+                }
+                if existing.media_type.is_none() {
+                    existing.media_type = observation.row.media_type;
+                }
+            }
+        }
+    }
+
+    if assets.is_empty() && pending.is_empty() {
+        return Err(final_asset_source_error(requested_id, any_failed));
+    }
+
+    assign_asset_keys(requested_id, &mut assets);
+    let primary = assets.first();
+    let fallback_coverage = pending
+        .values()
+        .min_by_key(|coverage| source_document_precedence(coverage.source_document));
+    let provider = primary
+        .map(|asset| asset.entry.provider.clone())
+        .or_else(|| fallback_coverage.map(|coverage| coverage.provider.clone()))
+        .expect("assets or named coverage establishes a provider");
+    let provenance = primary
+        .map(|asset| asset.entry.provenance.clone())
+        .unwrap_or(ArticleFulltextProvenance {
+            open_access: article.open_access,
+            retracted: article.europepmc_retracted,
+            package_url: None,
+            pdf_fallback_used: false,
+        });
+
+    let mut coverage = finalize_retrievable_coverage(retrievable_observations, &assets);
+    coverage.extend(pending.into_values());
+    coverage.sort_by(|left, right| {
+        (
+            left.filename.as_str(),
+            left.asset_key.as_deref().unwrap_or(""),
+            left.source_document,
+        )
+            .cmp(&(
+                right.filename.as_str(),
+                right.asset_key.as_deref().unwrap_or(""),
+                right.source_document,
+            ))
+    });
+
+    let mut bytes = BTreeMap::new();
+    let mut entries = Vec::with_capacity(assets.len());
+    for asset in assets {
+        bytes.insert(asset.entry.asset_key.clone(), asset.bytes);
+        entries.push(asset.entry);
+    }
+    entries.sort_by(|left, right| left.asset_key.cmp(&right.asset_key));
+    let mut manifest = ArticleAssetsManifest {
+        article_id: requested_id.trim().to_string(),
+        pmid: article.pmid.clone(),
+        pmcid: pmcid.map(str::to_string).or_else(|| article.pmcid.clone()),
+        provider,
+        provenance,
+        assets: entries,
+        coverage,
+        not_included: None,
+    };
+    manifest.not_included = Some(not_included_from_manifest(&manifest));
+    if let Some(not_included) = manifest.not_included.as_mut() {
+        not_included.complex_tables.count = complex_tables;
+    }
+    Ok(ResolvedArticleAssets { manifest, bytes })
+}
+
+fn merge_resolved_assets(mut assets: Vec<ResolvedAsset>) -> Vec<ResolvedAsset> {
+    assets.sort_by(|left, right| {
+        (left.precedence, left.canonical_identity.as_str())
+            .cmp(&(right.precedence, right.canonical_identity.as_str()))
+    });
+
+    let mut by_identity = BTreeMap::<String, ResolvedAsset>::new();
+    for asset in assets {
+        match by_identity.entry(asset.canonical_identity.clone()) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                entry.insert(asset);
+            }
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                merge_entry_facts(&mut entry.get_mut().entry, &asset.entry);
+            }
+        }
+    }
+
+    let mut by_hash = BTreeMap::<String, ResolvedAsset>::new();
+    for asset in by_identity.into_values() {
+        match by_hash.entry(asset.entry.sha256.clone()) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                entry.insert(asset);
+            }
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                let existing = entry.get_mut();
+                if (asset.precedence, asset.canonical_identity.as_str())
+                    < (existing.precedence, existing.canonical_identity.as_str())
+                {
+                    let mut replacement = asset;
+                    merge_entry_facts(&mut replacement.entry, &existing.entry);
+                    *existing = replacement;
+                } else {
+                    merge_entry_facts(&mut existing.entry, &asset.entry);
+                }
+            }
+        }
+    }
+    let mut merged = by_hash.into_values().collect::<Vec<_>>();
+    merged.sort_by(|left, right| {
+        (left.precedence, left.canonical_identity.as_str())
+            .cmp(&(right.precedence, right.canonical_identity.as_str()))
+    });
+    merged
+}
+
+fn merge_entry_facts(primary: &mut ArticleAssetEntry, other: &ArticleAssetEntry) {
+    primary
+        .discovery_routes
+        .extend(other.discovery_routes.clone());
+    primary.discovery_routes.sort();
+    primary.discovery_routes.dedup();
+    if primary.media_type.is_none() {
+        primary.media_type = other.media_type.clone();
+    }
+    if primary.jats.is_none() {
+        primary.jats = other.jats.clone();
+    }
+}
+
+fn assign_asset_keys(requested_id: &str, assets: &mut [ResolvedAsset]) {
+    let mut counts = BTreeMap::new();
+    for asset in assets.iter() {
+        *counts.entry(asset.entry.filename.clone()).or_insert(0usize) += 1;
+    }
+    for asset in assets {
+        let filename = asset.entry.filename.clone();
+        asset.entry.asset_key = if counts.get(&filename) == Some(&1) {
+            filename.clone()
+        } else {
+            format!(
+                "{}-{}--{}",
+                provider_slug(&asset.entry.provider.source),
+                sha256_hex(asset.canonical_identity.as_bytes()),
+                filename
+            )
+        };
+        asset.entry.handle = article_asset_command(requested_id, &asset.entry.asset_key);
+    }
+}
+
+fn retrievable_coverage(asset: &ResolvedAsset) -> ArticleAssetNamedCoverage {
+    let route = asset
+        .entry
+        .discovery_routes
+        .iter()
+        .filter(|route| route.provider == asset.entry.provider)
+        .min_by_key(|route| source_document_precedence(route.source_document))
+        .or_else(|| {
+            asset
+                .entry
+                .discovery_routes
+                .iter()
+                .min_by_key(|route| source_document_precedence(route.source_document))
+        })
+        .cloned()
+        .unwrap_or(ArticleAssetDiscoveryRoute {
+            provider: asset.entry.provider.clone(),
+            source_document: ArticleAssetSourceDocument::JatsXml,
+        });
+    ArticleAssetNamedCoverage {
+        filename: asset.entry.filename.clone(),
+        asset_key: Some(asset.entry.asset_key.clone()),
+        label: asset
+            .entry
+            .jats
+            .as_ref()
+            .and_then(|jats| jats.label.clone()),
+        media_type: asset.entry.media_type.clone(),
+        provider: asset.entry.provider.clone(),
+        source_document: route.source_document,
+        outcome: ArticleAssetNamedOutcome::Retrievable,
+        handle: Some(asset.entry.handle.clone()),
+        discovery_routes: asset.entry.discovery_routes.clone(),
+    }
+}
+
+fn retrievable_coverage_observations(
+    assets: &[ResolvedAsset],
+) -> Vec<RetrievableCoverageObservation> {
+    let mut observations = BTreeMap::<(String, String), RetrievableCoverageObservation>::new();
+    for asset in assets {
+        let key = (asset.entry.filename.clone(), asset.entry.sha256.clone());
+        let mut row = retrievable_coverage(asset);
+        row.asset_key = None;
+        row.handle = None;
+        match observations.entry(key) {
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                entry.insert(RetrievableCoverageObservation {
+                    sha256: asset.entry.sha256.clone(),
+                    precedence: asset.precedence,
+                    row,
+                });
+            }
+            std::collections::btree_map::Entry::Occupied(mut entry) => {
+                let existing = entry.get_mut();
+                if asset.precedence < existing.precedence {
+                    let mut replacement = RetrievableCoverageObservation {
+                        sha256: asset.entry.sha256.clone(),
+                        precedence: asset.precedence,
+                        row,
+                    };
+                    merge_coverage_facts(&mut replacement.row, &existing.row);
+                    *existing = replacement;
+                } else {
+                    merge_coverage_facts(&mut existing.row, &row);
+                }
+            }
+        }
+    }
+    observations.into_values().collect()
+}
+
+fn merge_coverage_facts(
+    primary: &mut ArticleAssetNamedCoverage,
+    other: &ArticleAssetNamedCoverage,
+) {
+    primary
+        .discovery_routes
+        .extend(other.discovery_routes.clone());
+    primary.discovery_routes.sort();
+    primary.discovery_routes.dedup();
+    if primary.label.is_none() {
+        primary.label = other.label.clone();
+    }
+    if primary.media_type.is_none() {
+        primary.media_type = other.media_type.clone();
+    }
+}
+
+fn finalize_retrievable_coverage(
+    observations: Vec<RetrievableCoverageObservation>,
+    assets: &[ResolvedAsset],
+) -> Vec<ArticleAssetNamedCoverage> {
+    let by_hash = assets
+        .iter()
+        .map(|asset| (asset.entry.sha256.as_str(), asset))
+        .collect::<BTreeMap<_, _>>();
+    observations
+        .into_iter()
+        .filter_map(|mut observation| {
+            let asset = by_hash.get(observation.sha256.as_str())?;
+            observation.row.asset_key = Some(asset.entry.asset_key.clone());
+            observation.row.handle = Some(asset.entry.handle.clone());
+            Some(observation.row)
+        })
+        .collect()
+}
+
+fn source_document_precedence(source: ArticleAssetSourceDocument) -> u8 {
+    match source {
+        ArticleAssetSourceDocument::PmcOaArchive => 0,
+        ArticleAssetSourceDocument::EuropePmcZip => 1,
+        ArticleAssetSourceDocument::JatsXml | ArticleAssetSourceDocument::PmcHtml => 2,
+        ArticleAssetSourceDocument::Figshare => 3,
+    }
+}
+
+fn named_outcome_priority(outcome: ArticleAssetNamedOutcome) -> u8 {
+    match outcome {
+        ArticleAssetNamedOutcome::Retrievable => 5,
+        ArticleAssetNamedOutcome::SourceUnavailable => 4,
+        ArticleAssetNamedOutcome::AccessOrLicenceDenied => 3,
+        ArticleAssetNamedOutcome::UnsupportedOrigin => 2,
+        ArticleAssetNamedOutcome::HealthyAbsent => 1,
+    }
+}
+
+fn provider_slug(provider: &str) -> String {
+    let slug = provider
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() {
+                ch.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect::<String>();
+    slug.split('-')
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("-")
+}
+
+async fn observe_pmc_package(pmcid: &str) -> SourceAttempt<PmcPackageObservation> {
+    let client = match PmcOaClient::new() {
+        Ok(client) => client,
+        Err(_) => return SourceAttempt::Failed,
+    };
+    let manifest = match client.oa_archive_manifest(pmcid).await {
+        Ok(Some(manifest)) => manifest,
+        Ok(None) => return SourceAttempt::Absent,
+        Err(_) => return SourceAttempt::Failed,
+    };
+    match client.archive_package(manifest.clone()).await {
+        Ok(package) => SourceAttempt::Success(PmcPackageObservation {
+            manifest,
+            package: Some(package),
+            failed: false,
+        }),
+        Err(_) => SourceAttempt::Success(PmcPackageObservation {
+            manifest,
+            package: None,
+            failed: true,
+        }),
+    }
+}
+
+async fn observe_europe_package(pmcid: &str) -> SourceAttempt<EuropePackageObservation> {
+    let client = match EuropePmcClient::new() {
+        Ok(client) => client,
+        Err(_) => return SourceAttempt::Failed,
+    };
+    match client.get_supplementary_package(pmcid).await {
+        Ok(Some(package)) => SourceAttempt::Success(EuropePackageObservation {
+            package,
+            pmc_manifest: None,
+        }),
+        Ok(None) => SourceAttempt::Absent,
+        Err(_) => SourceAttempt::Failed,
+    }
+}
+
+async fn observe_europe_xml(pmcid: &str) -> SourceAttempt<String> {
+    let client = match EuropePmcClient::new() {
+        Ok(client) => client,
+        Err(_) => return SourceAttempt::Failed,
+    };
+    match client.get_full_text_xml("PMC", pmcid).await {
+        Ok(Some(xml)) => SourceAttempt::Success(xml),
+        Ok(None) => SourceAttempt::Absent,
+        Err(_) => SourceAttempt::Failed,
+    }
+}
+
+async fn observe_ncbi_xml(pmcid: &str) -> SourceAttempt<String> {
+    let client = match NcbiEfetchClient::new() {
+        Ok(client) => client,
+        Err(_) => return SourceAttempt::Failed,
+    };
+    match client.get_full_text_xml(pmcid).await {
+        Ok(Some(xml)) => SourceAttempt::Success(xml),
+        Ok(None) => SourceAttempt::Absent,
+        Err(_) => SourceAttempt::Failed,
+    }
+}
+
+async fn observe_pmc_html(pmcid: &str) -> SourceAttempt<String> {
+    match crate::sources::pmc_article::html(pmcid).await {
+        Ok(Some(html)) => SourceAttempt::Success(html),
+        Ok(None) => SourceAttempt::Absent,
+        Err(_) => SourceAttempt::Failed,
+    }
 }
 
 async fn resolve_archive_package(article: &Article) -> SourceAttempt<ArchivePackage> {
@@ -255,14 +1184,6 @@ fn final_asset_source_error(requested_id: &str, failed: bool) -> BioMcpError {
         asset_sources_unavailable()
     } else {
         no_supported_asset_source(requested_id)
-    }
-}
-
-fn final_asset_bytes_error(requested_id: &str, wanted: &str, failed: bool) -> BioMcpError {
-    if failed {
-        asset_sources_unavailable()
-    } else {
-        article_asset_not_found(requested_id, wanted)
     }
 }
 
@@ -474,92 +1395,88 @@ fn normalize_title(raw: &str) -> Option<String> {
     (!value.is_empty()).then_some(value)
 }
 
-async fn figshare_assets_manifest(
+async fn observe_figshare_assets(
     requested_id: &str,
     article: &mut Article,
-) -> Result<Option<ArticleAssetsManifest>, BioMcpError> {
-    let Some(collection) = figshare_collection(article).await? else {
-        return Ok(None);
+) -> SourceAttempt<FigshareAssetsObservation> {
+    let collection = match figshare_collection(article).await {
+        Ok(Some(collection)) => collection,
+        Ok(None) => return SourceAttempt::Absent,
+        Err(_) => return SourceAttempt::Failed,
     };
-    let Some(first_article) = collection.articles.first() else {
-        return Ok(None);
+    let client = match FigshareClient::new() {
+        Ok(client) => client,
+        Err(_) => return SourceAttempt::Failed,
     };
     let provider = figshare_provider();
-    let provenance = figshare_provenance(first_article, article);
-    let client = FigshareClient::new()?;
-    let mut seen_files = BTreeSet::new();
+    let route = ArticleAssetDiscoveryRoute {
+        provider: provider.clone(),
+        source_document: ArticleAssetSourceDocument::Figshare,
+    };
+    let mut seen = BTreeSet::new();
     let mut assets = Vec::new();
-    let mut download_failed = false;
+    let mut nonretrievable = Vec::new();
+    let mut failed = collection.failed;
+    let mut named_files = 0usize;
     for figshare in &collection.articles {
         let reuse = figshare_reuse(figshare);
-        let asset_provenance = figshare_provenance(figshare, article);
+        let provenance = figshare_provenance(figshare, article);
         for file in &figshare.files {
-            if !seen_files.insert(file.filename.clone()) {
+            let identity = format!("figshare:{}:{}", figshare.article_id, file.id);
+            if !seen.insert(identity.clone()) {
                 continue;
             }
+            named_files += 1;
             match client.download_file(file).await {
-                Ok(bytes) => assets.push(figshare_asset_entry(
-                    requested_id,
-                    file,
-                    &bytes,
-                    &provider,
-                    &reuse,
-                    &asset_provenance,
-                )),
+                Ok(bytes) => {
+                    let mut entry = figshare_asset_entry(
+                        requested_id,
+                        file,
+                        &bytes,
+                        &provider,
+                        &reuse,
+                        &provenance,
+                    );
+                    entry.asset_key = sha256_hex(identity.as_bytes());
+                    assets.push(ResolvedAsset {
+                        canonical_identity: identity,
+                        precedence: 3,
+                        entry,
+                        bytes,
+                    });
+                }
                 Err(_) => {
-                    download_failed = true;
-                    tracing::warn!("Figshare asset download failed");
+                    failed = true;
+                    nonretrievable.push(PendingCoverage {
+                        canonical_identity: identity,
+                        row: ArticleAssetNamedCoverage {
+                            filename: file.filename.clone(),
+                            asset_key: None,
+                            label: None,
+                            media_type: file.mimetype.clone(),
+                            provider: provider.clone(),
+                            source_document: ArticleAssetSourceDocument::Figshare,
+                            outcome: ArticleAssetNamedOutcome::SourceUnavailable,
+                            handle: None,
+                            discovery_routes: vec![route.clone()],
+                        },
+                    });
                 }
             }
         }
     }
-    if assets.is_empty() {
-        return if download_failed || collection.failed {
-            Err(asset_sources_unavailable())
+    if named_files == 0 {
+        if failed {
+            SourceAttempt::Failed
         } else {
-            Ok(None)
-        };
-    }
-    assets.sort_by(|left, right| left.filename.cmp(&right.filename));
-    let mut manifest = ArticleAssetsManifest {
-        article_id: requested_id.trim().to_string(),
-        pmid: article.pmid.clone(),
-        pmcid: None,
-        provider,
-        provenance,
-        assets,
-        not_included: None,
-    };
-    manifest.not_included = Some(not_included_from_manifest(&manifest));
-    Ok(Some(manifest))
-}
-
-async fn figshare_asset_bytes(
-    article: &mut Article,
-    wanted: &str,
-) -> Result<AssetBytesAttempt, BioMcpError> {
-    let Some(collection) = figshare_collection(article).await? else {
-        return Ok(AssetBytesAttempt::SourceAbsent);
-    };
-    let client = FigshareClient::new()?;
-    let mut seen_files = BTreeSet::new();
-    for figshare in &collection.articles {
-        for file in &figshare.files {
-            if !seen_files.insert(file.filename.clone()) {
-                continue;
-            }
-            if file.filename == wanted {
-                return client
-                    .download_file(file)
-                    .await
-                    .map(AssetBytesAttempt::Found);
-            }
+            SourceAttempt::Absent
         }
-    }
-    if collection.failed {
-        Err(asset_sources_unavailable())
     } else {
-        Ok(AssetBytesAttempt::AssetMissing)
+        SourceAttempt::Success(FigshareAssetsObservation {
+            assets,
+            nonretrievable,
+            failed,
+        })
     }
 }
 
@@ -624,13 +1541,19 @@ fn figshare_asset_entry(
 ) -> ArticleAssetEntry {
     ArticleAssetEntry {
         filename: file.filename.clone(),
+        asset_key: file.filename.clone(),
         kind: figshare_kind(file).to_string(),
+        media_type: file.mimetype.clone(),
         size_bytes: bytes.len(),
         sha256: sha256_hex(bytes),
         provider: provider.clone(),
         reuse: reuse.clone(),
         provenance: provenance.clone(),
         jats: None,
+        discovery_routes: vec![ArticleAssetDiscoveryRoute {
+            provider: provider.clone(),
+            source_document: ArticleAssetSourceDocument::Figshare,
+        }],
         handle: article_asset_command(requested_id, &file.filename),
     }
 }
@@ -679,6 +1602,7 @@ fn build_europe_pmc_manifest(
         provider,
         provenance,
         assets,
+        coverage: Vec::new(),
         not_included: None,
     };
     manifest.not_included = Some(not_included_from_manifest(&manifest));
@@ -724,13 +1648,19 @@ fn europe_pmc_asset_entry(
 ) -> ArticleAssetEntry {
     ArticleAssetEntry {
         filename: entry.filename.clone(),
+        asset_key: entry.filename.clone(),
         kind: filename_kind(&entry.filename).to_string(),
+        media_type: None,
         size_bytes: entry.bytes.len(),
         sha256: sha256_hex(&entry.bytes),
         provider: provider.clone(),
         reuse: reuse.clone(),
         provenance: provenance.clone(),
         jats: None,
+        discovery_routes: vec![ArticleAssetDiscoveryRoute {
+            provider: provider.clone(),
+            source_document: ArticleAssetSourceDocument::EuropePmcZip,
+        }],
         handle: article_asset_command(requested_id, &entry.filename),
     }
 }
@@ -759,6 +1689,7 @@ fn build_assets_manifest(
         provider,
         provenance,
         assets,
+        coverage: Vec::new(),
         not_included: None,
     };
     manifest.not_included = Some(not_included_from_manifest(&manifest));
@@ -820,13 +1751,19 @@ fn asset_entry(
         .to_string();
     ArticleAssetEntry {
         filename: entry.filename.clone(),
+        asset_key: entry.filename.clone(),
         kind,
+        media_type: None,
         size_bytes: entry.bytes.len(),
         sha256: sha256_hex(&entry.bytes),
         provider: provider.clone(),
         reuse: reuse.clone(),
         provenance: provenance.clone(),
         jats: jats.and_then(article_asset_jats),
+        discovery_routes: vec![ArticleAssetDiscoveryRoute {
+            provider: provider.clone(),
+            source_document: ArticleAssetSourceDocument::PmcOaArchive,
+        }],
         handle: article_asset_command(requested_id, &entry.filename),
     }
 }
@@ -1194,18 +2131,6 @@ mod tests {
     }
 
     #[test]
-    fn final_asset_bytes_classification_preserves_prior_failure_after_missing_file() {
-        assert!(matches!(
-            final_asset_bytes_error("22663011", "missing.csv", false),
-            BioMcpError::NotFound { .. }
-        ));
-        assert!(matches!(
-            final_asset_bytes_error("22663011", "missing.csv", true),
-            BioMcpError::SourceUnavailable { .. }
-        ));
-    }
-
-    #[test]
     fn europe_pmc_manifest_retains_pmc_license_source_and_exact_member_facts() {
         let bytes = b"exact supplementary bytes".to_vec();
         let package = EuropePmcSupplementaryPackage {
@@ -1241,6 +2166,180 @@ mod tests {
                 .map(|source| source.source.as_str()),
             Some(PMC_PROVIDER_SOURCE)
         );
+    }
+
+    fn resolved_asset(
+        identity: &str,
+        filename: &str,
+        bytes: &[u8],
+        precedence: u8,
+        source_document: ArticleAssetSourceDocument,
+    ) -> ResolvedAsset {
+        let provider = ArticleFulltextProvider {
+            label: format!("provider-{precedence}"),
+            source: format!("source-{precedence}"),
+        };
+        ResolvedAsset {
+            canonical_identity: identity.to_string(),
+            precedence,
+            entry: ArticleAssetEntry {
+                filename: filename.to_string(),
+                asset_key: String::new(),
+                kind: "supplementary-file".to_string(),
+                media_type: None,
+                size_bytes: bytes.len(),
+                sha256: sha256_hex(bytes),
+                provider: provider.clone(),
+                reuse: ArticleFulltextReuse {
+                    license_present: false,
+                    license: None,
+                    license_source: None,
+                    reuse_warning: None,
+                },
+                provenance: ArticleFulltextProvenance::default(),
+                jats: None,
+                discovery_routes: vec![ArticleAssetDiscoveryRoute {
+                    provider,
+                    source_document,
+                }],
+                handle: String::new(),
+            },
+            bytes: bytes.to_vec(),
+        }
+    }
+
+    #[test]
+    fn malformed_jats_is_a_source_failure_instead_of_silent_absence() {
+        let mut candidates = Vec::new();
+        let route = jats_route(ArticleFulltextProvider {
+            label: "test XML".to_string(),
+            source: "test".to_string(),
+        });
+        assert!(append_jats_candidates(&mut candidates, "<article>", route).is_err());
+        assert!(candidates.is_empty());
+    }
+
+    #[test]
+    fn linked_budgets_are_deterministic_at_the_exact_boundaries() {
+        assert!(linked_aggregate_accepts(0, LINKED_AGGREGATE_LIMIT));
+        assert!(!linked_aggregate_accepts(1, LINKED_AGGREGATE_LIMIT));
+        let budgets = linked_fetch_batch_budgets(LINKED_AGGREGATE_LIMIT);
+        assert!(budgets.len() <= LINKED_FETCH_CONCURRENCY);
+        assert!(
+            budgets
+                .iter()
+                .all(|budget| *budget <= LINKED_ASSET_BODY_LIMIT)
+        );
+        assert_eq!(budgets.iter().sum::<usize>(), LINKED_AGGREGATE_LIMIT);
+        let partial = linked_fetch_batch_budgets(LINKED_ASSET_BODY_LIMIT + 1);
+        assert!(partial.iter().all(|budget| *budget > 0));
+        assert_eq!(partial.iter().sum::<usize>(), LINKED_ASSET_BODY_LIMIT + 1);
+
+        let mut candidates = vec![0, 1, 2, 3];
+        let overflow = split_candidate_overflow(&mut candidates, 2);
+        assert_eq!(candidates, vec![0, 1]);
+        assert_eq!(overflow, vec![2, 3]);
+    }
+
+    #[test]
+    fn identity_then_hash_merge_keeps_primary_bytes_and_all_routes() {
+        let bytes = b"same supplement";
+        let merged = merge_resolved_assets(vec![
+            resolved_asset(
+                "figshare:1:2",
+                "copy.csv",
+                bytes,
+                3,
+                ArticleAssetSourceDocument::Figshare,
+            ),
+            resolved_asset(
+                "pmc:PMC1:copy.csv",
+                "copy.csv",
+                bytes,
+                0,
+                ArticleAssetSourceDocument::PmcOaArchive,
+            ),
+        ]);
+
+        assert_eq!(merged.len(), 1);
+        assert_eq!(merged[0].precedence, 0);
+        assert_eq!(merged[0].bytes, bytes);
+        assert_eq!(merged[0].entry.discovery_routes.len(), 2);
+    }
+
+    #[test]
+    fn hash_dedup_preserves_coverage_for_distinct_provider_filenames() {
+        let bytes = b"shared supplement bytes";
+        let assets = vec![
+            resolved_asset(
+                "pmc:PMC1:methods.pdf",
+                "methods.pdf",
+                bytes,
+                0,
+                ArticleAssetSourceDocument::PmcOaArchive,
+            ),
+            resolved_asset(
+                "figshare:2:tables.pdf",
+                "tables.pdf",
+                bytes,
+                3,
+                ArticleAssetSourceDocument::Figshare,
+            ),
+        ];
+        let observations = retrievable_coverage_observations(&assets);
+        let mut merged = merge_resolved_assets(assets);
+        assign_asset_keys("42", &mut merged);
+        let coverage = finalize_retrievable_coverage(observations, &merged);
+        let methods = coverage
+            .iter()
+            .find(|row| row.filename == "methods.pdf")
+            .expect("methods filename must remain covered");
+        let tables = coverage
+            .iter()
+            .find(|row| row.filename == "tables.pdf")
+            .expect("tables filename must remain covered");
+        assert_eq!(methods.outcome, ArticleAssetNamedOutcome::Retrievable);
+        assert_eq!(tables.outcome, ArticleAssetNamedOutcome::Retrievable);
+        assert_eq!(methods.handle, tables.handle);
+    }
+
+    #[test]
+    fn collision_keys_are_stable_while_unique_names_keep_legacy_handles() {
+        let mut assets = vec![
+            resolved_asset(
+                "pmc:PMC1:same.csv",
+                "same.csv",
+                b"one",
+                0,
+                ArticleAssetSourceDocument::PmcOaArchive,
+            ),
+            resolved_asset(
+                "figshare:2:3",
+                "same.csv",
+                b"two",
+                3,
+                ArticleAssetSourceDocument::Figshare,
+            ),
+            resolved_asset(
+                "pmc:PMC1:unique.xlsx",
+                "unique.xlsx",
+                b"three",
+                0,
+                ArticleAssetSourceDocument::PmcOaArchive,
+            ),
+        ];
+        assign_asset_keys("42", &mut assets);
+
+        assert_eq!(assets[2].entry.asset_key, "unique.xlsx");
+        assert_eq!(
+            assets[2].entry.handle,
+            "biomcp get article 42 asset unique.xlsx"
+        );
+        for asset in &assets[..2] {
+            assert!(asset.entry.asset_key.ends_with("--same.csv"));
+            assert!(asset.entry.handle.ends_with(&asset.entry.asset_key));
+        }
+        assert_ne!(assets[0].entry.asset_key, assets[1].entry.asset_key);
     }
 
     fn figshare_row(

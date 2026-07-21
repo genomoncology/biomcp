@@ -4,6 +4,9 @@
 
 ### New features
 
+- Resolved recognized JATS- and PMC-HTML-linked article supplements through stable
+  asset keys, bounded provider fetches, merged discovery provenance, and typed
+  per-file coverage without exposing provider URLs.
 - Changed `variant articles` to union exact annotation, normalized-alias, and
   source-citation routes with per-row provenance, deterministic global ranking,
   one-pass pagination, diagnostic strategies, and explicit incomplete status.

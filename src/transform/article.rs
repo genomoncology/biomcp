@@ -18,9 +18,17 @@ pub use self::federation::{
     from_europepmc_result, from_europepmc_search_result, from_pubmed_esummary_entry,
     from_pubtator_document, from_pubtator_search_result, merge_europepmc_metadata,
 };
-pub(crate) use self::html::classify_html_document;
-pub(crate) use self::jats::classify_jats_document;
+pub(crate) use self::html::{classify_html_document, extract_pmc_supplement_links};
+pub(crate) use self::jats::{classify_jats_document, extract_jats_supplement_links};
 pub use self::pdf::extract_text_from_pdf;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ArticleSupplementLink {
+    pub href: String,
+    pub filename: String,
+    pub label: Option<String>,
+    pub media_type: Option<String>,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ArticleDocumentCoverage {

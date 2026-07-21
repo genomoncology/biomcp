@@ -72,13 +72,13 @@ fn article_asset_request(sections: &[String]) -> Result<Option<String>, crate::e
         .any(|section| section.trim().eq_ignore_ascii_case("assets"))
     {
         return Err(crate::error::BioMcpError::InvalidArgument(
-            "asset <name> is a standalone raw-byte retrieval form; do not combine it with assets"
+            "asset <asset-key> is a standalone raw-byte retrieval form; do not combine it with assets"
                 .into(),
         ));
     }
     if index + 2 != sections.len() {
         return Err(crate::error::BioMcpError::InvalidArgument(
-            "asset requires exactly one package filename (example: biomcp get article 22663011 asset traces-s1.csv)"
+            "asset requires exactly one asset key (example: biomcp get article 22663011 asset traces-s1.csv)"
                 .into(),
         ));
     }
@@ -89,7 +89,7 @@ fn article_asset_request(sections: &[String]) -> Result<Option<String>, crate::e
         .map(|value| Ok(Some(value.to_string())))
         .unwrap_or_else(|| {
             Err(crate::error::BioMcpError::InvalidArgument(
-                "asset requires exactly one package filename (example: biomcp get article 22663011 asset traces-s1.csv)"
+                "asset requires exactly one asset key (example: biomcp get article 22663011 asset traces-s1.csv)"
                     .into(),
             ))
         })
@@ -125,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    fn asset_requires_exactly_one_filename_and_no_assets_section() {
+    fn asset_requires_exactly_one_key_and_no_assets_section() {
         assert_eq!(
             article_asset_request(&sections(&["asset", "supplement.pdf"]))
                 .unwrap()
