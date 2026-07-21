@@ -494,14 +494,13 @@ case "$scenario" in
                  source_citation: ([.source_status[] | select(.route == "source_citation" and .source == "myvariant") | {status, detail}][0]),
                  literal_exact_aliases: ([.results[].matched_aliases[]] | unique),
                  only_literal_exact_aliases: (([.results[].matched_aliases[]] | unique) == $expected),
+                 literal_exact_route_queries: ([.debug_plan.routes[] | select(.route == "exact_lexical") | .queries[]] | unique),
+                 only_literal_exact_route_queries: (([.debug_plan.routes[] | select(.route == "exact_lexical") | .queries[]] | unique) == $expected),
                  literal_route_source_provenance: all($expected[] as $alias;
                    any(.results[];
                      (.matched_aliases == [$alias])
                      and (.routes == ["exact_lexical"])
-                     and (.sources == ["pubtator"]))),
-                 no_derived_genomic_alias: (
-                   ([.results[].matched_aliases[] | select(startswith("chr") or startswith("NC_"))] | unique)
-                   == [$expected[] | select(startswith("NC_"))])
+                     and (.sources == ["pubtator"])))
                }
            ],
            encoding_equivalence: {
@@ -513,7 +512,6 @@ case "$scenario" in
                rsids: []
              }),
              same_normalized_aliases: ($atm_components.resolution.normalized_aliases == $atm_genomic.resolution.normalized_aliases),
-             route_queries_present: (([$atm_components.debug_plan.routes[].queries[]] | length) > 0 and ([$atm_genomic.debug_plan.routes[].queries[]] | length) > 0),
              same_route_queries: (($atm_components | route_queries) == ($atm_genomic | route_queries))
            }
          }'

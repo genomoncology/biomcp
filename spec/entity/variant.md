@@ -437,8 +437,13 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-js
         "NM_000051.4:c.1066-6T>G"
       ],
       "only_literal_exact_aliases": true,
-      "literal_route_source_provenance": true,
-      "no_derived_genomic_alias": true
+      "literal_exact_route_queries": [
+        "ATM c.1066-6T>G",
+        "NC_000011.10:g.108248927T>G",
+        "NM_000051.4:c.1066-6T>G"
+      ],
+      "only_literal_exact_route_queries": true,
+      "literal_route_source_provenance": true
     },
     {
       "request_id": "palb2-grch38",
@@ -475,15 +480,19 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-js
         "PALB2 c.3350+5G>A"
       ],
       "only_literal_exact_aliases": true,
-      "literal_route_source_provenance": true,
-      "no_derived_genomic_alias": true
+      "literal_exact_route_queries": [
+        "NC_000016.10:g.23607859C>T",
+        "NM_024675.4:c.3350+5G>A",
+        "PALB2 c.3350+5G>A"
+      ],
+      "only_literal_exact_route_queries": true,
+      "literal_route_source_provenance": true
     }
   ],
   "encoding_equivalence": {
     "same_requested_variant": true,
     "expected_normalized_aliases": true,
     "same_normalized_aliases": true,
-    "route_queries_present": true,
     "same_route_queries": true
   }
 }
