@@ -1085,7 +1085,7 @@ fn plan_queries(
             .into_iter()
             .collect(),
         "pubtator_variant" if context.requested.is_authoritative_refseq() => {
-            exact_aliases(context).0
+            vec![input.trim().to_string()]
         }
         _ => {
             let aliases = combined_normalized_aliases(context);
@@ -2011,7 +2011,7 @@ mod tests {
         );
         assert_eq!(
             plan_queries("NC_000011.10:g.108248927T>G", &context, "pubtator_variant"),
-            exact_aliases(&context).0
+            vec!["NC_000011.10:g.108248927T>G"]
         );
 
         context.resolution.status = VariantResolutionStatus::Unresolved;
