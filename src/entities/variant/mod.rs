@@ -34,9 +34,11 @@ pub(crate) use self::normalization::transcript_coding_hgvs_re;
 #[allow(unused_imports)]
 pub(crate) use self::resolution::{
     NormalizedVariantAliases, RequestedVariantIdentity, SourceVariantIdentity,
-    VariantArticleRequest, VariantArticleResolutionContext, VariantIdentityComparison,
-    VariantResolutionStatus, VariantSearchResolution, compare_variant_identity,
-    gnomad_variant_slug, is_rsid, normalize_protein_change, protein_change_segment,
+    VariantArticleRequest, VariantArticleResolution, VariantArticleResolutionBasis,
+    VariantArticleResolutionContext, VariantIdentityComparison, VariantProviderValidation,
+    VariantProviderValidationStatus, VariantResolutionStatus, VariantSearchResolution,
+    compare_variant_identity, gnomad_variant_slug, is_rsid, normalize_protein_change,
+    protein_change_segment,
 };
 pub(crate) use self::search::resolve_article_variant_identity;
 

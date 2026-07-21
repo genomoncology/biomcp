@@ -13,8 +13,8 @@ use futures::{StreamExt, stream};
 use serde::Serialize;
 
 use crate::entities::variant::{
-    NormalizedVariantAliases, RequestedVariantIdentity, VariantArticleResolutionContext,
-    VariantResolutionStatus, VariantSearchResolution,
+    NormalizedVariantAliases, RequestedVariantIdentity, VariantArticleResolution,
+    VariantArticleResolutionContext, VariantProviderValidationStatus, VariantResolutionStatus,
 };
 use crate::error::BioMcpError;
 
@@ -92,7 +92,7 @@ pub struct VariantArticleRow {
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleResponse {
     pub requested_variant: RequestedVariantIdentity,
-    pub resolution: VariantSearchResolution,
+    pub resolution: VariantArticleResolution,
     pub strategy: VariantArticleStrategy,
     pub complete: bool,
     pub truncated: bool,
@@ -353,7 +353,7 @@ pub struct VariantArticleItemError {
 pub struct VariantArticleBatchItem {
     pub request_id: String,
     pub requested_variant: RequestedVariantIdentity,
-    pub resolution: Option<VariantSearchResolution>,
+    pub resolution: Option<VariantArticleResolution>,
     pub complete: bool,
     pub truncated: bool,
     pub pagination: VariantArticlePagination,
@@ -497,6 +497,26 @@ fn candidate_with_provenance(
 }
 
 fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
+    if context.requested.is_authoritative_refseq() {
+        let mut aliases = BTreeSet::new();
+        if let Some(coding) = context.requested.coding_change.as_deref() {
+            if let Some(gene) = context.requested.gene.as_deref() {
+                aliases.insert(format!("{gene} {coding}"));
+            }
+            if let Some(transcript) = context.requested.transcript.as_deref() {
+                aliases.insert(format!("{transcript}:{coding}"));
+            }
+        }
+        if let (Some(accession), Some(position), Some(reference), Some(alternate)) = (
+            context.requested.genomic_accession.as_deref(),
+            context.requested.position,
+            context.requested.reference.as_deref(),
+            context.requested.alternate.as_deref(),
+        ) {
+            aliases.insert(format!("{accession}:g.{position}{reference}>{alternate}"));
+        }
+        return (aliases.into_iter().take(MAX_EXACT_ALIASES).collect(), false);
+    }
     let mut aliases = BTreeSet::new();
     let gene = context
         .source_identity
@@ -520,8 +540,10 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
     if let Some(change) = context.requested.coding_change.as_deref() {
         insert_change(change);
     }
-    for change in &context.resolution.normalized_aliases.protein_changes {
-        insert_change(change);
+    if context.requested.protein_change.is_none() {
+        for change in &context.resolution.normalized_aliases.protein_changes {
+            insert_change(change);
+        }
     }
     if let Some(source) = context.source_identity.as_ref() {
         for change in source.protein_changes.iter().chain(&source.coding_changes) {
@@ -553,6 +575,9 @@ fn combined_normalized_aliases(
     context: &VariantArticleResolutionContext,
 ) -> NormalizedVariantAliases {
     let mut aliases = context.requested.normalized_aliases();
+    if context.requested.is_authoritative_refseq() {
+        return aliases;
+    }
     if let Some(source) = context.source_identity.as_ref() {
         aliases.protein_changes.extend(
             source
@@ -578,6 +603,9 @@ fn combined_normalized_aliases(
 }
 
 fn primary_exact_alias(context: &VariantArticleResolutionContext) -> Option<String> {
+    if context.requested.is_authoritative_refseq() {
+        return exact_aliases(context).0.into_iter().next();
+    }
     let gene = context.requested.gene.as_deref();
     if let Some(change) = context.requested.protein_change.as_deref() {
         return Some(
@@ -658,7 +686,11 @@ async fn annotation_candidates(
                 row,
                 "pubtator_variant",
                 "pubtator",
-                Some(token.matched_alias.clone()),
+                Some(if context.requested.is_authoritative_refseq() {
+                    input.trim().to_string()
+                } else {
+                    token.matched_alias.clone()
+                }),
             ));
         }
     }
@@ -836,29 +868,43 @@ async fn citation_candidates(
     context: &VariantArticleResolutionContext,
     execution: &VariantArticleExecutionContext,
 ) -> Result<Vec<ArticleCandidate>, BioMcpError> {
-    let Some(source_id) = context.source_id.as_deref() else {
+    let Some(retained_hit) = context.source_hit.as_ref() else {
         return Ok(Vec::new());
     };
-    let Some(started) = execution.reserve("source_citation") else {
-        return Ok(Vec::new());
+    let hydrated_hit = if retained_hit.civic.is_none() {
+        let Some(started) = execution.reserve("source_citation") else {
+            return Ok(Vec::new());
+        };
+        let result = crate::sources::myvariant::MyVariantClient::new()?
+            .get_all(&retained_hit.id)
+            .await;
+        execution.record(
+            "source_citation",
+            "myvariant",
+            started,
+            if result.is_ok() { "ok" } else { "unavailable" },
+            usize::from(result.is_ok()),
+        );
+        let source_key = context
+            .source_identity
+            .as_ref()
+            .map(crate::entities::variant::SourceVariantIdentity::normalized_key);
+        result?
+            .into_iter()
+            .filter(|hit| {
+                source_key.as_ref().is_none_or(|key| {
+                    crate::entities::variant::SourceVariantIdentity::from_myvariant_hit(hit)
+                        .normalized_key()
+                        == *key
+                })
+            })
+            .min_by_key(|hit| serde_json::to_string(hit).unwrap_or_default())
+    } else {
+        None
     };
-    let hit_result = crate::sources::myvariant::MyVariantClient::new()?
-        .get(source_id)
-        .await;
-    execution.record(
-        "source_citation",
-        "myvariant",
-        started,
-        if hit_result.is_ok() {
-            "ok"
-        } else {
-            "unavailable"
-        },
-        usize::from(hit_result.is_ok()),
-    );
-    let hit = hit_result?;
+    let hit = hydrated_hit.as_ref().unwrap_or(retained_hit);
     let matched_alias = primary_exact_alias(context);
-    Ok(crate::sources::myvariant::civic_pubmed_ids(&hit)
+    Ok(crate::sources::myvariant::civic_pubmed_ids(hit)
         .into_iter()
         .enumerate()
         .map(|(position, pmid)| {
@@ -1038,6 +1084,9 @@ fn plan_queries(
             .or_else(|| Some(input.to_string()))
             .into_iter()
             .collect(),
+        "pubtator_variant" if context.requested.is_authoritative_refseq() => {
+            exact_aliases(context).0
+        }
         _ => {
             let aliases = combined_normalized_aliases(context);
             aliases
@@ -1064,7 +1113,16 @@ fn build_debug_plan(
     next: VariantArticleNextPlan,
 ) -> VariantArticleDebugPlan {
     let resolved = matches!(context.resolution.status, VariantResolutionStatus::Resolved);
-    let route_names: Vec<&str> = if !resolved {
+    let contradictory = matches!(
+        context.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Contradictory
+    );
+    let route_names: Vec<&str> = if contradictory {
+        match strategy {
+            VariantArticleStrategy::Union => vec!["best_effort_free_text"],
+            VariantArticleStrategy::Annotation | VariantArticleStrategy::Lexical => Vec::new(),
+        }
+    } else if !resolved {
         match strategy {
             VariantArticleStrategy::Union => vec!["best_effort_free_text"],
             VariantArticleStrategy::Annotation => vec!["pubtator_variant"],
@@ -1232,6 +1290,39 @@ async fn search_variant_articles_identity(
     if !resolved {
         match strategy {
             VariantArticleStrategy::Union => {
+                match context.resolution.provider_validation.status {
+                    VariantProviderValidationStatus::Contradictory => {
+                        statuses.push(status_with_detail(
+                            "source_citation",
+                            "myvariant",
+                            "skipped",
+                            Some("provider identity contradicted request"),
+                        ))
+                    }
+                    VariantProviderValidationStatus::NotFound => statuses.push(status_with_detail(
+                        "source_citation",
+                        "myvariant",
+                        "skipped",
+                        Some("no compatible MyVariant record"),
+                    )),
+                    VariantProviderValidationStatus::Indeterminate => {
+                        statuses.push(status_with_detail(
+                            "source_citation",
+                            "myvariant",
+                            "skipped",
+                            Some("provider identity was not confirmable"),
+                        ))
+                    }
+                    VariantProviderValidationStatus::Unavailable => {
+                        statuses.push(status_with_detail(
+                            "source_citation",
+                            "myvariant",
+                            "skipped",
+                            Some("provider validation unavailable"),
+                        ))
+                    }
+                    VariantProviderValidationStatus::Confirmed => {}
+                }
                 let (rows, incomplete, succeeded, route_statuses) =
                     fallback_candidates(input, &context, &execution).await;
                 candidates.extend(rows);
@@ -1240,11 +1331,35 @@ async fn search_variant_articles_identity(
                 failed_routes += usize::from(incomplete || !succeeded);
             }
             VariantArticleStrategy::Annotation => {
-                statuses.push(status("pubtator_variant", "pubtator", "ok"));
+                if matches!(
+                    context.resolution.provider_validation.status,
+                    VariantProviderValidationStatus::Contradictory
+                ) {
+                    statuses.push(status_with_detail(
+                        "pubtator_variant",
+                        "pubtator",
+                        "skipped",
+                        Some("provider identity contradicted request"),
+                    ));
+                } else {
+                    statuses.push(status("pubtator_variant", "pubtator", "ok"));
+                }
                 succeeded_routes += 1;
             }
             VariantArticleStrategy::Lexical => {
-                statuses.push(status("exact_lexical", "federated", "ok"));
+                if matches!(
+                    context.resolution.provider_validation.status,
+                    VariantProviderValidationStatus::Contradictory
+                ) {
+                    statuses.push(status_with_detail(
+                        "exact_lexical",
+                        "federated",
+                        "skipped",
+                        Some("provider identity contradicted request"),
+                    ));
+                } else {
+                    statuses.push(status("exact_lexical", "federated", "ok"));
+                }
                 succeeded_routes += 1;
             }
         }
@@ -1292,16 +1407,45 @@ async fn search_variant_articles_identity(
             failed_routes += usize::from(incomplete || !succeeded);
         }
         if strategy == VariantArticleStrategy::Union {
-            match citation_candidates(&context, &execution).await {
-                Ok(rows) => {
-                    candidates.extend(rows);
-                    statuses.push(status("source_citation", "myvariant", "ok"));
-                    succeeded_routes += 1;
+            match context.resolution.provider_validation.status {
+                VariantProviderValidationStatus::Confirmed => {
+                    match citation_candidates(&context, &execution).await {
+                        Ok(rows) => {
+                            candidates.extend(rows);
+                            statuses.push(status("source_citation", "myvariant", "ok"));
+                            succeeded_routes += 1;
+                        }
+                        Err(_) => {
+                            statuses.push(status("source_citation", "myvariant", "unavailable"));
+                            failed_routes += 1;
+                        }
+                    }
                 }
-                Err(_) => {
-                    statuses.push(status("source_citation", "myvariant", "unavailable"));
+                VariantProviderValidationStatus::NotFound => statuses.push(status_with_detail(
+                    "source_citation",
+                    "myvariant",
+                    "skipped",
+                    Some("no compatible MyVariant record"),
+                )),
+                VariantProviderValidationStatus::Indeterminate => {
+                    statuses.push(status_with_detail(
+                        "source_citation",
+                        "myvariant",
+                        "skipped",
+                        Some("provider identity was not confirmable"),
+                    ));
                     failed_routes += 1;
                 }
+                VariantProviderValidationStatus::Unavailable => {
+                    statuses.push(status_with_detail(
+                        "source_citation",
+                        "myvariant",
+                        "skipped",
+                        Some("provider validation unavailable"),
+                    ));
+                    failed_routes += 1;
+                }
+                VariantProviderValidationStatus::Contradictory => {}
             }
         }
     }
@@ -1319,7 +1463,12 @@ async fn search_variant_articles_identity(
         .collect::<Vec<_>>();
     enrich_candidates(&mut visible_candidates, &execution).await;
     let budget_stopped = !execution.stopped_routes().is_empty();
-    let complete = failed_routes == 0 && !budget_stopped;
+    let provider_incomplete = matches!(
+        context.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Indeterminate
+            | VariantProviderValidationStatus::Unavailable
+    );
+    let complete = failed_routes == 0 && !budget_stopped && !provider_incomplete;
     let truncated = !complete || offset > 0 || has_more;
     let rows = visible_candidates
         .into_iter()
@@ -1740,16 +1889,25 @@ mod tests {
     };
 
     use crate::entities::article::test_support::row;
-    use crate::entities::variant::SourceVariantIdentity;
+    use crate::entities::variant::{
+        SourceVariantIdentity, VariantArticleResolutionBasis, VariantProviderValidation,
+    };
 
     fn resolved_context() -> VariantArticleResolutionContext {
         let requested = RequestedVariantIdentity::from_variant_input("BRAF p.V600E")
             .expect("requested identity");
         VariantArticleResolutionContext {
-            resolution: VariantSearchResolution {
+            resolution: VariantArticleResolution {
                 status: VariantResolutionStatus::Resolved,
                 normalized_aliases: requested.normalized_aliases(),
                 exhaustive: true,
+                basis: Some(VariantArticleResolutionBasis::ProviderConfirmed),
+                provider_validation: VariantProviderValidation {
+                    source: "myvariant".into(),
+                    status: VariantProviderValidationStatus::Confirmed,
+                    matched_alias: Some("p.V600E".into()),
+                    contradictory_field: None,
+                },
             },
             requested,
             source_id: Some("chr7:g.140453136A>T".into()),
@@ -1760,6 +1918,7 @@ mod tests {
                 coding_changes: vec!["c.1799T>A".into()],
                 rsids: vec!["rs113488022".into()],
             }),
+            source_hit: None,
             fallback_source_identities: Vec::new(),
             available: true,
         }
@@ -1787,13 +1946,95 @@ mod tests {
             aliases,
             vec![
                 "BRAF p.V600E",
-                "BRAF V600E",
                 "BRAF c.1799T>A",
                 "BRAF p.Val600Glu",
                 "chr7:g.140453136A>T",
                 "rs113488022",
             ]
         );
+    }
+
+    #[test]
+    fn refseq_exact_aliases_are_only_caller_literal_forms() {
+        let requested = RequestedVariantIdentity {
+            gene: Some("ATM".into()),
+            coding_change: Some("c.1066-6T>G".into()),
+            transcript: Some("NM_000051.4".into()),
+            genomic_accession: Some("NC_000011.10".into()),
+            genome_build: Some("GRCh38".into()),
+            position: Some(108248927),
+            reference: Some("T".into()),
+            alternate: Some("G".into()),
+            ..Default::default()
+        };
+        let mut context = VariantArticleResolutionContext {
+            resolution: VariantArticleResolution {
+                status: VariantResolutionStatus::Resolved,
+                normalized_aliases: requested.normalized_aliases(),
+                exhaustive: true,
+                basis: Some(VariantArticleResolutionBasis::CallerSupplied),
+                provider_validation: VariantProviderValidation {
+                    source: "myvariant".into(),
+                    status: VariantProviderValidationStatus::NotFound,
+                    matched_alias: None,
+                    contradictory_field: None,
+                },
+            },
+            requested,
+            source_id: None,
+            source_identity: Some(SourceVariantIdentity {
+                genomic_id: "chr11:g.108248927T>G".into(),
+                genes: vec!["ATM".into()],
+                protein_changes: vec!["p.?".into()],
+                coding_changes: vec!["c.1A>T".into()],
+                rsids: vec!["rs1".into()],
+            }),
+            source_hit: None,
+            fallback_source_identities: Vec::new(),
+            available: true,
+        };
+        assert_eq!(
+            exact_aliases(&context).0,
+            vec![
+                "ATM c.1066-6T>G",
+                "NC_000011.10:g.108248927T>G",
+                "NM_000051.4:c.1066-6T>G",
+            ]
+        );
+        assert_eq!(
+            combined_normalized_aliases(&context),
+            context.requested.normalized_aliases()
+        );
+        assert_eq!(
+            primary_exact_alias(&context).as_deref(),
+            Some("ATM c.1066-6T>G")
+        );
+        assert_eq!(
+            plan_queries("NC_000011.10:g.108248927T>G", &context, "pubtator_variant"),
+            exact_aliases(&context).0
+        );
+
+        context.resolution.status = VariantResolutionStatus::Unresolved;
+        context.resolution.basis = None;
+        context.resolution.provider_validation.status =
+            VariantProviderValidationStatus::Contradictory;
+        let plan = build_debug_plan(
+            "NC_000011.10:g.108248927T>G",
+            &context,
+            VariantArticleStrategy::Annotation,
+            &VariantArticleExecutionContext::single(),
+            VariantArticleCountsPlan {
+                pre_dedup: 0,
+                post_dedup: 0,
+                returned: 0,
+            },
+            false,
+            VariantArticleNextPlan {
+                offset: 0,
+                cursor: None,
+            },
+        );
+        assert!(plan.routes.is_empty());
     }
 
     #[test]
@@ -1817,14 +2058,22 @@ mod tests {
         let requested = RequestedVariantIdentity::from_variant_input("MSH2 p.L341P")
             .expect("requested identity");
         let mut context = VariantArticleResolutionContext {
-            resolution: VariantSearchResolution {
+            resolution: VariantArticleResolution {
                 status: VariantResolutionStatus::Ambiguous,
                 normalized_aliases: requested.normalized_aliases(),
                 exhaustive: true,
+                basis: None,
+                provider_validation: VariantProviderValidation {
+                    source: "myvariant".into(),
+                    status: VariantProviderValidationStatus::Indeterminate,
+                    matched_alias: None,
+                    contradictory_field: None,
+                },
             },
             requested,
             source_id: None,
             source_identity: None,
+            source_hit: None,
             fallback_source_identities: vec![
                 SourceVariantIdentity {
                     genomic_id: "first".into(),

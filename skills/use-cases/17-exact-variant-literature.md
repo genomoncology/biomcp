@@ -12,8 +12,11 @@ biomcp article citations 26951660 --limit 5
 biomcp article references 26951660 --limit 5
 ```
 
+For an assembly-aware one-item request, save `[{"request_id":"atm-grch38","gene":"ATM","transcript":"NM_000051.4","coding":"c.1066-6T>G","accession":"NC_000011.10","build":"GRCh38","position":108248927,"ref":"T","alt":"G"}]` as `variants.json`, then run `biomcp --json variant articles --input variants.json`.
+
 Interpretation:
 - Resolve the strict identity first; do not treat a search spelling as a normalized result.
-- Use the default `variant articles` union route as the compact shortlist, then compare candidate summaries in one batch.
-- Request full text and linked assets only for selected papers.
-- Expand citations or references only when the primary papers still lack the needed evidence.
+- `caller_supplied` means BioMCP accepted the supplied fields as one caller assertion; it validated syntax but did not establish cross-coordinate equivalence.
+- `provider_confirmed` means MyVariant uniquely confirmed the request; otherwise inspect `provider_validation` for `not_found`, `indeterminate`, `contradictory`, or `unavailable` and its nullable matched alias or contradictory field.
+- RefSeq exact work uses only caller-present transcript/coding, gene/coding, and genomic aliases; BioMCP performs no liftover, accession-to-`chr` conversion, strand flip, or inferred coordinate expansion.
+- Use the union shortlist, compare summaries in one batch, request full text/assets only for selected papers, and expand citations or references only when needed.

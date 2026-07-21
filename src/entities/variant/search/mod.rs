@@ -4,12 +4,13 @@ use crate::entities::SearchPage;
 use crate::error::BioMcpError;
 use crate::sources::myvariant::{MyVariantClient, MyVariantHit, VariantSearchParams};
 use crate::transform;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use super::{
-    RequestedVariantIdentity, SourceVariantIdentity, VariantArticleResolutionContext,
-    VariantIdentityComparison, VariantResolutionStatus, VariantSearchFilters,
-    VariantSearchResolution, VariantSearchResult, compare_variant_identity,
+    RequestedVariantIdentity, SourceVariantIdentity, VariantArticleResolution,
+    VariantArticleResolutionBasis, VariantArticleResolutionContext, VariantIdentityComparison,
+    VariantProviderValidation, VariantProviderValidationStatus, VariantResolutionStatus,
+    VariantSearchFilters, VariantSearchResolution, VariantSearchResult, compare_variant_identity,
 };
 
 #[derive(Debug, Clone)]
@@ -202,20 +203,339 @@ pub async fn search(
     Ok(search_page(filters, limit, 0).await?.results)
 }
 
-fn unavailable_article_resolution(
+#[derive(Debug, Clone)]
+struct ProviderCandidate {
+    hit: MyVariantHit,
+    identity: SourceVariantIdentity,
+    comparison: VariantIdentityComparison,
+}
+
+#[derive(Debug, Clone)]
+struct ProviderScan {
+    candidates: Vec<ProviderCandidate>,
+    exhaustive: bool,
+    available: bool,
+}
+
+fn provider_candidate(
+    requested: &RequestedVariantIdentity,
+    hit: MyVariantHit,
+) -> ProviderCandidate {
+    let identity = SourceVariantIdentity::from_myvariant_hit(&hit);
+    let comparison = compare_variant_identity(requested, &identity);
+    ProviderCandidate {
+        hit,
+        identity,
+        comparison,
+    }
+}
+
+fn article_resolution_context(
     requested: RequestedVariantIdentity,
+    scan: ProviderScan,
 ) -> VariantArticleResolutionContext {
+    let authoritative = requested.is_authoritative_refseq();
+    let aliases = requested.normalized_aliases();
+    let fallback_source_identities = scan
+        .candidates
+        .iter()
+        .filter(|candidate| {
+            !matches!(
+                candidate.comparison,
+                VariantIdentityComparison::Contradictory { .. }
+            )
+        })
+        .map(|candidate| candidate.identity.clone())
+        .collect();
+    let validation = |status, matched_alias, contradictory_field| VariantProviderValidation {
+        source: "myvariant".into(),
+        status,
+        matched_alias,
+        contradictory_field,
+    };
+    if !scan.available {
+        return VariantArticleResolutionContext {
+            requested,
+            resolution: VariantArticleResolution {
+                status: if authoritative {
+                    VariantResolutionStatus::Resolved
+                } else {
+                    VariantResolutionStatus::Ambiguous
+                },
+                normalized_aliases: aliases,
+                exhaustive: false,
+                basis: authoritative.then_some(VariantArticleResolutionBasis::CallerSupplied),
+                provider_validation: validation(
+                    VariantProviderValidationStatus::Unavailable,
+                    None,
+                    None,
+                ),
+            },
+            source_id: None,
+            source_identity: None,
+            source_hit: None,
+            fallback_source_identities,
+            available: authoritative,
+        };
+    }
+
+    let mut compatible = BTreeMap::<String, (BTreeSet<String>, Vec<&ProviderCandidate>)>::new();
+    let mut saw_indeterminate = false;
+    for candidate in &scan.candidates {
+        match &candidate.comparison {
+            VariantIdentityComparison::Compatible { matched_alias } => {
+                let entry = compatible
+                    .entry(candidate.identity.normalized_key())
+                    .or_insert_with(|| (BTreeSet::new(), Vec::new()));
+                if !matched_alias.trim().is_empty() {
+                    entry.0.insert(matched_alias.clone());
+                }
+                entry.1.push(candidate);
+            }
+            VariantIdentityComparison::Indeterminate { .. } => saw_indeterminate = true,
+            VariantIdentityComparison::Contradictory { .. } => {}
+        }
+    }
+
+    if scan.exhaustive && compatible.len() == 1 && !saw_indeterminate {
+        let (_, (matched_aliases, candidates)) = compatible.into_iter().next().expect("one key");
+        let selected = candidates
+            .into_iter()
+            .min_by_key(|candidate| serde_json::to_string(&candidate.hit).unwrap_or_default())
+            .expect("compatible candidate");
+        return VariantArticleResolutionContext {
+            requested,
+            resolution: VariantArticleResolution {
+                status: VariantResolutionStatus::Resolved,
+                normalized_aliases: aliases,
+                exhaustive: true,
+                basis: Some(VariantArticleResolutionBasis::ProviderConfirmed),
+                provider_validation: validation(
+                    VariantProviderValidationStatus::Confirmed,
+                    matched_aliases.into_iter().next(),
+                    None,
+                ),
+            },
+            source_id: Some(selected.hit.id.clone()),
+            source_identity: Some(selected.identity.clone()),
+            source_hit: Some(selected.hit.clone()),
+            fallback_source_identities,
+            available: true,
+        };
+    }
+
+    if !scan.exhaustive || compatible.len() > 1 || saw_indeterminate {
+        return VariantArticleResolutionContext {
+            requested,
+            resolution: VariantArticleResolution {
+                status: if authoritative {
+                    VariantResolutionStatus::Resolved
+                } else {
+                    VariantResolutionStatus::Ambiguous
+                },
+                normalized_aliases: aliases,
+                exhaustive: scan.exhaustive,
+                basis: authoritative.then_some(VariantArticleResolutionBasis::CallerSupplied),
+                provider_validation: validation(
+                    VariantProviderValidationStatus::Indeterminate,
+                    None,
+                    None,
+                ),
+            },
+            source_id: None,
+            source_identity: None,
+            source_hit: None,
+            fallback_source_identities,
+            available: true,
+        };
+    }
+
+    if !scan.candidates.is_empty() {
+        let mut contradictory = scan
+            .candidates
+            .iter()
+            .filter_map(|candidate| match candidate.comparison {
+                VariantIdentityComparison::Contradictory { field } => {
+                    Some((candidate.identity.normalized_key(), field))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        contradictory.sort();
+        return VariantArticleResolutionContext {
+            requested,
+            resolution: VariantArticleResolution {
+                status: VariantResolutionStatus::Unresolved,
+                normalized_aliases: aliases,
+                exhaustive: true,
+                basis: None,
+                provider_validation: validation(
+                    VariantProviderValidationStatus::Contradictory,
+                    None,
+                    contradictory.first().map(|(_, field)| (*field).to_string()),
+                ),
+            },
+            source_id: None,
+            source_identity: None,
+            source_hit: None,
+            fallback_source_identities: Vec::new(),
+            available: true,
+        };
+    }
+
     VariantArticleResolutionContext {
-        resolution: VariantSearchResolution {
-            status: VariantResolutionStatus::Ambiguous,
-            normalized_aliases: requested.normalized_aliases(),
-            exhaustive: false,
-        },
         requested,
+        resolution: VariantArticleResolution {
+            status: if authoritative {
+                VariantResolutionStatus::Resolved
+            } else {
+                VariantResolutionStatus::Unresolved
+            },
+            normalized_aliases: aliases,
+            exhaustive: true,
+            basis: authoritative.then_some(VariantArticleResolutionBasis::CallerSupplied),
+            provider_validation: validation(VariantProviderValidationStatus::NotFound, None, None),
+        },
         source_id: None,
         source_identity: None,
-        fallback_source_identities: Vec::new(),
-        available: false,
+        source_hit: None,
+        fallback_source_identities,
+        available: true,
+    }
+}
+
+async fn direct_provider_scan(
+    requested: &RequestedVariantIdentity,
+    input: &str,
+    execution: &crate::entities::article::variant_search::VariantArticleExecutionContext,
+) -> ProviderScan {
+    let Some(started) = execution.reserve("resolution") else {
+        return ProviderScan {
+            candidates: Vec::new(),
+            exhaustive: false,
+            available: false,
+        };
+    };
+    let result = match MyVariantClient::new() {
+        Ok(client) => client.get_all(input).await,
+        Err(error) => Err(error),
+    };
+    let conclusive = result.is_ok() || matches!(result, Err(BioMcpError::NotFound { .. }));
+    execution.record(
+        "resolution",
+        "myvariant",
+        started,
+        if conclusive { "ok" } else { "unavailable" },
+        usize::from(conclusive),
+    );
+    match result {
+        Ok(hits) => ProviderScan {
+            candidates: hits
+                .into_iter()
+                .map(|hit| provider_candidate(requested, hit))
+                .collect(),
+            exhaustive: true,
+            available: true,
+        },
+        Err(BioMcpError::NotFound { .. }) => ProviderScan {
+            candidates: Vec::new(),
+            exhaustive: true,
+            available: true,
+        },
+        Err(_) => ProviderScan {
+            candidates: Vec::new(),
+            exhaustive: false,
+            available: false,
+        },
+    }
+}
+
+async fn searched_provider_scan(
+    requested: &RequestedVariantIdentity,
+    execution: &crate::entities::article::variant_search::VariantArticleExecutionContext,
+) -> ProviderScan {
+    const SOURCE_PAGE: usize = 50;
+    const MAX_CANDIDATES: usize = 1_000;
+    let client = match MyVariantClient::new() {
+        Ok(client) => client,
+        Err(_) => {
+            return ProviderScan {
+                candidates: Vec::new(),
+                exhaustive: false,
+                available: false,
+            };
+        }
+    };
+    let mut provider_offset = 0;
+    let mut candidates = Vec::new();
+    let mut exhaustive = false;
+    while provider_offset < MAX_CANDIDATES {
+        let Some(started) = execution.reserve("resolution") else {
+            break;
+        };
+        let result = client
+            .search(&VariantSearchParams {
+                gene: requested.gene.clone(),
+                hgvsp: requested.protein_change.clone(),
+                hgvsc: requested.coding_change.clone(),
+                rsid: requested.rsid.clone(),
+                protein_alias: None,
+                significance: None,
+                max_frequency: None,
+                min_cadd: None,
+                consequence: None,
+                review_status: None,
+                population: None,
+                revel_min: None,
+                gerp_min: None,
+                tumor_site: None,
+                condition: None,
+                impact: None,
+                lof: false,
+                has: None,
+                missing: None,
+                therapy: None,
+                limit: SOURCE_PAGE,
+                offset: provider_offset,
+            })
+            .await;
+        execution.record(
+            "resolution",
+            "myvariant",
+            started,
+            if result.is_ok() { "ok" } else { "unavailable" },
+            usize::from(result.is_ok()),
+        );
+        let response = match result {
+            Ok(response) => response,
+            Err(_) => {
+                return ProviderScan {
+                    candidates: Vec::new(),
+                    exhaustive: false,
+                    available: false,
+                };
+            }
+        };
+        let provider_total = response.total;
+        let hit_count = response.hits.len();
+        let examined_count = hit_count.min(MAX_CANDIDATES - provider_offset);
+        candidates.extend(
+            response
+                .hits
+                .into_iter()
+                .take(examined_count)
+                .map(|hit| provider_candidate(requested, hit)),
+        );
+        provider_offset += examined_count;
+        if candidate_scan_exhaustive(provider_total, provider_offset, hit_count) {
+            exhaustive = true;
+            break;
+        }
+    }
+    ProviderScan {
+        candidates,
+        exhaustive,
+        available: true,
     }
 }
 
@@ -224,114 +544,12 @@ pub(crate) async fn resolve_article_variant_identity(
     input: &str,
     execution: &crate::entities::article::variant_search::VariantArticleExecutionContext,
 ) -> Result<VariantArticleResolutionContext, BioMcpError> {
-    if requested.genomic_accession.is_some() {
-        let Some(started) = execution.reserve("resolution") else {
-            return Ok(unavailable_article_resolution(requested));
-        };
-        let result = match MyVariantClient::new() {
-            Ok(client) => client.get(input).await,
-            Err(err) => Err(err),
-        };
-        execution.record(
-            "resolution",
-            "myvariant",
-            started,
-            if result.is_ok() { "ok" } else { "unavailable" },
-            usize::from(result.is_ok()),
-        );
-        return Ok(match result {
-            Ok(hit) => {
-                let source = SourceVariantIdentity::from_myvariant_hit(&hit);
-                let status = match compare_variant_identity(&requested, &source) {
-                    VariantIdentityComparison::Compatible { .. } => {
-                        VariantResolutionStatus::Resolved
-                    }
-                    VariantIdentityComparison::Indeterminate { .. } => {
-                        VariantResolutionStatus::Ambiguous
-                    }
-                    VariantIdentityComparison::Contradictory { .. } => {
-                        VariantResolutionStatus::Unresolved
-                    }
-                };
-                let resolved = matches!(status, VariantResolutionStatus::Resolved);
-                let fallback_source_identities =
-                    (!matches!(status, VariantResolutionStatus::Unresolved))
-                        .then(|| source.clone())
-                        .into_iter()
-                        .collect();
-                VariantArticleResolutionContext {
-                    requested: requested.clone(),
-                    resolution: VariantSearchResolution {
-                        status,
-                        normalized_aliases: requested.normalized_aliases(),
-                        exhaustive: true,
-                    },
-                    source_id: resolved.then(|| hit.id.clone()),
-                    source_identity: resolved.then_some(source),
-                    fallback_source_identities,
-                    available: true,
-                }
-            }
-            Err(BioMcpError::NotFound { .. }) => VariantArticleResolutionContext {
-                requested: requested.clone(),
-                resolution: VariantSearchResolution {
-                    status: VariantResolutionStatus::Unresolved,
-                    normalized_aliases: requested.normalized_aliases(),
-                    exhaustive: true,
-                },
-                source_id: None,
-                source_identity: None,
-                fallback_source_identities: Vec::new(),
-                available: true,
-            },
-            Err(_) => VariantArticleResolutionContext {
-                requested: requested.clone(),
-                resolution: VariantSearchResolution {
-                    status: VariantResolutionStatus::Ambiguous,
-                    normalized_aliases: requested.normalized_aliases(),
-                    exhaustive: false,
-                },
-                source_id: None,
-                source_identity: None,
-                fallback_source_identities: Vec::new(),
-                available: false,
-            },
-        });
-    }
-    let filters = VariantSearchFilters {
-        gene: requested.gene.clone(),
-        hgvsp: requested.protein_change.clone(),
-        hgvsc: requested.coding_change.clone(),
-        rsid: requested.rsid.clone(),
-        requested_identity: Some(requested.clone()),
-        ..Default::default()
+    let scan = if requested.genomic_accession.is_some() {
+        direct_provider_scan(&requested, input, execution).await
+    } else {
+        searched_provider_scan(&requested, execution).await
     };
-    let page_result = search_page_with_execution(&filters, 2, 0, Some(execution)).await;
-    let page = match page_result {
-        Ok(page) => page,
-        Err(_) => return Ok(unavailable_article_resolution(requested)),
-    };
-    let resolution = page.resolution.unwrap_or(VariantSearchResolution {
-        status: VariantResolutionStatus::Unresolved,
-        normalized_aliases: requested.normalized_aliases(),
-        exhaustive: false,
-    });
-    let fallback_source_identities = page
-        .results
-        .iter()
-        .filter_map(|row| row.source_identity.clone())
-        .collect();
-    let resolved = matches!(resolution.status, VariantResolutionStatus::Resolved)
-        .then(|| page.results.into_iter().next())
-        .flatten();
-    Ok(VariantArticleResolutionContext {
-        requested,
-        resolution,
-        source_id: resolved.as_ref().map(|row| row.id.clone()),
-        source_identity: resolved.and_then(|row| row.source_identity),
-        fallback_source_identities,
-        available: true,
-    })
+    Ok(article_resolution_context(requested, scan))
 }
 
 pub async fn search_page(

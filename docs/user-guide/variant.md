@@ -280,7 +280,39 @@ only for chosen papers, and expands citations or references only when needed.
 
 For several variants, pass a JSON array of 1-10 structured identities from a file
 or stdin. Each item can use an rsID, complete genomic HGVS, structured genomic
-coordinates, gene plus protein change, or coding change plus gene/transcript:
+coordinates, gene plus protein change, or coding change plus gene/transcript.
+Versioned RefSeq accepts either `genomic: "NC_...:g...."` plus an explicit
+`build`, or `accession`, `position`, `ref`, and `alt` plus the build. Builds are
+`GRCh37` or `GRCh38`; existing `chrN` identities remain valid.
+
+```json
+[
+  {"request_id":"atm","genomic":"NC_000011.10:g.108248927T>G","build":"GRCh38"},
+  {"request_id":"atm-components","accession":"NC_000011.10","position":108248927,"ref":"T","alt":"G","build":"GRCh38"}
+]
+```
+
+`caller_supplied` means BioMCP accepted the supplied fields as one caller
+assertion; it validated syntax but did not establish cross-coordinate
+equivalence. A unique compatible MyVariant identity instead yields
+`provider_confirmed`. `resolution.basis` is one of those values or `null`, while
+`provider_validation` reports `confirmed`, `not_found`, `indeterminate`,
+`contradictory`, or `unavailable`. Its `matched_alias` is non-null only for
+confirmation and `contradictory_field` only for contradiction; invalid items
+keep `resolution: null`.
+
+| MyVariant outcome | Public behavior |
+|---|---|
+| unique confirmation | resolved/provider-confirmed; exact routes and source citation |
+| exhaustive no record | RefSeq resolved/caller-supplied; exact routes; citation skipped without degradation |
+| indeterminate scan | RefSeq resolved/caller-supplied; exact routes; incomplete and unknown total |
+| contradictory facts | unresolved/null; no exact routes; optional `best_effort_free_text` only |
+| unavailable | RefSeq resolved/caller-supplied; exact routes; incomplete, truncated, unknown total |
+
+For caller-supplied RefSeq, exact aliases are limited to supplied
+transcript/coding, gene/coding, and RefSeq genomic forms. BioMCP performs no
+liftover, accession-to-`chr` conversion, strand flip, transcript selection, or
+inferred coordinate generation.
 
 ```bash
 biomcp --json variant articles --input variants.json --limit 10

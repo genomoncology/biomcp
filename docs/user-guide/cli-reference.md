@@ -707,6 +707,29 @@ normalized aliases, provider/call/page facts, ranking inputs, and fixed item and
 request budgets. The typed MCP `variant_articles` tool accepts the same item
 fields in memory.
 
+Structured assembly-aware items accept `genomic: "NC_...:g...."` plus `build`,
+or `accession`, `position`, `ref`, and `alt` plus `build`. Versioned RefSeq
+requires explicit `GRCh37` or `GRCh38`; existing `chrN` identities remain
+compatible. RefSeq exact routes contain only caller-present transcript/coding,
+gene/coding, and genomic aliases. There is no liftover, accession-to-`chr`
+conversion, strand flip, transcript selection, or inferred coordinate alias.
+
+`caller_supplied` means BioMCP accepted the supplied fields as one caller
+assertion; it validated syntax but did not establish cross-coordinate
+equivalence. `resolution.basis` is `caller_supplied`, `provider_confirmed`, or
+`null`. MyVariant `provider_validation` is `confirmed`, `not_found`,
+`indeterminate`, `contradictory`, or `unavailable`; `matched_alias` is non-null
+only for `confirmed`, and `contradictory_field` only for `contradictory`.
+Invalid batch items keep `resolution: null`.
+
+| Validation | Result |
+|---|---|
+| confirmed | resolved/provider-confirmed; exact routes and source citation |
+| not found | RefSeq resolved/caller-supplied; exact routes; citation skipped without degradation |
+| indeterminate | RefSeq resolved/caller-supplied; exact routes but incomplete/unknown total |
+| contradictory | unresolved/null; no exact route; optional labelled fallback only |
+| unavailable | RefSeq resolved/caller-supplied; exact routes but incomplete/truncated |
+
 `biomcp variant normalize ... --json` always writes parseable JSON on exit 0. If no provider returns a normalized form, the payload uses `status: "no_result"`, an empty `results` list, a clear `message`, per-service details, and `_meta.next_commands`.
 
 ```bash

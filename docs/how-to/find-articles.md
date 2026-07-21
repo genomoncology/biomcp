@@ -126,6 +126,38 @@ Use `_meta.next_commands` for batch/detail/full-text/assets/citation follow-ups.
 The opt-in plan explains normalized aliases, providers, calls/pages, ranking,
 and the two-worker, 50-work-unit-per-item bounds.
 
+When your authority is an assembly-aware RefSeq identity, use either complete
+form in the same array:
+
+```json
+[
+  {"request_id":"atm-hgvs","genomic":"NC_000011.10:g.108248927T>G","build":"GRCh38"},
+  {"request_id":"atm-fields","gene":"ATM","transcript":"NM_000051.4","coding":"c.1066-6T>G","accession":"NC_000011.10","position":108248927,"ref":"T","alt":"G","build":"GRCh38"}
+]
+```
+
+`caller_supplied` means BioMCP accepted the supplied fields as one caller
+assertion; it validated syntax but did not establish cross-coordinate
+equivalence. `resolution.basis` is `caller_supplied`, `provider_confirmed`, or
+`null`. MyVariant validation is `confirmed`, `not_found`, `indeterminate`,
+`contradictory`, or `unavailable`; `matched_alias` is non-null only when
+confirmed and `contradictory_field` only when contradictory. Invalid items use
+`resolution: null`.
+
+| Validation | Retrieval meaning |
+|---|---|
+| confirmed | provider-confirmed exact routes and source citation |
+| not found | caller-supplied RefSeq exact routes; citation skipped without degradation |
+| indeterminate | caller exact routes continue, but completion and total remain unknown |
+| contradictory | no exact route; only explicitly labelled best-effort fallback |
+| unavailable | caller exact routes continue, but output is incomplete and truncated |
+
+Only caller-present transcript/coding, gene/coding, and RefSeq genomic aliases
+enter exact RefSeq retrieval. BioMCP does not liftover, convert accessions to
+`chr`, flip strands, select transcripts, or infer coordinate aliases. Existing
+`chrN` inputs remain valid, and versioned RefSeq always requires `GRCh37` or
+`GRCh38`.
+
 ## Search PubMed directly
 
 ```bash

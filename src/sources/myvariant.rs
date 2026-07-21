@@ -721,23 +721,13 @@ impl MyVariantClient {
         Ok(RequestPlan::get(format!("variant/{id}")).query("fields", MYVARIANT_FIELDS_GET))
     }
 
-    /// Reduce a `/variant/{id}` response to a single hit value (pure — Tier-3 testable).
-    ///
-    /// MyVariant returns either an object (a single hit) or an array; an empty array
-    /// means the variant was not found.
-    pub(crate) fn select_get_hit_value(
+    /// Reduce a `/variant/{id}` response to every returned hit value (pure — Tier-3 testable).
+    pub(crate) fn select_get_hit_values(
         value: serde_json::Value,
-        id: &str,
-    ) -> Result<serde_json::Value, BioMcpError> {
+    ) -> Result<Vec<serde_json::Value>, BioMcpError> {
         match value {
-            serde_json::Value::Object(_) => Ok(value),
-            serde_json::Value::Array(mut arr) => {
-                arr.drain(..).next().ok_or_else(|| BioMcpError::NotFound {
-                    entity: "variant".into(),
-                    id: id.to_string(),
-                    suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
-                })
-            }
+            serde_json::Value::Object(_) => Ok(vec![value]),
+            serde_json::Value::Array(arr) => Ok(arr),
             _ => Err(BioMcpError::Api {
                 api: MYVARIANT_API.to_string(),
                 message: "Unexpected response type".into(),
@@ -745,18 +735,73 @@ impl MyVariantClient {
         }
     }
 
+    /// Reduce a `/variant/{id}` response to a single hit value (pure — Tier-3 testable).
+    ///
+    /// This legacy API intentionally retains first-hit selection for unaffected callers.
+    pub(crate) fn select_get_hit_value(
+        value: serde_json::Value,
+        id: &str,
+    ) -> Result<serde_json::Value, BioMcpError> {
+        Self::select_get_hit_values(value)?
+            .into_iter()
+            .next()
+            .ok_or_else(|| BioMcpError::NotFound {
+                entity: "variant".into(),
+                id: id.to_string(),
+                suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
+            })
+    }
+
     pub async fn get(&self, id: &str) -> Result<MyVariantHit, BioMcpError> {
         let id = id.trim();
         let plan = Self::get_plan(id)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let value: serde_json::Value = self.get_json(req).await?;
-
         let hit_value = Self::select_get_hit_value(value, id)?;
-
         serde_json::from_value(hit_value).map_err(|source| BioMcpError::ApiJson {
             api: MYVARIANT_API.to_string(),
             source,
         })
+    }
+
+    pub(crate) async fn get_all(&self, id: &str) -> Result<Vec<MyVariantHit>, BioMcpError> {
+        let id = id.trim();
+        let plan = Self::get_plan(id)?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let response = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::MYVARIANT,
+            ))
+            .await?;
+        if response.status() == reqwest::StatusCode::NOT_FOUND {
+            return Ok(Vec::new());
+        }
+        let status = response.status();
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .cloned();
+        let bytes = crate::sources::read_limited_source_body(
+            response,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::MYVARIANT),
+        )
+        .await?;
+        let value: serde_json::Value = crate::sources::decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
+            status,
+            content_type.as_ref(),
+            &bytes,
+            true,
+        )?;
+        Self::select_get_hit_values(value)?
+            .into_iter()
+            .map(|value| {
+                serde_json::from_value(value).map_err(|source| BioMcpError::ApiJson {
+                    api: MYVARIANT_API.to_string(),
+                    source,
+                })
+            })
+            .collect()
     }
 }
 

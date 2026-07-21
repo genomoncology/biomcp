@@ -119,6 +119,24 @@ fn select_get_hit_value_passes_object_through() {
 }
 
 #[test]
+fn select_get_hit_values_preserves_object_array_and_empty_shapes() {
+    let object = json!({"_id": "one"});
+    assert_eq!(
+        MyVariantClient::select_get_hit_values(object.clone()).unwrap(),
+        vec![object]
+    );
+    let array = json!([{"_id": "first"}, {"_id": "second"}]);
+    let hits = MyVariantClient::select_get_hit_values(array).unwrap();
+    assert_eq!(hits.len(), 2);
+    assert_eq!(hits[1]["_id"], "second");
+    assert!(
+        MyVariantClient::select_get_hit_values(json!([]))
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[test]
 fn select_get_hit_value_takes_first_array_element() {
     let value = json!([{"_id": "first"}, {"_id": "second"}]);
     let out = MyVariantClient::select_get_hit_value(value, "x").unwrap();

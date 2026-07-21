@@ -34,6 +34,19 @@ pub(in crate::entities::variant) fn hgvs_coords_re() -> &'static Regex {
     })
 }
 
+fn structured_genomic_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"^((?:chr[0-9XYM]+)|(?:NC_[0-9]+\.[0-9]+)):g\.(\d+)([ACGT])>([ACGT])$")
+            .expect("valid regex")
+    })
+}
+
+fn refseq_accession_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"^NC_[0-9]+\.[0-9]+$").expect("valid regex"))
+}
+
 fn gene_protein_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"^([A-Z][A-Z0-9]+)\s+([A-Z]\d+[A-Z*])$").expect("valid regex"))
@@ -370,20 +383,21 @@ impl VariantArticleRequest {
             rsid: Self::clean(&self.rsid),
         };
         if let Some(genomic) = Self::clean(&self.genomic) {
-            identity.populate_genomic(&genomic);
+            identity.populate_structured_genomic(&genomic);
         }
         identity
     }
 
     pub(crate) fn validate_identity(&self) -> Result<RequestedVariantIdentity, BioMcpError> {
-        let structured_genomic = self.accession.is_some()
-            || self.build.is_some()
+        let component_genomic = self.accession.is_some()
             || self.position.is_some()
             || self.reference.is_some()
             || self.alt.is_some();
-        if self.genomic.is_some() && structured_genomic {
+        let structured_genomic = component_genomic || self.build.is_some();
+        if self.genomic.is_some() && component_genomic {
             return Err(BioMcpError::InvalidArgument(
-                "variant article item cannot combine genomic with structured genomic fields".into(),
+                "variant article item cannot combine genomic with accession, position, ref, or alt"
+                    .into(),
             ));
         }
         let identity = self.requested_identity();
@@ -401,10 +415,10 @@ impl VariantArticleRequest {
             && (identity.position == Some(0)
                 || genomic_alias(&identity)
                     .as_deref()
-                    .is_none_or(|value| !hgvs_coords_re().is_match(value)))
+                    .is_none_or(|value| !structured_genomic_re().is_match(value)))
         {
             return Err(BioMcpError::InvalidArgument(
-                "variant article item genomic identity must use chr coordinates, a positive position, and A/C/G/T ref and alt bases"
+                "variant article item genomic identity must use chr or versioned RefSeq coordinates, a positive position, and A/C/G/T ref and alt bases"
                     .into(),
             ));
         }
@@ -413,6 +427,17 @@ impl VariantArticleRequest {
         }) {
             return Err(BioMcpError::InvalidArgument(
                 "variant article item build must be GRCh37 or GRCh38".into(),
+            ));
+        }
+        if identity
+            .genomic_accession
+            .as_deref()
+            .is_some_and(|accession| refseq_accession_re().is_match(accession))
+            && identity.genome_build.is_none()
+        {
+            return Err(BioMcpError::InvalidArgument(
+                "variant article item versioned RefSeq identity requires an explicit GRCh37 or GRCh38 build"
+                    .into(),
             ));
         }
         for (name, supplied, cleaned) in [
@@ -609,10 +634,31 @@ impl RequestedVariantIdentity {
         let Some(caps) = hgvs_coords_re().captures(value.trim()) else {
             return;
         };
+        self.populate_genomic_captures(&caps);
+    }
+
+    fn populate_structured_genomic(&mut self, value: &str) {
+        let Some(caps) = structured_genomic_re().captures(value.trim()) else {
+            return;
+        };
+        self.populate_genomic_captures(&caps);
+    }
+
+    fn populate_genomic_captures(&mut self, caps: &regex::Captures<'_>) {
         self.genomic_accession = Some(caps[1].to_string());
         self.position = caps[2].parse().ok();
         self.reference = Some(caps[3].to_string());
         self.alternate = Some(caps[4].to_string());
+    }
+
+    pub(crate) fn is_authoritative_refseq(&self) -> bool {
+        self.genomic_accession
+            .as_deref()
+            .is_some_and(|accession| refseq_accession_re().is_match(accession))
+            && self.genome_build.is_some()
+            && self.position.is_some()
+            && self.reference.is_some()
+            && self.alternate.is_some()
     }
 
     pub(crate) fn normalized_aliases(&self) -> NormalizedVariantAliases {
@@ -986,12 +1032,47 @@ pub(crate) struct VariantSearchResolution {
     pub exhaustive: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum VariantArticleResolutionBasis {
+    CallerSupplied,
+    ProviderConfirmed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum VariantProviderValidationStatus {
+    Confirmed,
+    NotFound,
+    Indeterminate,
+    Contradictory,
+    Unavailable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct VariantProviderValidation {
+    pub source: String,
+    pub status: VariantProviderValidationStatus,
+    pub matched_alias: Option<String>,
+    pub contradictory_field: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct VariantArticleResolution {
+    pub status: VariantResolutionStatus,
+    pub normalized_aliases: NormalizedVariantAliases,
+    pub exhaustive: bool,
+    pub basis: Option<VariantArticleResolutionBasis>,
+    pub provider_validation: VariantProviderValidation,
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct VariantArticleResolutionContext {
     pub requested: RequestedVariantIdentity,
-    pub resolution: VariantSearchResolution,
+    pub resolution: VariantArticleResolution,
     pub source_id: Option<String>,
     pub source_identity: Option<SourceVariantIdentity>,
+    pub source_hit: Option<crate::sources::myvariant::MyVariantHit>,
     pub fallback_source_identities: Vec<SourceVariantIdentity>,
     pub available: bool,
 }
