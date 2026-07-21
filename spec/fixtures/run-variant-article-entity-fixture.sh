@@ -496,8 +496,9 @@ case "$scenario" in
                  only_literal_exact_aliases: (([.results[].matched_aliases[]] | unique) == $expected),
                  literal_exact_route_queries: ([.debug_plan.routes[] | select(.route == "exact_lexical") | .queries[]] | unique),
                  only_literal_exact_route_queries: (([.debug_plan.routes[] | select(.route == "exact_lexical") | .queries[]] | unique) == $expected),
-                 literal_route_source_provenance: all($expected[] as $alias;
-                   any(.results[];
+                 literal_route_source_provenance: all($expected[];
+                   . as $alias
+                   | any($item.results[];
                      (.matched_aliases == [$alias])
                      and (.routes == ["exact_lexical"])
                      and (.sources == ["pubtator"])))
