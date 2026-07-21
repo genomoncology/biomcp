@@ -1913,7 +1913,7 @@ mod tests {
             (serde_json::json!({"rsid":"rs113488022"}), true),
             (serde_json::json!({"genomic":"chr7:g.140453136A>T"}), true),
             (
-                serde_json::json!({"accession":"chr7","position":140453136,"ref":"A","alt":"T"}),
+                serde_json::json!({"accession":"chr7","build":"GRCh38","position":140453136,"ref":"A","alt":"T"}),
                 true,
             ),
             (serde_json::json!({"gene":"BRAF","protein":"p.V600E"}), true),
@@ -1936,6 +1936,15 @@ mod tests {
                 false,
             ),
             (serde_json::json!({"accession":"chr7","position":1}), false),
+            (
+                serde_json::json!({"accession":"not-an-accession","position":0,"ref":"garbage","alt":"also-garbage"}),
+                false,
+            ),
+            (
+                serde_json::json!({"accession":"chr7","build":"unknown","position":140453136,"ref":"A","alt":"T"}),
+                false,
+            ),
+            (serde_json::json!({"genomic":"chr7:g.0A>T"}), false),
             (
                 serde_json::json!({"genomic":"chr7:g.140453136A>T","accession":"chr7"}),
                 false,

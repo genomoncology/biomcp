@@ -397,6 +397,24 @@ impl VariantArticleRequest {
                     .into(),
             ));
         }
+        if complete_genomic
+            && (identity.position == Some(0)
+                || genomic_alias(&identity)
+                    .as_deref()
+                    .is_none_or(|value| !hgvs_coords_re().is_match(value)))
+        {
+            return Err(BioMcpError::InvalidArgument(
+                "variant article item genomic identity must use chr coordinates, a positive position, and A/C/G/T ref and alt bases"
+                    .into(),
+            ));
+        }
+        if identity.genome_build.as_deref().is_some_and(|build| {
+            !build.eq_ignore_ascii_case("GRCh37") && !build.eq_ignore_ascii_case("GRCh38")
+        }) {
+            return Err(BioMcpError::InvalidArgument(
+                "variant article item build must be GRCh37 or GRCh38".into(),
+            ));
+        }
         for (name, supplied, cleaned) in [
             ("gene", self.gene.is_some(), identity.gene.as_ref()),
             (
