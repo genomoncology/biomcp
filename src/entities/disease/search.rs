@@ -131,8 +131,9 @@ fn normalize_inheritance(value: &str) -> Result<String, BioMcpError> {
         return Ok((*hpo_id).to_string());
     }
     Err(BioMcpError::InvalidArgument(format!(
-        "--inheritance must be a supported inheritance name ({}) or HPO inheritance ID",
-        NAMES.join(", ")
+        "--inheritance must be one of: {}; or HPO inheritance ID: {}",
+        NAMES.join(", "),
+        HPO_IDS.join(", ")
     )))
 }
 

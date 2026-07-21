@@ -249,7 +249,7 @@ pub(super) fn list_disease() -> String {
 - `search disease -q <query>` - search by name
 - `search phenotype "<HP terms or symptom phrases>"` - HPO IDs or resolved symptom text to ranked diseases
 - `search disease -q <query> --source <mondo|doid|mesh>` - constrain ontology source
-- `search disease -q <query> --inheritance <pattern>` - accepts autosomal dominant/recessive, x-linked variants, y-linked, mitochondrial, multifactorial, oligogenic, polygenic, sporadic, somatic mosaicism, broad `dominant`/`recessive`, and HPO inheritance IDs
+- `search disease -q <query> --inheritance <pattern>` - accepts autosomal dominant/recessive, x-linked variants, y-linked, mitochondrial, multifactorial, oligogenic, polygenic, sporadic, somatic mosaicism, broad `dominant`/`recessive`, and HPO inheritance IDs `HP:0000006`, `HP:0000007`, `HP:0001417`, `HP:0001423`, `HP:0001419`, `HP:0001450`, `HP:0001427`, `HP:0001426`, `HP:0010983`, `HP:0010982`, `HP:0003745`, and `HP:0001442`
 - `search disease -q <query> --phenotype <HP:...>`
 - `search disease -q <query> --onset <period>` - accepts antenatal, embryonal, fetal, congenital, neonatal, infantile (`infancy` alias), childhood, juvenile, adolescent, young adult, adult, middle age, and late onset
 - `search disease -q <query> --no-fallback` - skip discover recovery and keep the direct zero-result response
