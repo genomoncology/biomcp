@@ -540,10 +540,8 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
     if let Some(change) = context.requested.coding_change.as_deref() {
         insert_change(change);
     }
-    if context.requested.protein_change.is_none() {
-        for change in &context.resolution.normalized_aliases.protein_changes {
-            insert_change(change);
-        }
+    for change in &context.resolution.normalized_aliases.protein_changes {
+        insert_change(change);
     }
     if let Some(source) = context.source_identity.as_ref() {
         for change in source.protein_changes.iter().chain(&source.coding_changes) {
@@ -864,6 +862,26 @@ fn pmid_seed(pmid: String) -> ArticleSearchResult {
     }
 }
 
+fn select_hydrated_source_hit(
+    hits: Vec<crate::sources::myvariant::MyVariantHit>,
+    source_key: Option<&str>,
+) -> Result<crate::sources::myvariant::MyVariantHit, BioMcpError> {
+    hits.into_iter()
+        .filter(|hit| {
+            source_key.is_none_or(|key| {
+                crate::entities::variant::SourceVariantIdentity::from_myvariant_hit(hit)
+                    .normalized_key()
+                    == key
+            })
+        })
+        .min_by_key(|hit| serde_json::to_string(hit).unwrap_or_default())
+        .ok_or_else(|| BioMcpError::SourceUnavailable {
+            source_name: "MyVariant".into(),
+            reason: "the confirmed variant record was absent during citation hydration".into(),
+            suggestion: "Retry the variant article request".into(),
+        })
+}
+
 async fn citation_candidates(
     context: &VariantArticleResolutionContext,
     execution: &VariantArticleExecutionContext,
@@ -875,9 +893,17 @@ async fn citation_candidates(
         let Some(started) = execution.reserve("source_citation") else {
             return Ok(Vec::new());
         };
-        let result = crate::sources::myvariant::MyVariantClient::new()?
-            .get_all(&retained_hit.id)
-            .await;
+        let source_key = context
+            .source_identity
+            .as_ref()
+            .map(crate::entities::variant::SourceVariantIdentity::normalized_key);
+        let result = match crate::sources::myvariant::MyVariantClient::new() {
+            Ok(client) => client
+                .get_all(&retained_hit.id)
+                .await
+                .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref())),
+            Err(error) => Err(error),
+        };
         execution.record(
             "source_citation",
             "myvariant",
@@ -885,20 +911,7 @@ async fn citation_candidates(
             if result.is_ok() { "ok" } else { "unavailable" },
             usize::from(result.is_ok()),
         );
-        let source_key = context
-            .source_identity
-            .as_ref()
-            .map(crate::entities::variant::SourceVariantIdentity::normalized_key);
-        result?
-            .into_iter()
-            .filter(|hit| {
-                source_key.as_ref().is_none_or(|key| {
-                    crate::entities::variant::SourceVariantIdentity::from_myvariant_hit(hit)
-                        .normalized_key()
-                        == *key
-                })
-            })
-            .min_by_key(|hit| serde_json::to_string(hit).unwrap_or_default())
+        Some(result?)
     } else {
         None
     };
@@ -1946,12 +1959,20 @@ mod tests {
             aliases,
             vec![
                 "BRAF p.V600E",
+                "BRAF V600E",
                 "BRAF c.1799T>A",
                 "BRAF p.Val600Glu",
                 "chr7:g.140453136A>T",
                 "rs113488022",
             ]
         );
+    }
+
+    #[test]
+    fn missing_confirmed_record_during_citation_hydration_is_unavailable() {
+        let error = select_hydrated_source_hit(Vec::new(), Some("missing"))
+            .expect_err("a stale confirmed record must not become healthy empty coverage");
+        assert!(matches!(error, BioMcpError::SourceUnavailable { .. }));
     }
 
     #[test]

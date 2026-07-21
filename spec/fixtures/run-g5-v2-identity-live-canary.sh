@@ -133,8 +133,6 @@ def supplied_aliases(request):
         f'{request["gene"]} {request["coding"]}',
         f'{request["accession"]}:g.{request["position"]}{request["ref"]}>{request["alt"]}',
     }
-    if request.get("protein"):
-        aliases.add(f'{request["gene"]} {request["protein"]}')
     return aliases
 
 

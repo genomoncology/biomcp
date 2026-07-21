@@ -21,6 +21,7 @@ from urllib.parse import parse_qs, urlparse
 
 ready = Path(sys.argv[1])
 request_log = Path(sys.argv[2])
+scenario = sys.argv[3]
 
 BRAF_ANNOTATION_PMID = "6010001"
 BRAF_PROTEIN_ALIAS_PMID = "6010002"
@@ -88,6 +89,9 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if parsed.path.startswith("/v1/variant/"):
+            if scenario == "citation-stale-json":
+                send_json(self, 404, {"error": "No variant found"})
+                return
             if "NC_000011.10" in parsed.path or "NC_000016.10" in parsed.path:
                 send_json(self, 404, {"error": "No variant found"})
                 return
@@ -296,7 +300,7 @@ ready.write_text(f"http://127.0.0.1:{server.server_port}", encoding="utf-8")
 server.serve_forever()
 PY
 
-uv run --no-sync python3 "$server_py" "$ready_file" "$request_log" &
+uv run --no-sync python3 "$server_py" "$ready_file" "$request_log" "$scenario" &
 server_pid=$!
 trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 
@@ -465,6 +469,15 @@ case "$scenario" in
         }
       }'
     ;;
+  citation-stale-json)
+    "$binary" --json variant articles "BRAF p.V600E" --limit 3 \
+      | jq '{
+          resolution: .resolution.status,
+          source_citation: ([.source_status[] | select(.route == "source_citation" and .source == "myvariant") | {status}][0]),
+          complete,
+          truncated
+        }'
+    ;;
   refseq-not-found-json)
     refseq_input="${repo_root}/spec/fixtures/variant-article-refseq-input.json"
     batch="$($binary --json variant articles --input "$refseq_input" --limit 10 --debug-plan)"
@@ -477,6 +490,10 @@ case "$scenario" in
            ["NC_000016.10:g.23607859C>T", "NM_024675.4:c.3350+5G>A", "PALB2 c.3350+5G>A"]
          end;
        def route_queries: [.debug_plan.routes[] | {route, queries}] | sort_by(.route);
+       def source_citation_status:
+         [.source_status[] | select(.route == "source_citation" and .source == "myvariant") | {status, detail}][0];
+       def exact_result_shape:
+         [.results[] | {matched_aliases, routes, sources}] | sort_by(.matched_aliases, .routes, .sources);
        ($batch.items[] | select(.request_id == "atm-grch38")) as $atm_components
        | ($batch.items[] | select(.request_id == "atm-grch38-genomic")) as $atm_genomic
        | {
@@ -491,11 +508,11 @@ case "$scenario" in
                  resolution,
                  complete,
                  truncated,
-                 source_citation: ([.source_status[] | select(.route == "source_citation" and .source == "myvariant") | {status, detail}][0]),
+                 source_citation: source_citation_status,
                  literal_exact_aliases: ([.results[].matched_aliases[]] | unique),
                  only_literal_exact_aliases: (([.results[].matched_aliases[]] | unique) == $expected),
                  literal_exact_route_queries: ([.debug_plan.routes[] | select(.route == "exact_lexical") | .queries[]] | unique),
-                 only_literal_exact_route_queries: (([.debug_plan.routes[] | select(.route == "exact_lexical") | .queries[]] | unique) == $expected),
+                 only_literal_route_queries: (([.debug_plan.routes[].queries[]] | unique) - $expected | length == 0),
                  literal_route_source_provenance: all($expected[];
                    . as $alias
                    | any($item.results[];
@@ -513,7 +530,14 @@ case "$scenario" in
                rsids: []
              }),
              same_normalized_aliases: ($atm_components.resolution.normalized_aliases == $atm_genomic.resolution.normalized_aliases),
-             same_route_queries: (($atm_components | route_queries) == ($atm_genomic | route_queries))
+             same_route_queries: (($atm_components | route_queries) == ($atm_genomic | route_queries)),
+             same_public_behavior: (
+               $atm_components.resolution == $atm_genomic.resolution
+               and $atm_components.complete == $atm_genomic.complete
+               and $atm_components.truncated == $atm_genomic.truncated
+               and ($atm_components | source_citation_status) == ($atm_genomic | source_citation_status)
+               and ($atm_components | exact_result_shape) == ($atm_genomic | exact_result_shape)
+             )
            }
          }'
     ;;

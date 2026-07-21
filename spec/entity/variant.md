@@ -442,7 +442,7 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-js
         "NC_000011.10:g.108248927T>G",
         "NM_000051.4:c.1066-6T>G"
       ],
-      "only_literal_exact_route_queries": true,
+      "only_literal_route_queries": true,
       "literal_route_source_provenance": true
     },
     {
@@ -485,7 +485,7 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-js
         "NM_024675.4:c.3350+5G>A",
         "PALB2 c.3350+5G>A"
       ],
-      "only_literal_exact_route_queries": true,
+      "only_literal_route_queries": true,
       "literal_route_source_provenance": true
     }
   ],
@@ -493,7 +493,8 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-js
     "same_requested_variant": true,
     "expected_normalized_aliases": true,
     "same_normalized_aliases": true,
-    "same_route_queries": true
+    "same_route_queries": true,
+    "same_public_behavior": true
   }
 }
 ```
