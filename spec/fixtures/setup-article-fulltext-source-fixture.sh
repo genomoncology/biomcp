@@ -554,6 +554,23 @@ class Handler(BaseHTTPRequestHandler):
             })
             return
 
+        if decoded_path == "/search/" and query.get("text") == ["MSH2 p.L341P"]:
+            send_json(self, 200, {
+                "results": [{
+                    "_id": "pmid:26951660",
+                    "pmid": "26951660",
+                    "title": "MSH2 p.L341P exact-variant literature fixture",
+                    "journal": "Variant Literature Fixture Journal",
+                    "date": "2016-05-01",
+                    "score": 99.0,
+                }],
+                "count": 1,
+                "total_pages": 1,
+                "current": 1,
+                "page_size": 100,
+            })
+            return
+
         search_query = query.get("query")
         if (
             decoded_path == "/search"
@@ -1051,6 +1068,7 @@ printf 'export BIOMCP_PMC_HTML_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_NCBI_IDCONV_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_S2_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_FIGSHARE_BASE=%q\n' "$base_url" >>"$env_file"
+printf 'export BIOMCP_OLS4_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_CACHE_MIN_DISK_FREE=1B\n' >>"$env_file"
 printf 'unset NCBI_API_KEY\n' >>"$env_file"
 printf 'unset S2_API_KEY\n' >>"$env_file"
