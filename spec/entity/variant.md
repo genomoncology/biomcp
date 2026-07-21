@@ -385,6 +385,81 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. healthy-empty-json
 }
 ```
 
+## Batch Variant Literature Is Ordered and Compact
+
+<!-- mustmatch-lint: skip -->
+
+A structured input file replaces caller-authored alias query matrices when several
+exact variants need literature triage. The response keeps request order and each
+sibling's resolution state while returning shortlist facts rather than hydrated
+article cards. Its next commands can be parsed directly for article triage and
+detail retrieval.
+
+```bash run id=variant-article-batch exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. batch-compact-json
+```
+
+```json expect=variant-article-batch contains
+{
+  "request_ids": ["braf-v600e", "myd88-s219c"],
+  "requested_genes": ["BRAF", "MYD88"],
+  "sibling_arrays_retained": true,
+  "resolutions": [
+    {"request_id": "braf-v600e", "status": "resolved"},
+    {"request_id": "myd88-s219c", "status": "unresolved"}
+  ],
+  "match_reasons": {
+    "braf_all_exact": true,
+    "myd88_all_best_effort": true
+  },
+  "route_claims": {
+    "braf_has_exact": true,
+    "myd88_only_fallback": true
+  },
+  "aggregate": {"complete": true, "truncated": true},
+  "item_state_present": true,
+  "compact_rows": true,
+  "followups": {
+    "parseable": true,
+    "article_batch": true,
+    "article_detail": true,
+    "fulltext": true,
+    "assets": true,
+    "citations": true
+  }
+}
+```
+
+## Variant Article Route Plans Are Opt In
+
+<!-- mustmatch-lint: skip -->
+
+Request a route plan only in JSON when aliases, provider work, ranking, or a
+truncated acquisition needs explanation. Ordinary output stays compact. A single
+request and every item in a batch expose the same typed route facts, while the
+batch adds its fixed item-worker and request-budget summary.
+
+```bash run id=variant-article-plan exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. debug-plan-json
+```
+
+```json expect=variant-article-plan contains
+{
+  "ordinary_omits_plan": true,
+  "single": {
+    "aliases_present": true,
+    "routes": ["exact_lexical", "pubtator_variant", "source_citation"],
+    "shape_complete": true
+  },
+  "batch": {
+    "item_concurrency_limit": 2,
+    "items_planned": 2,
+    "request_budget_consistent": true,
+    "every_item_has_plan": true
+  }
+}
+```
+
 ## ID Normalization
 
 Exact variant lookup should normalize equivalent identifiers back to the same

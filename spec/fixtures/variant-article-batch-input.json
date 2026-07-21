@@ -1,0 +1,12 @@
+[
+  {
+    "request_id": "braf-v600e",
+    "gene": "BRAF",
+    "protein": "p.V600E"
+  },
+  {
+    "request_id": "myd88-s219c",
+    "gene": "MYD88",
+    "protein": "p.S219C"
+  }
+]
