@@ -1,4 +1,5 @@
 .PHONY: build test lint check-quality-ratchet release-gate run clean spec spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
+.PHONY: output-footprint
 
 SPEC_ROUTINE_PATHS = \
 	spec/entity/article.md \
@@ -73,6 +74,11 @@ release-gate: lint
 
 check-quality-ratchet:
 	@bash tools/check-quality-ratchet.sh
+
+output-footprint:
+	$(SPEC_BUILD)
+	$(MAKE) sync-python-dev
+	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync python benchmarks/output-footprint/run.py
 
 run:
 	cargo run --
